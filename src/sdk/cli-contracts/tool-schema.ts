@@ -32,6 +32,7 @@ import {
   toUniqueFlagContracts,
   withFlagAliasMetadata,
 } from "./flag-contracts.js";
+import { resolveReadOutputSurface } from "../read-output-contracts.js";
 
 const PM_TOOL_GLOBAL_PARAMETER_KEYS = [
   "json",
@@ -43,6 +44,13 @@ const PM_TOOL_GLOBAL_PARAMETER_KEYS = [
   "path",
   "pmExecutable",
   "timeoutMs",
+] as const;
+
+const PM_TOOL_READ_OUTPUT_PARAMETER_KEYS = [
+  "outputInclude",
+  "outputLimit",
+  "outputBudget",
+  "outputFormat",
 ] as const;
 
 const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<
@@ -1373,6 +1381,9 @@ export function pmToolActionParameterKeys(
   return toSchemaKeyList([
     "action",
     ...PM_TOOL_GLOBAL_PARAMETER_KEYS,
+    ...(resolveReadOutputSurface(action) !== undefined
+      ? PM_TOOL_READ_OUTPUT_PARAMETER_KEYS
+      : []),
     ...mutationParameterKeys,
     ...(contract.required ?? []),
     ...(contract.optional ?? []),
@@ -1514,7 +1525,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and the contract tests all bind to one constant instead of re-typing the `"4.0.2"` literal (pm-r9sz). Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.3.0" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.4.0" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the
@@ -1524,7 +1535,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA_MAJOR =
   PM_TOOL_PARAMETERS_SCHEMA_VERSION.split(".")[0];
 
 /** Version of the provider-compatible flat tool-parameters schema (`PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`). Tracked separately from the strict schema because the flat projection evolves independently. */
-export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.0.0" as const;
+export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.1.0" as const;
 
 /** Public contract for pm tool parameters schema, shared by SDK and presentation-layer consumers. */
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> =

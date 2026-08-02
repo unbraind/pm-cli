@@ -153,6 +153,14 @@ export function clearResolvedGlobalOptions(command: Command): void {
   delete (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS];
 }
 
+/** Read one string-valued Commander option without coercion. */
+function readStringCommandOption(
+  options: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  return typeof options[key] === "string" ? options[key] : undefined;
+}
+
 /** Implements get global options for the public runtime surface of this module. */
 export function getGlobalOptions(command: Command): GlobalOptions {
   const commandPath = getCommandPath(command);
@@ -180,6 +188,12 @@ export function getGlobalOptions(command: Command): GlobalOptions {
     idOnly: opts.idOnly === true,
     ...(opts.lean === true ? { lean: true } : {}),
     ...(opts.tokenAccounting === true ? { tokenAccounting: true } : {}),
+    outputInclude: readStringCommandOption(opts, "outputInclude"),
+    outputLimit: readStringCommandOption(opts, "outputLimit"),
+    outputBudget: readStringCommandOption(opts, "outputBudget"),
+    ...(opts.outputFormat === "toon" || opts.outputFormat === "json"
+      ? { outputFormat: opts.outputFormat }
+      : {}),
     path:
       typeof opts.pmPath === "string"
         ? opts.pmPath

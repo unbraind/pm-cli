@@ -28,6 +28,30 @@ export interface ToolDefinition {
   inputSchema: Record<string, unknown>;
 }
 
+const READ_OUTPUT_TOOL_PROPERTIES = {
+  outputInclude: {
+    type: "string",
+    minLength: 1,
+    description:
+      "Comma-separated fields or sections retained by any built-in read action.",
+  },
+  outputLimit: {
+    anyOf: [{ type: "integer", minimum: 1 }, { const: "unbounded" }],
+    description:
+      "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+  },
+  outputBudget: {
+    type: "integer",
+    minimum: 1,
+    description: "Universal estimated-token ceiling for a read result.",
+  },
+  outputFormat: {
+    type: "string",
+    enum: ["json", "toon"],
+    description: "Universal read-result encoding selector.",
+  },
+} as const;
+
 /** MCP transport parameters layered over every canonical action schema. */
 export const TOOL_SCHEMA_BASE = {
   type: "object",
@@ -157,6 +181,7 @@ const RAW_TOOLS: ToolDefinition[] = [
           description:
             "For single-item mutation actions, return only id and status.",
         },
+        ...READ_OUTPUT_TOOL_PROPERTIES,
       },
       ["action"],
     ),

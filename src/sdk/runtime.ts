@@ -53,10 +53,6 @@ import {
 } from "../core/schema/runtime-schema.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
-import type {
-  WorkspaceExtensionCommandContract,
-  WorkspaceFieldContract,
-} from "./workspace-contracts.js";
 import {
   buildWorkspaceExtensionCommandContracts,
   buildWorkspaceFieldContracts,
@@ -65,10 +61,7 @@ export type {
   WorkspaceExtensionCommandContract,
   WorkspaceFieldContract,
 } from "./workspace-contracts.js";
-import {
-  PM_TOOL_ACTIONS,
-  type PmToolAction,
-} from "./cli-contracts/enum-contracts.js";
+import { PM_TOOL_ACTIONS } from "./cli-contracts/enum-contracts.js";
 import {
   clearWorkspaceContractsCache,
   memoizeWorkspaceExtensionRegistrations,
@@ -79,6 +72,24 @@ import {
   applyContextIntentProjection,
   attachReadOutputContracts,
 } from "./context-intent-contracts.js";
+import {
+  runWithDiscoveredContextIntentContracts,
+  type PmContextIntentPackageModule,
+} from "./context-intent-runtime.js";
+import {
+  validateReadOutputOptions,
+  type PmReadOutputOptions,
+  type PmReadOutputResultFor,
+} from "./read-output-contracts.js";
+export type {
+  PmReadOutputBudgetExceeded,
+  PmReadOutputOptions,
+  PmReadOutputResult,
+  PmReadOutputResultFor,
+  PmReadOutputSurfaceContract,
+} from "./read-output-contracts.js";
+export type { PmContextIntentContract } from "./context-intent-contracts.js";
+export type { PmErrorCodeContract } from "./error-code-catalog.js";
 export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
 import { runActivity } from "./query/activity.js";
 import {
@@ -203,7 +214,6 @@ import {
 import { runDeps } from "./dependencies.js";
 import { runDocs } from "./docs.js";
 import type {
-  PmCloseActionOptions,
   PmCreateActionOptions,
   PmUpdateActionOptions,
 } from "./cli-contracts/typed-action-inputs.js";
@@ -614,173 +624,41 @@ export type {
   LogNote,
   PmSettings,
 } from "../types/index.js";
-
-/** Documents the get contracts options payload exchanged by command, SDK, and package integrations. */
-export interface GetContractsOptions extends ContractsCommandOptions {
-  /** Value that configures or reports pm root for this contract. */
-  pmRoot?: string;
-  /** Value that configures or reports cwd for this contract. */
-  cwd?: string;
-  /** Value that configures or reports no extensions for this contract. */
-  noExtensions?: boolean;
-  /** Value that configures or reports quiet for this contract. */
-  quiet?: boolean;
-  /** Value that configures or reports profile for this contract. */
-  profile?: boolean;
-}
-
-/** Documents the workspace contracts options payload exchanged by command, SDK, and package integrations. */
-export interface WorkspaceContractsOptions {
-  /** Value that configures or reports extension registrations for this contract. */
-  extensionRegistrations?: ExtensionRegistrationRegistry | null;
-  /** Value that configures or reports no extensions for this contract. */
-  noExtensions?: boolean;
-  /** Value that configures or reports cwd for this contract. */
-  cwd?: string;
-}
-
-/** Documents the workspace contracts payload exchanged by command, SDK, and package integrations. */
-export interface WorkspaceContracts {
-  /** Value that configures or reports types for this contract. */
-  types: string[];
-  /** Value that configures or reports statuses for this contract. */
-  statuses: string[];
-  /** Configured status id representing the open lifecycle state. */
-  openStatus: string;
-  /** Configured status id representing the closed lifecycle state. */
-  closeStatus: string;
-  /** Configured status id representing the canceled lifecycle state. */
-  canceledStatus: string;
-  /** Runtime custom fields accepted by create and update actions. */
-  fields?: WorkspaceFieldContract[];
-  /** Activated extension commands available through generic action dispatch. */
-  extensionCommands?: WorkspaceExtensionCommandContract[];
-}
-
-/**
- * Names a native pm action or an extension-contributed action accepted by {@link runAction}.
- */
-export type PmActionName = PmToolAction | (string & {});
-
-/** Plain object option bag forwarded to the same command runners used by MCP. */
-export type PmActionOptions = Record<string, unknown>;
-
-/** Union returned by the generic schema customization helper. */
-export type SchemaResult =
-  | SchemaInspectResult
-  | SchemaListResult
-  | SchemaShowResult
-  | SchemaShowStatusResult
-  | SchemaListFieldsResult
-  | SchemaShowFieldResult
-  | SchemaAddTypeResult
-  | SchemaRemoveTypeResult
-  | SchemaAddStatusResult
-  | SchemaRemoveStatusResult
-  | SchemaAddFieldResult
-  | SchemaRemoveFieldResult
-  | SchemaApplyPresetResult
-  | SchemaAddTypeInferResult
-  | SchemaEvolutionMigrationResult;
-
-/** Result returned by the SDK `startTask` lifecycle shortcut. */
-export interface StartTaskResult {
-  /** Stable identifier used to reference this record across commands and storage. */
-  id: string;
-  /** Value that configures or reports action for this contract. */
-  action: "start_task";
-  /** Value that configures or reports claim for this contract. */
-  claim: ClaimResult;
-  /** Value that configures or reports update for this contract. */
-  update: UpdateResult;
-}
-
-/** Result returned by the SDK `pauseTask` lifecycle shortcut. */
-export interface PauseTaskResult {
-  /** Stable identifier used to reference this record across commands and storage. */
-  id: string;
-  /** Value that configures or reports action for this contract. */
-  action: "pause_task";
-  /** Value that configures or reports update for this contract. */
-  update: UpdateResult;
-  /** Value that configures or reports release for this contract. */
-  release: ReleaseResult;
-}
-
-/** Result returned by the SDK `closeTask` lifecycle shortcut. */
-export interface CloseTaskResult {
-  /** Stable identifier used to reference this record across commands and storage. */
-  id: string;
-  /** Value that configures or reports action for this contract. */
-  action: "close_task";
-  /** Value that configures or reports close for this contract. */
-  close: CloseResult;
-  /** Value that configures or reports release for this contract. */
-  release: ReleaseResult;
-}
-
-/**
- * Complete high-level action request for {@link runAction}.
- */
-export type PmActionInput = PmActionOptions & {
-  /** Native or extension-contributed action name to dispatch. */
-  action: PmActionName;
-  /** Command-runner options forwarded after MCP-compatible normalization. */
-  options?: PmActionOptions;
-};
-
-/**
- * Per-call arguments accepted by {@link PmClient.run}. The action name is passed
- * as the first parameter, so an `action` property inside the args bag is rejected
- * at compile time.
- */
-export type PmClientRunArgs = Omit<PmActionInput, "action"> & {
-  /** Return full `changed_fields` arrays for mutation actions instead of the default compact `changed_field_count` projection. */
-  fullChangedFields?: boolean;
-  /** Return only mutation item ids when supported by the action. */
-  idOnly?: boolean;
-  action?: never;
-};
-
-/** Typed close-option bag accepted by {@link PmClient.close}: the contract-derived close options minus the positional `reason` parameter and its MCP `text` alias. */
-export type PmClientCloseActionOptions = Omit<
-  PmCloseActionOptions,
-  "reason" | "text"
->;
-
-/** Command options accepted by PmClient mutation convenience methods. */
-export type PmClientMutationOptions = PmActionOptions & {
-  /** Return full `changed_fields` arrays for this mutation instead of the compact SDK default. */
-  fullChangedFields?: boolean;
-  /** Return only mutation item ids when supported by the action. */
-  idOnly?: boolean;
-};
-
-/** Mutation options accepted by typed SDK convenience helpers that always return full command result envelopes. */
-export type PmClientFullMutationOptions = Omit<
+import type {
+  ClaimNextOptions,
+  CloseTaskResult,
+  GetContractsOptions,
+  PauseTaskResult,
+  PmActionInput,
+  PmActionName,
+  PmActionOptions,
+  PmClientCloseActionOptions,
+  PmClientFullMutationOptions,
+  PmClientOptions,
+  PmClientRunArgs,
+  SchemaResult,
+  StartTaskResult,
+  WorkspaceContracts,
+  WorkspaceContractsOptions,
+} from "./runtime-public-contracts.js";
+export type {
+  ClaimNextOptions,
+  CloseTaskResult,
+  GetContractsOptions,
+  PauseTaskResult,
+  PmActionInput,
+  PmActionName,
+  PmActionOptions,
+  PmClientCloseActionOptions,
+  PmClientFullMutationOptions,
   PmClientMutationOptions,
-  "fullChangedFields" | "idOnly"
->;
-
-/** Options for atomic next-work selection. `maxAttempts` accepts 1 through 100 inclusive and is validated at runtime for both numeric SDK input and CLI-style strings. */
-export interface ClaimNextOptions extends PmClientFullMutationOptions {
-  /** Maximum ranked candidates to attempt, from 1 through 100 inclusive. */
-  maxAttempts?: number | string;
-}
-
-/**
- * Stable defaults applied by {@link PmClient} to every action it runs.
- */
-export interface PmClientOptions {
-  /** Tracker root to pass as the SDK equivalent of `--pm-path`. */
-  pmRoot?: string;
-  /** Working directory used for workspace and extension resolution. */
-  cwd?: string;
-  /** Default mutation author forwarded to action options when absent. */
-  author?: string;
-  /** Disable extension loading for every action this client runs. */
-  noExtensions?: boolean;
-}
+  PmClientOptions,
+  PmClientRunArgs,
+  SchemaResult,
+  StartTaskResult,
+  WorkspaceContracts,
+  WorkspaceContractsOptions,
+} from "./runtime-public-contracts.js";
 
 const ACTIVE_EXTENSION_HOST_CONTEXT = Symbol(
   "pm.active-extension-host-context",
@@ -793,6 +671,11 @@ interface PmClientDefaults {
   noExtensions?: boolean;
   [ACTIVE_EXTENSION_HOST_CONTEXT]?: true;
 }
+
+type ReadOptions<Options> = Options & PmReadOutputOptions;
+type ReadPromise<Result, Options> = Promise<
+  PmReadOutputResultFor<Result, Options>
+>;
 
 function splitFullClientMutationOptions(
   options: PmClientFullMutationOptions,
@@ -846,37 +729,53 @@ export class PmClient {
   }
 
   /** Return the same context snapshot produced by `pm context`. */
-  context(options: ContextOptions = {}): Promise<ContextResult> {
+  context<Options extends ReadOptions<ContextOptions> = ContextOptions>(
+    options: Options = {} as Options,
+  ): ReadPromise<ContextResult, Options> {
     return this.runTyped("context", { options });
   }
 
   /** List items with the MCP/agent compact defaults. */
-  list(options: ListOptions = {}): Promise<ListResult> {
+  list<Options extends ReadOptions<ListOptions> = ListOptions>(
+    options: Options = {} as Options,
+  ): ReadPromise<ListResult, Options> {
     return this.runTyped("list", { options });
   }
 
   /** Search items with the MCP/agent compact defaults. */
-  search(query: string, options: SearchOptions = {}): Promise<SearchResult> {
+  search<Options extends ReadOptions<SearchOptions> = SearchOptions>(
+    query: string,
+    options: Options = {} as Options,
+  ): ReadPromise<SearchResult, Options> {
     return this.runTyped("search", { query, options });
   }
 
   /** Read one item by id. */
-  get(id: string, options: GetOptions = {}): Promise<GetResult> {
+  get<Options extends ReadOptions<GetOptions> = GetOptions>(
+    id: string,
+    options: Options = {} as Options,
+  ): ReadPromise<GetResult, Options> {
     return this.runTyped("get", { id, options });
   }
 
   /** Return the ranked next-work recommendation produced by `pm next`. */
-  next(options: NextOptions = {}): Promise<NextResult> {
+  next<Options extends ReadOptions<NextOptions> = NextOptions>(
+    options: Options = {} as Options,
+  ): ReadPromise<NextResult, Options> {
     return this.runTyped("next", { options });
   }
 
   /** Group matching items with the same semantics as `pm aggregate`. */
-  aggregate(options: AggregateOptions = {}): Promise<AggregateResult> {
+  aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(
+    options: Options = {} as Options,
+  ): ReadPromise<AggregateResult, Options> {
     return this.runTyped("aggregate", { options });
   }
 
   /** Return project tracker statistics with the same sections as `pm stats`. */
-  stats(options: StatsCommandOptions = {}): Promise<StatsResult> {
+  stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(
+    options: Options = {} as Options,
+  ): ReadPromise<StatsResult, Options> {
     return this.runTyped("stats", { options });
   }
 
@@ -888,15 +787,20 @@ export class PmClient {
   }
 
   /** List, add, edit, or delete item comments. */
-  comments(
+  comments<
+    Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions,
+  >(
     id: string,
-    options: CommentsCommandOptions = {},
-  ): Promise<CommentsResult> {
+    options: Options = {} as Options,
+  ): ReadPromise<CommentsResult, Options> {
     return this.runTyped("comments", { id, options });
   }
 
   /** List or append private item notes. */
-  notes(id: string, options: NotesCommandOptions = {}): Promise<NotesResult> {
+  notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(
+    id: string,
+    options: Options = {} as Options,
+  ): ReadPromise<NotesResult, Options> {
     return this.runTyped("notes", { id, options });
   }
 
@@ -909,7 +813,10 @@ export class PmClient {
   }
 
   /** Add, remove, clear, or list linked project files for an item. */
-  files(id: string, options: FilesCommandOptions = {}): Promise<FilesResult> {
+  files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(
+    id: string,
+    options: Options = {} as Options,
+  ): ReadPromise<FilesResult, Options> {
     return this.runTyped("files", { id, options });
   }
 
@@ -927,21 +834,27 @@ export class PmClient {
   }
 
   /** Add, remove, clear, or list linked documentation for an item. */
-  docs(id: string, options: DocsCommandOptions = {}): Promise<DocsResult> {
+  docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(
+    id: string,
+    options: Options = {} as Options,
+  ): ReadPromise<DocsResult, Options> {
     return this.runTyped("docs", { id, options });
   }
 
   /** Inspect item dependency relationships. */
-  deps(id: string, options: DepsCommandOptions = {}): Promise<DepsResult> {
+  deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(
+    id: string,
+    options: Options = {} as Options,
+  ): ReadPromise<DepsResult, Options> {
     return this.runTyped("deps", { id, options });
   }
 
   /** Run bounded workspace graph traversal, analytics, or governance-audit queries. */
-  graph(
+  graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(
     subcommand: GraphSubcommand,
     ids: { id?: string; target?: string } = {},
-    options: GraphCommandOptions = {},
-  ): Promise<GraphResult> {
+    options: Options = {} as Options,
+  ): ReadPromise<GraphResult, Options> {
     return this.runTyped("graph", { subcommand, ...ids, options });
   }
 
@@ -1184,26 +1097,31 @@ export class PmClient {
   }
 
   /** Run project validation checks with counts-only diagnostics. */
-  validate(
-    options: ValidateCommandOptions & { counts: true },
-  ): Promise<ValidateCountsResult>;
+  validate<Options extends ReadOptions<ValidateCommandOptions> & { counts: true }>(
+    options: Options,
+  ): ReadPromise<ValidateCountsResult, Options>;
   /** Run project validation checks with complete diagnostic arrays. */
-  validate(
-    options?: ValidateCommandOptions & { counts?: false },
-  ): Promise<ValidateResult>;
+  validate<
+    Options extends ReadOptions<ValidateCommandOptions> & { counts?: false } =
+      ValidateCommandOptions & { counts?: false },
+  >(options?: Options): ReadPromise<ValidateResult, Options>;
   /** Run project validation checks with a dynamically selected projection. */
-  validate(
-    options: ValidateCommandOptions,
-  ): Promise<ValidateResult | ValidateCountsResult>;
+  validate<Options extends ReadOptions<ValidateCommandOptions>>(
+    options: Options,
+  ): ReadPromise<ValidateResult | ValidateCountsResult, Options>;
   /** Run project validation checks. */
-  validate(
-    options: ValidateCommandOptions = {},
-  ): Promise<ValidateResult | ValidateCountsResult> {
+  validate<
+    Options extends ReadOptions<ValidateCommandOptions> = ValidateCommandOptions,
+  >(
+    options: Options = {} as Options,
+  ): ReadPromise<ValidateResult | ValidateCountsResult, Options> {
     return this.runTyped("validate", { options });
   }
 
   /** Run project health checks. */
-  health(options: RunHealthOptions = {}): Promise<HealthResult> {
+  health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(
+    options: Options = {} as Options,
+  ): ReadPromise<HealthResult, Options> {
     return this.runTyped("health", { options });
   }
 
@@ -1696,60 +1614,60 @@ export class PmClient {
 }
 
 /** Return the same context snapshot produced by `pm context` without constructing a reusable client. */
-export function context(
-  options: ContextOptions = {},
+export function context<Options extends ReadOptions<ContextOptions> = ContextOptions>(
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<ContextResult> {
+): ReadPromise<ContextResult, Options> {
   return new PmClient(clientOptions).context(options);
 }
 
 /** List items with the MCP/agent compact defaults without constructing a reusable client. */
-export function list(
-  options: ListOptions = {},
+export function list<Options extends ReadOptions<ListOptions> = ListOptions>(
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<ListResult> {
+): ReadPromise<ListResult, Options> {
   return new PmClient(clientOptions).list(options);
 }
 
 /** Search items with the MCP/agent compact defaults without constructing a reusable client. */
-export function search(
+export function search<Options extends ReadOptions<SearchOptions> = SearchOptions>(
   query: string,
-  options: SearchOptions = {},
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<SearchResult> {
+): ReadPromise<SearchResult, Options> {
   return new PmClient(clientOptions).search(query, options);
 }
 
 /** Read one item by id without constructing a reusable client. */
-export function get(
+export function get<Options extends ReadOptions<GetOptions> = GetOptions>(
   id: string,
-  options: GetOptions = {},
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<GetResult> {
+): ReadPromise<GetResult, Options> {
   return new PmClient(clientOptions).get(id, options);
 }
 
 /** Return the ranked next-work recommendation produced by `pm next` without constructing a reusable client. */
-export function next(
-  options: NextOptions = {},
+export function next<Options extends ReadOptions<NextOptions> = NextOptions>(
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<NextResult> {
+): ReadPromise<NextResult, Options> {
   return new PmClient(clientOptions).next(options);
 }
 
 /** Group matching items with the same semantics as `pm aggregate` without constructing a reusable client. */
-export function aggregate(
-  options: AggregateOptions = {},
+export function aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<AggregateResult> {
+): ReadPromise<AggregateResult, Options> {
   return new PmClient(clientOptions).aggregate(options);
 }
 
 /** Return project tracker statistics with the same sections as `pm stats` without constructing a reusable client. */
-export function stats(
-  options: StatsCommandOptions = {},
+export function stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<StatsResult> {
+): ReadPromise<StatsResult, Options> {
   return new PmClient(clientOptions).stats(options);
 }
 
@@ -1762,20 +1680,22 @@ export function duplicates(
 }
 
 /** List, add, edit, or delete item comments without constructing a reusable client. */
-export function comments(
+export function comments<
+  Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions,
+>(
   id: string,
-  options: CommentsCommandOptions = {},
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<CommentsResult> {
+): ReadPromise<CommentsResult, Options> {
   return new PmClient(clientOptions).comments(id, options);
 }
 
 /** List or append private item notes without constructing a reusable client. */
-export function notes(
+export function notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(
   id: string,
-  options: NotesCommandOptions = {},
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<NotesResult> {
+): ReadPromise<NotesResult, Options> {
   return new PmClient(clientOptions).notes(id, options);
 }
 
@@ -1789,11 +1709,11 @@ export function learnings(
 }
 
 /** Manage linked item files without constructing a reusable client. */
-export function files(
+export function files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(
   id: string,
-  options: FilesCommandOptions = {},
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<FilesResult> {
+): ReadPromise<FilesResult, Options> {
   return new PmClient(clientOptions).files(id, options);
 }
 
@@ -1815,30 +1735,30 @@ export function filesLookup(
 }
 
 /** Manage linked item docs without constructing a reusable client. */
-export function docs(
+export function docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(
   id: string,
-  options: DocsCommandOptions = {},
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<DocsResult> {
+): ReadPromise<DocsResult, Options> {
   return new PmClient(clientOptions).docs(id, options);
 }
 
 /** Inspect item dependency relationships without constructing a reusable client. */
-export function deps(
+export function deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(
   id: string,
-  options: DepsCommandOptions = {},
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<DepsResult> {
+): ReadPromise<DepsResult, Options> {
   return new PmClient(clientOptions).deps(id, options);
 }
 
 /** Run bounded workspace graph queries without constructing a reusable client. */
-export function graph(
+export function graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(
   subcommand: GraphSubcommand,
   ids: { id?: string; target?: string } = {},
-  options: GraphCommandOptions = {},
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<GraphResult> {
+): ReadPromise<GraphResult, Options> {
   return new PmClient(clientOptions).graph(subcommand, ids, options);
 }
 
@@ -2070,33 +1990,40 @@ export function profileLint(
 }
 
 /** Validate a tracker without constructing a reusable client using counts-only diagnostics. */
-export function validate(
-  options: ValidateCommandOptions & { counts: true },
+export function validate<
+  Options extends ReadOptions<ValidateCommandOptions> & { counts: true },
+>(
+  options: Options,
   clientOptions?: PmClientOptions,
-): Promise<ValidateCountsResult>;
+): ReadPromise<ValidateCountsResult, Options>;
 /** Validate a tracker without constructing a reusable client using complete diagnostics. */
-export function validate(
-  options?: ValidateCommandOptions & { counts?: false },
+export function validate<
+  Options extends ReadOptions<ValidateCommandOptions> & { counts?: false } =
+    ValidateCommandOptions & { counts?: false },
+>(
+  options?: Options,
   clientOptions?: PmClientOptions,
-): Promise<ValidateResult>;
+): ReadPromise<ValidateResult, Options>;
 /** Validate a tracker without constructing a reusable client with a dynamic projection. */
-export function validate(
-  options: ValidateCommandOptions,
+export function validate<Options extends ReadOptions<ValidateCommandOptions>>(
+  options: Options,
   clientOptions?: PmClientOptions,
-): Promise<ValidateResult | ValidateCountsResult>;
+): ReadPromise<ValidateResult | ValidateCountsResult, Options>;
 /** Validate a tracker without constructing a reusable client. */
-export function validate(
-  options: ValidateCommandOptions = {},
+export function validate<
+  Options extends ReadOptions<ValidateCommandOptions> = ValidateCommandOptions,
+>(
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<ValidateResult | ValidateCountsResult> {
+): ReadPromise<ValidateResult | ValidateCountsResult, Options> {
   return new PmClient(clientOptions).validate(options);
 }
 
 /** Run health checks without constructing a reusable client. */
-export function health(
-  options: RunHealthOptions = {},
+export function health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(
+  options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): Promise<HealthResult> {
+): ReadPromise<HealthResult, Options> {
   return new PmClient(clientOptions).health(options);
 }
 
@@ -2538,6 +2465,7 @@ type ActiveExtensionRuntime = {
   registrations: ExtensionActivationResult["registrations"];
   commands: ExtensionActivationResult["commands"];
   pmRoot: string;
+  packages: readonly PmContextIntentPackageModule[];
 };
 
 /** Publishes empty active extension registries so built-in fallback actions cannot observe stale or partially published extension state from a failed activation cycle. */
@@ -2631,11 +2559,11 @@ async function withActiveExtensionsExclusively<T>(
   cwd: string,
   run: (active: ActiveExtensionRuntime | null) => Promise<T>,
 ): Promise<T> {
+  const pmRoot = resolvePmRoot(cwd, global.path);
   if (global.noExtensions) {
     resetActiveExtensionRegistries();
-    return run(null);
+    return runWithDiscoveredContextIntentContracts({ pmRoot }, () => run(null));
   }
-  const pmRoot = resolvePmRoot(cwd, global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     resetActiveExtensionRegistries();
     return run(null);
@@ -2674,6 +2602,7 @@ async function withActiveExtensionsExclusively<T>(
       registrations: activationResult.registrations,
       commands: activationResult.commands,
       pmRoot,
+      packages: loadResult.loaded,
     };
   } catch (error) {
     resetActiveExtensionRegistries();
@@ -2687,7 +2616,10 @@ async function withActiveExtensionsExclusively<T>(
     );
   }
   try {
-    return await run(active);
+    return await runWithDiscoveredContextIntentContracts(
+      { pmRoot, packages: active?.packages },
+      () => run(active),
+    );
   } finally {
     // Reset the process-global active registries FIRST so a torn-down extension's
     // overrides/hooks cannot leak into a later request in this long-running server
@@ -3882,6 +3814,7 @@ async function dispatchAction(
   activeExtensions: ActiveExtensionRuntime | null,
 ): Promise<unknown> {
   const options = optionsWithAuthor(args, action);
+  validateReadOutputOptions(action, options);
   const ctx: McpActionDispatchContext = {
     action,
     args,

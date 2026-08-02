@@ -1,0 +1,65 @@
+/**
+ * @module tests/types/read-output-contracts.test-d
+ *
+ * Compile-time proof that universal read results require budget-omission
+ * narrowing and that every narrowed SDK entrypoint exports the contract types
+ * referenced by its public signatures.
+ */
+import {
+  PmClient,
+  applyReadOutputDimensions,
+  isReadOutputBudgetExceeded,
+  type ListResult,
+  type PmReadOutputOptions,
+  type PmReadOutputResult,
+} from "../../src/sdk/index.js";
+import type { PmReadOutputOptions as CoreReadOutputOptions } from "../../src/sdk/core.js";
+import type {
+  PmContextIntentContract,
+  PmErrorCodeContract,
+  PmReadOutputOptions as RuntimeReadOutputOptions,
+  PmReadOutputSurfaceContract,
+} from "../../src/sdk/runtime.js";
+
+const options = {
+  outputInclude: "id,title",
+  outputLimit: 2,
+  outputBudget: 256,
+  outputFormat: "toon",
+} satisfies PmReadOutputOptions &
+  CoreReadOutputOptions &
+  RuntimeReadOutputOptions;
+
+const result = applyReadOutputDimensions("list", options, {
+  items: [{ id: "pm-one" }],
+});
+
+// @ts-expect-error useful result fields are unsafe until the omission branch is narrowed
+const unsafeItems = result.items;
+void unsafeItems;
+
+if (isReadOutputBudgetExceeded(result)) {
+  const reason: "requested_budget_infeasible" =
+    result.output_budget_exceeded.reason;
+  void reason;
+} else {
+  const firstId: string | undefined = result.items[0]?.id;
+  void firstId;
+}
+
+declare const intentContract: PmContextIntentContract;
+declare const surfaceContract: PmReadOutputSurfaceContract;
+declare const errorContract: PmErrorCodeContract;
+void intentContract;
+void surfaceContract;
+void errorContract;
+
+const client = new PmClient();
+const ordinaryClientRead: Promise<ListResult> = client.list({ limit: "2" });
+const budgetedClientRead: Promise<PmReadOutputResult<ListResult>> = client.list(
+  {
+    outputBudget: 256,
+  },
+);
+void ordinaryClientRead;
+void budgetedClientRead;

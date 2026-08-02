@@ -19,6 +19,12 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   noExtensions: { type: "boolean" },
   noPager: { type: "boolean" },
   tokenAccounting: { type: "boolean" },
+  outputInclude: { type: "string", minLength: 1 },
+  outputLimit: {
+    anyOf: [{ type: "integer", minimum: 1 }, { const: "unbounded" }],
+  },
+  outputBudget: { type: "integer", minimum: 1 },
+  outputFormat: { type: "string", enum: ["json", "toon"] },
   path: { type: "string" },
   pmExecutable: { type: "string" },
   timeoutMs: { type: "number" },
@@ -841,6 +847,24 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   tokenAccounting: {
     description:
       "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+  },
+  outputInclude: {
+    description:
+      "Comma-separated fields or sections retained by any built-in read action.",
+    examples: ["id,title,status", "summary,counts"],
+  },
+  outputLimit: {
+    description:
+      "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+    examples: [10, "unbounded"],
+  },
+  outputBudget: {
+    description: "Universal estimated-token ceiling for a read result.",
+    examples: [600, 1200],
+  },
+  outputFormat: {
+    description: "Universal read-result encoding selector.",
+    examples: ["toon", "json"],
   },
   profile: {
     description: "Emit deterministic timing diagnostics to stderr.",

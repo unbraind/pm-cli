@@ -9248,20 +9248,6 @@
   "context_intents": [
     {
       "command": "context",
-      "description": "Bounded active hierarchy, ownership, blockers, and recent progress.",
-      "included_field_groups": [
-        "summary",
-        "focus",
-        "hierarchy",
-        "blockers",
-        "activity"
-      ],
-      "intent": "orient",
-      "source": "core",
-      "token_budget": 2400
-    },
-    {
-      "command": "context",
       "description": "Active ownership, evidence, decisions, and immediate continuation context.",
       "included_field_groups": [
         "summary",
@@ -9273,6 +9259,20 @@
       "intent": "handoff",
       "source": "core",
       "token_budget": 2200
+    },
+    {
+      "command": "context",
+      "description": "Bounded active hierarchy, ownership, blockers, and recent progress.",
+      "included_field_groups": [
+        "summary",
+        "focus",
+        "hierarchy",
+        "blockers",
+        "activity"
+      ],
+      "intent": "orient",
+      "source": "core",
+      "token_budget": 2400
     },
     {
       "command": "get",
@@ -12300,6 +12300,52 @@
           "options": {
             "type": "object"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -12606,6 +12652,52 @@
           },
           "options": {
             "type": "object"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
@@ -12973,6 +13065,52 @@
           },
           "options": {
             "type": "object"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
@@ -13793,6 +13931,52 @@
           "options": {
             "type": "object"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -13954,6 +14138,52 @@
           "options": {
             "type": "object"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -14067,6 +14297,52 @@
             "additionalProperties": true,
             "description": "Advanced command options forwarded to the selected pm action.",
             "type": "object"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
@@ -14303,6 +14579,52 @@
           },
           "options": {
             "type": "object"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
@@ -14545,6 +14867,52 @@
           "options": {
             "description": "Get options such as depth=brief|standard|deep|full, fields=id,title,status, or at=<version|ISO timestamp>.",
             "type": "object"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
@@ -14793,6 +15161,52 @@
           "options": {
             "type": "object"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -14943,6 +15357,52 @@
           },
           "options": {
             "type": "object"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
@@ -15491,6 +15951,52 @@
               "desc"
             ]
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -15823,6 +16329,52 @@
           "options": {
             "type": "object"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -16069,6 +16621,52 @@
           },
           "options": {
             "type": "object"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
@@ -17227,6 +17825,36 @@
             "description": "Underlying pm command options using camelCase keys.",
             "type": "object"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling."
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -17955,6 +18583,52 @@
           },
           "options": {
             "type": "object"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
@@ -19066,6 +19740,52 @@
           "options": {
             "type": "object"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "parentCycleSeverity": {
             "description": "Set parent-cycle warning policy for lifecycle checks.",
             "enum": [
@@ -19154,6 +19874,1159 @@
     "omitted_field_group_count": 0,
     "omitted_field_groups": []
   },
+  "read_output_dimensions": [
+    {
+      "command": "list",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--after",
+              "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--no-truncate",
+              "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--token-budget",
+              "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--format",
+              "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--stream",
+              "migration_hint": "--stream retains command streaming semantics; --output-format selects only static result encoding.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--brief",
+              "migration_hint": "--brief is a compatibility alias; prefer --output-include brief.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--compact",
+              "migration_hint": "--compact is a compatibility alias; prefer --output-include compact.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--fields",
+              "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--full",
+              "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "context",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--after",
+              "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--depth",
+              "migration_hint": "--depth retains traversal or detail-depth semantics; --output-limit does not replace it.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--token-budget",
+              "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--format",
+              "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--fields",
+              "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--section",
+              "migration_hint": "--section is a compatibility alias; prefer --output-include <csv>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "search",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--after",
+              "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--token-budget",
+              "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--format",
+              "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--compact",
+              "migration_hint": "--compact is a compatibility alias; prefer --output-include compact.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--fields",
+              "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--full",
+              "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "get",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--depth",
+              "migration_hint": "--depth retains traversal or detail-depth semantics; --output-limit does not replace it.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--token-budget",
+              "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--format",
+              "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--fields",
+              "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--full",
+              "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "next",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--blocked-limit",
+              "migration_hint": "--blocked-limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--token-budget",
+              "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--format",
+              "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "health",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--brief",
+              "migration_hint": "--brief is a compatibility alias; prefer --output-include brief.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--check-only",
+              "migration_hint": "--check-only retains health side-effect semantics; --output-include does not suppress vector refresh.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--full",
+              "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--summary",
+              "migration_hint": "--summary is a compatibility alias; prefer --output-include summary.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--verbose",
+              "migration_hint": "--verbose is a compatibility alias; prefer --output-include verbose.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "deps",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--edge-limit",
+              "migration_hint": "--edge-limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--max-depth",
+              "migration_hint": "--max-depth retains graph traversal-depth semantics; --output-limit does not replace it.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--node-limit",
+              "migration_hint": "--node-limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--token-budget",
+              "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--format",
+              "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--collapse",
+              "migration_hint": "--collapse is a compatibility alias; prefer --output-include collapse.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--full",
+              "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--summary",
+              "migration_hint": "--summary is a compatibility alias; prefer --output-include summary.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "graph",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--after",
+              "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--max-depth",
+              "migration_hint": "--max-depth retains graph traversal-depth semantics; --output-limit does not replace it.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--max-paths",
+              "migration_hint": "--max-paths retains graph path-search semantics; use --output-limit separately to bound returned rows.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--full",
+              "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--summary",
+              "migration_hint": "--summary is a compatibility alias; prefer --output-include summary.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "history",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--format",
+              "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--compact",
+              "migration_hint": "--compact is a compatibility alias; prefer --output-include compact.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--full",
+              "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "activity",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--unbounded",
+              "migration_hint": "--unbounded is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--stream",
+              "migration_hint": "--stream retains command streaming semantics; --output-format selects only static result encoding.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--compact",
+              "migration_hint": "--compact is a compatibility alias; prefer --output-include compact.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--full",
+              "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "validate",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--counts",
+              "migration_hint": "--counts is a compatibility alias; prefer --output-include counts.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--full",
+              "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--verbose",
+              "migration_hint": "--verbose is a compatibility alias; prefer --output-include verbose.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "events",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--follow",
+              "migration_hint": "--follow retains event-tail semantics; --output-format does not enable following.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--full",
+              "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "contracts",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--full",
+              "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--summary",
+              "migration_hint": "--summary is a compatibility alias; prefer --output-include summary.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "comments",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "notes",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "files",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--no-truncate",
+              "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit <n>.",
+              "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--offset",
+              "migration_hint": "--offset retains positional pagination semantics; use --output-limit separately to bound returned rows.",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "docs",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "stats",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "aggregate",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    }
+  ],
   "runtime_schema": {
     "canceled_status": "canceled",
     "close_status": "closed",
@@ -24153,6 +26026,52 @@
               "desc"
             ]
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -24678,6 +26597,52 @@
               "2",
               "asc",
               "desc"
+            ]
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
             ]
           },
           "parent": {
@@ -25207,6 +27172,52 @@
               "desc"
             ]
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -25732,6 +27743,52 @@
               "2",
               "asc",
               "desc"
+            ]
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
             ]
           },
           "parent": {
@@ -26261,6 +28318,52 @@
               "desc"
             ]
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -26786,6 +28889,52 @@
               "2",
               "asc",
               "desc"
+            ]
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
             ]
           },
           "parent": {
@@ -27315,6 +29464,52 @@
               "desc"
             ]
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -27842,6 +30037,52 @@
               "desc"
             ]
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -28090,6 +30331,52 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -28325,6 +30612,52 @@
           "noTags": {
             "description": "No Tags.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
@@ -28607,6 +30940,52 @@
             "description": "No Tags.",
             "type": "boolean"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -28840,6 +31219,52 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -29081,6 +31506,52 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -29423,6 +31894,52 @@
           "noTests": {
             "description": "No Tests.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
@@ -29870,6 +32387,52 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -30051,6 +32614,52 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -30176,6 +32785,52 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -31573,6 +34228,52 @@
               "update_ownership_bypass"
             ],
             "type": "string"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -33823,6 +36524,52 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -34012,6 +36759,52 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -34371,6 +37164,52 @@
               "100"
             ]
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -34535,6 +37374,52 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -34721,6 +37606,52 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -36094,6 +39025,52 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -36189,6 +39166,52 @@
           "noRefresh": {
             "description": "For health action, skip vector refresh while still running checks.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -36407,6 +39430,52 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "parentCycleSeverity": {
             "description": "Set parent-cycle warning policy for lifecycle checks.",
@@ -36916,6 +39985,52 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -38001,10 +41116,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.3.0"
+    "x-schema-version": "4.4.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.3.0",
+  "schema_version": "4.4.0",
   "selected": {
     "action": null,
     "availability_only": false,

@@ -61,6 +61,32 @@ describe("core/output/output", () => {
     expect(renderedFromExplicitToon).toContain("ok: true");
   });
 
+  it("forwards every canonical read-output control through shared rendering", () => {
+    const rendered = formatOutput(
+      {
+        items: [
+          { id: "pm-1", title: "One", body: "drop" },
+          { id: "pm-2", title: "Two", body: "drop" },
+        ],
+        row_contract: { command: "list", row_keys: ["items"] },
+      },
+      {
+        command: "list",
+        outputInclude: "id,title",
+        outputLimit: "1",
+        outputBudget: "800",
+        outputFormat: "json",
+      },
+    );
+    expect(JSON.parse(rendered)).toMatchObject({
+      items: [{ id: "pm-1", title: "One" }],
+      read_output: {
+        command: "list",
+        requested_dimensions: ["include", "amount", "cost", "encoding"],
+      },
+    });
+  });
+
   it("renders deterministic TOON output for nested values", () => {
     const rendered = formatOutput(
       {
@@ -792,6 +818,46 @@ describe("core/output/output", () => {
     const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     printError("boom");
     expect(stderrSpy).toHaveBeenCalledWith("ERR:boom\n");
+  });
+
+  it("forwards active command context to output services and test projection", () => {
+    let servicePayload: Record<string, unknown> | undefined;
+    setActiveCommandContext({
+      command: "test",
+      args: [],
+      options: { outputLimit: "1" },
+      pm_root: "/tmp/project",
+    });
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "context-output-service",
+          service: "output_format",
+          run: (context) => {
+            servicePayload = context.payload as Record<string, unknown>;
+            return { handled: false };
+          },
+        },
+      ],
+    });
+    const rendered = formatOutput(
+      {
+        run_results: [
+          {
+            command: "pnpm test",
+            status: "passed",
+            execution_context: { pm_path: "/tmp/project/.agents/pm" },
+          },
+        ],
+      },
+      { json: true },
+    );
+    expect(servicePayload).toMatchObject({
+      command: "test",
+      command_options: { outputLimit: "1" },
+    });
+    expect(JSON.parse(rendered)).toHaveProperty("execution_context");
   });
 
   it("uses non-string output service results as the rendered payload and falls back for non-string errors", () => {

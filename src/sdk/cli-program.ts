@@ -29,6 +29,13 @@ export function createPmCliProgram(version: string): Command {
       "--token-accounting",
       "Attach a bounded per-section token-cost receipt to command output",
     )
+    .option(
+      "--output-include <fields>",
+      "Retain comma-separated fields or sections in read output",
+    )
+    .option("--output-limit <count>", "Bound rows in read output")
+    .option("--output-budget <tokens>", "Bound estimated tokens in read output")
+    .option("--output-format <toon|json>", "Select the read-output encoding")
     .option("--quiet", "Suppress stdout output")
     .option(
       "--no-changed-fields",

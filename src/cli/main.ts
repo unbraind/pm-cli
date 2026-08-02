@@ -169,6 +169,9 @@ import {
 import { loadExtensionRecoveryFailures, loadUnknownCommandRecoveryFailures } from "./extension-recovery.js";
 import { maybeRenderBootstrapJsonHelp, attachCreateUpdatePolicyHelpText } from "./help-json-payload.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
+import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-runtime.js";
+import { validateReadOutputOptions } from "../sdk/read-output-contracts.js";
+import { loadContextIntentSnapshotForInvocation } from "./context-intent-invocation.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 
@@ -228,6 +231,7 @@ interface RuntimeExtensionSnapshot {
   loadedCount: number;
   loadFailedCount: number;
   activationFailedCount: number;
+  contextIntentPackages: Array<{ name: string; module: unknown }>;
 }
 
 interface RuntimeExtensionDiscoverySnapshot {
@@ -807,6 +811,10 @@ function extractCommandScopedOptions(
   delete scoped.idOnly;
   delete scoped.lean;
   delete scoped.tokenAccounting;
+  delete scoped.outputInclude;
+  delete scoped.outputLimit;
+  delete scoped.outputBudget;
+  delete scoped.outputFormat;
 
   const looseOptions = parseLooseCommandOptions(commandArgs);
   for (const [key, value] of Object.entries(looseOptions)) {
@@ -1509,6 +1517,7 @@ async function loadRuntimeExtensionSnapshot(
       loadedCount: loadResult.loaded.length,
       loadFailedCount: loadResult.failed.length,
       activationFailedCount: activationResult.failed.length,
+      contextIntentPackages: loadResult.loaded.map(({ name, module }) => ({ name, module })),
     };
     runtimeExtensionSnapshotCache = {
       key: cacheKey,
@@ -2020,11 +2029,22 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
     activeTelemetryCommandContext = null;
     clearActiveExtensionHooks();
     clearResolvedGlobalOptions(actionCommand);
+    const rawGlobalOptions = actionCommand.optsWithGlobals() as Record<
+      string,
+      unknown
+    >;
     const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
     const commandPath = getCommandPath(actionCommand);
     let commandArgs = actionCommand.args.map(String);
     let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
     let globalOptions = { ...bootstrapGlobalOptions };
+    validateReadOutputOptions(commandPath, {
+      ...commandOptions,
+      outputInclude: rawGlobalOptions.outputInclude,
+      outputLimit: rawGlobalOptions.outputLimit,
+      outputBudget: rawGlobalOptions.outputBudget,
+      outputFormat: rawGlobalOptions.outputFormat,
+    });
     await maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions);
     const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
     const runtimeExtensions = await maybeLoadRuntimeExtensions(actionCommand);
@@ -2941,9 +2961,21 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
     const invocationSettings = await readSettings(
       resolvePmRoot(process.cwd(), bootstrapGlobal.path),
     );
-    await runWithWorkspaceHarnessSignalDescriptors(
-      invocationSettings.agent_identity!.harness_signals,
-      () => program.parseAsync(invocationProcessArgv),
+    const intentSnapshot = await loadContextIntentSnapshotForInvocation(
+      invocationArgv,
+      resolvePmRoot(process.cwd(), bootstrapGlobal.path),
+      bootstrapGlobal.noExtensions,
+      loadRuntimeExtensionSnapshot,
+    );
+    await runWithDiscoveredContextIntentContracts(
+      {
+        pmRoot: resolvePmRoot(process.cwd(), bootstrapGlobal.path),
+        packages: intentSnapshot?.contextIntentPackages,
+      },
+      () => runWithWorkspaceHarnessSignalDescriptors(
+        invocationSettings.agent_identity!.harness_signals,
+        () => program.parseAsync(invocationProcessArgv),
+      ),
     );
   } catch (error: unknown) {
     await handleRunPmCliError({ error, invocationArgv });

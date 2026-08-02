@@ -12,6 +12,10 @@ import {
   type CliFlagContract,
 } from "./flag-contracts.js";
 import { pmToolActionParameterKeys } from "./tool-schema.js";
+import {
+  PM_READ_OUTPUT_OPTION_FLAGS,
+  resolveReadOutputSurface,
+} from "../read-output-contracts.js";
 
 /** Classification assigned to one CLI or SDK parameter. */
 export type SdkCliParameterDisposition =
@@ -70,6 +74,10 @@ const CLI_TRANSPORT_FLAGS = new Set([
   "--help",
   "--lean",
   "--token-accounting",
+  "--output-include",
+  "--output-limit",
+  "--output-budget",
+  "--output-format",
   "--no-changed-fields",
   "--no-extensions",
   "--no-pager",
@@ -78,6 +86,8 @@ const CLI_TRANSPORT_FLAGS = new Set([
   "--quiet",
   "--interval-ms",
 ]);
+
+const READ_OUTPUT_OPTION_FLAGS = new Set(PM_READ_OUTPUT_OPTION_FLAGS);
 
 const CLI_PRESENTATION_FLAGS = new Set([
   "--brief",
@@ -393,7 +403,11 @@ export function analyzeSdkCliParameterCompleteness(
 
   return actions.map((action) => {
     const command = actionCommand(action);
-    const flagContracts = canonicalLongFlags(resolveFlags(command));
+    const flagContracts = canonicalLongFlags(resolveFlags(command)).filter(
+      ({ flag }) =>
+        resolveReadOutputSurface(action) !== undefined ||
+        !READ_OUTPUT_OPTION_FLAGS.has(flag),
+    );
     const sdkParameters = new Set(resolveParameters(action) ?? []);
     const cli = flagContracts.map((contract) =>
       classifyCliInput(action, contract, flagContracts, sdkParameters),

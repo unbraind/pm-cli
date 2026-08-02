@@ -143,9 +143,13 @@ import {
   type ListProjectionMode,
 } from "../query/list.js";
 import {
-  PM_CONTEXT_INTENT_CONTRACTS,
+  getActiveContextIntentContracts,
   type PmContextIntentContract,
 } from "../context-intent-contracts.js";
+import {
+  PM_READ_OUTPUT_SURFACE_CONTRACTS,
+  type PmReadOutputSurfaceContract,
+} from "../read-output-contracts.js";
 import {
   enrichCliFlagInvocationContracts,
   type CliFlagInvocationContract,
@@ -294,6 +298,8 @@ export interface ContractsResult {
   mcp_tools?: McpToolContract[];
   /** Built-in intent-scoped read projections available to CLI, SDK, MCP, and package consumers. */
   context_intents?: readonly PmContextIntentContract[];
+  /** Canonical include, amount, cost, and encoding contracts for every built-in read surface. */
+  read_output_dimensions?: readonly PmReadOutputSurfaceContract[];
   /** Exhaustive stable and provisional machine-readable failure vocabulary. */
   error_codes?: readonly PmErrorCodeContract[];
 }
@@ -2741,7 +2747,8 @@ export async function runContracts(
     !selection.availabilityOnly
   ) {
     result.mcp_tools = buildMcpToolContracts();
-    result.context_intents = PM_CONTEXT_INTENT_CONTRACTS;
+    result.context_intents = getActiveContextIntentContracts();
+    result.read_output_dimensions = PM_READ_OUTPUT_SURFACE_CONTRACTS;
     result.error_codes = PM_ERROR_CODE_CATALOG;
   }
 

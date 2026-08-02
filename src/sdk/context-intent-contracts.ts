@@ -4,8 +4,10 @@
  * Declares composable, intent-scoped read projections for core commands,
  * workspace configuration, and packages.
  */
+import { AsyncLocalStorage } from "node:async_hooks";
 import { attachOutputOmissionReceipt } from "./output-projection.js";
 import { encodeQueryCursor } from "./pagination.js";
+import { applyReadOutputDimensions } from "./read-output-contracts.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 
@@ -151,6 +153,37 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
     },
   ]);
 
+const activeContextIntentContracts = new AsyncLocalStorage<
+  readonly PmContextIntentContract[]
+>();
+
+/** Runtime declaration layers applied to one asynchronous SDK or CLI execution. */
+export interface PmContextIntentRuntimeLayers {
+  /** Workspace declarations, which may override a core or package declaration. */
+  workspaceContracts?: readonly PmContextIntentContract[];
+  /** Package declarations, which may add but not replace earlier declarations. */
+  packageContracts?: readonly PmContextIntentContract[];
+}
+
+/** Return the request-scoped intent registry, or the immutable built-in registry outside a configured scope. */
+export function getActiveContextIntentContracts(): readonly PmContextIntentContract[] {
+  return activeContextIntentContracts.getStore() ?? PM_CONTEXT_INTENT_CONTRACTS;
+}
+
+/** Execute asynchronous work with isolated workspace and package intent declarations. */
+export function runWithContextIntentContracts<T>(
+  layers: PmContextIntentRuntimeLayers,
+  run: () => T,
+): T {
+  return activeContextIntentContracts.run(
+    composeContextIntentContracts(
+      layers.workspaceContracts,
+      layers.packageContracts,
+    ),
+    run,
+  );
+}
+
 function normalizeContextIntentDeclaration(
   declaration: PmContextIntentContract,
   source: PmContextIntentSource,
@@ -246,7 +279,7 @@ export function composeContextIntentContracts(
 export function resolveContextIntentContract(
   command: string,
   intent: string,
-  contracts: readonly PmContextIntentContract[] = PM_CONTEXT_INTENT_CONTRACTS,
+  contracts: readonly PmContextIntentContract[] = getActiveContextIntentContracts(),
 ): PmContextIntentContract | undefined {
   const normalizedCommand = command.trim().toLowerCase();
   const normalizedIntent = intent.trim().toLowerCase();
@@ -871,12 +904,16 @@ export function attachReadOutputContracts(
   return typeof disclosedResult === "object" &&
     disclosedResult !== null &&
     !Array.isArray(disclosedResult)
-    ? collapseContinuationMetadata(
+    ? applyReadOutputDimensions(
+        command ?? "",
         options,
-        attachContextIntentReceipt(
-          command ?? "",
+        collapseContinuationMetadata(
           options,
-          disclosedResult as Record<string, unknown>,
+          attachContextIntentReceipt(
+            command ?? "",
+            options,
+            disclosedResult as Record<string, unknown>,
+          ),
         ),
       )
     : disclosedResult;
