@@ -126,6 +126,65 @@ describe("mcp nested option-key validation (pm-upi0)", () => {
     });
   });
 
+  it("never reflects history-redact matcher material through MCP", async () => {
+    const server = await import("../../../src/mcp/server.js");
+    await withTempPmPath(async (context) => {
+      const canary = "mcp-redaction-canary-864";
+      const created = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          `MCP ${canary}`,
+          "--description",
+          "MCP redaction disclosure fixture",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--author",
+          "mcp-redaction-spec",
+        ],
+        { expectJson: true },
+      );
+      const id = (created.json as { item: { id: string } }).item.id;
+      const response = await server.handleRequest({
+        jsonrpc: "2.0",
+        id: 864,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            action: "history-redact",
+            id,
+            path: context.pmPath,
+            options: {
+              literal: [canary],
+              replacement: "[removed]",
+              dryRun: true,
+            },
+          },
+        },
+      });
+      const serialized = JSON.stringify(response);
+      expect(serialized).not.toContain(canary);
+      expect(serialized).not.toContain("[removed]");
+      expect(response).toMatchObject({
+        structuredContent: {
+          result: {
+            changed: true,
+            patterns: {
+              literal_count: 1,
+              regex_count: 0,
+              total_count: 1,
+              replacement_is_default: false,
+            },
+          },
+        },
+      });
+    });
+  });
+
   it("resolves contract keys per action and skips unknown or extension actions", async () => {
     const server = await import("../../../src/mcp/server.js");
     const detect = server._testOnly.detectUnexpectedOptionKeys;

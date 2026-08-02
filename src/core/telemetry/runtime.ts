@@ -122,8 +122,16 @@ const SENSITIVE_KEYWORDS = [
   "credentials",
   "bearer",
 ] as const;
+const REDACTION_INPUT_KEYS = new Set([
+  "literal",
+  "literals",
+  "regex",
+  "regexes",
+  "replacement",
+  "replacements",
+]);
 const SENSITIVE_INLINE_KEY_PATTERN =
-  "(?:token|secret|password|passwd|api[_-]?key|apikey|authorization|cookie|session|credentials|bearer)";
+  "(?:token|secret|password|passwd|api[_-]?key|apikey|authorization|cookie|session|credentials|bearer|literals?|regex(?:es)?|replacements?)";
 const INLINE_SENSITIVE_ASSIGNMENT_PATTERN = new RegExp(
   `\\b(${SENSITIVE_INLINE_KEY_PATTERN})\\s*([:=])\\s*([^\\s,;]+)`,
   "giu",
@@ -394,11 +402,14 @@ function isSensitiveKey(key: string): boolean {
     .replaceAll("-", "_")
     .replaceAll(/[^a-z0-9_]+/g, "_");
   const tokens = normalized.split("_").filter((token) => token.length > 0);
-  return SENSITIVE_KEYWORDS.some(
-    (keyword) =>
-      normalized === keyword ||
-      normalized.endsWith(`_${keyword}`) ||
-      tokens.includes(keyword),
+  return (
+    REDACTION_INPUT_KEYS.has(normalized) ||
+    SENSITIVE_KEYWORDS.some(
+      (keyword) =>
+        normalized === keyword ||
+        normalized.endsWith(`_${keyword}`) ||
+        tokens.includes(keyword),
+    )
   );
 }
 

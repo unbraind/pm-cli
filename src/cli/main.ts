@@ -92,7 +92,12 @@ import {
 } from "./extension-command-options.js";
 import { attachRichHelpText } from "./help-content.js";
 import { finishActiveTelemetryCommand, recordAfterCommandContextUsage } from "./after-command-context-usage.js";
-import { extractProvidedOptionFlags, normalizeLongOptionFlag, renderPmCommand } from "./argv-utils.js";
+import {
+  extractProvidedOptionFlags,
+  normalizeLongOptionFlag,
+  redactSensitiveCommandArgs,
+  renderPmCommand,
+} from "./argv-utils.js";
 import {
   classifyCommanderError,
   classifyPmCliError,
@@ -404,8 +409,23 @@ function buildRecoveryPayload(params: {
 }
 
 function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invocationArgv: string[], rawMessage: string): PmCliErrorContext {
-  const explainRequested = invocationArgv.includes("--explain");
-  const existingRecovery = context?.recovery;
+  const safeInvocationArgv = redactSensitiveCommandArgs(invocationArgv);
+  const explainRequested = safeInvocationArgv.includes("--explain");
+  const rawExistingRecovery = context?.recovery;
+  const existingRecovery = rawExistingRecovery && safeInvocationArgv.includes("history-redact")
+    ? {
+        ...rawExistingRecovery,
+        ...(rawExistingRecovery.attempted_command
+          ? { attempted_command: renderAttemptedCommand(safeInvocationArgv) }
+          : {}),
+        ...(rawExistingRecovery.normalized_args
+          ? { normalized_args: [...safeInvocationArgv] }
+          : {}),
+        ...(rawExistingRecovery.suggested_retry
+          ? { suggested_retry: renderAttemptedCommand(safeInvocationArgv) }
+          : {}),
+      }
+    : rawExistingRecovery;
   if (existingRecovery?.recovery_mode === "compact" && !explainRequested) {
     return {
       /* c8 ignore next */
@@ -413,12 +433,12 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
       recovery: existingRecovery,
     };
   }
-  const attemptedCommand = renderAttemptedCommand(invocationArgv);
-  const providedFields = extractProvidedOptionFlags(invocationArgv);
-  const inferredMissing = inferMissingFieldsForRecovery(rawMessage, invocationArgv, existingRecovery);
-  const suggestedRetry = resolveRecoverySuggestedRetry(invocationArgv, attemptedCommand, inferredMissing, existingRecovery);
+  const attemptedCommand = renderAttemptedCommand(safeInvocationArgv);
+  const providedFields = extractProvidedOptionFlags(safeInvocationArgv);
+  const inferredMissing = inferMissingFieldsForRecovery(rawMessage, safeInvocationArgv, existingRecovery);
+  const suggestedRetry = resolveRecoverySuggestedRetry(safeInvocationArgv, attemptedCommand, inferredMissing, existingRecovery);
   const recovery = buildRecoveryPayload({
-    invocationArgv,
+    invocationArgv: safeInvocationArgv,
     attemptedCommand,
     providedFields,
     inferredMissing,
@@ -2398,6 +2418,50 @@ function shouldRegisterRuntimeSchemaFlags(invocationArgv: string[]): boolean {
   return RUNTIME_SCHEMA_FLAG_BOOTSTRAP_COMMANDS.has(commandName);
 }
 
+/**
+ * Project a typo trace and its canonical target into disclosure-safe source,
+ * target, and retry values before they are copied into error diagnostics.
+ */
+function redactSensitiveFlagTypo(params: {
+  argv: string[];
+  normalizedDisplay: string;
+  normalizedTokens: string[];
+  rawFrom: unknown;
+}): { argv: string[]; normalizedDisplay: string; sourceDisplay: string } {
+  const rawTypoToken = String(params.rawFrom ?? "");
+  const rawTypoEqualsIndex = rawTypoToken.indexOf("=");
+  const rawTypoFlag = rawTypoEqualsIndex >= 0 ? rawTypoToken.slice(0, rawTypoEqualsIndex) : rawTypoToken;
+  const sensitiveCanonicalFlag = params.normalizedTokens
+    .map((token) => {
+      const equalsIndex = token.indexOf("=");
+      return equalsIndex >= 0 ? token.slice(0, equalsIndex) : token;
+    })
+    .find((token) => token === "--literal" || token === "--regex" || token === "--replacement");
+  const typoNormalizedArgv = sensitiveCanonicalFlag
+    ? params.argv.map((token) => {
+        const equalsIndex = token.indexOf("=");
+        const flag = equalsIndex >= 0 ? token.slice(0, equalsIndex) : token;
+        return flag === rawTypoFlag
+          ? equalsIndex >= 0
+            ? `${sensitiveCanonicalFlag}${token.slice(equalsIndex)}`
+            : sensitiveCanonicalFlag
+          : token;
+      })
+    : params.argv;
+  const safeArgv = redactSensitiveCommandArgs(typoNormalizedArgv);
+  const safeTypoDisplay = sensitiveCanonicalFlag && rawTypoEqualsIndex >= 0
+    ? `${rawTypoFlag}=[redacted]`
+    : rawTypoToken;
+  const safeNormalizedDisplay = sensitiveCanonicalFlag && params.normalizedDisplay.includes("=")
+    ? `${sensitiveCanonicalFlag}=[redacted]`
+    : params.normalizedDisplay;
+  return {
+    argv: safeArgv,
+    normalizedDisplay: safeNormalizedDisplay,
+    sourceDisplay: safeTypoDisplay,
+  };
+}
+
 function enforceExplicitRetryForFlagTypos(bootstrapInvocation: ReturnType<typeof normalizeBootstrapInvocation>): void {
   const commandName = bootstrapInvocation.commandName;
   if (!commandName) {
@@ -2412,16 +2476,22 @@ function enforceExplicitRetryForFlagTypos(bootstrapInvocation: ReturnType<typeof
   const mutatingCommand = MUTATION_COMMAND_NAMES.has(commandName) || MUTATING_OPERATION_COMMAND_NAMES.has(commandName);
   const code = mutatingCommand ? "mutating_flag_typo_requires_retry" : "flag_typo_requires_retry";
   const commandScope = mutatingCommand ? "mutating option" : "option";
+  const safeTypo = redactSensitiveFlagTypo({
+    argv: bootstrapInvocation.argv,
+    normalizedDisplay,
+    normalizedTokens,
+    rawFrom: typoEvent.from,
+  });
   throw new PmCliError(
-    `Refusing to auto-correct ${commandScope} ${typoEvent.from} to ${normalizedDisplay}. Retry with the canonical flag so the command is explicit.`,
+    `Refusing to auto-correct ${commandScope} ${safeTypo.sourceDisplay} to ${safeTypo.normalizedDisplay}. Retry with the canonical flag so the command is explicit.`,
     EXIT_CODE.USAGE,
     {
       code,
-      examples: [renderPmCommand(bootstrapInvocation.argv)],
+      examples: [renderPmCommand(safeTypo.argv)],
       nextSteps: ["Retry the command with the canonical flag shown in examples."],
       recovery: {
-        normalized_args: [...bootstrapInvocation.argv],
-        suggested_retry: renderPmCommand(bootstrapInvocation.argv),
+        normalized_args: safeTypo.argv,
+        suggested_retry: renderPmCommand(safeTypo.argv),
       },
     },
   );

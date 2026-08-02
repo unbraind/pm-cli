@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- GH-864: history-redact output must never echo literal secrets ([pm-y3w0ld](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y3w0ld.toon))
+
 ## 2026.8.2 - 2026-08-02
 
 ### Added

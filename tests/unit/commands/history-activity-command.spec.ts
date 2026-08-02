@@ -106,12 +106,16 @@ describe("runHistory and runActivity", () => {
       [],
     );
     expect(historyRedactInternals.normalizeRegexFlags("igi")).toBe("ig");
-    expect(historyRedactInternals.parseRegexRule("plain").label).toBe(
-      "/plain/g",
-    );
-    expect(historyRedactInternals.parseRegexRule("/plain/i").label).toBe(
-      "/plain/ig",
-    );
+    expect(historyRedactInternals.parseRegexRule("plain")).toEqual({
+      kind: "regex",
+      source: "plain",
+      flags: "g",
+    });
+    expect(historyRedactInternals.parseRegexRule("/plain/i")).toEqual({
+      kind: "regex",
+      source: "plain",
+      flags: "ig",
+    });
     expect(() => historyRedactInternals.parseRegexRule(" ")).toThrow(
       PmCliError,
     );
@@ -123,9 +127,9 @@ describe("runHistory and runActivity", () => {
       [" secret ", "secret"],
       "/token-[0-9]+/",
     );
-    expect(rules.map((rule) => rule.label)).toEqual([
-      "secret",
-      "/token-[0-9]+/g",
+    expect(rules).toEqual([
+      { kind: "literal", value: "secret" },
+      { kind: "regex", source: "token-[0-9]+", flags: "g" },
     ]);
     expect(() => historyRedactInternals.buildRedactionRules(" ", [])).toThrow(
       PmCliError,
@@ -835,6 +839,8 @@ describe("runHistory and runActivity", () => {
       expect(dryRunResult.changed).toBe(true);
       expect(dryRunResult.dry_run).toBe(true);
       expect(dryRunResult.history.audit_entry_added).toBe(false);
+      expect(JSON.stringify(dryRunResult)).not.toContain(leakedToken);
+      expect(JSON.stringify(dryRunResult)).not.toContain("[redacted_token]");
 
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       const historyRaw = await readFile(historyPath, "utf8");
@@ -871,10 +877,15 @@ describe("runHistory and runActivity", () => {
         { path: context.pmPath },
       );
       expect(redacted.changed).toBe(true);
-      expect(redacted.patterns.regex).toEqual([
-        "/secret-[0-9]+/ig",
-        "/secret-456/g",
-      ]);
+      expect(redacted.patterns).toEqual({
+        literal_count: 0,
+        regex_count: 2,
+        total_count: 2,
+        replacement_is_default: false,
+      });
+      expect(JSON.stringify(redacted)).not.toContain("secret-[0-9]+");
+      expect(JSON.stringify(redacted)).not.toContain("secret-456");
+      expect(JSON.stringify(redacted)).not.toContain("[secret]");
       expect(redacted.history.replacements).toBeGreaterThanOrEqual(2);
 
       const noMatchHistoryBefore = await readFile(
@@ -893,6 +904,8 @@ describe("runHistory and runActivity", () => {
       expect(noMatch.changed).toBe(false);
       expect(noMatch.history.audit_entry_added).toBe(false);
       expect(noMatch.warnings).toContain("history_redact_no_matches");
+      expect(JSON.stringify(noMatch)).not.toContain("definitely-not-present");
+      expect(JSON.stringify(noMatch)).not.toContain("[none]");
       expect(
         await readFile(
           path.join(context.pmPath, "history", `${id}.jsonl`),
@@ -963,6 +976,24 @@ describe("runHistory and runActivity", () => {
         message: expect.stringContaining("Invalid --regex value"),
       });
 
+      const sensitiveInvalidRegex = "canary-sensitive-regex-[";
+      const cliFailure = context.runCli([
+        "history-redact",
+        id,
+        "--regex",
+        sensitiveInvalidRegex,
+        "--replacement=canary-sensitive-replacement",
+        "--json",
+      ]);
+      expect(cliFailure.code).toBe(EXIT_CODE.USAGE);
+      expect(`${cliFailure.stdout}\n${cliFailure.stderr}`).not.toContain(
+        sensitiveInvalidRegex,
+      );
+      expect(`${cliFailure.stdout}\n${cliFailure.stderr}`).not.toContain(
+        "canary-sensitive-replacement",
+      );
+      expect(cliFailure.stderr).toContain("[redacted]");
+
       await expect(
         runHistoryRedact(
           id,
@@ -975,7 +1006,7 @@ describe("runHistory and runActivity", () => {
         ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
-        message: expect.stringContaining("would change item id"),
+        message: expect.stringContaining("would change the item id"),
       });
     });
   });

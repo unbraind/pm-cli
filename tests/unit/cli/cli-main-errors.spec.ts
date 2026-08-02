@@ -579,6 +579,41 @@ describe("CLI main error helpers", () => {
     });
   });
 
+  it("sanitizes inherited history-redact recovery fields in compact and expanded modes", () => {
+    const canary = "inherited-recovery-canary-864";
+    for (const explain of [false, true]) {
+      const invocationArgv = [
+        "history-redact",
+        "pm-example",
+        `--literal=${canary}`,
+        ...(explain ? ["--explain"] : []),
+      ];
+      const context = _testOnly.buildPmCliRecoveryContext(
+        {
+          recovery: {
+            recovery_mode: "compact",
+            attempted_command: `pm history-redact pm-example --literal=${canary}`,
+            normalized_args: [
+              "history-redact",
+              "pm-example",
+              `--literal=${canary}`,
+            ],
+            suggested_retry: `pm history-redact pm-example --literal=${canary}`,
+          },
+        },
+        invocationArgv,
+        "Invalid history-redact input",
+      );
+
+      expect(JSON.stringify(context)).not.toContain(canary);
+      expect(context.recovery).toMatchObject({
+        attempted_command: expect.stringContaining("--literal=[redacted]"),
+        normalized_args: expect.arrayContaining(["--literal=[redacted]"]),
+        suggested_retry: expect.stringContaining("--literal=[redacted]"),
+      });
+    }
+  });
+
   it("expands compact recovery payloads when explain is requested", () => {
     const context = _testOnly.buildPmCliRecoveryContext(
       {
@@ -3502,6 +3537,91 @@ export default {
         trace: [{ reason: "flag_typo", from: "--stats", to: undefined } as never],
       }),
     ).toThrow("to the canonical flag");
+
+    for (const { typo, canonical } of [
+      { typo: "--litteral", canonical: "--literal" },
+      { typo: "--regx", canonical: "--regex" },
+      { typo: "--replacment", canonical: "--replacement" },
+    ]) {
+      const canary = `${canonical.slice(2)}-typo-canary-864`;
+      let thrown: unknown;
+      try {
+        _testOnly.enforceExplicitRetryForFlagTypos({
+          commandName: "history-redact",
+          argv: ["history-redact", "pm-example", `${typo}=${canary}`],
+          trace: [
+            {
+              reason: "flag_typo",
+              from: `${typo}=${canary}`,
+              to: `${canonical}=${canary}`,
+            },
+          ],
+        });
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).toBeDefined();
+      expect(JSON.stringify(thrown)).not.toContain(canary);
+      expect(thrown).toMatchObject({
+        message: expect.not.stringContaining(canary),
+      });
+      expect(thrown).toMatchObject({
+        message: expect.stringContaining(`${typo}=[redacted]`),
+        context: {
+          examples: [expect.stringContaining(`${canonical}=[redacted]`)],
+          recovery: {
+            normalized_args: expect.arrayContaining([
+              `${canonical}=[redacted]`,
+            ]),
+            suggested_retry: expect.stringContaining(
+              `${canonical}=[redacted]`,
+            ),
+          },
+        },
+      });
+    }
+
+    const separateValueCanary = "separate-typo-canary-864";
+    let separateValueError: unknown;
+    try {
+      _testOnly.enforceExplicitRetryForFlagTypos({
+        commandName: "history-redact",
+        argv: [
+          "history-redact",
+          "pm-example",
+          "--litteral",
+          separateValueCanary,
+        ],
+        trace: [
+          { reason: "flag_typo", from: "--litteral", to: "--literal" },
+        ],
+      });
+    } catch (error) {
+      separateValueError = error;
+    }
+    expect(separateValueError).toMatchObject({
+      context: {
+        recovery: {
+          normalized_args: expect.arrayContaining([
+            "--literal",
+            "[redacted]",
+          ]),
+        },
+      },
+    });
+    expect(JSON.stringify(separateValueError)).not.toContain(
+      separateValueCanary,
+    );
+
+    expect(() =>
+      _testOnly.enforceExplicitRetryForFlagTypos({
+        commandName: "history-redact",
+        argv: ["history-redact", "--literal", "value"],
+        trace: [
+          { reason: "flag_typo", from: undefined, to: "--literal" } as never,
+        ],
+      }),
+    ).toThrow("Refusing to auto-correct");
   });
 });
 

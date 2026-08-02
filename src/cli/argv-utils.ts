@@ -37,4 +37,8 @@ export function extractProvidedOptionFlags(argv: string[]): string[] {
   return ordered;
 }
 
-export { quoteCommandArg, renderPmCommand } from "../sdk/command-line.js";
+export {
+  quoteCommandArg,
+  redactSensitiveCommandArgs,
+  renderPmCommand,
+} from "../sdk/command-line.js";

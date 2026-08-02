@@ -68,13 +68,11 @@ interface RegexRule {
   kind: "regex";
   source: string;
   flags: string;
-  label: string;
 }
 
 interface LiteralRule {
   kind: "literal";
   value: string;
-  label: string;
 }
 
 type RedactionRule = RegexRule | LiteralRule;
@@ -124,9 +122,14 @@ export interface HistoryRedactResult {
   changed: boolean;
   /** Value that configures or reports patterns for this contract. */
   patterns: {
-    literals: string[];
-    regex: string[];
-    replacement: string;
+    /** Number of unique literal matchers accepted without disclosing their values. */
+    literal_count: number;
+    /** Number of unique regular-expression matchers accepted without disclosing their source. */
+    regex_count: number;
+    /** Total number of accepted matchers across both matcher kinds. */
+    total_count: number;
+    /** Whether the canonical default replacement was selected implicitly. */
+    replacement_is_default: boolean;
   };
   /** Value that configures or reports history for this contract. */
   history: {
@@ -208,10 +211,10 @@ function parseRegexRule(spec: string): RegexRule {
   }
   try {
     new RegExp(source, flags);
-  } catch (error) {
+  } catch {
     /* c8 ignore start -- RegExp constructor failures are normalized in higher-level parser tests. */
     throw new PmCliError(
-      `Invalid --regex value "${spec}": ${error instanceof Error ? error.message : String(error)}`,
+      "Invalid --regex value; provide a valid JavaScript regular expression.",
       EXIT_CODE.USAGE,
     );
     /* c8 ignore stop */
@@ -221,7 +224,6 @@ function parseRegexRule(spec: string): RegexRule {
     kind: "regex",
     source,
     flags,
-    label: `/${source}/${flags}`,
   };
 }
 
@@ -238,7 +240,6 @@ function buildRedactionRules(
     .map<LiteralRule>((entry) => ({
       kind: "literal",
       value: entry,
-      label: entry,
     }));
   const regexRules = [
     ...new Set(
@@ -526,7 +527,7 @@ function resolveHistoryRedactNextItem(params: {
   );
   if (canonical.metadata.id !== params.subject.id) {
     throw new PmCliError(
-      `history-redact would change item id from ${params.subject.id} to ${canonical.metadata.id}; narrow your patterns.`,
+      "history-redact would change the item id; narrow your patterns.",
       EXIT_CODE.USAGE,
     );
   }
@@ -777,10 +778,9 @@ export async function runHistoryRedact(
     settings,
     getActiveExtensionRegistrations(),
   );
-  const replacement =
-    typeof options.replacement === "string" && options.replacement.length > 0
-      ? options.replacement
-      : "[redacted]";
+  const replacementInput = options.replacement ?? "";
+  const replacementIsDefault = replacementInput.length === 0;
+  const replacement = replacementIsDefault ? "[redacted]" : replacementInput;
   const rules = buildRedactionRules(options.literal, options.regex);
   const subject = await resolveHistorySubject(
     pmRoot,
@@ -881,13 +881,10 @@ export async function runHistoryRedact(
     dry_run: dryRun,
     changed,
     patterns: {
-      literals: rules
-        .filter((rule): rule is LiteralRule => rule.kind === "literal")
-        .map((rule) => rule.value),
-      regex: rules
-        .filter((rule): rule is RegexRule => rule.kind === "regex")
-        .map((rule) => `/${rule.source}/${rule.flags}`),
-      replacement,
+      literal_count: rules.filter((rule) => rule.kind === "literal").length,
+      regex_count: rules.filter((rule) => rule.kind === "regex").length,
+      total_count: rules.length,
+      replacement_is_default: replacementIsDefault,
     },
     history: {
       path: subject.historyPath,
