@@ -454,16 +454,17 @@ function formatEffectiveOutput(
   const format =
     resolveReadOutputEncoding(command ?? "", commandOptions) ??
     resolveOutputFormat(options);
+  const effectiveOptions = { ...options, command, commandOptions };
   const service = resolveOutputService(
     effectiveResult,
     nativeOutput,
-    options,
+    effectiveOptions,
     format,
   );
   if (service.rendered !== null) return service.rendered;
   const outputResult = service.result;
   const projectedOutputResult =
-    options.command === "test"
+    command === "test"
       ? projectLinkedTestEvidence(outputResult, options.lean === true)
       : outputResult;
   const intentOutputResult = attachReadOutputContracts(

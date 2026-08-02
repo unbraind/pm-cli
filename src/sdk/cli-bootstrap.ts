@@ -37,9 +37,13 @@ const isInlineGlobalValueToken = (token: string): boolean => {
   );
 };
 
-/** Whether optional bootstrap author syntax consumes the following token. */
-const consumesBootstrapAuthorValue = (next: string | undefined): boolean => {
-  return typeof next === "string" && !next.startsWith("-");
+/** Whether a bootstrap value flag consumes its following token. */
+const consumesBootstrapValue = (
+  flag: string,
+  next: string | undefined,
+): boolean => {
+  if (typeof next !== "string") return false;
+  return flag === "--path" || flag === "--pm-path" || !next.startsWith("-");
 };
 
 /** Documents the bootstrap global options payload exchanged by command, SDK, and package integrations. */
@@ -111,8 +115,7 @@ function consumeBootstrapGlobalToken(
     equalsIndex > 0 ? token.slice(equalsIndex + 1) : undefined;
   const consumesValue =
     inlineValue === undefined &&
-    (canonicalFlag !== "--author" ||
-      consumesBootstrapAuthorValue(argv[index + 1]));
+    consumesBootstrapValue(canonicalFlag, argv[index + 1]);
   const value = inlineValue ?? (consumesValue ? argv[index + 1] : undefined);
   if (canonicalFlag === "--author") {
     state.author = value ?? "";
@@ -191,12 +194,8 @@ export function stripGlobalBootstrapTokens(argv: string[]): string[] {
       index += 1;
       continue;
     }
-    if (token === "--author") {
-      index += consumesBootstrapAuthorValue(argv[index + 1]) ? 2 : 1;
-      continue;
-    }
     if (GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) {
-      index += 2;
+      index += consumesBootstrapValue(token, argv[index + 1]) ? 2 : 1;
       continue;
     }
     if (isInlineGlobalValueToken(token)) {
@@ -274,12 +273,8 @@ function findCommandTokenIndex(argv: string[]): number | undefined {
     if (token === "--") {
       return undefined;
     }
-    if (token === "--author") {
-      index += consumesBootstrapAuthorValue(argv[index + 1]) ? 1 : 0;
-      continue;
-    }
     if (GLOBAL_VALUE_CONSUMING_FLAGS.has(token)) {
-      index += 1;
+      index += consumesBootstrapValue(token, argv[index + 1]) ? 1 : 0;
       continue;
     }
     if (

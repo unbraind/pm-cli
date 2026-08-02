@@ -6,18 +6,18 @@ Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon) and [pm-c
 
 Every built-in read surface uses four output dimensions: what to include, how much to return, how much the result may cost, and how to encode it. The same canonical controls work through the CLI, SDK, MCP, generated schemas, runtime contracts, and shell completions.
 
-| Dimension | CLI | SDK and MCP | Meaning |
-| --- | --- | --- | --- |
-| Include | `--output-include <csv>` | `outputInclude` | Retain named fields or top-level sections. |
-| Amount | `--output-limit <n\|unbounded>` | `outputLimit` | Bound shared row collections. |
-| Cost | `--output-budget <tokens>` | `outputBudget` | Fail closed when even the compact result cannot fit. |
-| Encoding | `--output-format <toon\|json>` | `outputFormat` | Select the CLI renderer and record the requested encoding. |
+| Dimension | CLI                             | SDK and MCP     | Meaning                                                    |
+| --------- | ------------------------------- | --------------- | ---------------------------------------------------------- |
+| Include   | `--output-include <csv>`        | `outputInclude` | Retain named fields or top-level sections.                 |
+| Amount    | `--output-limit <n\|unbounded>` | `outputLimit`   | Bound shared row collections.                              |
+| Cost      | `--output-budget <tokens>`      | `outputBudget`  | Fail closed when even the compact result cannot fit.       |
+| Encoding  | `--output-format <toon\|json>`  | `outputFormat`  | Select the CLI renderer and record the requested encoding. |
 
 The contract covers `list`, `context`, `search`, `get`, `next`, `health`, `deps`, `graph`, `history`, `activity`, `validate`, `events`, `contracts`, `comments`, `notes`, `files`, `docs`, `stats`, and `aggregate`, including list aliases and `ctx`.
 
 ## Precedence and Compatibility
 
-Resolution is deterministic: canonical controls win over command-local compatibility options, which win over intent defaults, which win over command defaults. Existing options such as `--fields`, `--limit`, `--token-budget`, `--format`, `--brief`, and `--full` remain accepted. Contract output marks them as hidden compatibility aliases and supplies a migration hint; callers that omit the canonical controls receive the byte-identical established result.
+Resolution is deterministic: canonical controls win over command-local compatibility options, which win over intent defaults, which win over command defaults. Existing options such as `--fields`, `--limit`, `--token-budget`, `--format`, `--brief`, and `--full` remain accepted. Contract output marks them as hidden compatibility aliases and supplies a migration hint; traversal, cursor, side-effect, and streaming controls instead receive an explicit behavior-preservation hint because a static output control cannot replace their semantics. Callers that omit the canonical controls receive the byte-identical established result.
 
 ```bash
 pm list-open --output-include id,title,status --output-limit 10
@@ -26,7 +26,7 @@ pm search "runtime contracts" --output-limit 5 --output-format json
 pm contracts --full --json
 ```
 
-Every projected result carries a `read_output` receipt with the requested dimensions, precedence, observed compatibility aliases, deterministic estimated token count, and budget outcome. Universal controls are rejected on mutation commands and on the mutation mode of hybrid commands such as `comments`, `notes`, `files`, and `docs`.
+Every projected result carries a `read_output` receipt with the requested dimensions, precedence, observed compatibility aliases, deterministic estimated token count, string/row compaction signals, and budget outcome. If no useful content can fit, `PmReadOutputBudgetExceeded` provides a discriminated omission result; use `isReadOutputBudgetExceeded` before accessing result-specific fields. Universal controls are rejected on mutation commands and on the mutation mode of hybrid commands such as `comments`, `notes`, `files`, and `docs`.
 
 ## SDK and Package Usage
 

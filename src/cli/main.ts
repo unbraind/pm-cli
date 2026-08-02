@@ -2029,6 +2029,10 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
     activeTelemetryCommandContext = null;
     clearActiveExtensionHooks();
     clearResolvedGlobalOptions(actionCommand);
+    const rawGlobalOptions = actionCommand.optsWithGlobals() as Record<
+      string,
+      unknown
+    >;
     const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
     const commandPath = getCommandPath(actionCommand);
     let commandArgs = actionCommand.args.map(String);
@@ -2036,10 +2040,10 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
     let globalOptions = { ...bootstrapGlobalOptions };
     validateReadOutputOptions(commandPath, {
       ...commandOptions,
-      outputInclude: globalOptions.outputInclude,
-      outputLimit: globalOptions.outputLimit,
-      outputBudget: globalOptions.outputBudget,
-      outputFormat: globalOptions.outputFormat,
+      outputInclude: rawGlobalOptions.outputInclude,
+      outputLimit: rawGlobalOptions.outputLimit,
+      outputBudget: rawGlobalOptions.outputBudget,
+      outputFormat: rawGlobalOptions.outputFormat,
     });
     await maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions);
     const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);

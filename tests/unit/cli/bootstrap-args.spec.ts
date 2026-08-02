@@ -114,6 +114,23 @@ describe("parseBootstrapGlobalOptions", () => {
     });
   });
 
+  it("does not consume a following global flag as an output-control value", () => {
+    for (const flag of [
+      "--output-include",
+      "--output-limit",
+      "--output-budget",
+      "--output-format",
+    ]) {
+      expect(
+        parseBootstrapGlobalOptions([flag, "--json", "list"]),
+      ).toMatchObject({ json: true });
+      expect(stripGlobalBootstrapTokens([flag, "--json", "list"])).toEqual([
+        "list",
+      ]);
+      expect(parseBootstrapCommandName([flag, "--json", "list"])).toBe("list");
+    }
+  });
+
   it("stops parsing at -- sentinel", () => {
     const result = parseBootstrapGlobalOptions([
       "--json",

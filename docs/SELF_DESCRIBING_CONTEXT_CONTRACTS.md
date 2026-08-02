@@ -17,13 +17,13 @@ Use `pm contracts --summary --json` for the bounded bootstrap and `pm contracts 
 
 The read primitives accept `--for <intent>`:
 
-| Command | Built-in intent | Purpose |
-| --- | --- | --- |
-| `context` | `orient`, `handoff` | Active hierarchy or continuation context |
-| `get` | `inspect` | Complete item lifecycle and relationship context |
-| `list` and list aliases | `triage` | Compact governance and ownership fields |
-| `next` | `execute` | One actionable recommendation |
-| `search` | `discover` | Ranked canonical-lineage candidates |
+| Command                 | Built-in intent     | Purpose                                          |
+| ----------------------- | ------------------- | ------------------------------------------------ |
+| `context`               | `orient`, `handoff` | Active hierarchy or continuation context         |
+| `get`                   | `inspect`           | Complete item lifecycle and relationship context |
+| `list` and list aliases | `triage`            | Compact governance and ownership fields          |
+| `next`                  | `execute`           | One actionable recommendation                    |
+| `search`                | `discover`          | Ranked canonical-lineage candidates              |
 
 Explicit projection and token flags win over intent defaults:
 
@@ -33,7 +33,7 @@ pm next --for execute --ready-only --json
 pm search "output projection" --for discover --json
 ```
 
-Package authors compose declarations with `composeContextIntentContracts`. Active package modules may export `contextIntents` (or `context_intents`) as an array of contracts. Workspaces may declare an array, or `{ "intents": [...] }`, in `.agents/pm/context-intents.json`. Package declarations extend the built-ins; workspace declarations have final precedence and can intentionally override a matching command/intent pair. Invalid or duplicate declarations fail closed. Unknown CLI intent names return nearest-name guidance.
+Active package modules declare intents by exporting `contextIntents` (or `context_intents`) as an array of contracts; the runtime collects and composes them automatically for each request. Workspaces may declare an array, or `{ "intents": [...] }`, in `.agents/pm/context-intents.json`. Package declarations extend the built-ins; workspace declarations have final precedence and can intentionally override a matching command/intent pair. Invalid or duplicate declarations fail closed. Unknown CLI intent names return nearest-name guidance.
 
 ```ts
 export const contextIntents = [

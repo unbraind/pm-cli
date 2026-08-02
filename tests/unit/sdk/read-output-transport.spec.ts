@@ -7,6 +7,7 @@ import {
   optionsWithAuthor,
 } from "../../../src/sdk/runtime-input.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { runDirectDistCli } from "../../helpers/cliRunner.js";
 
 const CANONICAL_KEYS = [
   "outputInclude",
@@ -35,6 +36,18 @@ describe("universal read-output transport contracts", () => {
     expect(Object.keys(properties ?? {})).toEqual(
       expect.arrayContaining(CANONICAL_KEYS),
     );
+    expect(properties?.outputInclude).toMatchObject({ minLength: 1 });
+  });
+
+  it("rejects an unsupported canonical output format at invocation time", () => {
+    const result = runDirectDistCli([
+      "list",
+      "--output-format",
+      "yaml",
+      "--no-extensions",
+    ]);
+    expect(result.code).toBe(2);
+    expect(result.stderr).toContain("--output-format must be toon or json");
   });
 
   it("hoists top-level MCP controls while preserving nested precedence", () => {

@@ -31,6 +31,7 @@ export interface ToolDefinition {
 const READ_OUTPUT_TOOL_PROPERTIES = {
   outputInclude: {
     type: "string",
+    minLength: 1,
     description:
       "Comma-separated fields or sections retained by any built-in read action.",
   },

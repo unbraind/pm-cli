@@ -17840,6 +17840,7 @@
           },
           "outputInclude": {
             "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "minLength": 1,
             "type": "string"
           },
           "outputLimit": {
@@ -19885,7 +19886,7 @@
           "legacy_aliases": [
             {
               "flag": "--after",
-              "migration_hint": "--after is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
               "visibility": "hidden_alias"
             },
             {
@@ -19907,11 +19908,6 @@
           "inapplicable_reason": null,
           "legacy_aliases": [
             {
-              "flag": "--for",
-              "migration_hint": "--for is a compatibility alias; prefer --output-budget <tokens>.",
-              "visibility": "hidden_alias"
-            },
-            {
               "flag": "--token-budget",
               "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
               "visibility": "hidden_alias"
@@ -19931,7 +19927,7 @@
             },
             {
               "flag": "--stream",
-              "migration_hint": "--stream is a compatibility alias; prefer --output-format <toon|json>.",
+              "migration_hint": "--stream retains command streaming semantics; --output-format selects only static result encoding.",
               "visibility": "hidden_alias"
             }
           ]
@@ -19954,7 +19950,7 @@
             },
             {
               "flag": "--fields",
-              "migration_hint": "--fields is a compatibility alias; prefer --output-include fields.",
+              "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
               "visibility": "hidden_alias"
             },
             {
@@ -19983,12 +19979,12 @@
           "legacy_aliases": [
             {
               "flag": "--after",
-              "migration_hint": "--after is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--depth",
-              "migration_hint": "--depth is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--depth retains traversal or detail-depth semantics; --output-limit does not replace it.",
               "visibility": "hidden_alias"
             },
             {
@@ -20004,11 +20000,6 @@
           "dimension": "cost",
           "inapplicable_reason": null,
           "legacy_aliases": [
-            {
-              "flag": "--for",
-              "migration_hint": "--for is a compatibility alias; prefer --output-budget <tokens>.",
-              "visibility": "hidden_alias"
-            },
             {
               "flag": "--token-budget",
               "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
@@ -20037,12 +20028,12 @@
           "legacy_aliases": [
             {
               "flag": "--fields",
-              "migration_hint": "--fields is a compatibility alias; prefer --output-include fields.",
+              "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--section",
-              "migration_hint": "--section is a compatibility alias; prefer --output-include section.",
+              "migration_hint": "--section is a compatibility alias; prefer --output-include <csv>.",
               "visibility": "hidden_alias"
             }
           ]
@@ -20066,7 +20057,7 @@
           "legacy_aliases": [
             {
               "flag": "--after",
-              "migration_hint": "--after is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
               "visibility": "hidden_alias"
             },
             {
@@ -20082,11 +20073,6 @@
           "dimension": "cost",
           "inapplicable_reason": null,
           "legacy_aliases": [
-            {
-              "flag": "--for",
-              "migration_hint": "--for is a compatibility alias; prefer --output-budget <tokens>.",
-              "visibility": "hidden_alias"
-            },
             {
               "flag": "--token-budget",
               "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
@@ -20120,7 +20106,7 @@
             },
             {
               "flag": "--fields",
-              "migration_hint": "--fields is a compatibility alias; prefer --output-include fields.",
+              "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
               "visibility": "hidden_alias"
             },
             {
@@ -20149,7 +20135,7 @@
           "legacy_aliases": [
             {
               "flag": "--depth",
-              "migration_hint": "--depth is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--depth retains traversal or detail-depth semantics; --output-limit does not replace it.",
               "visibility": "hidden_alias"
             }
           ]
@@ -20160,11 +20146,6 @@
           "dimension": "cost",
           "inapplicable_reason": null,
           "legacy_aliases": [
-            {
-              "flag": "--for",
-              "migration_hint": "--for is a compatibility alias; prefer --output-budget <tokens>.",
-              "visibility": "hidden_alias"
-            },
             {
               "flag": "--token-budget",
               "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
@@ -20193,7 +20174,7 @@
           "legacy_aliases": [
             {
               "flag": "--fields",
-              "migration_hint": "--fields is a compatibility alias; prefer --output-include fields.",
+              "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
               "visibility": "hidden_alias"
             },
             {
@@ -20238,11 +20219,6 @@
           "dimension": "cost",
           "inapplicable_reason": null,
           "legacy_aliases": [
-            {
-              "flag": "--for",
-              "migration_hint": "--for is a compatibility alias; prefer --output-budget <tokens>.",
-              "visibility": "hidden_alias"
-            },
             {
               "flag": "--token-budget",
               "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
@@ -20315,7 +20291,7 @@
             },
             {
               "flag": "--check-only",
-              "migration_hint": "--check-only is a compatibility alias; prefer --output-include check-only.",
+              "migration_hint": "--check-only retains health side-effect semantics; --output-include does not suppress vector refresh.",
               "visibility": "hidden_alias"
             },
             {
@@ -20359,7 +20335,7 @@
             },
             {
               "flag": "--max-depth",
-              "migration_hint": "--max-depth is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--max-depth retains graph traversal-depth semantics; --output-limit does not replace it.",
               "visibility": "hidden_alias"
             },
             {
@@ -20437,7 +20413,7 @@
           "legacy_aliases": [
             {
               "flag": "--after",
-              "migration_hint": "--after is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
               "visibility": "hidden_alias"
             },
             {
@@ -20447,12 +20423,12 @@
             },
             {
               "flag": "--max-depth",
-              "migration_hint": "--max-depth is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--max-depth retains graph traversal-depth semantics; --output-limit does not replace it.",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--max-paths",
-              "migration_hint": "--max-paths is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--max-paths retains graph path-search semantics; use --output-limit separately to bound returned rows.",
               "visibility": "hidden_alias"
             }
           ]
@@ -20595,7 +20571,7 @@
           "legacy_aliases": [
             {
               "flag": "--stream",
-              "migration_hint": "--stream is a compatibility alias; prefer --output-format <toon|json>.",
+              "migration_hint": "--stream retains command streaming semantics; --output-format selects only static result encoding.",
               "visibility": "hidden_alias"
             }
           ]
@@ -20712,7 +20688,7 @@
           "legacy_aliases": [
             {
               "flag": "--follow",
-              "migration_hint": "--follow is a compatibility alias; prefer --output-format <toon|json>.",
+              "migration_hint": "--follow retains event-tail semantics; --output-format does not enable following.",
               "visibility": "hidden_alias"
             }
           ]
@@ -20899,7 +20875,7 @@
             },
             {
               "flag": "--offset",
-              "migration_hint": "--offset is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--offset retains positional pagination semantics; use --output-limit separately to bound returned rows.",
               "visibility": "hidden_alias"
             }
           ]

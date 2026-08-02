@@ -4,7 +4,7 @@
 
 ### Added
 
-- One declared output-bounding dimension set on every read surface: 18 flag spellings across 19 commands collapse to include / how-much / cost / encoding, with a precedence algebra and permanent aliases ([pm-hb7ug8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hb7ug8.toon))
+- One declared output-bounding dimension set on every read surface: 25 flag spellings across 19 commands collapse to include / how-much / cost / encoding, with a precedence algebra and permanent aliases ([pm-hb7ug8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hb7ug8.toon))
 - Intent-scoped read projections: a command returns exactly the fields the declared intent consumes, so agents stop paying for fields they discard ([pm-cxr0jb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cxr0jb.toon))
 
 ### Fixed

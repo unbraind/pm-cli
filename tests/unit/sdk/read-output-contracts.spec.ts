@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { attachReadOutputContracts } from "../../../src/sdk/context-intent-contracts.js";
+import { updateReadOutputReceiptEstimate } from "../../../src/sdk/read-output-budget.js";
 import {
   PM_READ_OUTPUT_DIMENSIONS,
   PM_READ_OUTPUT_OPTION_FLAGS,
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
   applyReadOutputDimensions,
+  isReadOutputBudgetExceeded,
   resolveReadOutputDimensions,
   resolveReadOutputEncoding,
   resolveReadOutputSurface,
@@ -30,11 +32,15 @@ describe("read output contracts", () => {
       expect(Object.keys(contract.dimensions).sort()).toEqual(
         [...PM_READ_OUTPUT_DIMENSIONS].sort(),
       );
-      expect(
-        Object.values(contract.dimensions).filter(
-          (dimension) => dimension.applicable,
-        ),
-      ).not.toHaveLength(0);
+      for (const dimension of Object.values(contract.dimensions)) {
+        expect(dimension.applicable).toBe(true);
+        expect(dimension.inapplicable_reason).toBeNull();
+        expect(Object.isFrozen(dimension)).toBe(true);
+        expect(Object.isFrozen(dimension.legacy_aliases)).toBe(true);
+        expect(dimension.legacy_aliases.every(Object.isFrozen)).toBe(true);
+      }
+      expect(Object.isFrozen(contract)).toBe(true);
+      expect(Object.isFrozen(contract.dimensions)).toBe(true);
     }
   });
 
@@ -99,9 +105,31 @@ describe("read output contracts", () => {
         within_budget: true,
       },
     });
+    expect(isReadOutputBudgetExceeded(projected)).toBe(false);
+    if (isReadOutputBudgetExceeded(projected) || !projected.read_output) {
+      throw new Error("Expected a shaped read result with a receipt.");
+    }
     expect(projected.read_output.estimated_tokens).toBe(
       Math.ceil(Buffer.byteLength(JSON.stringify(projected), "utf8") / 4),
     );
+  });
+
+  it("counts every retained row collection after applying an amount bound", () => {
+    const projected = applyReadOutputDimensions(
+      "list",
+      { outputLimit: 2 },
+      {
+        items: [{ id: "a" }, { id: "b" }, { id: "c" }],
+        related: [{ id: "r1" }],
+        metadata: "not-a-row-array",
+        count: 4,
+        row_contract: {
+          command: "list",
+          row_keys: ["items", "related", "metadata"],
+        },
+      },
+    );
+    expect(projected).toMatchObject({ count: 3 });
   });
 
   it("keeps legacy flags working while publishing one-line migration hints", () => {
@@ -140,6 +168,7 @@ describe("read output contracts", () => {
         result_omitted: true,
       },
     });
+    expect(isReadOutputBudgetExceeded(projected)).toBe(true);
     expect(projected.read_output.estimated_tokens).toBeLessThanOrEqual(256);
   });
 
@@ -217,6 +246,18 @@ describe("read output contracts", () => {
       resolveReadOutputDimensions("list", { for: "triage" })?.cost,
     ).toBeUndefined();
     expect(
+      resolveReadOutputDimensions("list", {
+        for: "triage",
+        token_budget: "600",
+      }),
+    ).toMatchObject({ cost: { source: "legacy", value: 600 } });
+    expect(
+      resolveReadOutputDimensions("list", {
+        after: "cursor",
+        limit: "10",
+      }),
+    ).toMatchObject({ amount: { source: "legacy", value: 10 } });
+    expect(
       resolveReadOutputDimensions("list", { token_budget: "invalid" })?.cost,
     ).toBeUndefined();
     expect(
@@ -270,6 +311,11 @@ describe("read output contracts", () => {
       { outputLimit: "unbounded" },
       { items: [{ id: "pm-1" }] },
     );
+    if (isReadOutputBudgetExceeded(unbounded)) {
+      throw new Error(
+        "An unbounded row request cannot return a budget omission.",
+      );
+    }
     expect(unbounded.items).toHaveLength(1);
     expect(unbounded.read_output).toMatchObject({ within_budget: true });
   });
@@ -281,8 +327,16 @@ describe("read output contracts", () => {
       { detail: "x".repeat(2_000) },
     );
     expect(textCompacted).toMatchObject({
-      read_output: { within_budget: true, result_omitted: false },
+      read_output: {
+        within_budget: true,
+        strings_compacted: true,
+        rows_compacted: false,
+        result_omitted: false,
+      },
     });
+    if (isReadOutputBudgetExceeded(textCompacted)) {
+      throw new Error("Expected compacted text instead of an omission.");
+    }
     expect(String(textCompacted.detail).endsWith("…")).toBe(true);
 
     const makeRows = (prefix: string) =>
@@ -307,8 +361,16 @@ describe("read output contracts", () => {
     expect(rowCompacted).toMatchObject({
       has_more: true,
       truncated: true,
-      read_output: { within_budget: true, result_omitted: false },
+      read_output: {
+        within_budget: true,
+        strings_compacted: true,
+        rows_compacted: true,
+        result_omitted: false,
+      },
     });
+    if (isReadOutputBudgetExceeded(rowCompacted)) {
+      throw new Error("Expected compacted rows instead of an omission.");
+    }
     expect(rowCompacted.count).toBe(
       rowCompacted.items.length + rowCompacted.related.length,
     );
@@ -326,6 +388,43 @@ describe("read output contracts", () => {
     expect(withoutCount).toMatchObject({
       read_output: { within_budget: true, result_omitted: false },
     });
+
+    const inferredRows = applyReadOutputDimensions(
+      "list",
+      { outputBudget: 350 },
+      { items: makeRows("item"), related: makeRows("related") },
+    );
+    expect(inferredRows).toMatchObject({
+      has_more: true,
+      truncated: true,
+      read_output: { rows_compacted: true },
+    });
+  });
+
+  it("bounds token estimation when custom JSON serialization never reaches a fixed point", () => {
+    let serializationCount = 0;
+    const receipt = {
+      command: "list" as const,
+      requested_dimensions: [],
+      precedence: ["canonical", "legacy", "intent", "default"] as const,
+      legacy_aliases_used: [],
+      migration_hints: [],
+      estimated_tokens: 0,
+      within_budget: true,
+      strings_compacted: false,
+      rows_compacted: false,
+      result_omitted: false,
+    };
+    updateReadOutputReceiptEstimate(
+      {
+        toJSON: () => ({
+          value: "x".repeat(serializationCount++ % 2 === 0 ? 4 : 400),
+        }),
+      },
+      receipt,
+    );
+    expect(serializationCount).toBe(8);
+    expect(receipt.estimated_tokens).toBeGreaterThan(50);
   });
 
   it("composes intent, relevance order, row bounds, and token budgets", () => {

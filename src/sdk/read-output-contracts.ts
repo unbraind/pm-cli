@@ -6,6 +6,7 @@
  */
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { compactReadOutputToBudget, updateReadOutputReceiptEstimate } from "./read-output-budget.js";
 
 /** Stable output dimensions shared by every read surface. */
 export const PM_READ_OUTPUT_DIMENSIONS = [
@@ -52,7 +53,7 @@ export interface PmReadOutputOptions {
   outputLimit?: string | number | "unbounded";
   /** Maximum estimated result tokens. */
   outputBudget?: string | number;
-  /** Requested transport encoding. */
+  /** Requested static renderer encoding; streaming remains a command behavior. */
   outputFormat?: "json" | "toon";
 }
 
@@ -115,7 +116,7 @@ export interface PmResolvedReadOutputDimensions {
   amount?: PmResolvedReadOutputDimension<number | "unbounded">;
   /** Requested estimated-token ceiling. */
   cost?: PmResolvedReadOutputDimension<number>;
-  /** Requested renderer encoding. */
+  /** Requested static encoding or a retained legacy streaming behavior. */
   encoding?: PmResolvedReadOutputDimension<"json" | "toon" | "stream">;
   /** Compatibility flags observed on the invocation. */
   legacy_aliases_used: string[];
@@ -143,9 +144,37 @@ export interface PmReadOutputReceipt {
   estimated_tokens: number;
   /** Whether the final result fits the requested cost ceiling. */
   within_budget: boolean;
+  /** Whether long string values were shortened while satisfying the cost ceiling. */
+  strings_compacted: boolean;
+  /** Whether row collections were reduced while satisfying the cost ceiling. */
+  rows_compacted: boolean;
   /** Whether the requested cost ceiling forced the useful result to be omitted. */
   result_omitted: boolean;
 }
+
+/** Result returned when the requested cost ceiling cannot fit useful content. */
+export interface PmReadOutputBudgetExceeded {
+  /** Stable omission marker and recovery instruction. */
+  output_budget_exceeded: {
+    /** Confirms that the useful result was deliberately omitted. */
+    omitted_result: true;
+    /** Stable reason for machine-readable recovery. */
+    reason: "requested_budget_infeasible";
+    /** Human- and agent-readable recovery instruction. */
+    restore_with: string;
+  };
+  /** Exact receipt for the bounded omission envelope. */
+  read_output: PmReadOutputReceipt;
+}
+
+/** Read result with an optional shaping receipt or a discriminated omission. */
+export type PmReadOutputResult<Result> =
+  | (Result & { read_output?: PmReadOutputReceipt })
+  | PmReadOutputBudgetExceeded;
+
+/** Select the omission-aware result type when an option shape can request a budget. */
+export type PmReadOutputResultFor<Result, Options> =
+  "outputBudget" extends keyof Options ? PmReadOutputResult<Result> : Result;
 
 const READ_OUTPUT_PRECEDENCE = [
   "canonical",
@@ -172,30 +201,30 @@ const LEGACY_FLAGS_BY_COMMAND: Readonly<
   list: {
     include: ["--brief", "--compact", "--fields", "--full"],
     amount: ["--after", "--limit", "--no-truncate"],
-    cost: ["--for", "--token-budget"],
+    cost: ["--token-budget"],
     encoding: ["--format", "--stream"],
   },
   context: {
     include: ["--fields", "--section"],
     amount: ["--after", "--depth", "--limit"],
-    cost: ["--for", "--token-budget"],
+    cost: ["--token-budget"],
     encoding: ["--format"],
   },
   search: {
     include: ["--compact", "--fields", "--full"],
     amount: ["--after", "--limit"],
-    cost: ["--for", "--token-budget"],
+    cost: ["--token-budget"],
     encoding: ["--format"],
   },
   get: {
     include: ["--fields", "--full"],
     amount: ["--depth"],
-    cost: ["--for", "--token-budget"],
+    cost: ["--token-budget"],
     encoding: ["--format"],
   },
   next: {
     amount: ["--blocked-limit", "--limit"],
-    cost: ["--for", "--token-budget"],
+    cost: ["--token-budget"],
     encoding: ["--format"],
   },
   health: {
@@ -238,10 +267,40 @@ const LEGACY_FLAGS_BY_COMMAND: Readonly<
   aggregate: {},
 };
 
+const VALUE_BEARING_INCLUDE_ALIASES = new Set(["--fields", "--section"]);
+
+const BEHAVIOR_PRESERVING_MIGRATION_HINTS: Readonly<Record<string, string>> =
+  Object.freeze({
+    "--after":
+      "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
+    "--check-only":
+      "--check-only retains health side-effect semantics; --output-include does not suppress vector refresh.",
+    "--depth":
+      "--depth retains traversal or detail-depth semantics; --output-limit does not replace it.",
+    "--follow":
+      "--follow retains event-tail semantics; --output-format does not enable following.",
+    "--max-depth":
+      "--max-depth retains graph traversal-depth semantics; --output-limit does not replace it.",
+    "--max-paths":
+      "--max-paths retains graph path-search semantics; use --output-limit separately to bound returned rows.",
+    "--offset":
+      "--offset retains positional pagination semantics; use --output-limit separately to bound returned rows.",
+    "--stream":
+      "--stream retains command streaming semantics; --output-format selects only static result encoding.",
+  });
+
+function flagSelector(flag: string): string {
+  return flag.slice(2).replaceAll("-", "_");
+}
+
 function migrationHint(flag: string, dimension: PmReadOutputDimension): string {
+  const behaviorHint = BEHAVIOR_PRESERVING_MIGRATION_HINTS[flag];
+  if (behaviorHint !== undefined) return behaviorHint;
   const suffix =
     dimension === "include"
-      ? flag.slice(2)
+      ? VALUE_BEARING_INCLUDE_ALIASES.has(flag)
+        ? "<csv>"
+        : flagSelector(flag)
       : dimension === "amount"
         ? "<n>"
         : dimension === "cost"
@@ -254,23 +313,29 @@ function buildSurfaceContract(
   command: PmReadOutputSurface,
 ): PmReadOutputSurfaceContract {
   const legacy = LEGACY_FLAGS_BY_COMMAND[command];
-  const dimensions = Object.fromEntries(
-    PM_READ_OUTPUT_DIMENSIONS.map((dimension) => [
-      dimension,
-      {
+  const dimensions = Object.freeze(
+    Object.fromEntries(
+      PM_READ_OUTPUT_DIMENSIONS.map((dimension) => [
         dimension,
-        canonical_option: CANONICAL_OPTIONS[dimension],
-        applicable: true,
-        inapplicable_reason: null,
-        legacy_aliases: (legacy[dimension] ?? []).map((flag) => ({
-          flag,
-          migration_hint: migrationHint(flag, dimension),
-          visibility: "hidden_alias" as const,
-        })),
-      },
-    ]),
+        Object.freeze({
+          dimension,
+          canonical_option: CANONICAL_OPTIONS[dimension],
+          applicable: true,
+          inapplicable_reason: null,
+          legacy_aliases: Object.freeze(
+            (legacy[dimension] ?? []).map((flag) =>
+              Object.freeze({
+                flag,
+                migration_hint: migrationHint(flag, dimension),
+                visibility: "hidden_alias" as const,
+              }),
+            ),
+          ) as PmReadOutputLegacyAlias[],
+        }),
+      ]),
+    ),
   ) as Record<PmReadOutputDimension, PmReadOutputDimensionContract>;
-  return { command, dimensions, precedence: READ_OUTPUT_PRECEDENCE };
+  return Object.freeze({ command, dimensions, precedence: READ_OUTPUT_PRECEDENCE });
 }
 
 /** Universal output contract for every built-in read surface. */
@@ -424,10 +489,12 @@ function positiveInteger(value: unknown): number | undefined {
 function resolveLegacyDimension(
   contract: PmReadOutputDimensionContract,
   options: Record<string, unknown>,
+  usable: (candidate: { value: unknown; flag: string }) => boolean,
 ): { value: unknown; flag: string } | undefined {
   for (const alias of contract.legacy_aliases) {
     const value = readOption(options, alias.flag);
-    if (isRequestedOption(value)) return { value, flag: alias.flag };
+    const candidate = { value, flag: alias.flag };
+    if (isRequestedOption(value) && usable(candidate)) return candidate;
   }
   return undefined;
 }
@@ -441,9 +508,7 @@ function resolveIncludeValue(
   if (!legacy) return undefined;
   return {
     source: "legacy",
-    value: stringList(legacy.value) ?? [
-      legacy.flag.slice(2).replaceAll("-", "_"),
-    ],
+    value: stringList(legacy.value) ?? [flagSelector(legacy.flag)],
   };
 }
 
@@ -476,7 +541,7 @@ function resolveCostValue(
   if (canonicalBudget !== undefined) {
     return { source: "canonical", value: canonicalBudget };
   }
-  if (!legacy || legacy.flag === "--for") return undefined;
+  if (!legacy) return undefined;
   const legacyBudget = positiveInteger(legacy.value);
   return legacyBudget === undefined
     ? undefined
@@ -507,10 +572,27 @@ export function resolveReadOutputDimensions(
   const normalizedCommand = resolveReadOutputSurface(command);
   if (!normalizedCommand) return undefined;
   const contract = SURFACE_CONTRACT_BY_COMMAND.get(normalizedCommand)!;
+  const legacyResolvers = {
+    include: (candidate: { value: unknown; flag: string }) =>
+      resolveIncludeValue(undefined, candidate),
+    amount: (candidate: { value: unknown; flag: string }) =>
+      resolveAmountValue(undefined, candidate),
+    cost: (candidate: { value: unknown; flag: string }) =>
+      resolveCostValue(undefined, candidate),
+    encoding: (candidate: { value: unknown; flag: string }) =>
+      resolveEncodingValue(undefined, candidate),
+  } satisfies Record<
+    PmReadOutputDimension,
+    (candidate: { value: unknown; flag: string }) => unknown
+  >;
   const legacyByDimension = Object.fromEntries(
     PM_READ_OUTPUT_DIMENSIONS.map((dimension) => [
       dimension,
-      resolveLegacyDimension(contract.dimensions[dimension], options),
+      resolveLegacyDimension(
+        contract.dimensions[dimension],
+        options,
+        (candidate) => legacyResolvers[dimension](candidate) !== undefined,
+      ),
     ]),
   ) as Record<
     PmReadOutputDimension,
@@ -631,23 +713,26 @@ function applyAmountBound(
 ): Record<string, unknown> {
   if (amount === "unbounded") return result;
   let truncated = false;
-  let retainedCount: number | undefined;
-  const rows = new Set(rowKeys(result));
+  const rowKeyList = rowKeys(result);
+  const rows = new Set(rowKeyList);
   const bounded = Object.fromEntries(
     Object.entries(result).map(([key, value]) => {
       if (!rows.has(key) || !Array.isArray(value) || value.length <= amount) {
         return [key, value];
       }
       truncated = true;
-      retainedCount = (retainedCount ?? 0) + amount;
       return [key, value.slice(0, amount)];
     }),
   );
   if (!truncated) return bounded;
   bounded.has_more = true;
   bounded.truncated = true;
-  if (retainedCount !== undefined && typeof bounded.count === "number") {
-    bounded.count = retainedCount;
+  if (typeof bounded.count === "number") {
+    bounded.count = rowKeyList.reduce(
+      (total, key) =>
+        total + (Array.isArray(bounded[key]) ? bounded[key].length : 0),
+      0,
+    );
   }
   bounded.applied_bound = {
     kind: "output_limit",
@@ -655,66 +740,6 @@ function applyAmountBound(
     value: amount,
   };
   return bounded;
-}
-
-function compactStrings(value: unknown): unknown {
-  if (typeof value === "string") {
-    return value.length > 240 ? `${value.slice(0, 240)}…` : value;
-  }
-  if (Array.isArray(value)) return value.map(compactStrings);
-  if (!isRecord(value)) return value;
-  return Object.fromEntries(
-    Object.entries(value).map(([key, entry]) => [key, compactStrings(entry)]),
-  );
-}
-
-function updateReceiptEstimate(
-  result: Record<string, unknown>,
-  receipt: PmReadOutputReceipt,
-): void {
-  let estimate = receipt.estimated_tokens;
-  for (;;) {
-    receipt.estimated_tokens = estimate;
-    const measured = Math.ceil(
-      Buffer.byteLength(JSON.stringify(result), "utf8") / 4,
-    );
-    if (measured === estimate) return;
-    estimate = measured;
-  }
-}
-
-function compactRowsToBudget(
-  result: Record<string, unknown>,
-  receipt: PmReadOutputReceipt,
-  budget: number,
-): void {
-  const keys = rowKeys(result);
-  for (;;) {
-    updateReceiptEstimate(result, receipt);
-    if (receipt.estimated_tokens <= budget) return;
-    const candidate = keys
-      .map((key) => ({
-        key,
-        rows: Array.isArray(result[key]) ? (result[key] as unknown[]) : [],
-      }))
-      .filter(({ rows }) => rows.length > 1)
-      .sort(
-        (left, right) =>
-          right.rows.length - left.rows.length ||
-          left.key.localeCompare(right.key),
-      )[0];
-    if (!candidate) return;
-    candidate.rows.splice(-Math.max(1, Math.ceil(candidate.rows.length / 2)));
-    result.has_more = true;
-    result.truncated = true;
-    if (typeof result.count === "number") {
-      result.count = keys.reduce(
-        (total, key) =>
-          total + (Array.isArray(result[key]) ? result[key].length : 0),
-        0,
-      );
-    }
-  }
 }
 
 function requestedDimensions(
@@ -732,7 +757,7 @@ export function applyReadOutputDimensions<
   command: string,
   options: Record<string, unknown>,
   result: Result,
-): Result & { read_output?: PmReadOutputReceipt } {
+): PmReadOutputResult<Result> {
   const resolved = resolveReadOutputDimensions(command, options);
   if (!resolved) return result;
   const requested = requestedDimensions(resolved);
@@ -758,17 +783,16 @@ export function applyReadOutputDimensions<
     migration_hints: resolved.migration_hints,
     estimated_tokens: 0,
     within_budget: true,
+    strings_compacted: false,
+    rows_compacted: false,
     result_omitted: false,
   };
   projected.read_output = receipt;
-  updateReceiptEstimate(projected, receipt);
+  updateReadOutputReceiptEstimate(projected, receipt);
   const budget =
     resolved.cost?.source === "canonical" ? resolved.cost.value : undefined;
   if (budget !== undefined && receipt.estimated_tokens > budget) {
-    projected = compactStrings(projected) as Record<string, unknown>;
-    projected.read_output = receipt;
-    compactRowsToBudget(projected, receipt, budget);
-    updateReceiptEstimate(projected, receipt);
+    projected = compactReadOutputToBudget(projected, receipt, budget);
   }
   if (budget !== undefined && receipt.estimated_tokens > budget) {
     const minimalReceipt: PmReadOutputReceipt = {
@@ -780,9 +804,11 @@ export function applyReadOutputDimensions<
       migration_hints: [],
       estimated_tokens: 0,
       within_budget: false,
+      strings_compacted: false,
+      rows_compacted: false,
       result_omitted: true,
     };
-    projected = {
+    const omitted: PmReadOutputBudgetExceeded = {
       output_budget_exceeded: {
         omitted_result: true,
         reason: "requested_budget_infeasible",
@@ -790,9 +816,25 @@ export function applyReadOutputDimensions<
       },
       read_output: minimalReceipt,
     };
-    updateReceiptEstimate(projected, minimalReceipt);
+    updateReadOutputReceiptEstimate(
+      omitted as unknown as Record<string, unknown>,
+      minimalReceipt,
+    );
+    return omitted;
   }
   return projected as Result & { read_output: PmReadOutputReceipt };
+}
+
+/** Narrow a universal read result to its budget-omission branch. */
+export function isReadOutputBudgetExceeded(
+  result: unknown,
+): result is PmReadOutputBudgetExceeded {
+  return (
+    isRecord(result) &&
+    isRecord(result.output_budget_exceeded) &&
+    result.output_budget_exceeded.omitted_result === true &&
+    result.output_budget_exceeded.reason === "requested_budget_infeasible"
+  );
 }
 
 /** Resolve only the canonical renderer override for shared CLI output code. */

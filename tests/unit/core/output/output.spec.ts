@@ -820,6 +820,46 @@ describe("core/output/output", () => {
     expect(stderrSpy).toHaveBeenCalledWith("ERR:boom\n");
   });
 
+  it("forwards active command context to output services and test projection", () => {
+    let servicePayload: Record<string, unknown> | undefined;
+    setActiveCommandContext({
+      command: "test",
+      args: [],
+      options: { outputLimit: "1" },
+      pm_root: "/tmp/project",
+    });
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "context-output-service",
+          service: "output_format",
+          run: (context) => {
+            servicePayload = context.payload as Record<string, unknown>;
+            return { handled: false };
+          },
+        },
+      ],
+    });
+    const rendered = formatOutput(
+      {
+        run_results: [
+          {
+            command: "pnpm test",
+            status: "passed",
+            execution_context: { pm_path: "/tmp/project/.agents/pm" },
+          },
+        ],
+      },
+      { json: true },
+    );
+    expect(servicePayload).toMatchObject({
+      command: "test",
+      command_options: { outputLimit: "1" },
+    });
+    expect(JSON.parse(rendered)).toHaveProperty("execution_context");
+  });
+
   it("uses non-string output service results as the rendered payload and falls back for non-string errors", () => {
     setActiveExtensionServices({
       overrides: [

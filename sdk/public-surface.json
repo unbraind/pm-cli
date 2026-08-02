@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1400,
+    "covered_symbols": 1404,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1401
+    "required_symbols": 1405
   },
   "breaking_acknowledgements": [
     {
@@ -579,6 +579,118 @@
       ],
       "package_version": "2026.8.2",
       "reason": "Add optional universal read-output controls and request-scoped context-intent declarations while preserving existing SDK call shapes"
+    },
+    {
+      "changes": [
+        "signature ./sdk:applyReadOutputDimensions",
+        "signature ./sdk:PmReadOutputReceipt",
+        "signature ./sdk/contracts:applyReadOutputDimensions",
+        "signature ./sdk/contracts:PmReadOutputReceipt"
+      ],
+      "package_version": "2026.8.2",
+      "reason": "Unreleased read-output API now models budget omission as a discriminated union and reports string and row compaction explicitly"
+    },
+    {
+      "changes": [
+        "signature ./sdk:aggregate",
+        "signature ./sdk:comments",
+        "signature ./sdk:context",
+        "signature ./sdk:deps",
+        "signature ./sdk:docs",
+        "signature ./sdk:files",
+        "signature ./sdk:get",
+        "signature ./sdk:graph",
+        "signature ./sdk:health",
+        "signature ./sdk:list",
+        "signature ./sdk:next",
+        "signature ./sdk:notes",
+        "signature ./sdk:PmClient",
+        "signature ./sdk:search",
+        "signature ./sdk:stats",
+        "signature ./sdk:validate",
+        "signature ./sdk/core:aggregate",
+        "signature ./sdk/core:comments",
+        "signature ./sdk/core:context",
+        "signature ./sdk/core:deps",
+        "signature ./sdk/core:docs",
+        "signature ./sdk/core:files",
+        "signature ./sdk/core:get",
+        "signature ./sdk/core:graph",
+        "signature ./sdk/core:list",
+        "signature ./sdk/core:next",
+        "signature ./sdk/core:notes",
+        "signature ./sdk/core:PmClient",
+        "signature ./sdk/core:search",
+        "signature ./sdk/runtime:aggregate",
+        "signature ./sdk/runtime:comments",
+        "signature ./sdk/runtime:context",
+        "signature ./sdk/runtime:deps",
+        "signature ./sdk/runtime:docs",
+        "signature ./sdk/runtime:files",
+        "signature ./sdk/runtime:get",
+        "signature ./sdk/runtime:graph",
+        "signature ./sdk/runtime:health",
+        "signature ./sdk/runtime:list",
+        "signature ./sdk/runtime:next",
+        "signature ./sdk/runtime:notes",
+        "signature ./sdk/runtime:PmClient",
+        "signature ./sdk/runtime:search",
+        "signature ./sdk/runtime:stats",
+        "signature ./sdk/runtime:validate"
+      ],
+      "package_version": "2026.8.2",
+      "reason": "Unreleased budgeted read methods now expose omission-aware conditional results while unbudgeted SDK calls retain their prior result types"
+    },
+    {
+      "changes": [
+        "signature ./sdk:aggregate",
+        "signature ./sdk:comments",
+        "signature ./sdk:context",
+        "signature ./sdk:deps",
+        "signature ./sdk:docs",
+        "signature ./sdk:files",
+        "signature ./sdk:get",
+        "signature ./sdk:graph",
+        "signature ./sdk:health",
+        "signature ./sdk:list",
+        "signature ./sdk:next",
+        "signature ./sdk:notes",
+        "signature ./sdk:PmClient",
+        "signature ./sdk:search",
+        "signature ./sdk:stats",
+        "signature ./sdk:validate",
+        "signature ./sdk/core:aggregate",
+        "signature ./sdk/core:comments",
+        "signature ./sdk/core:context",
+        "signature ./sdk/core:deps",
+        "signature ./sdk/core:docs",
+        "signature ./sdk/core:files",
+        "signature ./sdk/core:get",
+        "signature ./sdk/core:graph",
+        "signature ./sdk/core:list",
+        "signature ./sdk/core:next",
+        "signature ./sdk/core:notes",
+        "signature ./sdk/core:PmClient",
+        "signature ./sdk/core:search",
+        "signature ./sdk/runtime:aggregate",
+        "signature ./sdk/runtime:comments",
+        "signature ./sdk/runtime:context",
+        "signature ./sdk/runtime:deps",
+        "signature ./sdk/runtime:docs",
+        "signature ./sdk/runtime:files",
+        "signature ./sdk/runtime:get",
+        "signature ./sdk/runtime:graph",
+        "signature ./sdk/runtime:health",
+        "signature ./sdk/runtime:list",
+        "signature ./sdk/runtime:next",
+        "signature ./sdk/runtime:notes",
+        "signature ./sdk/runtime:PmClient",
+        "signature ./sdk/runtime:search",
+        "signature ./sdk/runtime:stats",
+        "signature ./sdk/runtime:validate"
+      ],
+      "package_version": "2026.8.2",
+      "reason": "Preserve omission-aware conditional read signatures while extracting public runtime contracts below the implementation file limit"
     }
   ],
   "entrypoints": {
@@ -877,7 +989,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "aggregate",
-          "signature": "(options?: AggregateOptions, clientOptions?: PmClientOptions) => Promise<AggregateResult> | calls: (options?: AggregateOptions, clientOptions?: PmClientOptions) => Promise<AggregateResult>"
+          "signature": "<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<AggregateResult, Options> | calls: <Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<AggregateResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -1090,10 +1202,10 @@
           "signature": "(artifactPath: string, migrations: PathMigration[]) => string | calls: (artifactPath: string, migrations: PathMigration[]) => string"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "function",
           "name": "applyReadOutputDimensions",
-          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { read_output?: PmReadOutputReceipt; } | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { read_output?: PmReadOutputReceipt; }"
+          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result> | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result>"
         },
         {
           "classification": "advanced_export",
@@ -2095,7 +2207,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "comments",
-          "signature": "(id: string, options?: CommentsCommandOptions, clientOptions?: PmClientOptions) => Promise<CommentsResult> | calls: (id: string, options?: CommentsCommandOptions, clientOptions?: PmClientOptions) => Promise<CommentsResult>"
+          "signature": "<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<CommentsResult, Options> | calls: <Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<CommentsResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -2329,7 +2441,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "context",
-          "signature": "(options?: ContextOptions, clientOptions?: PmClientOptions) => Promise<ContextResult> | calls: (options?: ContextOptions, clientOptions?: PmClientOptions) => Promise<ContextResult>"
+          "signature": "<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ContextResult, Options> | calls: <Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ContextResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -3265,7 +3377,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "deps",
-          "signature": "(id: string, options?: DepsCommandOptions, clientOptions?: PmClientOptions) => Promise<DepsResult> | calls: (id: string, options?: DepsCommandOptions, clientOptions?: PmClientOptions) => Promise<DepsResult>"
+          "signature": "<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DepsResult, Options> | calls: <Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DepsResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -3439,7 +3551,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "docs",
-          "signature": "(id: string, options?: DocsCommandOptions, clientOptions?: PmClientOptions) => Promise<DocsResult> | calls: (id: string, options?: DocsCommandOptions, clientOptions?: PmClientOptions) => Promise<DocsResult>"
+          "signature": "<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DocsResult, Options> | calls: <Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DocsResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -4333,7 +4445,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "files",
-          "signature": "(id: string, options?: FilesCommandOptions, clientOptions?: PmClientOptions) => Promise<FilesResult> | calls: (id: string, options?: FilesCommandOptions, clientOptions?: PmClientOptions) => Promise<FilesResult>"
+          "signature": "<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<FilesResult, Options> | calls: <Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<FilesResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -4597,7 +4709,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "get",
-          "signature": "(id: string, options?: GetOptions, clientOptions?: PmClientOptions) => Promise<GetResult> | calls: (id: string, options?: GetOptions, clientOptions?: PmClientOptions) => Promise<GetResult>"
+          "signature": "<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GetResult, Options> | calls: <Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GetResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -4729,7 +4841,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "graph",
-          "signature": "(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: GraphCommandOptions, clientOptions?: PmClientOptions) => Promise<GraphResult> | calls: (subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: GraphCommandOptions, clientOptions?: PmClientOptions) => Promise<GraphResult>"
+          "signature": "<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GraphResult, Options> | calls: <Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GraphResult, Options>"
         },
         {
           "classification": "supported",
@@ -5059,7 +5171,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "health",
-          "signature": "(options?: RunHealthOptions, clientOptions?: PmClientOptions) => Promise<HealthResult> | calls: (options?: RunHealthOptions, clientOptions?: PmClientOptions) => Promise<HealthResult>"
+          "signature": "<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<HealthResult, Options> | calls: <Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<HealthResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -5560,6 +5672,12 @@
           "signature": "(canonicalFlagSpec: string, aliasFlagSpec: string) => boolean | calls: (canonicalFlagSpec: string, aliasFlagSpec: string) => boolean"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "isReadOutputBudgetExceeded",
+          "signature": "(result: unknown) => result is PmReadOutputBudgetExceeded | calls: (result: unknown) => result is PmReadOutputBudgetExceeded"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "isReadRowContract",
@@ -5905,7 +6023,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "list",
-          "signature": "(options?: ListOptions, clientOptions?: PmClientOptions) => Promise<ListResult> | calls: (options?: ListOptions, clientOptions?: PmClientOptions) => Promise<ListResult>"
+          "signature": "<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ListResult, Options> | calls: <Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ListResult, Options>"
         },
         {
           "classification": "supported",
@@ -6439,7 +6557,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "next",
-          "signature": "(options?: NextOptions, clientOptions?: PmClientOptions) => Promise<NextResult> | calls: (options?: NextOptions, clientOptions?: PmClientOptions) => Promise<NextResult>"
+          "signature": "<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NextResult, Options> | calls: <Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NextResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -6613,7 +6731,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "notes",
-          "signature": "(id: string, options?: NotesCommandOptions, clientOptions?: PmClientOptions) => Promise<NotesResult> | calls: (id: string, options?: NotesCommandOptions, clientOptions?: PmClientOptions) => Promise<NotesResult>"
+          "signature": "<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NotesResult, Options> | calls: <Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NotesResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -7492,19 +7610,19 @@
           "signature": "\"1.1.0\""
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "value",
           "name": "PM_READ_OUTPUT_DIMENSIONS",
           "signature": "readonly [\"include\", \"amount\", \"cost\", \"encoding\"]"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "value",
           "name": "PM_READ_OUTPUT_OPTION_FLAGS",
           "signature": "readonly string[]"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "value",
           "name": "PM_READ_OUTPUT_SURFACE_CONTRACTS",
           "signature": "readonly PmReadOutputSurfaceContract[]"
@@ -7609,7 +7727,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmClient",
-          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context(options?: ContextOptions & PmReadOutputOptions): Promise<ContextResult>; list(options?: ListOptions & PmReadOutputOptions): Promise<ListResult>; search(query: string, options?: SearchOptions & PmReadOutputOptions): Promise<SearchResult>; get(id: string, options?: GetOptions & PmReadOutputOptions): Promise<GetResult>; next(options?: NextOptions & PmReadOutputOptions): Promise<NextResult>; aggregate(options?: AggregateOptions & PmReadOutputOptions): Promise<AggregateResult>; stats(options?: StatsCommandOptions & PmReadOutputOptions): Promise<StatsResult>; duplicates(options?: DuplicatesCommandOptions): Promise<DuplicatesResult>; comments(id: string, options?: CommentsCommandOptions & PmReadOutputOptions): Promise<CommentsResult>; notes(id: string, options?: NotesCommandOptions & PmReadOutputOptions): Promise<NotesResult>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files(id: string, options?: FilesCommandOptions & PmReadOutputOptions): Promise<FilesResult>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs(id: string, options?: DocsCommandOptions & PmReadOutputOptions): Promise<DocsResult>; deps(id: string, options?: DepsCommandOptions & PmReadOutputOptions): Promise<DepsResult>; graph(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: GraphCommandOptions & PmReadOutputOptions): Promise<GraphResult>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate(options: ValidateCommandOptions & PmReadOutputOptions & { counts: true; }): Promise<ValidateCountsResult>; validate(options?: ValidateCommandOptions & PmReadOutputOptions & { counts?: false; }): Promise<ValidateResult>; validate(options: ValidateCommandOptions & PmReadOutputOptions): Promise<ValidateResult | ValidateCountsResult>; health(options?: RunHealthOptions & PmReadOutputOptions): Promise<HealthResult>; gc(options?: GcCommandOptions): Promise<GcResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<{ acknowledged: number; history_path: string; }>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
+          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options): ReadPromise<ContextResult, Options>; list<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options): ReadPromise<ListResult, Options>; search<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options): ReadPromise<SearchResult, Options>; get<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options): ReadPromise<GetResult, Options>; next<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options): ReadPromise<NextResult, Options>; aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options): ReadPromise<AggregateResult, Options>; stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options): ReadPromise<StatsResult, Options>; duplicates(options?: DuplicatesCommandOptions): Promise<DuplicatesResult>; comments<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options): ReadPromise<CommentsResult, Options>; notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options): ReadPromise<NotesResult, Options>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options): ReadPromise<FilesResult, Options>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options): ReadPromise<DocsResult, Options>; deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options): ReadPromise<DepsResult, Options>; graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options): ReadPromise<GraphResult, Options>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options): ReadPromise<ValidateCountsResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options): ReadPromise<ValidateResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions>>(options: Options): ReadPromise<ValidateResult | ValidateCountsResult, Options>; health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options): ReadPromise<HealthResult, Options>; gc(options?: GcCommandOptions): Promise<GcResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<{ acknowledged: number; history_path: string; }>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
         },
         {
           "classification": "advanced_export",
@@ -7894,7 +8012,13 @@
           "signature": "export type PmPackageResourceMap = Partial<Record<PmPackageResourceKind, string[]>>;"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputBudgetExceeded",
+          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; }; read_output: PmReadOutputReceipt; }"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputDimension",
           "signature": "export type PmReadOutputDimension = (typeof PM_READ_OUTPUT_DIMENSIONS)[number];"
@@ -7912,31 +8036,43 @@
           "signature": "export type PmReadOutputDimensionSource = \"canonical\" | \"legacy\" | \"intent\" | \"default\";"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputLegacyAlias",
           "signature": "export interface PmReadOutputLegacyAlias { flag: string; migration_hint: string; visibility: \"hidden_alias\"; }"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
           "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; }"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; result_omitted: boolean; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmReadOutputResult",
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; }) | PmReadOutputBudgetExceeded;"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmReadOutputResultFor",
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputSurface",
           "signature": "export type PmReadOutputSurface = (typeof PM_READ_OUTPUT_SURFACES)[number];"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
           "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
@@ -9796,19 +9932,19 @@
           "signature": "<T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string) => number | calls: <T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string) => number"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "function",
           "name": "resolveReadOutputDimensions",
           "signature": "(command: string, options: Record<string, unknown>) => PmResolvedReadOutputDimensions | undefined | calls: (command: string, options: Record<string, unknown>) => PmResolvedReadOutputDimensions | undefined"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "function",
           "name": "resolveReadOutputEncoding",
           "signature": "(command: string, options: Record<string, unknown>) => \"json\" | \"toon\" | undefined | calls: (command: string, options: Record<string, unknown>) => \"json\" | \"toon\" | undefined"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "function",
           "name": "resolveReadOutputSurface",
           "signature": "(command: string) => PmReadOutputSurface | undefined | calls: (command: string) => PmReadOutputSurface | undefined"
@@ -11215,7 +11351,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "search",
-          "signature": "(query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult> | calls: (query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult>"
+          "signature": "<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<SearchResult, Options> | calls: <Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<SearchResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -11701,7 +11837,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "stats",
-          "signature": "(options?: StatsCommandOptions, clientOptions?: PmClientOptions) => Promise<StatsResult> | calls: (options?: StatsCommandOptions, clientOptions?: PmClientOptions) => Promise<StatsResult>"
+          "signature": "<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<StatsResult, Options> | calls: <Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<StatsResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -12475,7 +12611,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "validate",
-          "signature": "{ (options: ValidateCommandOptions & { counts: true; }, clientOptions?: PmClientOptions): Promise<ValidateCountsResult>; (options?: ValidateCommandOptions & { counts?: false; }, clientOptions?: PmClientOptions): Promise<ValidateResult>; (options: ValidateCommandOptions, clientOptions?: PmClientOptions): Promise<ValidateResult | ValidateCountsResult>; } | calls: (options: ValidateCommandOptions & { counts: true; }, clientOptions?: PmClientOptions) => Promise<ValidateCountsResult> ; (options?: ValidateCommandOptions & { counts?: false; }, clientOptions?: PmClientOptions) => Promise<ValidateResult> ; (options: ValidateCommandOptions, clientOptions?: PmClientOptions) => Promise<ValidateResult | ValidateCountsResult>"
+          "signature": "{ <Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options, clientOptions?: PmClientOptions): ReadPromise<ValidateCountsResult, Options>; <Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options, clientOptions?: PmClientOptions): ReadPromise<ValidateResult, Options>; <Options extends ReadOptions<ValidateCommandOptions>>(options: Options, clientOptions?: PmClientOptions): ReadPromise<ValidateResult | ValidateCountsResult, Options>; } | calls: <Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options, clientOptions?: PmClientOptions) => ReadPromise<ValidateCountsResult, Options> ; <Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ValidateResult, Options> ; <Options extends ReadOptions<ValidateCommandOptions>>(options: Options, clientOptions?: PmClientOptions) => ReadPromise<ValidateResult | ValidateCountsResult, Options>"
         },
         {
           "classification": "contract_data",
@@ -12538,7 +12674,7 @@
           "signature": "export interface ValidateMutationServices { runUpdate?: (id: string, options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>; }"
         },
         {
-          "classification": "contract_data",
+          "classification": "supported",
           "kind": "function",
           "name": "validateReadOutputOptions",
           "signature": "(command: string, options: Record<string, unknown>) => void | calls: (command: string, options: Record<string, unknown>) => void"
@@ -14335,7 +14471,7 @@
           "classification": "contract_data",
           "kind": "function",
           "name": "applyReadOutputDimensions",
-          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { read_output?: PmReadOutputReceipt; } | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { read_output?: PmReadOutputReceipt; }"
+          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result> | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result>"
         },
         {
           "classification": "contract_data",
@@ -14813,6 +14949,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "isReadOutputBudgetExceeded",
+          "signature": "(result: unknown) => result is PmReadOutputBudgetExceeded | calls: (result: unknown) => result is PmReadOutputBudgetExceeded"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "ITEM_MUTATE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -15221,6 +15363,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputBudgetExceeded",
+          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; }; read_output: PmReadOutputReceipt; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputDimension",
           "signature": "export type PmReadOutputDimension = (typeof PM_READ_OUTPUT_DIMENSIONS)[number];"
@@ -15253,7 +15401,19 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; result_omitted: boolean; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmReadOutputResult",
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; }) | PmReadOutputBudgetExceeded;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmReadOutputResultFor",
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
         },
         {
           "classification": "contract_data",
@@ -15739,7 +15899,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "aggregate",
-          "signature": "(options?: AggregateOptions, clientOptions?: PmClientOptions) => Promise<AggregateResult> | calls: (options?: AggregateOptions, clientOptions?: PmClientOptions) => Promise<AggregateResult>"
+          "signature": "<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<AggregateResult, Options> | calls: <Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<AggregateResult, Options>"
         },
         {
           "classification": "supported",
@@ -15788,6 +15948,12 @@
           "kind": "interface",
           "name": "AppendResult",
           "signature": "export interface AppendResult { item: Record<string, unknown>; appended: string; changed_fields: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "applyReadOutputDimensions",
+          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result> | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result>"
         },
         {
           "classification": "supported",
@@ -15871,7 +16037,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "comments",
-          "signature": "(id: string, options?: CommentsCommandOptions, clientOptions?: PmClientOptions) => Promise<CommentsResult> | calls: (id: string, options?: CommentsCommandOptions, clientOptions?: PmClientOptions) => Promise<CommentsResult>"
+          "signature": "<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<CommentsResult, Options> | calls: <Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<CommentsResult, Options>"
         },
         {
           "classification": "supported",
@@ -15895,7 +16061,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "context",
-          "signature": "(options?: ContextOptions, clientOptions?: PmClientOptions) => Promise<ContextResult> | calls: (options?: ContextOptions, clientOptions?: PmClientOptions) => Promise<ContextResult>"
+          "signature": "<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ContextResult, Options> | calls: <Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ContextResult, Options>"
         },
         {
           "classification": "supported",
@@ -15973,7 +16139,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "deps",
-          "signature": "(id: string, options?: DepsCommandOptions, clientOptions?: PmClientOptions) => Promise<DepsResult> | calls: (id: string, options?: DepsCommandOptions, clientOptions?: PmClientOptions) => Promise<DepsResult>"
+          "signature": "<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DepsResult, Options> | calls: <Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DepsResult, Options>"
         },
         {
           "classification": "supported",
@@ -16009,7 +16175,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "docs",
-          "signature": "(id: string, options?: DocsCommandOptions, clientOptions?: PmClientOptions) => Promise<DocsResult> | calls: (id: string, options?: DocsCommandOptions, clientOptions?: PmClientOptions) => Promise<DocsResult>"
+          "signature": "<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DocsResult, Options> | calls: <Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DocsResult, Options>"
         },
         {
           "classification": "supported",
@@ -16045,7 +16211,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "files",
-          "signature": "(id: string, options?: FilesCommandOptions, clientOptions?: PmClientOptions) => Promise<FilesResult> | calls: (id: string, options?: FilesCommandOptions, clientOptions?: PmClientOptions) => Promise<FilesResult>"
+          "signature": "<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<FilesResult, Options> | calls: <Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<FilesResult, Options>"
         },
         {
           "classification": "supported",
@@ -16093,7 +16259,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "get",
-          "signature": "(id: string, options?: GetOptions, clientOptions?: PmClientOptions) => Promise<GetResult> | calls: (id: string, options?: GetOptions, clientOptions?: PmClientOptions) => Promise<GetResult>"
+          "signature": "<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GetResult, Options> | calls: <Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GetResult, Options>"
         },
         {
           "classification": "supported",
@@ -16111,7 +16277,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "graph",
-          "signature": "(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: GraphCommandOptions, clientOptions?: PmClientOptions) => Promise<GraphResult> | calls: (subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: GraphCommandOptions, clientOptions?: PmClientOptions) => Promise<GraphResult>"
+          "signature": "<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GraphResult, Options> | calls: <Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GraphResult, Options>"
         },
         {
           "classification": "supported",
@@ -16136,6 +16302,12 @@
           "kind": "function",
           "name": "isPmCliExpectedError",
           "signature": "(error: unknown) => error is PmCliExpectedError | calls: (error: unknown) => error is PmCliExpectedError"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "isReadOutputBudgetExceeded",
+          "signature": "(result: unknown) => result is PmReadOutputBudgetExceeded | calls: (result: unknown) => result is PmReadOutputBudgetExceeded"
         },
         {
           "classification": "supported",
@@ -16213,7 +16385,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "list",
-          "signature": "(options?: ListOptions, clientOptions?: PmClientOptions) => Promise<ListResult> | calls: (options?: ListOptions, clientOptions?: PmClientOptions) => Promise<ListResult>"
+          "signature": "<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ListResult, Options> | calls: <Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ListResult, Options>"
         },
         {
           "classification": "supported",
@@ -16231,7 +16403,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "next",
-          "signature": "(options?: NextOptions, clientOptions?: PmClientOptions) => Promise<NextResult> | calls: (options?: NextOptions, clientOptions?: PmClientOptions) => Promise<NextResult>"
+          "signature": "<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NextResult, Options> | calls: <Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NextResult, Options>"
         },
         {
           "classification": "supported",
@@ -16267,7 +16439,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "notes",
-          "signature": "(id: string, options?: NotesCommandOptions, clientOptions?: PmClientOptions) => Promise<NotesResult> | calls: (id: string, options?: NotesCommandOptions, clientOptions?: PmClientOptions) => Promise<NotesResult>"
+          "signature": "<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NotesResult, Options> | calls: <Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NotesResult, Options>"
         },
         {
           "classification": "supported",
@@ -16295,6 +16467,24 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "PM_READ_OUTPUT_DIMENSIONS",
+          "signature": "readonly [\"include\", \"amount\", \"cost\", \"encoding\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "PM_READ_OUTPUT_OPTION_FLAGS",
+          "signature": "readonly string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "PM_READ_OUTPUT_SURFACE_CONTRACTS",
+          "signature": "readonly PmReadOutputSurfaceContract[]"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "PmActionInput",
           "signature": "export type PmActionInput = PmActionOptions & { action: PmActionName; options?: PmActionOptions; };"
@@ -16315,7 +16505,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmClient",
-          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context(options?: ContextOptions & PmReadOutputOptions): Promise<ContextResult>; list(options?: ListOptions & PmReadOutputOptions): Promise<ListResult>; search(query: string, options?: SearchOptions & PmReadOutputOptions): Promise<SearchResult>; get(id: string, options?: GetOptions & PmReadOutputOptions): Promise<GetResult>; next(options?: NextOptions & PmReadOutputOptions): Promise<NextResult>; aggregate(options?: AggregateOptions & PmReadOutputOptions): Promise<AggregateResult>; stats(options?: StatsCommandOptions & PmReadOutputOptions): Promise<StatsResult>; duplicates(options?: DuplicatesCommandOptions): Promise<DuplicatesResult>; comments(id: string, options?: CommentsCommandOptions & PmReadOutputOptions): Promise<CommentsResult>; notes(id: string, options?: NotesCommandOptions & PmReadOutputOptions): Promise<NotesResult>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files(id: string, options?: FilesCommandOptions & PmReadOutputOptions): Promise<FilesResult>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs(id: string, options?: DocsCommandOptions & PmReadOutputOptions): Promise<DocsResult>; deps(id: string, options?: DepsCommandOptions & PmReadOutputOptions): Promise<DepsResult>; graph(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: GraphCommandOptions & PmReadOutputOptions): Promise<GraphResult>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate(options: ValidateCommandOptions & PmReadOutputOptions & { counts: true; }): Promise<ValidateCountsResult>; validate(options?: ValidateCommandOptions & PmReadOutputOptions & { counts?: false; }): Promise<ValidateResult>; validate(options: ValidateCommandOptions & PmReadOutputOptions): Promise<ValidateResult | ValidateCountsResult>; health(options?: RunHealthOptions & PmReadOutputOptions): Promise<HealthResult>; gc(options?: GcCommandOptions): Promise<GcResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<{ acknowledged: number; history_path: string; }>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
+          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options): ReadPromise<ContextResult, Options>; list<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options): ReadPromise<ListResult, Options>; search<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options): ReadPromise<SearchResult, Options>; get<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options): ReadPromise<GetResult, Options>; next<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options): ReadPromise<NextResult, Options>; aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options): ReadPromise<AggregateResult, Options>; stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options): ReadPromise<StatsResult, Options>; duplicates(options?: DuplicatesCommandOptions): Promise<DuplicatesResult>; comments<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options): ReadPromise<CommentsResult, Options>; notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options): ReadPromise<NotesResult, Options>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options): ReadPromise<FilesResult, Options>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options): ReadPromise<DocsResult, Options>; deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options): ReadPromise<DepsResult, Options>; graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options): ReadPromise<GraphResult, Options>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options): ReadPromise<ValidateCountsResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options): ReadPromise<ValidateResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions>>(options: Options): ReadPromise<ValidateResult | ValidateCountsResult, Options>; health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options): ReadPromise<HealthResult, Options>; gc(options?: GcCommandOptions): Promise<GcResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<{ acknowledged: number; history_path: string; }>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
         },
         {
           "classification": "supported",
@@ -16328,6 +16518,60 @@
           "kind": "class",
           "name": "PmCliError",
           "signature": "export declare class PmCliError extends Error { readonly exitCode: number; readonly code?: string; readonly context: PmCliErrorContext; constructor(message: string, exitCode: number, context?: PmCliErrorContext); }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputBudgetExceeded",
+          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; }; read_output: PmReadOutputReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmReadOutputDimension",
+          "signature": "export type PmReadOutputDimension = (typeof PM_READ_OUTPUT_DIMENSIONS)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputLegacyAlias",
+          "signature": "export interface PmReadOutputLegacyAlias { flag: string; migration_hint: string; visibility: \"hidden_alias\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputOptions",
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputReceipt",
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmReadOutputResult",
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; }) | PmReadOutputBudgetExceeded;"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmReadOutputResultFor",
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmReadOutputSurface",
+          "signature": "export type PmReadOutputSurface = (typeof PM_READ_OUTPUT_SURFACES)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputSurfaceContract",
+          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
         },
         {
           "classification": "supported",
@@ -16382,6 +16626,24 @@
           "kind": "function",
           "name": "resolveHistoryEpisodeGroupIdentity",
           "signature": "(entry: HistoryEntry) => Pick<AgentEpisodeGroup, \"id\" | \"source\"> | calls: (entry: HistoryEntry) => Pick<AgentEpisodeGroup, \"id\" | \"source\">"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveReadOutputDimensions",
+          "signature": "(command: string, options: Record<string, unknown>) => PmResolvedReadOutputDimensions | undefined | calls: (command: string, options: Record<string, unknown>) => PmResolvedReadOutputDimensions | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveReadOutputEncoding",
+          "signature": "(command: string, options: Record<string, unknown>) => \"json\" | \"toon\" | undefined | calls: (command: string, options: Record<string, unknown>) => \"json\" | \"toon\" | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveReadOutputSurface",
+          "signature": "(command: string) => PmReadOutputSurface | undefined | calls: (command: string) => PmReadOutputSurface | undefined"
         },
         {
           "classification": "supported",
@@ -16453,7 +16715,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "search",
-          "signature": "(query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult> | calls: (query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult>"
+          "signature": "<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<SearchResult, Options> | calls: <Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<SearchResult, Options>"
         },
         {
           "classification": "supported",
@@ -16502,6 +16764,12 @@
           "kind": "interface",
           "name": "UpdateResult",
           "signature": "export interface UpdateResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "validateReadOutputOptions",
+          "signature": "(command: string, options: Record<string, unknown>) => void | calls: (command: string, options: Record<string, unknown>) => void"
         },
         {
           "classification": "supported",
@@ -20047,7 +20315,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "aggregate",
-          "signature": "(options?: AggregateOptions, clientOptions?: PmClientOptions) => Promise<AggregateResult> | calls: (options?: AggregateOptions, clientOptions?: PmClientOptions) => Promise<AggregateResult>"
+          "signature": "<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<AggregateResult, Options> | calls: <Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<AggregateResult, Options>"
         },
         {
           "classification": "supported",
@@ -20227,7 +20495,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "comments",
-          "signature": "(id: string, options?: CommentsCommandOptions, clientOptions?: PmClientOptions) => Promise<CommentsResult> | calls: (id: string, options?: CommentsCommandOptions, clientOptions?: PmClientOptions) => Promise<CommentsResult>"
+          "signature": "<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<CommentsResult, Options> | calls: <Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<CommentsResult, Options>"
         },
         {
           "classification": "supported",
@@ -20299,7 +20567,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "context",
-          "signature": "(options?: ContextOptions, clientOptions?: PmClientOptions) => Promise<ContextResult> | calls: (options?: ContextOptions, clientOptions?: PmClientOptions) => Promise<ContextResult>"
+          "signature": "<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ContextResult, Options> | calls: <Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ContextResult, Options>"
         },
         {
           "classification": "supported",
@@ -20443,7 +20711,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "deps",
-          "signature": "(id: string, options?: DepsCommandOptions, clientOptions?: PmClientOptions) => Promise<DepsResult> | calls: (id: string, options?: DepsCommandOptions, clientOptions?: PmClientOptions) => Promise<DepsResult>"
+          "signature": "<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DepsResult, Options> | calls: <Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DepsResult, Options>"
         },
         {
           "classification": "supported",
@@ -20461,7 +20729,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "docs",
-          "signature": "(id: string, options?: DocsCommandOptions, clientOptions?: PmClientOptions) => Promise<DocsResult> | calls: (id: string, options?: DocsCommandOptions, clientOptions?: PmClientOptions) => Promise<DocsResult>"
+          "signature": "<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DocsResult, Options> | calls: <Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<DocsResult, Options>"
         },
         {
           "classification": "supported",
@@ -20569,7 +20837,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "files",
-          "signature": "(id: string, options?: FilesCommandOptions, clientOptions?: PmClientOptions) => Promise<FilesResult> | calls: (id: string, options?: FilesCommandOptions, clientOptions?: PmClientOptions) => Promise<FilesResult>"
+          "signature": "<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<FilesResult, Options> | calls: <Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<FilesResult, Options>"
         },
         {
           "classification": "supported",
@@ -20671,7 +20939,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "get",
-          "signature": "(id: string, options?: GetOptions, clientOptions?: PmClientOptions) => Promise<GetResult> | calls: (id: string, options?: GetOptions, clientOptions?: PmClientOptions) => Promise<GetResult>"
+          "signature": "<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GetResult, Options> | calls: <Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GetResult, Options>"
         },
         {
           "classification": "advanced_export",
@@ -20743,7 +21011,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "graph",
-          "signature": "(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: GraphCommandOptions, clientOptions?: PmClientOptions) => Promise<GraphResult> | calls: (subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: GraphCommandOptions, clientOptions?: PmClientOptions) => Promise<GraphResult>"
+          "signature": "<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GraphResult, Options> | calls: <Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GraphResult, Options>"
         },
         {
           "classification": "advanced_export",
@@ -20773,7 +21041,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "health",
-          "signature": "(options?: RunHealthOptions, clientOptions?: PmClientOptions) => Promise<HealthResult> | calls: (options?: RunHealthOptions, clientOptions?: PmClientOptions) => Promise<HealthResult>"
+          "signature": "<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<HealthResult, Options> | calls: <Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<HealthResult, Options>"
         },
         {
           "classification": "supported",
@@ -20983,7 +21251,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "list",
-          "signature": "(options?: ListOptions, clientOptions?: PmClientOptions) => Promise<ListResult> | calls: (options?: ListOptions, clientOptions?: PmClientOptions) => Promise<ListResult>"
+          "signature": "<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ListResult, Options> | calls: <Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ListResult, Options>"
         },
         {
           "classification": "advanced_export",
@@ -21091,7 +21359,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "next",
-          "signature": "(options?: NextOptions, clientOptions?: PmClientOptions) => Promise<NextResult> | calls: (options?: NextOptions, clientOptions?: PmClientOptions) => Promise<NextResult>"
+          "signature": "<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NextResult, Options> | calls: <Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NextResult, Options>"
         },
         {
           "classification": "supported",
@@ -21175,7 +21443,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "notes",
-          "signature": "(id: string, options?: NotesCommandOptions, clientOptions?: PmClientOptions) => Promise<NotesResult> | calls: (id: string, options?: NotesCommandOptions, clientOptions?: PmClientOptions) => Promise<NotesResult>"
+          "signature": "<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NotesResult, Options> | calls: <Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NotesResult, Options>"
         },
         {
           "classification": "supported",
@@ -21337,7 +21605,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmClient",
-          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context(options?: ContextOptions & PmReadOutputOptions): Promise<ContextResult>; list(options?: ListOptions & PmReadOutputOptions): Promise<ListResult>; search(query: string, options?: SearchOptions & PmReadOutputOptions): Promise<SearchResult>; get(id: string, options?: GetOptions & PmReadOutputOptions): Promise<GetResult>; next(options?: NextOptions & PmReadOutputOptions): Promise<NextResult>; aggregate(options?: AggregateOptions & PmReadOutputOptions): Promise<AggregateResult>; stats(options?: StatsCommandOptions & PmReadOutputOptions): Promise<StatsResult>; duplicates(options?: DuplicatesCommandOptions): Promise<DuplicatesResult>; comments(id: string, options?: CommentsCommandOptions & PmReadOutputOptions): Promise<CommentsResult>; notes(id: string, options?: NotesCommandOptions & PmReadOutputOptions): Promise<NotesResult>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files(id: string, options?: FilesCommandOptions & PmReadOutputOptions): Promise<FilesResult>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs(id: string, options?: DocsCommandOptions & PmReadOutputOptions): Promise<DocsResult>; deps(id: string, options?: DepsCommandOptions & PmReadOutputOptions): Promise<DepsResult>; graph(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: GraphCommandOptions & PmReadOutputOptions): Promise<GraphResult>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate(options: ValidateCommandOptions & PmReadOutputOptions & { counts: true; }): Promise<ValidateCountsResult>; validate(options?: ValidateCommandOptions & PmReadOutputOptions & { counts?: false; }): Promise<ValidateResult>; validate(options: ValidateCommandOptions & PmReadOutputOptions): Promise<ValidateResult | ValidateCountsResult>; health(options?: RunHealthOptions & PmReadOutputOptions): Promise<HealthResult>; gc(options?: GcCommandOptions): Promise<GcResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<{ acknowledged: number; history_path: string; }>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
+          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options): ReadPromise<ContextResult, Options>; list<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options): ReadPromise<ListResult, Options>; search<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options): ReadPromise<SearchResult, Options>; get<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options): ReadPromise<GetResult, Options>; next<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options): ReadPromise<NextResult, Options>; aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options): ReadPromise<AggregateResult, Options>; stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options): ReadPromise<StatsResult, Options>; duplicates(options?: DuplicatesCommandOptions): Promise<DuplicatesResult>; comments<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options): ReadPromise<CommentsResult, Options>; notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options): ReadPromise<NotesResult, Options>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options): ReadPromise<FilesResult, Options>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options): ReadPromise<DocsResult, Options>; deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options): ReadPromise<DepsResult, Options>; graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options): ReadPromise<GraphResult, Options>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options): ReadPromise<ValidateCountsResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options): ReadPromise<ValidateResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions>>(options: Options): ReadPromise<ValidateResult | ValidateCountsResult, Options>; health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options): ReadPromise<HealthResult, Options>; gc(options?: GcCommandOptions): Promise<GcResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<{ acknowledged: number; history_path: string; }>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
         },
         {
           "classification": "advanced_export",
@@ -21380,6 +21648,48 @@
           "kind": "interface",
           "name": "PmCliExpectedError",
           "signature": "export interface PmCliExpectedError extends Error { name: typeof PM_CLI_EXPECTED_ERROR_NAME; exitCode: number; context: PmCliErrorContext; cause?: unknown; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmContextIntentContract",
+          "signature": "export interface PmContextIntentContract { command: PmContextIntentCommand; intent: string; description: string; included_field_groups: string[]; token_budget: number; source?: PmContextIntentSource; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmErrorCodeContract",
+          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; recovery: string; sources: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputBudgetExceeded",
+          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; }; read_output: PmReadOutputReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputOptions",
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmReadOutputResult",
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; }) | PmReadOutputBudgetExceeded;"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmReadOutputResultFor",
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputSurfaceContract",
+          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
         },
         {
           "classification": "supported",
@@ -22111,7 +22421,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "search",
-          "signature": "(query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult> | calls: (query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult>"
+          "signature": "<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<SearchResult, Options> | calls: <Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<SearchResult, Options>"
         },
         {
           "classification": "supported",
@@ -22207,7 +22517,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "stats",
-          "signature": "(options?: StatsCommandOptions, clientOptions?: PmClientOptions) => Promise<StatsResult> | calls: (options?: StatsCommandOptions, clientOptions?: PmClientOptions) => Promise<StatsResult>"
+          "signature": "<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<StatsResult, Options> | calls: <Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<StatsResult, Options>"
         },
         {
           "classification": "advanced_export",
@@ -22465,7 +22775,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "validate",
-          "signature": "{ (options: ValidateCommandOptions & { counts: true; }, clientOptions?: PmClientOptions): Promise<ValidateCountsResult>; (options?: ValidateCommandOptions & { counts?: false; }, clientOptions?: PmClientOptions): Promise<ValidateResult>; (options: ValidateCommandOptions, clientOptions?: PmClientOptions): Promise<ValidateResult | ValidateCountsResult>; } | calls: (options: ValidateCommandOptions & { counts: true; }, clientOptions?: PmClientOptions) => Promise<ValidateCountsResult> ; (options?: ValidateCommandOptions & { counts?: false; }, clientOptions?: PmClientOptions) => Promise<ValidateResult> ; (options: ValidateCommandOptions, clientOptions?: PmClientOptions) => Promise<ValidateResult | ValidateCountsResult>"
+          "signature": "{ <Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options, clientOptions?: PmClientOptions): ReadPromise<ValidateCountsResult, Options>; <Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options, clientOptions?: PmClientOptions): ReadPromise<ValidateResult, Options>; <Options extends ReadOptions<ValidateCommandOptions>>(options: Options, clientOptions?: PmClientOptions): ReadPromise<ValidateResult | ValidateCountsResult, Options>; } | calls: <Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options, clientOptions?: PmClientOptions) => ReadPromise<ValidateCountsResult, Options> ; <Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ValidateResult, Options> ; <Options extends ReadOptions<ValidateCommandOptions>>(options: Options, clientOptions?: PmClientOptions) => ReadPromise<ValidateResult | ValidateCountsResult, Options>"
         },
         {
           "classification": "supported",
