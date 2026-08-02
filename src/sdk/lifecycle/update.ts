@@ -173,6 +173,10 @@ export interface UpdateCommandOptions
   replaceDeps?: boolean;
   /** Value that configures or reports replace tests for this contract. */
   replaceTests?: boolean;
+  /** Atomically replace linked files with the supplied file entries. */
+  replaceFiles?: boolean;
+  /** Atomically replace linked docs with the supplied doc entries. */
+  replaceDocs?: boolean;
   /** Value that configures or reports runtime field commands for this contract. */
   runtimeFieldCommands?: Array<"update" | "update_many">;
   [key: string]: unknown;
@@ -254,7 +258,9 @@ const OWNERSHIP_BYPASS_DISALLOWED_UNSET_ITEM_METADATA_KEYS = new Set<string>([
 const UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS =
   createLegacyNoneCollectionNormalizers<UpdateCommandOptions>({
     depDisableFlagKey: "replaceDeps",
+    fileDisableFlagKey: "replaceFiles",
     testDisableFlagKey: "replaceTests",
+    docDisableFlagKey: "replaceDocs",
   });
 
 function normalizeLegacyNoneUpdateOptions(
@@ -522,6 +528,8 @@ function enforceOwnershipBypassScope(
     pushIf(options.depRemove !== undefined, "--dep-remove", disallowedFlags);
     pushIf(options.replaceDeps === true, "--replace-deps", disallowedFlags);
     pushIf(options.replaceTests === true, "--replace-tests", disallowedFlags);
+    pushIf(options.replaceFiles === true, "--replace-files", disallowedFlags);
+    pushIf(options.replaceDocs === true, "--replace-docs", disallowedFlags);
     pushIf(options.comment !== undefined, "--comment", disallowedFlags);
     pushIf(options.note !== undefined, "--note", disallowedFlags);
     pushIf(options.learning !== undefined, "--learning", disallowedFlags);
@@ -591,6 +599,8 @@ function enforceOwnershipBypassScope(
   pushIf(options.depRemove !== undefined, "--dep-remove", disallowedFlags);
   pushIf(options.replaceDeps === true, "--replace-deps", disallowedFlags);
   pushIf(options.replaceTests === true, "--replace-tests", disallowedFlags);
+  pushIf(options.replaceFiles === true, "--replace-files", disallowedFlags);
+  pushIf(options.replaceDocs === true, "--replace-docs", disallowedFlags);
   pushIf(options.note !== undefined, "--note", disallowedFlags);
   pushIf(options.learning !== undefined, "--learning", disallowedFlags);
   pushIf(options.test !== undefined, "--test", disallowedFlags);
@@ -1125,6 +1135,8 @@ function collectProvidedUpdatePolicyOptions(
   mark("file", options.file !== undefined);
   mark("test", options.test !== undefined);
   mark("test", options.replaceTests === true);
+  mark("file", options.replaceFiles === true);
+  mark("doc", options.replaceDocs === true);
   mark("doc", options.doc !== undefined);
   mark("reminder", options.reminder !== undefined);
   mark("event", options.event !== undefined);
@@ -1466,7 +1478,7 @@ function buildClearCollectionDefinitions(
       metadataKey: "learnings",
     },
     {
-      enabled: options.clearFiles,
+      enabled: options.clearFiles || options.replaceFiles,
       optionKey: "file",
       clearFlag: "--clear-files",
       valueFlag: "--file",
@@ -1482,7 +1494,7 @@ function buildClearCollectionDefinitions(
       metadataKey: "tests",
     },
     {
-      enabled: options.clearDocs,
+      enabled: options.clearDocs || options.replaceDocs,
       optionKey: "doc",
       clearFlag: "--clear-docs",
       valueFlag: "--doc",
@@ -1516,6 +1528,28 @@ function buildClearCollectionDefinitions(
   ];
 }
 
+function validateLinkedArtifactReplacement(params: {
+  enabled: boolean;
+  values: string[] | undefined;
+  replaceFlag: string;
+  clearEnabled: boolean;
+  clearFlag: string;
+  valueFlag: string;
+}): void {
+  if (params.enabled && (!params.values || params.values.length === 0)) {
+    throw new PmCliError(
+      `${params.replaceFlag} requires at least one ${params.valueFlag} entry`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (params.enabled && params.clearEnabled) {
+    throw new PmCliError(
+      `${params.replaceFlag} cannot be combined with ${params.clearFlag}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+}
+
 function validateReplaceOptions(options: UpdateCommandOptions): void {
   if (
     options.replaceDeps === true &&
@@ -1536,21 +1570,30 @@ function validateReplaceOptions(options: UpdateCommandOptions): void {
       EXIT_CODE.USAGE,
     );
   }
-  if (
-    options.replaceTests === true &&
-    (options.test === undefined || options.test.length === 0)
-  ) {
-    throw new PmCliError(
-      "--replace-tests requires at least one --test entry",
-      EXIT_CODE.USAGE,
-    );
-  }
-  if (options.replaceTests === true && options.clearTests === true) {
-    throw new PmCliError(
-      "--replace-tests cannot be combined with --clear-tests",
-      EXIT_CODE.USAGE,
-    );
-  }
+  validateLinkedArtifactReplacement({
+    enabled: options.replaceTests === true,
+    values: options.test,
+    replaceFlag: "--replace-tests",
+    clearEnabled: options.clearTests === true,
+    clearFlag: "--clear-tests",
+    valueFlag: "--test",
+  });
+  validateLinkedArtifactReplacement({
+    enabled: options.replaceFiles === true,
+    values: options.file,
+    replaceFlag: "--replace-files",
+    clearEnabled: options.clearFiles === true,
+    clearFlag: "--clear-files",
+    valueFlag: "--file",
+  });
+  validateLinkedArtifactReplacement({
+    enabled: options.replaceDocs === true,
+    values: options.doc,
+    replaceFlag: "--replace-docs",
+    clearEnabled: options.clearDocs === true,
+    clearFlag: "--clear-docs",
+    valueFlag: "--doc",
+  });
 }
 
 function applyClearCollectionDefinitions(params: {
@@ -1565,7 +1608,11 @@ function applyClearCollectionDefinitions(params: {
     }
     const isReplacement =
       (definition.optionKey === "dep" && params.options.replaceDeps === true) ||
-      (definition.optionKey === "test" && params.options.replaceTests === true);
+      (definition.optionKey === "test" &&
+        params.options.replaceTests === true) ||
+      (definition.optionKey === "file" &&
+        params.options.replaceFiles === true) ||
+      (definition.optionKey === "doc" && params.options.replaceDocs === true);
     if (definition.values && definition.values.length > 0 && !isReplacement) {
       throw new PmCliError(
         `Cannot combine ${definition.clearFlag} with ${definition.valueFlag}`,
@@ -1685,6 +1732,8 @@ function buildUpdateFieldFlags(
   flags.rank = options.rank !== undefined;
   flags.replaceDeps = options.replaceDeps === true;
   flags.replaceTests = options.replaceTests === true;
+  flags.replaceFiles = options.replaceFiles === true;
+  flags.replaceDocs = options.replaceDocs === true;
   flags.unset = options.unset !== undefined && options.unset.length > 0;
   flags.clearDeps = options.clearDeps === true;
   flags.clearComments = options.clearComments === true;
@@ -2273,6 +2322,7 @@ function applyEvidenceCollectionMutations(
     context.options.file,
     context.fileUpdates.values,
     fileKey,
+    context.options.replaceFiles === true,
     context.clearItemMetadataKeys,
     changedFields,
   );
@@ -2283,6 +2333,7 @@ function applyEvidenceCollectionMutations(
     context.options.doc,
     context.docUpdates.values,
     docKey,
+    context.options.replaceDocs === true,
     context.clearItemMetadataKeys,
     changedFields,
   );
@@ -2294,13 +2345,16 @@ function applyUniqueLinkedCollectionMutation<T extends LinkedFile | LinkedDoc>(
   optionValue: string[] | undefined,
   values: T[] | undefined,
   keyOf: (value: T) => string,
+  replace: boolean,
   clearItemMetadataKeys: ReadonlySet<string>,
   changedFields: string[],
 ): void {
   if (optionValue === undefined && !clearItemMetadataKeys.has(key)) {
     return;
   }
-  if (clearItemMetadataKeys.has(key) || !values || values.length === 0) {
+  if (replace) {
+    document.metadata[key] = values as never;
+  } else if (clearItemMetadataKeys.has(key) || !values || values.length === 0) {
     delete document.metadata[key];
   } else {
     const next = [...((document.metadata[key] as T[] | undefined) ?? [])];

@@ -46,6 +46,42 @@ describe("SDK item similarity governance", () => {
         prepareSimilarityText("Investigate gh-672"),
       ),
     ).toEqual({ score: 0.99, reason: "issue_code" });
+    expect(
+      scoreItemSimilarity(
+        "BD-30-A: production dependency",
+        "BD-30-B: embedding response",
+      ),
+    ).toEqual({ score: 0.25, reason: "title_token_jaccard" });
+    expect(
+      scoreItemSimilarity(
+        "BD-30-A: production dependency",
+        "Investigate bd-30-a packaging",
+      ),
+    ).toEqual({ score: 0.99, reason: "issue_code" });
+  });
+
+  it("keeps letter-suffixed sibling work out of duplicate clusters", async () => {
+    await withTempPmPath(async (context) => {
+      for (const title of [
+        "BD-30-A: sentence-transformers dependency missing from production",
+        "BD-30-B: Embedding service returns zero vectors instead of real embeddings",
+        "BD-30-C: Integration tests do not detect stub embedding service",
+        "BD-30-D: End-to-end test does not verify real embedding generation",
+      ]) {
+        context.runCli([
+          "create",
+          "--title",
+          title,
+          "--type",
+          "Task",
+          "--json",
+        ]);
+      }
+
+      await expect(
+        findDuplicateClusters({ pmRoot: context.pmPath }),
+      ).resolves.toMatchObject({ count: 0 });
+    });
   });
 
   it("finds deterministic all-status clusters with explicit batch cost", async () => {

@@ -20,6 +20,7 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { splitCommaList } from "../core/shared/split-comma-list.js";
+import { stableValueEquals } from "../core/shared/serialization.js";
 import {
   locateItem,
   mutateItem,
@@ -681,11 +682,12 @@ export async function runLinkedArtifacts(
     author,
     message: options.message,
     force: options.force,
+    skipNoop: true,
     mutate(document) {
       const metadata = document.metadata as Record<string, unknown>;
-      const next = [
-        ...((metadata[metadataKey] as LinkedArtifact[] | undefined) ?? []),
-      ];
+      const current =
+        (metadata[metadataKey] as LinkedArtifact[] | undefined) ?? [];
+      const next = [...current];
       const migrated = applyLinkedArtifactMigrations(
         next,
         adds,
@@ -703,10 +705,11 @@ export async function runLinkedArtifacts(
       } else {
         delete metadata[metadataKey];
       }
+      const changed = !stableValueEquals(current, normalized);
       return {
-        changedFields: [metadataKey],
+        changedFields: changed ? [metadataKey] : [],
         warnings:
-          migrated.count > 0
+          changed && migrated.count > 0
             ? [`path_migrations_applied:${migrated.count}`]
             : [],
       };
@@ -726,7 +729,7 @@ export async function runLinkedArtifacts(
   return buildLinkedArtifactResult({
     id: result.item.id,
     artifacts,
-    changed: true,
+    changed: result.changedFields.includes(metadataKey),
     migrationsApplied: migrationCount,
     options,
     workspaceRoot,

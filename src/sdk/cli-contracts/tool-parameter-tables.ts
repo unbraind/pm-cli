@@ -487,6 +487,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   discover: { type: "boolean" },
   apply: { type: "boolean" },
   discoveryNote: { type: "string" },
+  lookupPath: { type: "array", items: { type: "string" } },
   // GH-170 (pm-pfnx): single-string note for files/docs add batches (the shared
   // `note` key below is the array-typed create/update note seed).
   addNote: { type: "string" },
@@ -497,6 +498,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   depRemove: { type: "array", items: { type: "string" } },
   replaceDeps: { type: "boolean" },
   replaceTests: { type: "boolean" },
+  replaceFiles: { type: "boolean" },
+  replaceDocs: { type: "boolean" },
   comment: { type: "array", items: { type: "string" } },
   note: { type: "array", items: { type: "string" } },
   learning: { type: "array", items: { type: "string" } },
@@ -1124,6 +1127,19 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   replaceTests: {
     description:
       "When true for update, atomically replace linked tests with the supplied --test values.",
+  },
+  replaceFiles: {
+    description:
+      "When true for update, atomically replace linked files with the supplied --file values.",
+  },
+  replaceDocs: {
+    description:
+      "When true for update, atomically replace linked docs with the supplied --doc values.",
+  },
+  lookupPath: {
+    description:
+      "One or more source paths whose referencing pm items should be returned by files lookup.",
+    examples: [["src/sdk/files.ts"], ["README.md", "docs/SDK.md"]],
   },
   clearComments: {
     description: "When true, clear item comments.",

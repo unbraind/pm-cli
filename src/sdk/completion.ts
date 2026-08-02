@@ -3,10 +3,7 @@
  *
  * Implements the pm completion command surface and its agent-facing runtime behavior.
  */
-import {
-  EXIT_CODE,
-  PmCliError,
-} from "./runtime-primitives.js";
+import { EXIT_CODE, PmCliError } from "./runtime-primitives.js";
 import { listPmCommandsForTier } from "./agent-capability-contracts.js";
 import { SCAFFOLD_CAPABILITIES } from "./extension/scaffold.js";
 import {
@@ -432,6 +429,8 @@ const ZSH_MUTATION_COLLECTION_ARGUMENT_SPECS = [
   "'--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event'",
   "'--type-option[Type option key=value or key=<name>,value=<value>]:type_option'",
   "'--unset[Clear scalar metadata field by name]:field'",
+  "'--replace-files[Atomically replace linked files with provided --file values]'",
+  "'--replace-docs[Atomically replace linked docs with provided --doc values]'",
   "'--clear-deps[Clear dependency entries]'",
   "'--clear-comments[Clear comments]'",
   "'--clear-notes[Clear notes]'",
@@ -798,7 +797,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    files)",
-    `      COMPREPLY=(${compgen("discover --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("discover lookup --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --scope --limit --offset --no-truncate --strict-read --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    docs)",
     `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --note --validate-paths --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1564,6 +1563,29 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        files)
+          _arguments \\
+            '1:subcommand:(discover lookup)' \\
+            '--add[Add a linked file]:file' \\
+            '--add-glob[Add linked files matching a glob]:glob' \\
+            '--remove[Remove a linked file]:file' \\
+            '--migrate[Migrate linked-file metadata]' \\
+            '--list[List linked files]' \\
+            '--apply[Apply discovered linked files]' \\
+            '--note[Linked-file note]:note' \\
+            '--append-stable[Preserve stable append ordering]' \\
+            '--validate-paths[Validate linked-file paths]' \\
+            '--scope[Filter lookup by evidence scope]:(project global)' \\
+            '--limit[Maximum lookup matches]:number' \\
+            '--offset[Skip the first lookup matches]:number' \\
+            '--no-truncate[Return every lookup match]' \\
+            '--strict-read[Require authoritative source reads]' \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         deps)
           _arguments \\
             '--format[Output format]:(tree graph context)' \\
@@ -2154,6 +2176,8 @@ complete -c pm -n '__fish_seen_subcommand_from update' -l type-option           
 complete -c pm -n '__fish_seen_subcommand_from update' -l unset                   -d 'Clear scalar metadata field by name' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l replace-deps            -d 'Atomically replace dependencies with provided --dep values'
 complete -c pm -n '__fish_seen_subcommand_from update' -l replace-tests           -d 'Atomically replace linked tests with provided --test values'
+complete -c pm -n '__fish_seen_subcommand_from update' -l replace-files           -d 'Atomically replace linked files with provided --file values'
+complete -c pm -n '__fish_seen_subcommand_from update' -l replace-docs            -d 'Atomically replace linked docs with provided --doc values'
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-deps              -d 'Clear dependency entries'
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-comments          -d 'Clear comments'
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-notes             -d 'Clear notes'
@@ -2262,6 +2286,8 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l dep              
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l dep-remove              -d 'Dependency removal selector id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l replace-deps            -d 'Atomically replace dependencies with provided --dep values'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l replace-tests           -d 'Atomically replace linked tests with provided --test values'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l replace-files           -d 'Atomically replace linked files with provided --file values'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l replace-docs            -d 'Atomically replace linked docs with provided --doc values'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l comment                 -d 'Comment seed author=<value>,created_at=<iso|now>,text=<value>' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l note                    -d 'Note seed author=<value>,created_at=<iso|now>,text=<value>' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l learning                -d 'Learning seed author=<value>,created_at=<iso|now>,text=<value>' -r
@@ -2286,6 +2312,23 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l author           
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l force                   -d 'Force override'
 ${fishUpdateManyRuntimeFieldFlags}
+
+# files flags
+complete -c pm -n '__fish_seen_subcommand_from files' -a 'discover lookup' -d 'Linked-file subcommand'
+complete -c pm -n '__fish_seen_subcommand_from files' -l add -d 'Add a linked file' -r
+complete -c pm -n '__fish_seen_subcommand_from files' -l add-glob -d 'Add linked files matching a glob' -r
+complete -c pm -n '__fish_seen_subcommand_from files' -l remove -d 'Remove a linked file' -r
+complete -c pm -n '__fish_seen_subcommand_from files' -l migrate -d 'Migrate linked-file metadata'
+complete -c pm -n '__fish_seen_subcommand_from files' -l list -d 'List linked files'
+complete -c pm -n '__fish_seen_subcommand_from files' -l apply -d 'Apply discovered linked files'
+complete -c pm -n '__fish_seen_subcommand_from files' -l note -d 'Linked-file note' -r
+complete -c pm -n '__fish_seen_subcommand_from files' -l append-stable -d 'Preserve stable append ordering'
+complete -c pm -n '__fish_seen_subcommand_from files' -l validate-paths -d 'Validate linked-file paths'
+complete -c pm -n '__fish_seen_subcommand_from files' -l scope -d 'Filter lookup by evidence scope' -r -a 'project global'
+complete -c pm -n '__fish_seen_subcommand_from files' -l limit -d 'Maximum lookup matches' -r
+complete -c pm -n '__fish_seen_subcommand_from files' -l offset -d 'Skip the first lookup matches' -r
+complete -c pm -n '__fish_seen_subcommand_from files' -l no-truncate -d 'Return every lookup match'
+complete -c pm -n '__fish_seen_subcommand_from files' -l strict-read -d 'Require authoritative source reads'
 
 
 # search flags

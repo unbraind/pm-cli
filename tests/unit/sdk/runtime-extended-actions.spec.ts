@@ -1,3 +1,4 @@
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -210,7 +211,9 @@ describe("runtime extended action adapters", () => {
       ),
     );
     expect(mocks.createWorkspaceSnapshot).toHaveBeenCalledWith(
-      expect.stringContaining("runtime-extended-actions/.agents/pm"),
+      expect.stringContaining(
+        path.join("runtime-extended-actions", ".agents", "pm"),
+      ),
       { name: "proof" },
     );
 

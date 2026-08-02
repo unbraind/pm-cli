@@ -83,6 +83,8 @@ const UPDATE_MANY_MUTATION_FLAG_GUIDANCE = [
   "--doc",
   "--replace-deps",
   "--replace-tests",
+  "--replace-files",
+  "--replace-docs",
   "--unset",
   "--clear-*",
 ].join(", ");
@@ -168,6 +170,7 @@ const COLLECTION_MUTATION_PLAN_DEFINITIONS: CollectionMutationPlanDefinition[] =
       field: "files",
       addKey: "file",
       clearKey: "clearFiles",
+      replaceKey: "replaceFiles",
     },
     {
       field: "tests",
@@ -179,6 +182,7 @@ const COLLECTION_MUTATION_PLAN_DEFINITIONS: CollectionMutationPlanDefinition[] =
       field: "docs",
       addKey: "doc",
       clearKey: "clearDocs",
+      replaceKey: "replaceDocs",
     },
     {
       field: "reminders",

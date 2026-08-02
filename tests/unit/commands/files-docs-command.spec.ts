@@ -638,6 +638,18 @@ describe("runFiles", () => {
       );
       expect(migratedAdd.files.some((entry) => entry.path === "docs/new/added-later.md")).toBe(true);
       expect(migratedAdd.migrations_applied ?? 0).toBe(1);
+
+      const deduplicatedMigration = await runFiles(
+        sourceId,
+        {
+          add: ["path=docs/old/added-later.md,scope=project"],
+          migrate: ["from=docs/old/,to=docs/new/"],
+          message: "suppress migration receipt when dedupe preserves metadata",
+        },
+        { path: context.pmPath },
+      );
+      expect(deduplicatedMigration.changed).toBe(false);
+      expect(deduplicatedMigration.migrations_applied).toBeUndefined();
     });
   });
 

@@ -8,10 +8,10 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
-import type { ItemMetadata } from "../../types/index.js";
+import type { ItemMetadata, LinkedFile, LinkScope } from "../../types/index.js";
 
 const QUERY_INDEX_FILENAME = "metadata-query-index.sqlite";
-const QUERY_INDEX_VERSION = "3";
+const QUERY_INDEX_VERSION = "4";
 type DatabaseSyncConstructor = typeof DatabaseSync;
 
 function loadDatabaseSync(
@@ -54,6 +54,8 @@ export interface ItemMetadataQueryIndexRow {
   relativePath: string;
   /** Light item metadata serialized into the row store. */
   metadata: ItemMetadata;
+  /** Heavy linked-file records projected separately for reverse traceability. */
+  linkedFiles?: readonly LinkedFile[];
 }
 
 /** Selection supported directly by the persistent metadata query index. */
@@ -104,6 +106,31 @@ export interface SimilarItemMetadataIndexResult {
   items: ItemMetadata[];
 }
 
+/** One indexed item and the requested linked-file records that reference it. */
+export interface IndexedLinkedFileMatch {
+  /** Light metadata for the referencing item. */
+  item: ItemMetadata;
+  /** Exact linked-file records matching the requested paths and optional scope. */
+  files: LinkedFile[];
+}
+
+/** Bounded reverse linked-file query result from the persistent projection. */
+export interface LinkedFileMetadataIndexResult {
+  /** Effective index source cursor. */
+  source_cursor: string;
+  /** Total matching items before offset and limit. */
+  total: number;
+  /** Deterministically ordered referencing items in the requested window. */
+  matches: IndexedLinkedFileMatch[];
+}
+
+function normalizeIndexWindowValue(
+  value: number | undefined,
+  fallback: number,
+): number {
+  return Math.max(0, Math.floor(value === undefined ? fallback : value));
+}
+
 function queryIndexPath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", QUERY_INDEX_FILENAME);
 }
@@ -147,6 +174,16 @@ function createSchema(database: DatabaseSync): void {
     ) STRICT;
     CREATE INDEX item_metadata_keys_key_item
       ON item_metadata_keys(key, item_id);
+    CREATE TABLE item_linked_files (
+      item_id TEXT NOT NULL,
+      path TEXT NOT NULL,
+      scope TEXT NOT NULL,
+      note TEXT,
+      PRIMARY KEY(item_id, path, scope),
+      FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
+    ) STRICT;
+    CREATE INDEX item_linked_files_path_scope_item
+      ON item_linked_files(path, scope, item_id);
     CREATE VIRTUAL TABLE item_search USING fts5(
       id UNINDEXED,
       title,
@@ -210,6 +247,9 @@ function insertRow(
   database
     .prepare("DELETE FROM item_metadata_keys WHERE item_id = ?")
     .run(metadata.id);
+  database
+    .prepare("DELETE FROM item_linked_files WHERE item_id = ?")
+    .run(metadata.id);
   database.prepare("DELETE FROM item_search WHERE id = ?").run(metadata.id);
   database
     .prepare(
@@ -226,6 +266,12 @@ function insertRow(
   );
   for (const key of Object.keys(metadata)) {
     insertMetadataKey.run(metadata.id, key);
+  }
+  const insertLinkedFile = database.prepare(
+    "INSERT INTO item_linked_files(item_id, path, scope, note) VALUES (?, ?, ?, ?)",
+  );
+  for (const file of row.linkedFiles ?? []) {
+    insertLinkedFile.run(metadata.id, file.path, file.scope, file.note ?? null);
   }
 }
 
@@ -461,6 +507,104 @@ export async function queryItemMetadataIndex(options: {
       source_cursor: metadata.source_cursor,
       total: Number(totalRow.count),
       items,
+    };
+  } catch {
+    database?.close();
+    return null;
+  }
+}
+
+/**
+ * Resolve items that link any requested project-relative path without loading
+ * heavy item collections. Returns null when the optional projection is absent,
+ * stale, or corrupt so callers can fall back to authoritative item reads.
+ */
+export async function queryLinkedFileMetadataIndex(options: {
+  pmRoot: string;
+  expectedSourceCursor: string;
+  paths: readonly string[];
+  scope?: LinkScope;
+  limit?: number;
+  offset?: number;
+}): Promise<LinkedFileMetadataIndexResult | null> {
+  const Database = resolveDatabaseSync();
+  if (!Database || options.paths.length === 0) return null;
+  let database: DatabaseSync | undefined;
+  try {
+    database = new Database(queryIndexPath(options.pmRoot), {
+      readOnly: true,
+    });
+    const metadata = readIndexMetadata(database);
+    if (
+      metadata.version !== QUERY_INDEX_VERSION ||
+      metadata.source_cursor !== options.expectedSourceCursor
+    ) {
+      database.close();
+      return null;
+    }
+    const pathPlaceholders = options.paths.map(() => "?").join(", ");
+    const scopePredicate = options.scope === undefined ? "" : " AND scope = ?";
+    const matchParameters: SQLInputValue[] = [
+      ...options.paths,
+      ...(options.scope === undefined ? [] : [options.scope]),
+    ];
+    const predicate = `path IN (${pathPlaceholders})${scopePredicate}`;
+    const totalRow = database
+      .prepare(
+        `SELECT COUNT(DISTINCT item_id) AS count
+         FROM item_linked_files
+         WHERE ${predicate}`,
+      )
+      .get(...matchParameters) as { count: number };
+    const limit = normalizeIndexWindowValue(options.limit, 50);
+    const offset = normalizeIndexWindowValue(options.offset, 0);
+    const itemRows = database
+      .prepare(
+        `SELECT items.id, items.metadata_json
+         FROM items
+         WHERE EXISTS (
+           SELECT 1 FROM item_linked_files
+           WHERE item_linked_files.item_id = items.id AND ${predicate}
+         )
+         ORDER BY items.priority ASC, items.updated_at DESC, items.id ASC
+         LIMIT ? OFFSET ?`,
+      )
+      .all(...matchParameters, limit, offset);
+    const matches: IndexedLinkedFileMatch[] = [];
+    if (itemRows.length > 0) {
+      const itemIds = itemRows.map((row) => String(row.id));
+      const linkedRows = database
+        .prepare(
+          `SELECT item_id, path, scope, note
+           FROM item_linked_files
+           WHERE item_id IN (${itemIds.map(() => "?").join(", ")})
+             AND ${predicate}
+           ORDER BY path ASC, scope ASC`,
+        )
+        .all(...itemIds, ...matchParameters);
+      const filesByItem = new Map<string, LinkedFile[]>(
+        itemIds.map((itemId) => [itemId, []]),
+      );
+      for (const row of linkedRows) {
+        const itemId = String(row.item_id);
+        const files = filesByItem.get(itemId)!;
+        files.push({
+          path: String(row.path),
+          scope: String(row.scope) as LinkScope,
+          ...(row.note === null ? {} : { note: String(row.note) }),
+        });
+        filesByItem.set(itemId, files);
+      }
+      for (const row of itemRows) {
+        const item = JSON.parse(String(row.metadata_json)) as ItemMetadata;
+        matches.push({ item, files: filesByItem.get(String(row.id))! });
+      }
+    }
+    database.close();
+    return {
+      source_cursor: metadata.source_cursor,
+      total: Number(totalRow.count),
+      matches,
     };
   } catch {
     database?.close();

@@ -30,6 +30,7 @@ import {
 } from "../../../src/core/history/replay.js";
 import * as fsUtilsModule from "../../../src/core/fs/fs-utils.js";
 import * as historyRewriteModule from "../../../src/core/history/history-rewrite.js";
+import * as metadataCacheModule from "../../../src/core/store/item-metadata-cache.js";
 import * as lockModule from "../../../src/core/lock/lock.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -1043,6 +1044,11 @@ describe("runHistory and runActivity", () => {
         } as Awaited<
           ReturnType<typeof historyRewriteModule.verifyHistoryRewriteNoDrift>
         >);
+      const releaseSpy = vi
+        .spyOn(metadataCacheModule, "acquireItemMetadataDerivedIndexLock")
+        .mockResolvedValue(async () => {
+          throw new Error("synthetic derived-index release failure");
+        });
       const writeSpy = vi
         .spyOn(fsUtilsModule, "writeFileAtomic")
         .mockImplementation(async (target, content) => {
@@ -1069,7 +1075,36 @@ describe("runHistory and runActivity", () => {
         expect(await readFile(itemFile, "utf8")).toBe(itemBefore);
       } finally {
         driftSpy.mockRestore();
+        releaseSpy.mockRestore();
         writeSpy.mockRestore();
+      }
+    });
+  });
+
+  it("surfaces a derived-index lock release failure after a successful redaction", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact Release Failure");
+      const leakedToken = "release-failure-token-123";
+      context.runCli(
+        ["append", id, "--json", "--body", `secret ${leakedToken}`, "--author", "test-author", "--message", "append release failure token"],
+        { expectJson: true },
+      );
+      const releaseSpy = vi
+        .spyOn(metadataCacheModule, "acquireItemMetadataDerivedIndexLock")
+        .mockResolvedValue(async () => {
+          throw new Error("synthetic derived-index release failure");
+        });
+
+      try {
+        await expect(
+          runHistoryRedact(
+            id,
+            { literal: leakedToken, replacement: "[redacted_token]", author: "test-author" },
+            { path: context.pmPath },
+          ),
+        ).rejects.toThrow("synthetic derived-index release failure");
+      } finally {
+        releaseSpy.mockRestore();
       }
     });
   });

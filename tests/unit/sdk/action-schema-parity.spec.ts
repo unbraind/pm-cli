@@ -133,6 +133,16 @@ describe("action-scoped MCP schema parity", () => {
     expect([...waiverCounts.keys()].sort()).toEqual(
       Object.keys(baseline.maximum_waivers).sort(),
     );
+    expect(
+      coverage
+        .find(({ action }) => action === "files")
+        ?.sdk.find(({ input }) => input === "lookupPath"),
+    ).toEqual(
+      expect.objectContaining({
+        counterpart: "lookup <path...>",
+        disposition: "shared",
+      }),
+    );
   });
 
   it("fails closed when a new CLI flag lacks a schema mapping or waiver", () => {

@@ -129,6 +129,7 @@ const ACTION_POSITIONAL_PARAMETERS: Readonly<
   Partial<Record<PmToolAction, Readonly<Record<string, string>>>>
 > = {
   event: { title: "<title>" },
+  files: { lookupPath: "lookup <path...>" },
   meet: { title: "<title>" },
   merge: { subcommand: "<subcommand>" },
   remind: { title: "<title>" },

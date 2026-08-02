@@ -6,16 +6,22 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathExists } from "../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
+import {
+  getActiveExtensionRegistrations,
+  hasActiveOnReadHooks,
+} from "../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import {
   locateItem,
+  listAllItemMetadata,
   mutateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
+import { readItemMetadataDerivedIndexState } from "../core/store/item-metadata-cache.js";
+import { queryLinkedFileMetadataIndex } from "../core/store/item-metadata-query-index.js";
 import {
   getSettingsPath,
   resolvePmRoot,
@@ -24,7 +30,12 @@ import {
 import { readSettings } from "../core/store/settings.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { isPathWithinDirectory } from "../core/fs/path-utils.js";
-import type { ItemDocument, LinkedFile, LinkScope } from "../types/index.js";
+import type {
+  ItemDocument,
+  ItemMetadata,
+  LinkedFile,
+  LinkScope,
+} from "../types/index.js";
 import {
   dedupeLinkedArtifacts,
   normalizeLinkedPath,
@@ -135,6 +146,73 @@ export interface FilesDiscoverResult {
   added: LinkedFile[];
   /** Value that configures or reports skipped existing for this contract. */
   skipped_existing: FilesDiscoveryCandidate[];
+}
+
+/** Documents reverse linked-file lookup options shared by CLI, SDK, and MCP. */
+export interface FilesLookupOptions {
+  /** Project-relative or absolute source paths to resolve. */
+  paths: string[];
+  /** Restrict matches to one linked-file scope. */
+  scope?: LinkScope;
+  /** Maximum referencing items returned. */
+  limit?: number;
+  /** Number of ordered referencing items skipped. */
+  offset?: number;
+  /** Return every match instead of applying the default output bound. */
+  noTruncate?: boolean;
+  /** Fail when any authoritative item cannot be read. */
+  strictRead?: boolean;
+}
+
+/** Token-efficient item identity returned by reverse linked-file lookup. */
+export interface FilesLookupItem {
+  /** Stable item identifier. */
+  id: string;
+  /** Human-readable item title. */
+  title: string;
+  /** Item kind. */
+  type: string;
+  /** Lifecycle status. */
+  status: string;
+  /** Numeric scheduling priority. */
+  priority: number;
+  /** Last authoritative update timestamp. */
+  updated_at: string;
+}
+
+/** One item and its exact file links that matched a reverse lookup. */
+export interface FilesLookupMatch {
+  /** Referencing item identity. */
+  item: FilesLookupItem;
+  /** Matching linked-file evidence. */
+  files: LinkedFile[];
+}
+
+/** Reverse linked-file lookup result with bounded output and read provenance. */
+export interface FilesLookupResult {
+  /** Normalized paths used for matching. */
+  paths: string[];
+  /** Total referencing items before pagination. */
+  total: number;
+  /** Number of matches in this page. */
+  count: number;
+  /** Zero-based page offset. */
+  offset: number;
+  /** Effective result limit, or null when unbounded. */
+  limit: number | null;
+  /** Whether more matches remain after this page. */
+  has_more: boolean;
+  /** Whether the current page is bounded below the total match count. */
+  truncated: boolean;
+  /** Read source and completeness receipt. */
+  completeness: {
+    status: "complete" | "partial" | "unchecked";
+    source: "index" | "source_scan";
+  };
+  /** Non-fatal authoritative read warnings. */
+  warnings: string[];
+  /** Ordered reverse-traceability matches. */
+  matches: FilesLookupMatch[];
 }
 
 interface TextReference {
@@ -409,6 +487,236 @@ export async function runFiles(
     },
   );
   return renameArtifactsResultKey(result, "files");
+}
+
+async function normalizeFilesLookupPaths(
+  values: readonly string[],
+  workspaceRoot: string,
+): Promise<string[]> {
+  const canonicalWorkspaceRoot = await realpathForContainment(workspaceRoot);
+  const paths = await Promise.all(values.map(async (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      throw new PmCliError(
+        "Files lookup paths must not be empty.",
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (!path.isAbsolute(trimmed)) return normalizeLinkedPath(trimmed);
+    const canonicalAbsolutePath = await realpathForContainment(trimmed);
+    return isPathWithinDirectory(canonicalWorkspaceRoot, canonicalAbsolutePath)
+      ? normalizeLinkedPath(
+          path.relative(canonicalWorkspaceRoot, canonicalAbsolutePath),
+        )
+      : normalizeLinkedPath(canonicalAbsolutePath);
+  }));
+  const uniquePaths = [...new Set(paths)].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  if (uniquePaths.length === 0) {
+    throw new PmCliError(
+      "Files lookup requires at least one path.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return uniquePaths;
+}
+
+function resolveFilesLookupWindow(options: FilesLookupOptions): {
+  offset: number;
+  limit: number | undefined;
+} {
+  for (const [label, value] of [
+    ["limit", options.limit],
+    ["offset", options.offset],
+  ] as const) {
+    if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+      throw new PmCliError(
+        `Files lookup ${label} must be a non-negative integer.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+  }
+  const { offset = 0, limit = 50 } = options;
+  return {
+    offset: Math.max(0, Math.floor(offset)),
+    limit: options.noTruncate ? undefined : Math.max(0, Math.floor(limit)),
+  };
+}
+
+function projectFilesLookupItem(item: ItemMetadata): FilesLookupItem {
+  return {
+    id: item.id,
+    title: item.title,
+    type: item.type,
+    status: item.status,
+    priority: item.priority,
+    updated_at: item.updated_at,
+  };
+}
+
+async function queryFilesLookupIndex(params: {
+  pmRoot: string;
+  typeToFolder: Record<string, string>;
+  paths: string[];
+  scope: LinkScope | undefined;
+  limit: number | undefined;
+  offset: number;
+  strictRead: boolean;
+  noTruncate: boolean;
+}): Promise<Awaited<ReturnType<typeof queryLinkedFileMetadataIndex>>> {
+  if (
+    [params.strictRead, params.noTruncate, hasActiveOnReadHooks()].includes(true)
+  ) {
+    return null;
+  }
+  const indexState = await readItemMetadataDerivedIndexState(params.pmRoot, [
+    ...new Set(Object.values(params.typeToFolder)),
+  ]);
+  if (!indexState) return null;
+  return queryLinkedFileMetadataIndex({
+    pmRoot: params.pmRoot,
+    expectedSourceCursor: indexState.source_cursor,
+    paths: params.paths,
+    scope: params.scope,
+    limit: params.limit,
+    offset: params.offset,
+  });
+}
+
+async function queryFilesLookupSource(params: {
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeToFolder: Record<string, string>;
+  paths: string[];
+  scope: LinkScope | undefined;
+  limit: number | undefined;
+  offset: number;
+  strictRead: boolean;
+}): Promise<FilesLookupResult> {
+  const warnings: string[] = [];
+  const metadata = await listAllItemMetadata(
+    params.pmRoot,
+    params.settings.item_format,
+    params.typeToFolder,
+    warnings,
+    params.settings.schema,
+  );
+  const matching = metadata
+    .map((item) => ({
+      item,
+      files: (item.files ?? [])
+        .filter(
+          (file) =>
+            params.paths.includes(normalizeLinkedPath(file.path)) &&
+            (params.scope === undefined || file.scope === params.scope),
+        )
+        .sort((left, right) => {
+          const byPath = left.path.localeCompare(right.path);
+          return byPath === 0 ? left.scope.localeCompare(right.scope) : byPath;
+        }),
+    }))
+    .filter((match) => match.files.length > 0)
+    .sort((left, right) => {
+      const byPriority = left.item.priority - right.item.priority;
+      if (byPriority !== 0) return byPriority;
+      const byUpdated = right.item.updated_at.localeCompare(
+        left.item.updated_at,
+      );
+      return byUpdated === 0
+        ? left.item.id.localeCompare(right.item.id)
+        : byUpdated;
+    });
+  const readWarnings = warnings.filter((warning) =>
+    /^item_list_(?:item|directory)_read_failed:/u.test(warning),
+  );
+  if (params.strictRead && readWarnings.length > 0) {
+    throw new PmCliError(
+      `Files lookup could not read every item: ${readWarnings.join("; ")}`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  }
+  const page = matching.slice(
+    params.offset,
+    params.limit === undefined ? undefined : params.offset + params.limit,
+  );
+  return {
+    paths: params.paths,
+    total: matching.length,
+    count: page.length,
+    offset: params.offset,
+    limit: params.limit ?? null,
+    has_more: params.offset + page.length < matching.length,
+    truncated: params.offset + page.length < matching.length,
+    completeness: {
+      status: readWarnings.length === 0 ? "complete" : "partial",
+      source: "source_scan",
+    },
+    warnings,
+    matches: page.map((match) => ({
+      item: projectFilesLookupItem(match.item),
+      files: match.files,
+    })),
+  };
+}
+
+/** Resolve the pm items that reference one or more source paths. */
+export async function runFilesLookup(
+  options: FilesLookupOptions,
+  global: GlobalOptions,
+): Promise<FilesLookupResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const workspaceRoot = resolveWorkspaceRoot(pmRoot);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
+  }
+  const paths = await normalizeFilesLookupPaths(options.paths, workspaceRoot);
+  const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const { offset, limit } = resolveFilesLookupWindow(options);
+  const indexed = await queryFilesLookupIndex({
+    pmRoot,
+    typeToFolder: typeRegistry.type_to_folder,
+    paths,
+    scope: options.scope,
+    limit,
+    offset,
+    strictRead: options.strictRead === true,
+    noTruncate: options.noTruncate === true,
+  });
+  if (indexed) {
+    return {
+      paths,
+      total: indexed.total,
+      count: indexed.matches.length,
+      offset,
+      limit: limit!,
+      has_more: offset + indexed.matches.length < indexed.total,
+      truncated: offset + indexed.matches.length < indexed.total,
+      completeness: { status: "unchecked", source: "index" },
+      warnings: [],
+      matches: indexed.matches.map((match) => ({
+        item: projectFilesLookupItem(match.item),
+        files: match.files,
+      })),
+    };
+  }
+  return queryFilesLookupSource({
+    pmRoot,
+    settings,
+    typeToFolder: typeRegistry.type_to_folder,
+    paths,
+    scope: options.scope,
+    limit,
+    offset,
+    strictRead: options.strictRead === true,
+  });
 }
 
 /** Implements run files discover for the public runtime surface of this module. */

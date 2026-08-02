@@ -65,19 +65,56 @@ interface ParsedTelemetryQueue {
   entries: QueuedTelemetryEventRecord[];
 }
 
-interface TelemetryStatusSummary {
+/** Local telemetry configuration, queue, and most recent flush state. */
+export interface TelemetryStatusSummary {
+  /** Whether telemetry delivery is enabled. */
   enabled: boolean;
+  /** Configured delivery endpoint. */
   endpoint: string;
+  /** Local event queue path. */
   queue_path: string;
+  /** Local telemetry state path. */
   state_path: string;
+  /** Total queue rows, including invalid rows. */
   queue_rows_total: number;
+  /** Valid queue entries eligible for delivery. */
   queue_entries: number;
+  /** Invalid queue rows retained for diagnostics. */
   queue_invalid_rows: number;
+  /** Queue file size in bytes. */
   queue_size_bytes: number;
+  /** Most recent attempted flush time. */
   last_attempted_flush_at: string | null;
+  /** Most recent successful flush time. */
   last_successful_flush_at: string | null;
+  /** Most recent failed flush time. */
   last_failed_flush_at: string | null;
+  /** Most recent failed flush message. */
   last_failed_flush_error: string | null;
+}
+
+/** Precise receipt returned by a telemetry flush operation. */
+export interface TelemetryFlushResult {
+  /** Stable action discriminator. */
+  action: "telemetry";
+  /** Stable flush discriminator. */
+  subcommand: "flush";
+  /** Valid queue entries observed before the flush attempt. */
+  queue_entries_before: number;
+  /** Valid queue entries that remain after the flush attempt. */
+  queue_entries_after: number;
+  /** Number of valid queue entries removed by this flush attempt. */
+  queue_entries_drained: number;
+  /** Whether at least one valid queue entry was removed. */
+  queue_progressed: boolean;
+  /** Whether no valid queue entries remain. */
+  queue_empty: boolean;
+  /** Compatibility completion field; equivalent to `queue_empty`. */
+  queue_drained: boolean;
+  /** Complete post-flush telemetry status. */
+  status: TelemetryStatusSummary;
+  /** ISO timestamp at which the receipt was assembled. */
+  generated_at: string;
 }
 
 /** Documents the telemetry command options payload exchanged by command, SDK, and package integrations. */
@@ -549,12 +586,20 @@ const runTelemetryFlush: TelemetryCommandHandler = async (
   const before = await buildTelemetryStatusSummary(context.globalPmRoot);
   await flushTelemetryQueueNow(context.globalPmRoot);
   const after = await buildTelemetryStatusSummary(context.globalPmRoot);
+  const queueEntriesDrained = Math.max(
+    0,
+    before.queue_entries - after.queue_entries,
+  );
+  const queueEmpty = after.queue_entries === 0;
   return {
     action: "telemetry",
     subcommand: "flush",
     queue_entries_before: before.queue_entries,
     queue_entries_after: after.queue_entries,
-    queue_drained: after.queue_entries < before.queue_entries,
+    queue_entries_drained: queueEntriesDrained,
+    queue_progressed: queueEntriesDrained > 0,
+    queue_empty: queueEmpty,
+    queue_drained: queueEmpty,
     status: after,
     generated_at: nowIso(),
   };
@@ -626,11 +671,21 @@ const TELEMETRY_COMMAND_HANDLERS: Record<
   clear: runTelemetryClear,
 };
 
-/** Implements run telemetry for the public runtime surface of this module. */
-export const runTelemetry = async (
+/** Run telemetry flush with a precise completion receipt. */
+export function runTelemetry(
+  options: TelemetryCommandOptions & { subcommand: "flush" },
+  global: GlobalOptions,
+): Promise<TelemetryFlushResult>;
+/** Run any telemetry subcommand through the public runtime surface. */
+export function runTelemetry(
+  options: TelemetryCommandOptions,
+  global: GlobalOptions,
+): Promise<Record<string, unknown>>;
+/** Implements the telemetry runtime overloads. */
+export async function runTelemetry(
   options: TelemetryCommandOptions,
   _global: GlobalOptions,
-): Promise<Record<string, unknown>> => {
+): Promise<TelemetryFlushResult | Record<string, unknown>> {
   void _global;
   const subcommand = normalizeTelemetrySubcommand(options.subcommand);
   const globalPmRoot = resolveGlobalPmRoot(process.cwd());
@@ -639,4 +694,4 @@ export const runTelemetry = async (
     queuePath: path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH),
     statePath: path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH),
   });
-};
+}

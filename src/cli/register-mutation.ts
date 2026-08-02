@@ -32,6 +32,7 @@ import { registerStructuredMutationCommands } from "./register-structured-mutati
 import { registerHistoryAuthorAcknowledgeCommand } from "./register-history-author.js";
 import { PLAN_SUBCOMMANDS, runPlan } from "./commands/plan.js";
 import { runNotes } from "./commands/notes.js";
+import { registerFilesLookupCommand } from "./register-files-lookup.js";
 import {
   isPureSnakeCaseAlias,
   looksLikeSchemaSubcommandTypo,
@@ -2230,6 +2231,8 @@ export function registerMutationCommands(
       "--replace-tests",
       "Atomically replace linked test entries with the provided --test values",
     )
+    .option("--replace-files", "Atomically replace linked file entries with the provided --file values")
+    .option("--replace-docs", "Atomically replace linked doc entries with the provided --doc values")
     .option("--clear-deps", "Clear dependency entries")
     .option("--clear-comments", "Clear comments")
     .option("--clear-notes", "Clear notes")
@@ -2428,6 +2431,8 @@ export function registerMutationCommands(
       "--replace-tests",
       "Atomically replace linked tests with provided --test values",
     )
+    .option("--replace-files", "Atomically replace linked files with provided --file values")
+    .option("--replace-docs", "Atomically replace linked docs with provided --doc values")
     .option(
       "--comment <value>",
       "Add comment seed author=<value>,created_at=<iso|now>,text=<value>",
@@ -3417,9 +3422,7 @@ export function registerMutationCommands(
     .description("List, add, edit, or delete learnings for an item.")
     .action(runLearningsAction);
 
-  const filesCommand = program
-    .command("files")
-    .description("Manage files linked to an item.");
+  const filesCommand = program.command("files").description("Manage files linked to an item.");
 
   filesCommand
     .argument("<id>", "Item id")
@@ -3473,10 +3476,10 @@ export function registerMutationCommands(
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")
-    .description(
-      "Discover existing file paths referenced in item text and optionally link missing files.",
-    )
+    .description("Discover existing file paths referenced in item text and optionally link missing files.")
     .action(runFilesDiscoverAction);
+
+  registerFilesLookupCommand(filesCommand);
 
   program
     .command("docs")

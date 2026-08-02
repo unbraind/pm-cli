@@ -864,8 +864,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       ],
     },
     files: {
-      required: ["id"],
+      required: [],
       optional: [
+        "id",
         "add",
         "addGlob",
         "remove",
@@ -880,8 +881,15 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "discoveryNote",
         "appendStable",
         "validatePaths",
+        "lookupPath",
+        "scope",
+        "limit",
+        "offset",
+        "noTruncate",
+        "strictRead",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
+      anyOfRequired: [["id"], ["lookupPath"]],
       dependentAnyOfRequired: [
         { property: "addNote", anyOfRequired: [["add"], ["addGlob"]] },
       ],

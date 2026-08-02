@@ -10,6 +10,7 @@ import {
   writeFileAtomic,
 } from "../core/fs/fs-utils.js";
 import { createHistoryEntry } from "../core/history/history.js";
+import { invalidateHistoryDriftCacheForPath } from "../core/history/drift-cache.js";
 import { executeHistoryRewrite } from "../core/history/history-rewrite.js";
 import {
   EMPTY_REPLAY_DOCUMENT,
@@ -36,6 +37,10 @@ import {
   runActiveOnWriteHooks,
 } from "../core/extensions/index.js";
 import { locateItem, readLocatedItem } from "../core/store/item-store.js";
+import {
+  acquireItemMetadataDerivedIndexLock,
+  refreshItemMetadataDerivedIndex,
+} from "../core/store/item-metadata-cache.js";
 import {
   getHistoryPath,
   getItemPath,
@@ -605,6 +610,7 @@ async function applyHistoryRedactRewrite(params: {
   force: boolean | undefined;
   rewrittenEntries: HistoryEntry[];
 }): Promise<string[]> {
+  let derivedIndexWarnings: string[] = [];
   return executeHistoryRewrite({
     pmRoot: params.pmRoot,
     subject: params.subject,
@@ -617,6 +623,10 @@ async function applyHistoryRedactRewrite(params: {
     force: params.force,
     itemDocument: params.currentItem.document,
     applyRewrite: async ({ historyRawUnderLock }) => {
+      const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+        params.pmRoot,
+        params.author,
+      );
       const affectedItemPaths = new Set<string>();
       if (params.currentItem.path) {
         affectedItemPaths.add(params.currentItem.path);
@@ -628,41 +638,74 @@ async function applyHistoryRedactRewrite(params: {
       if (params.currentItem.path && params.currentItem.raw !== null) {
         itemSnapshots.set(params.currentItem.path, params.currentItem.raw);
       }
+      let rethrowReleaseFailure = (): void => {};
       try {
-        /* c8 ignore next -- item-write diff branch requires path and content divergence under lock races. */
-        if (
-          params.nextItem.path &&
-          params.nextItem.raw !== null &&
-          params.nextItem.raw !== params.currentItem.raw
-        ) {
-          await writeFileAtomic(params.nextItem.path, params.nextItem.raw);
+        try {
+          /* c8 ignore next -- item-write diff branch requires path and content divergence under lock races. */
+          if (
+            params.nextItem.path &&
+            params.nextItem.raw !== null &&
+            params.nextItem.raw !== params.currentItem.raw
+          ) {
+            await writeFileAtomic(params.nextItem.path, params.nextItem.raw);
+          }
+          if (
+            params.currentItem.path &&
+            (!params.nextItem.path ||
+              params.nextItem.path !== params.currentItem.path)
+          ) {
+            await fs.rm(params.currentItem.path, { force: true });
+          }
+          await writeFileAtomic(
+            params.subject.historyPath,
+            historyEntriesToRaw(params.rewrittenEntries),
+          );
+        } catch (error) {
+          try {
+            await rollbackHistoryRedactRewrite(
+              params.subject.historyPath,
+              historyRawUnderLock,
+              affectedItemPaths,
+              itemSnapshots,
+            );
+          } finally {
+            await invalidateHistoryDriftCacheForPath(
+              params.subject.historyPath,
+            );
+          }
+          throw error;
         }
-        if (
-          params.currentItem.path &&
-          (!params.nextItem.path ||
-            params.nextItem.path !== params.currentItem.path)
-        ) {
-          await fs.rm(params.currentItem.path, { force: true });
+        await invalidateHistoryDriftCacheForPath(params.subject.historyPath);
+        const itemPath = params.nextItem.path ?? params.currentItem.path;
+        if (itemPath) {
+          derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+            pmRoot: params.pmRoot,
+            preferredFormat: params.settings.item_format,
+            typeToFolder: params.typeRegistry.type_to_folder,
+            schema: params.settings.schema,
+            itemPath,
+            ...(params.currentItem.path
+              ? { previousItemPath: params.currentItem.path }
+              : {}),
+            document: params.nextItem.document,
+          });
         }
-        await writeFileAtomic(
-          params.subject.historyPath,
-          historyEntriesToRaw(params.rewrittenEntries),
-        );
-      } catch (error) {
-        await rollbackHistoryRedactRewrite(
-          params.subject.historyPath,
-          historyRawUnderLock,
-          affectedItemPaths,
-          itemSnapshots,
-        );
-        throw error;
+      } finally {
+        await releaseDerivedIndexLock().catch((error: unknown) => {
+          rethrowReleaseFailure = () => {
+            throw error;
+          };
+        });
       }
+      rethrowReleaseFailure();
     },
-    applyPostRewrite: async () =>
-      runHistoryRedactWriteHooks(params.subject.historyPath, [
+    applyPostRewrite: async () => [
+      ...derivedIndexWarnings,
+      ...(await runHistoryRedactWriteHooks(params.subject.historyPath, [
         params.nextItem.path,
         params.currentItem.path,
-      ]),
+      ])),
+    ],
   });
 }
 

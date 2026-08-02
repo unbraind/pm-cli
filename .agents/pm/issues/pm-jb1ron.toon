@@ -1,0 +1,62 @@
+id: pm-jb1ron
+title: "GH-867: linked files and docs no-op additions report changed and append phantom history"
+description: Re-adding an equal normalized file or doc link enters the mutation path and reports changed true even though deduplication preserves the existing array. Detect semantic no-ops after normalization and avoid phantom history.
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:cli","area:sdk",context-integrity,github-report,linked-resources,mutation-contract
+created_at: "2026-08-02T06:48:02.175Z"
+updated_at: "2026-08-02T13:08:20.421Z"
+closed_at: "2026-08-02T13:08:19.573Z"
+completed_at: "2026-08-02T13:08:19.573Z"
+author: "harness:codex"
+acceptance_criteria: "Equal normalized file and doc arrays return changed false; No-op additions append no mutation history; Different-note duplicate behavior remains explicit and deterministic; CLI, SDK, and history tests cover files and docs; The GitHub report is linked to this canonical PM item"
+goal: project management = context management
+objective: Evidence mutations report only durable state changes
+value: History and agent receipts remain trustworthy and token-efficient
+impact: Eliminates phantom evidence mutations across SDK and CLI
+outcome: Idempotent linked-resource operations are observably idempotent
+why_now: GitHub #867 reproduced false changed output on 2026.8.2
+parent: pm-usfg
+risk: medium
+confidence: high
+reporter: GitHub #867
+severity: medium
+resolution: fixed
+expected_result: Deduplicated no-op returns changed false and writes no history
+actual_result: "Implemented, review-corrected, and verified by 6,704 tests at exact 100/100/100/100 coverage"
+affected_version: 2026.8.2
+fixed_version: next-auto-release
+component: linked-resource SDK/CLI mutations
+regression: true
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-45mb,related,"2026-08-02T06:48:02.175Z","harness:codex","cli:create:dep",detected
+  pm-zwpp,related,"2026-08-02T06:48:02.175Z","harness:codex","cli:create:dep",detected
+  pm-f86lth,implements,"2026-08-02T07:13:19.696Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
+  "2026-08-02T06:48:02.175Z","harness:codex","Duplicate check evidence: searched all open, closed, and canceled PM items for duplicate linked file changed, no-op changed true, idempotent files/docs, and deduplicated add. Closed pm-e0ab and pm-45mb are adjacent but do not own the current files/docs mutation path. Source: https://github.com/unbraind/pm-cli/issues/867."
+  "2026-08-02T07:13:26.021Z","harness:codex","Implementation evidence: repeated files/docs additions now use skipNoop and actual changed fields, preserving item bytes and append-only history when normalized evidence is unchanged."
+  "2026-08-02T07:23:03.438Z","harness:codex","Manual isolated acceptance: repeating the identical files add in /tmp/tmp.M0KDXDPIeX returned changed=false; focused unit coverage also proves history line count does not increase."
+  "2026-08-02T11:28:19.574Z","harness:codex","Repository-wide verification: 418 test files and 6,703 tests passed under the sandboxed coverage runner with exact 100% statements (47,529/47,529), branches (34,246/34,246), functions (9,673/9,673), and lines (46,119/46,119). No coverage thresholds, exclusions, or ignore counts were weakened."
+  "2026-08-02T11:35:46.046Z","harness:codex","Packed-consumer acceptance: pnpm smoke:npx passed the generated tarball across 15 packaged modules. An independent tarball was then installed from unrelated root /tmp/tmp.0PKR29g4Dz into separate npm and Bun consumers with isolated project/global trackers; both initialized, created items, added evidence, and returned files lookup total=1. npm additionally proved atomic files/docs replacement and exact repeated evidence changed=false."
+  "2026-08-02T12:21:46.355Z","harness:codex","Hosted acceptance: exact head fd69b84335ead8ef1022b606a470166e78c9f188 passed nightly run 30747290823 on Windows Node 24, macOS Node 24, and Ubuntu Node 22/24/25. Ubuntu Node 24 also passed secret scan, exact 100% coverage, static quality, and compatibility migration gates."
+  "2026-08-02T12:58:09.377Z","harness:codex","PR #872 review correction: path migration receipts are emitted only when final normalized linked-artifact metadata changes; migration-plus-dedupe no-ops now remain observably unchanged. CodeRabbit outside-diff integrity finding verified as valid."
+  "2026-08-02T13:08:09.812Z","harness:codex","Exact-head review-correction verification: 418 test files and 6,704 tests passed with exact 100% statements (47,540/47,540), branches (34,248/34,248), functions (9,675/9,675), and lines (46,130/46,130). The first run's 99.99% branch result exposed and removed an impossible join fallback rather than weakening the gate."
+files[3]{path,scope,note}:
+  src/sdk/linked-artifacts.ts,project,true no-op linked evidence mutations
+  tests/unit/commands/files-docs-command.spec.ts,project,migration receipt no-op regression
+  tests/unit/sdk/context-management-primitives.spec.ts,project,no-op history regression coverage
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/files-docs-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: linked artifact migration and dedupe receipts
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context-management-primitives.spec.ts
+    scope: project
+    timeout_seconds: 240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msbpwupo-sqclej,test,passed,"2026-08-02T11:29:11.884Z","2026-08-02T11:29:26.652Z","2026-08-02T11:29:26.652Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_EVIDENCE_TRACEABILITY.md,project,no-op mutation contract
+close_reason: PR #872 review corrections implemented with focused regressions and exact 100% repository coverage.
+body: ""
