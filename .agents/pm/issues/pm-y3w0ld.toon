@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:sdk","area:security",history,privacy,redaction
 created_at: "2026-08-02T00:40:15.547Z"
-updated_at: "2026-08-02T01:28:11.945Z"
+updated_at: "2026-08-02T01:29:54.208Z"
 closed_at: "2026-08-02T01:25:47.246Z"
 completed_at: "2026-08-02T01:25:47.246Z"
 author: "harness:codex"
@@ -27,10 +27,11 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-qwoy,implements,"2026-08-02T00:41:03.670Z","harness:codex","cli:update:dep",detected
   pm-wwooxx,related_to,"2026-08-02T00:41:03.670Z","harness:codex","cli:update:dep",detected
   pm-xk39,discovered_from,"2026-08-02T00:41:03.670Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-02T01:25:27.533Z","harness:codex","Implementation evidence: public HistoryRedactResult now exposes matcher-kind counts and replacement_is_default only; CLI recovery and typo guidance sanitize history-redact argv; telemetry redacts literal/regex/replacement inputs while retaining safe count fields; CLI, SDK, MCP, telemetry, dry-run, no-op, applied, and rejected paths have canary non-disclosure coverage. The public SDK surface records the acknowledged GH-864 security contract change."
   "2026-08-02T01:25:33.533Z","harness:codex","Verification evidence: final source head passes 417/417 test files and 6691/6691 tests with exact 100% statements (47379/47379), branches (34105/34105), functions (9641/9641), and lines (45975/45975). pnpm lint passed with zero ESLint warnings and zero duplication clones; static quality passed 100% docstring/export/member coverage and SDK/package/token/context gates; contracts, secrets, docs links, context/retrieval/agent-task token evaluations, SDK surface, typecheck, and focused 63-test matrix passed."
   "2026-08-02T01:28:11.945Z","harness:codex","Changelog evidence: npm registry latest pm-changelog is 2026.8.1; package-owned generation added the Unreleased security entry and changelog:pm:check reproduced it byte-for-byte."
+  "2026-08-02T01:29:54.208Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/869 opened from exact implementation commit 0761e4fd8. The PR links this canonical item and closes GitHub issue #864; final exact-head review/check evidence will be appended after CI and bot review."
 notes[1]{created_at,author,text}:
   "2026-08-02T01:25:29.335Z","harness:codex","Manual acceptance used an unrelated temporary tracker and exercised dry-run, applied, no-op, and invalid-regex paths. All matcher and replacement canaries were absent from captured stdout/stderr; applied history verified successfully and added the audit marker only when a rewrite occurred."
 learnings[1]{created_at,author,text}:
