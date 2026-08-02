@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ergonomics,cli-grammar,contracts,pm-cli,simplification,token-efficiency
 created_at: "2026-07-31T06:07:31.733Z"
-updated_at: "2026-08-02T18:17:42.490Z"
+updated_at: "2026-08-02T18:21:11.256Z"
 closed_at: "2026-08-02T18:17:23.994Z"
 completed_at: "2026-08-02T18:17:23.994Z"
 author: "harness:claude-code"
@@ -38,11 +38,12 @@ dependencies[14]{id,kind,created_at,author,source_kind,author_source}:
   pm-srns,related,"2026-07-31T06:09:19.788Z","harness:claude-code","cli:update:dep",detected
   pm-x710qm,related,"2026-07-31T06:09:19.788Z","harness:claude-code","cli:update:dep",detected
   pm-yekkvt,related,"2026-07-31T06:09:19.788Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-31T07:02:30.950Z","harness:codex","Scope decision: this PR delivers four independently complete SDK/CLI context-integrity contracts. The universal four-dimension runtime flag algebra requires command-wide registration and execution changes beyond a truthful additive contract table, so it remains canonical follow-up work rather than being falsely closed by metadata-only implementation."
   "2026-08-01T21:15:45.750Z","harness:codex","Tranche boundary 2026-08-01: the accounting receipt establishes the cost dimension at shared egress, but this branch does not collapse all 18 legacy bounding spellings across 19 read commands. Releasing the claim and returning the item to open so only actively edited work remains in progress."
   "2026-08-02T17:24:14.187Z","harness:codex","Evidence 2026-08-02: one SDK-owned four-dimension contract now covers include, amount, cost, and encoding across 19 canonical read surfaces; aliases normalize list-* and ctx, explicit controls reject mutation and hybrid-mutation combinations, legacy-only calls remain byte-stable, and action-scoped SDK/MCP schemas omit the controls from mutations. Focused parser, transport, contract, completion, and SDK/CLI integration verification passed 249 tests; the schema-parity waiver ratchet remains at its prior ceiling rather than being relaxed. Public SDK and generated CLI/MCP contract snapshots are current."
   "2026-08-02T18:17:10.078Z","harness:codex","Completion evidence 2026-08-02: one SDK-owned include/amount/cost/encoding algebra covers all 19 canonical reads with zero availability disagreement and zero unbounded surfaces. Canonical flags are globally discoverable in CLI and Bash/Zsh/Fish completion, typed on PmClient reads, transported by MCP, present only on read action schemas, and rejected before mutations. Linked suites passed 124 focused tests plus contracts snapshot validation. Full repository coverage passed 421 files / 6,730 tests at exact 100/100/100/100; lint, docstrings, duplication, SDK surface, context evaluation, fuzz, security scan, pnpm audit, changelog check, and contract gates all passed. The public versioned schema now serves byte-identical 4.4.0 at https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json with 133 strict action branches and outputInclude/outputLimit/outputBudget/outputFormat; the prior schema and exact stale GET/HEAD cache entries have recoverable timestamped backups. GitHub has zero open PRs and zero open Dependabot, code-scanning, or secret-scanning alerts; all 24 open issues contain a valid canonical PM-item Markdown link. The sole scheduled auto-release run after the manual v2026.8.2 release returned release_already_cut_today and created no second tag; npm latest is 2026.8.2, and isolated npx/bunx execution passed."
+  "2026-08-02T18:21:11.256Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/873 carries the cohesive SDK/CLI intent-scoped read and universal output-contract delivery. Exact-head CI and review-loop evidence will remain on the PR to avoid appending unreviewed tracker mutations after bot approval."
 learnings[1]{created_at,author,text}:
   "2026-08-02T18:17:10.670Z","harness:codex","Universal read controls belong in one SDK contract and shared egress. Canonical controls may shape output, but merely retaining a legacy alias must not change bytes. Action-scoped schemas must omit read-only controls from every mutation branch rather than relaxing parity waivers."
 files[27]{path,scope,note}:
