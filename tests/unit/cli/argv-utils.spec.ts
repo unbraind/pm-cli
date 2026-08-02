@@ -51,6 +51,13 @@ describe("argv-utils.redactSensitiveCommandArgs", () => {
     expect(redactSensitiveCommandArgs(["history-redact", "--literal"])).toEqual(
       ["history-redact", "--literal"],
     );
+    expect(
+      redactSensitiveCommandArgs([
+        "history-redact",
+        "--literal",
+        "--dry-run",
+      ]),
+    ).toEqual(["history-redact", "--literal", "--dry-run"]);
   });
 });
 

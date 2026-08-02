@@ -49,5 +49,10 @@ describe("history-redact telemetry disclosure safety", () => {
       total_count: 2,
       replacement_is_default: false,
     });
+    expect(
+      _testOnly.sanitizeValue(
+        `literals=${literal} regexes:${regex} replacements=${replacement}`,
+      ),
+    ).toBe("literals=[redacted] regexes:[redacted] replacements=[redacted]");
   });
 });

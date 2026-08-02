@@ -131,7 +131,7 @@ const REDACTION_INPUT_KEYS = new Set([
   "replacements",
 ]);
 const SENSITIVE_INLINE_KEY_PATTERN =
-  "(?:token|secret|password|passwd|api[_-]?key|apikey|authorization|cookie|session|credentials|bearer|literal|regex|replacement)";
+  "(?:token|secret|password|passwd|api[_-]?key|apikey|authorization|cookie|session|credentials|bearer|literals?|regex(?:es)?|replacements?)";
 const INLINE_SENSITIVE_ASSIGNMENT_PATTERN = new RegExp(
   `\\b(${SENSITIVE_INLINE_KEY_PATTERN})\\s*([:=])\\s*([^\\s,;]+)`,
   "giu",

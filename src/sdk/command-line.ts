@@ -66,11 +66,12 @@ export function redactSensitiveCommandArgs(argv: readonly string[]): string[] {
   const redacted: string[] = [];
   let redactNext = false;
   for (const token of argv) {
-    if (redactNext) {
+    if (redactNext && !token.startsWith("-")) {
       redacted.push("[redacted]");
       redactNext = false;
       continue;
     }
+    redactNext = false;
     const equalsIndex = token.indexOf("=");
     const flag = equalsIndex >= 0 ? token.slice(0, equalsIndex) : token;
     if (!HISTORY_REDACT_SENSITIVE_FLAGS.has(flag)) {
