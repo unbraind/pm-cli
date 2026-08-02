@@ -1,0 +1,40 @@
+id: pm-ya7x55
+title: "The positional-argument layer of the command grammar has no lexicon and no gate: 21 distinct positional shapes across 76 commands, and three commands declare an optional subcommand they refuse to run without"
+description: "Grammar governance covers three of the four layers an agent must learn. pm-fs8q9x owns flags (one spelling per concept), pm-wt43zj owns nouns and verbs (allowlist and vocabulary), pm-hqa8g1 owns exit codes, pm-x4nn3z owns error codes. Nothing owns positional arguments, and the measurement shows why that matters: the 76 rendered top-level commands present 21 distinct positional shapes. 42 take none. The item id alone appears as required <id> on 13 commands and optional [id] on 4, so the single most common concept in the surface has two arities with no rule saying which applies. Subcommand dispatch has five incompatible shapes: <subcommand> [id] [target] (graph), <subcommand> [artifact] [base] [ours] [theirs] (merge), [subcommand] [name] (schema, profile), [subcommand] [id] [stepRef] [reorderTo] (plan), and [namespaceOrSubcommand] [subcommand] (telemetry, whose first slot is polymorphic). pm config takes [scope] [action] [key] [value], a four-slot untyped chain where position alone carries meaning. The declared arity is also not the enforced arity. pm schema, pm profile, and pm plan all render [subcommand] as optional and all three exit 2 when it is omitted, while pm telemetry, pm item, pm workspace, and pm config render the same optional notation and genuinely accept omission with exit 0. Worse, the two commands that honestly declare <subcommand> as required (graph, merge) refuse with 'Missing required argument subcommand', whereas the three that declare it optional and are not refuse with 'Invalid argument value' - a different error class for the same condition, routing the agent toward correcting a value it never supplied. Bracket notation is therefore unreliable as a signal, which is precisely the cost the simplification epic exists to remove."
+type: Task
+status: open
+priority: 1
+tags[5]: agent-ux,"area:cli","area:contracts",grammar,simplification
+created_at: "2026-08-02T15:03:08.302Z"
+updated_at: "2026-08-02T15:07:43.534Z"
+author: "harness:claude-code"
+estimated_minutes: 720
+acceptance_criteria: "The contracts table declares each command's positional signature as data - slot name, required or optional, value kind, and whether the slot is polymorphic - alongside the flag and exit-code declarations it already carries; A conformance gate fails when a command's declared positional arity disagrees with its enforced arity, with pm schema, pm profile, and pm plan as the negative-control fixtures that fail before the fix; One concept has one positional spelling and one arity across the surface: the item id is required or optional by a declared rule, not per command, and a violation fails the gate; Omitting a required positional produces the missing-required-argument refusal on every command, never the invalid-value refusal, asserted across the full command inventory; The count of distinct positional shapes is measured, recorded as evidence on this item, declared as a budget in the contracts table, and cannot increase without the gate failing; Subcommand dispatch converges on one declared shape, with every current spelling preserved as a hidden alias proven by a test over the pre-change inventory"
+goal: project management = context management
+objective: "Bring positional arguments under the same declared-and-gated grammar that already governs flags, nouns, verbs, exit codes, and error codes"
+value: An agent that cannot generalize argument placement must carry a per-command mental model; closing the last ungoverned grammar layer is what makes the noun-verb consolidation actually reduce what an agent has to know
+why_now: "The simplification epic is measured in nouns and flags, but the positional layer is where the surface silently disagrees with its own help text, and it is the one layer with no owner among the four grammar-governance items"
+parent: pm-mpbb
+risk: medium
+confidence: high
+environment: "pm 2026.8.2, 76 rendered top-level commands, linux"
+expected_result: "A rendered [subcommand] slot is omittable on every command that renders it, and a required slot refuses with the missing-required-argument code everywhere"
+actual_result: "pm schema, pm profile, and pm plan render [subcommand] and exit 2 with Invalid argument value when it is omitted, while graph and merge render <subcommand> and exit 2 with Missing required argument subcommand"
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fs8q9x,related,"2026-08-02T15:03:08.302Z","harness:claude-code","cli:create:dep",detected
+  pm-gy885b,discovered_from,"2026-08-02T15:03:08.302Z","harness:claude-code","cli:create:dep",detected
+  pm-hqa8g1,related,"2026-08-02T15:03:08.302Z","harness:claude-code","cli:create:dep",detected
+  pm-n7rr,implements,"2026-08-02T15:03:08.302Z","harness:claude-code","cli:create:dep",detected
+  pm-wt43zj,blocked_by,"2026-08-02T15:03:08.302Z","harness:claude-code","cli:create:dep",detected
+  pm-x4nn3z,related,"2026-08-02T15:03:08.302Z","harness:claude-code","cli:create:dep",detected
+  pm-pbyu,implements,"2026-08-02T15:05:57.381Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-02T15:03:08.302Z","harness:claude-code","Duplicate check before create: read pm-fs8q9x (flags), pm-wt43zj (nouns/verbs), pm-hqa8g1 (exit codes), pm-x4nn3z (error codes), pm-pbyu (noun-verb ADR), pm-7i97c3 (command intent), pm-gy885b (closed value domains) in full. All four grammar-governance items scope explicitly to flags, nouns/verbs, exit codes, and error codes respectively; none mentions positional arguments in title, description, or AC. pm-gy885b covers value domains a refusal fails to name, which is adjacent but concerns flag VALUES, not slot arity - recorded as discovered_from. No existing n7rr child covers argument placement; the existing children all consolidate which commands exist, not how their arguments are shaped."
+files[2]{path,scope,note}:
+  src/cli/commands/contracts.ts,project,Renders the contract surface agents read for exact argument shapes
+  src/sdk/cli-contracts/runtime-contracts.ts,project,"Contract tables that already declare flags,intents and exit codes; the positional signature must be declared here"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- contracts,project,300
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Command reference rendering the positional shapes this task normalizes
+body: ""

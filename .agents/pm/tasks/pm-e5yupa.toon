@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[6]: "area:storage",ci,durability,governance,long-horizon,migration
 created_at: "2026-07-25T12:29:31.317Z"
-updated_at: "2026-07-26T10:52:08.896Z"
+updated_at: "2026-08-02T15:05:56.080Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "The policy declares, per format version, its support window, what support guarantees (read, verify, migrate), and what happens when the window closes; A golden workspace for every supported format version lives in the test corpus, and CI asserts the current build reads it, verifies its hash chains, and migrates it without loss; Hash-chain verification across construction changes is covered explicitly, so a verification break is caught separately from a read break; Derived artifacts from older versions are covered: the policy states whether they are usable or must be rebuilt, and the test asserts the stated behavior; Dropping support for a format version is a reviewable, announced event with a migration path, never a silent failure to parse; The policy is referenced from the v1.0 stability contract so it is frozen alongside the other compatibility guarantees"
@@ -18,18 +18,50 @@ outcome: An operator of a decade-old workspace knows exactly what the current re
 parent: pm-o2kc
 risk: low
 confidence: 70
-dependencies[13]{id,kind,created_at,author,source_kind}:
-  pm-agou,related,"2026-07-25T12:29:31.317Z",null,null
-  pm-eeai,related,"2026-07-25T12:29:31.317Z",null,null
-  pm-o79o,related,"2026-07-25T12:29:31.317Z",null,null
-  pm-pae3wo,related,"2026-07-25T12:29:31.317Z",null,null
-  pm-xp1xsw,related,"2026-07-25T12:29:31.317Z",null,null
-  pm-0qg5,related,"2026-07-25T12:35:30.978Z",null,null
-  pm-4jk8kx,blocked_by,"2026-07-25T12:35:30.978Z",null,null
-  pm-9c7h9x,related,"2026-07-25T12:35:30.978Z",null,null
-  pm-t4d7nz,related,"2026-07-25T12:35:30.978Z",null,null
-  pm-wlqxg3,related,"2026-07-25T12:35:30.978Z",null,null
-  pm-is1a,implements,"2026-07-26T05:49:50.155Z",null,null
-  pm-4jk8kx,verifies,"2026-07-26T05:50:24.686Z",null,null
-  pm-bbk8we,related,"2026-07-26T10:52:08.252Z",null,null
+dependencies[14]:
+  - id: pm-agou
+    kind: related
+    created_at: "2026-07-25T12:29:31.317Z"
+  - id: pm-eeai
+    kind: related
+    created_at: "2026-07-25T12:29:31.317Z"
+  - id: pm-o79o
+    kind: related
+    created_at: "2026-07-25T12:29:31.317Z"
+  - id: pm-pae3wo
+    kind: related
+    created_at: "2026-07-25T12:29:31.317Z"
+  - id: pm-xp1xsw
+    kind: related
+    created_at: "2026-07-25T12:29:31.317Z"
+  - id: pm-0qg5
+    kind: related
+    created_at: "2026-07-25T12:35:30.978Z"
+  - id: pm-4jk8kx
+    kind: blocked_by
+    created_at: "2026-07-25T12:35:30.978Z"
+  - id: pm-9c7h9x
+    kind: related
+    created_at: "2026-07-25T12:35:30.978Z"
+  - id: pm-t4d7nz
+    kind: related
+    created_at: "2026-07-25T12:35:30.978Z"
+  - id: pm-wlqxg3
+    kind: related
+    created_at: "2026-07-25T12:35:30.978Z"
+  - id: pm-is1a
+    kind: implements
+    created_at: "2026-07-26T05:49:50.155Z"
+  - id: pm-4jk8kx
+    kind: verifies
+    created_at: "2026-07-26T05:50:24.686Z"
+  - id: pm-bbk8we
+    kind: related
+    created_at: "2026-07-26T10:52:08.252Z"
+  - id: pm-m0yjtg
+    kind: related
+    created_at: "2026-08-02T15:05:55.823Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: ""

@@ -1,0 +1,40 @@
+id: pm-m0yjtg
+title: "history-compact renumbers version identifiers, so pm get --at N and pm restore N address a different recorded state after compaction with exit 0 and no signal"
+description: "Version numbers are the only addressing scheme pm offers for the immutable record besides timestamps, and history-compact silently rebases them. Before compaction pm get <id> --at 3 returned the state recorded at entry 3. After 'pm history-compact <id> --before 6' the same command returns the state recorded at the original entry 7, exits 0, and emits no warning, no deprecation, and no mapping. Timestamp addressing behaves correctly across the same boundary (a pruned timestamp is refused with history_target_out_of_range exit 2), so the two addressing schemes diverge: one is stable under compaction and the other silently changes meaning. Every stored reference to a version number - in a comment, a close reason, an external audit record, a script, a downstream tracker - becomes a reference to different content at the moment a stream is compacted, and nothing in the record says so. The synthetic baseline entry records only the free-text message 'history-compact baseline snapshot before 6.' and carries no structured field for the compacted-entry count or the version offset, so no consumer can mechanically translate a pre-compaction version to its post-compaction equivalent or determine that a given version number predates the boundary. The baseline entry is also stamped with the compaction wall-clock time while occupying index 1, so after compaction the stream's index order and timestamp order disagree: index 1 ts 14:55:39 precedes index 2 ts 14:54:53. pm history --verify --strict-exit exits 0 throughout, so no integrity check observes any of this."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,"area:history","area:storage",durability,immutability
+created_at: "2026-08-02T15:01:30.323Z"
+updated_at: "2026-08-02T15:07:33.896Z"
+author: "harness:claude-code"
+estimated_minutes: 600
+acceptance_criteria: "A version identifier resolves to the same recorded state before and after compaction, or the pre-boundary identifier is refused with a distinct machine-readable code rather than silently resolving to different content; The compaction baseline entry records the compacted-entry count and the version offset as structured fields, so a reader can mechanically map a pre-compaction version number to its post-compaction equivalent or classify it as pruned; A read or restore targeting a version that predates the compaction boundary is reported as intentionally unavailable, distinguishable by code from an out-of-range target that never existed; The stream's index order and timestamp order agree after compaction, or the baseline entry's timestamp semantics are declared in the format specification and asserted by a test; history --verify fails, or a dedicated check fails, on a stream whose version addressing changed meaning without a recorded offset - proven by a negative-control fixture; The evidence in this item's description is reproduced as a regression test that compacts a stream and asserts version-identifier stability or refusal"
+goal: project management = context management
+objective: "Make version addressing stable under compaction, or make its instability explicit, recorded, and refusable"
+value: Restoring an item to any version at any time is the core durability promise; an identifier that silently changes meaning turns a correct-looking restore into undetected data substitution
+impact: Silent wrong answer on point-in-time reads and restores after any compaction
+why_now: "The mandate is that any item can be restored to any version at any time and that the record is immutable proof; compaction is the one shipped operation that breaks the identifier the promise is written in, and it passes every existing integrity check"
+parent: pm-o2kc
+risk: high
+confidence: high
+severity: high
+environment: "pm 2026.8.2, sandbox PM_PATH, Node 20+, linux"
+repro_steps: pm create Task V1; for i in 2..10 pm update <id> --title V$i; pm get <id> --at 3 -> V3; pm history-compact <id> --before 6; pm get <id> --at 3 -> V7 (exit 0)
+expected_result: "pm get <id> --at 3 returns the same recorded state before and after compaction, or refuses with a pruned-version code"
+actual_result: Before compaction --at 3 returns the state titled V3; after compacting before v6 the same command returns the state titled V7 with exit 0 and no warning
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4a7m,discovered_from,"2026-08-02T15:01:30.323Z","harness:claude-code","cli:create:dep",detected
+  pm-h6wmtc,related,"2026-08-02T15:01:30.323Z","harness:claude-code","cli:create:dep",detected
+  pm-wlqxg3,verifies,"2026-08-02T15:01:30.323Z","harness:claude-code","cli:create:dep",detected
+  pm-e3gn0z,related,"2026-08-02T15:05:49.747Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-02T15:01:30.323Z","harness:claude-code","Duplicate check before create: searched 'immutable history restore version', 'compaction', 'point in time', and read pm-wlqxg3, pm-h6wmtc, pm-3z0k, pm-9yfo, pm-6l2mza, pm-hib1, pm-4a7m in full. pm-wlqxg3 is the reconstruction GATE and its AC already anticipates this class ('versions it dropped are reported as intentionally unavailable rather than silently wrong') but it is the test that would catch the defect, not the product behaviour - filed separately per the standing gate-vs-product-defect split (precedent pm-0fhw). pm-h6wmtc owns retention POLICY and lawful erasure, not identifier stability. pm-6l2mza (workspace snapshot rewind) is CLOSED and concerns deleting streams, not renumbering within one. pm-3z0k is detached attestation export. No existing item owns version-identifier stability across compaction."
+files[2]{path,scope,note}:
+  src/core/history/projection.ts,project,"Resolves a version number or timestamp to a recorded entry; version resolution is index-relative so it silently rebases after compaction,while timestamp resolution correctly refuses with history_target_out_of_range"
+  src/sdk/history-compact.ts,project,Writes the synthetic baseline entry and prunes the stream; the baseline carries only a free-text message and no structured version offset
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- history-compact,project,300
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Documents history-compact and restore; must state the version-addressing stability class once declared
+body: ""

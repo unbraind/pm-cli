@@ -6,14 +6,14 @@ status: open
 priority: 2
 tags[8]: analytics,"area:sdk",eval,history,rl,scale,streaming,training
 created_at: "2026-07-28T10:00:18.787Z"
-updated_at: "2026-07-31T14:26:26.016Z"
+updated_at: "2026-08-02T15:05:51.454Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A trajectory is readable scoped to an episode or a session, ordered by a sound causal order rather than wall-clock timestamp alone; Each step carries the observation boundary in force, the recorded mutation, the recording identity including harness, model and effort where available, and any verdict change that followed; Output is line-delimited rows read in constant memory at any trajectory length, and a cursor resumes an interrupted read; The projection is derived and recomputable from history alone: a rebuilt index and a fresh read produce identical trajectories, and no trajectory row is ever authoritative; Redacted history content never resurfaces in a trajectory export, proven by a test that redacts an entry and re-reads a trajectory covering it; The read is bounded by a declared token budget like every other read surface, and degrades rather than emitting unbounded output"
 parent: pm-o2kc
 risk: medium
 confidence: 78
-dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-10l1vm,blocked_by,"2026-07-28T10:00:18.787Z","harness:claude-code","cli:create:dep",detected
   pm-f86lth,related,"2026-07-28T10:00:18.787Z","harness:claude-code","cli:create:dep",detected
   pm-ffz0a9,related,"2026-07-28T10:00:18.787Z","harness:claude-code","cli:create:dep",detected
@@ -25,4 +25,5 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,implements,"2026-07-28T10:00:18.787Z","harness:claude-code","cli:create:dep",detected
   pm-z2j1qt,related,"2026-07-28T10:00:18.787Z","harness:claude-code","cli:create:dep",detected
   pm-klxax7,implements,"2026-07-31T14:26:25.814Z","harness:claude-code","cli:update:dep",detected
+  pm-m0yjtg,blocked_by,"2026-08-02T15:05:51.171Z","harness:claude-code","cli:update:dep",detected
 body: ""
