@@ -2,27 +2,32 @@ id: pm-wnbk2l
 title: "GH-779 recurrence: history-redact must refresh item and drift projections atomically"
 description: "The audited history-redact transaction writes item and history files directly, bypassing both drift-cache invalidation and the metadata derived-index refresh used by normal item mutations. On a warmed large tracker, validation can compare rewritten history with stale item metadata and recreate a false hash mismatch after runtime GC."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[7]: "area:sdk",cache,context-integrity,github-report,history,privacy,regression
 created_at: "2026-08-02T10:41:02.284Z"
-updated_at: "2026-08-02T11:35:50.715Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#2200ff97f3054162c3afa1bb"
+updated_at: "2026-08-02T12:22:33.861Z"
+closed_at: "2026-08-02T12:22:08.812Z"
+completed_at: "2026-08-02T12:22:08.812Z"
 author: "harness:codex"
 acceptance_criteria: A successful history-redact invalidates drift verification state; Rewritten or relocated items refresh the metadata derived index in the same serialized transaction; Rollback preserves authoritative files and invalidates derived drift state; A warmed-index regression proves validate sees the rewritten item and history without gc; GitHub #779 links this recurrence item
 parent: pm-o2kc
+resolution: fixed
+expected_result: "History redaction refreshes item metadata and drift projections within the serialized transaction, including rollback invalidation"
+actual_result: "Implemented, regression-covered, manually package-tested, and verified on exact-head cross-platform nightly run 30747290823"
+fixed_version: next-auto-release
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-ajaskl,discovered_from,"2026-08-02T10:41:02.284Z","harness:codex","cli:create:dep",detected
   pm-f86lth,related,"2026-08-02T10:41:02.284Z","harness:codex","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-02T10:41:02.284Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-02T10:41:02.284Z","harness:codex","Duplicate guard acknowledgement: pm identified closed pm-ajaskl by the shared GH-779 code. That item remains valid completed history for the general invalidation fix; this separate child records the newly reproduced later history-redact bypass and is linked discovered_from rather than marked duplicate."
   "2026-08-02T10:43:41.590Z","harness:codex","Root cause and implementation evidence: history-redact directly rewrote authoritative item/history files outside mutateItem, so a warm metadata projection survived while drift state could also remain. The rewrite now holds the derived-index writer lock, invalidates drift state after commit or rollback, refreshes moved/updated/deleted item projections, and returns refresh warnings. Regression prewarms both caches, redacts, proves drift cache removal, then validates clean without gc."
   "2026-08-02T11:28:23.253Z","harness:codex","Repository-wide verification: 418 test files and 6,703 tests passed under the sandboxed coverage runner with exact 100% statements (47,529/47,529), branches (34,246/34,246), functions (9,673/9,673), and lines (46,119/46,119). No coverage thresholds, exclusions, or ignore counts were weakened."
   "2026-08-02T11:32:32.647Z","harness:codex","Linked-test context correction: the entire validate-command suite contains unrelated cases that intentionally scan the checkout corpus and therefore cannot run truthfully inside pm test's nested PM_PATH sandbox (11 unrelated artifact-scan failures), while it passes in the repository coverage runner. Replaced that over-broad link with the exact warmed-cache redaction regression; this preserves sandbox isolation and avoids recording unrelated failures as acceptance evidence."
   "2026-08-02T11:35:49.862Z","harness:codex","Packed-consumer acceptance: pnpm smoke:npx passed the generated tarball across 15 packaged modules. An independent tarball was then installed from unrelated root /tmp/tmp.0PKR29g4Dz into separate npm and Bun consumers with isolated project/global trackers; both initialized, created items, added evidence, and returned files lookup total=1. npm additionally proved atomic files/docs replacement and exact repeated evidence changed=false."
   "2026-08-02T11:35:50.715Z","harness:codex","Linked verification final receipt: the exact quoted warmed-cache redaction regression passed 1/1 in the PM schema sandbox. The earlier full-file linked failures were context-induced unrelated artifact-scan cases and are superseded by this precise passing link plus the separately passing full 6,703-test coverage run."
+  "2026-08-02T12:21:54.082Z","harness:codex","Hosted acceptance: exact head fd69b84335ead8ef1022b606a470166e78c9f188 passed nightly run 30747290823 on Windows Node 24, macOS Node 24, and Ubuntu Node 22/24/25. Ubuntu Node 24 also passed secret scan, exact 100% coverage, static quality, and compatibility migration gates."
 files[2]{path,scope,note}:
   src/sdk/history-redact.ts,project,serialized item and history projection refresh
   tests/unit/commands/validate-command.spec.ts,project,warmed metadata and drift cache regression
@@ -35,4 +40,5 @@ test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msbq1kfn-zty7hp,test,passed,"2026-08-02T11:32:57.050Z","2026-08-02T11:33:06.611Z","2026-08-02T11:33:06.611Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SDK_EVIDENCE_TRACEABILITY.md,project,history-redact projection transaction contract
+close_reason: "Delivered serialized history-redact projection refresh, drift invalidation on commit/rollback, warmed-cache regression proof, and green hosted matrix."
 body: ""

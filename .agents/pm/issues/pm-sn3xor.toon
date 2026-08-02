@@ -2,25 +2,30 @@ id: pm-sn3xor
 title: "GH-871: preserve letter-suffixed issue codes in duplicate similarity scoring"
 description: The similarity scorer truncates complete codes such as BD-30-A through BD-30-D to BD-30 and assigns distinct sibling work a 0.99 issue_code duplicate score with unsafe close guidance. Extract full letter/task suffixes and reserve the near-certain score for exact complete-code equality.
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: "area:sdk",context-integrity,duplicates,github-report,governance
 created_at: "2026-08-02T10:36:17.608Z"
-updated_at: "2026-08-02T11:35:48.349Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#2200ff97f3054162c3afa1bb"
+updated_at: "2026-08-02T12:22:32.466Z"
+closed_at: "2026-08-02T12:22:05.557Z"
+completed_at: "2026-08-02T12:22:05.557Z"
 author: "harness:codex"
 acceptance_criteria: Complete codes with letter suffixes remain distinct; exact complete-code equality retains the 0.99 issue_code signal; batch duplicate recommendations do not suggest closing sibling suffix work; focused unit and end-to-end duplicate-sweep coverage passes; GitHub #871 links this canonical item
 parent: pm-6bz1
+resolution: fixed
+expected_result: Complete issue codes preserve meaningful suffix identity and only exact full-code matches receive the near-certain duplicate signal
+actual_result: "Implemented, regression-covered, manually package-tested, and verified on exact-head cross-platform nightly run 30747290823"
+fixed_version: next-auto-release
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2i12ti,related,"2026-08-02T10:36:17.608Z","harness:codex","cli:create:dep",detected
   pm-2nxe,discovered_from,"2026-08-02T10:36:17.608Z","harness:codex","cli:create:dep",detected
   pm-f86lth,related,"2026-08-02T10:36:17.608Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-02T10:36:17.608Z","harness:codex","created_at=now,text=Duplicate check evidence: searched every status for issue_code, letter suffixes, sibling duplicates, BD-30, GH-275, and GH-709. Closed pm-2nxe covers parent/child prefixes and closed pm-2i12ti owns batch scoring infrastructure; neither preserves meaningful suffixes. Source: https://github.com/unbraind/pm-cli/issues/871."
   "2026-08-02T10:38:29.433Z","harness:codex","Implementation evidence: complete hyphenated issue-code suffixes now participate in identity; exact full-code equality retains 0.99 while BD-30-A/B/C/D siblings remain outside duplicate clusters. Focused similarity suite passes."
   "2026-08-02T11:28:21.751Z","harness:codex","Repository-wide verification: 418 test files and 6,703 tests passed under the sandboxed coverage runner with exact 100% statements (47,529/47,529), branches (34,246/34,246), functions (9,673/9,673), and lines (46,119/46,119). No coverage thresholds, exclusions, or ignore counts were weakened."
   "2026-08-02T11:35:48.349Z","harness:codex","Packed-consumer acceptance: pnpm smoke:npx passed the generated tarball across 15 packaged modules. An independent tarball was then installed from unrelated root /tmp/tmp.0PKR29g4Dz into separate npm and Bun consumers with isolated project/global trackers; both initialized, created items, added evidence, and returned files lookup total=1. npm additionally proved atomic files/docs replacement and exact repeated evidence changed=false."
+  "2026-08-02T12:21:51.129Z","harness:codex","Hosted acceptance: exact head fd69b84335ead8ef1022b606a470166e78c9f188 passed nightly run 30747290823 on Windows Node 24, macOS Node 24, and Ubuntu Node 22/24/25. Ubuntu Node 24 also passed secret scan, exact 100% coverage, static quality, and compatibility migration gates."
 files[2]{path,scope,note}:
   src/sdk/similarity-scoring.ts,project,complete external issue-code identity extraction
   tests/unit/sdk/similarity.spec.ts,project,exact-code and sibling-cluster regressions
@@ -30,4 +35,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msbpxsn5-59nj8k,test,passed,"2026-08-02T11:29:59.166Z","2026-08-02T11:30:10.625Z","2026-08-02T11:30:10.625Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SDK_EVIDENCE_TRACEABILITY.md,project,duplicate identity contract
+close_reason: "Delivered complete suffixed issue-code identity scoring, exact equality preservation, sibling non-duplication coverage, and green hosted matrix."
 body: ""

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Fixed
+
+- GH-779 recurrence: history-redact must refresh item and drift projections atomically ([pm-wnbk2l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wnbk2l.toon))
+- GH-870: make runtime workspace path assertions portable in Windows nightly ([pm-rusbe4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rusbe4.toon))
+- GH-871: preserve letter-suffixed issue codes in duplicate similarity scoring ([pm-sn3xor](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sn3xor.toon))
+- GH-865: classify linked-test lock contention as infrastructure collision ([pm-2irc1p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2irc1p.toon))
+- GH-866: telemetry flush queue-drain contract reports partial progress as fully drained ([pm-u5c27w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u5c27w.toon))
+- GH-867: linked files and docs no-op additions report changed and append phantom history ([pm-jb1ron](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jb1ron.toon))
+- GH-868: atomic replacement contract for linked files and docs ([pm-cstuys](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cstuys.toon))
+
 ### Security
 
 - GH-864: history-redact output must never echo literal secrets ([pm-y3w0ld](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y3w0ld.toon))

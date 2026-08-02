@@ -2,13 +2,13 @@ id: pm-u5c27w
 title: "GH-866: telemetry flush queue-drain contract reports partial progress as fully drained"
 description: "The telemetry flush SDK/CLI result sets queue_drained when the queue count merely decreases, even if entries remain. Publish unambiguous progress, empty, and drained-count facts while preserving an explicit compatibility contract."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[6]: "area:cli","area:sdk","area:telemetry",github-report,output-contract,reliability
 created_at: "2026-08-02T06:47:37.821Z"
-updated_at: "2026-08-02T11:35:46.839Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#b54ea3df17a9d4f6f64078c0"
+updated_at: "2026-08-02T12:22:02.983Z"
+closed_at: "2026-08-02T12:22:02.232Z"
+completed_at: "2026-08-02T12:22:02.232Z"
 author: "harness:codex"
 acceptance_criteria: "Flush results expose queue_progressed, queue_empty, and queue_entries_drained with precise types; queue_drained is true only when the queue is empty or is explicitly preserved under documented compatibility semantics; SDK, CLI, docs, and acceptance tests cover partial and complete drains; The GitHub report is linked to this canonical PM item"
 goal: project management = context management
@@ -22,20 +22,23 @@ risk: medium
 confidence: high
 reporter: GitHub #866
 severity: medium
+resolution: fixed
 expected_result: Queue completion and progress are separate facts
-actual_result: queue_drained is true when only some entries leave
+actual_result: "Implemented, regression-covered, manually package-tested, and verified on exact-head cross-platform nightly run 30747290823"
 affected_version: 2026.8.2
+fixed_version: next-auto-release
 component: telemetry SDK/CLI result contracts
 regression: true
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,related,"2026-08-02T06:47:37.821Z","harness:codex","cli:create:dep",detected
   pm-r7md,related,"2026-08-02T06:47:37.821Z","harness:codex","cli:create:dep",detected
   pm-5oj5,implements,"2026-08-02T07:13:22.273Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-02T06:47:37.821Z","harness:codex","Duplicate check evidence: searched all open, closed, and canceled PM items for queue_drained, partial telemetry flush, queue empty, and drained entries; historical telemetry items cover transport and retention, not this result-contract ambiguity. Source: https://github.com/unbraind/pm-cli/issues/866."
   "2026-08-02T07:13:28.300Z","harness:codex","Implementation evidence: telemetry flush exposes typed queue_entries_drained, queue_progressed, queue_empty, and completion-correct queue_drained fields; 101-entry coverage proves partial progress is not completion."
   "2026-08-02T11:28:20.231Z","harness:codex","Repository-wide verification: 418 test files and 6,703 tests passed under the sandboxed coverage runner with exact 100% statements (47,529/47,529), branches (34,246/34,246), functions (9,673/9,673), and lines (46,119/46,119). No coverage thresholds, exclusions, or ignore counts were weakened."
   "2026-08-02T11:35:46.839Z","harness:codex","Packed-consumer acceptance: pnpm smoke:npx passed the generated tarball across 15 packaged modules. An independent tarball was then installed from unrelated root /tmp/tmp.0PKR29g4Dz into separate npm and Bun consumers with isolated project/global trackers; both initialized, created items, added evidence, and returned files lookup total=1. npm additionally proved atomic files/docs replacement and exact repeated evidence changed=false."
+  "2026-08-02T12:21:47.815Z","harness:codex","Hosted acceptance: exact head fd69b84335ead8ef1022b606a470166e78c9f188 passed nightly run 30747290823 on Windows Node 24, macOS Node 24, and Ubuntu Node 22/24/25. Ubuntu Node 24 also passed secret scan, exact 100% coverage, static quality, and compatibility migration gates."
 files[5]{path,scope,note}:
   sdk/public-surface.json,project,Reviewed public SDK surface for precise telemetry flush receipts
   src/sdk/index.ts,project,typed telemetry flush export
@@ -48,4 +51,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msbpx6no-040qt5,test,passed,"2026-08-02T11:29:27.263Z","2026-08-02T11:29:42.132Z","2026-08-02T11:29:42.132Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SDK_EVIDENCE_TRACEABILITY.md,project,telemetry receipt contract
+close_reason: "Delivered completion-correct telemetry flush receipts separating progress, drained count, and empty queue, with partial-drain coverage and green hosted matrix."
 body: ""
