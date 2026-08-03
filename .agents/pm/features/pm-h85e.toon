@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-experience,"area:cli",context,extensions,gh-issue
 created_at: "2026-07-06T21:09:04.826Z"
-updated_at: "2026-08-03T19:41:44.037Z"
+updated_at: "2026-08-03T19:48:01.173Z"
 closed_at: "2026-08-03T19:40:19.423Z"
 completed_at: "2026-08-03T19:40:19.423Z"
 author: maintainer-agent
@@ -69,5 +69,7 @@ tests[2]{command,scope,timeout_seconds}:
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msdktcjm-xp7zgw,test,passed,"2026-08-03T18:42:07.299Z","2026-08-03T18:42:17.410Z","2026-08-03T18:42:17.410Z",1,0,0
   test-local-msdlo4f2-r7j7kv,test,passed,"2026-08-03T19:05:56.476Z","2026-08-03T19:06:13.214Z","2026-08-03T19:06:13.214Z",2,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated closed-item release record
 close_reason: Delivered bounded extension-health context projection and the negated CLI/SDK contract through PR #884; merged and fully verified.
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/471\n\nAdd a brief installed package/extension health summary to `pm context` so agents can diagnose extension-related issues without separate `pm package doctor` runs. Must respect the context token budget (see GH-445 tag-folding work pm-ishm) — summary line(s), not full diagnostics; opt-out via flag/--fields."

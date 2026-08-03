@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: activation,agent-ux,"area:extensions","area:sdk",extensibility,perf,startup
 created_at: "2026-07-28T10:27:34.772Z"
-updated_at: "2026-08-03T19:41:42.923Z"
+updated_at: "2026-08-03T19:48:00.242Z"
 closed_at: "2026-08-03T19:40:17.547Z"
 completed_at: "2026-08-03T19:40:17.547Z"
 author: "harness:claude-code"
@@ -44,7 +44,8 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/extension-startup.integration.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msdksz0l-5mo48u,test,passed,"2026-08-03T18:41:43.498Z","2026-08-03T18:41:59.877Z","2026-08-03T18:41:59.877Z",1,0,0
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated closed-item release record
   docs/EXTENSIONS.md,project,Authoritative activation commands contract
 close_reason: Delivered authoritative activation.commands behavior across rich extension capabilities through PR #884; merged and fully verified.
 body: ""

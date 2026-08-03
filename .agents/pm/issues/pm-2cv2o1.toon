@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: dependencies,release-gate,security,vulnerability
 created_at: "2026-08-03T18:14:18.504Z"
-updated_at: "2026-08-03T19:41:45.033Z"
+updated_at: "2026-08-03T19:48:02.067Z"
 closed_at: "2026-08-03T19:40:21.087Z"
 completed_at: "2026-08-03T19:40:21.087Z"
 author: "harness:codex"
@@ -42,5 +42,7 @@ tests[2]{command,scope,timeout_seconds}:
   pnpm lint,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msdkvozm-e96476,test,passed,"2026-08-03T18:42:32.541Z","2026-08-03T18:44:06.850Z","2026-08-03T18:44:06.850Z",2,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated closed-item release record
 close_reason: "Patched brace-expansion and PostCSS advisory floors, refreshed compatible tooling, and verified zero package-manager and GitHub security alerts through PR #884."
 body: ""

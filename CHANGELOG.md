@@ -2,8 +2,16 @@
 
 ## Unreleased
 
+### Added
+
+- GH-471: pm context includes an installed package/extension health summary ([pm-h85e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-h85e.toon))
+- Static contribution manifest: persist the install-time contribution inventory so the command registry is built from data and extension modules import only when a contribution is actually invoked ([pm-021kdp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-021kdp.toon))
+
 ### Fixed
 
+- GH-882: unresolved extension commands must lead with the activation failure and actionable recovery ([pm-4uplae](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4uplae.toon))
+- Extension-mode is folded into the metadata-cache identity, so alternating --no-extensions with a normal invocation evicts a 4.5 MB cache and every command costs 5 seconds instead of 0.4 ([pm-77okxr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-77okxr.toon))
+- Declared activation.commands is silently overridden by the renderers/hooks/parser/preflight capability tier, so any extension beyond plain commands is eagerly imported on every invocation ([pm-j0w7j9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-j0w7j9.toon))
 - GH-832: package command namespace ownership and collision diagnostics are not discoverable ([pm-6z0wzf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6z0wzf.toon))
 - GH-681: latest calendar ordinal must satisfy stable package peer ranges ([pm-csuce0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-csuce0.toon))
 - The model provenance resolver derives the harness session-file path with an incomplete slug encoding, so it silently resolves nothing in any workspace whose path contains an underscore - including this repository ([pm-9gvazz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9gvazz.toon))
@@ -11,6 +19,10 @@
 - Warn when custom schema fields collide with MCP transport or tool-specific inputs ([pm-yfdav2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yfdav2.toon))
 - GH-844: local npm package archives are rejected as install sources ([pm-lw6acw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lw6acw.toon))
 - The one-release-per-day guard compares a prefix glob against unpadded date keys, so it is correct only by accident of tag creation order and silently skips a real release for any out-of-order tag ([pm-ki67py](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ki67py.toon))
+
+### Security
+
+- Refresh transitive brace-expansion and PostCSS patches for 2026-08-03 audit advisories ([pm-2cv2o1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2cv2o1.toon))
 
 ### Other
 

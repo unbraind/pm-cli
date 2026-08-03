@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: activation,agent-ux,architecture,"area:extensions","area:sdk",extensibility,perf,startup
 created_at: "2026-07-28T10:28:05.792Z"
-updated_at: "2026-08-03T19:41:41.966Z"
+updated_at: "2026-08-03T19:47:59.851Z"
 closed_at: "2026-08-03T19:40:16.948Z"
 completed_at: "2026-08-03T19:40:16.948Z"
 author: "harness:claude-code"
@@ -27,10 +27,11 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-usfg,implements,"2026-07-28T10:31:17.775Z","harness:claude-code","cli:update:dep",detected
   pm-4uplae,verifies,"2026-08-03T18:39:39.773Z","harness:codex","cli:update:dep",detected
   pm-j0w7j9,verifies,"2026-08-03T18:39:39.773Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-03T18:40:10.785Z","harness:codex","Implementation evidence: introduced a schema-versioned ExtensionContributionInventory that is parsed without importing extension modules and persisted after successful activation. Loader discovery merges manifest and managed snapshots; install results expose the derived inventory; SDK authoring exports and public-surface/schema snapshots are aligned. Static discovery now supplies commands, handlers, overrides, hooks, schema, parser, renderer, service, migration, importer/exporter, search/vector, and preflight surfaces."
   "2026-08-03T19:30:42.879Z","harness:codex","Exact-head PR evidence (PR #884, c361624e2): every hosted required check passes, including static/typecheck/coverage/smokes/compat, Ubuntu/macOS/Windows runtime smoke, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, DeepScan, CodeFactor, Codecov, ShellCheck, PSScriptAnalyzer, actionlint, and Docs/Skills. The complete sandboxed local suite passes 428 files / 6,792 tests at exact 100% statements, branches, functions, and lines; lint, zero-clone analysis, 100% docstring gates, contracts, and focused review regressions pass. All 12 CodeRabbit threads were individually replied to and reacted to; nine actionable findings were fixed in c361624e2 and all threads are resolved. The requested exact-head CodeRabbit rerun was included-review-rate-limited and the authenticated Greptile gate returned free_reviews_limit_reached; these are reviewer limitations, not clean-review claims."
   "2026-08-03T19:40:13.847Z","harness:codex","Merge and operational evidence: PR #884 merged to main as 657f8fa56a1e56c918095a58600c49188206e180; local main equals origin/main and the worktree is clean. No open PRs remain; GitHub Dependabot, code-scanning, and secret-scanning each report zero open alerts; pnpm audit reports no known vulnerabilities. Telemetry flush at 2026-08-03T19:36:53.267Z successfully drained four queued events, while subsequent status commands generated fresh self-observability rows. Live Sentry 14-day data shows no new issue attributable to this tranche; older unresolved PM-CLI-2S and PM-CLI-2Q remain independently tracked by open pm-4odf0c and pm-qyg51h. The sole immutable same-day tag/package remains v2026.8.3 / @unbrained/pm-cli@2026.8.3; the scheduled Auto Release already proved same-day no-op behavior after that release, so this post-tag merge is intentionally eligible for the next UTC daily release rather than creating or moving a duplicate same-day version."
+  "2026-08-03T19:47:59.419Z","harness:codex","Final-main CI run 30846935310 passed every runtime, typecheck, compatibility, coverage, smoke, and Windows lane but correctly failed the static lane because closing this tranche changed generated changelog inputs. Regenerated CHANGELOG.md with installed pm-changelog@2026.8.3, linked the generated document to all six owning items, and verified changelog:pm:check is byte-stable; no pm-changelog source defect was found."
 notes[1]{created_at,author,text}:
   "2026-08-03T18:40:11.200Z","harness:codex","Design decision: manifest contributions are an optional ahead-of-time declaration while the managed install snapshot is mechanically derived from the real activation summary. Runtime discovery prefers precise inventory but retains conservative legacy fallback for packages not yet reinstalled."
 learnings[1]{created_at,author,text}:
@@ -53,7 +54,8 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/contribution-inventory.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/integration/extension-startup.integration.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msdksm2u-7jbpw1,test,passed,"2026-08-03T18:41:26.350Z","2026-08-03T18:41:43.110Z","2026-08-03T18:41:43.110Z",1,0,0
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated closed-item release record
   docs/EXTENSIONS.md,project,Contribution inventory authoring and activation semantics
 close_reason: "Delivered static contribution inventories and side-effect-free discovery through PR #884; merged, fully verified, and queued for the next eligible daily package release."
 body: ""

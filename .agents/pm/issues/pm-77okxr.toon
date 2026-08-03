@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",cache,multi-agent,perf,scale
 created_at: "2026-07-26T11:25:41.728Z"
-updated_at: "2026-08-03T19:41:43.444Z"
+updated_at: "2026-08-03T19:48:00.747Z"
 closed_at: "2026-08-03T19:40:18.533Z"
 completed_at: "2026-08-03T19:40:18.533Z"
 author: "harness:claude-code"
@@ -91,5 +91,7 @@ test_runs[1]:
         unit: seconds
         threshold: 1
         recorded_at: "2026-08-03T18:42:06.943Z"
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated closed-item release record
 close_reason: Delivered bounded multi-context cache retention with atomic reuse and race-safe pruning through PR #884; merged and verified on the real large tracker.
 body: ""
