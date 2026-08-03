@@ -18,8 +18,8 @@ function usage() {
   node scripts/release-version.mjs next [--date <YYYY.M.D>]
 
 Rules:
-  - Version format: YYYY.M.D or YYYY.M.D-N
-  - N is the release number for that day and must be >= 2 when present
+  - New production versions use YYYY.M.D exactly once per UTC day
+  - Historical YYYY.M.D-N tags remain valid for immutable recovery only
   - Month/day must be valid calendar values
 `);
 }
@@ -163,7 +163,9 @@ function nextVersionForDate(packageName, dateKey) {
   if (releasesOnDate.length === 0) {
     return dateKey;
   }
-  return `${dateKey}-${releasesOnDate.length + 1}`;
+  fail(
+    `Release already exists for ${dateKey}; same-day ordinal releases are SemVer prereleases and cannot satisfy stable package peer ranges. Recover the immutable existing tag or wait for the next UTC day.`,
+  );
 }
 
 function parseFlags(args) {
@@ -226,12 +228,12 @@ function runCheck(flags) {
       );
     }
 
-    const expectedNext = nextVersionForDate(pkg.name, expectedDate);
-    if (pkg.version !== expectedNext) {
+    if (parsedVersion.ordinal !== null) {
       fail(
-        `Version sequencing mismatch: package.json has ${pkg.version}, expected next release version ${expectedNext}.`,
+        `Version sequencing mismatch: ${pkg.version} is a historical ordinal; new releases must use the stable ${expectedDate} version.`,
       );
     }
+    nextVersionForDate(pkg.name, expectedDate);
   }
 
   console.log(`Version policy check passed (${pkg.version}).`);

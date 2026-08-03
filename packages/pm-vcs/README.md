@@ -1,8 +1,8 @@
-# @unbrained/pm-vcs
+# @unbrained/pm-vcs-sdk-exemplar
 
-> Tracker: [pm-xtrd](../../.agents/pm/features/pm-xtrd.toon), acceptance story [pm-8ngt](../../.agents/pm/stories/pm-8ngt.toon), atomic SDK transactions [pm-4e12](../../.agents/pm/features/pm-4e12.toon), graph SDK [pm-ju83](../../.agents/pm/features/pm-ju83.toon).
+> Tracker: namespace ownership [pm-6z0wzf](../../.agents/pm/issues/pm-6z0wzf.toon), SDK exemplar [pm-xtrd](../../.agents/pm/features/pm-xtrd.toon), acceptance story [pm-8ngt](../../.agents/pm/stories/pm-8ngt.toon), atomic SDK transactions [pm-4e12](../../.agents/pm/features/pm-4e12.toon), graph SDK [pm-ju83](../../.agents/pm/features/pm-ju83.toon).
 
-`pm-vcs` is the first deliberately non-project-management package in the
+`pm-vcs-sdk-exemplar` is the first deliberately non-project-management package in the
 first-party ecosystem. It proves that public pm SDK and extension contracts can
 model a small version-control domain without importing `src/core`, reading item
 files directly, or adding VCS policy to the core CLI.
@@ -11,8 +11,9 @@ The exemplar provides:
 
 - `Changeset` and `VcsRef` custom item types;
 - `draft -> proposed -> merged|abandoned` domain lifecycle;
-- `vcs ref-create`, `vcs create`, `vcs propose`, `vcs merge`, `vcs abandon`,
-  `vcs show`, and `vcs log` commands;
+- collision-free `vcs-exemplar ref-create`, `create`, `propose`, `merge`,
+  `abandon`, `show`, and `log` commands, with internal `vcs` compatibility
+  spellings retained for existing local consumers;
 - a `beforeCommand` hook enforcing explicit reviewed-merge affirmation;
 - point-in-time changeset reconstruction through `getItemAt`;
 - a durable, optimistic, append-only `commits_to` relationship stream projected
@@ -23,10 +24,10 @@ The exemplar provides:
 ## Install and stage the domain
 
 ```bash
-pm install vcs --project
+pm install vcs-exemplar --project
 pm profile apply vcs
 pm package doctor --project --isolated --detail deep --json
-pm contracts --command "vcs merge" --flags-only --json
+pm contracts --command "vcs-exemplar merge" --flags-only --json
 ```
 
 The package registers live types and fields globally, so the manifest does not
@@ -36,18 +37,18 @@ the `Changeset` transition graph idempotently.
 ## End-to-end changeset flow
 
 ```bash
-pm vcs ref-create main --author demo
-pm vcs create "Add durable projection" --ref <ref-id> --tree-hash sha256:abc --author demo
-pm vcs propose <changeset-id> --author demo
-pm vcs show <changeset-id> --at 1
-pm vcs merge <changeset-id> --ref <ref-id> --reviewed --author demo
-pm vcs log
+pm vcs-exemplar ref-create main --author demo
+pm vcs-exemplar create "Add durable projection" --ref <ref-id> --tree-hash sha256:abc --author demo
+pm vcs-exemplar propose <changeset-id> --author demo
+pm vcs-exemplar show <changeset-id> --at 1
+pm vcs-exemplar merge <changeset-id> --ref <ref-id> --reviewed --author demo
+pm vcs-exemplar log
 ```
 
-`vcs show --at` reconstructs immutable item history. `vcs log` independently
+`vcs-exemplar show --at` reconstructs immutable item history. `vcs-exemplar log` independently
 projects the package-owned relationship JSONL stream, proving that current item
 state and graph event state are both rebuildable from public SDK contracts.
-`vcs merge` publishes success only after its SDK transaction journal commits;
+`vcs-exemplar merge` publishes success only after its SDK transaction journal commits;
 ordinary failures compensate in reverse order, and retrying the same merge id
 resumes any interrupted forward or compensation phase.
 

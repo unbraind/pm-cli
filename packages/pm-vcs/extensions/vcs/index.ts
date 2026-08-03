@@ -25,12 +25,18 @@ import type {
 
 /** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
-  name: "builtin-vcs-exemplar",
+  name: "builtin-vcs-sdk-exemplar",
   version: "0.1.0",
   entry: "./index.js",
   priority: 0,
   capabilities: ["commands", "schema", "hooks"],
 };
+
+/** Collision-free command root advertised by the bundled SDK exemplar. */
+export const VCS_COMMAND_NAMESPACE = "vcs-exemplar";
+
+/** Compatibility command root retained for existing local exemplar consumers. */
+export const VCS_LEGACY_COMMAND_NAMESPACE = "vcs";
 
 /** Domain types contributed by the VCS exemplar. */
 export const VCS_ITEM_TYPES = [
@@ -636,16 +642,16 @@ const ID_ARGUMENT = [
 
 /** Build every VCS domain command definition from one contract table. */
 export function buildVcsCommands(): CommandDefinition[] {
-  return [
+  const canonicalCommands: CommandDefinition[] = [
     {
-      name: "vcs ref-create",
+      name: `${VCS_COMMAND_NAMESPACE} ref-create`,
       action: "vcs-ref-create",
       description: "Create a VCS ref through the public pm lifecycle SDK.",
       arguments: [{ name: "name", required: true, description: "Ref name." }],
       run: runRefCreate,
     },
     {
-      name: "vcs create",
+      name: `${VCS_COMMAND_NAMESPACE} create`,
       action: "vcs-create",
       description: "Create a draft changeset.",
       arguments: [
@@ -669,14 +675,14 @@ export function buildVcsCommands(): CommandDefinition[] {
       run: runChangesetCreate,
     },
     {
-      name: "vcs propose",
+      name: `${VCS_COMMAND_NAMESPACE} propose`,
       action: "vcs-propose",
       description: "Move a draft changeset into review.",
       arguments: ID_ARGUMENT,
       run: (context) => transitionChangeset(context, "proposed"),
     },
     {
-      name: "vcs merge",
+      name: `${VCS_COMMAND_NAMESPACE} merge`,
       action: "vcs-merge",
       description: "Merge a reviewed changeset into a ref.",
       arguments: ID_ARGUMENT,
@@ -697,14 +703,14 @@ export function buildVcsCommands(): CommandDefinition[] {
       run: runChangesetMerge,
     },
     {
-      name: "vcs abandon",
+      name: `${VCS_COMMAND_NAMESPACE} abandon`,
       action: "vcs-abandon",
       description: "Retire a draft or proposed changeset.",
       arguments: ID_ARGUMENT,
       run: (context) => transitionChangeset(context, "abandoned"),
     },
     {
-      name: "vcs show",
+      name: `${VCS_COMMAND_NAMESPACE} show`,
       action: "vcs-show",
       description: "Read current or point-in-time changeset state.",
       arguments: ID_ARGUMENT,
@@ -714,17 +720,33 @@ export function buildVcsCommands(): CommandDefinition[] {
       run: runChangesetShow,
     },
     {
-      name: "vcs log",
+      name: `${VCS_COMMAND_NAMESPACE} log`,
       action: "vcs-log",
       description: "Project the immutable merge relationship stream.",
       run: runVcsLog,
     },
   ];
+  return [
+    ...canonicalCommands,
+    ...canonicalCommands.map((command) => ({
+      ...command,
+      name: command.name.replace(
+        VCS_COMMAND_NAMESPACE,
+        VCS_LEGACY_COMMAND_NAMESPACE,
+      ),
+      description: `${command.description} Legacy compatibility spelling; prefer pm ${command.name}.`,
+      tier: "internal" as const,
+    })),
+  ];
 }
 
 /** Hook-enforced merge rule: domain merges require an explicit review affirmation. */
 export function enforceVcsMergePolicy(context: BeforeCommandHookContext): void {
-  if (context.command !== "vcs merge") return;
+  if (
+    context.command !== `${VCS_COMMAND_NAMESPACE} merge` &&
+    context.command !== `${VCS_LEGACY_COMMAND_NAMESPACE} merge`
+  )
+    return;
   if (context.options?.reviewed !== true)
     throw new TypeError("vcs merge requires --reviewed");
 }

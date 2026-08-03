@@ -641,6 +641,9 @@ function summarizeCandidate(candidate: ExtensionCandidate): EffectiveExtension {
   if (candidate.source_package) {
     summary.source_package = candidate.source_package;
   }
+  if (candidate.source_aliases) {
+    summary.source_aliases = [...candidate.source_aliases];
+  }
   return summary;
 }
 
@@ -650,10 +653,15 @@ function normalizeManagedSourcePackage(value: unknown): string | undefined {
     : undefined;
 }
 
+interface ManagedExtensionSourceIdentity {
+  package_name?: string;
+  aliases: string[];
+}
+
 async function readManagedExtensionSourcePackages(
   extensionsRoot: string,
-): Promise<Map<string, string>> {
-  const packages = new Map<string, string>();
+): Promise<Map<string, ManagedExtensionSourceIdentity>> {
+  const packages = new Map<string, ManagedExtensionSourceIdentity>();
   try {
     const parsed = JSON.parse(
       await fs.readFile(
@@ -675,22 +683,31 @@ async function readManagedExtensionSourcePackages(
       const record = entry as {
         directory?: unknown;
         name?: unknown;
-        source?: { package?: unknown };
+        source?: { input?: unknown; name?: unknown; package?: unknown };
       };
       const sourcePackage = normalizeManagedSourcePackage(
         record.source?.package,
       );
-      if (!sourcePackage) {
+      const aliases = [record.source?.input, record.source?.name, sourcePackage]
+        .filter((value): value is string =>
+          typeof value === "string" && value.trim().length > 0,
+        )
+        .map((value) => value.trim());
+      if (aliases.length === 0) {
         continue;
       }
+      const identity: ManagedExtensionSourceIdentity = {
+        aliases: [...new Set(aliases)],
+        ...(sourcePackage ? { package_name: sourcePackage } : {}),
+      };
       if (
         typeof record.directory === "string" &&
         record.directory.trim().length > 0
       ) {
-        packages.set(`directory:${record.directory.trim()}`, sourcePackage);
+        packages.set(`directory:${record.directory.trim()}`, identity);
       }
       if (typeof record.name === "string" && record.name.trim().length > 0) {
-        packages.set(`name:${record.name.trim()}`, sourcePackage);
+        packages.set(`name:${record.name.trim()}`, identity);
       }
     }
   } catch {
@@ -849,7 +866,7 @@ async function scanExtensionDirectory(
   directory: string,
   enabled: Set<string>,
   disabled: Set<string>,
-  managedSourcePackages: ReadonlyMap<string, string>,
+  managedSourcePackages: ReadonlyMap<string, ManagedExtensionSourceIdentity>,
   pmMaxVersionExceededMode: PmMaxVersionExceededMode,
 ): Promise<ScannedExtensionDirectory> {
   const extensionDir = path.join(extensionsRoot, directory);
@@ -917,7 +934,7 @@ async function scanExtensionDirectory(
     entryExists &&
     pmVersionCompatibility.allowed &&
     pmMaxVersionCompatibility.allowed;
-  const sourcePackage =
+  const sourceIdentity =
     managedSourcePackages.get(`directory:${directory}`) ??
     managedSourcePackages.get(`name:${manifest.name}`);
 
@@ -943,7 +960,8 @@ async function scanExtensionDirectory(
             manifest_path: manifestPath,
             entry_path: entryPath,
             manifest,
-            source_package: sourcePackage,
+            source_package: sourceIdentity?.package_name,
+            source_aliases: sourceIdentity?.aliases,
           }
         : null,
   };
@@ -3604,7 +3622,14 @@ export const _testOnlyLoader = {
   parseComparableVersion,
   parseManifest,
   readCurrentPmCliVersion,
-  readManagedExtensionSourcePackages,
+  readManagedExtensionSourcePackages: async (extensionsRoot: string) =>
+    new Map(
+      [...(await readManagedExtensionSourcePackages(extensionsRoot))]
+        .filter((entry): entry is [string, ManagedExtensionSourceIdentity & { package_name: string }] =>
+          typeof entry[1].package_name === "string",
+        )
+        .map(([key, identity]) => [key, identity.package_name]),
+    ),
   resolveExtensionImportHref,
   resolveCurrentPmCliVersion,
   resolveCommandDefinitionAction,

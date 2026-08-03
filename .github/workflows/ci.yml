@@ -189,7 +189,7 @@ jobs:
           pnpm sdk:surface:check
           pnpm security:scan
           pnpm lint
-          npm pack --dry-run
+          node scripts/release/package-artifact-gate.mjs
 
       - name: Enforce discovery and answer token budgets
         if: matrix.gate == 'static'

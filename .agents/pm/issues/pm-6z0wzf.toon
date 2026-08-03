@@ -2,11 +2,13 @@ id: pm-6z0wzf
 title: "GH-832: package command namespace ownership and collision diagnostics are not discoverable"
 description: "Track the public-package collision with the bundled private pm-vcs exemplar and define deterministic, inspectable command namespace ownership for extension authors and operators."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T07:01:54.979Z"
-updated_at: "2026-08-03T09:06:52.703Z"
+updated_at: "2026-08-03T14:35:49.730Z"
+closed_at: "2026-08-03T14:35:31.124Z"
+completed_at: "2026-08-03T14:35:31.124Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Expose command-path and alias ownership through SDK and contracts; fail closed or resolve collisions by a documented deterministic policy naming all claimants; report collisions in health; namespace bundled exemplars without breaking existing invocations; cover scope-preserving package identity and dual-package activation
@@ -14,28 +16,47 @@ parent: pm-tnud
 risk: medium
 confidence: high
 severity: high
+resolution: "Namespaced the private VCS SDK exemplar and its canonical commands, retained internal legacy invocations, and projected managed install aliases plus command ownership through loader/describe contracts."
 expected_result: "Package authors can preflight command and alias ownership, activation resolves collisions deterministically, and diagnostics name every claimant without silently dropping sibling commands."
-actual_result: A private bundled exemplar and a public package independently claim vcs aliases and command paths; fresh workspaces cannot discover ownership or the collision outcome.
+actual_result: "The bundled package installs as @unbrained/pm-vcs-sdk-exemplar via vcs-exemplar; canonical vcs-exemplar commands and internal vcs compatibility commands both work, and package describe resolves the install alias with deterministic ownership."
 component: extensions/command-registry
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4vwcvq,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
   pm-v1yo,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
   pm-tnud,implements,"2026-07-31T10:15:13.251Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-07-31T07:01:54.979Z","harness:codex","Duplicate check evidence: searched all statuses for VCS alias, command registration, and collision claimants; pm-v1yo covers core-group aliases and pm-4vwcvq covers partial activation, while GH-832 is the distinct package-to-package namespace ownership gap. Source: https://github.com/unbraind/pm-cli/issues/832"
   "2026-07-31T10:15:15.393Z","harness:codex","Organization rationale 2026-07-31: this issue is the discoverability acceptance gap for pm-tnud, not a parallel package epic. Estimate 180m, medium risk, high confidence; the consolidation task now records it as an explicit completion prerequisite."
   "2026-08-03T07:39:30.021Z","harness:codex","TDD evidence: duplicate handler ownership assertion failed before the describe projection and now reports activation-ordered claimants, the effective final winner, collision state, and last_activated_wins policy through CLI results and public SDK types."
   "2026-08-03T08:23:07.826Z","harness:codex","Manual acceptance: package describe --json in fresh Node and Bun workspaces reports the installed command-kit handler, project claimant, last_activated_wins policy, winner, and collision=false. The packed consumer imports buildExtensionDescribeResult from @unbrained/pm-cli/sdk."
   "2026-08-03T08:53:22.136Z","harness:codex","Tranche boundary: this PR delivers deterministic activation-ordered command claimant discovery, winner/collision projection, public SDK types, CLI JSON/Markdown output, documentation, focused tests, and Node/Bun packed acceptance. The item remains open because the acceptance criterion to namespace the bundled VCS exemplar without breaking legacy invocations is intentionally not claimed by this tranche."
   "2026-08-03T09:06:52.703Z","harness:codex","PR evidence for delivered ownership-discovery scope: https://github.com/unbraind/pm-cli/pull/880. The canonical item remains open for the separately stated bundled VCS exemplar namespacing residual."
-files[5]{path,scope,note}:
+  "2026-08-03T13:32:19.851Z","harness:codex","TDD evidence: canonical vcs-exemplar command expectations and package identity assertions were updated first; focused package/catalog tests now pass with legacy vcs command compatibility retained at internal tier."
+  "2026-08-03T13:51:36.428Z","harness:codex","TDD/manual acceptance evidence: package describe now resolves the persisted install alias through managed source provenance and bundled package identity. Focused extension-describe suite passes 20/20, typecheck and build pass, and the original isolated command PM_PATH=/tmp/pm-package-platform.0QLv6q/project/.agents/pm PM_GLOBAL_PATH=/tmp/pm-package-platform.0QLv6q/global/.agents/pm node dist/cli.js package describe vcs-exemplar --project --json returns ok=true, target=vcs-exemplar, total=1, canonical builtin-vcs-sdk-exemplar ownership, and all 14 canonical plus compatibility command paths."
+  "2026-08-03T13:52:34.472Z","harness:codex","Live GitHub cross-check 2026-08-03: GH-832 has a direct pm item .toon link comment; all 23 open repository issues have at least one direct pm .toon link comment; there are zero open PRs, zero Dependabot alerts, zero code-scanning alerts, and zero secret-scanning alerts. Current main CI/Security/CodeQL/Scorecard/CodSpeed runs are green."
+  "2026-08-03T14:34:06.957Z","harness:codex","Final local verification: repository coverage passes 100/100/100/100 across 425 files and 6,782 tests; full static/docstring/SDK parity/context/token gates pass; packed npx smoke and 88-command package-first dogfood pass. Exact install alias is now a loader-projected SDK identity rather than CLI-only special handling."
+files[12]{path,scope,note}:
+  packages/pm-vcs/extensions/vcs/index.ts,project,canonical namespaced commands with internal compatibility spellings
+  packages/pm-vcs/extensions/vcs/manifest.json,project,namespaced bundled extension identity
+  packages/pm-vcs/package.json,project,collision-free package identity and canonical alias
   sdk/public-surface.json,project,public command ownership contracts snapshot
+  src/core/extensions/extension-types.ts,project,Public loaded-extension install-source alias identity contract
+  src/core/extensions/loader.ts,project,Persist managed install identities into loaded extension context
   src/sdk/extension.ts,project,CLI lifecycle result integration
   src/sdk/extension/describe.ts,project,deterministic command ownership projection
   src/sdk/index.ts,project,public ownership SDK exports
+  tests/unit/extensions/extension-command.spec.ts,project,bundled catalog and wildcard activation identity coverage
   tests/unit/extensions/extension-describe.spec.ts,project,winner and claimant contract coverage
-tests[1]{command,scope,timeout_seconds}:
+  tests/unit/packages/vcs-extension.spec.ts,project,canonical and legacy command acceptance coverage
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-describe.spec.ts,project,240
-docs[1]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/vcs-extension.spec.ts tests/unit/extensions/extension-command.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msdbyul9-genmgh,test,passed,"2026-08-03T14:34:08.910Z","2026-08-03T14:34:37.533Z","2026-08-03T14:34:37.533Z",2,0,0
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,Generated release-facing namespace and alias resolution entry
   docs/EXTENSIONS.md,project,ownership policy and discovery workflow
+  packages/pm-vcs/GAP_REPORT.md,project,SDK exemplar namespace assessment
+  packages/pm-vcs/README.md,project,canonical install and command migration guidance
+close_reason: "Delivered collision-free VCS SDK exemplar package and vcs-exemplar namespace with internal legacy command compatibility, loader-projected install-alias discovery, CLI/SDK ownership context, 100% coverage, packed and dogfood acceptance."
 body: ""

@@ -10,7 +10,7 @@ core into Git.
 | --- | --- | --- |
 | Domain entities | extension item types and fields | Complete: `Changeset` and `VcsRef` require no core change. |
 | Domain lifecycle | project profile statuses and workflows | Complete: draft, review, merge, and abandon are schema-owned. |
-| Domain verbs | `registerCommand` | Complete: seven structured commands share normal CLI/contracts rendering. |
+| Domain verbs | `registerCommand` | Complete: seven collision-free `vcs-exemplar` commands share normal CLI/contracts rendering; internal `vcs` spellings preserve local compatibility. |
 | Business rule | `beforeCommand` hook | Complete: merge requires an explicit reviewed affirmation. |
 | Current state | `PmClient` lifecycle/query methods | Complete: command handlers use the same mutation engine as CLI and MCP. |
 | Point-in-time state | `getItemAt` | Complete: any changeset history version or timestamp is reconstructed without file access. |

@@ -2,7 +2,6 @@
 
 import { createHash } from "node:crypto";
 import {
-  lstat,
   mkdir,
   readdir,
   readFile,
@@ -46,7 +45,6 @@ const binPath = path.join(repoRoot, "dist", "cli.js");
 const lockRetryMs = 250;
 const lockTimeoutMs = 120_000;
 const staleLockMs = 10 * 60_000;
-const bundleStaleRetentionMs = 10 * 60_000;
 const bundleManifestPath = path.join(outputDir, "bundle-manifest.json");
 
 export function sleep(ms) {
@@ -151,17 +149,10 @@ export async function removeStaleBundleFiles(outputs) {
     ),
   );
   const existingFiles = await collectFiles(outputDir);
-  const now = Date.now();
   await Promise.all(
     existingFiles
       .filter((filePath) => !expectedFiles.has(filePath))
-      .map(async (filePath) => {
-        const fileStats = await lstat(filePath).catch(() => null);
-        if (!fileStats || now - fileStats.mtimeMs < bundleStaleRetentionMs) {
-          return;
-        }
-        await unlink(filePath).catch(() => {});
-      }),
+      .map((filePath) => unlink(filePath).catch(() => {})),
   );
 }
 
@@ -221,7 +212,9 @@ function bundleOptions(selectedEntryPoints, chunkNames) {
 export async function main() {
   // Do not delete the live bundle before rebuilding. Agents often run docs,
   // dogfood, and build gates concurrently in one checkout; removing this folder
-  // creates a transient broken `dist/cli.js` runtime.
+  // creates a transient broken `dist/cli.js` runtime. Once both new graphs are
+  // complete under the build lock, obsolete hashed chunks are safe to prune and
+  // must not leak into repeated-build package artifacts.
   const releaseBundleBuildLock = await acquireBundleBuildLock();
   try {
     const primaryBuildResult = await build(

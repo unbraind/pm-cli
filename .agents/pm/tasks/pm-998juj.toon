@@ -2,11 +2,13 @@ id: pm-998juj
 title: "Published artifact weight: the npm tarball ships 20MB of inline-source sourcemaps plus duplicate tsc and bundle outputs"
 description: "The published package is 40.66MB unpacked across 1,668 files (npm view @unbrained/pm-cli dist.unpackedSize/dist.fileCount, 2026.7.25). Local dist is 31MB, of which 491 .js.map files account for 20MB — tsconfig.json sets both sourceMap:true and inlineSources:true, so every map embeds the full TypeScript source (dist/sdk alone: 2.6MB JS, 1.2MB d.ts, 5.0MB maps). Those maps are already uploaded to Sentry at release time by the sentry:upload script, which reads dist/ directly, so the tarball copy is redundant for symbolication. On top of that the tarball ships both build outputs: the tsc emit (dist/cli 5.6MB, dist/core 5.4MB, dist/sdk 8.7MB) and the esbuild bundle (dist/cli-bundle 12MB, 182 chunks) that bin/exports actually resolve to. package.json also declares an unused optional peerDependency on 'typebox' — no source, package, script, or doc file references it. Duplicate check: searched install/size/tarball/sourcemap/footprint all-status. pm-oxq2 (closed) removed the nested 25MB host copy from project-scope extension installs and its own body raised 'publish a slim SDK-only package' without acting on it; pm-feecbs owns install-latency policy for the 18 external packages, not the host artifact; pm-hcrmye deliberately kept production source maps and did not examine tarball composition."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[5]: "area:release",distribution,ecosystem,packaging,performance
 created_at: "2026-07-25T07:10:06.541Z"
-updated_at: "2026-07-26T05:55:34.770Z"
+updated_at: "2026-08-03T14:35:51.029Z"
+closed_at: "2026-08-03T14:35:34.373Z"
+completed_at: "2026-08-03T14:35:34.373Z"
 author: unknown
 estimated_minutes: 300
 acceptance_criteria: "The published tarball no longer ships .js.map files (or ships only what symbolication provably needs), with Sentry release symbolication verified against a real captured event after the change; a documented decision records whether both the tsc emit and the esbuild bundle must ship, and any redundant output is dropped from package.json files or justified in writing; the unused typebox peer dependency is removed or a source reference is added; a size assertion in the release gates fails when unpacked size or file count regresses beyond a committed budget; npx and global install still work from a packed tarball (existing smoke:npx and package-first dogfood proofs stay green) and no runtime feature, type, or export is removed"
@@ -17,15 +19,41 @@ why_now: The artifact grew from the 25MB recorded in pm-oxq2 to 40.66MB with no 
 parent: pm-u9d0
 risk: low
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-feecbs,related,"2026-07-25T07:11:55.544Z",null,null
-  pm-oxq2,discovered_from,"2026-07-25T07:11:55.544Z",null,null
-  pm-quzx,related,"2026-07-25T07:11:55.544Z",null,null
-  pm-yse5dt,related,"2026-07-25T07:11:55.544Z",null,null
-  pm-u9d0,implements,"2026-07-26T05:55:34.518Z",null,null
-comments[2]{created_at,author,text}:
+resolution: "Excluded source maps from npm artifacts, removed the unused typebox peer, added fail-closed size/content budgets to CI and release, and made locked repeated bundle builds prune obsolete chunks."
+expected_result: "Published artifacts remain deterministic, bounded, runtime-complete, free of source maps and unused peers, and cannot silently grow across repeated builds."
+actual_result: "Two consecutive builds pack 1,308 files and 15,228,302 unpacked bytes with zero maps; required CLI/SDK/type entrypoints, 100% coverage, packed smoke, and package-first dogfood pass."
+dependencies[5]{id,kind,created_at}:
+  pm-feecbs,related,"2026-07-25T07:11:55.544Z"
+  pm-oxq2,discovered_from,"2026-07-25T07:11:55.544Z"
+  pm-quzx,related,"2026-07-25T07:11:55.544Z"
+  pm-yse5dt,related,"2026-07-25T07:11:55.544Z"
+  pm-u9d0,implements,"2026-07-26T05:55:34.518Z"
+comments[6]{created_at,author,text}:
   "2026-07-25T07:12:23.380Z","harness:claude-code","Duplicate-check evidence (all-status pm search over install, size, tarball, sourcemap, footprint, packaging): matched closed pm-oxq2, pm-59gj, pm-vnjh, pm-hcrmye and open pm-feecbs, pm-quzx. pm-oxq2 fixed the nested host copy inside project-scope extension installs and explicitly parked the slim-package idea; pm-feecbs governs the 18 external packages, not the host tarball; pm-hcrmye kept production source maps as part of its fix without examining tarball composition. No open item owns host artifact size."
   "2026-07-25T07:12:24.186Z","harness:claude-code","Composition evidence: npm view @unbrained/pm-cli dist.unpackedSize=40660446 dist.fileCount=1668. Local dist 31MB total: cli-bundle 12MB (182 chunks), sdk 8.7MB, cli 5.6MB, core 5.4MB, mcp 152K. 491 .js.map files total 20MB; dist/sdk splits as 2.6MB JS, 1.2MB d.ts, 5.0MB maps — the ratio is driven by tsconfig inlineSources:true. scripts sentry:upload runs 'sentry-cli sourcemaps upload --validate dist/' at release, so symbolication already has the maps out-of-band. grep across src, packages, scripts and docs finds zero references to the declared optional peer 'typebox'."
+  "2026-08-03T13:32:21.580Z","harness:codex","TDD evidence: artifact negative controls reject oversize, excessive-file, source-map, missing-runtime-path, and malformed npm pack reports. Live npm pack projection passes at 15,225,239 unpacked bytes, 1,308 files, and zero .map files versus the recorded 40,660,446-byte/1,668-file baseline."
+  "2026-08-03T13:52:35.742Z","harness:codex","Security/dependency evidence 2026-08-03: pnpm audit reports no known vulnerabilities; pnpm security:scan reports no credential-like secrets; GitHub reports zero open Dependabot, code-scanning, and secret-scanning alerts. The package artifact gate independently reports 15,225,239 unpacked bytes, 1,308 files, required runtime/type entrypoints present, and zero source maps."
+  "2026-08-03T14:09:10.202Z","harness:codex","Fail-closed gate finding and fix: repeated builds retained fresh obsolete hashed chunks for 10 minutes, causing npm pack to grow from 15,225,239 bytes/1,308 files to 22,043,512 bytes/1,489 files. Bundle output cleanup now occurs immediately after both new graphs complete under the existing build lock (never before rebuild). Focused tests pass 24/24; two consecutive builds now produce a stable passing artifact at 15,228,302 bytes, 1,308 files, zero source maps."
+  "2026-08-03T14:34:08.224Z","harness:codex","Final local verification: full coverage passes 100/100/100/100 (48,230 statements, 34,881 branches, 9,855 functions, 46,764 lines); static/docstring/security/context gates pass; repeated-build artifact is stable at 15,228,302 bytes/1,308 files/zero maps; packed npx and 88-command dogfood pass. Hosted-analysis is the only pre-PR limitation because DeepScan has no result for base SHA d2bf9f146; it will be re-evaluated on the PR exact head."
 notes[1]{created_at,author,text}:
   "2026-07-25T21:18:48.881Z","harness:claude-code","Artifact-weight re-measurement 2026-07-25 (evening ecosystem review), measured on the freshly built dist/ tree at version 2026.7.25 (pnpm build, exit 0, \"Already up to date\").\n\ndist/ totals 40MB across 1,460 files. Of that, 526 .map files account for 28MB — roughly 70% of the whole published artifact is sourcemaps. The previously recorded baseline on this item was 40.66MB / 1,668 files with ~20MB of inlineSources sourcemaps, so total size and file count are flat-to-slightly-down while the sourcemap share has grown from about half to about seven tenths. The ratio is moving the wrong way even though the headline number is not.\n\nThat reinforces this item's existing framing rather than changing it: the sourcemaps are already uploaded to Sentry, so shipping them to every npm consumer buys nothing at install time, and they are now the dominant cost by a wide margin. The other two components this item tracks are unchanged — the artifact still carries both the tsc emit and the esbuild bundle, and the dead `typebox` peer is still declared in package.json (line 178, \"typebox\": \"*\", with a peerDependenciesMeta entry) against zero occurrences of the string typebox anywhere under src/. Confirmed by grep this pass.\n\nLive-state cross-check performed at the same time, all healthy: npm dist-tags.latest 2026.7.25 matching the local build, GitHub release v2026.7.25 present, and the last completed runs of CI, CodeQL, CodSpeed, OSSF Scorecard and Security and Script Quality all conclusion=success."
+files[10]{path,scope,note}:
+  .github/workflows/ci.yml,project,mandatory PR artifact gate
+  .github/workflows/release.yml,project,mandatory release artifact gate
+  package.json,project,packlist excludes source maps and removes unused peer
+  pnpm-lock.yaml,project,unused typebox root peer removal
+  scripts/bundle-cli.mjs,project,Prune obsolete hashed bundle chunks after locked graph rebuilds so repeated builds stay package-deterministic
+  scripts/release/package-artifact-budget.json,project,reviewable artifact size and contents budgets
+  scripts/release/package-artifact-gate.mjs,project,npm packlist artifact contract gate
+  tests/integration/ci-workflow-contract.spec.ts,project,hosted gate enforcement coverage
+  tests/unit/scripts/bundle-cli.spec.ts,project,Verify all obsolete bundle outputs are removed after a successful graph rebuild
+  tests/unit/scripts/release/package-artifact-gate.spec.ts,project,fail-closed artifact negative controls
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msdbz6wt-4n92fd,test,passed,"2026-08-03T14:34:45.211Z","2026-08-03T14:34:53.501Z","2026-08-03T14:34:53.501Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated release-facing artifact budget entry
+  docs/RELEASING.md,project,artifact budget policy and maintainer workflow
+close_reason: "Delivered deterministic package artifact budgets, source-map exclusion, unused peer removal, immediate post-build stale-chunk cleanup, mandatory CI/release gates, 100% coverage, packed and dogfood proof."
 body: ""

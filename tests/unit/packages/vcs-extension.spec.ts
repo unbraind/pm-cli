@@ -20,6 +20,8 @@ import {
 import vcsExtension, {
   VCS_ITEM_FIELDS,
   VCS_ITEM_TYPES,
+  VCS_COMMAND_NAMESPACE,
+  VCS_LEGACY_COMMAND_NAMESPACE,
   VCS_RELATIONSHIP_KIND,
   activate,
   buildVcsCommands,
@@ -44,7 +46,7 @@ function emptyState(): ProfileCurrentState {
 }
 
 describe("pm-vcs beyond-PM SDK exemplar", () => {
-  it("registers schema, profile, seven domain commands, and the merge hook", async () => {
+  it("registers schema, profile, namespaced commands, legacy aliases, and the merge hook", async () => {
     const harness = await createExtensionTestHarness(vcsExtension, {
       capabilities: ["commands", "schema", "hooks"],
     });
@@ -53,6 +55,13 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
     expect(vcsExtension.activate).toBe(activate);
     expect(vcsExtension.deactivate).toBe(deactivate);
     expect(buildVcsCommands().map((command) => command.name)).toEqual([
+      "vcs-exemplar ref-create",
+      "vcs-exemplar create",
+      "vcs-exemplar propose",
+      "vcs-exemplar merge",
+      "vcs-exemplar abandon",
+      "vcs-exemplar show",
+      "vcs-exemplar log",
       "vcs ref-create",
       "vcs create",
       "vcs propose",
@@ -61,6 +70,13 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
       "vcs show",
       "vcs log",
     ]);
+    expect(VCS_COMMAND_NAMESPACE).toBe("vcs-exemplar");
+    expect(VCS_LEGACY_COMMAND_NAMESPACE).toBe("vcs");
+    expect(
+      buildVcsCommands()
+        .slice(7)
+        .every((command) => command.tier === "internal"),
+    ).toBe(true);
     for (const itemType of VCS_ITEM_TYPES) {
       expect(
         harness.assertItemType({ itemType: itemType.name }).itemType.name,
@@ -119,6 +135,14 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
   it("enforces reviewed merges while leaving every other command untouched", () => {
     expect(() =>
       enforceVcsMergePolicy({
+        command: "vcs-exemplar merge",
+        args: ["change-1"],
+        options: {},
+        pm_root: "/tmp/pm",
+      }),
+    ).toThrow(/--reviewed/);
+    expect(() =>
+      enforceVcsMergePolicy({
         command: "vcs merge",
         args: ["change-1"],
         options: {},
@@ -158,7 +182,7 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
       ).toBe(0);
 
       const ref = await context.runCliInProcess(
-        ["vcs", "ref-create", "main", "--json"],
+        ["vcs-exemplar", "ref-create", "main", "--json"],
         { expectJson: true },
       );
       expect(ref.code).toBe(0);
@@ -166,7 +190,7 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
 
       const created = await context.runCliInProcess(
         [
-          "vcs",
+          "vcs-exemplar",
           "create",
           "Durable projection",
           "--ref",
@@ -181,7 +205,7 @@ describe("pm-vcs beyond-PM SDK exemplar", () => {
       const changesetId = (created.json as { id: string }).id;
 
       const missingReview = await context.runCliInProcess(
-        ["vcs", "merge", changesetId, "--ref", refId, "--json"],
+        ["vcs-exemplar", "merge", changesetId, "--ref", refId, "--json"],
         { expectJson: true },
       );
       expect(missingReview.code).not.toBe(0);

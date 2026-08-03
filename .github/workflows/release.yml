@@ -160,7 +160,7 @@ jobs:
           pnpm exec sentry-cli releases finalize "$RELEASE" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
 
       - name: Packaging smoke check
-        run: npm pack --dry-run
+        run: node scripts/release/package-artifact-gate.mjs
 
       - name: npx tarball smoke check
         run: pnpm smoke:npx

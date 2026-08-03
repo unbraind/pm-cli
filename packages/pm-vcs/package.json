@@ -1,5 +1,5 @@
 {
-  "name": "@unbrained/pm-vcs",
+  "name": "@unbrained/pm-vcs-sdk-exemplar",
   "version": "2026.8.3",
   "private": true,
   "type": "module",
@@ -22,7 +22,7 @@
   ],
   "pm": {
     "aliases": [
-      "vcs"
+      "vcs-exemplar"
     ],
     "extensions": [
       "extensions/vcs"

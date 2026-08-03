@@ -18,7 +18,9 @@ For local progressive-disclosure routing, install `guide-shell` with `pm install
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon),
 [pm-4s24d2](../.agents/pm/issues/pm-4s24d2.toon),
-[pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon).
+[pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), stable peer compatibility
+[pm-csuce0](../.agents/pm/issues/pm-csuce0.toon), and artifact budgets
+[pm-998juj](../.agents/pm/tasks/pm-998juj.toon).
 
 ## Version Policy
 
@@ -34,10 +36,12 @@ Inspect the next SemVer-compatible calendar version for diagnostics:
 pnpm version:next
 ```
 
-This diagnostic preserves compatibility with historical ordinal tags. Its
-output does not override the production pipeline's one-release-per-UTC-day
-guard. An explicit pipeline `--version` must equal the current UTC calendar
-date; past, future, malformed, and ordinal targets fail before Git inspection.
+This diagnostic preserves validation compatibility with historical ordinal
+tags, but never proposes one. When today's stable release already exists it
+fails with immutable-tag recovery guidance, because an ordinal would be a
+SemVer prerelease excluded from ordinary stable package peer ranges. An
+explicit pipeline `--version` must equal the current UTC calendar date; past,
+future, malformed, and ordinal targets fail before Git inspection.
 
 Validate the current package version:
 
@@ -205,7 +209,10 @@ pnpm release:pipeline
 
 The static phase includes `pnpm sdk:surface:check`,
 `pnpm benchmark:sdk-entrypoints:check`, and
-`pnpm benchmark:transport:check`. Additive SDK exports require a reviewed
+`pnpm benchmark:transport:check`. The packaging phase runs
+`pnpm quality:package-artifact`, which evaluates npm's actual packlist against
+the committed unpacked-size, file-count, required-runtime-file, and forbidden
+source-map budgets. Additive SDK exports require a reviewed
 snapshot refresh. A removal or semantic signature change fails until the
 maintainer supplies
 `pnpm sdk:surface:update -- --acknowledge-breaking "<release rationale>"`;

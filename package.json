@@ -85,6 +85,7 @@
   },
   "files": [
     "dist/**",
+    "!dist/**/*.map",
     "README.md",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
@@ -129,6 +130,7 @@
     "quality:retrieval-eval": "pnpm build && node scripts/release/retrieval-eval-gate.mjs",
     "quality:retrieval-eval:update": "pnpm build && node scripts/release/retrieval-eval-gate.mjs --update",
     "quality:gate-registry": "pnpm build && node scripts/release/gate-registry.mjs",
+    "quality:package-artifact": "pnpm build && node scripts/release/package-artifact-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
     "quality:docs-links": "node scripts/release/docs-skills-gate.mjs --links-only",
     "quality:hosted-analysis": "node scripts/release/hosted-analysis-gate.mjs",
@@ -190,14 +192,6 @@
   },
   "engines": {
     "node": ">=22.18.0"
-  },
-  "peerDependencies": {
-    "typebox": "*"
-  },
-  "peerDependenciesMeta": {
-    "typebox": {
-      "optional": true
-    }
   },
   "dependencies": {
     "@sentry/node": "10.69.0",

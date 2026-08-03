@@ -340,6 +340,10 @@ describe("extension scaffold define builder guidance", () => {
     expect(packageJson.peerDependencies?.["@unbrained/pm-cli"]).toBe(`>=${SCAFFOLD_PM_MIN_VERSION}`);
     expect(manifest.pm_min_version).toBe(SCAFFOLD_PM_MIN_VERSION);
     expect(scaffold["README.md"]).toContain(`Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\``);
+    expect(scaffold["README.md"]).toContain(
+      `stable range \`>=${SCAFFOLD_PM_MIN_VERSION}\``,
+    );
+    expect(scaffold["README.md"]).toContain("SemVer excludes prerelease ordinals");
     expect(packageJson.scripts?.build).toBeUndefined();
     expect(packageJson.scripts?.typecheck).toBe("tsc --noEmit");
     expect(packageJson.scripts?.["test:runtime"]).toBe("node --test");

@@ -49,14 +49,16 @@ describe("scripts/release-version: check/next success paths", () => {
     expect(result.execFileSync).not.toHaveBeenCalled();
   });
 
-  it("computes the next ordinal release for a date with published versions", async () => {
+  it("refuses to propose a same-day ordinal after a stable release exists", async () => {
     const result = await runReleaseVersionScenario({
       args: ["next", "--date", "2026.6.14"],
       packageJson: { name: "pm-cli", version: "2026.6.14" },
       execFileSyncImpl: () => JSON.stringify(["2026.6.14", "2026.6.14-2", "2026.6.13"]),
     });
-    expect(result.failure).toBeNull();
-    expect(result.logs.at(-1)).toBe("2026.6.14-3");
+    expect(String(result.failure ?? "")).toContain("EXIT:1");
+    expect(result.errors.join("\n")).toContain(
+      "same-day ordinal releases are SemVer prereleases",
+    );
   });
 
   it("returns the bare date key when npm returns a 404 for the package", async () => {
@@ -92,13 +94,15 @@ describe("scripts/release-version: check/next success paths", () => {
     expect(result.logs.at(-1)).toBe(dateKey);
   });
 
-  it("treats a single published string version as a one-element list", async () => {
+  it("refuses a date when npm returns one published string version", async () => {
     const result = await runReleaseVersionScenario({
       args: ["next", "--date", "2026.6.14"],
       execFileSyncImpl: () => JSON.stringify("2026.6.14"),
     });
-    expect(result.failure).toBeNull();
-    expect(result.logs.at(-1)).toBe("2026.6.14-2");
+    expect(String(result.failure ?? "")).toContain("EXIT:1");
+    expect(result.errors.join("\n")).toContain(
+      "Release already exists for 2026.6.14",
+    );
   });
 
   it("treats a non-array, non-string npm payload as an empty version list", async () => {
@@ -156,7 +160,20 @@ describe("scripts/release-version: failure paths", () => {
       execFileSyncImpl: () => JSON.stringify(["2026.6.14"]),
     });
     expect(String(result.failure ?? "")).toContain("EXIT:1");
-    expect(result.errors.join("\n")).toContain("Version sequencing mismatch");
+    expect(result.errors.join("\n")).toContain(
+      "same-day ordinal releases are SemVer prereleases",
+    );
+  });
+
+  it("rejects a historical ordinal as a new stable release target", async () => {
+    const result = await runReleaseVersionScenario({
+      args: ["check", "--verify-next", "--date", "2026.6.14"],
+      packageJson: { name: "pm-cli", version: "2026.6.14-2" },
+    });
+    expect(String(result.failure ?? "")).toContain("EXIT:1");
+    expect(result.errors.join("\n")).toContain(
+      "new releases must use the stable 2026.6.14 version",
+    );
   });
 
   it("fails on an unknown flag", async () => {
