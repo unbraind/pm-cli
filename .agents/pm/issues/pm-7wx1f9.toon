@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-03T08:27:22.410Z"
-updated_at: "2026-08-03T08:46:17.117Z"
+updated_at: "2026-08-03T09:06:51.546Z"
 closed_at: "2026-08-03T08:39:20.609Z"
 completed_at: "2026-08-03T08:39:20.609Z"
 author: "harness:codex"
@@ -27,10 +27,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jrdri,related_to,"2026-08-03T08:27:22.410Z","harness:codex","cli:create:dep",detected
   pm-2evy,implements,"2026-08-03T08:27:22.410Z","harness:codex","cli:create:dep",detected
   pm-6j7r1a,discovered_from,"2026-08-03T08:27:22.410Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-03T08:27:22.410Z","harness:codex","text=Duplicate check evidence: searched all 2,292 items across every status for GH-878, workspace snapshot help, unknown_command, help availability, and contracts closure. Closed pm-6j7r1a owns enumerated-versus-resolvable root spellings and closed pm-1jrdri owns rendered-versus-contracted roots; GH-878 is the distinct nested action-path and help self-resolution regression. Source: https://github.com/unbraind/pm-cli/issues/878"
   "2026-08-03T08:38:45.431Z","harness:codex","Implementation evidence: structured JSON help now resolves contract-backed positional paths through their nearest registered Commander parent while retaining the requested canonical path; implicit help self-resolution is admitted from the core command contract. The integration gate invokes structured help for every command emitted by contracts and verifies the exact requested tokens. Focused suite passed 2/2 tests, including all 116 current command paths; both 'help --json workspace snapshot create' and 'help --json help' return exit 0 with exact resolved_path values."
   "2026-08-03T08:46:17.117Z","harness:codex","Coverage hardening: the first repo-wide run passed all 6,759 tests but correctly failed the 100% threshold because the new path resolver branches were not directly instrumented. Added focused source-level tests for empty/exact/implicit/positional/orphaned/unknown paths and direct/lifecycle/invalid flag-contract membership; focused verification now passes 5/5 across the unit invariant and all-command integration gate. No ignore pragma or threshold exception was added."
+  "2026-08-03T09:06:51.546Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/880 closes GH-878 with structured-help closure across all 116 enumerated command paths and direct source-level branch coverage."
 files[7]{path,scope,note}:
   sdk/public-surface.json,project,Lock the new public SDK primitive
   src/cli/help-json-payload.ts,project,Resolve contract-backed positional and implicit structured help paths

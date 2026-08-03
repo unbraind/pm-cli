@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:mcp","area:schema",diagnostics
 created_at: "2026-07-27T21:05:14.401Z"
-updated_at: "2026-08-03T08:24:38.658Z"
+updated_at: "2026-08-03T09:06:50.990Z"
 closed_at: "2026-08-03T08:24:37.943Z"
 completed_at: "2026-08-03T08:24:37.943Z"
 author: "harness:codex"
@@ -22,11 +22,12 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-b9ov,related,"2026-07-27T21:05:14.401Z","harness:codex","cli:create:dep",detected
   pm-m4ikkz,implements,"2026-07-27T21:05:14.401Z","harness:codex","cli:create:dep",detected
   pm-xwah,related,"2026-07-27T21:05:14.401Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-27T21:05:14.401Z","harness:codex","Dedupe evidence: all-status search for MCP custom-field collision diagnostics reviewed the canonical reserved-field fix pm-b9ov, runtime projection pm-m4ikkz, and exact collision guard pm-xwah; none owns author-facing MCP transport/tool-input diagnostics. CodeRabbit final review raised this distinct low-noise UX follow-up."
   "2026-08-03T07:39:30.736Z","harness:codex","TDD evidence: schema add-field, profile lint, and extension doctor tests now cover canonical MCP ownership collisions and options.<field> recovery. Dispatch remains unchanged; the diagnostic is author-time and deterministic."
   "2026-08-03T08:06:46.625Z","harness:codex","Evidence: repo-wide static quality now passes with 100% module/export/member docstrings, zero clone findings, public SDK boundary closure, token/context gates, SDK entrypoint cost checks, and CLI transport floor. Collision diagnostics were split into a focused SDK module instead of raising the 3,400-line architecture budget."
   "2026-08-03T08:23:08.556Z","harness:codex","Manual acceptance: schema add-field cwd emitted custom_field_mcp_input_collision:cwd:cwd:mcp_tool_input:use=options.cwd in a fresh workspace. The packed SDK resolver maps pm-executable to options.pmExecutable without changing dispatch."
+  "2026-08-03T09:06:50.989Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/880 carries the unified MCP custom-field collision resolver across schema, profile, doctor, generated contracts, and SDK exports."
 files[14]{path,scope,note}:
   scripts/release/static-quality-gate.mts,project,Retire stale private SDK exception after publishing describe ownership primitives
   sdk/public-surface.json,project,public collision resolver and code vocabulary snapshot
