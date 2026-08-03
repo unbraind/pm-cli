@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-14T21:47:46.436Z"
-updated_at: "2026-08-03T09:53:05.479Z"
+updated_at: "2026-08-03T09:55:07.593Z"
 closed_at: "2026-08-03T09:51:53.585Z"
 completed_at: "2026-08-03T09:51:53.585Z"
 author: maintainer-agent
@@ -23,13 +23,14 @@ dependencies[3]{id,kind,created_at}:
   pm-k7dp,related,"2026-07-14T21:47:46.436Z"
   pm-pim7,related,"2026-07-14T21:47:46.436Z"
   pm-qwoy,implements,"2026-07-26T17:04:09.990Z"
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-14T21:49:50.034Z",maintainer-agent,"GitHub toggle attempt 2026-07-14: PATCH /repos with security_and_analysis.secret_scanning_non_provider_patterns/.secret_scanning_validity_checks = enabled returns 200 but the values stay 'disabled' (verified via GET after retry with JSON body and form syntax) — silently ignored for this user-namespace public repo; these two appear UI-gated. Maintainer UI path: Settings → Advanced Security → Secret Protection → enable 'Non-provider patterns' and 'Validity checks' (both FREE on public repos). Already-enabled free surface verified live: secret_scanning, secret_scanning_push_protection, dependabot_security_updates, private vulnerability reporting."
   "2026-07-14T21:55:56.383Z",maintainer-agent,"Implementation: TruffleHog job added to security.yml — trufflesecurity/trufflehog@27b0417c (v3.95.9), fetch-depth:0, extra_args '--results=verified,unknown --exclude-paths=.trufflehog-exclude-paths.txt'. Local full-history scan with the pinned binary: 0 verified secrets; sole 'unknown' = deliberate test fixture https://[redacted-test-fixture-uri] in tests/unit/health-command.spec.ts (DNS-unverifiable) — excluded via unanchored path regex (anchored ^...$ does NOT match in git mode; trap noted). Post-exclusion scan exit 0 / 0 findings printed."
   "2026-07-14T22:03:22.432Z",maintainer-agent,"Gate self-test (first live catch): the initial push went RED because my own implementation comment quoted the basic-auth fixture URI verbatim — the literal landed in this item's history JSONL and TruffleHog flagged the pm store itself (2 unknown results, exit 183). Remediation: pm history-redact pm-4ris (regex redaction, 1 replacement, hash chain recomputed, verify_ok:true — first production use of history-redact) + excluded this item's two store paths in .trufflehog-exclude-paths.txt because the pre-redaction literal is permanent in git blob history. Rule reinforced: NEVER quote secret-pattern literals into pm text, even to describe a fixture. Full-history rescan with pinned binary: 0 findings."
   "2026-07-25T16:56:20.818Z","harness:codex","Security evidence: TruffleHog 3.96.0 found 0 verified secrets and one unverified credential-shaped URI in the earlier PR commit for a unit-test fixture. The current tree composes the inert URI at runtime; the PR branch will be rewritten after final changes so the obsolete blob is unreachable, then rescanned with verified+unknown fail mode."
   "2026-07-25T17:05:55.143Z","harness:codex","Final evidence: after squashing the PR-only commits, TruffleHog 3.96.0 scanned aa7e76be..b7974127 with verified+unknown fail mode and reported 0 verified / 0 unknown findings. Current-tree secret scan and exact-head 6,370-test 100% coverage also pass."
   "2026-08-03T09:51:52.861Z","harness:codex","Regression correction evidence 2026-08-03: scheduled run 30798451130 failed because provider timeouts classified ordinary PM hash-chain values as unknown Sentry tokens. Reproduced with TruffleHog 3.96.0, including false positives on hashes and a function name. The hard gate now scans all Git history for provider-verified live credentials with --fail-on-scan-errors; deterministic current-tree credential shapes remain mandatory through Trivy plus pnpm security:scan. Exact full-history proof scanned 88,655 chunks / 143,087,116 bytes with zero verified and zero unverified outputs. Focused workflow contract passed 12/12; full repository coverage passed 424 files / 6,773 tests at exact 100/100/100/100; lint, zero-clone jscpd, 100% docstrings, static/package/SDK/token/context gates, and tracked secret scan passed."
+  "2026-08-03T09:55:07.593Z","harness:codex","GitHub delivery: PR #881 https://github.com/unbraind/pm-cli/pull/881 carries the deterministic full-history credential verification correction. The PR body links this canonical item; exact pre-push proof is recorded above."
 files[3]{path,scope,note}:
   .github/workflows/security.yml,project,Deterministic full-history verified credential and scan-error policy
   tests/integration/ci-workflow-contract.spec.ts,project,Pin scanner flags and exact reviewed exclusion allowlist
