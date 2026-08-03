@@ -117,9 +117,9 @@ describe("aggregate command helper coverage", () => {
 
     expect(_testOnlyAggregateCommand.parseStatus(undefined, statusRegistry)).toBeUndefined();
     expect(_testOnlyAggregateCommand.parseStatus("all", statusRegistry)).toBeUndefined();
-    expect(_testOnlyAggregateCommand.parseStatus("open", statusRegistry)).toBe("open");
+    expect(_testOnlyAggregateCommand.parseStatus("open", statusRegistry)).toEqual(["open"]);
     expect(() => _testOnlyAggregateCommand.parseStatus("all,open", statusRegistry)).toThrow(PmCliError);
-    expect(() => _testOnlyAggregateCommand.parseStatus("open,closed", statusRegistry)).toThrow(PmCliError);
+    expect(_testOnlyAggregateCommand.parseStatus("open,closed", statusRegistry)).toEqual(["open", "closed"]);
     expect(() => _testOnlyAggregateCommand.parseStatus("not-a-status", statusRegistry)).toThrow(PmCliError);
     expect(_testOnlyAggregateCommand.parseGroupBy(undefined)).toEqual(["status"]);
     expect(_testOnlyAggregateCommand.parseGroupBy("type, priority")).toEqual(["type", "priority"]);

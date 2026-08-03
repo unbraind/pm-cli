@@ -1123,16 +1123,20 @@
           "flag": "--include-unparented"
         },
         {
-          "flag": "--status"
+          "flag": "--status",
+          "list": true
         },
         {
-          "flag": "--type"
+          "flag": "--type",
+          "list": true
         },
         {
-          "flag": "--tag"
+          "flag": "--tag",
+          "list": true
         },
         {
-          "flag": "--priority"
+          "flag": "--priority",
+          "list": true
         },
         {
           "flag": "--deadline-before"
@@ -1141,7 +1145,8 @@
           "flag": "--deadline-after"
         },
         {
-          "flag": "--assignee"
+          "flag": "--assignee",
+          "list": true
         },
         {
           "aliases": [
@@ -1153,10 +1158,12 @@
           "flag": "--parent"
         },
         {
-          "flag": "--sprint"
+          "flag": "--sprint",
+          "list": true
         },
         {
-          "flag": "--release"
+          "flag": "--release",
+          "list": true
         }
       ],
       "provider": "core"
@@ -3167,16 +3174,19 @@
           "list": true
         },
         {
-          "flag": "--type"
+          "flag": "--type",
+          "list": true
         },
         {
           "aliases": [
             "--tags"
           ],
-          "flag": "--tag"
+          "flag": "--tag",
+          "list": true
         },
         {
-          "flag": "--priority"
+          "flag": "--priority",
+          "list": true
         },
         {
           "flag": "--deadline-before"
@@ -3207,7 +3217,8 @@
           "list": true
         },
         {
-          "flag": "--assignee"
+          "flag": "--assignee",
+          "list": true
         },
         {
           "aliases": [
@@ -3219,10 +3230,12 @@
           "flag": "--parent"
         },
         {
-          "flag": "--sprint"
+          "flag": "--sprint",
+          "list": true
         },
         {
-          "flag": "--release"
+          "flag": "--release",
+          "list": true
         },
         {
           "flag": "--filter-ac-missing"
@@ -3398,16 +3411,19 @@
           "list": true
         },
         {
-          "flag": "--type"
+          "flag": "--type",
+          "list": true
         },
         {
           "aliases": [
             "--tags"
           ],
-          "flag": "--tag"
+          "flag": "--tag",
+          "list": true
         },
         {
-          "flag": "--priority"
+          "flag": "--priority",
+          "list": true
         },
         {
           "flag": "--deadline-before"
@@ -3438,7 +3454,8 @@
           "list": true
         },
         {
-          "flag": "--assignee"
+          "flag": "--assignee",
+          "list": true
         },
         {
           "aliases": [
@@ -3450,10 +3467,12 @@
           "flag": "--parent"
         },
         {
-          "flag": "--sprint"
+          "flag": "--sprint",
+          "list": true
         },
         {
-          "flag": "--release"
+          "flag": "--release",
+          "list": true
         },
         {
           "flag": "--filter-ac-missing"
@@ -3629,16 +3648,19 @@
           "list": true
         },
         {
-          "flag": "--type"
+          "flag": "--type",
+          "list": true
         },
         {
           "aliases": [
             "--tags"
           ],
-          "flag": "--tag"
+          "flag": "--tag",
+          "list": true
         },
         {
-          "flag": "--priority"
+          "flag": "--priority",
+          "list": true
         },
         {
           "flag": "--deadline-before"
@@ -3669,7 +3691,8 @@
           "list": true
         },
         {
-          "flag": "--assignee"
+          "flag": "--assignee",
+          "list": true
         },
         {
           "aliases": [
@@ -3681,10 +3704,12 @@
           "flag": "--parent"
         },
         {
-          "flag": "--sprint"
+          "flag": "--sprint",
+          "list": true
         },
         {
-          "flag": "--release"
+          "flag": "--release",
+          "list": true
         },
         {
           "flag": "--filter-ac-missing"
@@ -3860,16 +3885,19 @@
           "list": true
         },
         {
-          "flag": "--type"
+          "flag": "--type",
+          "list": true
         },
         {
           "aliases": [
             "--tags"
           ],
-          "flag": "--tag"
+          "flag": "--tag",
+          "list": true
         },
         {
-          "flag": "--priority"
+          "flag": "--priority",
+          "list": true
         },
         {
           "flag": "--deadline-before"
@@ -3900,7 +3928,8 @@
           "list": true
         },
         {
-          "flag": "--assignee"
+          "flag": "--assignee",
+          "list": true
         },
         {
           "aliases": [
@@ -3912,10 +3941,12 @@
           "flag": "--parent"
         },
         {
-          "flag": "--sprint"
+          "flag": "--sprint",
+          "list": true
         },
         {
-          "flag": "--release"
+          "flag": "--release",
+          "list": true
         },
         {
           "flag": "--filter-ac-missing"
@@ -4091,16 +4122,19 @@
           "list": true
         },
         {
-          "flag": "--type"
+          "flag": "--type",
+          "list": true
         },
         {
           "aliases": [
             "--tags"
           ],
-          "flag": "--tag"
+          "flag": "--tag",
+          "list": true
         },
         {
-          "flag": "--priority"
+          "flag": "--priority",
+          "list": true
         },
         {
           "flag": "--deadline-before"
@@ -4131,7 +4165,8 @@
           "list": true
         },
         {
-          "flag": "--assignee"
+          "flag": "--assignee",
+          "list": true
         },
         {
           "aliases": [
@@ -4143,10 +4178,12 @@
           "flag": "--parent"
         },
         {
-          "flag": "--sprint"
+          "flag": "--sprint",
+          "list": true
         },
         {
-          "flag": "--release"
+          "flag": "--release",
+          "list": true
         },
         {
           "flag": "--filter-ac-missing"
@@ -4322,16 +4359,19 @@
           "list": true
         },
         {
-          "flag": "--type"
+          "flag": "--type",
+          "list": true
         },
         {
           "aliases": [
             "--tags"
           ],
-          "flag": "--tag"
+          "flag": "--tag",
+          "list": true
         },
         {
-          "flag": "--priority"
+          "flag": "--priority",
+          "list": true
         },
         {
           "flag": "--deadline-before"
@@ -4362,7 +4402,8 @@
           "list": true
         },
         {
-          "flag": "--assignee"
+          "flag": "--assignee",
+          "list": true
         },
         {
           "aliases": [
@@ -4374,10 +4415,12 @@
           "flag": "--parent"
         },
         {
-          "flag": "--sprint"
+          "flag": "--sprint",
+          "list": true
         },
         {
-          "flag": "--release"
+          "flag": "--release",
+          "list": true
         },
         {
           "flag": "--filter-ac-missing"
@@ -4553,16 +4596,19 @@
           "list": true
         },
         {
-          "flag": "--type"
+          "flag": "--type",
+          "list": true
         },
         {
           "aliases": [
             "--tags"
           ],
-          "flag": "--tag"
+          "flag": "--tag",
+          "list": true
         },
         {
-          "flag": "--priority"
+          "flag": "--priority",
+          "list": true
         },
         {
           "flag": "--deadline-before"
@@ -4593,7 +4639,8 @@
           "list": true
         },
         {
-          "flag": "--assignee"
+          "flag": "--assignee",
+          "list": true
         },
         {
           "aliases": [
@@ -4605,10 +4652,12 @@
           "flag": "--parent"
         },
         {
-          "flag": "--sprint"
+          "flag": "--sprint",
+          "list": true
         },
         {
-          "flag": "--release"
+          "flag": "--release",
+          "list": true
         },
         {
           "flag": "--filter-ac-missing"
@@ -4784,16 +4833,19 @@
           "list": true
         },
         {
-          "flag": "--type"
+          "flag": "--type",
+          "list": true
         },
         {
           "aliases": [
             "--tags"
           ],
-          "flag": "--tag"
+          "flag": "--tag",
+          "list": true
         },
         {
-          "flag": "--priority"
+          "flag": "--priority",
+          "list": true
         },
         {
           "flag": "--deadline-before"
@@ -4824,7 +4876,8 @@
           "list": true
         },
         {
-          "flag": "--assignee"
+          "flag": "--assignee",
+          "list": true
         },
         {
           "aliases": [
@@ -4836,10 +4889,12 @@
           "flag": "--parent"
         },
         {
-          "flag": "--sprint"
+          "flag": "--sprint",
+          "list": true
         },
         {
-          "flag": "--release"
+          "flag": "--release",
+          "list": true
         },
         {
           "flag": "--filter-ac-missing"
@@ -6505,16 +6560,19 @@
           "list": true
         },
         {
-          "flag": "--type"
+          "flag": "--type",
+          "list": true
         },
         {
           "aliases": [
             "--tags"
           ],
-          "flag": "--tag"
+          "flag": "--tag",
+          "list": true
         },
         {
-          "flag": "--priority"
+          "flag": "--priority",
+          "list": true
         },
         {
           "flag": "--deadline-before"
@@ -6535,13 +6593,16 @@
           "flag": "--created-before"
         },
         {
-          "flag": "--assignee"
+          "flag": "--assignee",
+          "list": true
         },
         {
-          "flag": "--sprint"
+          "flag": "--sprint",
+          "list": true
         },
         {
-          "flag": "--release"
+          "flag": "--release",
+          "list": true
         },
         {
           "flag": "--parent"
@@ -7154,16 +7215,20 @@
       "command": "update-many",
       "flags": [
         {
-          "flag": "--filter-status"
+          "flag": "--filter-status",
+          "list": true
         },
         {
-          "flag": "--filter-type"
+          "flag": "--filter-type",
+          "list": true
         },
         {
-          "flag": "--filter-tag"
+          "flag": "--filter-tag",
+          "list": true
         },
         {
-          "flag": "--filter-priority"
+          "flag": "--filter-priority",
+          "list": true
         },
         {
           "flag": "--filter-deadline-before"
@@ -7184,7 +7249,8 @@
           "flag": "--filter-created-before"
         },
         {
-          "flag": "--filter-assignee"
+          "flag": "--filter-assignee",
+          "list": true
         },
         {
           "aliases": [
@@ -7196,10 +7262,12 @@
           "flag": "--filter-parent"
         },
         {
-          "flag": "--filter-sprint"
+          "flag": "--filter-sprint",
+          "list": true
         },
         {
-          "flag": "--filter-release"
+          "flag": "--filter-release",
+          "list": true
         },
         {
           "flag": "--filter-ac-missing"

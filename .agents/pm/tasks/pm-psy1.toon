@@ -2,18 +2,43 @@ id: pm-psy1
 title: "Scripting contract: documented and test-gated guarantees for exit codes, stdout/stderr stream discipline, and stable machine-readable field names"
 description: "Contract child of the composability story: scripts can only be reliable if the shell-facing behavior is promised, not incidental. Today exit codes and stdout/stderr split are unspecified; review #11/#12 hit real cases where errors on stderr made failures look like empty results (search --format). Duplicate check: docs items (pm-ds3b SDK reference) cover the programmatic surface, not the shell contract."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",composability,docs
 created_at: "2026-07-06T21:25:26.225Z"
-updated_at: "2026-07-25T06:28:01.283Z"
+updated_at: "2026-08-03T23:02:15.181Z"
+closed_at: "2026-08-03T22:25:54.080Z"
+completed_at: "2026-08-03T22:25:54.080Z"
 author: maintainer-agent
 estimated_minutes: 360
 acceptance_criteria: "docs/ gains a composability/scripting reference: exit-code table (success/not-found/validation/conflict/lock classes), the rule that data goes to stdout and diagnostics to stderr, JSON field-name stability policy, and worked grep/jq/xargs recipes; a gate-style spec asserts the exit codes and stream discipline for representative commands so regressions fail CI; README links the reference"
 parent: pm-mpbb
 risk: medium
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-m9xv,related,"2026-07-06T21:26:30.213Z",null,null
-  pm-m9xv,implements,"2026-07-25T06:28:01.007Z",null,null
+resolution: "Published and test-gated the CLI scripting process, structured-output, filter, and composition contract."
+expected_result: "Scripts have a documented exit-code table, stdout/stderr discipline, stable structured fields, and executable jq/xargs recipes."
+actual_result: "docs/SCRIPTING.md is linked from both indexes; dedicated integration gates prove exits 0/2/3/4 and stdout/stderr separation, while contract snapshots and consumer tests pass."
+dependencies[2]{id,kind,created_at}:
+  pm-m9xv,related,"2026-07-06T21:26:30.213Z"
+  pm-m9xv,implements,"2026-07-25T06:28:01.007Z"
+comments[4]{created_at,author,text}:
+  "2026-08-03T22:22:00.884Z","harness:codex","Implementation evidence: docs/SCRIPTING.md now defines exit codes 0-5, stdout/stderr separation, stable JSON envelopes/field names, all-status lifecycle semantics, uniform repeat/CSV OR filters, escaping, jq/xargs/NDJSON patterns, SDK imports, and bulk dry-run safety. Contract snapshots and public SDK surface are current. pnpm audit has zero advisories; tracked-secret scan and all GitHub Dependabot/code/secret alert inventories are zero; all 22 open GitHub issues have canonical PM .toon backlinks; pm-changelog latest/current is 2026.8.3. Full release gates pass locally through 100% coverage, npx, and dogfood; hosted analysis is deferred to the pushed exact SHA because the pre-PR main SHA has no DeepScan result."
+  "2026-08-03T22:28:29.263Z","harness:codex","Publication evidence: PR #886 https://github.com/unbraind/pm-cli/pull/886 opened from feat/sdk-query-scripting-contracts at implementation commit dffef60e1. Hosted checks and review inventory will be recorded against the final exact head before merge."
+  "2026-08-03T22:43:24.617Z","harness:codex","PR #886 review correction: scripting recipes now preserve upstream pm exit status with explicit capture or pipefail, and the xargs recipe uses a portable non-empty guard without GNU-only -r. Focused scripting/query tests, typecheck, ESLint, and docs-link gates pass."
+  "2026-08-03T23:02:15.181Z","harness:codex","Hosted review evidence for PR #886 at implementation head e824afc76897839f01089c6ae4dc8ee6418b6654: all deterministic checks passed; review fixes preserve pm failures through the jq recipe under pipefail and replace GNU-only xargs -r with a portable guarded loop. CodeRabbit's documentation findings were fixed, acknowledged inline, and resolved; Greptile quota availability is recorded on pm-e02lgu."
+files[3]{path,scope,note}:
+  tests/integration/query-filter-contract.spec.ts,project,Machine-client contract acceptance gate
+  tests/integration/scripting-contract.spec.ts,project,Exit-code and stdout-stderr process contract gate
+  tests/unit/sdk/multi-value-filters.spec.ts,project,SDK parser unit gate
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/query-filter-contract.spec.ts,project,240,Temporary tracker scripting acceptance gate
+  node scripts/run-tests.mjs test -- tests/integration/scripting-contract.spec.ts,project,240,Representative process exit and stream gate
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msdsopxv-kx98js,test,passed,"2026-08-03T22:22:29.184Z","2026-08-03T22:22:38.419Z","2026-08-03T22:22:38.419Z",1,0,0
+  test-local-msdsr7vv-6ducm8,test,passed,"2026-08-03T22:24:25.941Z","2026-08-03T22:24:34.987Z","2026-08-03T22:24:34.987Z",1,0,0
+docs[3]{path,scope,note}:
+  docs/README.md,project,Machine-client documentation route
+  docs/SCRIPTING.md,project,Canonical CLI scripting contract
+  README.md,project,Top-level scripting reference
+close_reason: "Delivered the documented and executable CLI scripting contract, including exit and stream-discipline gates."
 body: ""

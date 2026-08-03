@@ -9,6 +9,8 @@
 
 ### Fixed
 
+- Uniform multi-value filter-value grammar: --status accepts CSV but --type/--priority fail fast and --tag silently matches the literal CSV string ([pm-gknu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gknu.toon))
+- list applies an undisclosed default lifecycle scope and reports the scoped count as the corpus total with has_more false, while search applies no such scope, so the two discovery surfaces disagree about what exists ([pm-999jh7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-999jh7.toon))
 - GH-882: unresolved extension commands must lead with the activation failure and actionable recovery ([pm-4uplae](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4uplae.toon))
 - Extension-mode is folded into the metadata-cache identity, so alternating --no-extensions with a normal invocation evicts a 4.5 MB cache and every command costs 5 seconds instead of 0.4 ([pm-77okxr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-77okxr.toon))
 - Declared activation.commands is silently overridden by the renderers/hooks/parser/preflight capability tier, so any extension beyond plain commands is eagerly imported on every invocation ([pm-j0w7j9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-j0w7j9.toon))
@@ -26,6 +28,7 @@
 
 ### Other
 
+- Scripting contract: documented and test-gated guarantees for exit codes, stdout/stderr stream discipline, and stable machine-readable field names ([pm-psy1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-psy1.toon))
 - Published artifact weight: the npm tarball ships 20MB of inline-source sourcemaps plus duplicate tsc and bundle outputs ([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon))
 
 ## 2026.8.3 - 2026-08-03

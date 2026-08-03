@@ -16,7 +16,11 @@ import {
   writeMutationCheckpoint,
 } from "../../../src/core/checkpoint/mutation-checkpoint.js";
 import { matchesRuntimeFilters } from "../../../src/core/schema/runtime-field-filters.js";
-import { EXIT_CODE } from "../../../src/core/shared/constants.js";
+import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
+import {
+  EXIT_CODE,
+  SETTINGS_DEFAULTS,
+} from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   readSettings,
@@ -237,10 +241,7 @@ describe("update-many command helper coverage", () => {
     expect(_testOnlyUpdateManyCommand.normalizeExistingTags("alpha")).toEqual(
       [],
     );
-    const statusRegistry = {
-      definitions: [{ id: "open", role: "active" }],
-      alias_to_id: new Map([["open", "open"]]),
-    };
+    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
     expect(
       _testOnlyUpdateManyCommand.normalizeStatusFilter(
         undefined,
@@ -249,7 +250,13 @@ describe("update-many command helper coverage", () => {
     ).toBeUndefined();
     expect(
       _testOnlyUpdateManyCommand.normalizeStatusFilter("open", statusRegistry),
-    ).toBe("open");
+    ).toEqual(["open"]);
+    expect(
+      _testOnlyUpdateManyCommand.normalizeStatusFilter(
+        "open,closed",
+        statusRegistry,
+      ),
+    ).toEqual(["open", "closed"]);
     expect(() =>
       _testOnlyUpdateManyCommand.normalizeStatusFilter(
         "missing",

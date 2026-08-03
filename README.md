@@ -27,6 +27,7 @@
 | New maintainer onboarding                                      | [Onboarding](docs/ONBOARDING.md)                                                                                                        |
 | Agent workflow and token-minimal loops                         | [Agent Guide](docs/AGENT_GUIDE.md)                                                                                                      |
 | Command families and examples                                  | [Command Reference](docs/COMMANDS.md)                                                                                                   |
+| Shell, CI, and machine-client composition                       | [CLI Scripting Contract](docs/SCRIPTING.md)                                                                                              |
 | Settings, storage, search, and output                          | [Configuration](docs/CONFIGURATION.md)                                                                                                  |
 | Safe test execution and linked tests                           | [Testing](docs/TESTING.md)                                                                                                              |
 | Security reporting and resilience controls                    | [Security Policy](SECURITY.md), [Security Governance](docs/SECURITY_GOVERNANCE.md)                                                      |

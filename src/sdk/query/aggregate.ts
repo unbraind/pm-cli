@@ -142,6 +142,8 @@ export interface AggregateResult {
     numeric_field?: string | null;
     include_unparented: boolean;
     status: ItemStatus | null;
+    /** Concrete validated statuses supplied through the OR-composed selector. */
+    status_values?: ItemStatus[];
     type: string | null;
     tag: string | null;
     priority: string | null;
@@ -162,7 +164,7 @@ export interface AggregateResult {
 function parseStatus(
   raw: string | undefined,
   statusRegistry: RuntimeStatusRegistry,
-): ItemStatus | undefined {
+): ItemStatus[] | undefined {
   const statuses = parseStatusFilterCsv(raw, statusRegistry, {
     strict: true,
     flagLabel: "--status",
@@ -170,13 +172,7 @@ function parseStatus(
   if (!statuses || statuses.length === 0) {
     return undefined;
   }
-  if (statuses.length > 1) {
-    throw new PmCliError(
-      'Aggregate --status accepts one status, or the standalone "all" sentinel.',
-      EXIT_CODE.USAGE,
-    );
-  }
-  return statuses[0];
+  return statuses;
 }
 
 interface NumericAggregation {
@@ -534,7 +530,7 @@ function buildAggregateFilters(params: {
   groupBy: AggregateGroupField[];
   includeCompletion: boolean;
   includeUnparented: boolean;
-  status: ItemStatus | undefined;
+  status: ItemStatus[] | undefined;
   options: AggregateOptions;
   numericAggregation: NumericAggregation | null;
 }): AggregateResult["filters"] {
@@ -543,7 +539,8 @@ function buildAggregateFilters(params: {
     count: true,
     completion: params.includeCompletion,
     include_unparented: params.includeUnparented,
-    status: params.status ?? null,
+    status: params.status?.[0] ?? null,
+    status_values: params.status,
     type: params.options.type ?? null,
     tag: params.options.tag ?? null,
     priority: params.options.priority ?? null,
@@ -596,7 +593,11 @@ export async function runAggregate(
   const includeCompletion = options.completion === true;
   const includeUnparented = options.includeUnparented === true;
 
-  const listed = await runList(status, buildListQueryFilters(options), global);
+  const listed = await runList(
+    undefined,
+    { ...buildListQueryFilters(options), status: options.status },
+    global,
+  );
 
   const grouped = new Map<string, AggregateAccumulator>();
   let skippedUnparented = 0;

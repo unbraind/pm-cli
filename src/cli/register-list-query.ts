@@ -296,6 +296,9 @@ async function runRegisteredListCommand(params: {
   const listOptions = normalizeListOptions(intentOptions);
   applyDefaultListProjection(listOptions, params.name);
   if (params.excludeTerminal) listOptions.excludeTerminal = true;
+  if (params.name === "list" && listOptions.status === undefined) {
+    listOptions.status = "all";
+  }
   listOptions.dependencyBlocked = params.dependencyBlocked;
   const output = resolveRegisteredListOutputContext(
     intentOptions,
@@ -340,7 +343,8 @@ function registerListCommand(
   if (allowStatusFilter) {
     command.option(
       "--status <value>",
-      "Filter by status (use all for no status restriction)",
+      "Filter by status (repeatable or comma-separated; matches any; all selects every status)",
+      collect,
     );
   }
   command
@@ -349,13 +353,21 @@ function registerListCommand(
       "--token-budget <n>",
       "Override the selected intent's maximum estimated output tokens",
     )
-    .option("--type <value>", "Filter by item type")
+    .option(
+      "--type <value>",
+      "Filter by item type (repeatable or comma-separated; matches any)",
+      collect,
+    )
     .option(
       "--tag <value>",
       "Filter by tag (repeatable or comma-separated; matches any)",
       collect,
     )
-    .option("--priority <value>", "Filter by priority")
+    .option(
+      "--priority <value>",
+      "Filter by priority (repeatable or comma-separated; matches any)",
+      collect,
+    )
     .option(
       "--deadline-before <value>",
       "Filter by deadline upper bound (ISO/date string or relative)",
@@ -386,14 +398,14 @@ function registerListCommand(
       "--ids <value>",
       "Filter by explicit item IDs (comma-separated or repeatable)",
     )
-    .option("--assignee <value>", "Filter by assignee")
+    .option("--assignee <value>", "Filter by assignee", collect)
     .option(
       "--assignee-filter <value>",
       "Filter assignee presence: assigned|unassigned",
     )
     .option("--parent <value>", "Filter by parent item ID")
-    .option("--sprint <value>", "Filter by sprint")
-    .option("--release <value>", "Filter by release")
+    .option("--sprint <value>", "Filter by sprint", collect)
+    .option("--release <value>", "Filter by release", collect)
     .option(
       "--filter-ac-missing",
       "Show only items missing acceptance_criteria",
@@ -916,7 +928,8 @@ export function registerListQueryCommands(
   const listCommandDescriptors: ListCommandDescriptor[] = [
     {
       name: "list",
-      description: "List active items with optional filters.",
+      description:
+        "List items across every lifecycle status with optional filters.",
       excludeTerminal: true,
       allowStatusFilter: true,
     },

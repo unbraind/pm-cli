@@ -71,7 +71,9 @@ export function buildCompactSearchFilterSummary(params: {
   applyFilterValueEcho(filters, options, COMPACT_SEARCH_VALUE_FILTER_ECHO_ENTRIES);
   Object.assign(filters, buildGovernanceMissingFilterEcho(options as Record<string, unknown>));
   Object.assign(filters, buildContentFilterEcho(options as Record<string, unknown>));
-  if (matchMode !== "or") filters.match_mode = matchMode;
+  if (matchMode !== undefined && matchMode !== "or") {
+    filters.match_mode = matchMode;
+  }
   if (includeLinked) filters.include_linked = true;
   if (titleExact) filters.title_exact = true;
   if (phraseExact) filters.phrase_exact = true;
@@ -105,7 +107,10 @@ export function buildVerboseSearchFilters(params: {
   return {
     mode: effectiveMode,
     match_mode: matchMode,
-    status: isAllStatuses(options.status) ? "all" : valueOrNull(options.status),
+    status:
+      options.status === undefined || isAllStatuses(options.status)
+        ? "all"
+        : options.status,
     type: valueOrNull(options.type),
     tag: valueOrNull(options.tag),
     priority: valueOrNull(options.priority),

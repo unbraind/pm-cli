@@ -4201,27 +4201,31 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         true,
       );
 
-      // pm list (bare command) excludes terminal statuses by default
+      // pm list (bare command) discloses and returns the same all-status scope as search.
       const listActive = context.runCli(["list", "--json", "--type", "Task"], { expectJson: true });
       expect(listActive.code).toBe(0);
       const listActiveJson = listActive.json as {
         count: number;
         items: Array<Record<string, unknown>>;
+        filters: { status: string };
         projection: { mode: string; fields: string[] | null };
       };
-      expect(listActiveJson.count).toBe(5);
+      expect(listActiveJson.count).toBe(7);
+      expect(listActiveJson.filters.status).toBe("all");
       expect(listActiveJson.projection).toEqual({
         mode: "brief",
         fields: ["id", "status", "type", "title"],
       });
       expect(Object.keys(listActiveJson.items[0] ?? {})).toEqual(["id", "status", "type", "title"]);
-      const activeStatuses = listActiveJson.items.map((item) => item.status as string);
-      expect(activeStatuses).not.toContain("closed");
-      expect(activeStatuses).not.toContain("canceled");
-      expect(activeStatuses).toContain("draft");
-      expect(activeStatuses).toContain("open");
-      expect(activeStatuses).toContain("in_progress");
-      expect(activeStatuses).toContain("blocked");
+      const defaultStatuses = listActiveJson.items.map((item) => item.status as string);
+      expect(defaultStatuses).toEqual(expect.arrayContaining([
+        "draft",
+        "open",
+        "in_progress",
+        "blocked",
+        "closed",
+        "canceled",
+      ]));
 
       const listActiveFull = context.runCli(["list", "--json", "--type", "Task", "--full"], { expectJson: true });
       expect(listActiveFull.code).toBe(0);

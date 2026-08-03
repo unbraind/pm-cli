@@ -56,6 +56,7 @@ export * from "./query/next.js";
 export * from "./query/search-pagination.js";
 export * from "./query/search-rendering.js";
 export * from "./query/item-filter-options.js";
+export * from "./query/multi-value-filters.js";
 export * from "./query/parsers.js";
 export * from "./pagination.js";
 export * from "./item-children.js";

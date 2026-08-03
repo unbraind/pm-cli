@@ -2,21 +2,50 @@ id: pm-gknu
 title: "Uniform multi-value filter-value grammar: --status accepts CSV but --type/--priority fail fast and --tag silently matches the literal CSV string"
 description: "Unify multi-value filter parsing so status, type, priority, tag, assignee, sprint, and release accept one predictable CSV grammar with explicit literal-comma handling."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",consistency,filters
 created_at: "2026-07-15T06:25:23.773Z"
-updated_at: "2026-07-26T05:59:30.846Z"
+updated_at: "2026-08-03T23:02:14.661Z"
+closed_at: "2026-08-03T22:25:52.899Z"
+completed_at: "2026-08-03T22:25:52.899Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "every enumerable filter flag on list/search/aggregate/update-many (--type, --priority, --status, --assignee, --sprint, --release) accepts the same CSV multi-value grammar as --status with per-token validation and fail-fast on any invalid token; free-form --tag defines explicit CSV OR-semantics with a documented escape for literal commas; contracts + docs + completion updated via the full new-flag checklist; no existing single-value spelling breaks"
 parent: pm-mpbb
 risk: medium
 confidence: 85
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-fgih,related,"2026-07-15T06:25:23.773Z",null,null
-  pm-plwm,related,"2026-07-15T06:25:23.773Z",null,null
-  pm-srns,related,"2026-07-15T06:25:23.773Z",null,null
-  pm-mpbb,implements,"2026-07-26T05:57:10.064Z",null,null
-  pm-fs8q9x,implements,"2026-07-26T05:59:30.605Z",null,null
+resolution: "Shipped one public SDK parser and uniform OR filter execution across list, search, aggregate, and update-many."
+expected_result: Every enumerable query selector accepts repeatable and CSV OR values with token validation and documented literal-comma escaping.
+actual_result: "SDK, CLI flag contracts, docs, snapshots, integration tests, npx, Bun/bunx, and bulk dry-run consumers all prove the shared grammar."
+dependencies[5]{id,kind,created_at}:
+  pm-fgih,related,"2026-07-15T06:25:23.773Z"
+  pm-plwm,related,"2026-07-15T06:25:23.773Z"
+  pm-srns,related,"2026-07-15T06:25:23.773Z"
+  pm-mpbb,implements,"2026-07-26T05:57:10.064Z"
+  pm-fs8q9x,implements,"2026-07-26T05:59:30.605Z"
+comments[4]{created_at,author,text}:
+  "2026-08-03T22:22:00.388Z","harness:codex","Implementation evidence: added the public @unbrained/pm-cli/sdk/query multi-value parser with CSV OR composition, stable de-duplication, per-token typed validation, escaped literal commas and backslashes, and explicit-empty failure. list, search, aggregate, and update-many now share uniform type/tag/priority/assignee/sprint/release/status behavior; repeatable CLI flags are declared in runtime contracts. Packed npx smoke passed, 88-command package-first dogfood passed, and an unrelated Bun install/bunx/SDK consumer matched two open+closed Task/Issue rows through repeated CLI filters, SDK filters, and bulk dry-run."
+  "2026-08-03T22:28:28.340Z","harness:codex","Publication evidence: PR #886 https://github.com/unbraind/pm-cli/pull/886 opened from feat/sdk-query-scripting-contracts at implementation commit dffef60e1. Hosted checks and review inventory will be recorded against the final exact head before merge."
+  "2026-08-03T22:43:24.074Z","harness:codex","PR #886 review correction: empty CSV members now fail instead of being discarded; direct Commander list registration collects every repeatable selector; each selector is independently proven to exclude a fixture across list, aggregate, and update-many; missing integration/parser file links are now recorded through pm. Focused 54-test, typecheck, ESLint, and docs-link gates pass."
+  "2026-08-03T23:02:14.661Z","harness:codex","Hosted review evidence for PR #886 at implementation head e824afc76897839f01089c6ae4dc8ee6418b6654: all deterministic checks passed; review fixes now reject every empty CSV token and prove strict subsets plus repeated-option unions for status, type, tag, priority, assignee, sprint, and release across list, aggregate, and update-many. All CodeRabbit threads are acknowledged and resolved; Greptile quota availability is recorded on pm-e02lgu."
+files[11]{path,scope,note}:
+  sdk/public-surface.json,project,Generated SDK API classification
+  src/sdk/cli-contracts/flag-contracts.ts,project,Repeatable flag runtime contracts
+  src/sdk/lifecycle/update-many.ts,project,Bulk selector multi-status execution
+  src/sdk/query.ts,project,Public SDK query export
+  src/sdk/query/aggregate.ts,project,Aggregate multi-status and shared filter execution
+  src/sdk/query/list.ts,project,List multi-value filter execution
+  src/sdk/query/multi-value-filters.ts,project,Public escaped CSV OR-filter SDK primitive
+  src/sdk/query/search.ts,project,Search multi-value filter execution
+  tests/fixtures/contracts/full.json,project,Generated CLI contract snapshot
+  tests/integration/cli.integration.spec.ts,project,CLI compatibility coverage for filter contract
+  tests/unit/sdk/multi-value-filters.spec.ts,project,Public parser unit coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/multi-value-filters.spec.ts tests/integration/query-filter-contract.spec.ts tests/unit/commands/aggregate-command.spec.ts tests/unit/commands/update-many-command.spec.ts,project,240,SDK and cross-surface OR-filter gate
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msdsoigy-aawm9a,test,passed,"2026-08-03T22:22:15.778Z","2026-08-03T22:22:28.738Z","2026-08-03T22:22:28.738Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SCRIPTING.md,project,Uniform OR grammar and SDK parser usage
+close_reason: "Delivered the shared SDK multi-value filter grammar across read, aggregate, and bulk mutation surfaces with packed npm/Bun proof."
 body: "Evidence 2026-07-15 (v2026.7.14 main build): pm list --status open,in_progress works (CSV); pm list --type Epic,Milestone exits 2 invalid_argument_value (single-value only, 18 Epics exist); pm list --priority 0,1 exits 2 (single-value only); pm list --tag security,performance exits 0 with items:[] count:0 while --tag security alone matches 45 — the CSV string is matched as ONE literal tag, the last silent-zero member of the pm-kj4k class (enum halves fail fast correctly since PR#545; the free-form tag half cannot be enum-validated, so it needs CSV semantics instead). Class fix only: one shared multi-value filter parser; never file per-flag point patches — cite this item. Input-side grammar twin of pm-srns (output), tactical subset of pm-plwm (--where predicates); filter-parity precedent pm-13nx (closed)."

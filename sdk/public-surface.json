@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1412,
+    "covered_symbols": 1417,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1413
+    "required_symbols": 1418
   },
   "breaking_acknowledgements": [
     {
@@ -748,6 +748,16 @@
       ],
       "package_version": "2026.8.3",
       "reason": "Add optional static extension contribution inventory and context health contracts"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AggregateResult",
+        "signature ./sdk/core:AggregateResult",
+        "signature ./sdk/query:AggregateResult",
+        "signature ./sdk/runtime:AggregateResult"
+      ],
+      "package_version": "2026.8.3",
+      "reason": "Aggregate filter metadata now discloses multi-status OR selections through optional status_values while preserving status compatibility"
     }
   ],
   "entrypoints": {
@@ -1064,7 +1074,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateResult",
-          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
+          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
         },
         {
           "classification": "supported",
@@ -6659,6 +6669,12 @@
           "signature": "export interface ModePairedOutputProjectionContract { command: string; complete_mode: string; omissions_by_mode: Readonly<Record<string, readonly OutputProjectionFieldGroup[]>>; }"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MultiValueFilterOptions",
+          "signature": "export interface MultiValueFilterOptions { label: string; normalize?: (value: string) => string; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "mutateItem",
@@ -7337,6 +7353,12 @@
           "signature": "(raw: string[] | undefined) => PathMigration[] | calls: (raw: string[] | undefined) => PathMigration[]"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseMultiValueFilter",
+          "signature": "(raw: string | undefined, options: MultiValueFilterOptions) => string[] | undefined | calls: (raw: string | undefined, options: MultiValueFilterOptions) => string[] | undefined"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "parseOptionalNonNegativeInteger",
@@ -7353,6 +7375,12 @@
           "kind": "function",
           "name": "parsePriority",
           "signature": "(raw: string | undefined, label?: string) => number | undefined | calls: (raw: string | undefined, label?: string) => number | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parsePriorityFilterSet",
+          "signature": "(raw: string | undefined, label?: string) => Set<number> | undefined | calls: (raw: string | undefined, label?: string) => Set<number> | undefined"
         },
         {
           "classification": "advanced_export",
@@ -7397,6 +7425,12 @@
           "signature": "(raw: unknown, registry: RuntimeStatusRegistry, options?: ParseStatusFilterOptions) => ItemStatus[] | undefined | calls: (raw: unknown, registry: RuntimeStatusRegistry, options?: ParseStatusFilterOptions) => ItemStatus[] | undefined"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseStringFilterSet",
+          "signature": "(raw: string | undefined, options: MultiValueFilterOptions) => Set<string> | undefined | calls: (raw: string | undefined, options: MultiValueFilterOptions) => Set<string> | undefined"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "parseTags",
@@ -7413,6 +7447,12 @@
           "kind": "function",
           "name": "parseType",
           "signature": "(raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => ItemType | undefined | calls: (raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => ItemType | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseTypeFilterSet",
+          "signature": "(raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => Set<ItemType> | undefined | calls: (raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => Set<ItemType> | undefined"
         },
         {
           "classification": "supported",
@@ -16172,7 +16212,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateResult",
-          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
+          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
         },
         {
           "classification": "supported",
@@ -19130,7 +19170,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateResult",
-          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
+          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
         },
         {
           "classification": "supported",
@@ -19920,6 +19960,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "MultiValueFilterOptions",
+          "signature": "export interface MultiValueFilterOptions { label: string; normalize?: (value: string) => string; }"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "NEXT_OUTPUT_VALUES",
           "signature": "readonly [\"markdown\", \"toon\", \"json\"]"
@@ -20029,14 +20075,38 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "parseMultiValueFilter",
+          "signature": "(raw: string | undefined, options: MultiValueFilterOptions) => string[] | undefined | calls: (raw: string | undefined, options: MultiValueFilterOptions) => string[] | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "parsePriority",
           "signature": "(raw: string | undefined, label?: string) => number | undefined | calls: (raw: string | undefined, label?: string) => number | undefined"
         },
         {
           "classification": "supported",
           "kind": "function",
+          "name": "parsePriorityFilterSet",
+          "signature": "(raw: string | undefined, label?: string) => Set<number> | undefined | calls: (raw: string | undefined, label?: string) => Set<number> | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseStringFilterSet",
+          "signature": "(raw: string | undefined, options: MultiValueFilterOptions) => Set<string> | undefined | calls: (raw: string | undefined, options: MultiValueFilterOptions) => Set<string> | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "parseType",
           "signature": "(raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => ItemType | undefined | calls: (raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => ItemType | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseTypeFilterSet",
+          "signature": "(raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => Set<ItemType> | undefined | calls: (raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => Set<ItemType> | undefined"
         },
         {
           "classification": "supported",
@@ -20588,7 +20658,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateResult",
-          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
+          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
         },
         {
           "classification": "supported",
