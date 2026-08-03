@@ -86,6 +86,21 @@ export function runRuntimeEventsAction(
         ? undefined
         : parseRuntimeInteger(input.limit, "limit"),
     full: input.full === true,
+    ...(input.provenance === undefined
+      ? {}
+      : { provenance: input.provenance === true }),
+    ...(input.provenanceSummary === undefined
+      ? {}
+      : { provenanceSummary: input.provenanceSummary === true }),
+    ...(input.harness === undefined
+      ? {}
+      : { harness: stringList(input.harness) }),
+    ...(input.agentInstance === undefined
+      ? {}
+      : { agentInstance: stringList(input.agentInstance) }),
+    ...(input.provenanceFilter === undefined
+      ? {}
+      : { provenanceFilter: stringList(input.provenanceFilter) }),
   });
 }
 

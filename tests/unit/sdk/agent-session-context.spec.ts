@@ -346,6 +346,16 @@ describe("agent session and episode context", () => {
         coverage: 1,
         inert: false,
       },
+      {
+        harness: "codex",
+        dimension: "version",
+        entries: 2,
+        observed: 0,
+        unavailable: 0,
+        legacy_missing: 2,
+        coverage: null,
+        inert: false,
+      },
     ]);
   });
 

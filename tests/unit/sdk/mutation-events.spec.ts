@@ -6,8 +6,16 @@ import {
   listMutationEvents,
   subscribeMutationEvents,
 } from "../../../src/sdk/index.js";
-import { _testOnly as eventIndexTestOnly } from "../../../src/core/history/event-index.js";
+import {
+  _testOnly as eventIndexTestOnly,
+  queryHistoryEventIndex,
+} from "../../../src/core/history/event-index.js";
 import { appendHistoryEntry } from "../../../src/core/history/history.js";
+import { EXIT_CODE } from "../../../src/core/shared/constants.js";
+import {
+  readSettings,
+  writeSettings,
+} from "../../../src/core/store/settings.js";
 import { handleRequest } from "../../../src/mcp/server.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -202,6 +210,185 @@ describe("SDK mutation event stream", () => {
           since: page.next_cursor,
         }),
       ).rejects.toThrow(/does not match this query/);
+    });
+  });
+
+  it("projects and filters patch-free provenance with versioned legacy identity", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.agent_identity!.identity_vocabulary = {
+        version: 4,
+        aliases: { "legacy-codex": "codex" },
+      };
+      await writeSettings(context.pmPath, settings, "settings:write");
+      await appendHistoryEntry(
+        path.join(context.pmPath, "history", "pm-provenance.jsonl"),
+        {
+          ts: "2026-07-24T09:00:00.000Z",
+          author: "legacy-codex",
+          agent_instance: "instance-a",
+          agent_provenance: {
+            effort: { value: "xhigh", source: "environment" },
+            model: { value: "gpt-5.6-sol", source: "probe" },
+          },
+          op: "update",
+          patch: [{ op: "replace", path: "/metadata/status", value: "closed" }],
+          before_hash: "before",
+          after_hash: "after",
+        },
+      );
+
+      const page = await listMutationEvents({
+        pmRoot: context.pmPath,
+        item: "pm-provenance",
+        provenance: true,
+        provenanceSummary: true,
+        harness: "codex",
+        agentInstance: "instance-a",
+        provenanceFilter: ["model=gpt-5.6-sol", "effort=xhigh"],
+      });
+      expect(page).toMatchObject({
+        count: 1,
+        events: [
+          {
+            item_id: "pm-provenance",
+            provenance: {
+              author: "legacy-codex",
+              agent_harness: "codex",
+              harness_source: "vocabulary",
+              vocabulary_version: 4,
+            },
+          },
+        ],
+        provenance_summary: {
+          entries: 1,
+          harness: { resolved: 1, unresolved: 0 },
+        },
+      });
+      expect(page.events[0].provenance).not.toHaveProperty("patch");
+      expect(page.events[0]).not.toHaveProperty("entry");
+      await expect(
+        listMutationEvents({
+          pmRoot: context.pmPath,
+          full: true,
+          provenance: true,
+        }),
+      ).rejects.toThrow(/mutually exclusive/u);
+      await expect(
+        listMutationEvents({
+          pmRoot: context.pmPath,
+          provenanceFilter: "private=value",
+        }),
+      ).rejects.toThrow(/Unknown provenance dimension/u);
+
+      const cliPage = context.runCli([
+        "events",
+        "--item",
+        "pm-provenance",
+        "--provenance",
+        "--provenance-summary",
+        "--harness",
+        "codex",
+        "--provenance-filter",
+        "effort=xhigh",
+      ]);
+      expect(
+        cliPage.stdout
+          .trim()
+          .split("\n")
+          .map((line) => JSON.parse(line) as Record<string, unknown>),
+      ).toMatchObject([
+        {
+          item_id: "pm-provenance",
+          provenance: { agent_harness: "codex", vocabulary_version: 4 },
+        },
+        {
+          type: "provenance_summary",
+          provenance_summary: { entries: 1 },
+        },
+      ]);
+      const invalidFollow = context.runCli([
+        "events",
+        "--follow",
+        "--provenance-summary",
+      ]);
+      expect(invalidFollow.code).toBe(EXIT_CODE.USAGE);
+      expect(invalidFollow.stderr).toContain("cannot be combined with --follow");
+      await expect(
+        handleRequest({
+          id: 4,
+          method: "tools/call",
+          params: {
+            name: "pm_events",
+            arguments: {
+              path: context.pmPath,
+              item: "pm-provenance",
+              provenance: true,
+              provenanceSummary: true,
+              harness: "codex",
+              agentInstance: "instance-a",
+              provenanceFilter: "model=gpt-5.6-sol",
+            },
+          },
+        }),
+      ).resolves.toMatchObject({
+        structuredContent: {
+          result: {
+            count: 1,
+            provenance_summary: { entries: 1 },
+          },
+        },
+      });
+    });
+  });
+
+  it("filters recorded harnesses without requiring legacy aliases", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      delete settings.agent_identity;
+      await writeSettings(context.pmPath, settings, "settings:write");
+      await appendHistoryEntry(
+        path.join(context.pmPath, "history", "pm-recorded-harness.jsonl"),
+        {
+          ts: "2026-07-24T09:30:00.000Z",
+          author: "recorded-agent",
+          agent_harness: "codex",
+          op: "update",
+          patch: [],
+          before_hash: "before",
+          after_hash: "after",
+        },
+      );
+      await expect(
+        listMutationEvents({
+          pmRoot: context.pmPath,
+          item: "pm-recorded-harness",
+          harness: "codex",
+          provenance: true,
+        }),
+      ).resolves.toMatchObject({
+        count: 1,
+        events: [
+          {
+            provenance: {
+              agent_harness: "codex",
+              harness_source: "recorded",
+            },
+          },
+        ],
+      });
+      await expect(
+        queryHistoryEventIndex(context.pmPath, {
+          harnesses: ["codex"],
+          limit: 10,
+        }),
+      ).resolves.toMatchObject({
+        events: expect.arrayContaining([
+          expect.objectContaining({
+            entry: expect.objectContaining({ agent_harness: "codex" }),
+          }),
+        ]),
+      });
     });
   });
 

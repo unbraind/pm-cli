@@ -13,7 +13,7 @@ import type { HistoryEntry } from "../../types/index.js";
 import { readHistoryEntries } from "./read.js";
 
 const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
-const EVENT_INDEX_VERSION = "1";
+const EVENT_INDEX_VERSION = "2";
 type DatabaseSyncConstructor = typeof DatabaseSync;
 
 /** Stable location of one history entry inside its authoritative stream. */
@@ -40,6 +40,17 @@ export interface HistoryEventIndexQuery {
   ops?: readonly string[];
   /** Include only these authors. */
   authors?: readonly string[];
+  /** Include recorded harnesses or alias authors resolving to them. */
+  harnesses?: readonly string[];
+  /** Legacy author literals accepted by the requested harness vocabulary. */
+  harness_alias_authors?: readonly string[];
+  /** Include only these privacy-safe invocation fingerprints. */
+  agent_instances?: readonly string[];
+  /** Exact extensible provenance dimension predicates. */
+  provenance?: ReadonlyArray<{
+    dimension: string;
+    values: readonly string[];
+  }>;
   /** Include only these stream subjects. */
   stream_ids?: readonly string[];
   /** Maximum events returned. */
@@ -105,6 +116,8 @@ function createSchema(database: DatabaseSync): void {
       stream_offset INTEGER NOT NULL,
       ts TEXT NOT NULL,
       author TEXT NOT NULL,
+      agent_harness TEXT,
+      agent_instance TEXT,
       op TEXT NOT NULL,
       entry_json TEXT NOT NULL,
       PRIMARY KEY(stream_id, stream_offset)
@@ -115,6 +128,10 @@ function createSchema(database: DatabaseSync): void {
       ON events(op, ts, stream_id, stream_offset);
     CREATE INDEX events_author_order
       ON events(author, ts, stream_id, stream_offset);
+    CREATE INDEX events_harness_order
+      ON events(agent_harness, ts, stream_id, stream_offset);
+    CREATE INDEX events_instance_order
+      ON events(agent_instance, ts, stream_id, stream_offset);
   `);
   database
     .prepare("INSERT INTO metadata(key, value) VALUES ('version', ?)")
@@ -125,14 +142,17 @@ function insertEvent(database: DatabaseSync, event: IndexedHistoryEvent): void {
   database
     .prepare(
       `INSERT INTO events(
-        stream_id, stream_offset, ts, author, op, entry_json
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
+        stream_id, stream_offset, ts, author, agent_harness,
+        agent_instance, op, entry_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       event.stream_id,
       event.stream_offset,
       event.entry.ts,
       event.entry.author,
+      event.entry.agent_harness ?? null,
+      event.entry.agent_instance ?? null,
       event.entry.op,
       JSON.stringify(event.entry),
     );
@@ -260,6 +280,26 @@ function appendSetPredicate(
   parameters.push(...values);
 }
 
+function appendHarnessPredicate(
+  clauses: string[],
+  parameters: SQLInputValue[],
+  harnesses: readonly string[] | undefined,
+  aliasAuthors: readonly string[] | undefined,
+): void {
+  if (!harnesses || harnesses.length === 0) return;
+  const harnessPlaceholders = harnesses.map(() => "?").join(", ");
+  const aliases = aliasAuthors ?? [];
+  if (aliases.length > 0) {
+    clauses.push(
+      `(agent_harness IN (${harnessPlaceholders}) OR (agent_harness IS NULL AND author IN (${aliases.map(() => "?").join(", ")})))`,
+    );
+    parameters.push(...harnesses, ...aliases);
+    return;
+  }
+  clauses.push(`agent_harness IN (${harnessPlaceholders})`);
+  parameters.push(...harnesses);
+}
+
 /** Query the optional event projection without scanning history streams. */
 export async function queryHistoryEventIndex(
   pmRoot: string,
@@ -291,6 +331,24 @@ export async function queryHistoryEventIndex(
   }
   appendSetPredicate(clauses, parameters, "op", query.ops);
   appendSetPredicate(clauses, parameters, "author", query.authors);
+  appendHarnessPredicate(
+    clauses,
+    parameters,
+    query.harnesses,
+    query.harness_alias_authors,
+  );
+  appendSetPredicate(
+    clauses,
+    parameters,
+    "agent_instance",
+    query.agent_instances,
+  );
+  for (const predicate of query.provenance ?? []) {
+    clauses.push(
+      `json_extract(entry_json, '$.agent_provenance.${predicate.dimension}.value') IN (${predicate.values.map(() => "?").join(", ")})`,
+    );
+    parameters.push(...predicate.values);
+  }
   appendSetPredicate(clauses, parameters, "stream_id", query.stream_ids);
   const where = clauses.length === 0 ? "" : ` WHERE ${clauses.join(" AND ")}`;
   let database: DatabaseSync | undefined;

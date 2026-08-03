@@ -28,12 +28,14 @@ import {
   GUIDE_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
+  HISTORY_FLAG_CONTRACTS,
   INIT_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
   NEXT_FLAG_CONTRACTS,
   PACKAGE_FLAG_CONTRACTS,
   PLAN_FLAG_CONTRACTS,
   SEARCH_FLAG_CONTRACTS,
+  EVENTS_FLAG_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
   UPDATE_MANY_FLAG_CONTRACTS,
   toCompletionFlagString,
@@ -91,6 +93,8 @@ const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
 const UPDATE_MANY_FLAGS = toCompletionFlagString(UPDATE_MANY_FLAG_CONTRACTS);
 const CLOSE_MANY_FLAGS = toCompletionFlagString(CLOSE_MANY_FLAG_CONTRACTS);
 const ACTIVITY_FLAGS = toCompletionFlagString(ACTIVITY_FLAG_CONTRACTS);
+const HISTORY_FLAGS = toCompletionFlagString(HISTORY_FLAG_CONTRACTS);
+const EVENTS_FLAGS = toCompletionFlagString(EVENTS_FLAG_CONTRACTS);
 const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
 const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
 const NEXT_FLAGS = toCompletionFlagString(NEXT_FLAG_CONTRACTS);
@@ -827,7 +831,10 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
     "      ;;",
     "    history)",
-    `      COMPREPLY=(${compgen("--limit --compact --full --diff --field --verify --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen(HISTORY_FLAGS)})`,
+    "      ;;",
+    "    events)",
+    `      COMPREPLY=(${compgen(EVENTS_FLAGS)})`,
     "      ;;",
     "    history-compact)",
     `      COMPREPLY=(${compgen("--before --ids --all-over --closed --all-streams --min-entries --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1352,9 +1359,32 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--limit[Max entries]:number' \\
             '--compact[Condensed history projection]' \\
             '--full[Show full history entries]' \\
+            '--provenance[Patch-free identity and agent provenance projection]' \\
+            '--provenance-summary[Include bounded provenance completeness counts]' \\
+            '*--harness[Filter by recorded or vocabulary-resolved harness]:harness' \\
+            '*--agent-instance[Filter by privacy-safe agent instance]:instance' \\
+            '*--provenance-filter[Filter by exact declared provenance value]:dimension=value' \\
             '--diff[Include per-entry field-level before/after value diffs]' \\
             '--field[With --diff, show only entries that changed this field]:field' \\
             '--verify[Verify history hash chain and replay integrity]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        events)
+          _arguments \\
+            '--since[Resume after a cursor or from an ISO timestamp]:cursor_or_timestamp' \\
+            '*--type[Filter by mutation operation]:operation' \\
+            '*--author[Filter by mutation author]:author' \\
+            '*--item[Filter by item or workspace stream]:item' \\
+            '--limit[Maximum events, up to 1000]:number' \\
+            '--full[Include complete authoritative history entries]' \\
+            '--provenance[Include patch-free identity and agent provenance]' \\
+            '--provenance-summary[Include bounded provenance completeness counts]' \\
+            '*--harness[Filter by recorded or vocabulary-resolved harness]:harness' \\
+            '*--agent-instance[Filter by privacy-safe agent instance]:instance' \\
+            '*--provenance-filter[Filter by exact declared provenance value]:dimension=value' \\
+            '--follow[Continue emitting committed events]' \\
+            '--interval-ms[Empty-read delay while following]:milliseconds' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1485,6 +1515,11 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--limit[Max entries]:number' \\
             '--compact[Condensed activity projection]' \\
             '--full[Show full activity entries]' \\
+            '--provenance[Patch-free identity and agent provenance projection]' \\
+            '--provenance-summary[Include bounded provenance completeness counts]' \\
+            '*--harness[Filter by recorded or vocabulary-resolved harness]:harness' \\
+            '*--agent-instance[Filter by privacy-safe agent instance]:instance' \\
+            '*--provenance-filter[Filter by exact declared provenance value]:dimension=value' \\
             '--stream[Emit line-delimited JSON rows]:mode' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -2463,9 +2498,27 @@ complete -c pm -n '__fish_seen_subcommand_from get' -l tree-depth -d 'Cap subtre
 complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max history entries' -r
 complete -c pm -n '__fish_seen_subcommand_from history'  -l compact -d 'Condensed history projection'
 complete -c pm -n '__fish_seen_subcommand_from history'  -l full -d 'Show full history entries'
+complete -c pm -n '__fish_seen_subcommand_from history'  -l provenance -d 'Patch-free identity and agent provenance projection'
+complete -c pm -n '__fish_seen_subcommand_from history'  -l provenance-summary -d 'Include bounded provenance completeness counts'
+complete -c pm -n '__fish_seen_subcommand_from history'  -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
+complete -c pm -n '__fish_seen_subcommand_from history'  -l agent-instance -d 'Filter by privacy-safe agent instance' -r
+complete -c pm -n '__fish_seen_subcommand_from history'  -l provenance-filter -d 'Filter by exact declared provenance value' -r
 complete -c pm -n '__fish_seen_subcommand_from history'  -l diff -d 'Include per-entry field-level before/after value diffs'
 complete -c pm -n '__fish_seen_subcommand_from history'  -l field -d 'With --diff, show only entries that changed this field' -r
 complete -c pm -n '__fish_seen_subcommand_from history'  -l verify -d 'Verify history hash chain and replay integrity'
+complete -c pm -n '__fish_seen_subcommand_from events' -l since -d 'Resume after a cursor or from an ISO timestamp' -r
+complete -c pm -n '__fish_seen_subcommand_from events' -l type -d 'Filter by mutation operation' -r
+complete -c pm -n '__fish_seen_subcommand_from events' -l author -d 'Filter by mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from events' -l item -d 'Filter by item or workspace stream' -r
+complete -c pm -n '__fish_seen_subcommand_from events' -l limit -d 'Maximum events, up to 1000' -r
+complete -c pm -n '__fish_seen_subcommand_from events' -l full -d 'Include complete authoritative history entries'
+complete -c pm -n '__fish_seen_subcommand_from events' -l provenance -d 'Include patch-free identity and agent provenance'
+complete -c pm -n '__fish_seen_subcommand_from events' -l provenance-summary -d 'Include bounded provenance completeness counts'
+complete -c pm -n '__fish_seen_subcommand_from events' -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
+complete -c pm -n '__fish_seen_subcommand_from events' -l agent-instance -d 'Filter by privacy-safe agent instance' -r
+complete -c pm -n '__fish_seen_subcommand_from events' -l provenance-filter -d 'Filter by exact declared provenance value' -r
+complete -c pm -n '__fish_seen_subcommand_from events' -l follow -d 'Continue emitting committed events'
+complete -c pm -n '__fish_seen_subcommand_from events' -l interval-ms -d 'Empty-read delay while following' -r
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l before -d 'Compact entries strictly before this version number or ISO timestamp' -r
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l ids -d 'Bulk: compact an explicit comma-separated list of item ids' -r
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l all-over -d 'Bulk: compact every stream with more than N entries' -r
@@ -2546,6 +2599,11 @@ complete -c pm -n '__fish_seen_subcommand_from activity' -l to -d 'Upper timesta
 complete -c pm -n '__fish_seen_subcommand_from activity' -l limit -d 'Max activity entries' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l compact -d 'Condensed activity projection'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l full -d 'Show full activity entries'
+complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance -d 'Patch-free identity and agent provenance projection'
+complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance-summary -d 'Include bounded provenance completeness counts'
+complete -c pm -n '__fish_seen_subcommand_from activity' -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
+complete -c pm -n '__fish_seen_subcommand_from activity' -l agent-instance -d 'Filter by privacy-safe agent instance' -r
+complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance-filter -d 'Filter by exact declared provenance value' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l stream -d 'Emit line-delimited JSON rows'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l action -d 'Filter schema by tool action' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l command -d 'Scope output to one command (narrow-by-default)' -r

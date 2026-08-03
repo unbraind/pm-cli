@@ -742,6 +742,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["sdk/mutation-events.ts"],
   },
   {
+    code: "invalid_provenance_predicate",
+    meaning: "Invalid provenance predicate condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/history-provenance.ts"],
+  },
+  {
     code: "invalid_query_cursor",
     meaning: "Invalid query cursor condition.",
     stability: "stable",
@@ -1503,6 +1512,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/plan.ts"],
+  },
+  {
+    code: "unknown_provenance_dimension",
+    meaning: "Unknown provenance dimension condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/history-provenance.ts"],
   },
   {
     code: "unknown_status",

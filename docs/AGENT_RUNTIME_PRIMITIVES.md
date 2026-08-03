@@ -20,7 +20,11 @@ tracked by [pm-1zhfls](../.agents/pm/issues/pm-1zhfls.toon).
 Session provenance and episode continuity are tracked by
 [pm-9wbiye](../.agents/pm/issues/pm-9wbiye.toon),
 [pm-rbg1qo](../.agents/pm/issues/pm-rbg1qo.toon), and
-[pm-oqo9l2](../.agents/pm/features/pm-oqo9l2.toon).
+[pm-oqo9l2](../.agents/pm/features/pm-oqo9l2.toon). Automatic bounded probes,
+historical projections, and versioned legacy identity are tracked by
+[pm-ffz0a9](../.agents/pm/issues/pm-ffz0a9.toon),
+[pm-v8gfi7](../.agents/pm/issues/pm-v8gfi7.toon), and
+[pm-3yxwv5](../.agents/pm/issues/pm-3yxwv5.toon).
 
 `pm` treats project management as context management. These primitives keep
 mutation provenance, source-workspace identity, extension flags, and bounded
@@ -47,13 +51,16 @@ Every newly created `HistoryEntry` records `author_source` as `asserted`,
 are independent: even an explicit, environment, or configured author retains
 the observed `agent_harness`, legacy `agent_model`/`agent_model_source`, and
 extensible `agent_provenance` fields. The built-in provenance dimensions are
-`model`, `effort`, `role`, and `topic`. A declared session can also record the
+`model`, `effort`, `role`, `topic`, and `version`. A declared session can also record the
 optional `agent_episode` join key. Older history remains valid because all agent
 fields are optional.
 
-Detection is a pure, bounded signal match: it does not launch a subprocess,
-traverse an unbounded process tree, execute user regexes, emit environment
-values, or make network requests. Raw harness session signals are transient
+Detection is bounded: it does not launch a subprocess, traverse a process tree,
+execute user regexes, emit environment values, or make network requests. A
+named built-in resolver may inspect a strictly capped tail of a harness-owned
+session file and retain only allow-listed model/version values. Set
+`agent_identity.probes_enabled` to `false`, or `PM_AGENT_PROBES=off`, to disable
+those resolvers. Raw harness session signals are transient
 invocation context: they are never persisted to history or exported to
 telemetry. Explicit semantic session context uses bounded role, topic, and
 episode declarations that are safe to retain in repository-local history.
@@ -111,6 +118,9 @@ automatically using `settings.agent_identity.harness_signals`.
           "role": ["ACME_ROLE"],
           "topic": ["ACME_TOPIC"]
         },
+        "provenance_resolvers": {
+          "version": "ai_agent_version"
+        },
         "provenance_unavailable_dimensions": [],
         "argv_markers": ["acme-agent"],
         "client_names": ["acme-agent"]
@@ -124,6 +134,25 @@ Descriptors are literal, length-bounded data. Built-in namespaces cannot be
 overridden; duplicate package/workspace namespaces fail with a deterministic
 collision error. Precedence is built-ins, registered packages, then the active
 workspace. Registration performs no filesystem, process, or network access.
+
+## Patch-free historical context
+
+The CLI, SDK, and MCP expose the same historical context vocabulary:
+
+```bash
+pm history pm-example --provenance --harness codex \
+  --provenance-filter effort=xhigh --provenance-summary --json
+pm activity --provenance --agent-instance <digest> --json
+pm events --provenance --harness claude-code
+```
+
+These projections retain the immutable timestamp, operation, original author,
+canonical harness interpretation, instance digest, and extensible observations.
+They omit patches and hashes. The workspace's versioned
+`agent_identity.identity_vocabulary.aliases` may interpret exact historical
+author literals at read time; every row reports `harness_source` and
+`vocabulary_version`, and unresolved literals remain visible in the bounded
+summary. No history entry is rewritten.
 
 MCP captures `clientInfo.name` and `clientInfo.version` during initialize and
 scopes all later tool calls to that client signal. Optional host-provided

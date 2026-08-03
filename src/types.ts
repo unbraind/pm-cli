@@ -971,7 +971,8 @@ export interface HistoryEntry {
     | "mcp_client"
     | "argv"
     | "host"
-    | "session";
+    | "session"
+    | "probe";
   /** Privacy-safe fingerprint distinguishing concurrent harness invocations. */
   agent_instance?: string;
   /** Extensible local-only descriptive agent provenance; null means declared but unavailable. */
@@ -988,7 +989,8 @@ export interface HistoryEntry {
           | "mcp_client"
           | "argv"
           | "host"
-          | "session";
+          | "session"
+          | "probe";
       } | null
     >
   >;
@@ -1259,6 +1261,15 @@ export interface PmSettings {
   author_default: string;
   /** Declarative workspace additions to the built-in agent identity registry. */
   agent_identity?: {
+    /** Whether bounded local harness-owned provenance probes may run. */
+    probes_enabled?: boolean;
+    /** Versioned read-time interpretation for legacy free-text authors. */
+    identity_vocabulary?: {
+      /** Reproducible vocabulary revision recorded in read projections. */
+      version: number;
+      /** Exact literal author spellings mapped to canonical harness namespaces. */
+      aliases: Record<string, string>;
+    };
     /** Pure, bounded harness signal descriptors evaluated after built-ins. */
     harness_signals: Array<{
       /** Stable lowercase harness namespace. */
@@ -1271,6 +1282,11 @@ export interface PmSettings {
       session_environment_keys?: string[];
       /** Extensible provenance dimensions mapped to ordered environment keys. */
       provenance_environment_keys?: Record<string, string[]>;
+      /** Provenance dimensions mapped to audited built-in local resolvers. */
+      provenance_resolvers?: Record<
+        string,
+        "ai_agent_version" | "claude_session_file"
+      >;
       /** Dimensions intentionally unavailable from this harness environment. */
       provenance_unavailable_dimensions?: string[];
       /** Literal executable or argument markers. */

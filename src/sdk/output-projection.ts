@@ -69,10 +69,13 @@ export const PM_READ_ROW_CONTRACTS = {
   },
   search: { row_keys: ["items"], fields: "supported" },
   activity: {
-    row_keys: ["compact_activity", "activity"],
+    row_keys: ["compact_activity", "provenance_activity", "activity"],
     fields: "unsupported",
   },
-  history: { row_keys: ["compact_history", "history"], fields: "unsupported" },
+  history: {
+    row_keys: ["compact_history", "provenance_history", "history"],
+    fields: "unsupported",
+  },
   deps: {
     row_keys: ["graph.nodes", "graph.edges", "context.nodes", "context.edges"],
     fields: "unsupported",
@@ -115,6 +118,12 @@ export const PM_MODE_PAIRED_OUTPUT_PROJECTION_CONTRACTS = [
           restore_with: "--full",
         },
       ],
+      provenance: [
+        {
+          name: "patch_and_hashes",
+          restore_with: "--full",
+        },
+      ],
     },
   },
   {
@@ -124,6 +133,12 @@ export const PM_MODE_PAIRED_OUTPUT_PROJECTION_CONTRACTS = [
       compact: [
         {
           name: "raw_history",
+          restore_with: "--full",
+        },
+      ],
+      provenance: [
+        {
+          name: "patch_and_hashes",
           restore_with: "--full",
         },
       ],
@@ -253,8 +268,8 @@ const READ_RESULT_SENTINEL_KEYS: Readonly<Record<string, readonly string[]>> = {
     "held_by_others",
   ],
   search: ["items", "projection"],
-  activity: ["compact_activity", "activity"],
-  history: ["compact_history", "history"],
+  activity: ["compact_activity", "provenance_activity", "activity"],
+  history: ["compact_history", "provenance_history", "history"],
   deps: ["tree", "graph", "projection"],
   health: ["checks"],
   aggregate: ["groups"],

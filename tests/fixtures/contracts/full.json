@@ -1074,6 +1074,24 @@
           "flag": "--full"
         },
         {
+          "flag": "--provenance"
+        },
+        {
+          "flag": "--provenance-summary"
+        },
+        {
+          "flag": "--harness",
+          "repeatable": true
+        },
+        {
+          "flag": "--agent-instance",
+          "repeatable": true
+        },
+        {
+          "flag": "--provenance-filter",
+          "repeatable": true
+        },
+        {
           "flag": "--stream"
         }
       ],
@@ -2839,6 +2857,24 @@
         },
         {
           "flag": "--full"
+        },
+        {
+          "flag": "--provenance"
+        },
+        {
+          "flag": "--provenance-summary"
+        },
+        {
+          "flag": "--harness",
+          "repeatable": true
+        },
+        {
+          "flag": "--agent-instance",
+          "repeatable": true
+        },
+        {
+          "flag": "--provenance-filter",
+          "repeatable": true
         },
         {
           "flag": "--diff"
@@ -10141,6 +10177,16 @@
       "stability": "stable"
     },
     {
+      "code": "invalid_provenance_predicate",
+      "exit_code": 2,
+      "meaning": "Invalid provenance predicate condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/history-provenance.ts"
+      ],
+      "stability": "stable"
+    },
+    {
       "code": "invalid_query_cursor",
       "exit_code": 2,
       "meaning": "Invalid query cursor condition.",
@@ -10977,6 +11023,16 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/plan.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_provenance_dimension",
+      "exit_code": 2,
+      "meaning": "Unknown provenance dimension condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/history-provenance.ts"
       ],
       "stability": "stable"
     },
@@ -14242,6 +14298,27 @@
       "input_schema": {
         "additionalProperties": true,
         "properties": {
+          "agentInstance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Privacy-safe agent invocation fingerprint filter, supplied once or as a list.",
+            "examples": [
+              "a1b2c3d4",
+              [
+                "a1b2c3d4",
+                "e5f6g7h8"
+              ]
+            ]
+          },
           "author": {
             "anyOf": [
               {
@@ -14261,6 +14338,20 @@
           },
           "full": {
             "type": "boolean"
+          },
+          "harness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Harness."
           },
           "item": {
             "anyOf": [
@@ -14358,6 +14449,35 @@
           },
           "profile": {
             "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "provenance": {
+            "description": "Return patch-free immutable author, harness, instance, and extensible provenance rows.",
+            "type": "boolean"
+          },
+          "provenanceFilter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Exact extensible provenance predicate in dimension=value form, supplied once or as a list.",
+            "examples": [
+              "model=gpt-5.6-sol",
+              [
+                "effort=xhigh",
+                "role=reviewer"
+              ]
+            ]
+          },
+          "provenanceSummary": {
+            "description": "Include bounded observed, unavailable, legacy-missing, and unresolved-author counts.",
             "type": "boolean"
           },
           "quiet": {
@@ -32548,6 +32668,27 @@
             "const": "history",
             "description": "Tool action to execute."
           },
+          "agentInstance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Privacy-safe agent invocation fingerprint filter, supplied once or as a list.",
+            "examples": [
+              "a1b2c3d4",
+              [
+                "a1b2c3d4",
+                "e5f6g7h8"
+              ]
+            ]
+          },
           "compact": {
             "description": "Render compact projection output for search and list-family actions.",
             "type": "boolean"
@@ -32578,6 +32719,20 @@
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
+          },
+          "harness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Harness."
           },
           "id": {
             "description": "Item identifier for read or mutation actions.",
@@ -32679,6 +32834,35 @@
             "description": "Emit deterministic timing diagnostics to stderr.",
             "type": "boolean"
           },
+          "provenance": {
+            "description": "Return patch-free immutable author, harness, instance, and extensible provenance rows.",
+            "type": "boolean"
+          },
+          "provenanceFilter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Exact extensible provenance predicate in dimension=value form, supplied once or as a list.",
+            "examples": [
+              "model=gpt-5.6-sol",
+              [
+                "effort=xhigh",
+                "role=reviewer"
+              ]
+            ]
+          },
+          "provenanceSummary": {
+            "description": "Include bounded observed, unavailable, legacy-missing, and unresolved-author counts.",
+            "type": "boolean"
+          },
           "quiet": {
             "description": "Suppress stdout payload output.",
             "type": "boolean"
@@ -32717,6 +32901,27 @@
             "const": "events",
             "description": "Tool action to execute."
           },
+          "agentInstance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Privacy-safe agent invocation fingerprint filter, supplied once or as a list.",
+            "examples": [
+              "a1b2c3d4",
+              [
+                "a1b2c3d4",
+                "e5f6g7h8"
+              ]
+            ]
+          },
           "author": {
             "anyOf": [
               {
@@ -32741,6 +32946,20 @@
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
+          },
+          "harness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Harness."
           },
           "item": {
             "anyOf": [
@@ -32849,6 +33068,35 @@
           },
           "profile": {
             "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "provenance": {
+            "description": "Return patch-free immutable author, harness, instance, and extensible provenance rows.",
+            "type": "boolean"
+          },
+          "provenanceFilter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Exact extensible provenance predicate in dimension=value form, supplied once or as a list.",
+            "examples": [
+              "model=gpt-5.6-sol",
+              [
+                "effort=xhigh",
+                "role=reviewer"
+              ]
+            ]
+          },
+          "provenanceSummary": {
+            "description": "Include bounded observed, unavailable, legacy-missing, and unresolved-author counts.",
             "type": "boolean"
           },
           "quiet": {
@@ -34168,6 +34416,27 @@
             "const": "activity",
             "description": "Tool action to execute."
           },
+          "agentInstance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Privacy-safe agent invocation fingerprint filter, supplied once or as a list.",
+            "examples": [
+              "a1b2c3d4",
+              [
+                "a1b2c3d4",
+                "e5f6g7h8"
+              ]
+            ]
+          },
           "author": {
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
@@ -34183,6 +34452,20 @@
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
+          },
+          "harness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Harness."
           },
           "id": {
             "description": "Item identifier for read or mutation actions.",
@@ -34292,6 +34575,35 @@
           },
           "profile": {
             "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "provenance": {
+            "description": "Return patch-free immutable author, harness, instance, and extensible provenance rows.",
+            "type": "boolean"
+          },
+          "provenanceFilter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Exact extensible provenance predicate in dimension=value form, supplied once or as a list.",
+            "examples": [
+              "model=gpt-5.6-sol",
+              [
+                "effort=xhigh",
+                "role=reviewer"
+              ]
+            ]
+          },
+          "provenanceSummary": {
+            "description": "Include bounded observed, unavailable, legacy-missing, and unresolved-author counts.",
             "type": "boolean"
           },
           "quiet": {

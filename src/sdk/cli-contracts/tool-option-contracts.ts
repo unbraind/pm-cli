@@ -396,6 +396,15 @@ export const TOOL_ACTIVITY_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "unbounded", flag: "--unbounded" },
   { param: "compact", flag: "--compact" },
   { param: "full", flag: "--full" },
+  { param: "provenance", flag: "--provenance" },
+  { param: "provenanceSummary", flag: "--provenance-summary" },
+  { param: "harness", flag: "--harness", repeatable: true },
+  { param: "agentInstance", flag: "--agent-instance", repeatable: true },
+  {
+    param: "provenanceFilter",
+    flag: "--provenance-filter",
+    repeatable: true,
+  },
 ];
 
 /** Public contract for tool context option contracts, shared by SDK and presentation-layer consumers. */

@@ -16,7 +16,16 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { stableStringify } from "../core/shared/serialization.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import { readSettings } from "../core/store/settings.js";
 import type { HistoryEntry } from "../types/index.js";
+import {
+  parseHistoryProvenanceFilters,
+  projectHistoryProvenance,
+  resolveHistoryProvenanceDimensions,
+  summarizeHistoryProvenance,
+  type HistoryProvenanceRow,
+  type HistoryProvenanceSummary,
+} from "./history-provenance.js";
 
 const MUTATION_EVENT_CURSOR_VERSION = 1;
 const MUTATION_EVENT_CURSOR_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -50,6 +59,16 @@ export interface ListMutationEventsOptions {
   limit?: number;
   /** Include the complete history entry instead of the compact projection. */
   full?: boolean;
+  /** Return patch-free provenance instead of the compact event projection. */
+  provenance?: boolean;
+  /** Include bounded provenance completeness counts for the returned page. */
+  provenanceSummary?: boolean;
+  /** Filter by canonical recorded or vocabulary-resolved harness. */
+  harness?: string | readonly string[];
+  /** Filter by privacy-safe invocation fingerprint. */
+  agentInstance?: string | readonly string[];
+  /** Exact provenance dimension predicates (`dimension=value`). */
+  provenanceFilter?: string | readonly string[];
 }
 
 /** One ordered cross-item mutation event. */
@@ -72,6 +91,8 @@ export interface MutationEvent {
   patch_count: number;
   /** Complete authoritative history entry when `full` is requested. */
   entry?: HistoryEntry;
+  /** Patch-free provenance row when requested. */
+  provenance?: HistoryProvenanceRow;
 }
 
 /** Bounded event page returned by {@link listMutationEvents}. */
@@ -86,6 +107,8 @@ export interface MutationEventPage {
   next_cursor?: string;
   /** Persistent derived projection used for the read. */
   source: "derived_index";
+  /** Constant-size provenance completeness metrics for the returned page. */
+  provenance_summary?: HistoryProvenanceSummary;
 }
 
 /** Follow controls accepted by {@link subscribeMutationEvents}. */
@@ -119,6 +142,9 @@ function eventQueryFingerprint(options: ListMutationEventsOptions): string {
         type: normalizeFilter(options.type),
         author: normalizeFilter(options.author),
         item: normalizeFilter(options.item),
+        harness: normalizeFilter(options.harness),
+        agent_instance: normalizeFilter(options.agentInstance),
+        provenance: normalizeFilter(options.provenanceFilter),
       }),
     )
     .digest("hex")
@@ -229,38 +255,10 @@ function resolveMutationEventStart(
   return { sinceTimestamp: new Date(milliseconds).toISOString() };
 }
 
-/** Read one bounded page of mutation events from the persistent projection. */
-export async function listMutationEvents(
-  options: ListMutationEventsOptions = {},
-): Promise<MutationEventPage> {
-  const pmRoot = resolvePmRoot(options.cwd ?? process.cwd(), options.pmRoot);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(
-      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
-  const requestedLimit = parseMutationEventLimit(options.limit);
-  const fingerprint = eventQueryFingerprint(options);
-  const { cursor, sinceTimestamp } = resolveMutationEventStart(
-    options.since,
-    fingerprint,
-  );
-  const query = {
-    ...(cursor
-      ? {
-          after_ts: cursor.ts,
-          after_stream_id: cursor.stream_id,
-          after_stream_offset: cursor.stream_offset,
-        }
-      : sinceTimestamp
-        ? { since_ts: sinceTimestamp }
-        : {}),
-    ops: normalizeFilter(options.type),
-    authors: normalizeFilter(options.author),
-    stream_ids: normalizeFilter(options.item),
-    limit: requestedLimit,
-  };
+async function resolveIndexedMutationEvents(
+  pmRoot: string,
+  query: NonNullable<Parameters<typeof queryHistoryEventIndex>[1]>,
+) {
   let indexed = await queryHistoryEventIndex(pmRoot, query);
   if (indexed === null) {
     if (!(await rebuildHistoryEventIndex(pmRoot))) {
@@ -279,6 +277,69 @@ export async function listMutationEvents(
       { code: "event_index_unavailable" },
     );
   }
+  return indexed;
+}
+
+/** Read one bounded page of mutation events from the persistent projection. */
+export async function listMutationEvents(
+  options: ListMutationEventsOptions = {},
+): Promise<MutationEventPage> {
+  const pmRoot = resolvePmRoot(options.cwd ?? process.cwd(), options.pmRoot);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
+  }
+  const requestedLimit = parseMutationEventLimit(options.limit);
+  if (options.full === true && options.provenance === true) {
+    throw new PmCliError(
+      "Mutation event projections are mutually exclusive. Use --provenance or --full.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const settings = await readSettings(pmRoot);
+  const vocabulary = settings.agent_identity!.identity_vocabulary!;
+  const dimensions = resolveHistoryProvenanceDimensions(
+    settings.agent_identity!.harness_signals,
+  );
+  const provenancePredicates = parseHistoryProvenanceFilters(
+    { provenance: options.provenanceFilter },
+    dimensions,
+  );
+  const harnesses = normalizeFilter(options.harness);
+  const fingerprint = eventQueryFingerprint(options);
+  const { cursor, sinceTimestamp } = resolveMutationEventStart(
+    options.since,
+    fingerprint,
+  );
+  const query = {
+    ...(cursor
+      ? {
+          after_ts: cursor.ts,
+          after_stream_id: cursor.stream_id,
+          after_stream_offset: cursor.stream_offset,
+        }
+      : sinceTimestamp
+        ? { since_ts: sinceTimestamp }
+        : {}),
+    ops: normalizeFilter(options.type),
+    authors: normalizeFilter(options.author),
+    harnesses,
+    harness_alias_authors: harnesses
+      ? Object.entries(vocabulary.aliases)
+          .filter(([, harness]) => harnesses.includes(harness))
+          .map(([author]) => author)
+      : undefined,
+    agent_instances: normalizeFilter(options.agentInstance),
+    provenance: [...provenancePredicates].map(([dimension, values]) => ({
+      dimension,
+      values: [...values],
+    })),
+    stream_ids: normalizeFilter(options.item),
+    limit: requestedLimit,
+  };
+  const indexed = await resolveIndexedMutationEvents(pmRoot, query);
   const events = indexed.events.map((event) => ({
     cursor: encodeMutationEventCursor(event, fingerprint),
     item_id: event.stream_id,
@@ -291,6 +352,14 @@ export async function listMutationEvents(
       : { message: event.entry.message }),
     patch_count: event.entry.patch.length,
     ...(options.full === true ? { entry: event.entry } : {}),
+    ...(options.provenance === true
+      ? {
+          provenance: projectHistoryProvenance(event.entry, vocabulary, {
+            itemId: event.stream_id,
+            version: event.stream_offset + 1,
+          }),
+        }
+      : {}),
   }));
   return {
     events,
@@ -300,6 +369,15 @@ export async function listMutationEvents(
       ? {}
       : { next_cursor: events[events.length - 1].cursor }),
     source: "derived_index",
+    ...(options.provenanceSummary === true
+      ? {
+          provenance_summary: summarizeHistoryProvenance(
+            indexed.events.map((event) => event.entry),
+            vocabulary,
+            dimensions,
+          ),
+        }
+      : {}),
   };
 }
 

@@ -833,6 +833,22 @@ describe("registration helpers", () => {
     expect(normalizeActivityOptions({ compact: false }).compact).toBe(false);
     // Neither flag: compact defaults to true.
     expect(normalizeActivityOptions({}).compact).toBe(true);
+    expect(
+      normalizeActivityOptions({
+        provenance: true,
+        provenanceSummary: true,
+        harness: ["codex"],
+        agentInstance: ["instance-a"],
+        provenanceFilter: ["model=gpt-5.6-sol"],
+      }),
+    ).toMatchObject({
+      compact: false,
+      provenance: true,
+      provenanceSummary: true,
+      harness: ["codex"],
+      agentInstance: ["instance-a"],
+      provenanceFilter: ["model=gpt-5.6-sol"],
+    });
   });
 
   it("separates update-many mutation options from selector controls", () => {

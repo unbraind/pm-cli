@@ -23,6 +23,7 @@ import type {
   ExtensionPolicySettings,
   GovernanceSettings,
   ItemTypeDefinition,
+  PmSettings,
   RuntimeSchemaSettings,
 } from "../../types.js";
 import type { PmMaxVersionExceededModeSetting } from "../extensions/extension-types.js";
@@ -38,18 +39,7 @@ export interface ParsedSettings {
   /** Value that configures or reports author default for this contract. */
   author_default: string;
   /** Declarative workspace additions to agent identity detection. */
-  agent_identity?: {
-    harness_signals: Array<{
-      harness: string;
-      environment_keys?: string[];
-      model_environment_keys?: string[];
-      session_environment_keys?: string[];
-      provenance_environment_keys?: Record<string, string[]>;
-      provenance_unavailable_dimensions?: string[];
-      argv_markers?: string[];
-      client_names?: string[];
-    }>;
-  };
+  agent_identity?: PmSettings["agent_identity"];
   /** Shared pre-write mutation guard policy. */
   mutation_guard?: {
     require_attributed_author?: boolean;
@@ -499,6 +489,9 @@ const harnessSignalDescriptor = vObject({
   provenance_environment_keys: vOptional(
     vRecordOf(vArray(harnessSignalLiteral, 64)),
   ),
+  provenance_resolvers: vOptional(
+    vRecordOf(vLiteral("ai_agent_version", "claude_session_file")),
+  ),
   provenance_unavailable_dimensions: vOptional(
     vArray(harnessSignalLiteral, 64),
   ),
@@ -517,6 +510,15 @@ const settingsCheck = vObject({
   author_default: vString,
   agent_identity: vOptional(
     vObject({
+      probes_enabled: vOptional(vBoolean),
+      identity_vocabulary: vOptional(
+        vObject({
+          version: vNumber({ int: true, positive: true }),
+          aliases: vRecordOf(
+            vBoundedNormalizedString(128, /^[a-z0-9]+(?:-[a-z0-9]+)*$/u),
+          ),
+        }),
+      ),
       harness_signals: vArray(harnessSignalDescriptor),
     }),
   ),

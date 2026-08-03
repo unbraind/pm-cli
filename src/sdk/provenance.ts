@@ -119,7 +119,10 @@ export function analyzeAgentProvenanceDescriptorCoverage(
           dimension === "model"
             ? descriptor.model_environment_keys
             : descriptor.provenance_environment_keys?.[dimension];
-        return (keys?.length ?? 0) > 0;
+        return (
+          (keys?.length ?? 0) > 0 ||
+          descriptor.provenance_resolvers?.[dimension] !== undefined
+        );
       })
       .map((descriptor) => descriptor.harness)
       .sort();
