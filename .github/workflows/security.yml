@@ -62,11 +62,14 @@ jobs:
           # scheduled runs can rescan the entire history.
           fetch-depth: 0
 
-      # Verified-credential detection on top of Trivy's pattern-based secret
-      # scan: TruffleHog re-checks candidate secrets against the issuing
-      # provider and fails on live (verified) or unverifiable (unknown)
-      # results. push/PR events scan the changed commit range; scheduled runs
-      # rescan everything. Known-benign paths are excluded via
+      # Provider-verified credential detection on top of the deterministic
+      # current-tree Trivy and repository pattern scans: TruffleHog re-checks
+      # candidates against the issuer and fails on confirmed-live values.
+      # Network/provider verification failures are not findings because they
+      # otherwise reclassify ordinary PM hash-chain values as unknown secrets;
+      # source scan errors still fail closed. Push/PR events scan the changed
+      # commit range, while scheduled runs rescan all Git history.
+      # Known-benign paths are excluded via
       # .trufflehog-exclude-paths.txt (one unanchored path regex per line):
       # a deliberate basic-auth URI test fixture in the health-command spec,
       # plus the two pm-4ris tracker files whose git history contains a
@@ -75,7 +78,7 @@ jobs:
       - name: TruffleHog scan
         uses: trufflesecurity/trufflehog@6f3c981e7b77f235fd2702dd74af25fc4b72bf11 # v3.96.0
         with:
-          extra_args: --results=verified,unknown --exclude-paths=.trufflehog-exclude-paths.txt
+          extra_args: --results=verified --fail-on-scan-errors --exclude-paths=.trufflehog-exclude-paths.txt
 
   shellcheck:
     name: ShellCheck

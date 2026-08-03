@@ -699,6 +699,11 @@ describe("GitHub workflow contract", () => {
   it("keeps security workflow downloads pinned and hash-verified", async () => {
     const securityPath = path.resolve(repoRoot, ".github/workflows/security.yml");
     const securityWorkflow = normalizeWorkflow(await readFile(securityPath, "utf8"));
+    const truffleHogExclusions = normalizeWorkflow(
+      await readFile(path.resolve(repoRoot, ".trufflehog-exclude-paths.txt"), "utf8"),
+    )
+      .trim()
+      .split("\n");
 
     expectContainsAll(securityWorkflow, [
       "name: Security and Script Quality",
@@ -709,6 +714,7 @@ describe("GitHub workflow contract", () => {
       "scanners: vuln,secret,misconfig",
       "trivyignores: .trivyignore",
       "skip-dirs: node_modules,dist,coverage,.pnpm-store",
+      "extra_args: --results=verified --fail-on-scan-errors --exclude-paths=.trufflehog-exclude-paths.txt",
       "shellcheck --version",
       "shellcheck --severity=style",
       "$moduleVersion = '1.24.0'",
@@ -721,6 +727,11 @@ describe("GitHub workflow contract", () => {
       "expected_sha=\"8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8\"",
       "sha256sum --check --strict",
       "./actionlint -color",
+    ]);
+    expect(truffleHogExclusions).toEqual([
+      "tests/unit/health-command\\.spec\\.ts",
+      "\\.agents/pm/history/pm-4ris\\.jsonl",
+      "\\.agents/pm/tasks/pm-4ris\\.toon",
     ]);
     expectContainsNone(securityWorkflow, ["Install-Module PSScriptAnalyzer", "Set-PSRepository PSGallery"]);
   });
