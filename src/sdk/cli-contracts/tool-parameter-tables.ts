@@ -441,6 +441,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   includeDecisions: { type: "boolean" },
   explainRanking: { type: "boolean" },
   noTags: { type: "boolean" },
+  noExtensionHealth: { type: "boolean" },
   run: { type: "boolean" },
   count: { type: "boolean" },
   sum: { type: "string" },

@@ -1095,6 +1095,10 @@ export function registerListQueryCommands(
         "--token-budget <n>",
         "Maximum estimated tokens spent on ranked focus rows",
       )
+      .option(
+        "--no-extension-health",
+        "Omit the installed extension health summary",
+      )
       .option("--no-tags", "Omit tag arrays from context focus rows");
     // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
     addHiddenOption(

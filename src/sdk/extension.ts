@@ -12,6 +12,8 @@ import {
   loadExtensions,
   nextExtensionReloadToken,
 } from "../core/extensions/index.js";
+import { describeExtensionActivation } from "../core/extensions/activation-summary.js";
+import { createExtensionContributionInventory } from "../core/extensions/contribution-inventory.js";
 import { resolveExtensionRoots } from "../core/extensions/loader.js";
 import { pathExists } from "../core/fs/fs-utils.js";
 import { resolvePmPackageRootFromModule } from "../core/packages/root.js";
@@ -43,6 +45,7 @@ import {
   readManagedExtensionState,
   writeManagedExtensionState,
   upsertManagedEntry,
+  persistManagedContributionInventory,
   resolveManagedExtensionStatePath,
   type ManagedExtensionSource,
   type ManagedExtensionRecord,
@@ -86,6 +89,7 @@ import {
   withExtensionInstallLock,
 } from "./extension/install-runtime.js";
 import { mapWithFixedConcurrency } from "./extension/concurrency.js";
+import { summarizeRuntimeCommandPathsForExtension } from "./extension/runtime-summary.js";
 import { collectGlobalOutputOverrideDoctorWarnings } from "./extension/output-ownership.js";
 import { collectMcpCustomFieldCollisionDoctorWarnings } from "./extension/custom-field-collisions.js";
 import { checkGithubUpdate } from "./extension/update-check.js";
@@ -281,6 +285,8 @@ export interface ManagedExtensionSummary {
   command_paths?: string[];
   /** Value that configures or reports action paths for this contract. */
   action_paths?: string[];
+  /** Static install-time contribution inventory. */
+  contributions?: ManagedExtensionRecord["contributions"];
   /** Value that configures or reports managed for this contract. */
   managed: boolean;
   /** Value that configures or reports source for this contract. */
@@ -1020,6 +1026,7 @@ const buildInstalledExtensionSummary = (
     enabled: identity.enabled,
     runtime_active: null,
     activation_status: "unknown",
+    contributions: managed.contributions,
     managed: Boolean(managedEntry),
     source: managed.source,
     update_available: managed.update_available,
@@ -1209,26 +1216,6 @@ interface ActivationFailureDiagnostic {
   };
 }
 
-/** Return stable runtime command paths registered by one extension. */
-const summarizeRuntimeCommandPathsForExtension = (
-  extensionName: string,
-  installed: ManagedExtensionSummary[],
-): { command_paths: string[]; action_paths: string[] } => {
-  const normalizedName = normalizeExtensionNameForMatch(extensionName);
-  const entry = installed.find(
-    (candidate) =>
-      normalizeExtensionNameForMatch(candidate.name) === normalizedName,
-  );
-  return {
-    command_paths: [...(entry?.command_paths ?? [])].sort((left, right) =>
-      left.localeCompare(right),
-    ),
-    action_paths: [...(entry?.action_paths ?? [])].sort((left, right) =>
-      left.localeCompare(right),
-    ),
-  };
-};
-
 /** Resolve the package vocabulary name used in extension command discovery. */
 const resolveCommandDiscoveryPackageName = (
   extensionName: string,
@@ -1355,6 +1342,10 @@ const probeRuntimeCommandPathsForInstall = (
   item_type_registrations: Awaited<
     ReturnType<typeof activateExtensions>
   >["registrations"]["item_types"];
+  contribution_inventories: Record<
+    string,
+    NonNullable<ManagedExtensionRecord["contributions"]>
+  >;
 }> => {
   return extensionRuntimeProbeQueue.enqueue(async () => {
     const originalPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
@@ -1388,6 +1379,16 @@ const probeRuntimeCommandPathsForInstall = (
         })),
         ...collectActivationFailureDiagnostics(activationResult.failed),
       ];
+      const contributionInventories = Object.fromEntries(
+        loadResult.loaded.map((extension) => [
+          normalizeExtensionNameForMatch(extension.name),
+          createExtensionContributionInventory(
+            describeExtensionActivation(activationResult, {
+              extensionName: extension.name,
+            }),
+          ),
+        ]),
+      );
       return {
         installed: applyDoctorRuntimeActivationState(
           refreshedInstalled,
@@ -1398,6 +1399,7 @@ const probeRuntimeCommandPathsForInstall = (
         activation_failures: runtimeFailures,
         extensions_disabled: loadResult.disabled_by_flag,
         item_type_registrations: activationResult.registrations.item_types,
+        contribution_inventories: contributionInventories,
       };
     } finally {
       await fs.rm(moduleGraphSnapshotRoot, { recursive: true, force: true });
@@ -1461,6 +1463,7 @@ const adoptUnmanagedExtensions = async (
       manifest_version: validated.manifest.version,
       manifest_entry: validated.manifest.entry,
       capabilities: [...validated.manifest.capabilities],
+      contributions: validated.manifest.contributions,
       installed_at: now,
       updated_at: now,
       source: sourceRecord,
@@ -2179,6 +2182,7 @@ const persistExtensionInstall = async (
       manifest_version: validated.manifest.version,
       manifest_entry: validated.manifest.entry,
       capabilities: [...validated.manifest.capabilities],
+      contributions: validated.manifest.contributions,
       ...timestamps,
       source: sourceRecord,
     });
@@ -2363,6 +2367,18 @@ const performExtensionInstallUnderLock = async (
     commandSummary,
     installedItemTypeDefinitions,
   );
+  const contributionInventory =
+    runtimeProbe.contribution_inventories[
+      normalizeExtensionNameForMatch(validated.manifest.name)
+    ];
+  if (contributionInventory) {
+    persisted.managedState = await persistManagedContributionInventory(
+      resolvedRoots.selected_root,
+      persisted.managedState,
+      validated.manifest.name,
+      contributionInventory,
+    );
+  }
 
   return withResult(
     {
@@ -2385,6 +2401,7 @@ const performExtensionInstallUnderLock = async (
       runtime_activation_status: activation.status,
       command_paths: commandSummary.command_paths,
       action_paths: commandSummary.action_paths,
+      contributions: contributionInventory,
       command_discovery: buildInstallCommandDiscovery(
         validated.manifest.name,
         persisted.sourceRecord,
@@ -2774,6 +2791,7 @@ const runExtensionAdoptAction = async (
     manifest_version: validated.manifest.version,
     manifest_entry: validated.manifest.entry,
     capabilities: [...validated.manifest.capabilities],
+    contributions: validated.manifest.contributions,
     installed_at: now,
     updated_at: now,
     source: sourceRecord,

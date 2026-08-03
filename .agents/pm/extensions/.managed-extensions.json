@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-03T15:02:53.911Z",
+  "updated_at": "2026-08-03T18:44:40.428Z",
   "entries": [
     {
       "name": "pm-changelog",
@@ -14,6 +14,58 @@
         "renderers",
         "schema"
       ],
+      "contributions": {
+        "schema_version": 1,
+        "commands": [
+          "changelog export",
+          "changelog generate"
+        ],
+        "command_overrides": [],
+        "command_handlers": [
+          "changelog export",
+          "changelog generate"
+        ],
+        "hooks": [],
+        "flag_commands": [
+          "changelog export",
+          "changelog generate"
+        ],
+        "item_types": [],
+        "item_fields": [],
+        "migrations": [],
+        "profiles": [],
+        "importers": [],
+        "exporters": [
+          "changelog"
+        ],
+        "search_providers": [],
+        "vector_store_adapters": [],
+        "parser_overrides": [],
+        "service_overrides": [],
+        "renderer_overrides": [
+          "json",
+          "toon"
+        ],
+        "renderer_ownership": [
+          {
+            "format": "json",
+            "commands": [
+              "changelog generate",
+              "changelog export"
+            ],
+            "result_discriminator": true
+          },
+          {
+            "format": "toon",
+            "commands": [
+              "changelog generate",
+              "changelog export"
+            ],
+            "result_discriminator": true
+          }
+        ],
+        "preflight_overrides": 0
+      },
       "installed_at": "2026-05-23T20:26:03.509Z",
       "updated_at": "2026-08-03T08:24:18.111Z",
       "source": {

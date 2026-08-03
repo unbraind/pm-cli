@@ -2,19 +2,57 @@ id: pm-h85e
 title: "GH-471: pm context includes an installed package/extension health summary"
 description: "Dogfood GH-471: pm context shows item counts but nothing about extension/package health, forcing separate doctor/health invocations to understand project state. Duplicate check: searched context extension health summary — pm-ishm (GH-445) covers context tag noise only, no overlap."
 type: Feature
-status: open
+status: in_progress
 priority: 3
 tags[5]: agent-experience,"area:cli",context,extensions,gh-issue
 created_at: "2026-07-06T21:09:04.826Z"
-updated_at: "2026-07-26T05:49:55.702Z"
+updated_at: "2026-08-03T18:42:17.416Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: pm context output includes a brief installed-packages line with health status (ok/degraded per package); stays token-lean and can be suppressed via a flag or --fields; covered by specs
 parent: pm-mpbb
 risk: low
 confidence: medium
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-tu71,related,"2026-07-14T17:05:07.982Z",null,null
-  pm-nf7q,related,"2026-07-16T05:45:21.766Z",null,null
-  pm-bwyw,implements,"2026-07-26T05:49:55.450Z",null,null
+dependencies[5]:
+  - id: pm-tu71
+    kind: related
+    created_at: "2026-07-14T17:05:07.982Z"
+  - id: pm-nf7q
+    kind: related
+    created_at: "2026-07-16T05:45:21.766Z"
+  - id: pm-bwyw
+    kind: implements
+    created_at: "2026-07-26T05:49:55.450Z"
+  - id: pm-021kdp
+    kind: discovered_from
+    created_at: "2026-08-03T18:39:43.892Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-08-03T18:39:43.892Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-08-03T18:40:14.471Z","harness:codex","Implementation evidence: context returns a compact extension_health census with total/ok/degraded counts and bounded per-package details sourced through static discovery only. --no-extension-health suppresses it across CLI/SDK contracts. Empty installations omit the field entirely, preserving the committed large-workspace context baseline at exactly 1,231 estimated tokens; healthy and degraded branches plus markdown rendering are covered."
+notes[1]{created_at,author,text}:
+  "2026-08-03T18:40:14.917Z","harness:codex","Token policy: health is counts-first and bounded; absence costs zero bytes. This avoids making every context packet pay for an empty diagnostic surface while still exposing actionable package state when extensions exist."
+learnings[1]{created_at,author,text}:
+  "2026-08-03T18:40:15.302Z","harness:codex","Context health should expose whether another diagnostic call is needed, not duplicate doctor output. Static inventory plus bounded degraded details gives agents routing context without activating extensions or exceeding the context budget."
+files[7]{path,scope,note}:
+  src/sdk/query/context.ts,project,Bounded installed extension health projection
+  src/cli/register-list-query.ts,project,Context health opt-out CLI flag
+  src/sdk/cli-contracts/flag-contracts.ts,project,CLI flag contract
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,Tool option contract
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,MCP and SDK parameter contract
+  tests/unit/commands/context-extension-health.spec.ts,project,Healthy degraded bounded and opt-out coverage
+  tests/unit/commands/context-command.spec.ts,project,Markdown health rendering coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/context-extension-health.spec.ts tests/unit/commands/context-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msdktcjm-xp7zgw,test,passed,"2026-08-03T18:42:07.299Z","2026-08-03T18:42:17.410Z","2026-08-03T18:42:17.410Z",1,0,0
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/471\n\nAdd a brief installed package/extension health summary to `pm context` so agents can diagnose extension-related issues without separate `pm package doctor` runs. Must respect the context token budget (see GH-445 tag-folding work pm-ishm) — summary line(s), not full diagnostics; opt-out via flag/--fields."

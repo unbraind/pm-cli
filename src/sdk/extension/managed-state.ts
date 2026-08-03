@@ -8,6 +8,8 @@ import path from "node:path";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
+import { normalizeExtensionContributionInventory } from "../../core/extensions/contribution-inventory.js";
+import type { ExtensionContributionInventory } from "../../core/extensions/extension-types.js";
 import {
   normalizeExtensionNameForMatch,
   normalizeStringList,
@@ -59,6 +61,8 @@ export interface ManagedExtensionRecord {
   manifest_entry: string;
   /** Value that configures or reports capabilities for this contract. */
   capabilities: string[];
+  /** Install-time snapshot of every registered extension surface. */
+  contributions?: ExtensionContributionInventory;
   /** ISO 8601 timestamp recording when installed occurred. */
   installed_at: string;
   /** ISO 8601 timestamp recording when updated occurred. */
@@ -251,6 +255,12 @@ function normalizeManagedRecord(raw: unknown): ManagedExtensionRecord | null {
   if (!source) {
     return null;
   }
+  const contributions = normalizeExtensionContributionInventory(
+    entry.contributions,
+  );
+  if (contributions === null) {
+    return null;
+  }
   return {
     name: entry.name.trim(),
     directory: entry.directory.trim(),
@@ -258,6 +268,7 @@ function normalizeManagedRecord(raw: unknown): ManagedExtensionRecord | null {
     manifest_version: entry.manifest_version,
     manifest_entry: entry.manifest_entry,
     capabilities: normalizeStringList(entry.capabilities),
+    contributions,
     installed_at: entry.installed_at,
     updated_at: entry.updated_at,
     source,
@@ -382,4 +393,22 @@ export function upsertManagedEntry(
     updated_at: nowIso(),
     entries: sortManagedEntries(updatedEntries),
   };
+}
+
+/** Persist a verified install-time contribution inventory on its managed record. */
+export async function persistManagedContributionInventory(
+  extensionsRoot: string,
+  state: ManagedExtensionState,
+  extensionName: string,
+  contributions: ExtensionContributionInventory,
+): Promise<ManagedExtensionState> {
+  const entry = state.entries.find(
+    (candidate) =>
+      normalizeExtensionNameForMatch(candidate.name) ===
+      normalizeExtensionNameForMatch(extensionName),
+  );
+  if (!entry) return state;
+  const updated = upsertManagedEntry(state, { ...entry, contributions });
+  await writeManagedExtensionState(extensionsRoot, updated);
+  return updated;
 }

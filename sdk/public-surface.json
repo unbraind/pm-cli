@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1409,
+    "covered_symbols": 1412,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1410
+    "required_symbols": 1413
   },
   "breaking_acknowledgements": [
     {
@@ -732,6 +732,22 @@
       ],
       "package_version": "2026.8.3",
       "reason": "Intentional additive universal row-contract and profile diagnostic vocabulary expansion for pm-sb0tns and pm-yfdav2"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContextOptions",
+        "signature ./sdk:ContextResult",
+        "signature ./sdk:ExtensionManifest",
+        "signature ./sdk/authoring:ExtensionManifest",
+        "signature ./sdk/core:ContextOptions",
+        "signature ./sdk/core:ContextResult",
+        "signature ./sdk/query:ContextOptions",
+        "signature ./sdk/query:ContextResult",
+        "signature ./sdk/runtime:ContextOptions",
+        "signature ./sdk/runtime:ContextResult"
+      ],
+      "package_version": "2026.8.3",
+      "reason": "Add optional static extension contribution inventory and context health contracts"
     }
   ],
   "entrypoints": {
@@ -2644,7 +2660,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextOptions",
-          "signature": "export interface ContextOptions { date?: string; from?: string; to?: string; past?: boolean; type?: string; tag?: string; priority?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; limit?: string; maxItems?: string; after?: string; format?: string; depth?: string; fields?: string; section?: string[]; activityLimit?: string; staleThreshold?: string; parent?: string; explainRanking?: boolean; tokenBudget?: string | number; noTags?: boolean; [key: string]: unknown; }"
+          "signature": "export interface ContextOptions { date?: string; from?: string; to?: string; past?: boolean; type?: string; tag?: string; priority?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; limit?: string; maxItems?: string; after?: string; format?: string; depth?: string; fields?: string; section?: string[]; activityLimit?: string; staleThreshold?: string; parent?: string; explainRanking?: boolean; tokenBudget?: string | number; noTags?: boolean; noExtensionHealth?: boolean; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -2764,7 +2780,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextResult",
-          "signature": "export interface ContextResult { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
+          "signature": "export interface ContextResult { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
         },
         {
           "classification": "supported",
@@ -2975,6 +2991,12 @@
           "kind": "function",
           "name": "createExtensionCommandSdk",
           "signature": "(pmRoot: string, client: PmClient) => ExtensionCommandSdk | calls: (pmRoot: string, client: PmClient) => ExtensionCommandSdk"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "createExtensionContributionInventory",
+          "signature": "(summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; }) => ExtensionContributionInventory | calls: (summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; }) => ExtensionContributionInventory"
         },
         {
           "classification": "supported",
@@ -4249,6 +4271,12 @@
           "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; }"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExtensionContributionInventory",
+          "signature": "export interface ExtensionContributionInventory { schema_version: 1; commands?: string[]; command_overrides?: string[]; command_handlers?: string[]; hooks?: string[]; flag_commands?: string[]; item_types?: string[]; item_fields?: string[]; relationship_kinds?: string[]; migrations?: string[]; profiles?: string[]; importers?: string[]; exporters?: string[]; search_providers?: string[]; vector_store_adapters?: string[]; parser_overrides?: string[]; service_overrides?: string[]; renderer_overrides?: string[]; renderer_ownership?: Array<{ format: OutputRendererFormat; commands: string[]; result_discriminator: boolean; }>; preflight_overrides?: number; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "extensionDeactivate",
@@ -4330,7 +4358,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionManifest",
-          "signature": "export interface ExtensionManifest { name: string; version: string; entry: string; priority: number; capabilities: string[]; manifest_version?: number; pm_min_version?: string; pm_max_version?: string; engines?: ExtensionManifestEngines; trusted?: boolean; provenance?: ExtensionProvenanceMetadata; sandbox_profile?: ExtensionSandboxProfile; permissions?: ExtensionRuntimePermissionDeclaration; activation?: ExtensionActivationMetadata; legacy_capability_aliases?: LegacyExtensionCapabilityAliasMapping[]; }"
+          "signature": "export interface ExtensionManifest { name: string; version: string; entry: string; priority: number; capabilities: string[]; manifest_version?: number; pm_min_version?: string; pm_max_version?: string; engines?: ExtensionManifestEngines; trusted?: boolean; provenance?: ExtensionProvenanceMetadata; sandbox_profile?: ExtensionSandboxProfile; permissions?: ExtensionRuntimePermissionDeclaration; activation?: ExtensionActivationMetadata; contributions?: ExtensionContributionInventory; legacy_capability_aliases?: LegacyExtensionCapabilityAliasMapping[]; }"
         },
         {
           "classification": "supported",
@@ -6773,6 +6801,12 @@
           "kind": "interface",
           "name": "NormalizedTypeWorkflow",
           "signature": "export interface NormalizedTypeWorkflow { type: string; allowed_transitions: [ string, string ][]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "normalizeExtensionContributionInventory",
+          "signature": "(value: unknown) => ExtensionContributionInventory | null | undefined | calls: (value: unknown) => ExtensionContributionInventory | null | undefined"
         },
         {
           "classification": "supported",
@@ -13389,6 +13423,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "createExtensionContributionInventory",
+          "signature": "(summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; }) => ExtensionContributionInventory | calls: (summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; }) => ExtensionContributionInventory"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "declineServiceOverride",
           "signature": "() => ServiceOverrideDecision | calls: () => ServiceOverrideDecision"
         },
@@ -13713,6 +13753,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ExtensionContributionInventory",
+          "signature": "export interface ExtensionContributionInventory { schema_version: 1; commands?: string[]; command_overrides?: string[]; command_handlers?: string[]; hooks?: string[]; flag_commands?: string[]; item_types?: string[]; item_fields?: string[]; relationship_kinds?: string[]; migrations?: string[]; profiles?: string[]; importers?: string[]; exporters?: string[]; search_providers?: string[]; vector_store_adapters?: string[]; parser_overrides?: string[]; service_overrides?: string[]; renderer_overrides?: string[]; renderer_ownership?: Array<{ format: OutputRendererFormat; commands: string[]; result_discriminator: boolean; }>; preflight_overrides?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ExtensionDeactivationFailure",
           "signature": "export interface ExtensionDeactivationFailure { layer: ExtensionLayer; name: string; error: string; }"
         },
@@ -13762,7 +13808,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionManifest",
-          "signature": "export interface ExtensionManifest { name: string; version: string; entry: string; priority: number; capabilities: string[]; manifest_version?: number; pm_min_version?: string; pm_max_version?: string; engines?: ExtensionManifestEngines; trusted?: boolean; provenance?: ExtensionProvenanceMetadata; sandbox_profile?: ExtensionSandboxProfile; permissions?: ExtensionRuntimePermissionDeclaration; activation?: ExtensionActivationMetadata; legacy_capability_aliases?: LegacyExtensionCapabilityAliasMapping[]; }"
+          "signature": "export interface ExtensionManifest { name: string; version: string; entry: string; priority: number; capabilities: string[]; manifest_version?: number; pm_min_version?: string; pm_max_version?: string; engines?: ExtensionManifestEngines; trusted?: boolean; provenance?: ExtensionProvenanceMetadata; sandbox_profile?: ExtensionSandboxProfile; permissions?: ExtensionRuntimePermissionDeclaration; activation?: ExtensionActivationMetadata; contributions?: ExtensionContributionInventory; legacy_capability_aliases?: LegacyExtensionCapabilityAliasMapping[]; }"
         },
         {
           "classification": "supported",
@@ -14003,6 +14049,12 @@
           "kind": "function",
           "name": "mergeExtensionBlueprints",
           "signature": "(...blueprints: ExtensionBlueprint[]) => ExtensionBlueprint | calls: (...blueprints: ExtensionBlueprint[]) => ExtensionBlueprint"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "normalizeExtensionContributionInventory",
+          "signature": "(value: unknown) => ExtensionContributionInventory | null | undefined | calls: (value: unknown) => ExtensionContributionInventory | null | undefined"
         },
         {
           "classification": "supported",
@@ -16276,13 +16328,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextOptions",
-          "signature": "export interface ContextOptions { date?: string; from?: string; to?: string; past?: boolean; type?: string; tag?: string; priority?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; limit?: string; maxItems?: string; after?: string; format?: string; depth?: string; fields?: string; section?: string[]; activityLimit?: string; staleThreshold?: string; parent?: string; explainRanking?: boolean; tokenBudget?: string | number; noTags?: boolean; [key: string]: unknown; }"
+          "signature": "export interface ContextOptions { date?: string; from?: string; to?: string; past?: boolean; type?: string; tag?: string; priority?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; limit?: string; maxItems?: string; after?: string; format?: string; depth?: string; fields?: string; section?: string[]; activityLimit?: string; staleThreshold?: string; parent?: string; explainRanking?: boolean; tokenBudget?: string | number; noTags?: boolean; noExtensionHealth?: boolean; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextResult",
-          "signature": "export interface ContextResult { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
+          "signature": "export interface ContextResult { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
         },
         {
           "classification": "supported",
@@ -19378,7 +19430,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextOptions",
-          "signature": "export interface ContextOptions { date?: string; from?: string; to?: string; past?: boolean; type?: string; tag?: string; priority?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; limit?: string; maxItems?: string; after?: string; format?: string; depth?: string; fields?: string; section?: string[]; activityLimit?: string; staleThreshold?: string; parent?: string; explainRanking?: boolean; tokenBudget?: string | number; noTags?: boolean; [key: string]: unknown; }"
+          "signature": "export interface ContextOptions { date?: string; from?: string; to?: string; past?: boolean; type?: string; tag?: string; priority?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; limit?: string; maxItems?: string; after?: string; format?: string; depth?: string; fields?: string; section?: string[]; activityLimit?: string; staleThreshold?: string; parent?: string; explainRanking?: boolean; tokenBudget?: string | number; noTags?: boolean; noExtensionHealth?: boolean; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -19498,7 +19550,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextResult",
-          "signature": "export interface ContextResult { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
+          "signature": "export interface ContextResult { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
         },
         {
           "classification": "supported",
@@ -20794,7 +20846,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextOptions",
-          "signature": "export interface ContextOptions { date?: string; from?: string; to?: string; past?: boolean; type?: string; tag?: string; priority?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; limit?: string; maxItems?: string; after?: string; format?: string; depth?: string; fields?: string; section?: string[]; activityLimit?: string; staleThreshold?: string; parent?: string; explainRanking?: boolean; tokenBudget?: string | number; noTags?: boolean; [key: string]: unknown; }"
+          "signature": "export interface ContextOptions { date?: string; from?: string; to?: string; past?: boolean; type?: string; tag?: string; priority?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; limit?: string; maxItems?: string; after?: string; format?: string; depth?: string; fields?: string; section?: string[]; activityLimit?: string; staleThreshold?: string; parent?: string; explainRanking?: boolean; tokenBudget?: string | number; noTags?: boolean; noExtensionHealth?: boolean; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -20806,7 +20858,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextResult",
-          "signature": "export interface ContextResult { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
+          "signature": "export interface ContextResult { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
         },
         {
           "classification": "advanced_export",

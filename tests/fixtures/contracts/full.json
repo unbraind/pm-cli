@@ -1673,6 +1673,10 @@
         },
         {
           "cursor_semantics": "presentation",
+          "flag": "--no-extension-health"
+        },
+        {
+          "cursor_semantics": "presentation",
           "flag": "--no-tags"
         }
       ],
@@ -2110,6 +2114,10 @@
             "--token_budget"
           ],
           "flag": "--token-budget"
+        },
+        {
+          "cursor_semantics": "presentation",
+          "flag": "--no-extension-health"
         },
         {
           "cursor_semantics": "presentation",

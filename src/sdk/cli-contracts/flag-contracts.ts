@@ -1490,6 +1490,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
     { flag: "--explain-ranking" },
     { flag: "--explain_ranking" },
     { flag: "--token-budget", aliases: ["--token_budget"] },
+    { flag: "--no-extension-health" },
     { flag: "--no-tags" },
   ],
   new Set([
@@ -1502,6 +1503,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
     "--stale-threshold",
     "--explain-ranking",
     "--explain_ranking",
+    "--no-extension-health",
     "--no-tags",
   ]),
 );

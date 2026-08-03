@@ -1206,7 +1206,19 @@ function activationCommandMatchesProbe(command: string, probe: RuntimeExtensionA
 }
 
 function extensionActivationCommands(extension: ExtensionDiscoveryResult["effective"][number]): string[] {
-  return extension.activation?.commands ?? [];
+  return (
+    extension.activation?.commands ??
+    [
+      ...(extension.contributions?.commands ?? []),
+      ...(extension.contributions?.command_handlers ?? []),
+      ...(extension.contributions?.command_overrides ?? []),
+      ...(extension.contributions?.flag_commands ?? []),
+      ...(extension.contributions?.parser_overrides ?? []),
+      ...(extension.contributions?.renderer_ownership?.flatMap(
+        (entry) => entry.commands,
+      ) ?? []),
+    ]
+  );
 }
 
 function extensionCapabilities(extension: ExtensionDiscoveryResult["effective"][number]): Set<string> {
@@ -1268,36 +1280,70 @@ function extensionProvidesTemplatesRuntime(commands: readonly string[]): boolean
   });
 }
 
-function extensionNeedsActivationForProbe(extension: ExtensionDiscoveryResult["effective"][number], probe: RuntimeExtensionActivationProbe): boolean {
-  const capabilities = extensionCapabilities(extension);
+/** Match direct command paths plus the built-in create-template bridge. */
+function matchesStaticExtensionCommand(
+  commands: readonly string[],
+  probe: RuntimeExtensionActivationProbe,
+): boolean {
+  return (
+    commands.some((command) => activationCommandMatchesProbe(command, probe)) ||
+    (commandPathNeedsTemplateExtensions(probe) &&
+      extensionProvidesTemplatesRuntime(commands))
+  );
+}
+
+/** Identify contribution surfaces that participate in global runtime behavior. */
+function hasGlobalExtensionContributions(
+  contributions: NonNullable<
+    ExtensionDiscoveryResult["effective"][number]["contributions"]
+  >,
+): boolean {
+  const contributionCounts = [
+    contributions.hooks?.length ?? 0,
+    contributions.preflight_overrides ?? 0,
+    contributions.item_types?.length ?? 0,
+    contributions.item_fields?.length ?? 0,
+    contributions.relationship_kinds?.length ?? 0,
+    contributions.service_overrides?.length ?? 0,
+    (contributions.renderer_overrides?.length ?? 0) -
+      (contributions.renderer_ownership?.length ?? 0),
+  ];
+  return contributionCounts.some((count) => count > 0);
+}
+
+/** Resolve an exact activation verdict from declared commands and contributions. */
+function resolveStaticExtensionActivationDecision(
+  extension: ExtensionDiscoveryResult["effective"][number],
+  probe: RuntimeExtensionActivationProbe,
+): boolean | undefined {
+  const explicitCommands = extension.activation?.commands ?? [];
+  if (explicitCommands.length > 0) {
+    return matchesStaticExtensionCommand(explicitCommands, probe);
+  }
   const commands = extensionActivationCommands(extension);
-  if (commands.some((command) => activationCommandMatchesProbe(command, probe))) {
+  if (matchesStaticExtensionCommand(commands, probe)) return true;
+  if (
+    extensionCapabilities(extension).has("search") &&
+    commandPathNeedsSearchExtensions(probe.commandPath)
+  ) {
     return true;
   }
+  if (extension.contributions) {
+    return hasGlobalExtensionContributions(extension.contributions);
+  }
+  return undefined;
+}
 
-  if (commandPathNeedsTemplateExtensions(probe) && extensionProvidesTemplatesRuntime(commands)) {
-    return true;
-  }
-
-  // Search providers attach to the built-in search commands (reindex/search/...)
-  // even when the extension declares unrelated commands of its own. This is a
-  // non-terminal positive gate: it must not short-circuit a `false` here, or an
-  // extension that pairs `search` with command-bearing capabilities would be
-  // skipped for its own commands (the conservative tier below is what activates
-  // those). A pure search provider has no command-bearing capability, so it falls
-  // through to `return false` and stays scoped to search commands.
-  if (capabilities.has("search") && commandPathNeedsSearchExtensions(probe.commandPath)) {
-    return true;
-  }
+function extensionNeedsActivationForProbe(extension: ExtensionDiscoveryResult["effective"][number], probe: RuntimeExtensionActivationProbe): boolean {
+  const staticDecision = resolveStaticExtensionActivationDecision(
+    extension,
+    probe,
+  );
+  if (staticDecision !== undefined) return staticDecision;
+  const capabilities = extensionCapabilities(extension);
 
   if (hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES)) {
     return true;
-  }
-
-  // When the extension fully enumerates its activation commands and none matched,
-  // its command-bearing surfaces cannot satisfy this probe.
-  if (commands.length > 0) {
-    return false;
   }
 
   // Without declared activation commands the contributed command names are
@@ -2709,7 +2755,14 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
   const unknownMessage = `unknown command '${unknownToken}'`;
   const pmRoot = resolvePmRoot(process.cwd(), context.bootstrapGlobal.path);
   const recoveryCommandDescriptors = await loadRuntimeExtensionCommandDescriptorsForRecovery(pmRoot);
-  const failedExtensions = await loadExtensionRecoveryFailures(pmRoot);
+  const recoveryProbe = buildBootstrapActivationProbe(
+    context.invocationArgv,
+  );
+  const failedExtensions = await loadExtensionRecoveryFailures(
+    pmRoot,
+    {},
+    collectActivationCommandCandidates(recoveryProbe),
+  );
   const usageContext = await resolveCommanderUsageContext(
     { message: unknownMessage },
     program,
@@ -2826,7 +2879,14 @@ async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, 
   const baseRenderedUsage = context.jsonErrors
     ? await formatCommanderUsageJson(context.error, program, activeRuntimeExtensionCommandDescriptors, context.bootstrapGlobal.lean === true)
     : await formatCommanderUsageMessage(context.error, program, activeRuntimeExtensionCommandDescriptors);
-  const recoveryFailures = await loadUnknownCommandRecoveryFailures(classification.code, context.bootstrapPmRoot);
+  const recoveryFailures = await loadUnknownCommandRecoveryFailures(
+    classification.code,
+    context.bootstrapPmRoot,
+    {},
+    collectActivationCommandCandidates(
+      buildBootstrapActivationProbe(context.invocationArgv),
+    ),
+  );
   const renderedUsage = appendCommanderExtensionFailures(baseRenderedUsage, context.jsonErrors, recoveryFailures);
   await finishRunPmCliFailure({
     errorMessage: usageContext.message,
@@ -3024,6 +3084,7 @@ export const _testOnly = {
   extensionNeedsActivationForProbe,
   extensionProvidesTemplatesRuntime,
   hasAnyCapability,
+  hasGlobalExtensionContributions,
   handleGenericRunPmCliError,
   handleRunPmCliCommanderError,
   handleRunPmCliError,
@@ -3042,6 +3103,7 @@ export const _testOnly = {
   maybeLoadRuntimeExtensions,
   maybeAttachCreateUpdatePolicyHelpText,
   maybeLogHandledCliErrorToSentry,
+  matchesStaticExtensionCommand,
   normalizeTelemetryCommandResolution,
   normalizeTelemetryErrorCategory,
   normalizeTelemetryResolutionStage,
@@ -3054,6 +3116,7 @@ export const _testOnly = {
   registerDynamicExtensionCommandPaths,
   registerRuntimeSchemaFieldFlags,
   resolveCoreCommandRegistrationSelection,
+  resolveStaticExtensionActivationDecision,
   resolveUnknownHelpToken: resolveUnknownCommanderToken,
   readThrownExitCode,
   runAndClearAfterCommandHooks,

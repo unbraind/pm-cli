@@ -76,6 +76,10 @@ export {
   renderExtensionSurfaceMarkdown,
   type ExtensionSurfaceMarkdownOptions,
 } from "../core/extensions/activation-summary-markdown.js";
+export {
+  createExtensionContributionInventory,
+  normalizeExtensionContributionInventory,
+} from "../core/extensions/contribution-inventory.js";
 export type {
   AfterCommandAffectedItem,
   AfterCommandHook,
@@ -102,6 +106,7 @@ export type {
   ExtensionDeactivationOptions,
   ExtensionDeactivationResult,
   ExtensionDiagnostic,
+  ExtensionContributionInventory,
   ExtensionDiscoveryResult,
   ExtensionHookRegistry,
   ExtensionSelfIdentity,

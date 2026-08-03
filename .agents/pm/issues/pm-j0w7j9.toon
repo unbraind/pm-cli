@@ -2,23 +2,43 @@ id: pm-j0w7j9
 title: "Declared activation.commands is silently overridden by the renderers/hooks/parser/preflight capability tier, so any extension beyond plain commands is eagerly imported on every invocation"
 description: "extensionNeedsActivationForProbe (src/cli/main.ts) evaluates GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES = {hooks, parser, preflight, renderers} BEFORE the 'commands.length > 0 -> return false' early exit. Consequence: once an extension declares any one of those four capabilities, its own declared activation.commands scope has no effect at all and the extension is imported plus activated for every command probe. Only an extension declaring exclusively command-bearing capabilities can ever be skipped.\n\nProven in a clean sandbox with the SHIPPED scaffold, not by reading code. 'pm extension --init ./rend-ext --capability renderers' generates capabilities [commands, renderers] and activation.commands [\"rend ext ping\"] - a narrow, exact scope. After installing it, 'pm list --limit 1 --profile' reports 'profile:extensions loaded=1 ... renderer_overrides=1': the extension was imported and activated for a command that is provably not in its declared scope. The sibling commands-only scaffold in the same workspace was correctly skipped. The scaffold therefore emits a manifest field that is inert for the capability it was generated for, which is worse than emitting nothing - an author reads the generated activation block as a promise the runtime does not keep.\n\nMeasured cost at HEAD in this repository (14 installed extensions, best-of-5, node dist/cli.js list --limit 5): 784 ms with extensions vs 392 ms with --no-extensions = 2.00x. pm-4oww closed on the acceptance criterion 'warm per-command latency with all bundled packages installed within 1.5x of bare workspace'. That criterion is violated at HEAD and no gate measures it, so the regression is invisible. Four of the fourteen installed manifests (builtin-digital-twin-exemplar, builtin-kanban-profile, builtin-lifecycle-hooks, builtin-vcs-exemplar) declare no activation block at all and fall through the conservative tier; the single managed npm extension in this repo (pm-changelog) declares renderers and is therefore pinned eager by this defect.\n\nThis is the structural reason 'extremely extensible' and 'everything feels instant' currently trade against each other: the four capabilities an ambitious extension most wants (renderers, hooks, parser, preflight) are exactly the four that force it to tax every command. The tier is not an oversight in isolation - pm-halx decided the analogous schema tier deliberately - but no item owns the renderers/hooks/parser/preflight half, and unlike schema these four have a natural static scope (which command's output, which lifecycle phase, which parser target) that the manifest simply has no vocabulary to express.\n\nRepro: pm extension --init ./x --capability renderers; pm extension --install --project ./x; pm list --limit 1 --profile"
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[7]: activation,agent-ux,"area:extensions","area:sdk",extensibility,perf,startup
 created_at: "2026-07-28T10:27:34.772Z"
-updated_at: "2026-07-28T10:34:42.034Z"
+updated_at: "2026-08-03T18:41:59.884Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "An extension whose manifest declares narrow activation.commands is NOT imported for a command outside that scope, regardless of which capabilities it declares; the ~1.5x ceiling from pm-4oww is re-measured and enforced by a gate that can fail"
 parent: pm-ugqx
 risk: medium
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-021kdp,related,"2026-07-28T10:31:06.897Z","harness:claude-code","cli:update:dep",detected
   pm-4oww,discovered_from,"2026-07-28T10:31:06.897Z","harness:claude-code","cli:update:dep",detected
   pm-5wb6,related,"2026-07-28T10:31:06.897Z","harness:claude-code","cli:update:dep",detected
   pm-9rxu,implements,"2026-07-28T10:31:06.897Z","harness:claude-code","cli:update:dep",detected
   pm-halx,related,"2026-07-28T10:31:06.897Z","harness:claude-code","cli:update:dep",detected
-learnings[1]{created_at,author,text}:
+  pm-4oww,verifies,"2026-08-03T18:39:40.324Z","harness:codex","cli:update:dep",detected
+  pm-ugqx,implements,"2026-08-03T18:39:40.324Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-03T18:40:12.043Z","harness:codex","Verification evidence: explicit activation.commands is now authoritative across all capability combinations. Integration coverage proves a renderer/hook-capable package is not imported for unrelated list, a search+commands package activates for its own command whether or not activation.commands is declared, semantic search activates the declared search scope, and global inventory contributions still activate eagerly when required."
+notes[1]{created_at,author,text}:
+  "2026-08-03T18:40:12.429Z","harness:codex","Compatibility boundary: legacy packages without explicit activation.commands or static contribution data keep the conservative activation heuristic. The governance-audit package intentionally omits a narrow activation block because its parser/hooks/services are global contributions."
+learnings[2]{created_at,author,text}:
   "2026-07-28T10:34:42.034Z","harness:claude-code","A gate that is opt-in via a manifest field is only as strong as the code path that reads the field. Here the field is read — and then overridden by a capability check that runs first, so the declaration is inert for exactly the extensions that most need it. The general check: when a config field is supposed to narrow behaviour, find the branch that returns the broad answer and confirm the narrow branch is evaluated before it, not after. Reading the parser alone would have shown the field being parsed correctly.\n\nThe proof that mattered was not source reading but the shipped scaffold: generate the artifact the product tells authors to generate, install it, and observe whether the runtime honours what it emitted. `pm extension --init --capability renderers` produces a manifest declaring a narrow scope, and `pm list --limit 1 --profile` shows that extension loaded anyway. One command each way, and it cannot be argued with."
+  "2026-08-03T18:40:12.853Z","harness:codex",Activation metadata must be evaluated before broad capability fallback. Treating an explicit scope as authoritative makes generated manifests enforceable contracts; a static inventory then supplies the safe path for global contributions without importing unrelated modules.
+files[4]{path,scope,note}:
+  src/cli/main.ts,project,Authoritative activation command selection
+  src/core/extensions/loader.ts,project,Static activation probe inputs
+  packages/pm-governance-audit/extensions/governance-audit/manifest.json,project,Global contribution activation declaration
+  tests/integration/extension-startup.integration.spec.ts,project,Cross-capability lazy activation regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/extension-startup.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msdksz0l-5mo48u,test,passed,"2026-08-03T18:41:43.498Z","2026-08-03T18:41:59.877Z","2026-08-03T18:41:59.877Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Authoritative activation commands contract
 body: ""
