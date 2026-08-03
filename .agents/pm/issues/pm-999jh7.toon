@@ -2,11 +2,13 @@ id: pm-999jh7
 title: "list applies an undisclosed default lifecycle scope and reports the scoped count as the corpus total with has_more false, while search applies no such scope, so the two discovery surfaces disagree about what exists"
 description: "Measured on 2026-08-03 against the real tracker using pm 2026.8.3.\n\npm list --type Issue --limit 900 returns 127 rows and an envelope stating total 127 and has_more false. The workspace holds 722 items of type Issue; pm stats reports 719 and pm list --type Issue --status all --limit 900 returns 722. So the command answers the question 'how many Issues does this project have' with a number that is 17 percent of the truth, and attaches an explicit assertion that nothing more exists.\n\nThree separate contract failures compose here, and only the first is documented:\n\n1. A default lifecycle scope is applied. --help does say 'use all for no status filter', which implies a default exists, but never states what it is. That is a documentation gap on its own.\n2. The filters block does not disclose it. filters is the envelope's mechanism for stating what was applied; it reports {type, limit, runtime_filters:{}} and omits the filter that removed 595 rows. A consumer cannot reconstruct the query from its own receipt.\n3. total and has_more describe the scoped set as if it were the whole set. The project has already established the principle that omission must be receipted - the omission_receipt block exists precisely so a caller knows fields were withheld and how to restore them. Row-level omission by default scope has no equivalent, and worse, the two fields that would carry the signal both actively deny it.\n\nThe surfaces also disagree with each other. pm search 'release' --limit 900 returns 869 rows with total null, and returns the identical 869 with --status all, so search applies no default lifecycle scope at all. An agent that orients with list sees active work; an agent that orients with search sees the full history; neither is told which it is looking at. A closed story once argued search should scope to open work by default; list scopes and search does not, and nothing records that this divergence is intentional.\n\nWhy this matters more than a default. This project's operating rules require an agent to search existing items and reuse the canonical lineage before creating work, and the single largest source of duplicate work is failing to see terminal items. The default that hides 82 percent of the Issue corpus is applied on the exact surface an agent uses to check for prior art, and the envelope tells it the view was complete. Composability compounds it: the documented shell idiom pipes list --json into jq, and a jq expression cannot second-guess a total the envelope asserts.\n\nScale symmetry: the failure is a property of the corpus's terminal fraction, not its size. At 2,285 items the hidden fraction is 82 percent of Issues; in a decades-long workspace it approaches 100 percent, and the surface will confidently report a few hundred rows as the entire project.\n\nScope is default-scope disclosure and the meaning of total and has_more on row-producing reads. The absence of a shared row contract across read surfaces has its own owner; this is what the envelope must say once that contract exists."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",context-management,data-quality,scale
 created_at: "2026-08-03T06:26:13.535Z"
-updated_at: "2026-08-03T20:29:05.493Z"
+updated_at: "2026-08-03T22:25:51.952Z"
+closed_at: "2026-08-03T22:25:51.073Z"
+completed_at: "2026-08-03T22:25:51.073Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Any default scope a read applies is present in the envelope's filters block, spelled exactly as the flag that would reproduce it; total means the count before row-level scoping, or the field is renamed so that it cannot be read as a corpus total; has_more is false only when no row was withheld by limit or by any default scope; list and search declare the same default lifecycle scope, or their difference is stated in both help texts and in the row contract; A gate asserts, for every row-producing read, that the filters block round-trips: re-running with exactly the disclosed filters reproduces the same rows"
@@ -16,8 +18,9 @@ confidence: high
 severity: high
 environment: "pm 2026.8.3, real tracker workspace, 2,285 items of which 722 are Issue"
 repro_steps: "pm list --type Issue --limit 900 --json | jq '{count,total,has_more,filters}' then compare with pm list --type Issue --status all --limit 900 --json | jq '{count,total}'"
-expected_result: "Either the envelope reports the true corpus total for the type and marks the returned rows as a scoped subset, or the applied default appears in the filters block so the scope is self-describing. has_more reflects whether rows were withheld for any reason."
-actual_result: "count 127, total 127, has_more false, and filters lists only {type, limit, runtime_filters:{}}. The real Issue count is 722. The default lifecycle scope is applied invisibly, the scoped count is presented as the total, and the completeness flag actively asserts that nothing was withheld."
+resolution: "Removed the undisclosed active-only default: list and search now default to all statuses and emit reproducible status=all filter receipts."
+expected_result: Default lifecycle scope is explicit and reproducible; list and search agree; totals and has_more describe the actual all-status result set.
+actual_result: "Bare list and search include terminal history, disclose status=all, preserve explicit lifecycle shortcuts, and pass round-trip integration plus 100% coverage gates."
 component: cli/list
 dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-33cw,implements,"2026-08-03T06:26:36.268Z","harness:claude-code","cli:update:dep",detected
@@ -30,7 +33,21 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-plwm,related,"2026-08-03T06:26:36.268Z","harness:claude-code","cli:update:dep",detected
   pm-sb0tns,related,"2026-08-03T06:26:36.268Z","harness:claude-code","cli:update:dep",detected
   pm-zw9188,related,"2026-08-03T06:26:36.268Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-03T11:09:25.276Z","harness:codex","Estimate basis 2026-08-03: 300 minutes covers contract semantics, list/search parity, envelope count correction, lifecycle-scope disclosure, round-trip gate, and compatibility tests."
   "2026-08-03T20:29:05.493Z","harness:claude-code","Delta-read evidence for the undisclosed default lifecycle scope, measured 2026-08-03 on the live tracker.\n\nThe scope default is most wrong exactly where it matters most. Asking \"what changed while I was away\" over a six-hour window:\n\n- pm list --updated-after <T> --limit 500 returns count 0, total 0.\n- pm list --status all --updated-after <T> returns 9 items.\n- pm activity --from <T> reports 144 history entries touching those same 9 distinct items.\n\nThe nine items are all terminal (closed in that window). The default scope therefore suppresses the entire delta, and the receipt reports total 0 rather than disclosing that a lifecycle filter was applied. A returning agent reads count 0 as \"nothing happened\" when in fact 144 recorded mutations landed on 9 items, including every closure of the period.\n\nThis is the same undisclosed default this item already owns, observed on the one query where the omitted rows are guaranteed to be the informative ones: closures are the changes a returning caller most needs and the default scope is the one filter that removes all of them. Recorded as evidence, not as a second defect.\n"
+  "2026-08-03T22:21:59.901Z","harness:codex","Implementation evidence: bare pm list now selects and reports status=all instead of silently excluding terminal items; search verbose receipts use the same all-status default while compact receipts remain omission-efficient unless a scope was explicit. Registration, list, search-rendering, CLI integration, scripting, and token-baseline artifacts are linked. Repo-wide coverage passed 6,799 tests at exactly 100% statements, branches, functions, and lines. The required truth receipt adds exactly 5 estimated tokens to the small-workspace envelope (621 to 626; composite 2,385 to 2,390), with all item rows and the other three scenarios byte-stable; positive and million-token negative-control gates pass."
+files[4]{path,scope,note}:
+  src/cli/register-list-query.ts,project,Truthful all-status list default
+  src/sdk/query/list.ts,project,Effective status receipt
+  src/sdk/query/search-rendering.ts,project,Search all-status receipt
+  tests/unit/commands/search-command.spec.ts,project,Default scope regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240,Lifecycle scope and CLI registration gate
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msdso858-h2d8az,test,passed,"2026-08-03T22:22:01.340Z","2026-08-03T22:22:15.356Z","2026-08-03T22:22:15.356Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/agent-task-token-baseline.json,project,Truthful all-status receipt token ceiling
+  docs/SCRIPTING.md,project,All-status default and filter receipt contract
+close_reason: "Delivered truthful all-status list/search scope and reproducible receipts with exact coverage, token-budget, and consumer evidence."
 body: ""

@@ -42,6 +42,7 @@ import {
   resolveAuthor,
 } from "../runtime-primitives.js";
 import type { ItemStatus, PmSettings } from "../../types/index.js";
+import { parseStatusFilterCsv } from "../../core/item/status-filter.js";
 import { hasListFilters } from "../query/list-filter-shared.js";
 import {
   runList,
@@ -715,21 +716,11 @@ const buildPlannedItemDiff = (
 const normalizeStatusFilter = (
   value: string | undefined,
   statusRegistry: RuntimeStatusRegistry,
-): ItemStatus | undefined => {
-  if (value === undefined) {
-    return undefined;
-  }
-  const normalized = normalizeStatusInput(value, statusRegistry);
-  if (!normalized) {
-    const allowedStatuses = statusRegistry.definitions.map(
-      (definition) => definition.id,
-    );
-    throw new PmCliError(
-      `Invalid --filter-status value "${value}". Allowed: ${allowedStatuses.join(", ")}`,
-      EXIT_CODE.USAGE,
-    );
-  }
-  return normalized;
+): ItemStatus[] | undefined => {
+  return parseStatusFilterCsv(value, statusRegistry, {
+    strict: true,
+    flagLabel: "--filter-status",
+  });
 };
 
 /** Rejects an explicitly blank bulk ID filter before loading the corpus. */
@@ -922,7 +913,6 @@ interface UpdateManyPlan {
   planned: PlannedItemDiff[];
   actionable: PlannedItemDiff[];
   updateSummary: Record<string, unknown>;
-  statusFilter: ItemStatus | undefined;
   unmatchedIds: string[] | undefined;
 }
 
@@ -1022,14 +1012,15 @@ const buildUpdateManyPlan = async (params: {
   runtime: UpdateManyRuntimeContext;
   updateSummary: Record<string, unknown>;
 }): Promise<UpdateManyPlan> => {
-  const statusFilter = normalizeStatusFilter(
+  normalizeStatusFilter(
     params.options.status,
     params.runtime.statusRegistry,
   );
   const listed = await runList(
-    statusFilter,
+    undefined,
     {
       ...params.options.list,
+      status: params.options.status,
       compact: undefined,
       brief: undefined,
       fields: undefined,
@@ -1064,7 +1055,6 @@ const buildUpdateManyPlan = async (params: {
     planned,
     actionable: planned.filter((row) => row.changes.length > 0),
     updateSummary: params.updateSummary,
-    statusFilter,
     unmatchedIds: collectUnmatchedRequestedIds(
       params.options.list?.ids,
       existenceItems,
@@ -1186,7 +1176,7 @@ const applyUpdateManyPlan = async (params: {
           checkpointId,
           nowValue,
           options: params.options,
-          statusFilter: params.plan.statusFilter,
+          statusFilter: params.options.status,
           filters: params.plan.listed.filters,
           updateSummary: params.plan.updateSummary,
           checkpointItems,

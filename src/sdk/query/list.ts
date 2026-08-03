@@ -19,7 +19,12 @@ import {
   resolveItemTypeRegistry,
   type ItemTypeRegistry,
 } from "../../core/item/type-registry.js";
-import { parseIntegerLimit, parsePriority, parseType } from "./parsers.js";
+import { parseIntegerLimit } from "./parsers.js";
+import {
+  parsePriorityFilterSet,
+  parseStringFilterSet,
+  parseTypeFilterSet,
+} from "./multi-value-filters.js";
 import {
   collectRuntimeFilterValues,
   matchesRuntimeFilters,
@@ -1042,21 +1047,21 @@ interface ListFilterSet {
   idsFilter: Set<string> | undefined;
   statusSet: Set<ItemStatus> | undefined;
   excludeTerminal: boolean;
-  typeFilter: ItemType | undefined;
-  tagFilters: string[];
-  priorityFilter: number | undefined;
+  typeFilter: Set<ItemType> | undefined;
+  tagFilters: Set<string> | undefined;
+  priorityFilter: Set<number> | undefined;
   deadlineBefore: string | undefined;
   deadlineAfter: string | undefined;
   updatedAfter: string | undefined;
   updatedBefore: string | undefined;
   createdAfter: string | undefined;
   createdBefore: string | undefined;
-  assigneeFilter: string | undefined;
+  assigneeFilter: Set<string> | undefined;
   assigneeModeFilter: "assigned" | "unassigned" | undefined;
   parentFilter: string | undefined;
   treeEnabled: boolean;
-  sprintFilter: string | undefined;
-  releaseFilter: string | undefined;
+  sprintFilter: Set<string> | undefined;
+  releaseFilter: Set<string> | undefined;
   missingMetadataFilters: MissingMetadataFilters;
   missingMetadataActive: boolean;
   lifecycleClassifier: ReturnType<typeof lifecycleClassifierFromStatusRegistry>;
@@ -1064,15 +1069,11 @@ interface ListFilterSet {
   contentFiltersActive: boolean;
 }
 
-function parseListTagFilters(raw: string | undefined): string[] {
-  return [
-    ...new Set(
-      (raw ?? "")
-        .split(",")
-        .map((tag) => tag.trim().toLowerCase())
-        .filter((tag) => tag.length > 0),
-    ),
-  ];
+function parseListTagFilters(raw: string | undefined): Set<string> | undefined {
+  return parseStringFilterSet(raw, {
+    label: "--tag",
+    normalize: (tag) => tag.toLowerCase(),
+  });
 }
 
 function appendUnknownTagWarning(
@@ -1081,7 +1082,7 @@ function appendUnknownTagWarning(
   warnings: string[],
 ): void {
   const requestedTags = parseListTagFilters(rawTags);
-  if (requestedTags.length === 0) {
+  if (requestedTags === undefined) {
     return;
   }
   const knownTags = new Set(
@@ -1089,20 +1090,21 @@ function appendUnknownTagWarning(
       item.tags.map((tag) => tag.trim().toLowerCase()),
     ),
   );
-  const unknownTags = requestedTags.filter((tag) => !knownTags.has(tag));
+  const unknownTags = [...requestedTags].filter((tag) => !knownTags.has(tag));
   if (unknownTags.length > 0) {
     warnings.push(`unknown_tags:${unknownTags.join(",")}`);
   }
 }
 
 function assertListAssigneeFilters(
-  assigneeFilter: string | undefined,
+  assigneeFilter: Set<string> | undefined,
   assigneeModeFilter: "assigned" | "unassigned" | undefined,
 ): void {
   if (
     assigneeFilter &&
-    (assigneeFilter.toLowerCase() === "none" ||
-      assigneeFilter.toLowerCase() === "null")
+    [...assigneeFilter].some(
+      (value) => value.toLowerCase() === "none" || value.toLowerCase() === "null",
+    )
   ) {
     throw new PmCliError(
       '--assignee no longer accepts "none" or "null". Use --assignee-filter unassigned.',
@@ -1123,7 +1125,9 @@ function resolveListFilterSet(
   typeRegistry: ItemTypeRegistry,
   statusRegistry: RuntimeStatusRegistry,
 ): ListFilterSet {
-  const assigneeFilter = options.assignee?.trim();
+  const assigneeFilter = parseStringFilterSet(options.assignee, {
+    label: "--assignee",
+  });
   const assigneeModeFilter = parseAssigneeFilter(options.assigneeFilter);
   assertListAssigneeFilters(assigneeFilter, assigneeModeFilter);
   const missingMetadataFilters = resolveMissingMetadataFilters(options);
@@ -1135,9 +1139,9 @@ function resolveListFilterSet(
     statusSet:
       status && status.length > 0 ? new Set<ItemStatus>(status) : undefined,
     excludeTerminal: options.excludeTerminal === true,
-    typeFilter: parseType(options.type, typeRegistry),
+    typeFilter: parseTypeFilterSet(options.type, typeRegistry),
     tagFilters: parseListTagFilters(options.tag),
-    priorityFilter: parsePriority(options.priority),
+    priorityFilter: parsePriorityFilterSet(options.priority),
     deadlineBefore: parseDeadline(options.deadlineBefore, "deadline-before"),
     deadlineAfter: parseDeadline(options.deadlineAfter, "deadline-after"),
     updatedAfter: resolveListUpdatedAfter(options),
@@ -1154,8 +1158,8 @@ function resolveListFilterSet(
     assigneeModeFilter,
     parentFilter: options.parent?.trim(),
     treeEnabled: options.tree === true,
-    sprintFilter: options.sprint?.trim(),
-    releaseFilter: options.release?.trim(),
+    sprintFilter: parseStringFilterSet(options.sprint, { label: "--sprint" }),
+    releaseFilter: parseStringFilterSet(options.release, { label: "--release" }),
     missingMetadataFilters,
     missingMetadataActive: hasMissingMetadataFilter(missingMetadataFilters),
     lifecycleClassifier: lifecycleClassifierFromStatusRegistry(statusRegistry),
@@ -1186,10 +1190,10 @@ function matchesListIdentityFilters(
   if (filters.statusSet && !filters.statusSet.has(item.status)) return false;
   if (filters.excludeTerminal && isTerminalStatus(item.status, statusRegistry))
     return false;
-  if (filters.typeFilter && item.type !== filters.typeFilter) return false;
+  if (filters.typeFilter && !filters.typeFilter.has(item.type)) return false;
   if (
-    filters.tagFilters.length > 0 &&
-    !filters.tagFilters.some((tag) =>
+    filters.tagFilters &&
+    ![...filters.tagFilters].some((tag) =>
       (item.tags ?? []).some(
         (candidate) => candidate.trim().toLowerCase() === tag,
       ),
@@ -1199,7 +1203,7 @@ function matchesListIdentityFilters(
   }
   return (
     filters.priorityFilter === undefined ||
-    item.priority === filters.priorityFilter
+    filters.priorityFilter.has(item.priority)
   );
 }
 
@@ -1219,7 +1223,7 @@ function matchesListAssigneeFilterSet(
     return false;
   return (
     filters.assigneeFilter === undefined ||
-    item.assignee === filters.assigneeFilter
+    (item.assignee !== undefined && filters.assigneeFilter.has(item.assignee))
   );
 }
 
@@ -1235,12 +1239,12 @@ function matchesListScopeFilters(
     return false;
   if (
     filters.sprintFilter !== undefined &&
-    item.sprint !== filters.sprintFilter
+    (item.sprint === undefined || !filters.sprintFilter.has(item.sprint))
   )
     return false;
   return (
     filters.releaseFilter === undefined ||
-    item.release === filters.releaseFilter
+    (item.release !== undefined && filters.releaseFilter.has(item.release))
   );
 }
 
@@ -1703,7 +1707,9 @@ function resolveListStatusSelection(
   const filtersStatus = explicitAllStatuses
     ? "all"
     : resolvedStatus === undefined
-      ? null
+      ? effectiveOptions.excludeTerminal === true
+        ? null
+        : "all"
       : resolvedStatus.length === 1
         ? resolvedStatus[0]
         : resolvedStatus;

@@ -27,7 +27,7 @@ pm guide release --json
 | Codex or ChatGPT plugin implementer | [Codex Plugin](CODEX_PLUGIN.md) | [Native ChatGPT and Codex Plugin Implementation Plan](CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md) |
 | Codex user | [Codex Plugin](CODEX_PLUGIN.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md) |
 | Claude Code user | [Claude Code Plugin](CLAUDE_CODE_PLUGIN.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md) |
-| Machine client | `pm contracts --json` | [Command Reference](COMMANDS.md#machine-contracts), optionally `pm install guide-shell --project && pm guide commands` |
+| Machine client | `pm contracts --json` | [CLI Scripting Contract](SCRIPTING.md), [Command Reference](COMMANDS.md#machine-contracts), optionally `pm install guide-shell --project && pm guide commands` |
 
 ## Documentation Map
 
@@ -35,6 +35,7 @@ pm guide release --json
 - [Onboarding](ONBOARDING.md) - first-two-hours maintainer and contributor setup.
 - [Agent Guide](AGENT_GUIDE.md) - canonical agent loop, tracker linking, and token-minimal command choices.
 - [Command Reference](COMMANDS.md) - command families with examples and when to use each family.
+- [CLI Scripting Contract](SCRIPTING.md) - exit codes, stdout/stderr boundaries, stable JSON fields, uniform OR filters, and shell composition recipes.
 - [Configuration](CONFIGURATION.md) - settings, storage formats, output, search, validation, and environment variables.
 - [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.
 - [Security Governance](SECURITY_GOVERNANCE.md) - vulnerability reporting, review discipline, property fuzzing, and OpenSSF limitations.

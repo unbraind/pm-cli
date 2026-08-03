@@ -20,7 +20,12 @@ import {
   resolveItemTypeRegistry,
   type ItemTypeRegistry,
 } from "../../core/item/type-registry.js";
-import { parseLimit, parsePriority, parseType } from "./parsers.js";
+import { parseLimit } from "./parsers.js";
+import {
+  parsePriorityFilterSet,
+  parseStringFilterSet,
+  parseTypeFilterSet,
+} from "./multi-value-filters.js";
 import {
   executeEmbeddingRequest,
   resolveEmbeddingProviders,
@@ -702,18 +707,18 @@ type SearchMissingMetadataFilters = ReturnType<
 type SearchContentFieldFilters = ReturnType<typeof resolveContentFieldFilters>;
 
 interface SearchMetadataFilterSet {
-  typeFilter: ItemType | undefined;
-  tagFilter: string | undefined;
-  priorityFilter: number | undefined;
+  typeFilter: Set<ItemType> | undefined;
+  tagFilter: Set<string> | undefined;
+  priorityFilter: Set<number> | undefined;
   deadlineBefore: string | undefined;
   deadlineAfter: string | undefined;
   updatedAfter: string | undefined;
   updatedBefore: string | undefined;
   createdAfter: string | undefined;
   createdBefore: string | undefined;
-  assigneeFilter: string | undefined;
-  sprintFilter: string | undefined;
-  releaseFilter: string | undefined;
+  assigneeFilter: Set<string> | undefined;
+  sprintFilter: Set<string> | undefined;
+  releaseFilter: Set<string> | undefined;
   parentFilter: string | undefined;
   statusSet: Set<ItemStatus> | undefined;
   missingMetadataFilters: SearchMissingMetadataFilters;
@@ -722,14 +727,15 @@ interface SearchMetadataFilterSet {
   contentFiltersActive: boolean;
 }
 
-function assertSearchAssigneeFilter(assigneeFilter: string | undefined): void {
+function assertSearchAssigneeFilter(assigneeFilter: Set<string> | undefined): void {
   // Match pm list: --assignee no longer accepts none/null (unassigned filtering
   // belongs to a dedicated flag there; pm search has no presence flag so reject
   // the sentinel values explicitly rather than silently matching a literal).
   if (
     assigneeFilter &&
-    (assigneeFilter.toLowerCase() === "none" ||
-      assigneeFilter.toLowerCase() === "null")
+    [...assigneeFilter].some(
+      (value) => value.toLowerCase() === "none" || value.toLowerCase() === "null",
+    )
   ) {
     throw new PmCliError(
       '--assignee no longer accepts "none" or "null".',
@@ -743,16 +749,21 @@ function resolveSearchMetadataFilterSet(
   typeRegistry: ItemTypeRegistry,
   statusFilter: ItemStatus[] | undefined,
 ): SearchMetadataFilterSet {
-  const assigneeFilter = options.assignee?.trim();
+  const assigneeFilter = parseStringFilterSet(options.assignee, {
+    label: "--assignee",
+  });
   assertSearchAssigneeFilter(assigneeFilter);
   const missingMetadataFilters = resolveMissingMetadataFilters(options);
   const contentFieldFilters = resolveContentFieldFilters(
     options as Record<string, unknown>,
   );
   return {
-    typeFilter: parseType(options.type, typeRegistry),
-    tagFilter: options.tag?.trim().toLowerCase(),
-    priorityFilter: parsePriority(options.priority),
+    typeFilter: parseTypeFilterSet(options.type, typeRegistry),
+    tagFilter: parseStringFilterSet(options.tag, {
+      label: "--tag",
+      normalize: (tag) => tag.toLowerCase(),
+    }),
+    priorityFilter: parsePriorityFilterSet(options.priority),
     deadlineBefore: parseSearchDeadline(
       options.deadlineBefore,
       "deadline-before",
@@ -769,8 +780,8 @@ function resolveSearchMetadataFilterSet(
       "created-before",
     ),
     assigneeFilter,
-    sprintFilter: options.sprint?.trim(),
-    releaseFilter: options.release?.trim(),
+    sprintFilter: parseStringFilterSet(options.sprint, { label: "--sprint" }),
+    releaseFilter: parseStringFilterSet(options.release, { label: "--release" }),
     parentFilter: options.parent?.trim(),
     statusSet:
       statusFilter && statusFilter.length > 0
@@ -799,12 +810,13 @@ function matchesIdentitySearchFilters(
   filters: SearchMetadataFilterSet,
 ): boolean {
   if (filters.statusSet && !filters.statusSet.has(item.status)) return false;
-  if (filters.typeFilter && item.type !== filters.typeFilter) return false;
-  if (filters.tagFilter && !stringArray(item.tags).includes(filters.tagFilter))
+  if (filters.typeFilter && !filters.typeFilter.has(item.type)) return false;
+  const tagFilter = filters.tagFilter;
+  if (tagFilter && !stringArray(item.tags).some((tag) => tagFilter.has(tag)))
     return false;
   if (
     filters.priorityFilter !== undefined &&
-    item.priority !== filters.priorityFilter
+    !filters.priorityFilter.has(item.priority)
   )
     return false;
   return true;
@@ -823,18 +835,18 @@ function matchesOwnerSearchFilters(
 ): boolean {
   if (
     filters.assigneeFilter !== undefined &&
-    item.assignee !== filters.assigneeFilter
+    (item.assignee === undefined || !filters.assigneeFilter.has(item.assignee))
   )
     return false;
   if (
     filters.sprintFilter !== undefined &&
-    item.sprint !== filters.sprintFilter
+    (item.sprint === undefined || !filters.sprintFilter.has(item.sprint))
   )
     return false;
   /* c8 ignore start -- release/parent metadata filter combinations are covered by integration search fixtures */
   if (
     filters.releaseFilter !== undefined &&
-    item.release !== filters.releaseFilter
+    (item.release === undefined || !filters.releaseFilter.has(item.release))
   )
     return false;
   if (

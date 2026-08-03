@@ -3276,7 +3276,7 @@ describe("runSearch", () => {
       { path: "/tmp/pm-search" },
     );
     expect(noStatus.count).toBe(2);
-    expect(noStatus.filters.status).toBeNull();
+    expect(noStatus.filters.status).toBe("all");
 
     // --status all is an explicit no-op status filter for duplicate discovery
     // across open/closed/canceled/custom lifecycle buckets.
