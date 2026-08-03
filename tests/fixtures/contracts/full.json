@@ -10177,6 +10177,16 @@
       "stability": "stable"
     },
     {
+      "code": "invalid_provenance_predicate",
+      "exit_code": 2,
+      "meaning": "Invalid provenance predicate condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/history-provenance.ts"
+      ],
+      "stability": "stable"
+    },
+    {
       "code": "invalid_query_cursor",
       "exit_code": 2,
       "meaning": "Invalid query cursor condition.",
@@ -11013,6 +11023,16 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/plan.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_provenance_dimension",
+      "exit_code": 2,
+      "meaning": "Unknown provenance dimension condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/history-provenance.ts"
       ],
       "stability": "stable"
     },
