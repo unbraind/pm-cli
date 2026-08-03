@@ -2,19 +2,22 @@ id: pm-j0w7j9
 title: "Declared activation.commands is silently overridden by the renderers/hooks/parser/preflight capability tier, so any extension beyond plain commands is eagerly imported on every invocation"
 description: "extensionNeedsActivationForProbe (src/cli/main.ts) evaluates GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES = {hooks, parser, preflight, renderers} BEFORE the 'commands.length > 0 -> return false' early exit. Consequence: once an extension declares any one of those four capabilities, its own declared activation.commands scope has no effect at all and the extension is imported plus activated for every command probe. Only an extension declaring exclusively command-bearing capabilities can ever be skipped.\n\nProven in a clean sandbox with the SHIPPED scaffold, not by reading code. 'pm extension --init ./rend-ext --capability renderers' generates capabilities [commands, renderers] and activation.commands [\"rend ext ping\"] - a narrow, exact scope. After installing it, 'pm list --limit 1 --profile' reports 'profile:extensions loaded=1 ... renderer_overrides=1': the extension was imported and activated for a command that is provably not in its declared scope. The sibling commands-only scaffold in the same workspace was correctly skipped. The scaffold therefore emits a manifest field that is inert for the capability it was generated for, which is worse than emitting nothing - an author reads the generated activation block as a promise the runtime does not keep.\n\nMeasured cost at HEAD in this repository (14 installed extensions, best-of-5, node dist/cli.js list --limit 5): 784 ms with extensions vs 392 ms with --no-extensions = 2.00x. pm-4oww closed on the acceptance criterion 'warm per-command latency with all bundled packages installed within 1.5x of bare workspace'. That criterion is violated at HEAD and no gate measures it, so the regression is invisible. Four of the fourteen installed manifests (builtin-digital-twin-exemplar, builtin-kanban-profile, builtin-lifecycle-hooks, builtin-vcs-exemplar) declare no activation block at all and fall through the conservative tier; the single managed npm extension in this repo (pm-changelog) declares renderers and is therefore pinned eager by this defect.\n\nThis is the structural reason 'extremely extensible' and 'everything feels instant' currently trade against each other: the four capabilities an ambitious extension most wants (renderers, hooks, parser, preflight) are exactly the four that force it to tax every command. The tier is not an oversight in isolation - pm-halx decided the analogous schema tier deliberately - but no item owns the renderers/hooks/parser/preflight half, and unlike schema these four have a natural static scope (which command's output, which lifecycle phase, which parser target) that the manifest simply has no vocabulary to express.\n\nRepro: pm extension --init ./x --capability renderers; pm extension --install --project ./x; pm list --limit 1 --profile"
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[7]: activation,agent-ux,"area:extensions","area:sdk",extensibility,perf,startup
 created_at: "2026-07-28T10:27:34.772Z"
-updated_at: "2026-08-03T19:30:43.315Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
+updated_at: "2026-08-03T19:41:42.923Z"
+closed_at: "2026-08-03T19:40:17.547Z"
+completed_at: "2026-08-03T19:40:17.547Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "An extension whose manifest declares narrow activation.commands is NOT imported for a command outside that scope, regardless of which capabilities it declares; the ~1.5x ceiling from pm-4oww is re-measured and enforced by a gate that can fail"
 parent: pm-ugqx
 risk: medium
 confidence: high
+resolution: "PR #884 made explicit activation.commands authoritative across command, renderer, hook, parser, preflight, search, and schema capability combinations while retaining conservative legacy fallback only when precise inventory is unavailable."
+expected_result: "An extension imports only when the invoked command or global contribution requires it, and declared command scopes remain authoritative even for rich multi-capability packages."
+actual_result: "Before this change, global capability tiers overrode activation.commands and eagerly imported renderer, hook, parser, or preflight extensions for unrelated commands."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-021kdp,related,"2026-07-28T10:31:06.897Z","harness:claude-code","cli:update:dep",detected
   pm-4oww,discovered_from,"2026-07-28T10:31:06.897Z","harness:claude-code","cli:update:dep",detected
@@ -23,9 +26,10 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-halx,related,"2026-07-28T10:31:06.897Z","harness:claude-code","cli:update:dep",detected
   pm-4oww,verifies,"2026-08-03T18:39:40.324Z","harness:codex","cli:update:dep",detected
   pm-ugqx,implements,"2026-08-03T18:39:40.324Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-03T18:40:12.043Z","harness:codex","Verification evidence: explicit activation.commands is now authoritative across all capability combinations. Integration coverage proves a renderer/hook-capable package is not imported for unrelated list, a search+commands package activates for its own command whether or not activation.commands is declared, semantic search activates the declared search scope, and global inventory contributions still activate eagerly when required."
   "2026-08-03T19:30:43.315Z","harness:codex","Exact-head PR evidence (PR #884, c361624e2): every hosted required check passes, including static/typecheck/coverage/smokes/compat, Ubuntu/macOS/Windows runtime smoke, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, DeepScan, CodeFactor, Codecov, ShellCheck, PSScriptAnalyzer, actionlint, and Docs/Skills. The complete sandboxed local suite passes 428 files / 6,792 tests at exact 100% statements, branches, functions, and lines; lint, zero-clone analysis, 100% docstring gates, contracts, and focused review regressions pass. All 12 CodeRabbit threads were individually replied to and reacted to; nine actionable findings were fixed in c361624e2 and all threads are resolved. The requested exact-head CodeRabbit rerun was included-review-rate-limited and the authenticated Greptile gate returned free_reviews_limit_reached; these are reviewer limitations, not clean-review claims."
+  "2026-08-03T19:40:14.473Z","harness:codex","Merge and operational evidence: PR #884 merged to main as 657f8fa56a1e56c918095a58600c49188206e180; local main equals origin/main and the worktree is clean. No open PRs remain; GitHub Dependabot, code-scanning, and secret-scanning each report zero open alerts; pnpm audit reports no known vulnerabilities. Telemetry flush at 2026-08-03T19:36:53.267Z successfully drained four queued events, while subsequent status commands generated fresh self-observability rows. Live Sentry 14-day data shows no new issue attributable to this tranche; older unresolved PM-CLI-2S and PM-CLI-2Q remain independently tracked by open pm-4odf0c and pm-qyg51h. The sole immutable same-day tag/package remains v2026.8.3 / @unbrained/pm-cli@2026.8.3; the scheduled Auto Release already proved same-day no-op behavior after that release, so this post-tag merge is intentionally eligible for the next UTC daily release rather than creating or moving a duplicate same-day version."
 notes[1]{created_at,author,text}:
   "2026-08-03T18:40:12.429Z","harness:codex","Compatibility boundary: legacy packages without explicit activation.commands or static contribution data keep the conservative activation heuristic. The governance-audit package intentionally omits a narrow activation block because its parser/hooks/services are global contributions."
 learnings[2]{created_at,author,text}:
@@ -42,4 +46,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msdksz0l-5mo48u,test,passed,"2026-08-03T18:41:43.498Z","2026-08-03T18:41:59.877Z","2026-08-03T18:41:59.877Z",1,0,0
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,Authoritative activation commands contract
+close_reason: Delivered authoritative activation.commands behavior across rich extension capabilities through PR #884; merged and fully verified.
 body: ""

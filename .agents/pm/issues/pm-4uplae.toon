@@ -2,13 +2,13 @@ id: pm-4uplae
 title: "GH-882: unresolved extension commands must lead with the activation failure and actionable recovery"
 description: "When an installed extension declares the requested command but module activation fails, unresolved-command recovery currently reports a false Unknown command diagnosis, recommends typo hunting, and prints the detected root cause last without actionable dependency repair. This is a regression/follow-up to the closed activation-diagnostics lineage, not a duplicate: the structured failure exists but the command-boundary classifier and ordering remain wrong."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",extensions,gh-issue,recovery,regression
 created_at: "2026-08-03T17:04:45.941Z"
-updated_at: "2026-08-03T19:30:44.643Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
+updated_at: "2026-08-03T19:41:44.509Z"
+closed_at: "2026-08-03T19:40:20.344Z"
+completed_at: "2026-08-03T19:40:20.344Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Unknown-command classification consults static installed contribution data and activation failures before typo recovery; module-resolution failures render bounded non-secret install recovery; structured JSON and human output agree; isolated clone-like extension acceptance is covered.
@@ -17,6 +17,7 @@ risk: medium
 confidence: high
 severity: high
 repro_steps: "Install a project extension, remove its node_modules, then invoke one of its declared commands."
+resolution: "PR #884 joins attempted command paths with static contribution ownership and activation failures so declared extension-command failures lead recovery output, use a stable error code, and avoid false typo guidance."
 expected_result: "If a requested command is declared by an installed extension whose activation failed, the error identifies that extension and failure first, provides safe reinstall or dependency recovery, preserves the attempted command, and avoids known-wrong typo remediation."
 actual_result: "The CLI reports Unknown command, recommends pm --help and alternate paths, then appends the real module-resolution activation failure after the recovery bundle without a repair command."
 affected_version: 2026.8.3
@@ -29,11 +30,12 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-ugqx,implements,"2026-08-03T17:04:45.941Z","harness:codex","cli:create:dep",detected
   pm-yffj,related,"2026-08-03T17:04:45.941Z","harness:codex","cli:create:dep",detected
   pm-3ljt19,verifies,"2026-08-03T18:39:44.443Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-03T17:04:45.941Z","harness:codex","Duplicate-check evidence: inspected all-status pm search results plus full live metadata/comments/history for closed pm-yffj and pm-3ljt19. Those items delivered diagnostic payloads and earlier command-boundary propagation, but GH-882 reproduces a current 2026.8.3 classifier/order/recovery regression where the payload exists and the headline/remediation remain false. Related GH-772/pm-4vwcvq concerns rejected registration rather than import-time activation failure. Canonical GitHub report: https://github.com/unbraind/pm-cli/issues/882"
   "2026-08-03T18:40:15.748Z","harness:codex","Implementation evidence: unresolved-command recovery now correlates the attempted command with statically declared extension command paths before generic typo guidance. Matching activation failures lead human output and populate extension_command_failure in JSON; dependency-install remediation appears only when the failure matches the requested path. End-to-end coverage installs a broken clone-like extension and asserts the false Unknown command diagnosis no longer leads."
   "2026-08-03T19:02:41.643Z","harness:codex","Hosted contract follow-up: the new extension_command_activation_failed code is now included in the generated public error-code catalog and the full contract snapshot. The exact contracts:check pipeline passes after generating the catalog before refreshing the snapshot."
   "2026-08-03T19:30:44.643Z","harness:codex","Exact-head PR evidence (PR #884, c361624e2): every hosted required check passes, including static/typecheck/coverage/smokes/compat, Ubuntu/macOS/Windows runtime smoke, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, DeepScan, CodeFactor, Codecov, ShellCheck, PSScriptAnalyzer, actionlint, and Docs/Skills. The complete sandboxed local suite passes 428 files / 6,792 tests at exact 100% statements, branches, functions, and lines; lint, zero-clone analysis, 100% docstring gates, contracts, and focused review regressions pass. All 12 CodeRabbit threads were individually replied to and reacted to; nine actionable findings were fixed in c361624e2 and all threads are resolved. The requested exact-head CodeRabbit rerun was included-review-rate-limited and the authenticated Greptile gate returned free_reviews_limit_reached; these are reviewer limitations, not clean-review claims."
+  "2026-08-03T19:40:15.976Z","harness:codex","Merge and operational evidence: PR #884 merged to main as 657f8fa56a1e56c918095a58600c49188206e180; local main equals origin/main and the worktree is clean. No open PRs remain; GitHub Dependabot, code-scanning, and secret-scanning each report zero open alerts; pnpm audit reports no known vulnerabilities. Telemetry flush at 2026-08-03T19:36:53.267Z successfully drained four queued events, while subsequent status commands generated fresh self-observability rows. Live Sentry 14-day data shows no new issue attributable to this tranche; older unresolved PM-CLI-2S and PM-CLI-2Q remain independently tracked by open pm-4odf0c and pm-qyg51h. The sole immutable same-day tag/package remains v2026.8.3 / @unbrained/pm-cli@2026.8.3; the scheduled Auto Release already proved same-day no-op behavior after that release, so this post-tag merge is intentionally eligible for the next UTC daily release rather than creating or moving a duplicate same-day version."
 notes[1]{created_at,author,text}:
   "2026-08-03T18:40:16.200Z","harness:codex","Privacy and relevance boundary: recovery exposes the extension identity and bounded sanitized failure context but does not offer dependency repair for unrelated activation failures or leak arbitrary module paths."
 learnings[1]{created_at,author,text}:
@@ -51,4 +53,5 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/extension-command-recovery.integration.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/recovery-context-usage.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msdktny5-fxhvx4,test,passed,"2026-08-03T18:42:17.762Z","2026-08-03T18:42:32.189Z","2026-08-03T18:42:32.189Z",1,0,0
+close_reason: "Fixed GH #882 declared-command activation recovery with stable structured and human diagnostics through PR #884; merged, verified, and GitHub issue closed."
 body: ""

@@ -2,17 +2,18 @@ id: pm-2cv2o1
 title: Refresh transitive brace-expansion and PostCSS patches for 2026-08-03 audit advisories
 description: "A fresh pnpm audit found GHSA-rgw5-rvv9-x895 in brace-expansion 5.0.8 through ESLint/minimatch and GHSA-fxqj-rqcc-2cmp in postcss 8.5.22 through Vite/Vitest. GitHub alert APIs currently report zero open alerts, so the lockfile must be refreshed directly to patched versions and verified with the complete release/security gate."
 type: Issue
-status: in_progress
+status: closed
 priority: 0
 tags[4]: dependencies,release-gate,security,vulnerability
 created_at: "2026-08-03T18:14:18.504Z"
-updated_at: "2026-08-03T19:30:45.061Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
+updated_at: "2026-08-03T19:41:45.033Z"
+closed_at: "2026-08-03T19:40:21.087Z"
+completed_at: "2026-08-03T19:40:21.087Z"
 author: "harness:codex"
 acceptance_criteria: brace-expansion resolves to at least 5.0.9; postcss resolves to at least 8.5.23; pnpm audit reports zero vulnerabilities; full release and consumer verification passes
 parent: pm-u9d0
 severity: high
+resolution: "PR #884 raised secure override floors to brace-expansion 5.0.9 and PostCSS 8.5.23, refreshed tsx to 4.23.5, and verified the package-manager and GitHub security inventories are clean."
 expected_result: "pnpm audit reports zero vulnerabilities and all repository quality, coverage, packaging, npm, and Bun acceptance gates remain green."
 actual_result: "pnpm audit reports one high and one moderate transitive vulnerability while GitHub Dependabot, code-scanning, and secret-scanning APIs each report zero open alerts."
 affected_version: 2026.8.3
@@ -23,10 +24,11 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-a24aqt,discovered_from,"2026-08-03T18:14:31.376Z","harness:codex","cli:update:dep",detected
   pm-rnpb,related,"2026-08-03T18:14:31.376Z","harness:codex","cli:update:dep",detected
   pm-u9d0,verifies,"2026-08-03T18:39:44.976Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-03T18:14:18.504Z","harness:codex","Duplicate check: exact advisory-id searches across all pm statuses returned zero items. Broader package searches found only closed predecessor advisories pm-5q81jq, pm-f5hy2n, and pm-a24aqt for different GHSAs; this item preserves new advisory lineage instead of reopening completed fixes."
   "2026-08-03T18:40:17.025Z","harness:codex","Security evidence: pnpm audit initially reported high GHSA-rgw5-rvv9-x895 through brace-expansion 5.0.8 and moderate GHSA-fxqj-rqcc-2cmp through postcss 8.5.22 while GitHub Dependabot/code-scanning/secret-scanning APIs each reported zero open alerts. Overrides now require brace-expansion >=5.0.9 <6 and postcss >=8.5.23 <9; the resolved graph uses patched versions and pnpm audit reports no known vulnerabilities. tsx was refreshed to 4.23.5."
   "2026-08-03T19:30:45.061Z","harness:codex","Exact-head PR evidence (PR #884, c361624e2): every hosted required check passes, including static/typecheck/coverage/smokes/compat, Ubuntu/macOS/Windows runtime smoke, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, DeepScan, CodeFactor, Codecov, ShellCheck, PSScriptAnalyzer, actionlint, and Docs/Skills. The complete sandboxed local suite passes 428 files / 6,792 tests at exact 100% statements, branches, functions, and lines; lint, zero-clone analysis, 100% docstring gates, contracts, and focused review regressions pass. All 12 CodeRabbit threads were individually replied to and reacted to; nine actionable findings were fixed in c361624e2 and all threads are resolved. The requested exact-head CodeRabbit rerun was included-review-rate-limited and the authenticated Greptile gate returned free_reviews_limit_reached; these are reviewer limitations, not clean-review claims."
+  "2026-08-03T19:40:16.425Z","harness:codex","Merge and operational evidence: PR #884 merged to main as 657f8fa56a1e56c918095a58600c49188206e180; local main equals origin/main and the worktree is clean. No open PRs remain; GitHub Dependabot, code-scanning, and secret-scanning each report zero open alerts; pnpm audit reports no known vulnerabilities. Telemetry flush at 2026-08-03T19:36:53.267Z successfully drained four queued events, while subsequent status commands generated fresh self-observability rows. Live Sentry 14-day data shows no new issue attributable to this tranche; older unresolved PM-CLI-2S and PM-CLI-2Q remain independently tracked by open pm-4odf0c and pm-qyg51h. The sole immutable same-day tag/package remains v2026.8.3 / @unbrained/pm-cli@2026.8.3; the scheduled Auto Release already proved same-day no-op behavior after that release, so this post-tag merge is intentionally eligible for the next UTC daily release rather than creating or moving a duplicate same-day version."
 notes[1]{created_at,author,text}:
   "2026-08-03T18:40:17.470Z","harness:codex","Compatibility boundary: npm-package-arg 14 is intentionally deferred because its Node engine excludes the supported Node 22.18 floor. TypeScript 7 is intentionally deferred because typescript-eslint 8.66 supports TypeScript below 6.1. These are incompatible majors rather than unattended safe updates."
 learnings[1]{created_at,author,text}:
@@ -40,4 +42,5 @@ tests[2]{command,scope,timeout_seconds}:
   pnpm lint,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msdkvozm-e96476,test,passed,"2026-08-03T18:42:32.541Z","2026-08-03T18:44:06.850Z","2026-08-03T18:44:06.850Z",2,0,0
+close_reason: "Patched brace-expansion and PostCSS advisory floors, refreshed compatible tooling, and verified zero package-manager and GitHub security alerts through PR #884."
 body: ""
