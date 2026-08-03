@@ -6,7 +6,7 @@ status: in_progress
 priority: 3
 tags[5]: agent-experience,"area:cli",context,extensions,gh-issue
 created_at: "2026-07-06T21:09:04.826Z"
-updated_at: "2026-08-03T18:42:17.416Z"
+updated_at: "2026-08-03T19:06:13.220Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
 author: maintainer-agent
@@ -37,22 +37,26 @@ dependencies[5]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-03T18:40:14.471Z","harness:codex","Implementation evidence: context returns a compact extension_health census with total/ok/degraded counts and bounded per-package details sourced through static discovery only. --no-extension-health suppresses it across CLI/SDK contracts. Empty installations omit the field entirely, preserving the committed large-workspace context baseline at exactly 1,231 estimated tokens; healthy and degraded branches plus markdown rendering are covered."
+  "2026-08-03T19:01:43.052Z","harness:codex","Hosted CI evidence: the first PR run exposed that local release orchestration had not exercised contracts:check after the new flag projection. Regenerated the authoritative snapshot, adding noExtensionHealth to all three context option schemas, and linked the exact hosted gate so future item verification reproduces CI ordering."
 notes[1]{created_at,author,text}:
   "2026-08-03T18:40:14.917Z","harness:codex","Token policy: health is counts-first and bounded; absence costs zero bytes. This avoids making every context packet pay for an empty diagnostic surface while still exposing actionable package state when extensions exist."
 learnings[1]{created_at,author,text}:
   "2026-08-03T18:40:15.302Z","harness:codex","Context health should expose whether another diagnostic call is needed, not duplicate doctor output. Static inventory plus bounded degraded details gives agents routing context without activating extensions or exceeding the context budget."
-files[7]{path,scope,note}:
-  src/sdk/query/context.ts,project,Bounded installed extension health projection
+files[8]{path,scope,note}:
   src/cli/register-list-query.ts,project,Context health opt-out CLI flag
   src/sdk/cli-contracts/flag-contracts.ts,project,CLI flag contract
   src/sdk/cli-contracts/tool-option-contracts.ts,project,Tool option contract
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,MCP and SDK parameter contract
-  tests/unit/commands/context-extension-health.spec.ts,project,Healthy degraded bounded and opt-out coverage
+  src/sdk/query/context.ts,project,Bounded installed extension health projection
+  tests/fixtures/contracts/full.json,project,CLI SDK and MCP contract snapshot for no-extension-health
   tests/unit/commands/context-command.spec.ts,project,Markdown health rendering coverage
-tests[1]{command,scope,timeout_seconds}:
+  tests/unit/commands/context-extension-health.spec.ts,project,Healthy degraded bounded and opt-out coverage
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/context-extension-health.spec.ts tests/unit/commands/context-command.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  "pnpm run contracts:check",project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msdktcjm-xp7zgw,test,passed,"2026-08-03T18:42:07.299Z","2026-08-03T18:42:17.410Z","2026-08-03T18:42:17.410Z",1,0,0
+  test-local-msdlo4f2-r7j7kv,test,passed,"2026-08-03T19:05:56.476Z","2026-08-03T19:06:13.214Z","2026-08-03T19:06:13.214Z",2,0,0
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/471\n\nAdd a brief installed package/extension health summary to `pm context` so agents can diagnose extension-related issues without separate `pm package doctor` runs. Must respect the context token budget (see GH-445 tag-folding work pm-ishm) — summary line(s), not full diagnostics; opt-out via flag/--fields."

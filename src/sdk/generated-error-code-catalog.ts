@@ -359,6 +359,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["sdk/mutation-events.ts"],
   },
   {
+    code: "extension_command_activation_failed",
+    meaning: "Extension command activation failed condition.",
+    stability: "stable",
+    exit_code: 1,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/commander-usage.ts"],
+  },
+  {
     code: "extension_dependency_name_unsafe",
     meaning: "Extension dependency name unsafe condition.",
     stability: "stable",

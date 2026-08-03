@@ -23724,6 +23724,7 @@
     "empty_surface",
     "event_cursor_query_mismatch",
     "event_index_unavailable",
+    "extension_command_activation_failed",
     "extension_dependency_name_unsafe",
     "extension_dependency_spec_invalid",
     "extension_dependency_version_unsafe",

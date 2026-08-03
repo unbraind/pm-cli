@@ -9761,6 +9761,16 @@
       "stability": "stable"
     },
     {
+      "code": "extension_command_activation_failed",
+      "exit_code": 1,
+      "meaning": "Extension command activation failed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commander-usage.ts"
+      ],
+      "stability": "stable"
+    },
+    {
       "code": "extension_dependency_name_unsafe",
       "exit_code": 2,
       "meaning": "Extension dependency name unsafe condition.",
@@ -12721,6 +12731,10 @@
               10,
               "25"
             ]
+          },
+          "noExtensionHealth": {
+            "description": "No Extension Health.",
+            "type": "boolean"
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -30758,6 +30772,10 @@
               "25"
             ]
           },
+          "noExtensionHealth": {
+            "description": "No Extension Health.",
+            "type": "boolean"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
@@ -31084,6 +31102,10 @@
               10,
               "25"
             ]
+          },
+          "noExtensionHealth": {
+            "description": "No Extension Health.",
+            "type": "boolean"
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
