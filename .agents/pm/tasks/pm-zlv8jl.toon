@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: ci,governance,quality,testing
 created_at: "2026-07-25T06:17:53.723Z"
-updated_at: "2026-07-26T05:55:42.574Z"
+updated_at: "2026-08-03T20:56:39.895Z"
 author: unknown
 estimated_minutes: 600
 acceptance_criteria: "CI collects per-test outcome history across runs and computes a stability score for every test in the suite; A test crossing the instability threshold automatically produces or updates one tracked item carrying the observed failure rate, the platforms involved, and links to the failing runs, with no duplicate filed for an already-tracked test; A quarantine list exists with a declared maximum size that ratchets downward and cannot be raised without an explicit recorded decision; Quarantined tests continue to execute and report their results; they are excluded only from the pass/fail gate, and their exclusion is visible in the run summary; A genuine regression in a quarantined test is still detectable, proven by an acceptance test that regresses a quarantined test and asserts the signal is not lost"
@@ -19,12 +19,14 @@ why_now: The defect-escape ratchet and mutation-testing gate both assume the sui
 parent: pm-u9d0
 risk: medium
 confidence: high
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-a8lnoh,related,"2026-07-25T06:17:53.723Z",null,null
-  pm-ld0z,related,"2026-07-25T06:17:53.723Z",null,null
-  pm-rtn5h6,related,"2026-07-25T06:17:53.723Z",null,null
-  pm-tgq6,related,"2026-07-25T06:17:53.723Z",null,null
-  pm-zclzll,related,"2026-07-25T06:17:53.723Z",null,null
-  pm-u9d0,verifies,"2026-07-26T05:50:09.086Z",null,null
-  pm-u9d0,implements,"2026-07-26T05:55:42.346Z",null,null
+dependencies[7]{id,kind,created_at}:
+  pm-a8lnoh,related,"2026-07-25T06:17:53.723Z"
+  pm-ld0z,related,"2026-07-25T06:17:53.723Z"
+  pm-rtn5h6,related,"2026-07-25T06:17:53.723Z"
+  pm-tgq6,related,"2026-07-25T06:17:53.723Z"
+  pm-zclzll,related,"2026-07-25T06:17:53.723Z"
+  pm-u9d0,verifies,"2026-07-26T05:50:09.086Z"
+  pm-u9d0,implements,"2026-07-26T05:55:42.346Z"
+comments[1]{created_at,author,text}:
+  "2026-08-03T20:56:39.895Z","harness:claude-code","A clean natural experiment, observed 2026-08-03 immediately after this item was filed.\n\nA commit touching only tracker data under the pm store, with no source, script, workflow or test file changed, turned the Windows regression job on main red. Two tests in the init command suite failed at 30010 and 30002 milliseconds, which is the generic Vitest timeout rather than an assertion. Re-running the failed job against byte-identical content passed, and main is green at the same commit.\n\nThe experiment is clean because the input could not have caused a behavioural change. Tracker data is not read by that suite, which sandboxes its own store path. So the failure carried zero information about the commit and the leg still reported red.\n\nTwo consequences for this item.\n\nFirst, the measured failure rate is a mixture and nothing separates its parts. Of the 28 alerts counted here, an unknown fraction are product defects that a pre-merge control would have caught, and an unknown fraction are infrastructure timeouts that no control can catch because there is nothing to catch. A rate that mixes them cannot justify any decision, which strengthens rather than weakens the case for measuring it properly: the first thing the meter has to do is partition.\n\nSecond, the timeout class is itself a recurrence. Two items in this tracker are already closed for the same subject, Windows init package acceptance exceeding the generic Vitest timeout, and both closed with a per-site timeout increase. The class has returned on a third site. That is the second independent recurrence found today and it arrived, unprompted, in the CI response to the commit that filed the recurrence work.\n\nPartitioning rule this suggests, recorded as input rather than as a decision: a failure whose signature is a timeout at the declared limit, on a leg whose median passing duration for that suite is far below the limit, and which passes on re-run with identical content, is infrastructure. Everything else is a candidate defect until proved otherwise. The re-run is the discriminator and it is cheap.\n"
 body: ""
