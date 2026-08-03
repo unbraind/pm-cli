@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T07:01:54.979Z"
-updated_at: "2026-08-03T14:48:08.184Z"
-closed_at: "2026-08-03T14:48:07.483Z"
-completed_at: "2026-08-03T14:48:07.483Z"
+updated_at: "2026-08-03T14:54:22.935Z"
+closed_at: "2026-08-03T14:54:22.217Z"
+completed_at: "2026-08-03T14:54:22.217Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Expose command-path and alias ownership through SDK and contracts; fail closed or resolve collisions by a documented deterministic policy naming all claimants; report collisions in health; namespace bundled exemplars without breaking existing invocations; cover scope-preserving package identity and dual-package activation
@@ -24,7 +24,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4vwcvq,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
   pm-v1yo,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
   pm-tnud,implements,"2026-07-31T10:15:13.251Z","harness:codex","cli:update:dep",detected
-comments[13]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-07-31T07:01:54.979Z","harness:codex","Duplicate check evidence: searched all statuses for VCS alias, command registration, and collision claimants; pm-v1yo covers core-group aliases and pm-4vwcvq covers partial activation, while GH-832 is the distinct package-to-package namespace ownership gap. Source: https://github.com/unbraind/pm-cli/issues/832"
   "2026-07-31T10:15:15.393Z","harness:codex","Organization rationale 2026-07-31: this issue is the discoverability acceptance gap for pm-tnud, not a parallel package epic. Estimate 180m, medium risk, high confidence; the consolidation task now records it as an explicit completion prerequisite."
   "2026-08-03T07:39:30.021Z","harness:codex","TDD evidence: duplicate handler ownership assertion failed before the describe projection and now reports activation-ordered claimants, the effective final winner, collision state, and last_activated_wins policy through CLI results and public SDK types."
@@ -38,6 +38,7 @@ comments[13]{created_at,author,text}:
   "2026-08-03T14:37:48.835Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/883 at initial exact head 3a184d480. Awaiting hosted checks and full Greptile/CodeRabbit review."
   "2026-08-03T14:46:44.765Z","harness:codex","Hosted CI evidence at PR #883 head 98448a77950e: Gates (static) failed only because readManagedExtensionSourcePackages reached complexity 17 against the mandatory maximum 16. Simplified parsed managed-state validation and alias normalization without weakening lint or changing the SDK identity contract; focused ESLint now passes and extension loader/describe tests pass 130/130."
   "2026-08-03T14:48:06.691Z","harness:codex","Follow-up verification complete: repo-wide pnpm lint:eslint passes; all three linked sandbox-safe test commands pass (19 + 130 + 141 tests), and the contract-preserving simplification is ready for exact-head hosted rerun."
+  "2026-08-03T14:54:17.503Z","harness:codex","Second hosted static-gate evidence at exact head c0f92b72d: code lint and all later checks pass; the remaining failure is deterministic CHANGELOG.md drift caused by the just-recorded PM close evidence. Regenerating exclusively through installed pm-changelog 2026.8.3, then checking idempotence."
 files[12]{path,scope,note}:
   packages/pm-vcs/extensions/vcs/index.ts,project,canonical namespaced commands with internal compatibility spellings
   packages/pm-vcs/extensions/vcs/manifest.json,project,namespaced bundled extension identity
@@ -63,5 +64,5 @@ docs[4]{path,scope,note}:
   docs/EXTENSIONS.md,project,ownership policy and discovery workflow
   packages/pm-vcs/GAP_REPORT.md,project,SDK exemplar namespace assessment
   packages/pm-vcs/README.md,project,canonical install and command migration guidance
-close_reason: Resolved PR #883 hosted static complexity regression without weakening the quality gate; repo-wide ESLint and all linked extension/VCS tests pass.
+close_reason: PR #883 follow-up is fully verified; strict complexity passes and CHANGELOG.md is regenerated from the final closed PM state with pm-changelog 2026.8.3.
 body: ""
