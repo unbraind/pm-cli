@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[6]: agent-ux,"area:cli",cache,multi-agent,perf,scale
 created_at: "2026-07-26T11:25:41.728Z"
-updated_at: "2026-08-03T19:16:51.392Z"
+updated_at: "2026-08-03T19:30:43.775Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
 author: "harness:claude-code"
@@ -44,10 +44,11 @@ dependencies[7]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-03T18:40:13.251Z","harness:codex","Implementation evidence: metadata, body, and collection caches now retain compatibility files plus at most four fingerprint-addressed variants. Alternating extension-enabled and --no-extensions invocations restores the matching prior envelope instead of reparsing the corpus; variant writes use the existing atomic store path and retention prunes older identities deterministically. Cache-context changes are reported as diagnostics rather than warning noise."
   "2026-08-03T18:41:18.751Z","harness:codex","Real-scale acceptance on this 2,000+ item tracker after the fix: list extension warm 0.392s; first no-extension context creation 4.275s; restoring extension variant 0.432s; restoring no-extension variant 0.346s. Alternating restored get stayed 0.440/0.348s, context 1.771/1.355s, and next 0.751/0.694s. Runtime retained three fingerprinted metadata/collection variants plus compatibility aliases, below the four-variant bound. The previous persistent 5s mutual eviction is gone; only the first unseen identity pays construction."
   "2026-08-03T19:16:51.392Z","harness:codex","Review-loop implementation: exclude compatibility aliases from the four-variant retention budget; repopulate the fingerprinted envelope memo after atomic writes; tolerate per-file stat races during best-effort pruning; compute pmRoot once; assert the exact four-variant boundary; and exercise a retained variant disappearing between enumeration and stat."
+  "2026-08-03T19:30:43.775Z","harness:codex","Exact-head PR evidence (PR #884, c361624e2): every hosted required check passes, including static/typecheck/coverage/smokes/compat, Ubuntu/macOS/Windows runtime smoke, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, DeepScan, CodeFactor, Codecov, ShellCheck, PSScriptAnalyzer, actionlint, and Docs/Skills. The complete sandboxed local suite passes 428 files / 6,792 tests at exact 100% statements, branches, functions, and lines; lint, zero-clone analysis, 100% docstring gates, contracts, and focused review regressions pass. All 12 CodeRabbit threads were individually replied to and reacted to; nine actionable findings were fixed in c361624e2 and all threads are resolved. The requested exact-head CodeRabbit rerun was included-review-rate-limited and the authenticated Greptile gate returned free_reviews_limit_reached; these are reviewer limitations, not clean-review claims."
 notes[1]{created_at,author,text}:
   "2026-08-03T18:40:13.645Z","harness:codex","Acceptance is asserted by rebuild count and source reads rather than fragile wall-clock thresholds: the regression test alternates runtime identities, confirms the previous variant is reused without item rereads, and verifies the four-variant retention ceiling."
 learnings[1]{created_at,author,text}:

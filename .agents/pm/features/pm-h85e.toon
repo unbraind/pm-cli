@@ -6,7 +6,7 @@ status: in_progress
 priority: 3
 tags[5]: agent-experience,"area:cli",context,extensions,gh-issue
 created_at: "2026-07-06T21:09:04.826Z"
-updated_at: "2026-08-03T19:16:51.781Z"
+updated_at: "2026-08-03T19:30:44.198Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
 author: maintainer-agent
@@ -37,10 +37,11 @@ dependencies[5]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-03T18:40:14.471Z","harness:codex","Implementation evidence: context returns a compact extension_health census with total/ok/degraded counts and bounded per-package details sourced through static discovery only. --no-extension-health suppresses it across CLI/SDK contracts. Empty installations omit the field entirely, preserving the committed large-workspace context baseline at exactly 1,231 estimated tokens; healthy and degraded branches plus markdown rendering are covered."
   "2026-08-03T19:01:43.052Z","harness:codex","Hosted CI evidence: the first PR run exposed that local release orchestration had not exercised contracts:check after the new flag projection. Regenerated the authoritative snapshot, adding noExtensionHealth to all three context option schemas, and linked the exact hosted gate so future item verification reproduces CI ordering."
   "2026-08-03T19:16:51.781Z","harness:codex","Review-loop correction: Commander represents --no-extension-health as extensionHealth=false. normalizeContextOptions now translates that negated option to noExtensionHealth=true before runContext, with direct helper and real CLI registration coverage."
+  "2026-08-03T19:30:44.198Z","harness:codex","Exact-head PR evidence (PR #884, c361624e2): every hosted required check passes, including static/typecheck/coverage/smokes/compat, Ubuntu/macOS/Windows runtime smoke, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, DeepScan, CodeFactor, Codecov, ShellCheck, PSScriptAnalyzer, actionlint, and Docs/Skills. The complete sandboxed local suite passes 428 files / 6,792 tests at exact 100% statements, branches, functions, and lines; lint, zero-clone analysis, 100% docstring gates, contracts, and focused review regressions pass. All 12 CodeRabbit threads were individually replied to and reacted to; nine actionable findings were fixed in c361624e2 and all threads are resolved. The requested exact-head CodeRabbit rerun was included-review-rate-limited and the authenticated Greptile gate returned free_reviews_limit_reached; these are reviewer limitations, not clean-review claims."
 notes[1]{created_at,author,text}:
   "2026-08-03T18:40:14.917Z","harness:codex","Token policy: health is counts-first and bounded; absence costs zero bytes. This avoids making every context packet pay for an empty diagnostic surface while still exposing actionable package state when extensions exist."
 learnings[1]{created_at,author,text}:

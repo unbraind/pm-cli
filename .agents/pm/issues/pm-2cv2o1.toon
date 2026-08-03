@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[4]: dependencies,release-gate,security,vulnerability
 created_at: "2026-08-03T18:14:18.504Z"
-updated_at: "2026-08-03T18:44:06.855Z"
+updated_at: "2026-08-03T19:30:45.061Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
 author: "harness:codex"
@@ -23,9 +23,10 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-a24aqt,discovered_from,"2026-08-03T18:14:31.376Z","harness:codex","cli:update:dep",detected
   pm-rnpb,related,"2026-08-03T18:14:31.376Z","harness:codex","cli:update:dep",detected
   pm-u9d0,verifies,"2026-08-03T18:39:44.976Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-03T18:14:18.504Z","harness:codex","Duplicate check: exact advisory-id searches across all pm statuses returned zero items. Broader package searches found only closed predecessor advisories pm-5q81jq, pm-f5hy2n, and pm-a24aqt for different GHSAs; this item preserves new advisory lineage instead of reopening completed fixes."
   "2026-08-03T18:40:17.025Z","harness:codex","Security evidence: pnpm audit initially reported high GHSA-rgw5-rvv9-x895 through brace-expansion 5.0.8 and moderate GHSA-fxqj-rqcc-2cmp through postcss 8.5.22 while GitHub Dependabot/code-scanning/secret-scanning APIs each reported zero open alerts. Overrides now require brace-expansion >=5.0.9 <6 and postcss >=8.5.23 <9; the resolved graph uses patched versions and pnpm audit reports no known vulnerabilities. tsx was refreshed to 4.23.5."
+  "2026-08-03T19:30:45.061Z","harness:codex","Exact-head PR evidence (PR #884, c361624e2): every hosted required check passes, including static/typecheck/coverage/smokes/compat, Ubuntu/macOS/Windows runtime smoke, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, DeepScan, CodeFactor, Codecov, ShellCheck, PSScriptAnalyzer, actionlint, and Docs/Skills. The complete sandboxed local suite passes 428 files / 6,792 tests at exact 100% statements, branches, functions, and lines; lint, zero-clone analysis, 100% docstring gates, contracts, and focused review regressions pass. All 12 CodeRabbit threads were individually replied to and reacted to; nine actionable findings were fixed in c361624e2 and all threads are resolved. The requested exact-head CodeRabbit rerun was included-review-rate-limited and the authenticated Greptile gate returned free_reviews_limit_reached; these are reviewer limitations, not clean-review claims."
 notes[1]{created_at,author,text}:
   "2026-08-03T18:40:17.470Z","harness:codex","Compatibility boundary: npm-package-arg 14 is intentionally deferred because its Node engine excludes the supported Node 22.18 floor. TypeScript 7 is intentionally deferred because typescript-eslint 8.66 supports TypeScript below 6.1. These are incompatible majors rather than unattended safe updates."
 learnings[1]{created_at,author,text}:
