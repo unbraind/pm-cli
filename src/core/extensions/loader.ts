@@ -669,14 +669,12 @@ async function readManagedExtensionSourcePackages(
         "utf8",
       ),
     ) as unknown;
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      !Array.isArray((parsed as { entries?: unknown }).entries)
-    ) {
+    const managedExtensions = asRecordLoose(parsed);
+    const entries = managedExtensions?.entries;
+    if (!Array.isArray(entries)) {
       return packages;
     }
-    for (const entry of (parsed as { entries: unknown[] }).entries) {
+    for (const entry of entries) {
       if (typeof entry !== "object" || entry === null) {
         continue;
       }
@@ -689,10 +687,8 @@ async function readManagedExtensionSourcePackages(
         record.source?.package,
       );
       const aliases = [record.source?.input, record.source?.name, sourcePackage]
-        .filter((value): value is string =>
-          typeof value === "string" && value.trim().length > 0,
-        )
-        .map((value) => value.trim());
+        .map((value) => normalizeManagedSourcePackage(value))
+        .filter((value): value is string => value !== undefined);
       if (aliases.length === 0) {
         continue;
       }

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T07:01:54.979Z"
-updated_at: "2026-08-03T14:37:48.835Z"
-closed_at: "2026-08-03T14:35:31.124Z"
-completed_at: "2026-08-03T14:35:31.124Z"
+updated_at: "2026-08-03T14:48:08.184Z"
+closed_at: "2026-08-03T14:48:07.483Z"
+completed_at: "2026-08-03T14:48:07.483Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Expose command-path and alias ownership through SDK and contracts; fail closed or resolve collisions by a documented deterministic policy naming all claimants; report collisions in health; namespace bundled exemplars without breaking existing invocations; cover scope-preserving package identity and dual-package activation
@@ -24,7 +24,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4vwcvq,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
   pm-v1yo,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
   pm-tnud,implements,"2026-07-31T10:15:13.251Z","harness:codex","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-07-31T07:01:54.979Z","harness:codex","Duplicate check evidence: searched all statuses for VCS alias, command registration, and collision claimants; pm-v1yo covers core-group aliases and pm-4vwcvq covers partial activation, while GH-832 is the distinct package-to-package namespace ownership gap. Source: https://github.com/unbraind/pm-cli/issues/832"
   "2026-07-31T10:15:15.393Z","harness:codex","Organization rationale 2026-07-31: this issue is the discoverability acceptance gap for pm-tnud, not a parallel package epic. Estimate 180m, medium risk, high confidence; the consolidation task now records it as an explicit completion prerequisite."
   "2026-08-03T07:39:30.021Z","harness:codex","TDD evidence: duplicate handler ownership assertion failed before the describe projection and now reports activation-ordered claimants, the effective final winner, collision state, and last_activated_wins policy through CLI results and public SDK types."
@@ -36,6 +36,8 @@ comments[11]{created_at,author,text}:
   "2026-08-03T13:52:34.472Z","harness:codex","Live GitHub cross-check 2026-08-03: GH-832 has a direct pm item .toon link comment; all 23 open repository issues have at least one direct pm .toon link comment; there are zero open PRs, zero Dependabot alerts, zero code-scanning alerts, and zero secret-scanning alerts. Current main CI/Security/CodeQL/Scorecard/CodSpeed runs are green."
   "2026-08-03T14:34:06.957Z","harness:codex","Final local verification: repository coverage passes 100/100/100/100 across 425 files and 6,782 tests; full static/docstring/SDK parity/context/token gates pass; packed npx smoke and 88-command package-first dogfood pass. Exact install alias is now a loader-projected SDK identity rather than CLI-only special handling."
   "2026-08-03T14:37:48.835Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/883 at initial exact head 3a184d480. Awaiting hosted checks and full Greptile/CodeRabbit review."
+  "2026-08-03T14:46:44.765Z","harness:codex","Hosted CI evidence at PR #883 head 98448a77950e: Gates (static) failed only because readManagedExtensionSourcePackages reached complexity 17 against the mandatory maximum 16. Simplified parsed managed-state validation and alias normalization without weakening lint or changing the SDK identity contract; focused ESLint now passes and extension loader/describe tests pass 130/130."
+  "2026-08-03T14:48:06.691Z","harness:codex","Follow-up verification complete: repo-wide pnpm lint:eslint passes; all three linked sandbox-safe test commands pass (19 + 130 + 141 tests), and the contract-preserving simplification is ready for exact-head hosted rerun."
 files[12]{path,scope,note}:
   packages/pm-vcs/extensions/vcs/index.ts,project,canonical namespaced commands with internal compatibility spellings
   packages/pm-vcs/extensions/vcs/manifest.json,project,namespaced bundled extension identity
@@ -49,15 +51,17 @@ files[12]{path,scope,note}:
   tests/unit/extensions/extension-command.spec.ts,project,bundled catalog and wildcard activation identity coverage
   tests/unit/extensions/extension-describe.spec.ts,project,winner and claimant contract coverage
   tests/unit/packages/vcs-extension.spec.ts,project,canonical and legacy command acceptance coverage
-tests[2]{command,scope,timeout_seconds}:
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-describe.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-loader.spec.ts tests/unit/extensions/extension-describe.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/packages/vcs-extension.spec.ts tests/unit/extensions/extension-command.spec.ts,project,300
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msdbyul9-genmgh,test,passed,"2026-08-03T14:34:08.910Z","2026-08-03T14:34:37.533Z","2026-08-03T14:34:37.533Z",2,0,0
+  test-local-msdcfyho-0v80bn,test,passed,"2026-08-03T14:47:20.233Z","2026-08-03T14:47:55.740Z","2026-08-03T14:47:55.740Z",3,0,0
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,Generated release-facing namespace and alias resolution entry
   docs/EXTENSIONS.md,project,ownership policy and discovery workflow
   packages/pm-vcs/GAP_REPORT.md,project,SDK exemplar namespace assessment
   packages/pm-vcs/README.md,project,canonical install and command migration guidance
-close_reason: "Delivered collision-free VCS SDK exemplar package and vcs-exemplar namespace with internal legacy command compatibility, loader-projected install-alias discovery, CLI/SDK ownership context, 100% coverage, packed and dogfood acceptance."
+close_reason: Resolved PR #883 hosted static complexity regression without weakening the quality gate; repo-wide ESLint and all linked extension/VCS tests pass.
 body: ""
