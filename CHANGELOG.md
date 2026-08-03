@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The one-release-per-day guard compares a prefix glob against unpadded date keys, so it is correct only by accident of tag creation order and silently skips a real release for any out-of-order tag ([pm-ki67py](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ki67py.toon))
+
 ## 2026.8.3 - 2026-08-03
 
 ### Added

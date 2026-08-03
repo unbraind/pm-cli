@@ -1,0 +1,29 @@
+id: pm-eq9dlw
+title: "The session-role dimension is wired to a boolean child-session flag, so every nested claude-code invocation records the role literally as \"1\" and fleet analytics will group real work under a meaningless label"
+description: "Measured on 2026-08-03 against pm 2026.8.3.\n\nThe claude-code harness descriptor in src/core/shared/author.ts declares provenance_environment_keys.role = ['CLAUDE_CODE_CHILD_SESSION']. That variable is a boolean marker meaning 'this invocation is a nested session'; its value in a live session is the literal string '1'. The resolver treats any non-blank value as the role observation, so a fresh mutation on 2026-08-03 records agent_provenance.role = {value: '1', source: 'environment'}.\n\nThis reads as legitimate provenance. The source is 'environment', which is the same source category a genuinely declared role would carry, so no consumer can distinguish a real role from this artifact by inspecting the entry. Fleet attribution analytics group by role; a permanently immutable population of entries labelled role '1' is worse than a population labelled null, because null is honest about absence and '1' is not.\n\nThe wiring appears to be a category error introduced while closing the gap that role had no descriptor key on any harness. Filling the slot with the only role-adjacent variable the harness exports satisfies a coverage metric while defeating the purpose of the dimension. If the nested-session fact is worth recording it deserves its own dimension with its own name and a boolean value domain.\n\nRelated but distinct: whether a declared resolver that fails is distinguishable from a dimension a harness cannot supply is its own finding. This one is the inverse - a resolver that succeeds and records a value that means nothing.\n\nScope is the role dimension wiring and the general rule that a descriptor key must match the value domain of the dimension it feeds."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:sdk",data-quality,identity,provenance
+created_at: "2026-08-03T06:21:42.773Z"
+updated_at: "2026-08-03T06:23:40.475Z"
+author: "harness:claude-code"
+acceptance_criteria: "No provenance dimension is sourced from an environment key whose value domain is boolean or presence-only; Each descriptor key declares the dimension value domain it is expected to carry, and a value outside that domain is refused rather than recorded; The nested-session fact, if worth recording, is recorded in a dimension whose name says what it means rather than being smuggled into role; A corpus check reports zero provenance values that are bare booleans or single digits across all dimensions"
+parent: pm-5oj5
+risk: medium
+confidence: high
+severity: medium
+environment: "pm 2026.8.3, claude-code harness with CLAUDE_CODE_CHILD_SESSION=1, Linux"
+repro_steps: Run a pm mutation from a nested/child claude-code session and read agent_provenance.role on the newest history entry.
+expected_result: "role is either a descriptive session role the operator declared, or null when the harness publishes no role."
+actual_result: "role is {value: \"1\", source: \"environment\"}. The claude-code descriptor maps the role dimension to CLAUDE_CODE_CHILD_SESSION, which is a presence/boolean flag whose value is the string \"1\", not a role name."
+component: core/shared/author
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1wiugq,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
+  pm-9gvazz,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
+  pm-gw6uyq,blocks,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
+  pm-itsjf0,discovered_from,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
+  pm-lu6sca,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
+  pm-pj2isb,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
+  pm-rbg1qo,discovered_from,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
+body: ""
