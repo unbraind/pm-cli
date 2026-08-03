@@ -1,0 +1,24 @@
+id: pm-2zjs0g
+title: "Platform nightly legs fail on half of all days and nothing measures the rate: each alert opens a fresh issue and closes on repair, so a 28-occurrence family reads as 28 first occurrences"
+description: "Measured 2026-08-03 against the live GitHub Actions record and the tracker itself.\n\nThe scheduled Nightly Validation workflow has raised 28 failure alerts between 2026-06-20 and 2026-08-03. That is 23 distinct calendar days carrying at least one red leg across a 44-day window, so a platform leg fails on roughly half of all days. By leg: windows-latest Node 24 nineteen times, macos-latest Node 24 six times, ubuntu-latest three times. Every one of the 28 alerts is closed. Median time from alert to closure is 5.7 hours and the maximum is 175 hours.\n\nThe alerting itself works exactly as specified. The workflow searches for an open issue with the same title, comments on it if one exists, and otherwise opens a new one. Because each occurrence is repaired within hours, the search never finds an open issue, so every occurrence opens a fresh one. The channel therefore encodes each failure as a first occurrence and destroys the recurrence count as a side effect of working correctly.\n\nThe tracker shows the same shape. A title census over all items returns roughly thirty closed items whose subject is a platform nightly regression, spanning at least eight months of releases and many independent root causes: POSIX path literals, realpath canonicalization asymmetry, short-name temp directories, native path quoting, errno literals, spawn and lock behaviour, and most recently a workspace slug encoding. Each was diagnosed, fixed, closed and forgotten. No item, report, gate or command anywhere computes the family rate.\n\nThe consequence is a decision error, not a test error. Every individual repair looks proportionate because it is judged against one failing spec. The correct comparison is against the family: a defect class that recurs on half of all days with a median five-hour repair is consuming more sustained effort than the pre-merge control it lacks would cost, and nothing in the project can state that sentence with evidence. The exact same argument was already accepted for the release pipeline, where the failure rate of the scheduled auto-release was made a first-class defect precisely because the recovery path closes its own evidence. This item is that argument applied to the platform legs.\n\nScope is measurement and escalation, not the repair of any individual leg and not the choice of which checks run before merge. It must produce a durable, queryable rate per leg per period, a recurrence identity that survives repair, and a declared threshold that changes behaviour when crossed."
+type: Issue
+status: open
+priority: 1
+tags[3]: ci,recurrence,reliability
+created_at: "2026-08-03T20:34:28.473Z"
+updated_at: "2026-08-03T20:35:36.828Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "A durable per-leg failure-rate report is derivable from recorded data alone and states occurrences, distinct affected days, and repair latency over a caller-chosen window; The alert channel carries a stable recurrence identity so a repaired occurrence does not reset the count, and the identity survives closure of the alert and of the tracking item; A declared threshold on the rate changes behaviour rather than only reporting, and the behaviour change is recorded where the release decision can read it; The historical 28 occurrences and the tracker items that repaired them are reconciled into one queryable family with no hand-maintained list; A negative control proves the meter reports zero on a period with no failures rather than failing open"
+parent: pm-u9d0
+risk: high
+confidence: 90
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1qkivy,implements,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected
+  pm-e70zh5,discovered_from,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected
+  pm-ei6x66,related,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected
+  pm-j668gl,related,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected
+  pm-k6t4yb,blocked_by,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected
+  pm-ouyq3n,blocked_by,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected
+  pm-xp1xsw,implements,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected
+body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli",context,context-management,scale,token-budget
 created_at: "2026-08-03T06:22:52.917Z"
-updated_at: "2026-08-03T11:15:45.530Z"
+updated_at: "2026-08-03T20:38:41.659Z"
 author: "harness:claude-code"
 estimated_minutes: 900
 acceptance_criteria: "A session or request-group identity can be supplied to successive reads, and a fact already served under that identity is not re-serialized in full; Suppressed repeats are represented by a reference the agent can resolve, not silently dropped, and the receipt says what was suppressed and why; A budget can be declared for a group of calls, and the group degrades deterministically when it is exhausted, exactly as a single call does today; The prescribed orientation sequence in AGENTS.md is measured end to end in CI, and the measurement is a ratchet that may only shrink; The mechanism composes with the fleet-level shared-assembly work rather than duplicating it: within-session dedupe and across-agent amortization use one representation; Small workspaces pay nothing for the machinery: at three items the orientation cost is unchanged or lower"
@@ -16,7 +16,7 @@ why_now: "Every per-call budget mechanism the project has built is now in place 
 parent: pm-mpbb
 risk: medium
 confidence: high
-dependencies[15]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,related,"2026-08-03T06:23:57.876Z","harness:claude-code","cli:update:dep",detected
   pm-5t33or,related,"2026-08-03T06:23:57.876Z","harness:claude-code","cli:update:dep",detected
   pm-8pnj,related,"2026-08-03T06:23:57.876Z","harness:claude-code","cli:update:dep",detected
@@ -32,6 +32,7 @@ dependencies[15]{id,kind,created_at,author,source_kind,author_source}:
   pm-tuadp2,related,"2026-08-03T06:23:57.876Z","harness:claude-code","cli:update:dep",detected
   pm-5t33or,blocked_by,"2026-08-03T11:15:45.320Z","harness:codex","cli:update:dep",detected
   pm-n7rr,implements,"2026-08-03T11:15:45.320Z","harness:codex","cli:update:dep",detected
+  pm-cyn0y6,related,"2026-08-03T20:38:41.575Z","harness:claude-code","cli:update:dep",detected
 comments[2]{created_at,author,text}:
   "2026-08-03T11:09:25.972Z","harness:codex","Estimate basis 2026-08-03: 900 minutes reflects a cross-call budget ledger, served-fact references, deterministic degradation, session and fleet composition, CI ratchet, and small-workspace no-regression proof."
   "2026-08-03T11:15:45.320Z","harness:codex","Sequencing 2026-08-03: establish trustworthy per-command ceilings in pm-5t33or before composing a session ledger, then use the same receipt and degradation algebra for within-session deduplication. This item implements the agent-facing simplification outcome because fewer commands are insufficient if the prescribed multi-call orientation still repeats a third of its bytes."

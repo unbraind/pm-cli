@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T00:05:13.668Z"
-updated_at: "2026-07-31T01:03:17.733Z"
+updated_at: "2026-08-03T20:42:20.668Z"
 closed_at: "2026-07-31T01:03:14.623Z"
 completed_at: "2026-07-31T01:03:14.623Z"
 author: "harness:codex"
@@ -18,8 +18,9 @@ resolution: fixed
 expected_result: "Exact-tag recovery restores public access from a reviewed main dispatch SHA, never republishes an immutable version, and verifies npm, npx, and bunx anonymously."
 actual_result: "Merged PRs #834 and #835; release run 30594784895 restored and verified v2026.7.30 from main in 9m41s; an independent token-free clean-cache verifier passed npm metadata, direct/package npx, bunx, and GitHub release checks on the first attempt."
 fixed_version: 2026.7.30
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2z9263,related_to,"2026-07-31T00:05:39.600Z","harness:codex","cli:update:dep",detected
+  pm-xp1xsw,implements,"2026-08-03T20:42:20.573Z","harness:claude-code","cli:update:dep",detected
 comments[7]{created_at,author,text}:
   "2026-07-31T00:05:13.668Z","harness:codex","Duplicate check searched all statuses for stale anonymous registry visibility,workflow-dispatch access stabilization,hidden-package recovery,and npm private state. pm-7zs0 is the recurring release-health parent; closed pm-2z9263 fixed identity drift and conditional recovery but does not own post-verification visibility regression. No duplicate implementation item was found."
   "2026-07-31T00:10:17.205Z","harness:codex","Implementation evidence: workflow_dispatch exact-tag recovery now calls the authenticated public-access repair before anonymous metadata probes; E404 remains a guarded first-publication path, non-404 access failures stop, normal tag-push behavior is unchanged, and existing immutable versions skip publication. Linked executable fake-registry and workflow contracts pass 30/30. Typecheck, ESLint, jscpd zero clones, static/docstrings 100%, package boundary/parity, token budgets, SDK surface/import-cost/transport floors, docs/skills, and diff checks pass."

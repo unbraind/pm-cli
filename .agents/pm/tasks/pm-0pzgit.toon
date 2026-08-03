@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: "area:testing",ci,defect-escape,instrument-integrity,quality-gate
 created_at: "2026-08-03T06:31:40.504Z"
-updated_at: "2026-08-03T11:09:24.697Z"
+updated_at: "2026-08-03T20:38:18.150Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "An inventory exists of every boundary value: paths, filenames, slugs, env keys, wire formats, and any string that must be byte-identical to a value produced by a system this repository does not control; Each inventory entry is either backed by a captured real sample committed as a fixture, or carries a recorded waiver stating why no sample can be captured; A test that constructs its expected value by calling the production transform is rejected by the gate for any inventoried boundary; The gate names the inventory entry and the missing sample when it fails, so the remediation is mechanical; The captured samples are redaction-safe: no operator path, host, or token is committed; The claude_session_file slug encoding is the first entry, with a committed sample directory name proving the underscore fold"
@@ -28,6 +28,7 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-rtn5h6,implements,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
   pm-zclzll,related,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-03T11:09:24.678Z","harness:codex","Estimate basis 2026-08-03: 480 minutes covers boundary inventory, redacted real fixtures, negative gate controls, CI integration, and cross-platform verification; uncertainty is bounded because the first failing boundary and acceptance contract are already identified."
+  "2026-08-03T20:38:18.150Z","harness:claude-code","A live instance of the exact structural blind spot this gate is scoped to, observed 2026-08-03 in the failing Windows nightly leg.\n\nThe failing assertion is in the agent runtime provenance suite, on the test that extracts bounded model and version fields from a harness session file. The value under test is a directory name that must be byte-identical to one produced by an external harness this repository does not control. The test does not assert against a captured sample. It rebuilds the expected name in the test body, branching on platform, using the same rule the production code uses.\n\nThat construction can only fail when the two restatements of one rule disagree, which is what happened on Windows and what did not happen on POSIX. On POSIX it is a tautology: the test passes because both sides encode the same assumption, including the case where the shared assumption is wrong. The external contract is never exercised on any platform.\n\nThis is the inventory entry this gate exists to reject, and it is worth keeping as the reference instance because it shows the failure mode is not hypothetical: the same test was simultaneously unable to fail on one platform and unable to pass on another, and neither outcome tested the boundary. A captured sample from a real harness project directory would have decided both.\n\nRecorded as evidence and as a candidate first fixture, not as a second item.\n"
 body: ""

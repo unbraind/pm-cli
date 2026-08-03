@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: agent-ux,"area:cli","area:sdk",context,scale,tokens
 created_at: "2026-07-25T06:17:13.426Z"
-updated_at: "2026-07-25T06:27:58.011Z"
+updated_at: "2026-08-03T20:38:18.653Z"
 author: unknown
 estimated_minutes: 900
 acceptance_criteria: "list, search, context, and get accept --since <cursor> and return changed rows, tombstones for rows that left the set, and an unchanged count that makes the delta verifiable; The cursor is query-bound and opaque: applying it to a different filter, projection, or format fails with a typed error rather than returning a misleading delta; A delta response over an unchanged workspace costs asymptotically less than the full projection and the saving is asserted by the token-cost corpus gate; Deltas are derived from the same durable substrate as the mutation event stream, with no separate bookkeeping to fall out of sync; The SDK exposes the delta as a typed primitive so packages and MCP get it without reimplementation; Correctness is proven by property tests that replay arbitrary mutation interleavings and assert delta-then-apply equals full-read"
@@ -19,14 +19,16 @@ why_now: The mutation event stream and durable pagination cursors both shipped; 
 parent: pm-9rxu
 risk: medium
 confidence: medium
-dependencies[9]{id,kind,created_at,author,source_kind}:
-  pm-4k6b,related,"2026-07-25T06:17:13.426Z",null,null
-  pm-5t33or,related,"2026-07-25T06:17:13.426Z",null,null
-  pm-801d,blocked_by,"2026-07-25T06:17:13.426Z",null,null
-  pm-bwyw,related,"2026-07-25T06:17:13.426Z",null,null
-  pm-e200,related,"2026-07-25T06:17:13.426Z",null,null
-  pm-o87av6,related,"2026-07-25T06:17:13.426Z",null,null
-  pm-plwm,related,"2026-07-25T06:17:13.426Z",null,null
-  pm-bwyw,implements,"2026-07-25T06:27:57.728Z",null,null
-  pm-g2zz,implements,"2026-07-25T06:27:57.728Z",null,null
+dependencies[9]{id,kind,created_at}:
+  pm-4k6b,related,"2026-07-25T06:17:13.426Z"
+  pm-5t33or,related,"2026-07-25T06:17:13.426Z"
+  pm-801d,blocked_by,"2026-07-25T06:17:13.426Z"
+  pm-bwyw,related,"2026-07-25T06:17:13.426Z"
+  pm-e200,related,"2026-07-25T06:17:13.426Z"
+  pm-o87av6,related,"2026-07-25T06:17:13.426Z"
+  pm-plwm,related,"2026-07-25T06:17:13.426Z"
+  pm-bwyw,implements,"2026-07-25T06:27:57.728Z"
+  pm-g2zz,implements,"2026-07-25T06:27:57.728Z"
+comments[1]{created_at,author,text}:
+  "2026-08-03T20:38:18.653Z","harness:claude-code","Measured the cost of re-orientation on the live tracker 2026-08-03, which is the case this feature exists to serve.\n\nOver a six-hour window, 144 recorded history entries touched 9 distinct items. The surfaces available to a returning caller answer that question three different ways and none of them answers it well.\n\npm context, the command whose entire purpose is orientation, accepts no time window at all: the flag is rejected with exit 2. Its default projection is 8879 bytes and is recomputed in full whether or not anything moved.\n\npm list accepts updated-after and returns 0 rows for that window under its default lifecycle scope, because all 9 changed items are terminal. Raising the scope to all returns the 9. The receipt reports total 0 without disclosing that a filter removed the entire delta.\n\npm activity accepts from and returns the 144 entries, but as operations rather than items: it names ids and ops, so the caller must fold 144 rows back into 9 item states and then read each one.\n\nSo the delta is either unavailable, silently empty, or expressed in a unit the caller cannot act on, and the full projection is the only reliable path. That is the asymmetry this feature closes, and it is worth noting that the unchanged-count in the acceptance criteria is the part that makes the answer trustworthy: without it, a delta of zero rows is indistinguishable from the scoped-away zero measured here.\n"
 body: ""

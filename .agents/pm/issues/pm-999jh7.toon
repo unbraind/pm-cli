@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",context-management,data-quality,scale
 created_at: "2026-08-03T06:26:13.535Z"
-updated_at: "2026-08-03T11:09:25.296Z"
+updated_at: "2026-08-03T20:29:05.493Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Any default scope a read applies is present in the envelope's filters block, spelled exactly as the flag that would reproduce it; total means the count before row-level scoping, or the field is renamed so that it cannot be read as a corpus total; has_more is false only when no row was withheld by limit or by any default scope; list and search declare the same default lifecycle scope, or their difference is stated in both help texts and in the row contract; A gate asserts, for every row-producing read, that the filters block round-trips: re-running with exactly the disclosed filters reproduces the same rows"
@@ -30,6 +30,7 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-plwm,related,"2026-08-03T06:26:36.268Z","harness:claude-code","cli:update:dep",detected
   pm-sb0tns,related,"2026-08-03T06:26:36.268Z","harness:claude-code","cli:update:dep",detected
   pm-zw9188,related,"2026-08-03T06:26:36.268Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-03T11:09:25.276Z","harness:codex","Estimate basis 2026-08-03: 300 minutes covers contract semantics, list/search parity, envelope count correction, lifecycle-scope disclosure, round-trip gate, and compatibility tests."
+  "2026-08-03T20:29:05.493Z","harness:claude-code","Delta-read evidence for the undisclosed default lifecycle scope, measured 2026-08-03 on the live tracker.\n\nThe scope default is most wrong exactly where it matters most. Asking \"what changed while I was away\" over a six-hour window:\n\n- pm list --updated-after <T> --limit 500 returns count 0, total 0.\n- pm list --status all --updated-after <T> returns 9 items.\n- pm activity --from <T> reports 144 history entries touching those same 9 distinct items.\n\nThe nine items are all terminal (closed in that window). The default scope therefore suppresses the entire delta, and the receipt reports total 0 rather than disclosing that a lifecycle filter was applied. A returning agent reads count 0 as \"nothing happened\" when in fact 144 recorded mutations landed on 9 items, including every closure of the period.\n\nThis is the same undisclosed default this item already owns, observed on the one query where the omitted rows are guaranteed to be the informative ones: closures are the changes a returning caller most needs and the default scope is the one filter that removes all of them. Recorded as evidence, not as a second defect.\n"
 body: ""

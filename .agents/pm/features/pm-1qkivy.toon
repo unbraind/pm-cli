@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[9]: "area:ci",cicd,context-management,defect-escape,history,instrument-integrity,quality-gate,recurrence,sdk-first
 created_at: "2026-08-03T11:14:27.152Z"
-updated_at: "2026-08-03T11:14:27.152Z"
+updated_at: "2026-08-03T20:35:50.121Z"
 author: "harness:codex"
 estimated_minutes: 720
 acceptance_criteria: "A public SDK recurrence analyzer incrementally folds terminal issues, resolution evidence, linked files and tests, error codes, affected versions, and typed recurrence or supersedes edges into versioned defect families; Every family records canonical owner, trigger signals, required local checks, required hosted checks, negative control, escape budget, false-positive budget, and links to the historical items that justify it; A change-risk command and SDK call accept a commit, file set, package, or pm item and return a bounded explainable receipt naming selected families, evidence paths, required gates, omissions, and token and latency cost; Local pre-push and GitHub Actions consume the same generated policy artifact and fail on drift between their selected checks; hosted CI may add environment-only checks but cannot omit local deterministic checks; The initial backfill covers extension alias contracts, path and slug normalization, history projection invalidation, cross-platform process or lock behavior, CLI liveness, release and registry boundaries, and self-generated fixture blind spots; A closed defect cannot satisfy recurrence governance without a linked regression test, a deterministic non-test gate, or an explicit reviewed waiver with expiry; Optional semantic clustering only proposes families with evidence and confidence; deterministic identifiers, paths, test links, error codes, and typed edges control blocking behavior; The index is cursorable, resumable, merge-safe, and benchmarked on million-item multi-decade histories; incremental change analysis does not scan or serialize the full corpus; Mutation and policy changes append hash-chained history events so any recurrence model version and CI decision can be reconstructed later"
@@ -19,7 +19,7 @@ why_now: All-status review found repeated families with strong historical eviden
 parent: pm-u9d0
 risk: medium
 confidence: medium
-dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-0pzgit,blocked_by,"2026-08-03T11:14:27.152Z","harness:codex","cli:create:dep",detected
   pm-4k6b,related,"2026-08-03T11:14:27.152Z","harness:codex","cli:create:dep",detected
   pm-7ufz,discovered_from,"2026-08-03T11:14:27.152Z","harness:codex","cli:create:dep",detected
@@ -31,6 +31,7 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-wnbk2l,discovered_from,"2026-08-03T11:14:27.152Z","harness:codex","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-03T11:14:27.152Z","harness:codex","cli:create:dep",detected
   pm-zlv8jl,related,"2026-08-03T11:14:27.152Z","harness:codex","cli:create:dep",detected
+  pm-ouyq3n,blocked_by,"2026-08-03T20:35:49.982Z","harness:claude-code","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-08-03T11:14:27.152Z","harness:codex","Duplicate check 2026-08-03: searched all statuses for recurring issues history CI gate, defect recurrence mining, closed issues generate regression tests, issue pattern CI before push, and historical defect taxonomy quality gate. Existing items own individual quality gates and incidents; none owns history-derived recurrence families plus shared local/hosted check selection."
 body: ""

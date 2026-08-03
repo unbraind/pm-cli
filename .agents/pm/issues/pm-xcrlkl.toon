@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:ci","area:quality",codefactor,regression,release-gate
 created_at: "2026-07-30T12:30:28.665Z"
-updated_at: "2026-07-30T12:34:40.780Z"
+updated_at: "2026-08-03T20:42:21.295Z"
 closed_at: "2026-07-30T12:34:37.722Z"
 completed_at: "2026-07-30T12:34:37.722Z"
 author: "harness:codex"
@@ -23,9 +23,10 @@ actual_result: "The validator now accepts the live successful 1 issue fixed. pay
 affected_version: 2026.7.30
 fixed_version: next release after 2026.7.30
 regression: true
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-39cqqx,related_to,"2026-07-30T12:30:28.665Z","harness:codex","cli:create:dep",detected
   pm-xspd,related_to,"2026-07-30T12:30:28.665Z","harness:codex","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-08-03T20:42:21.146Z","harness:claude-code","cli:update:dep",detected
 comments[2]{created_at,author,text}:
   "2026-07-30T12:30:28.665Z","harness:codex","Duplicate check: searched all statuses for hosted analysis, CodeFactor, release gate, fixed, and no issues found. Closed pm-39cqqx is the shipped canonical gate; this new regression records provider payload drift observed live on PR #829 rather than rewriting its completed historical result."
   "2026-07-30T12:34:10.800Z","harness:codex","TDD evidence: the live fixed-only CodeFactor payload regression first failed 1/56 while all prior cases passed. The implementation now requires completed success, output.annotations_count exactly 0, and an explicit no-issues or numeric fixed-only title. Focused hosted-analysis plus release-runner tests pass 66/66; pnpm lint and pnpm typecheck pass. Live exact-head acceptance passes for 408c958f654d300d78cdf93a36d34918684a6c52 with DeepScan 0 new, CodeFactor title 1 issue fixed., zero outstanding annotations, and strict protected-main requirements."
