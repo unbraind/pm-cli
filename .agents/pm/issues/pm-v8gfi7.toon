@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-07-29T04:40:18.469Z"
-updated_at: "2026-08-03T00:33:59.932Z"
+updated_at: "2026-08-03T00:40:12.394Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#aea157f022b12643c556d387"
 author: "harness:claude-code"
@@ -23,7 +23,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-z8qd4k,related,"2026-07-29T04:40:18.469Z","harness:claude-code","cli:create:dep",detected
   pm-3yxwv5,blocked_by,"2026-08-01T20:22:12.435Z","harness:codex","cli:update:dep",detected
   pm-ffz0a9,blocked_by,"2026-08-01T20:22:12.435Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-29T04:40:18.469Z","harness:claude-code","Duplicate check before create: pm-ffz0a9 owns the model RESOLVER (how a non-environment source supplies the value); pm-rbg1qo owns descriptor COVERAGE per harness for topic, effort and role; pm-gw6uyq owns the derived ANALYTICS and explicitly assumes grouping by harness and model is possible; pm-itsjf0 is CLOSED and shipped the extensible dimension schema; pm-0zcwz6 is CLOSED and honestly recorded model capture as inert; pm-z8qd4k owns the claim-principal collapse, a different consequence of the same one-value author. None of them owns the read projection or the predicate. Searched keyword and semantic for provenance filter, projection, harness grouping; grepped the corpus for agent_provenance, which returns only 4k6b, itsjf0, 0zcwz6, ffz0a9 and rbg1qo."
   "2026-08-02T15:05:37.415Z","harness:claude-code","Reproduced 2026-08-02 on the real tracker. 'pm history <id> --limit 1 --json' returns rows under compact_history whose complete key set is exactly [author, changed_fields, index, op, patch_ops, ts] - no harness, no model, no effort, no agent_instance, no session topic or role. The raw stream file carries all of them (agent_harness, agent_instance, agent_provenance.{model,effort,role,topic}), so the data exists and the only projection that renders it is the unbounded one. Confirms the item's framing from the read side: an agent that wants provenance must either parse .agents/pm/history/*.jsonl directly, which AGENTS.md forbids, or pay the full patch_ops payload."
   "2026-08-02T23:02:31.542Z","harness:codex","Implementation evidence: live patch-free activity scan completed in 1.29s across 43,561 immutable entries with --limit 0. The summary reported 9,351 recorded/resolved harness rows, 34,210 unresolved legacy authors, effort 665 observed/932 unavailable/41,964 legacy-missing, model 0 observed/4,015 unavailable/39,546 legacy-missing, and no patch/hash payloads. History projections preserve original one-based versions; SDK/CLI/MCP and Bash/Zsh/Fish share harness, instance, and declared dimension filters."
@@ -32,6 +32,7 @@ comments[8]{created_at,author,text}:
   "2026-08-03T00:17:08.800Z","harness:codex","CI feedback: Docs and Skills caught stale type-folder links for pm-v8gfi7 and pm-3yxwv5 in both provenance docs. Corrected both to the canonical .agents/pm/issues paths and verified pnpm quality:docs-links locally before the follow-up push."
   "2026-08-03T00:27:55.610Z","harness:codex","CI feedback: static gate required regenerating stable error-code catalog entries for invalid_provenance_predicate and unknown_provenance_dimension, which also refreshed the full contract snapshot. Token-surface gate measured intentional help growth for history/activity/events and MCP contracts; updated the repository baseline through pnpm quality:token-surface:update. Exact local reruns pnpm contracts:check and pnpm quality:token-surface now pass."
   "2026-08-03T00:33:59.932Z","harness:codex","CodeRabbit feedback: strengthened the in-process events CLI test to pass two --harness, two --agent-instance, and two --provenance-filter values and assert complete ordered arrays. This now detects last-value-only parser regressions. Focused register-list-query suite passes."
+  "2026-08-03T00:40:12.394Z","harness:codex","PR #874 exact-head review evidence: head 0827f5d10987531bc922a9f56c84f8e2c6b48e71; all GitHub checks passed. CodeRabbit posted 8 actionable inline findings; all 8 were up-voted and answered inline, 7 verified already satisfied and 1 implemented in 0827f5d10. All threads resolved. Bot summaries/confirmations were reacted to; rate-limit-only responses were down-voted. Sourcery and Gemini limitations were explicitly acknowledged. Final inventory found zero unresolved threads."
 files[15]{path,scope,note}:
   scripts/agent-token-surface-baseline.json,project,Intentional bounded help and contract surface growth
   sdk/public-surface.json,project,Generated public SDK contract
