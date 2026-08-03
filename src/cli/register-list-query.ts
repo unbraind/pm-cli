@@ -344,6 +344,7 @@ function registerListCommand(
     command.option(
       "--status <value>",
       "Filter by status (repeatable or comma-separated; matches any; all selects every status)",
+      collect,
     );
   }
   command
@@ -355,6 +356,7 @@ function registerListCommand(
     .option(
       "--type <value>",
       "Filter by item type (repeatable or comma-separated; matches any)",
+      collect,
     )
     .option(
       "--tag <value>",
@@ -364,6 +366,7 @@ function registerListCommand(
     .option(
       "--priority <value>",
       "Filter by priority (repeatable or comma-separated; matches any)",
+      collect,
     )
     .option(
       "--deadline-before <value>",
@@ -395,14 +398,14 @@ function registerListCommand(
       "--ids <value>",
       "Filter by explicit item IDs (comma-separated or repeatable)",
     )
-    .option("--assignee <value>", "Filter by assignee")
+    .option("--assignee <value>", "Filter by assignee", collect)
     .option(
       "--assignee-filter <value>",
       "Filter assignee presence: assigned|unassigned",
     )
     .option("--parent <value>", "Filter by parent item ID")
-    .option("--sprint <value>", "Filter by sprint")
-    .option("--release <value>", "Filter by release")
+    .option("--sprint <value>", "Filter by sprint", collect)
+    .option("--release <value>", "Filter by release", collect)
     .option(
       "--filter-ac-missing",
       "Show only items missing acceptance_criteria",

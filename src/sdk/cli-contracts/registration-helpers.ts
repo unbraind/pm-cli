@@ -763,6 +763,14 @@ function readListOptionString(
   }
   for (const key of contract.keys) {
     const value = options[key];
+    if (Array.isArray(value)) {
+      const strings = value.filter(
+        (entry): entry is string => typeof entry === "string",
+      );
+      if (strings.length > 0) {
+        return strings.join(",");
+      }
+    }
     /* c8 ignore start -- unreachable: readFirstStringFromCommanderOptions already returns above for any string value under contract.keys, so a string here cannot occur */
     if (target === "ids" && typeof value === "string") {
       return value;
@@ -823,11 +831,7 @@ export function normalizeListOptions(
   const normalized: Record<string, unknown> = {
     status: readListOptionString(options, "status"),
     type: readListOptionString(options, "type"),
-    tag: Array.isArray(options.tag)
-      ? options.tag
-          .filter((value): value is string => typeof value === "string")
-          .join(",")
-      : readListOptionString(options, "tag"),
+    tag: readListOptionString(options, "tag"),
     priority: readListOptionString(options, "priority"),
     deadlineBefore: readListOptionString(options, "deadlineBefore"),
     deadlineAfter: readListOptionString(options, "deadlineAfter"),

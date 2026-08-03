@@ -18,11 +18,13 @@ Use this contract when composing `pm` with shells, CI runners, `jq`, or another 
 Successful structured results are written to stdout. Diagnostics, warnings, profiles, and errors are written to stderr so `--json`, `--format ndjson`, CSV, and table stdout remain pipe-safe. Never merge stderr into stdout before parsing structured output.
 
 ```bash
-if ! result=$(pm list --type Task,Issue --status open,in_progress --json); then
+if result=$(pm list --type Task,Issue --status open,in_progress --json); then
+  printf '%s\n' "$result" | jq -r '.items[].id'
+else
+  status=$?
   printf '%s\n' "pm list failed" >&2
-  exit 1
+  exit "$status"
 fi
-printf '%s\n' "$result" | jq -r '.items[].id'
 ```
 
 ## Stable Structured Fields
@@ -34,6 +36,7 @@ Projection flags intentionally change row shape. Use `--fields` when a script re
 For long-lived clients, generate or inspect the runtime contract instead of hard-coding recalled flags:
 
 ```bash
+set -o pipefail
 pm contracts --command list --flags-only --json |
   jq -e '.flags[] | select(.flag == "--status" and .list == true)'
 ```
@@ -71,14 +74,21 @@ import {
 Prefer cursor continuation over offsets for a changing corpus, and pass IDs through JSON rather than parsing human output:
 
 ```bash
-pm search "needs documentation" --status open,in_progress --fields id --json |
-  jq -r '.items[].id' |
-  xargs -r -n 1 pm get --fields id,title,status --json
+if search_result=$(pm search "needs documentation" --status open,in_progress --fields id --json); then
+  ids=$(printf '%s\n' "$search_result" | jq -r '.items[].id') || exit $?
+  if [ -n "$ids" ]; then
+    printf '%s\n' "$ids" | xargs -n 1 pm get --fields id,title,status --json
+  fi
+else
+  status=$?
+  exit "$status"
+fi
 ```
 
 Use NDJSON for streaming row-by-row tools:
 
 ```bash
+set -o pipefail
 pm list --status all --brief --format ndjson |
   jq -c 'select(.priority <= 1) | {id, title, status}'
 ```

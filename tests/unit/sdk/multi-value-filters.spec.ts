@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveItemTypeRegistry } from "../../../src/core/item/type-registry.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { normalizeListOptions } from "../../../src/sdk/cli-contracts/registration-helpers.js";
 import {
   parseMultiValueFilter,
   parsePriorityFilterSet,
@@ -35,6 +36,11 @@ describe("multi-value query filters", () => {
         2,
       ),
     );
+    for (const value of ["alpha,,beta", "alpha,", ",beta"]) {
+      expect(() => parseMultiValueFilter(value, { label: "--release" })).toThrow(
+        /--release requires at least one non-empty value/,
+      );
+    }
   });
 
   it("builds normalized string membership sets", () => {
@@ -44,6 +50,7 @@ describe("multi-value query filters", () => {
         normalize: (value) => value.toLowerCase(),
       }),
     ).toEqual(new Set(["alpha", "beta"]));
+    expect(normalizeListOptions({ type: [1, false] }).type).toBeUndefined();
   });
 
   it("resolves every type token and reports the invalid token", () => {

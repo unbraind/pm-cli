@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runAggregate } from "../../src/sdk/query/aggregate.js";
-import { runList } from "../../src/sdk/query/list.js";
+import { runList, type ListOptions } from "../../src/sdk/query/list.js";
 import { runUpdateMany } from "../../src/sdk/lifecycle/update-many.js";
 import {
   withTempPmPath,
@@ -113,9 +113,44 @@ describe("universal query-filter scripting contract", () => {
         [openId, closedId].sort(),
       );
 
+      const strictSubsetFilters = [
+        { options: { type: "Task" }, expectedId: openId },
+        { options: { priority: "0" }, expectedId: openId },
+        { options: { assignee: "alice" }, expectedId: openId },
+        { options: { sprint: "sprint-a" }, expectedId: openId },
+        { options: { release: "release-a" }, expectedId: openId },
+        { options: { tag: String.raw`customer\,success` }, expectedId: closedId },
+      ] satisfies Array<{ options: ListOptions; expectedId: string }>;
+      for (const { options, expectedId } of strictSubsetFilters) {
+        const strictList = await runList(
+          undefined,
+          { ...options, full: true },
+          { path: context.pmPath },
+        );
+        expect(strictList.items.map((item) => item.id)).toEqual([expectedId]);
+        const strictAggregate = await runAggregate(
+          { groupBy: "status", ...options },
+          { path: context.pmPath },
+        );
+        expect(strictAggregate.totals.items_considered).toBe(1);
+        const strictUpdate = await runUpdateMany(
+          {
+            list: options,
+            update: { priority: "2" },
+            dryRun: true,
+          },
+          { path: context.pmPath },
+        );
+        expect(strictUpdate.matched_count).toBe(1);
+      }
+
       const repeatedCliFilters = context.runCli(
         [
           "list",
+          "--status",
+          "open",
+          "--status",
+          "closed",
           "--type",
           "Task",
           "--type",
@@ -124,6 +159,18 @@ describe("universal query-filter scripting contract", () => {
           "0",
           "--priority",
           "4",
+          "--assignee",
+          "alice",
+          "--assignee",
+          "bob",
+          "--sprint",
+          "sprint-a",
+          "--sprint",
+          "sprint-b",
+          "--release",
+          "release-a",
+          "--release",
+          "release-b",
           "--brief",
           "--json",
         ],

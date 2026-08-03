@@ -51,16 +51,16 @@ export function parseMultiValueFilter(
     current += character;
   }
   decoded.push(current);
-  const normalized = decoded
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0)
-    .map((value) => options.normalize?.(value) ?? value);
-  if (normalized.length === 0) {
+  const values = decoded.map((value) => value.trim());
+  if (values.some((value) => value.length === 0)) {
     throw new PmCliError(
       `${options.label} requires at least one non-empty value`,
       EXIT_CODE.USAGE,
     );
   }
+  const normalized = values.map(
+    (value) => options.normalize?.(value) ?? value,
+  );
   return [...new Set(normalized)];
 }
 
