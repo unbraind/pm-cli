@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: analytics,"area:sdk",identity,observability,provenance,scale
 created_at: "2026-07-25T12:26:56.829Z"
-updated_at: "2026-08-01T20:25:33.216Z"
+updated_at: "2026-08-03T11:20:44.416Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "Analytics are pure derivations over immutable history with no new stored state and no telemetry dependency; Grouping is available by harness, by model, and by author_source, and every reported figure carries its sample count and window; A metric with an insufficient sample is reported as insufficient rather than as a number, so small workspaces get honest output; Output is bounded by the same token-budget contract as other read surfaces and degrades deterministically instead of dumping entries; The documentation states that these figures are observational, that detected identity is unverified, and that the figures must not be used as an authorization or allocation input; A workspace with no model provenance (pre-capture history) produces correct harness-level output and reports the model dimension as unavailable rather than empty"
@@ -79,4 +79,8 @@ dependencies[16]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+comments[3]{created_at,author,text}:
+  "2026-08-03T11:15:47.038Z","harness:codex","Attribution sequencing 2026-08-03: fleet analytics cannot be trusted until live-corpus coverage is enforced, resolver failure is distinguishable from unavailable, invalid boolean role values are rejected, non-Claude model and effort adapters work, and topic or role attribution is populated automatically. These are now explicit blockers rather than generic relationships."
+  "2026-08-03T11:19:53.252Z","harness:codex","Graph correction 2026-08-03: removed reciprocal blocked_by spellings for pm-lu6sca and pm-eq9dlw because those items already hold the canonical blocks edges to this item. The semantic prerequisite remains; storing both directions added no information and triggered duplicate-edge governance."
+  "2026-08-03T11:20:44.252Z","harness:codex","Cycle correction 2026-08-03: removed analytics-side blocked_by mirrors for pm-1wiugq, pm-c0lrdm, and pm-3zgh2c. Canonical direction remains pm-1wiugq blocks the delivery features, which implement this analytics outcome; pm-lu6sca and pm-eq9dlw retain their existing blocks edges. This preserves the prerequisite chain without a reciprocal active cycle."
 body: ""

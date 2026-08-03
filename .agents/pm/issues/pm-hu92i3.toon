@@ -6,8 +6,9 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli","area:contracts",evidence,history
 created_at: "2026-08-03T06:20:42.504Z"
-updated_at: "2026-08-03T06:23:56.841Z"
+updated_at: "2026-08-03T11:09:26.613Z"
 author: "harness:claude-code"
+estimated_minutes: 300
 acceptance_criteria: "A comma inside an annotation value round-trips byte-identically through --add and the JSON read, for files, docs, notes, learnings, comments, test and dep; Exactly one documented mechanism exists for embedding a separator in a value, and the other spellings either work identically or fail loudly; A backslash escape is either consumed as an escape or rejected, never stored literally; The chosen mechanism is named in the --help text of every command that accepts the key=value grammar; A regression test asserts the round-trip for all three spellings against a sandbox workspace"
 parent: pm-yql1
 risk: medium
@@ -28,4 +29,6 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,blocks,"2026-08-03T06:23:56.474Z","harness:claude-code","cli:update:dep",detected
   pm-ya7x55,related,"2026-08-03T06:23:56.474Z","harness:claude-code","cli:update:dep",detected
   pm-yql1,blocks,"2026-08-03T06:23:56.474Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-03T11:09:26.600Z","harness:codex","Estimate basis 2026-08-03: 300 minutes covers one shared annotation parser, migration-safe grammar choice, all seven annotation surfaces, help text, and byte-round-trip regression matrix."
 body: ""

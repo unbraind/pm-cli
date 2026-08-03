@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: agent-ux,"area:cli","area:contracts",simplification
 created_at: "2026-08-01T09:46:45.146Z"
-updated_at: "2026-08-01T09:58:11.134Z"
+updated_at: "2026-08-03T11:15:44.008Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Every command in the catalog resolves to a declared intent by construction with no fallback string; package-contributed commands declare intent through the contribution manifest; intent shape is constrained (imperative, names the noun and read/write direction, within a declared character budget, unique across commands); coverage and uniqueness are machine-checked in the noun-verb conformance pass so a command without an intent cannot merge"
@@ -34,6 +34,8 @@ dependencies[15]{id,kind,created_at,author,source_kind,author_source}:
   pm-wt43zj,related,"2026-08-01T09:46:45.146Z","harness:claude-code","cli:create:dep",detected
   pm-x4nn3z,related,"2026-08-01T09:46:45.146Z","harness:claude-code","cli:create:dep",detected
   pm-wt43zj,blocked_by,"2026-08-01T09:56:21.460Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-03T11:15:43.989Z","harness:codex","Live contract delta 2026-08-03: 31 of 76 canonical summary commands still emit the placeholder intent Inspect flags. The historical title records 32 at discovery time; current evidence shows one improvement but 40.8 percent of the canonical cold-start surface remains non-explanatory. Keep the item open until the machine check reaches zero and prevents recurrence."
 files[1]{path,scope,note}:
   src/sdk/cli-contracts/runtime-contracts.ts,project,"COMMAND_INTENTS map at :594 and the silent summarizeCommandIntent fallback at :2429"
 tests[1]{command,scope,timeout_seconds}:

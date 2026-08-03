@@ -4,14 +4,23 @@ description: "The new agent_identity.probes_enabled and identity_vocabulary sett
 type: Chore
 status: open
 priority: 2
-tags[3]: cli,context-management,sdk
+tags[7]: agent-ux,"area:config",cli,context-management,identity,provenance,sdk
 created_at: "2026-08-02T23:03:26.452Z"
-updated_at: "2026-08-02T23:03:26.452Z"
+updated_at: "2026-08-03T11:09:32.382Z"
 author: "harness:codex"
+estimated_minutes: 360
 acceptance_criteria: "pm config project get/list/export exposes probe policy and vocabulary revision/count without dumping unnecessary aliases; Typed CLI and SDK mutations add/remove exact aliases and monotonically update the vocabulary version through audited settings history; CLI, SDK, MCP, contracts, completions, docs, sparse settings compatibility, and temporary consumer tests remain in parity"
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+parent: pm-8jdc
+risk: medium
+confidence: high
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-3yxwv5,discovered_from,"2026-08-02T23:03:26.452Z","harness:codex","cli:create:dep",detected
   pm-mf4j,blocked_by,"2026-08-02T23:03:26.452Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-1wiugq,related,"2026-08-03T11:09:28.654Z","harness:codex","cli:update:dep",detected
+  pm-5oj5,related,"2026-08-03T11:09:28.654Z","harness:codex","cli:update:dep",detected
+  pm-8jdc,implements,"2026-08-03T11:09:28.654Z","harness:codex","cli:update:dep",detected
+  pm-usfg,implements,"2026-08-03T11:09:28.654Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
   "2026-08-02T23:03:26.452Z","harness:codex","Duplicate check 2026-08-02: keyword and semantic searches across all statuses found pm-3yxwv5 for the read-time vocabulary, pm-mf4j for generic positional config UX, pm-9byd for earlier scalar config exposure, and pm-v68d for narrow MCP config. None owns typed agent probe/vocabulary mutation; created as the operator-facing follow-up discovered while dogfooding the live 43,561-entry residual report."
+  "2026-08-03T11:09:28.654Z","harness:codex","Organization 2026-08-03: assigned to schema and universal configuration because this item owns operator-visible settings plus SDK mutation parity. Estimate 360 minutes covers typed CLI and SDK reads/writes, audited vocabulary revisioning, completions, MCP parity, sparse settings compatibility, docs, and isolated consumer tests. Risk is medium and confidence high because the underlying probe and vocabulary primitives already shipped."
 body: ""

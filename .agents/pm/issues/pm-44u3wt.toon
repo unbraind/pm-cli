@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: "area:release",ci,observability,reliability,scheduling
 created_at: "2026-07-27T04:05:01.742Z"
-updated_at: "2026-07-31T06:14:41.159Z"
+updated_at: "2026-08-03T11:17:38.929Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The observed scheduled start time is measured against the declared cron and the divergence is reported rather than assumed to be jitter; The release window is expressed as a policy the project can assert, so a run that starts outside it is a detectable condition rather than an invisible one; The same-day release guard keys off an instant whose definition is stated in the workflow and does not silently move with platform scheduling lag; The release-health verification procedure names the window it expects, so a missing release is distinguishable from a late one"
@@ -28,6 +28,7 @@ dependencies[5]{id,kind,created_at}:
   pm-u9d0,implements,"2026-07-27T04:05:01.742Z"
   pm-9gxi,related,"2026-07-27T04:21:28.511Z"
   pm-xp1xsw,implements,"2026-07-27T04:21:28.511Z"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-31T06:14:41.159Z","harness:claude-code","Still live, verified 2026-07-31. Declared cron is \"35 2 * * *\" (02:35 UTC). Today's scheduled run created 05:50:49Z — 3h15m late. Last eleven scheduled runs all fired between 05:24:10Z and 06:05:09Z, i.e. the drift is stable at roughly three hours rather than intermittent, so the effective release clock is 05:30-06:05 UTC and no document says so."
+  "2026-08-03T11:17:38.929Z","harness:codex","Current schedule evidence 2026-08-03: workflow declares cron 02:35 UTC; scheduled run 30788639874 started 05:57:42Z, a delay of about 3 hours 23 minutes, and succeeded. Functional release safety is intact, but the documented schedule-window and drift-SLO issue remains live."
 body: ""

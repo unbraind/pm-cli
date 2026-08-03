@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:ci","area:docs","area:release",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:13.323Z"
-updated_at: "2026-08-03T08:54:50.210Z"
+updated_at: "2026-08-03T11:15:50.760Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: Docs gates validate links and anchors; onboarding verified from a clean install; daily auto-release and nightly matrices stay green for 30 consecutive days without manual intervention.
@@ -16,13 +16,47 @@ value: Low-friction contribution and reliable releases
 parent: pm-doxj
 risk: low
 confidence: high
-dependencies[5]{id,kind,created_at}:
-  pm-pae3wo,related,"2026-07-24T23:54:44.691Z"
-  pm-rtn5h6,related,"2026-07-24T23:54:44.691Z"
-  pm-xp1xsw,related,"2026-07-24T23:54:44.691Z"
-  pm-zclzll,related,"2026-07-24T23:54:44.691Z"
-  pm-xp1xsw,implements,"2026-07-26T05:48:55.434Z"
-comments[13]{created_at,author,text}:
+dependencies[9]:
+  - id: pm-pae3wo
+    kind: related
+    created_at: "2026-07-24T23:54:44.691Z"
+  - id: pm-rtn5h6
+    kind: related
+    created_at: "2026-07-24T23:54:44.691Z"
+  - id: pm-xp1xsw
+    kind: related
+    created_at: "2026-07-24T23:54:44.691Z"
+  - id: pm-zclzll
+    kind: related
+    created_at: "2026-07-24T23:54:44.691Z"
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-07-26T05:48:55.434Z"
+  - id: pm-1qkivy
+    kind: blocked_by
+    created_at: "2026-08-03T11:15:50.561Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-44u3wt
+    kind: blocked_by
+    created_at: "2026-08-03T11:15:50.561Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-e70zh5
+    kind: blocked_by
+    created_at: "2026-08-03T11:15:50.561Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ygli86
+    kind: blocked_by
+    created_at: "2026-08-03T11:15:50.561Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[14]{created_at,author,text}:
   "2026-06-04T05:37:37.958Z",codex-gh-triage,"GitHub triage evidence 2026-06-04: gh pr list open -> none; gh issue list open -> none; default branch main public active, latest main CI run 26921051508 success for 21f2bab2; workflows active: Auto Release, CI, Docs, Nightly Validation, Release, Dependabot Updates. Security/dependency: dependabot open alerts [], secret-scanning open alerts [], security-advisories open [], vulnerability-alerts endpoint HTTP 204 enabled/no body; code-scanning alerts endpoint returned 404 no analysis found plus admin:repo_hook scope hint. Dependabot update workflow latest runs succeeded on 2026-06-02. Release state: latest GitHub release remains v2026.5.31; npm @unbrained/pm-cli latest 2026.5.31 while local package is 2026.6.2. Auto Release latest scheduled runs 2026-06-01/02/03 all failed; run 26870058549 fails intentionally because SENTRY_PERSONAL_ADMIN_TOKEN is empty before push/tag creation. pm-changelog: npm latest 2026.6.3; project managed extension active 2026.6.3; pm package doctor deep ok. Bootstrap for this comment: npm install -g ., pm --version 2026.6.2, node v25.9.0, pnpm 10.33.4, pnpm build passed. No code changes made by codex-gh-triage."
   "2026-06-04T05:46:45.337Z",codex-sdk-cli-impl,"Follow-up fix: Sentry gate reported one high handled CommandError, PM-CLI-19 (Validation failed: 1 structural error(s)). This matches the existing handled validation CommandError allowlist class, so the combined branch adds the exact one-error validation wording to scripts/release/sentry-telemetry-gate.mjs and covers it in tests/integration/release-automation-contract.spec.ts."
   "2026-06-06T02:28:43.943Z",codex-docs-release-bundle,"Execution kickoff: implementing combined docs/release bundle across pm-oh5h, pm-10ml, pm-5vsv, pm-ijd9, pm-mp6c, pm-0sqs, pm-e376, pm-pwdx, pm-g3xl, pm-75du, and pm-7j8t on one branch with linked evidence and full verification gates."
@@ -36,6 +70,7 @@ comments[13]{created_at,author,text}:
   "2026-08-03T07:07:21.910Z","harness:codex","Dependency evidence 2026-08-03: Dependabot PR #877 upgraded CodeQL Action 4.37.3 to 4.37.4 and CodSpeed 4.18.5 to 5.0.1. Refreshed exact-head checks passed CI, literal coverage, Windows, CodeQL, Semgrep, Trivy, TruffleHog, static, docs, compatibility, and smoke gates; all bot comments were reacted to and individually acknowledged before squash merge bbbc13b58. Live Dependabot, code-scanning, and secret-scanning alert inventories were empty."
   "2026-08-03T08:23:10.144Z","harness:codex","Release-gate evidence for the broad SDK/CLI tranche: docs/type/static/duplicate/package-boundary/token/context/retrieval/coverage/version/secret/npx/package-dogfood gates passed; full coverage is 6,758 tests at 100/100/100/100. The final local release registry correctly stops only at greptile-review because the code is not committed yet. One governance import-cost sample transiently exceeded its bound on the first run; the exact isolated check and subsequent registry run passed all 10 entrypoints."
   "2026-08-03T08:54:50.210Z","harness:codex","Fresh GitHub/release inventory 2026-08-03 for the broad SDK/CLI tranche: zero open PRs; every one of 26 open issues has a comment containing its canonical pm-item link; Dependabot, code-scanning, and secret-scanning each report zero open alerts; pnpm audit is clean. The only outdated dependencies are the two incompatible majors already owned by pm-ksr40d and pm-do5b. Auto Release run 30788639874 succeeded as a tracker-only no-op after detecting one tracker-only commit since v2026.8.3, emitted no new tag, and the repository still has exactly one 2026-08-03 release."
+  "2026-08-03T11:15:50.561Z","harness:codex","CI and release organization 2026-08-03: capability completion is explicitly blocked by scheduled reliability measurement, documented schedule behavior, exact published-artifact acceptance, and history-derived recurrence protection. Individual historical regressions remain linked through pm-1qkivy rather than duplicated as new generic CI chores."
 notes[2]:
   - created_at: "2026-07-25T06:22:46.687Z"
     author: "harness:claude-code"

@@ -1,0 +1,37 @@
+id: pm-3zgh2c
+title: "Automatic semantic session attribution: infer bounded topic and role from claimed work and harness context without per-call identity flags"
+description: "The shipped session-context contract can carry topic and role, but it depends on a caller declaring them once. Live history on 2026-08-03 contains 43,787 events with zero topic observations and only 37 role observations; fresh Codex mutations record model, effort, role, and topic as explicit null. Add an SDK-first inference layer that derives a stable, privacy-bounded topic from the claimed or focused pm lineage and derives a controlled role from the operation sequence and harness context. Precedence is explicit session declaration, trusted harness-native metadata, claimed or focused work, then explicit unavailable. The mutation record must preserve value, source, confidence, rule version, and the item or session evidence used, without retaining prompt text. Inference updates incrementally when focus or claims change and propagates through CLI, SDK, MCP, child processes, and packages."
+type: Feature
+status: open
+priority: 1
+tags[7]: agent-ux,"area:sdk",context-management,identity,observability,provenance,scale
+created_at: "2026-08-03T11:08:05.494Z"
+updated_at: "2026-08-03T11:15:49.033Z"
+author: "harness:codex"
+estimated_minutes: 720
+acceptance_criteria: "A fresh CLI, SDK, MCP, child-process, and package-host mutation made after claiming or focusing an item records a non-null topic derived from the canonical item lineage without any PM_AUTHOR, author, topic, or role flag; Role values come from a versioned controlled vocabulary such as implementer, reviewer, investigator, release operator, planner, or orchestrator and are inferred from claim state plus mutation sequence rather than copied from a boolean environment flag; Each inferred observation records source, confidence, inference-rule version, and stable evidence references; raw prompt text, arbitrary session contents, paths, and secrets are never retained; Explicit session declarations and trusted harness-native values take precedence over inference, conflicts are reported, and an explicit unavailable reason is recorded when evidence is insufficient; Inference is incremental and bounded by the active lineage or session delta, not a scan of the full corpus, with million-item and thousand-agent latency and memory budgets; CLI, SDK, MCP, extension, and child-process mutations share one SDK implementation and produce equivalent provenance; A corpus-facing coverage gate measures topic and role by harness and source, proves a negative control can fail, and ratchets non-null coverage without rewriting legacy history; Session topic and role improve adaptive-context and episode-trajectory relevance in a graded evaluation without increasing the declared observation token ceiling"
+goal: project management = context management
+objective: "Make topic and role useful, automatic, explainable, and queryable on every mutation without PM_AUTHOR or repeated agent input"
+value: Fleet history can be grouped by what agents were doing and in which capacity without relying on free-text author names
+impact: "Improves context ranking, multi-agent coordination, evaluation trajectories, and rework analytics while keeping identity capture private and token-free for agents"
+outcome: "Fresh mutations carry non-null, explainable topic and role whenever work context supplies sufficient evidence, otherwise an explicit bounded unavailable reason"
+why_now: "The container and propagation mechanism shipped, but current corpus topic coverage is exactly zero and role coverage is only 37 of 43,787 events; fresh Codex mutations have neither, so the desired automatic identity contract remains unfulfilled."
+parent: pm-5oj5
+risk: high
+confidence: medium
+dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1wiugq,verifies,"2026-08-03T11:08:05.494Z","harness:codex","cli:create:dep",detected
+  pm-4k6b,implements,"2026-08-03T11:08:05.494Z","harness:codex","cli:create:dep",detected
+  pm-eq9dlw,blocked_by,"2026-08-03T11:08:05.494Z","harness:codex","cli:create:dep",detected
+  pm-ffz0a9,related,"2026-08-03T11:08:05.494Z","harness:codex","cli:create:dep",detected
+  pm-gw6uyq,implements,"2026-08-03T11:08:05.494Z","harness:codex","cli:create:dep",detected
+  pm-lu6sca,blocked_by,"2026-08-03T11:08:05.494Z","harness:codex","cli:create:dep",detected
+  pm-qd6gvf,implements,"2026-08-03T11:08:05.494Z","harness:codex","cli:create:dep",detected
+  pm-rbg1qo,discovered_from,"2026-08-03T11:08:05.494Z","harness:codex","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-08-03T11:08:05.494Z","harness:codex","cli:create:dep",detected
+  pm-yds9dt,related,"2026-08-03T11:08:05.494Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-03T11:15:48.827Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-03T11:08:05.494Z","harness:codex","Duplicate check 2026-08-03: searched all statuses for session topic automatic infer provenance, infer session topic from work items, automatic session role detection, agent session semantic attribution, and semantic session topic role claimed work inference. Closed pm-rbg1qo owns declaration and propagation, open pm-eq9dlw owns the invalid boolean role signal, open pm-lu6sca owns resolver outcome semantics, and open pm-1wiugq owns corpus coverage instrumentation; none owns automatic semantic inference from claimed work."
+  "2026-08-03T11:11:51.123Z","harness:codex","Correction 2026-08-03: the first create-time census statement incorrectly said role coverage was zero. The exact post-mutation all-history projection is 43,787 events: model 0, effort 702, role 37, topic 0. Current description and why-now now carry the corrected values; immutable history preserves both the error and this correction."
+body: ""

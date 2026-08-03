@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: gates,identity,instrument-integrity,observability,provenance
 created_at: "2026-07-31T14:11:14.755Z"
-updated_at: "2026-07-31T14:28:51.005Z"
+updated_at: "2026-08-03T11:15:46.317Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "A pm surface reports provenance coverage over the real history corpus - a pm health check, a pm validate check, or an ops verb - so the inert condition becomes observable without writing code; The report distinguishes a dimension no harness declares from a dimension declared by some harness and never observed, using the descriptor coverage analyzer rather than only the model summarizer; A gate fails, or at minimum warns with a recorded threshold, when a declared dimension is inert across a bounded recent window, so a signal that stops working is caught rather than silently degrading; The gate is proved capable of failing by a negative control, following the pattern pm-b2hc4x established, so it cannot join the set of gates that are structurally unable to fail; The measurement is bounded and resumable over the history streams so it stays inside token and latency budgets at million-item scale"
@@ -15,7 +15,7 @@ risk: medium
 confidence: 96
 expected_result: The analyzer that detects inert identity signals runs against the corpus and reports that model coverage is zero and role has never been observed.
 actual_result: It runs only inside its own unit test against hand-built fixtures; the corpus condition it was written to detect has been true for every entry ever written and has never been reported.
-dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-0zcwz6,discovered_from,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
   pm-33cw,related,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
   pm-5oj5,implements,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
@@ -23,6 +23,10 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-b2hc4x,related,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
   pm-ffz0a9,related,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,verifies,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
+  pm-3zgh2c,blocks,"2026-08-03T11:15:46.153Z","harness:codex","cli:update:dep",detected
+  pm-c0lrdm,blocks,"2026-08-03T11:15:46.153Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-03T11:15:46.153Z","harness:codex","Live all-history census 2026-08-03 after tracker organization: 43,787 events; 9,577 carry a detected harness; non-null model 0, effort 702, role 37, topic 0. Fresh Codex claim and update events record harness and unique instance correctly but model, effort, role, and topic as explicit null. The coverage instrument therefore remains a real-corpus gate prerequisite for the cross-harness adapter pm-c0lrdm and semantic attribution pm-3zgh2c, not a fixture-only utility."
 learnings[1]{created_at,author,text}:
   "2026-07-31T14:28:51.005Z","harness:claude-code",An analyzer whose only caller is its own unit test is indistinguishable from an unimplemented feature at the level that matters. Grepping for a symbol outside its defining module and its spec is a two-second check that should accompany any claim that a governance capability exists.
 files[2]{path,scope,note}:

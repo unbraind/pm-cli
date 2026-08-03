@@ -6,8 +6,9 @@ status: open
 priority: 2
 tags[4]: "area:sdk",data-quality,identity,provenance
 created_at: "2026-08-03T06:21:42.773Z"
-updated_at: "2026-08-03T06:23:40.475Z"
+updated_at: "2026-08-03T11:09:27.912Z"
 author: "harness:claude-code"
+estimated_minutes: 240
 acceptance_criteria: "No provenance dimension is sourced from an environment key whose value domain is boolean or presence-only; Each descriptor key declares the dimension value domain it is expected to carry, and a value outside that domain is refused rather than recorded; The nested-session fact, if worth recording, is recorded in a dimension whose name says what it means rather than being smuggled into role; A corpus check reports zero provenance values that are bare booleans or single digits across all dimensions"
 parent: pm-5oj5
 risk: medium
@@ -26,4 +27,6 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-lu6sca,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
   pm-pj2isb,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
   pm-rbg1qo,discovered_from,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-03T11:09:27.894Z","harness:codex","Estimate basis 2026-08-03: 240 minutes covers value-domain declarations, invalid boolean rejection, a correctly named nested-session dimension, corpus check, and regression coverage."
 body: ""

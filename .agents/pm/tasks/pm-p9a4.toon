@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: baseline,graph,relationships,task,"wave:0"
 created_at: "2026-07-13T21:59:48.347Z"
-updated_at: "2026-07-26T05:54:50.792Z"
+updated_at: "2026-08-03T11:23:00.410Z"
 author: codex-root
 estimated_minutes: 300
 acceptance_criteria: "Record snapshot identity, commands, schema and package versions, counts by status and type, parent-depth distribution, edge kinds, components, isolates, ordering depth, dangling endpoints, and history integrity; Classify all roots and active dependency isolates as intentional, governed sparse, incomplete, ambiguous, archived, or remediation debt with reason and reviewer state; Detect item bodies and comments that name explicit prerequisites or delivery links missing from dependency metadata and record source excerpts or event pointers without auto-mutating; Map related_to and other legacy aliases plus parent or child duplication into candidate canonical kinds while preserving uncertainty; Produce cursorable machine-readable findings and a compact summary whose limits, omissions, and snapshot are explicit; Run exact, fuzzy, and parent-scope duplicate scans plus validate, health, and history-drift checks; baseline creation makes no terminal-item mutations"
@@ -19,11 +19,18 @@ why_now: "The current baseline has 185 hierarchy roots overall, 100 active depen
 parent: pm-a8zm
 risk: low
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-6x7o,blocked_by,"2026-07-13T21:59:48.347Z",null,null
-  pm-mp49,related,"2026-07-13T21:59:48.347Z",null,null
-  pm-v657,related,"2026-07-13T21:59:48.347Z",null,null
-  pm-a8zm,implements,"2026-07-26T05:54:50.564Z",null,null
-comments[1]{created_at,author,text}:
+dependencies[4]{id,kind,created_at}:
+  pm-6x7o,blocked_by,"2026-07-13T21:59:48.347Z"
+  pm-mp49,related,"2026-07-13T21:59:48.347Z"
+  pm-v657,related,"2026-07-13T21:59:48.347Z"
+  pm-a8zm,implements,"2026-07-26T05:54:50.564Z"
+comments[2]{created_at,author,text}:
   "2026-07-13T21:59:48.347Z",codex-root,"Duplicate check 2026-07-13: prior audits captured point-in-time state but no open execution task owns the typed graph baseline,isolate classification,waiver ledger,and body-to-edge drift required by pm-a8zm."
+  "2026-08-03T11:22:46.046Z","harness:codex","All-status baseline evidence 2026-08-03 after organization: 2,296 current items and 43,816 immutable events; statuses are 337 open, one in progress, 1,944 closed, and 14 canceled. All 338 active items have acceptance criteria, estimates, risk, confidence, and dependencies; pm-doxj is the sole unparented active item and is the intentional portfolio root. Storage integrity parsed all 2,296 items and 2,310 history streams with zero missing or unreadable streams, hash mismatches, chain mismatches, merge conflicts, repair reconciliations, or runtime-cache leakage. Graph profile is 2,299 nodes including three classified terminal-only missing endpoints, 10,761 deduplicated directed edges, one component, zero active isolates, zero active degree-one nodes, ten layers, and a nine-edge critical path. Graph audit is back at the pre-change baseline of eleven informational legacy findings only: one legacy duplicate class, one no-blocker sentinel class, eight terminal ordering-cycle classes, and one terminal missing-reference class. Active lifecycle has zero terminal parents, stale blockers, dependency cycles, or parent cycles. A 0.90 all-status duplicate scan returns fifteen known historical or false-positive clusters and none contains the three new items. Strict historical debt remains explicit: 295 terminal resolution backfills, broad legacy reviewer or sprint fields, 195 missing linked paths and 21 tracked orphan candidates owned by pm-e9zh and pm-j8z6; no placeholder normalization, pruning, or terminal mutation was applied. Command census: 76 canonical commands, 159 runtime paths, 2,096 flags, 31 placeholder intents, and 21 missing default token budgets. Provenance census: model 0, effort 702, role 37, topic 0. Verification passed three linked gates including 78 release-automation tests, build, and the 11-gate registry across 45 enforced pipelines; published 2026.8.3 passed npm, npx, bunx, MCP, bin, negative-control, and GitHub Release checks with exactly one daily release."
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/verify-published-release.spec.ts,project,900
+  pnpm build,project,300
+  "pnpm quality:gate-registry",project,600
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msd4yony-iy8v1p,test,passed,"2026-08-03T11:18:17.640Z","2026-08-03T11:18:32.541Z","2026-08-03T11:18:32.541Z",3,0,0
 body: "## Current reproducible anchors\n\nAt audit time: 1,786 total items; 200 active; 1,601 parent edges; 1,137 dependency entries; 665 items with dependencies; 109 active dependency components; 100 active dependency isolates; longest active order-bearing path two edges; parent depth max four; no active normalized-title duplicate cluster; no active lifecycle cycle or dangling dependency endpoint.\n\nThese are baselines, not target quotas. The task must rerun and timestamp every measure when claimed.\n\n## Deliverables\n\nA counts-first report, machine-readable finding stream, waiver registry, explicit uncertainty queue, and exact proposed relationship operations for Wave 1."

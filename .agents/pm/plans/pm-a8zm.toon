@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: all-status,audit,backfill,graph,plan,relationships,resumable
 created_at: "2026-07-13T21:59:23.505Z"
-updated_at: "2026-08-01T20:25:28.792Z"
+updated_at: "2026-08-03T11:29:07.574Z"
 author: codex-root
 estimated_minutes: 1800
 acceptance_criteria: "Every item is classified as correctly connected, intentional root, intentional archive or isolate, waived with rationale, or remediation debt with an exact next action; All legacy edge kinds and aliases are mapped to canonical semantics with source evidence; ambiguous relationships remain investigations rather than guessed rewrites; Execution is partitioned into bounded cursor-based waves with snapshots, checkpoints, deterministic ordering, idempotency, resume, rollback-by-new-event, and multi-agent claim boundaries; Active strategic lineages are enriched before terminal history; closed or canceled items change only in dedicated changelog-safe batches coordinated with pm-e9zh; Every mutation records author, timestamp, rationale, source evidence, confidence, previous meaning, and resulting validation evidence in immutable history; Post-wave audits show no new duplicates, dangling endpoints, false order cycles, history drift, or unexplained policy violations and publish graph-quality deltas; The process is benchmarked and token-bounded for one million items and safe under concurrent agents without full-memory or full-output requirements"
@@ -41,4 +41,197 @@ notes[2]:
     author: "harness:claude-code"
     text: "Graph measurement and enrichment pass on 2026-07-25, following the earlier measurement recorded in the preceding note. Method is unchanged and remains canonical: parse the .toon corpus directly (dependencies[N]{...} CSV blocks, not the CLI renderer, which is far too slow past two hundred items), build two undirected graphs - all-kinds and semantic-only, meaning every kind except parent and child - and breadth-first search each from the Milestone-type roots. Hierarchy-inclusive reachability always flatters; report semantic-only.\n\nBefore this pass: 3,832 workspace edges, 1,811 semantic edges, 36 active items at semantic degree one, semantic depth 6, zero unreachable, zero zero-degree. After: 3,989 workspace edges, 1,872 semantic edges, 28 active items at semantic degree one, semantic depth 6, zero unreachable, zero zero-degree. The 28 remaining degree-one items are exactly the deliberate Semgrep two-level hub topology (members to file representative to rule-class representative) and must never be given fabricated edges.\n\nThe substantive change this pass was edge-kind diversity rather than edge count. Two registered relationship kinds had never been used in this workspace: implements had zero edges and verifies had eight. They now carry ten and nineteen. The distinction encoded is worth preserving because graph queries depend on it: `implements` points from a delivery item to the story or accepted decision it realises, so traversing incoming implements edges on a story answers what work would satisfy it; `verifies` points from a gate, benchmark, or harness to the property it supplies evidence for, so traversing incoming verifies edges on an outcome milestone answers what would prove the gate is met. Every outcome milestone now has at least one incoming verifies edge, which makes the milestone ladder traversable in the evidence direction and not only in the ownership direction.\n\nThe other structural gain was the consolidation family. Thirteen children of the simplification epic held exactly one semantic edge each - blocked_by the alias shim - which made them indistinguishable from one another to any graph algorithm. Each now carries the defects and owners it actually absorbs (calendar relocation to the duration-parsing defect and the calendar service collision; ops grouping to the three diagnostics-surface defects; annotation facets to the linked-test ordering and stdin conventions, and so on). Those edges are class relationships that already existed in the ledger prose and are now machine-readable.\n\nStanding caution repeated from the first pass: isolate and degree counters measure attachment, not explanation. `pm graph audit` reported zero isolated and zero degree-leq-one active nodes both before and after this pass, while the semantic measurements above moved substantially. Strategic reachability, eccentricity, and shortest typed path to a milestone are the metrics that matter and they are owned by pm-bzmeaa."
     edited_at: "2026-07-25T06:32:42.325Z"
+plan_mode: approved
+plan_resume_context: "Current checkpoint 2026-08-03: 2,296 items, 43,816 immutable events, 10,761 deduplicated graph edges, one component, zero active isolates, zero active degree-one nodes, ten layers, and only eleven classified informational legacy findings. Every active item has AC, estimate, risk, confidence, and dependencies; the roadmap is the sole intentional parent root. Three unique future features were filed for automatic semantic session attribution, cross-harness provenance adapters, and history-derived CI recurrence. Terminal metadata and links remain evidence-batched under pm-e9zh, pm-j8z6, pm-hnc9w7, and pm-lnrk."
+plan_validation[1]{text,command,expected}:
+  All-status baseline must remain reproducible and append-only before any terminal enrichment batch.,pm validate --check-history-drift --check-storage-integrity --check-lifecycle --check-resolution --counts --json,"Zero history-chain, storage-integrity, lifecycle, active-blocker, and active-cycle errors; historical metadata debt remains explicitly classified rather than placeholder-normalized."
+plan_decisions[1]{ts,author,decision,rationale,evidence}:
+  "2026-08-03T11:10:30.966Z","harness:codex","Optimize relationship semantics, reachability, and explainability rather than raw edge density.","The graph is already one connected component with no active isolates. Adding weak related edges would inflate degree while degrading planning, impact, and critical-path meaning.","2026-08-03 graph audit: 10,704 deduplicated directed edges, zero active isolates, 67 redundant edges, ten layers, and only informational legacy findings."
+plan_discoveries[3]{ts,author,text}:
+  "2026-08-03T11:10:31.658Z","harness:codex","Automatic author harness and instance detection works for current Codex mutations, but model, effort, role, and topic are all explicitly null; corpus-wide topic and role observations remain zero."
+  "2026-08-03T11:11:51.782Z","harness:codex","Correction to the preceding provenance discovery: automatic harness and instance detection works for current Codex mutations, whose model, effort, role, and topic are all explicitly null. Across all 43,787 events, model is present on 0, effort on 702, role on 37, and topic on 0; role is sparse, not zero. Immutable history preserves the superseded statement and this correction."
+  "2026-08-03T11:29:07.574Z","harness:codex","Fresh hybrid reindex completed, but its checked-in 10-query relevance evaluation failed 6 queries at average nDCG@5 0.7014 while the separately wired 5-query k=10 retrieval CI gate passed at nDCG 0.8327. Canonical owner pm-p1g43q now records the split; future context/retrieval work must converge fixture topology, thresholds, k, and published metrics rather than treating either result as universal."
+plan_steps[8]:
+  - id: plan-step-001
+    order: 1
+    title: "Publish the live corpus, provenance, release, and graph baseline"
+    status: completed
+    created_at: "2026-08-03T11:10:27.139Z"
+    updated_at: "2026-08-03T11:22:47.262Z"
+    body: "Capture all statuses, types, priorities, metadata coverage, full history integrity, edge ontology, components, centrality, cycles, duplicate candidates, command contracts, provenance coverage, release state, and explicit omissions in bounded reproducible output."
+    evidence: "Published reproducible live metrics for all statuses, full history integrity, graph topology and findings, duplicate candidates, command contracts, provenance coverage, CI and release behavior, file debt, and explicit limitations on pm-p9a4."
+    completed_at: "2026-08-03T11:22:47.262Z"
+    linked_items[2]:
+      - id: pm-p9a4
+        kind: depends_on
+      - id: pm-p9a4
+        kind: verifies
+        note: Canonical baseline task and waiver ledger
+  - id: plan-step-002
+    order: 2
+    title: Complete active metadata and canonical ownership hygiene
+    status: completed
+    created_at: "2026-08-03T11:10:27.668Z"
+    updated_at: "2026-08-03T11:22:47.797Z"
+    body: "Resolve missing active estimates, parents, risks, confidence, and semantically justified typed edges. Preserve intentional roots and classify historical strict-metadata exceptions instead of manufacturing values."
+    evidence: "Filled every active estimate gap, assigned the sole accidental orphan pm-yds9dt to pm-8jdc with risk and confidence, preserved pm-doxj as the intentional root, created three deduplicated fully specified features, and returned active dependency and parent cycles to zero."
+    completed_at: "2026-08-03T11:22:47.797Z"
+    linked_items[3]:
+      - id: pm-p9a4
+        kind: depends_on
+      - id: pm-qnl2
+        kind: related
+        note: Active enrichment and evidence-backed terminal metadata owners
+      - id: pm-e9zh
+        kind: related
+        note: Active enrichment and evidence-backed terminal metadata owners
+  - id: plan-step-003
+    order: 3
+    title: Consolidate command grammar and cross-call token economics
+    status: pending
+    created_at: "2026-08-03T11:10:28.199Z"
+    updated_at: "2026-08-03T11:12:32.719Z"
+    body: "Collapse the agent-facing surface to noun-verb families with alias-preserved compatibility, complete intent and budget contracts, compose budgets across an orientation session, and retain shell-friendly JSON, TOON, NDJSON, jq, and grep workflows."
+    linked_items[6]:
+      - id: pm-pbyu
+        kind: depends_on
+      - id: pm-n7rr
+        kind: implements
+        note: Command simplification and token-efficiency programme
+      - id: pm-5t33or
+        kind: implements
+        note: Command simplification and token-efficiency programme
+      - id: pm-hid9g1
+        kind: implements
+        note: Command simplification and token-efficiency programme
+      - id: pm-999jh7
+        kind: implements
+        note: Command simplification and token-efficiency programme
+      - id: pm-7i97c3
+        kind: implements
+        note: Contracts-summary intent gap owner; corrected from mistyped identifier
+  - id: plan-step-004
+    order: 4
+    title: Complete SDK-first identity and semantic session provenance
+    status: pending
+    created_at: "2026-08-03T11:10:28.730Z"
+    updated_at: "2026-08-03T11:10:28.730Z"
+    body: "Move every remaining identity primitive into the SDK, expose policy through config, distinguish resolver outcomes, infer bounded topic and role, add non-Claude harness adapters, and gate real-corpus coverage across CLI, MCP, packages, npx, and bunx."
+    linked_items[7]:
+      - id: pm-lu6sca
+        kind: depends_on
+      - id: pm-eq9dlw
+        kind: depends_on
+      - id: pm-usfg
+        kind: implements
+        note: SDK-first automatic provenance chain
+      - id: pm-1wiugq
+        kind: implements
+        note: SDK-first automatic provenance chain
+      - id: pm-yds9dt
+        kind: implements
+        note: SDK-first automatic provenance chain
+      - id: pm-3zgh2c
+        kind: implements
+        note: SDK-first automatic provenance chain
+      - id: pm-c0lrdm
+        kind: implements
+        note: SDK-first automatic provenance chain
+  - id: plan-step-005
+    order: 5
+    title: Reconstruct terminal execution order and evolution from immutable evidence
+    status: pending
+    created_at: "2026-08-03T11:10:29.268Z"
+    updated_at: "2026-08-03T11:10:29.268Z"
+    body: "Recover prerequisite, verifies, supersedes, incident, release, and package edges from explicit historical evidence in deterministic cursorable batches; retain ambiguities as findings and coordinate any terminal mutation with changelog and resolution governance."
+    linked_items[6]:
+      - id: pm-p9a4
+        kind: depends_on
+      - id: pm-hnc9w7
+        kind: implements
+        note: Changelog-safe terminal lineage and ordering work
+      - id: pm-lnrk
+        kind: implements
+        note: Changelog-safe terminal lineage and ordering work
+      - id: pm-gxs55a
+        kind: implements
+        note: Changelog-safe terminal lineage and ordering work
+      - id: pm-wmf72c
+        kind: implements
+        note: Changelog-safe terminal lineage and ordering work
+      - id: pm-s5e04g
+        kind: implements
+        note: Changelog-safe terminal lineage and ordering work
+  - id: plan-step-006
+    order: 6
+    title: Prove federated million-item and thousand-agent behavior
+    status: pending
+    created_at: "2026-08-03T11:10:29.820Z"
+    updated_at: "2026-08-03T11:10:29.820Z"
+    body: "Benchmark bounded graph and context operations on realistic multi-decade histories, concurrent claims and merges, cross-workspace references, resumable indexes, failure injection, and deterministic replay. Publish latency, memory, token, conflict, and correctness budgets."
+    linked_items[6]:
+      - id: pm-m2il
+        kind: depends_on
+      - id: pm-9rxu
+        kind: verifies
+        note: "Scale, federation, and longevity evidence chain"
+      - id: pm-o87av6
+        kind: verifies
+        note: "Scale, federation, and longevity evidence chain"
+      - id: pm-odohgb
+        kind: verifies
+        note: "Scale, federation, and longevity evidence chain"
+      - id: pm-is1a
+        kind: verifies
+        note: "Scale, federation, and longevity evidence chain"
+      - id: pm-e5yupa
+        kind: verifies
+        note: "Scale, federation, and longevity evidence chain"
+  - id: plan-step-007
+    order: 7
+    title: Graduate outcome milestones through evidence-gated horizons
+    status: pending
+    created_at: "2026-08-03T11:10:30.374Z"
+    updated_at: "2026-08-03T11:10:30.374Z"
+    body: "Promote grammar, SDK completeness, provable history, proven scale, general availability, and universal-domain outcomes only when their measurable exit criteria pass; preserve the living roadmap as the sole portfolio root."
+    linked_items[7]:
+      - id: pm-m08hza
+        kind: depends_on
+      - id: pm-j82fd3
+        kind: verifies
+        note: Long-horizon outcome milestones
+      - id: pm-9rgaal
+        kind: verifies
+        note: Long-horizon outcome milestones
+      - id: pm-w7ccmv
+        kind: verifies
+        note: Long-horizon outcome milestones
+      - id: pm-o87av6
+        kind: verifies
+        note: Long-horizon outcome milestones
+      - id: pm-xp1xsw
+        kind: verifies
+        note: Long-horizon outcome milestones
+      - id: pm-t4d7nz
+        kind: verifies
+        note: Long-horizon outcome milestones
+  - id: plan-step-008
+    order: 8
+    title: Convert historical defect recurrence into shared CI policy
+    status: pending
+    created_at: "2026-08-03T11:15:51.427Z"
+    updated_at: "2026-08-03T11:15:51.427Z"
+    body: "Fold resolved incidents, relationships, linked tests, files, error codes, and waivers into deterministic defect families; select bounded local and hosted checks from the same SDK artifact and prove negative controls plus million-item incremental behavior."
+    linked_items[4]:
+      - id: pm-0pzgit
+        kind: depends_on
+      - id: pm-1qkivy
+        kind: implements
+        note: History-derived local and hosted CI recurrence programme
+      - id: pm-u9d0
+        kind: implements
+        note: History-derived local and hosted CI recurrence programme
+      - id: pm-usfg
+        kind: implements
+        note: History-derived local and hosted CI recurrence programme
 body: "## Wave strategy\n\n0. Freeze and publish a reproducible baseline; classify current roots, active dependency isolates, aliases, and body-to-edge mismatches.\n1. Enrich active strategic stories, features, decisions, and delivery chains with high-confidence explicit evidence.\n2. Normalize legacy edge aliases and repair semantic integrity after ADR acceptance.\n3. Backfill recent terminal lineages in changelog-safe batches, then move backward by history epoch.\n4. Reconstruct evidence, incident, release, package, and domain relationships from immutable events and linked resources.\n5. Verify million-item and federated behavior, sample quality manually, and retain a waiver and uncertainty ledger.\n\n## Safety\n\nNo generic-density target. No all-items full dump. No terminal touch outside a dedicated batch. No automatic edge whose source and confidence cannot be explained. A correction appends a superseding event rather than erasing proof."

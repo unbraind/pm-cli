@@ -6,7 +6,7 @@ status: open
 priority: 0
 tags[6]: backlog,context-management,living-map,pm-cli,post-v0.1,roadmap
 created_at: "2026-05-31T19:41:50.865Z"
-updated_at: "2026-08-03T06:28:46.156Z"
+updated_at: "2026-08-03T11:15:52.056Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: Living backlog reflects the entire ecosystem; every capability epic has defined acceptance and active children; periodic review passes keep zero orphan open items and zero untracked work streams.
@@ -87,7 +87,7 @@ dependencies[18]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[29]:
+comments[30]:
   - created_at: "2026-07-04T20:56:30.024Z"
     author: codex-agent
     text: "Audit evidence 2026-07-04 continuation: inspected all statuses with pm list --status all, pm stats, pm aggregate, pm validate --check-resolution --check-history-drift, pm health --check-only --summary, pm next, active duplicate-title scan, active parent-link scan, and live gh issue/pr list. Live totals: 1506 pm items, 1514 history streams, 24446 history entries. Status distribution: 37 open, 13 in_progress, 1444 closed, 12 canceled, 0 blocked. Type distribution: 1 Milestone, 81 Epics, 286 Features, 286 Issues, 524 Tasks, 224 Chores, 17 Plans, 50 Decisions, 36 Stories, 1 Reminder. Active structure: 50 active items, zero active non-epic orphans, zero duplicate-looking active titles, pm next ready=36 blocked=0. GitHub cross-check: one open issue GH-427, already tracked by in_progress pm-lt6n; zero open PRs. Existing broad audit lineages pm-y904 and pm-osea are closed with evidence and remain canonical, so no duplicate audit item was created. Residual governance: validate reports validate_resolution_missing_fields:268 on closed historical items, already represented by open pm-e9zh; active metadata filter only flags claimed epic pm-4ak1 for missing estimate/reviewer/sprint/release metadata, noted there without taking over the claim."
@@ -176,6 +176,9 @@ comments[29]:
   - created_at: "2026-08-01T20:29:11.482Z"
     author: "harness:codex"
     text: "Final count correction after duplicate consolidation: pm-4flipp is canceled with duplicate_of pm-449do9, not closed release work. Final distribution is 2,265 items and 43,141 history entries: 328 open, zero in progress, 1,923 closed, and 14 canceled. This supersedes the interim 1,924 closed and 13 canceled count in the preceding evidence comment; all other integrity and graph metrics are unchanged."
+  - created_at: "2026-08-03T11:15:52.056Z"
+    author: "harness:codex"
+    text: "Long-horizon portfolio map 2026-08-03: the living roadmap remains the sole intentional root. Evidence-gated outcomes progress through agent-legible grammar pm-j82fd3, SDK completeness pm-9rgaal, provable history pm-w7ccmv, proven scale pm-o87av6, v1.0 general availability pm-xp1xsw, and universal-domain platform pm-t4d7nz. Cross-cutting programmes are CLI simplification pm-n7rr, SDK-first architecture pm-usfg, adaptive context pm-4k6b, million-item scale pm-9rxu, multi-agent convergence pm-dj98, immutable storage pm-o2kc, relationship maturity pm-96h7, agent environments and RL or evals pm-klxax7, workspace federation pm-odohgb, multi-decade readability pm-e5yupa, release and CI pm-u9d0, and observability or provenance pm-5oj5. New gaps are individually owned by pm-c0lrdm, pm-3zgh2c, and pm-1qkivy; no untracked future theme is introduced in this note."
 notes[120]:
   - created_at: "2026-06-07T10:24:45.228Z"
     author: maintainer-agent

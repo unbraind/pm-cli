@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags[5]: "area:testing",ci,defect-escape,instrument-integrity,quality-gate
 created_at: "2026-08-03T06:31:40.504Z"
-updated_at: "2026-08-03T06:32:00.579Z"
+updated_at: "2026-08-03T11:09:24.697Z"
 author: "harness:claude-code"
+estimated_minutes: 480
 acceptance_criteria: "An inventory exists of every boundary value: paths, filenames, slugs, env keys, wire formats, and any string that must be byte-identical to a value produced by a system this repository does not control; Each inventory entry is either backed by a captured real sample committed as a fixture, or carries a recorded waiver stating why no sample can be captured; A test that constructs its expected value by calling the production transform is rejected by the gate for any inventoried boundary; The gate names the inventory entry and the missing sample when it fails, so the remediation is mechanical; The captured samples are redaction-safe: no operator path, host, or token is committed; The claude_session_file slug encoding is the first entry, with a committed sample directory name proving the underscore fold"
 value: "Closes the one escape route that neither 100 percent literal coverage nor a mutation-score ratchet can close, because both measure the suite against the code and this class is a defect in which the suite and the code agree with each other and disagree with the world."
 outcome: "Any encoder, path builder, or wire-format writer whose output must be understood by something outside this repository is proven against a captured artifact from that system, so agreement between a function and its own fixture can never be mistaken for agreement with reality."
@@ -27,4 +28,6 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-rtn5h6,implements,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
   pm-zclzll,related,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-03T11:09:24.678Z","harness:codex","Estimate basis 2026-08-03: 480 minutes covers boundary inventory, redacted real fixtures, negative gate controls, CI integration, and cross-platform verification; uncertainty is bounded because the first failing boundary and acceptance contract are already identified."
 body: ""
