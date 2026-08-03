@@ -184,12 +184,17 @@ describe("agent runtime SDK primitives", () => {
   it("extracts only bounded model and version fields from a harness session file", async () => {
     const home = await mkdtemp(path.join(os.tmpdir(), "pm-provenance-probe-"));
     tempRoots.push(home);
-    const cwd = "/tmp/provenance workspace";
+    const cwd = "/tmp/provenance workspace_with_symbols";
+    const resolvedWorkspace = path.resolve(cwd);
+    const claudeProjectDirectory =
+      process.platform === "win32"
+        ? `${path.parse(resolvedWorkspace).root[0]}--tmp-provenance-workspace-with-symbols`
+        : "-tmp-provenance-workspace-with-symbols";
     const sessionDirectory = path.join(
       home,
       ".claude",
       "projects",
-      cwd.replaceAll("/", "-"),
+      claudeProjectDirectory,
     );
     await mkdir(sessionDirectory, { recursive: true });
     await writeFile(

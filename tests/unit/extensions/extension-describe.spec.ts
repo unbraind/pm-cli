@@ -192,6 +192,46 @@ describe("buildExtensionDescribeResult", () => {
     // Equal names fall back to the layer comparator: "global" sorts before "project".
     expect(result.extensions.map((entry) => entry.layer)).toEqual(["global", "project"]);
   });
+
+  it("reports deterministic command ownership and the effective winner", async () => {
+    const { loadResult, activationResult } = await buildActivation([
+      {
+        name: "global-vcs",
+        layer: "global",
+        activate: (api) => api.registerCommand({ name: "vcs show", run: () => ({ owner: "global" }) }),
+      },
+      {
+        name: "project-vcs",
+        layer: "project",
+        activate: (api) => {
+          api.registerCommand({ name: "vcs show", run: () => ({ owner: "project" }) });
+          api.registerCommand("vcs show", (context) => context.result);
+        },
+      },
+    ]);
+
+    const result = buildExtensionDescribeResult(undefined, loadResult, activationResult);
+
+    expect(result.command_ownership).toEqual([
+      {
+        command: "vcs show",
+        surface: "handler",
+        policy: "last_activated_wins",
+        collision: true,
+        claimants: [
+          { name: "global-vcs", layer: "global", winner: false },
+          { name: "project-vcs", layer: "project", winner: true },
+        ],
+      },
+      {
+        command: "vcs show",
+        surface: "override",
+        policy: "last_activated_wins",
+        collision: false,
+        claimants: [{ name: "project-vcs", layer: "project", winner: true }],
+      },
+    ]);
+  });
 });
 
 describe("renderExtensionDescribeMarkdown", () => {

@@ -55,6 +55,30 @@ describe("read row contracts", () => {
     });
   });
 
+  it("declares annotation and diagnostic collections through the universal selector", () => {
+    for (const [command, result, rowKeys] of [
+      ["comments", { comments: [], count: 0 }, ["comments"]],
+      ["notes", { notes: [], count: 0 }, ["notes"]],
+      ["learnings", { learnings: [], count: 0 }, ["learnings"]],
+      ["files", { files: [], count: 0 }, ["files"]],
+      ["docs", { docs: [], count: 0 }, ["docs"]],
+      ["validate", { checks: [], warnings: [] }, ["checks", "warnings"]],
+      [
+        "contracts",
+        { command_summaries: [], commands: [] },
+        ["command_summaries", "commands"],
+      ],
+    ] as const) {
+      expect(resolveReadRowContract(command, result)).toEqual({
+        command,
+        row_kind: "collection",
+        row_keys: rowKeys,
+        fields: "unsupported",
+        jq_selector: PM_READ_ROW_JQ_SELECTOR,
+      });
+    }
+  });
+
   it("does not annotate package overrides that only share a command name", () => {
     expect(resolveReadRowContract("list", { result: [] })).toBeUndefined();
     expect(

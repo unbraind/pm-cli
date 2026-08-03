@@ -1825,6 +1825,27 @@ function normalizeCommandNameForContracts(
   return commandName.trim().toLowerCase();
 }
 
+/** Returns whether a normalized command path owns a concrete core flag-contract row. Surface-less commands such as `help` intentionally return false, while positional virtual paths such as `workspace snapshot create` return true. */
+export function hasSubcommandFlagContractsForCommand(
+  commandName: string | undefined,
+): boolean {
+  const normalized = normalizeCommandNameForContracts(commandName);
+  if (SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND.has(normalized)) {
+    return true;
+  }
+  const [rootCommand, lifecycleSubcommand, ...extraParts] =
+    normalized.split(/\s+/);
+  return (
+    (rootCommand === "extension" ||
+      rootCommand === "package" ||
+      rootCommand === "packages") &&
+    lifecycleSubcommand !== undefined &&
+    extraParts.length === 0 &&
+    (lifecycleSubcommand === "init" ||
+      EXTENSION_LIFECYCLE_FLAG_CONTRACTS_BY_SUBCOMMAND.has(lifecycleSubcommand))
+  );
+}
+
 /** Resolves the flag contracts an `extension`/`package <subcommand>` lifecycle invocation accepts. `init` carries the package-only `--declarative` flag, so `package`/`packages init` resolve to the package init table while `extension init` resolves to the extension init table; every other lifecycle subcommand shares one table, and an unknown subcommand falls back to globals-only. */
 function resolveExtensionLifecycleFlagContracts(
   rootCommand: string,

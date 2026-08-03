@@ -25,6 +25,8 @@ import type {
   ExtensionActivationResult,
   ExtensionLayer,
   ExtensionLoadResult,
+  RegisteredExtensionCommandHandler,
+  RegisteredExtensionCommandOverride,
 } from "../../core/extensions/loader.js";
 import { normalizeExtensionNameForMatch } from "./shared.js";
 
@@ -69,11 +71,84 @@ export interface ExtensionDescribeResult {
   extensions: ExtensionSurfaceDescription[];
   /** Value that configures or reports union for this contract. */
   union: ExtensionActivationSummary;
+  /** Deterministic ownership table for every registered command handler or override in scope. */
+  command_ownership: ExtensionCommandOwnership[];
+}
+
+/** One package claim on a command path, including whether runtime precedence selects it. */
+export interface ExtensionCommandClaimant {
+  /** Extension manifest name. */
+  name: string;
+  /** Extension discovery layer. */
+  layer: ExtensionLayer;
+  /** Whether this claimant is the effective owner under the declared policy. */
+  winner: boolean;
+}
+
+/** Inspectable ownership and collision state for one command registry surface. */
+export interface ExtensionCommandOwnership {
+  /** Full command path. */
+  command: string;
+  /** Registry surface that owns dispatch behavior. */
+  surface: "handler" | "override";
+  /** Stable runtime precedence policy. */
+  policy: "last_activated_wins";
+  /** Whether more than one extension claims this path on the same surface. */
+  collision: boolean;
+  /** Every claimant in activation order; exactly the final claimant is the winner. */
+  claimants: ExtensionCommandClaimant[];
 }
 
 /** Compose a collision-free identity key for an extension from its layer and normalized name. The two parts are joined with a colon; the layer prefix is always a colon-free enum value, so distinct (layer, name) pairs never collide even when a name itself contains a colon. */
 function layerNameKey(layer: ExtensionLayer, name: string): string {
   return `${layer}:${normalizeExtensionNameForMatch(name)}`;
+}
+
+function buildExtensionCommandOwnership(
+  activationResult: ExtensionActivationResult,
+  matchedNames: ReadonlySet<string> | null,
+): ExtensionCommandOwnership[] {
+  type RegisteredCommand =
+    | RegisteredExtensionCommandHandler
+    | RegisteredExtensionCommandOverride;
+  const rows: ExtensionCommandOwnership[] = [];
+  for (const [surface, entries] of [
+    ["handler", activationResult.commands.handlers],
+    ["override", activationResult.commands.overrides],
+  ] as const) {
+    const byCommand = new Map<string, RegisteredCommand[]>();
+    for (const entry of entries) {
+      const bucket = byCommand.get(entry.command) ?? [];
+      byCommand.set(entry.command, [...bucket, entry]);
+    }
+    for (const [command, claimants] of byCommand) {
+      if (
+        matchedNames !== null &&
+        !claimants.some((entry) =>
+          matchedNames.has(normalizeExtensionNameForMatch(entry.name)),
+        )
+      ) {
+        continue;
+      }
+      const winner = claimants.at(-1)!;
+      rows.push({
+        command,
+        surface,
+        policy: "last_activated_wins",
+        collision: claimants.length > 1,
+        claimants: claimants.map((entry) => ({
+          name: entry.name,
+          layer: entry.layer,
+          winner: entry === winner,
+        })),
+      });
+    }
+  }
+  return rows.sort(
+    (left, right) =>
+      left.command.localeCompare(right.command) ||
+      left.surface.localeCompare(right.surface),
+  );
 }
 
 /**
@@ -162,6 +237,10 @@ export function buildExtensionDescribeResult(
     total: extensions.length,
     extensions,
     union: describeExtensionActivation(activationResult, unionOptions),
+    command_ownership: buildExtensionCommandOwnership(
+      activationResult,
+      matchedNames,
+    ),
   };
 }
 
@@ -209,6 +288,20 @@ export function renderExtensionDescribeMarkdown(
     `Described: ${result.total} ${noun}${result.total === 1 ? "" : "s"}`,
     "",
   );
+
+  if ((result.command_ownership?.length ?? 0) > 0) {
+    lines.push("## Command ownership", "");
+    for (const ownership of result.command_ownership) {
+      const winner = ownership.claimants.find((claimant) => claimant.winner)!;
+      const claimantNames = ownership.claimants
+        .map((claimant) => `${claimant.layer}:${claimant.name}`)
+        .join(", ");
+      lines.push(
+        `- \`${ownership.command}\` (${ownership.surface}): ${winner.layer}:${winner.name}; policy=${ownership.policy}; collision=${String(ownership.collision)}; claimants=${claimantNames}`,
+      );
+    }
+    lines.push("");
+  }
 
   if (result.extensions.length === 0) {
     lines.push(`_No ${noun}s are loaded._`, "");

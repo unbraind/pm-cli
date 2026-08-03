@@ -448,7 +448,7 @@ function readClaudeSessionProvenance(
   const session = nonBlank(env.CLAUDE_CODE_SESSION_ID);
   if (!session || !/^[A-Za-z0-9_-]{1,128}$/u.test(session)) return undefined;
   const workspace = path.resolve(signals.cwd ?? process.cwd());
-  const encodedWorkspace = workspace.replaceAll("\\", "/").replaceAll("/", "-");
+  const encodedWorkspace = workspace.replaceAll(/[^A-Za-z0-9-]/gu, "-");
   const sessionPath = path.join(
     signals.home_dir ?? os.homedir(),
     ".claude",

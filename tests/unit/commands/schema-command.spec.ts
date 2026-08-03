@@ -2021,6 +2021,20 @@ describe("schema custom field commands (GH-vhbf)", () => {
     });
   });
 
+  it("warns when a field is shadowed by a canonical MCP input", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../../src/cli/commands/schema.js");
+      const collision = await schema.runSchemaAddField(
+        "allow_missing_parent",
+        { type: "boolean" },
+        { path: context.pmPath },
+      );
+      expect(collision.warnings).toContain(
+        "custom_field_mcp_input_collision:allow_missing_parent:allowMissingParent:mcp_tool_input:use=options.allowMissingParent",
+      );
+    });
+  });
+
   it("rejects an invalid add-field key and an empty show-field key", async () => {
     await withTempPmPath(async (context) => {
       const schema = await import("../../../src/cli/commands/schema.js");

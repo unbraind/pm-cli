@@ -2,11 +2,13 @@ id: pm-lw6acw
 title: "GH-844: local npm package archives are rejected as install sources"
 description: Accept bounded local npm package archives as first-class package install sources while preserving provenance and enforcing extraction safety before manifest and entrypoint validation.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T12:33:23.036Z"
-updated_at: "2026-07-31T12:33:23.036Z"
+updated_at: "2026-08-03T08:24:35.931Z"
+closed_at: "2026-08-03T08:24:35.131Z"
+completed_at: "2026-08-03T08:24:35.131Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Accept npm .tgz and .tar.gz package archives through the public SDK and pm package install; Bound extracted entry count and bytes and reject traversal, escaping links, unsupported roots, and ambiguous manifests; Preserve original archive provenance in managed package metadata; Cover npm and Bun offline temp-workspace installation on POSIX and Windows-safe paths"
@@ -16,13 +18,27 @@ confidence: high
 reporter: github
 severity: medium
 environment: pm-cli 2026.7.31; npm pack tarball; offline fresh workspace
+resolution: "Implemented bounded shell-free local npm archive extraction for .tgz and .tar.gz across local and npm: sources, preserving original provenance and validating the npm package root before installation."
 expected_result: "pm package install accepts safe local .tgz and .tar.gz npm package archives, validates a bounded extraction, preserves archive provenance, and behaves consistently through SDK and CLI surfaces."
-actual_result: The local source validator requires a directory and rejects a standard npm package archive with Local extension source must be a directory.
+actual_result: "Safe local npm archives install through SDK and CLI under Node and Bun; traversal, links, unsupported entry types, ambiguous metadata, and configured archive/entry/expanded limits fail before installation."
 component: SDK and CLI package source installation
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-59gj,discovered_from,"2026-07-31T12:33:23.036Z","harness:codex","cli:create:dep",detected
   pm-g072,related_to,"2026-07-31T12:33:23.036Z","harness:codex","cli:create:dep",detected
   pm-vnjh,related_to,"2026-07-31T12:33:23.036Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-31T12:33:23.036Z","harness:codex","Duplicate check evidence: searched all 2,230 live items across every status for GH-844, local npm tarballs, npm pack, tgz package sources, archive extraction, traversal, and symlink safety. Closed pm-59gj owns the package-first baseline, closed pm-g072 owns dependency-spec injection safety, and closed pm-vnjh owns ecosystem smoke infrastructure; none accepts package archives. The open namespace consolidation pm-tnud is the canonical parent. Source: https://github.com/unbraind/pm-cli/issues/844"
+  "2026-08-03T07:39:29.247Z","harness:codex","TDD evidence: real npm archives first failed through the public resolver, then passed safe install plus traversal/root/link/entry/expanded-byte bounds. The tar@7.5.22 API and ReadEntry types were verified from installed package declarations before implementation; no shell extraction is used for local archives."
+  "2026-08-03T08:06:47.248Z","harness:codex","Evidence: full coverage gate passes 6,758 tests across 422 files at exactly 100% statements, branches, functions, and lines. Local archive coverage includes local and npm: source routing, no npm-pack execution, metadata fallbacks, entry/expanded/archive limits, links, device/path escapes, and required npm package layout."
+  "2026-08-03T08:23:07.106Z","harness:codex","Manual acceptance: fresh isolated Node and Bun workspaces installed the real @unbrained/pm-command-kit npm tarball from its original local archive path, activated it, and invoked command-kit echo under Bun. A separately packed pm-cli consumer ran the public SDK plus npx --no-install pm and bunx --no-install pm at 2026.8.3."
+files[4]{path,scope,note}:
+  package.json,project,tar parser runtime dependency
+  pnpm-lock.yaml,project,locked tar dependency graph
+  src/sdk/extension/install-sources.ts,project,bounded shell-free local npm archive resolution
+  tests/unit/extensions/extension-install-security.spec.ts,project,safe and adversarial archive coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,archive source and containment contract
+close_reason: "Implemented and verified safe local npm archive package sources: full 100% coverage, isolated Node/Bun archive install and invocation, packed npx/bunx consumer proof, docs, provenance, and adversarial containment checks."
 body: ""

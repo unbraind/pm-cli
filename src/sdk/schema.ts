@@ -80,6 +80,7 @@ import {
   readSettings,
   resolveGovernanceKnobs,
 } from "../core/store/settings.js";
+import { resolvePmToolCustomFieldCollision } from "./cli-contracts/tool-schema.js";
 
 /** Public contract for schema subcommands, shared by SDK and presentation-layer consumers. */
 export const SCHEMA_SUBCOMMANDS = [
@@ -1654,6 +1655,12 @@ export async function runSchemaAddField(
   const fieldsPath = fieldsPathFor(pmRoot, schema);
 
   const warnings: string[] = [];
+  const mcpCollision = resolvePmToolCustomFieldCollision(normalized.key);
+  if (mcpCollision) {
+    warnings.push(
+      `custom_field_mcp_input_collision:${mcpCollision.field}:${mcpCollision.property}:${mcpCollision.owner}:use=${mcpCollision.nested_path}`,
+    );
+  }
   const author = resolveAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
 

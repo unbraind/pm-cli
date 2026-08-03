@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1405,
+    "covered_symbols": 1409,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1406
+    "required_symbols": 1410
   },
   "breaking_acknowledgements": [
     {
@@ -723,6 +723,15 @@
       ],
       "package_version": "2026.8.2",
       "reason": "Additive provenance projections, filters, version dimension, and optional probe controls intentionally expand public SDK contracts without removing existing behavior."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_READ_ROW_CONTRACTS",
+        "signature ./sdk:PROFILE_LINT_CODES",
+        "signature ./sdk/authoring:PROFILE_LINT_CODES"
+      ],
+      "package_version": "2026.8.3",
+      "reason": "Intentional additive universal row-contract and profile diagnostic vocabulary expansion for pm-sb0tns and pm-yfdav2"
     }
   ],
   "entrypoints": {
@@ -1658,6 +1667,12 @@
           "kind": "function",
           "name": "buildCorpusShapeItemPlan",
           "signature": "(shape: Readonly<CorpusShape>, index: number, itemCount: number, seed?: number) => CorpusShapeItemPlan | calls: (shape: Readonly<CorpusShape>, index: number, itemCount: number, seed?: number) => CorpusShapeItemPlan"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "buildExtensionDescribeResult",
+          "signature": "(target: string | undefined, loadResult: ExtensionLoadResult, activationResult: ExtensionActivationResult) => ExtensionDescribeResult | calls: (target: string | undefined, loadResult: ExtensionLoadResult, activationResult: ExtensionActivationResult) => ExtensionDescribeResult"
         },
         {
           "classification": "supported",
@@ -4200,8 +4215,20 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "ExtensionCommandClaimant",
+          "signature": "export interface ExtensionCommandClaimant { name: string; layer: ExtensionLayer; winner: boolean; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "ExtensionCommandOptions",
           "signature": "export interface ExtensionCommandOptions { install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ExtensionCommandOwnership",
+          "signature": "export interface ExtensionCommandOwnership { command: string; surface: \"handler\" | \"override\"; policy: \"last_activated_wins\"; collision: boolean; claimants: ExtensionCommandClaimant[]; }"
         },
         {
           "classification": "supported",
@@ -4250,6 +4277,18 @@
           "kind": "interface",
           "name": "ExtensionDeactivationResult",
           "signature": "export interface ExtensionDeactivationResult { deactivated: number; warnings: string[]; failed: ExtensionDeactivationFailure[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "ExtensionDescribeActivationStatus",
+          "signature": "export type ExtensionDescribeActivationStatus = \"ok\" | \"failed\" | \"not_loaded\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ExtensionDescribeResult",
+          "signature": "export interface ExtensionDescribeResult { target: string | null; total: number; extensions: ExtensionSurfaceDescription[]; union: ExtensionActivationSummary; command_ownership: ExtensionCommandOwnership[]; }"
         },
         {
           "classification": "supported",
@@ -4454,6 +4493,12 @@
           "kind": "interface",
           "name": "ExtensionServiceRegistry",
           "signature": "export interface ExtensionServiceRegistry { overrides: RegisteredExtensionServiceOverride[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ExtensionSurfaceDescription",
+          "signature": "export interface ExtensionSurfaceDescription { name: string; layer: ExtensionLayer; version: string; activation_status: ExtensionDescribeActivationStatus; surfaces: ExtensionActivationSummary; }"
         },
         {
           "classification": "supported",
@@ -5210,6 +5255,12 @@
           "kind": "function",
           "name": "hashEmptyDocument",
           "signature": "() => string | calls: () => string"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "hasSubcommandFlagContractsForCommand",
+          "signature": "(commandName: string | undefined) => boolean | calls: (commandName: string | undefined) => boolean"
         },
         {
           "classification": "advanced_export",
@@ -7723,7 +7774,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_READ_ROW_CONTRACTS",
-          "signature": "{ readonly context: { readonly row_keys: readonly [\"high_level\", \"low_level\"]; readonly fields: \"supported\"; }; readonly get: { readonly row_keys: readonly [\"children\"]; readonly fields: \"supported\"; }; readonly list: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly next: { readonly row_keys: readonly [\"recommended\", \"ready\", \"decision_needed\", \"blocked\", \"held_by_others\"]; readonly fields: \"unsupported\"; }; readonly search: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly activity: { readonly row_keys: readonly [\"compact_activity\", \"provenance_activity\", \"activity\"]; readonly fields: \"unsupported\"; }; readonly history: { readonly row_keys: readonly [\"compact_history\", \"provenance_history\", \"history\"]; readonly fields: \"unsupported\"; }; readonly deps: { readonly row_keys: readonly [\"graph.nodes\", \"graph.edges\", \"context.nodes\", \"context.edges\"]; readonly fields: \"unsupported\"; }; readonly health: { readonly row_keys: readonly [\"checks\"]; readonly fields: \"unsupported\"; }; readonly aggregate: { readonly row_keys: readonly [\"groups\"]; readonly fields: \"unsupported\"; }; readonly duplicates: { readonly row_keys: readonly [\"clusters\"]; readonly fields: \"unsupported\"; }; readonly stats: { readonly row_keys: readonly [\"by_type\", \"by_status\"]; readonly fields: \"unsupported\"; }; }"
+          "signature": "{ readonly context: { readonly row_keys: readonly [\"high_level\", \"low_level\"]; readonly fields: \"supported\"; }; readonly get: { readonly row_keys: readonly [\"children\"]; readonly fields: \"supported\"; }; readonly list: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly next: { readonly row_keys: readonly [\"recommended\", \"ready\", \"decision_needed\", \"blocked\", \"held_by_others\"]; readonly fields: \"unsupported\"; }; readonly search: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly activity: { readonly row_keys: readonly [\"compact_activity\", \"provenance_activity\", \"activity\"]; readonly fields: \"unsupported\"; }; readonly history: { readonly row_keys: readonly [\"compact_history\", \"provenance_history\", \"history\"]; readonly fields: \"unsupported\"; }; readonly deps: { readonly row_keys: readonly [\"graph.nodes\", \"graph.edges\", \"context.nodes\", \"context.edges\"]; readonly fields: \"unsupported\"; }; readonly health: { readonly row_keys: readonly [\"checks\"]; readonly fields: \"unsupported\"; }; readonly aggregate: { readonly row_keys: readonly [\"groups\"]; readonly fields: \"unsupported\"; }; readonly duplicates: { readonly row_keys: readonly [\"clusters\"]; readonly fields: \"unsupported\"; }; readonly stats: { readonly row_keys: readonly [\"by_type\", \"by_status\"]; readonly fields: \"unsupported\"; }; readonly comments: { readonly row_keys: readonly [\"comments\"]; readonly fields: \"unsupported\"; }; readonly notes: { readonly row_keys: readonly [\"notes\"]; readonly fields: \"unsupported\"; }; readonly learnings: { readonly row_keys: readonly [\"learnings\"]; readonly fields: \"unsupported\"; }; readonly files: { readonly row_keys: readonly [\"files\"]; readonly fields: \"unsupported\"; }; readonly docs: { readonly row_keys: readonly [\"docs\"]; readonly fields: \"unsupported\"; }; readonly validate: { readonly row_keys: readonly [\"checks\", \"warnings\"]; readonly fields: \"unsupported\"; }; readonly contracts: { readonly row_keys: readonly [\"command_summaries\", \"commands\"]; readonly fields: \"unsupported\"; }; }"
         },
         {
           "classification": "advanced_export",
@@ -7760,6 +7811,12 @@
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
           "signature": "\"4.4.0\""
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_TOOL_RESERVED_CUSTOM_FIELD_PROPERTIES",
+          "signature": "ReadonlySet<string>"
         },
         {
           "classification": "advanced_export",
@@ -8195,6 +8252,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmToolCustomFieldCollision",
+          "signature": "export interface PmToolCustomFieldCollision { field: string; property: string; owner: \"mcp_tool_input\"; nested_path: string; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateActionOptions",
           "signature": "export type PmUpdateActionOptions = Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">;"
@@ -8281,7 +8344,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "PROFILE_LINT_CODES",
-          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
+          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"field_mcp_input_collision\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
         },
         {
           "classification": "supported",
@@ -9640,6 +9703,12 @@
           "signature": "export interface RendererOverrideContext extends Partial<PortableWorkspaceContext> { format: OutputRendererFormat; command?: string; args?: string[]; options?: Record<string, unknown>; global?: GlobalOptions; pm_root?: string; result: unknown; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "renderExtensionDescribeMarkdown",
+          "signature": "(result: ExtensionDescribeResult, noun: string) => string | calls: (result: ExtensionDescribeResult, noun: string) => string"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "RenderExtensionHarnessMarkdownOptions",
@@ -10004,6 +10073,12 @@
           "kind": "function",
           "name": "resolvePmRoot",
           "signature": "(cwd: string, cliPath?: string) => string | calls: (cwd: string, cliPath?: string) => string"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmToolCustomFieldCollision",
+          "signature": "(field: string) => PmToolCustomFieldCollision | undefined | calls: (field: string) => PmToolCustomFieldCollision | undefined"
         },
         {
           "classification": "advanced_export",
@@ -14089,7 +14164,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "PROFILE_LINT_CODES",
-          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
+          "signature": "readonly [\"profile_name_empty\", \"profile_name_not_normalized\", \"profile_title_empty\", \"profile_summary_empty\", \"type_invalid\", \"type_duplicate\", \"status_invalid\", \"status_duplicate\", \"field_invalid\", \"field_duplicate\", \"field_mcp_input_collision\", \"workflow_type_empty\", \"workflow_type_unknown\", \"workflow_duplicate_type\", \"workflow_transition_malformed\", \"workflow_status_unknown\", \"config_key_unknown\", \"config_value_invalid\", \"config_duplicate\", \"template_type_unknown\", \"package_spec_empty\"]"
         },
         {
           "classification": "supported",
@@ -14981,6 +15056,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "hasSubcommandFlagContractsForCommand",
+          "signature": "(commandName: string | undefined) => boolean | calls: (commandName: string | undefined) => boolean"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "HEALTH_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -15305,6 +15386,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_TOOL_RESERVED_CUSTOM_FIELD_PROPERTIES",
+          "signature": "ReadonlySet<string>"
+        },
+        {
+          "classification": "contract_data",
           "kind": "interface",
           "name": "PmActionSchemaContract",
           "signature": "export interface PmActionSchemaContract { required?: string[]; optional?: string[]; anyOfRequired?: Array<string[]>; oneOfRequired?: Array<string[]>; dependentAnyOfRequired?: Array<{ property: string; anyOfRequired: Array<string[]>; }>; conditionalRequired?: Array<{ property: string; value: string; required: string[]; }>; mutuallyExclusive?: Array<string[]>; mutuallyExclusiveWhen?: Array<Array<{ property: string; schema: Record<string, unknown>; }>>; }"
@@ -15563,6 +15650,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmToolCustomFieldCollision",
+          "signature": "export interface PmToolCustomFieldCollision { field: string; property: string; owner: \"mcp_tool_input\"; nested_path: string; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateActionOptions",
           "signature": "export type PmUpdateActionOptions = Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">;"
@@ -15632,6 +15725,12 @@
           "kind": "function",
           "name": "resolvePmErrorCodeContract",
           "signature": "(code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract | calls: (code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmToolCustomFieldCollision",
+          "signature": "(field: string) => PmToolCustomFieldCollision | undefined | calls: (field: string) => PmToolCustomFieldCollision | undefined"
         },
         {
           "classification": "contract_data",
@@ -23588,6 +23687,7 @@
     "extension_update_health_partial_coverage",
     "field_duplicate",
     "field_invalid",
+    "field_mcp_input_collision",
     "github_source_entry_unbuilt",
     "history_author_acknowledge_selector_required",
     "history_drift_chain_mismatch",
@@ -23624,6 +23724,7 @@
     "likely_duplicate",
     "linked_test_value_not_quoted",
     "list_source_incomplete",
+    "local_package_archive_unsafe",
     "local_source_not_found_bare_name",
     "lock_conflict",
     "locks_stale_count",

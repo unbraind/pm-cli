@@ -1060,7 +1060,6 @@ function importEdgeKey(edge) {
 export const PRIVATE_SDK_IMPORT_ALLOWLIST = new Set([
   "src/sdk/cli-contracts/registration-helpers.ts",
   "src/sdk/cli-contracts/runtime-contracts.ts",
-  "src/sdk/extension/describe.ts",
   "src/sdk/extension/scaffold.ts",
   "src/sdk/extension/shared.ts",
   "src/sdk/lifecycle/lifecycle-transitions.ts",
