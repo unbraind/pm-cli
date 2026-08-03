@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",composability,docs
 created_at: "2026-07-06T21:25:26.225Z"
-updated_at: "2026-08-03T22:43:24.617Z"
+updated_at: "2026-08-03T23:02:15.181Z"
 closed_at: "2026-08-03T22:25:54.080Z"
 completed_at: "2026-08-03T22:25:54.080Z"
 author: maintainer-agent
@@ -21,10 +21,11 @@ actual_result: "docs/SCRIPTING.md is linked from both indexes; dedicated integra
 dependencies[2]{id,kind,created_at}:
   pm-m9xv,related,"2026-07-06T21:26:30.213Z"
   pm-m9xv,implements,"2026-07-25T06:28:01.007Z"
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-03T22:22:00.884Z","harness:codex","Implementation evidence: docs/SCRIPTING.md now defines exit codes 0-5, stdout/stderr separation, stable JSON envelopes/field names, all-status lifecycle semantics, uniform repeat/CSV OR filters, escaping, jq/xargs/NDJSON patterns, SDK imports, and bulk dry-run safety. Contract snapshots and public SDK surface are current. pnpm audit has zero advisories; tracked-secret scan and all GitHub Dependabot/code/secret alert inventories are zero; all 22 open GitHub issues have canonical PM .toon backlinks; pm-changelog latest/current is 2026.8.3. Full release gates pass locally through 100% coverage, npx, and dogfood; hosted analysis is deferred to the pushed exact SHA because the pre-PR main SHA has no DeepScan result."
   "2026-08-03T22:28:29.263Z","harness:codex","Publication evidence: PR #886 https://github.com/unbraind/pm-cli/pull/886 opened from feat/sdk-query-scripting-contracts at implementation commit dffef60e1. Hosted checks and review inventory will be recorded against the final exact head before merge."
   "2026-08-03T22:43:24.617Z","harness:codex","PR #886 review correction: scripting recipes now preserve upstream pm exit status with explicit capture or pipefail, and the xargs recipe uses a portable non-empty guard without GNU-only -r. Focused scripting/query tests, typecheck, ESLint, and docs-link gates pass."
+  "2026-08-03T23:02:15.181Z","harness:codex","Hosted review evidence for PR #886 at implementation head e824afc76897839f01089c6ae4dc8ee6418b6654: all deterministic checks passed; review fixes preserve pm failures through the jq recipe under pipefail and replace GNU-only xargs -r with a portable guarded loop. CodeRabbit's documentation findings were fixed, acknowledged inline, and resolved; Greptile quota availability is recorded on pm-e02lgu."
 files[3]{path,scope,note}:
   tests/integration/query-filter-contract.spec.ts,project,Machine-client contract acceptance gate
   tests/integration/scripting-contract.spec.ts,project,Exit-code and stdout-stderr process contract gate

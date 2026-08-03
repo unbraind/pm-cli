@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",context-management,data-quality,scale
 created_at: "2026-08-03T06:26:13.535Z"
-updated_at: "2026-08-03T22:43:23.390Z"
+updated_at: "2026-08-03T23:02:14.167Z"
 closed_at: "2026-08-03T22:25:51.073Z"
 completed_at: "2026-08-03T22:25:51.073Z"
 author: "harness:claude-code"
@@ -33,12 +33,13 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-plwm,related,"2026-08-03T06:26:36.268Z","harness:claude-code","cli:update:dep",detected
   pm-sb0tns,related,"2026-08-03T06:26:36.268Z","harness:claude-code","cli:update:dep",detected
   pm-zw9188,related,"2026-08-03T06:26:36.268Z","harness:claude-code","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-03T11:09:25.276Z","harness:codex","Estimate basis 2026-08-03: 300 minutes covers contract semantics, list/search parity, envelope count correction, lifecycle-scope disclosure, round-trip gate, and compatibility tests."
   "2026-08-03T20:29:05.493Z","harness:claude-code","Delta-read evidence for the undisclosed default lifecycle scope, measured 2026-08-03 on the live tracker.\n\nThe scope default is most wrong exactly where it matters most. Asking \"what changed while I was away\" over a six-hour window:\n\n- pm list --updated-after <T> --limit 500 returns count 0, total 0.\n- pm list --status all --updated-after <T> returns 9 items.\n- pm activity --from <T> reports 144 history entries touching those same 9 distinct items.\n\nThe nine items are all terminal (closed in that window). The default scope therefore suppresses the entire delta, and the receipt reports total 0 rather than disclosing that a lifecycle filter was applied. A returning agent reads count 0 as \"nothing happened\" when in fact 144 recorded mutations landed on 9 items, including every closure of the period.\n\nThis is the same undisclosed default this item already owns, observed on the one query where the omitted rows are guaranteed to be the informative ones: closures are the changes a returning caller most needs and the default scope is the one filter that removes all of them. Recorded as evidence, not as a second defect.\n"
   "2026-08-03T22:21:59.901Z","harness:codex","Implementation evidence: bare pm list now selects and reports status=all instead of silently excluding terminal items; search verbose receipts use the same all-status default while compact receipts remain omission-efficient unless a scope was explicit. Registration, list, search-rendering, CLI integration, scripting, and token-baseline artifacts are linked. Repo-wide coverage passed 6,799 tests at exactly 100% statements, branches, functions, and lines. The required truth receipt adds exactly 5 estimated tokens to the small-workspace envelope (621 to 626; composite 2,385 to 2,390), with all item rows and the other three scenarios byte-stable; positive and million-token negative-control gates pass."
   "2026-08-03T22:28:27.578Z","harness:codex","Publication evidence: PR #886 https://github.com/unbraind/pm-cli/pull/886 opened from feat/sdk-query-scripting-contracts at implementation commit dffef60e1. Hosted checks and review inventory will be recorded against the final exact head before merge."
   "2026-08-03T22:43:23.390Z","harness:codex","PR #886 review correction: linked the previously omitted cli.integration.spec.ts lifecycle regression through pm. Review also prompted portable scripting examples and stronger exact-head verification; status remains closed and released."
+  "2026-08-03T23:02:14.167Z","harness:codex","Hosted review evidence for PR #886 at implementation head e824afc76897839f01089c6ae4dc8ee6418b6654: all deterministic CI/security/platform/coverage checks passed; CodeRabbit's lifecycle-scope and empty-token findings were fixed and acknowledged inline; all review threads are resolved. Full local coverage remains 48,413/48,413 statements, 35,024/35,024 branches, 9,904/9,904 functions, and 46,932/46,932 lines across 6,800 tests. Greptile was requested twice but its authenticated gate reported free_reviews_limit_reached, tracked canonically by pm-e02lgu."
 files[5]{path,scope,note}:
   src/cli/register-list-query.ts,project,Truthful all-status list default
   src/sdk/query/list.ts,project,Effective status receipt

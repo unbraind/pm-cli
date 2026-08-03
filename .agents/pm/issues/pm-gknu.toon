@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",consistency,filters
 created_at: "2026-07-15T06:25:23.773Z"
-updated_at: "2026-08-03T22:43:24.074Z"
+updated_at: "2026-08-03T23:02:14.661Z"
 closed_at: "2026-08-03T22:25:52.899Z"
 completed_at: "2026-08-03T22:25:52.899Z"
 author: maintainer-agent
@@ -24,10 +24,11 @@ dependencies[5]{id,kind,created_at}:
   pm-srns,related,"2026-07-15T06:25:23.773Z"
   pm-mpbb,implements,"2026-07-26T05:57:10.064Z"
   pm-fs8q9x,implements,"2026-07-26T05:59:30.605Z"
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-03T22:22:00.388Z","harness:codex","Implementation evidence: added the public @unbrained/pm-cli/sdk/query multi-value parser with CSV OR composition, stable de-duplication, per-token typed validation, escaped literal commas and backslashes, and explicit-empty failure. list, search, aggregate, and update-many now share uniform type/tag/priority/assignee/sprint/release/status behavior; repeatable CLI flags are declared in runtime contracts. Packed npx smoke passed, 88-command package-first dogfood passed, and an unrelated Bun install/bunx/SDK consumer matched two open+closed Task/Issue rows through repeated CLI filters, SDK filters, and bulk dry-run."
   "2026-08-03T22:28:28.340Z","harness:codex","Publication evidence: PR #886 https://github.com/unbraind/pm-cli/pull/886 opened from feat/sdk-query-scripting-contracts at implementation commit dffef60e1. Hosted checks and review inventory will be recorded against the final exact head before merge."
   "2026-08-03T22:43:24.074Z","harness:codex","PR #886 review correction: empty CSV members now fail instead of being discarded; direct Commander list registration collects every repeatable selector; each selector is independently proven to exclude a fixture across list, aggregate, and update-many; missing integration/parser file links are now recorded through pm. Focused 54-test, typecheck, ESLint, and docs-link gates pass."
+  "2026-08-03T23:02:14.661Z","harness:codex","Hosted review evidence for PR #886 at implementation head e824afc76897839f01089c6ae4dc8ee6418b6654: all deterministic checks passed; review fixes now reject every empty CSV token and prove strict subsets plus repeated-option unions for status, type, tag, priority, assignee, sprint, and release across list, aggregate, and update-many. All CodeRabbit threads are acknowledged and resolved; Greptile quota availability is recorded on pm-e02lgu."
 files[11]{path,scope,note}:
   sdk/public-surface.json,project,Generated SDK API classification
   src/sdk/cli-contracts/flag-contracts.ts,project,Repeatable flag runtime contracts
