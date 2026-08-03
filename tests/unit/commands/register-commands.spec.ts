@@ -743,13 +743,23 @@ describe("list-query command actions", () => {
       blocked_fallback: [],
     } as never);
     vi.mocked(resolveContextOutputFormat).mockReturnValue("ndjson" as never);
-    await runCliRaw("context", "--format", "ndjson", "--no-tags");
+    await runCliRaw(
+      "context",
+      "--format",
+      "ndjson",
+      "--no-extension-health",
+      "--no-tags",
+    );
     expect(stdout).toHaveBeenLastCalledWith(
       '{"id":"pm-feature"}\n{"id":"pm-task"}\n',
     );
     expect(
       lastCallArg<Record<string, unknown>>(vi.mocked(runContext) as never, 0),
-    ).toMatchObject({ format: "ndjson", noTags: true });
+    ).toMatchObject({
+      format: "ndjson",
+      noExtensionHealth: true,
+      noTags: true,
+    });
     stdout.mockRestore();
   });
 

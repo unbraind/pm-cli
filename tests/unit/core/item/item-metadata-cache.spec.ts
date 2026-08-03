@@ -680,8 +680,7 @@ describe("item metadata cache", () => {
       const retainedContexts = runtimeEntries.filter((entry) =>
         /^metadata-cache\.[a-f0-9]{16}\.json$/.test(entry),
       );
-      expect(retainedContexts.length).toBeGreaterThan(1);
-      expect(retainedContexts.length).toBeLessThanOrEqual(4);
+      expect(retainedContexts).toHaveLength(4);
     });
   });
 
@@ -728,6 +727,89 @@ describe("item metadata cache", () => {
         expect(candidates[0]?.metadata.id).toBe("pm-context-enumeration");
       } finally {
         readdirSpy.mockRestore();
+      }
+    });
+  });
+
+  it("keeps cache publication best-effort when one retained-context stat fails", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      await fs.writeFile(
+        path.join(tasksDir, "pm-context-stat.toon"),
+        serializeItemDocument(
+          {
+            metadata: makeTaskMetadata({ id: "pm-context-stat" }),
+            body: "cache stat fallback",
+          },
+          { format: "toon" },
+        ),
+        "utf8",
+      );
+      const options = { derivedIndexMinimumItems: 1 };
+      for (let index = 0; index < 4; index += 1) {
+        const registrations = createEmptyExtensionRegistrationRegistry();
+        registrations.item_fields.push({
+          layer: "project",
+          name: `stat-field-${index}`,
+          fields: [
+            {
+              name: `stat_custom_field_${index}`,
+              type: "string",
+              commands: ["create"],
+            },
+          ],
+        });
+        setActiveExtensionRegistrations(registrations);
+        await listAllDocumentCandidatesCached(
+          pmRoot,
+          "toon",
+          { Task: "tasks" },
+          [],
+          undefined,
+          options,
+        );
+      }
+      const runtimeDir = path.join(pmRoot, "runtime");
+      const retainedVariant = (await fs.readdir(runtimeDir)).find((entry) =>
+        /^metadata-cache\.[a-f0-9]{16}\.json$/.test(entry),
+      );
+      expect(retainedVariant).toBeDefined();
+      const unavailablePath = path.join(runtimeDir, retainedVariant ?? "");
+      const realStat = fs.stat;
+      const statSpy = vi.spyOn(fs, "stat").mockImplementation(
+        (async (...args: Parameters<typeof fs.stat>) => {
+          if (String(args[0]) === unavailablePath) {
+            throw new Error("retained cache disappeared");
+          }
+          return realStat(...args);
+        }) as typeof fs.stat,
+      );
+      try {
+        const registrations = createEmptyExtensionRegistrationRegistry();
+        registrations.item_fields.push({
+          layer: "project",
+          name: "stat-field-final",
+          fields: [
+            {
+              name: "stat_custom_field_final",
+              type: "string",
+              commands: ["create"],
+            },
+          ],
+        });
+        setActiveExtensionRegistrations(registrations);
+        const candidates = await listAllDocumentCandidatesCached(
+          pmRoot,
+          "toon",
+          { Task: "tasks" },
+          [],
+          undefined,
+          options,
+        );
+        expect(candidates[0]?.metadata.id).toBe("pm-context-stat");
+      } finally {
+        statSpy.mockRestore();
       }
     });
   });

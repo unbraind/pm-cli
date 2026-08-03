@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { writeTestExtension } from "../helpers/extensions.js";
@@ -26,13 +27,14 @@ describe("extension command activation recovery", () => {
         entrySource:
           'import "missing-extension-runtime-dependency";\nexport default { activate() {} };\n',
       });
+      const cliPath = path.resolve(process.cwd(), "dist", "cli.js");
+      expect(
+        existsSync(cliPath),
+        "run `pnpm build` before this integration test",
+      ).toBe(true);
       const completed = spawnSync(
         process.execPath,
-        [
-          path.resolve(process.cwd(), "dist", "cli.js"),
-          "broken",
-          "ping",
-        ],
+        [cliPath, "broken", "ping"],
         {
           cwd: process.cwd(),
           env: context.env,
@@ -55,12 +57,7 @@ describe("extension command activation recovery", () => {
 
       const structured = spawnSync(
         process.execPath,
-        [
-          path.resolve(process.cwd(), "dist", "cli.js"),
-          "broken",
-          "ping",
-          "--json",
-        ],
+        [cliPath, "broken", "ping", "--json"],
         {
           cwd: process.cwd(),
           env: context.env,

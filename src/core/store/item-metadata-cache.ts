@@ -563,17 +563,30 @@ async function persistCache(
   } catch {
     envelopeMemo.delete(cachePath);
   }
+  const pmRoot = path.dirname(path.dirname(cachePath));
   if (
-    cachePath === getCachePath(path.dirname(path.dirname(cachePath))) ||
-    cachePath === getBodyCachePath(path.dirname(path.dirname(cachePath))) ||
-    cachePath === getCollectionsCachePath(path.dirname(path.dirname(cachePath)))
+    cachePath === getCachePath(pmRoot) ||
+    cachePath === getBodyCachePath(pmRoot) ||
+    cachePath === getCollectionsCachePath(pmRoot)
   ) {
     const contextPath = getContextCachePath(
       cachePath,
       envelope.context_fingerprint,
     );
     await writeFileAtomic(contextPath, JSON.stringify(envelope));
-    envelopeMemo.delete(contextPath);
+    try {
+      const contextStat = await fs.stat(contextPath);
+      memoizeEnvelope(contextPath, {
+        signature: {
+          mtime_ms: contextStat.mtimeMs,
+          ctime_ms: contextStat.ctimeMs,
+          size: contextStat.size,
+        },
+        envelope,
+      });
+    } catch {
+      envelopeMemo.delete(contextPath);
+    }
     const directory = path.dirname(cachePath);
     const extension = path.extname(cachePath);
     const stem = path.basename(cachePath, extension);
@@ -583,20 +596,31 @@ async function persistCache(
       .filter(
         (entry) =>
           entry.isFile() &&
+          entry.name !== path.basename(cachePath) &&
           entry.name.startsWith(`${stem}.`) &&
           entry.name.endsWith(extension),
       )
       .map((entry) => path.join(directory, entry.name));
     if (variants.length > MAX_CACHE_CONTEXTS) {
-      const byAge = await Promise.all(
-        variants.map(async (variantPath) => ({
-          path: variantPath,
-          mtime: (await fs.stat(variantPath)).mtimeMs,
-        })),
+      const byAge = (
+        await Promise.all(
+          variants.map(async (variantPath) => {
+            try {
+              return {
+                path: variantPath,
+                mtime: (await fs.stat(variantPath)).mtimeMs,
+              };
+            } catch {
+              return null;
+            }
+          }),
+        )
+      ).filter(
+        (entry): entry is { path: string; mtime: number } => entry !== null,
       );
       for (const stale of byAge
         .sort((left, right) => left.mtime - right.mtime)
-        .slice(0, variants.length - MAX_CACHE_CONTEXTS)) {
+        .slice(0, Math.max(0, byAge.length - MAX_CACHE_CONTEXTS))) {
         await fs.rm(stale.path, { force: true });
         envelopeMemo.delete(stale.path);
       }

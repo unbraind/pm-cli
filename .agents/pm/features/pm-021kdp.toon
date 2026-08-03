@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[8]: activation,agent-ux,architecture,"area:extensions","area:sdk",extensibility,perf,startup
 created_at: "2026-07-28T10:28:05.792Z"
-updated_at: "2026-08-03T18:41:43.115Z"
+updated_at: "2026-08-03T19:16:50.613Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
 author: "harness:claude-code"
@@ -30,19 +30,20 @@ notes[1]{created_at,author,text}:
   "2026-08-03T18:40:11.200Z","harness:codex","Design decision: manifest contributions are an optional ahead-of-time declaration while the managed install snapshot is mechanically derived from the real activation summary. Runtime discovery prefers precise inventory but retains conservative legacy fallback for packages not yet reinstalled."
 learnings[1]{created_at,author,text}:
   "2026-08-03T18:40:11.626Z","harness:codex",A contribution registry only removes startup imports when it is available before module evaluation. Persisting the activation result converts runtime knowledge into durable static context while install-time verification prevents hand-authored manifests from becoming trusted executable truth.
-files[12]{path,scope,note}:
+files[13]{path,scope,note}:
+  docs/schemas/extension-manifest.schema.json,project,Manifest contribution schema
+  sdk/public-surface.json,project,Public contribution inventory SDK snapshot
   src/core/extensions/contribution-inventory.ts,project,Static manifest inventory normalization
   src/core/extensions/extension-candidate.ts,project,Side-effect-free extension candidate discovery
   src/core/extensions/extension-types.ts,project,Typed contribution inventory contract
   src/core/extensions/loader.ts,project,Static discovery and persisted inventory merge
+  src/sdk/authoring.ts,project,Public authoring exports
   src/sdk/extension.ts,project,Install-time inventory derivation
   src/sdk/extension/managed-state.ts,project,Managed contribution persistence
   src/sdk/extension/runtime-summary.ts,project,Runtime activation summary projection
-  src/sdk/authoring.ts,project,Public authoring exports
-  docs/schemas/extension-manifest.schema.json,project,Manifest contribution schema
+  tests/integration/extension-startup.integration.spec.ts,project,No-import startup acceptance
   tests/unit/extensions/contribution-inventory.spec.ts,project,Inventory normalization coverage
   tests/unit/extensions/extension-loader.spec.ts,project,Static loader coverage
-  tests/integration/extension-startup.integration.spec.ts,project,No-import startup acceptance
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/contribution-inventory.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/integration/extension-startup.integration.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:

@@ -1333,6 +1333,9 @@ describe("registration helpers", () => {
     expect(normalizeContextOptions({}).parent).toBeUndefined();
     expect(normalizeContextOptions({ tokenBudget: 800 }).tokenBudget).toBe(800);
     expect(
+      normalizeContextOptions({ extensionHealth: false }).noExtensionHealth,
+    ).toBe(true);
+    expect(
       normalizeContextOptions({ tokenBudget: Number.NaN }).tokenBudget,
     ).toBeUndefined();
     expect(
