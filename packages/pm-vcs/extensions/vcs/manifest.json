@@ -1,5 +1,5 @@
 {
-  "name": "builtin-vcs-exemplar",
+  "name": "builtin-vcs-sdk-exemplar",
   "version": "0.1.0",
   "entry": "./index.ts",
   "priority": 0,

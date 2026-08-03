@@ -2798,6 +2798,7 @@ export function buildStarterExtensionScaffoldFiles(
       ...buildScaffoldActivationReadmeSection(capability, "package"),
       "",
       "## Compatibility Bounds",
+      `- \`peerDependencies["@unbrained/pm-cli"]\` uses the stable range \`>=${SCAFFOLD_PM_MIN_VERSION}\`. Keep a normal stable range instead of pinning a date ordinal: SemVer excludes prerelease ordinals such as \`2026.7.24-3\`, while daily stable releases continue to satisfy the range.`,
       "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
       `- \`manifest_version\` (integer): manifest schema generation. Leave at \`${SCAFFOLD_MANIFEST_VERSION}\` unless you adopt a newer manifest schema.`,
       `- \`pm_min_version\` (string): lowest pm CLI version that may load this package. Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\`. The loader blocks the package on older CLIs.`,

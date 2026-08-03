@@ -161,10 +161,10 @@ function buildExtensionCommandOwnership(
  * provided only the case-insensitively matching extensions are described and the
  * `union` is scoped to that resolved name set; otherwise every loaded extension contributes.
  * A target may name either the extension itself or its source npm package
- * (`source_package`), so agents can reuse the `package_name` values surfaced by
- * `pm extension list` / install discovery without a second lookup. An unmatched
- * `target` yields an empty `extensions` array -- the caller decides whether that
- * is a not-found error.
+ * (`source_package`) or any persisted install-source identity (`source_aliases`),
+ * so agents can reuse the exact catalog, local, GitHub, or npm spelling passed
+ * to install without a second lookup. An unmatched `target` yields an empty
+ * `extensions` array -- the caller decides whether that is a not-found error.
  */
 export function buildExtensionDescribeResult(
   target: string | undefined,
@@ -218,7 +218,11 @@ export function buildExtensionDescribeResult(
                   normalizedTarget ||
                 (typeof entry.source_package === "string" &&
                   normalizeExtensionNameForMatch(entry.source_package) ===
-                    normalizedTarget),
+                    normalizedTarget) ||
+                (entry.source_aliases ?? []).some(
+                  (alias) =>
+                    normalizeExtensionNameForMatch(alias) === normalizedTarget,
+                ),
             )
             .map((entry) => normalizeExtensionNameForMatch(entry.name))
             .concat(normalizedTarget),

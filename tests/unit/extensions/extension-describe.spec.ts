@@ -376,7 +376,27 @@ describe("extension describe action", () => {
       });
       await writeFile(
         path.join(context.pmPath, "extensions", ".managed-extensions.json"),
-        `${JSON.stringify({ entries: [{ name: "profile-ext", source: { package: "@example/pm-profile" } }] }, null, 2)}\n`,
+        `${JSON.stringify({
+          version: 1,
+          updated_at: "2026-08-03T00:00:00.000Z",
+          entries: [{
+            name: "profile-ext",
+            directory: "profile-ext",
+            scope: "project",
+            manifest_version: "0.1.0",
+            manifest_entry: "./index.js",
+            capabilities: [],
+            installed_at: "2026-08-03T00:00:00.000Z",
+            updated_at: "2026-08-03T00:00:00.000Z",
+            source: {
+              kind: "npm",
+              input: "@example/pm-profile",
+              location: "@example/pm-profile",
+              package: "@example/pm-profile",
+              version: "1.0.0",
+            },
+          }],
+        }, null, 2)}\n`,
         "utf8",
       );
       await expect(
@@ -385,6 +405,55 @@ describe("extension describe action", () => {
         exitCode: EXIT_CODE.NOT_FOUND,
         message: /Loaded package names: @example\/pm-profile/,
       });
+    });
+  });
+
+  it("describes a package by its persisted install alias", async () => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions", "profile-ext"),
+        name: "profile-ext",
+        entrySource:
+          "export default { activate(api) { api.registerCommand({ name: 'profile inspect', run: () => ({ ok: true }) }); } };\n",
+      });
+      await writeFile(
+        path.join(context.pmPath, "extensions", ".managed-extensions.json"),
+        `${JSON.stringify({
+          version: 1,
+          updated_at: "2026-08-03T00:00:00.000Z",
+          entries: [{
+            name: "profile-ext",
+            directory: "profile-ext",
+            scope: "project",
+            manifest_version: "0.1.0",
+            manifest_entry: "./index.js",
+            capabilities: ["commands"],
+            installed_at: "2026-08-03T00:00:00.000Z",
+            updated_at: "2026-08-03T00:00:00.000Z",
+            source: {
+              kind: "local",
+              input: "profile-starter",
+              location: "/tmp/profile-starter",
+              package: "@example/pm-profile",
+            },
+          }],
+        }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const result = await runExtension(
+        "profile-starter",
+        { describe: true, project: true, vocabulary: "package" },
+        { path: context.pmPath },
+      );
+      const details = result.details as {
+        target: string;
+        total: number;
+        extensions: Array<{ name: string }>;
+      };
+      expect(details.target).toBe("profile-starter");
+      expect(details.total).toBe(1);
+      expect(details.extensions.map((entry) => entry.name)).toEqual(["profile-ext"]);
     });
   });
 });

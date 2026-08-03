@@ -3167,6 +3167,10 @@ is not interpreted as a missing input.
   native rendering.
 - Declare only capabilities in use.
 - Set `pm_min_version` when the package requires SDK or runtime behavior added after older pm releases.
+- Declare `@unbrained/pm-cli` as an ordinary stable peer range (the scaffold uses
+  `>=<pm_min_version>`). Do not pin or target historical `YYYY.M.D-N` ordinals:
+  SemVer treats those as prereleases, so normal first-party stable ranges
+  deliberately exclude them while accepting later daily `YYYY.M.D` releases.
 - Include examples and failure hints in dynamic commands.
 - Add `pm package doctor` diagnostics to testing instructions.
 

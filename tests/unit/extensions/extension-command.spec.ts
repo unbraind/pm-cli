@@ -3698,10 +3698,10 @@ describe("extension command runtime", () => {
             },
           },
           {
-            alias: "vcs",
+            alias: "vcs-exemplar",
             available: true,
             installed: false,
-            package_name: "@unbrained/pm-vcs",
+            package_name: "@unbrained/pm-vcs-sdk-exemplar",
             catalog: {
               display_name: "VCS SDK Exemplar",
               category: "sdk",
@@ -4040,8 +4040,8 @@ describe("extension command runtime", () => {
             activated: true,
           },
           {
-            alias: "vcs",
-            extension: { name: "builtin-vcs-exemplar" },
+            alias: "vcs-exemplar",
+            extension: { name: "builtin-vcs-sdk-exemplar" },
             activated: true,
           },
         ],

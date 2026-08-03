@@ -296,6 +296,8 @@ export interface EffectiveExtension {
   name: string;
   /** Value that configures or reports source package for this contract. */
   source_package?: string;
+  /** Install-source identities that can resolve this extension through package lifecycle commands. */
+  source_aliases?: string[];
   /** Value that configures or reports version for this contract. */
   version: string;
   /** Value that configures or reports entry for this contract. */
@@ -1659,6 +1661,8 @@ export interface ExtensionCandidate {
   manifest: ExtensionManifest;
   /** Value that configures or reports source package for this contract. */
   source_package?: string;
+  /** Install-source identities that can resolve this extension through package lifecycle commands. */
+  source_aliases?: string[];
 }
 
 /** Documents the extension layer scan result payload exchanged by command, SDK, and package integrations. */

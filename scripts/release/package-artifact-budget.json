@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "max_unpacked_bytes": 20000000,
+  "max_file_count": 1800,
+  "forbidden_suffixes": [".map"],
+  "required_paths": [
+    "dist/cli.js",
+    "dist/cli-bundle/sdk.js",
+    "dist/sdk/index.d.ts",
+    "package.json"
+  ]
+}

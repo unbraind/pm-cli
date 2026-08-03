@@ -488,7 +488,7 @@ describe("bundle-cli helpers", () => {
     await expect(mod.collectFiles("/x")).rejects.toThrow("perm");
   });
 
-  it("removeStaleBundleFiles keeps expected + recent files and unlinks old extras (swallows unlink error)", async () => {
+  it("removeStaleBundleFiles keeps expected files and unlinks every obsolete output", async () => {
     const unlink = vi.fn(async () => {
       throw new Error("unlink failed");
     });
@@ -506,25 +506,7 @@ describe("bundle-cli helpers", () => {
           isFile: () => true,
           isSymbolicLink: () => false,
         },
-        {
-          name: "recent.js",
-          isDirectory: () => false,
-          isFile: () => true,
-          isSymbolicLink: () => false,
-        },
-        {
-          name: "nostat.js",
-          isDirectory: () => false,
-          isFile: () => true,
-          isSymbolicLink: () => false,
-        },
       ]),
-      lstat: vi.fn(async (p: string) => {
-        const s = String(p);
-        if (s.endsWith("nostat.js")) throw new Error("no stat");
-        if (s.endsWith("old.js")) return { mtimeMs: Date.now() - 11 * 60_000 };
-        return { mtimeMs: Date.now() };
-      }),
       unlink,
     });
     const mod = await harness.importModuleStable<BundleModule>(SCRIPT);
