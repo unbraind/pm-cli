@@ -80,12 +80,31 @@ export interface PmToolCustomFieldCollision {
 export function resolvePmToolCustomFieldCollision(
   field: string,
 ): PmToolCustomFieldCollision | undefined {
-  const property = field
-    .trim()
-    .toLowerCase()
-    .replaceAll(/[-_]+([a-z0-9])/g, (_match, character: string) =>
-      character.toUpperCase(),
-    );
+  const normalized = field.trim().toLowerCase();
+  let property = "";
+  for (let index = 0; index < normalized.length; index += 1) {
+    const character = normalized[index]!;
+    if (character !== "-" && character !== "_") {
+      property += character;
+      continue;
+    }
+    let nextIndex = index + 1;
+    while (normalized[nextIndex] === "-" || normalized[nextIndex] === "_") {
+      nextIndex += 1;
+    }
+    const nextCharacter = normalized[nextIndex];
+    if (
+      nextCharacter !== undefined &&
+      ((nextCharacter >= "a" && nextCharacter <= "z") ||
+        (nextCharacter >= "0" && nextCharacter <= "9"))
+    ) {
+      property += nextCharacter.toUpperCase();
+      index = nextIndex;
+      continue;
+    }
+    property += normalized.slice(index, nextIndex);
+    index = nextIndex - 1;
+  }
   return PM_TOOL_RESERVED_CUSTOM_FIELD_PROPERTIES.has(property)
     ? {
         field,
