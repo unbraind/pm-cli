@@ -12,6 +12,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import {
   DEFAULT_EXTENSION_PRIORITY,
   isCanonicalPathWithinDirectory,
+  parseExtensionManifestDocument,
   type ExtensionManifest,
 } from "../../core/extensions/loader.js";
 
@@ -85,66 +86,9 @@ export function normalizeManagedDirectoryName(name: string): string {
   return directoryName;
 }
 
-function parseOptionalManifestPriority(value: unknown): number | null {
-  if (value === undefined || value === null) {
-    return DEFAULT_EXTENSION_PRIORITY;
-  }
-  return typeof value === "number" && Number.isInteger(value) ? value : null;
-}
-
-function parseOptionalManifestCapabilities(value: unknown): string[] | null {
-  if (value === undefined || value === null) {
-    return [];
-  }
-  if (
-    !Array.isArray(value) ||
-    value.some((entry) => typeof entry !== "string")
-  ) {
-    return null;
-  }
-  return normalizeStringList(value.map((entry) => String(entry).toLowerCase()));
-}
-
 /** Implements parse extension manifest for the public runtime surface of this module. */
 export function parseExtensionManifest(raw: unknown): ExtensionManifest | null {
-  if (typeof raw !== "object" || raw === null) {
-    return null;
-  }
-  const candidate = raw as Record<string, unknown>;
-  if (
-    typeof candidate.name !== "string" ||
-    candidate.name.trim().length === 0
-  ) {
-    return null;
-  }
-  if (
-    typeof candidate.version !== "string" ||
-    candidate.version.trim().length === 0
-  ) {
-    return null;
-  }
-  if (
-    typeof candidate.entry !== "string" ||
-    candidate.entry.trim().length === 0
-  ) {
-    return null;
-  }
-
-  const priority = parseOptionalManifestPriority(candidate.priority);
-  const capabilities = parseOptionalManifestCapabilities(
-    candidate.capabilities,
-  );
-  if (priority === null || capabilities === null) {
-    return null;
-  }
-
-  return {
-    name: candidate.name.trim(),
-    version: candidate.version.trim(),
-    entry: candidate.entry.trim(),
-    priority,
-    capabilities,
-  };
+  return parseExtensionManifestDocument(raw);
 }
 
 /** Bounded package metadata used only to improve GitHub-source recovery. */

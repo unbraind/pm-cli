@@ -208,7 +208,7 @@ describe("extension startup activation", () => {
     });
   });
 
-  it("keeps renderer and hook overrides active even when activation metadata does not match the command", async () => {
+  it("honors narrow activation metadata for renderer and hook extensions", async () => {
     await withTempPmPath(async (context) => {
       const hookLogPath = path.join(context.tempRoot, "hook-extension.log");
       await writeTestExtension({
@@ -265,13 +265,76 @@ describe("extension startup activation", () => {
         expectJson: true,
       });
       expect(rendered.code).toBe(0);
-      expect(rendered.json).toEqual({
-        rendered_by: "renderer-ext",
-        command: "list-open",
+      expect(rendered.json).toMatchObject({
+        items: [],
       });
-      expect(await readOptionalFile(hookLogPath)).toBe(
-        "activate\nbefore\nafter:true\n",
+      expect(await readOptionalFile(hookLogPath)).toBe("");
+    });
+  });
+
+  it("uses static global contributions only when the manifest inventory requires eager activation", async () => {
+    await withTempPmPath(async (context) => {
+      const skippedLogPath = path.join(context.tempRoot, "static-empty.log");
+      const activatedLogPath = path.join(
+        context.tempRoot,
+        "static-global.log",
       );
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions"),
+        directory: "00-static-empty",
+        manifest: {
+          name: "00-static-empty",
+          version: "1.0.0",
+          entry: "index.mjs",
+          capabilities: ["hooks"],
+          contributions: { schema_version: 1 },
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          'import { appendFileSync } from "node:fs";',
+          `appendFileSync(${JSON.stringify(skippedLogPath)}, "import\\n", "utf8");`,
+          "export default { activate() {} };",
+          "",
+        ].join("\n"),
+      });
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions"),
+        directory: "01-static-global",
+        manifest: {
+          name: "01-static-global",
+          version: "1.0.0",
+          entry: "index.mjs",
+          capabilities: ["hooks"],
+          contributions: {
+            schema_version: 1,
+            hooks: ["before_command"],
+            item_types: [],
+            item_fields: [],
+            relationship_kinds: [],
+            service_overrides: [],
+            renderer_overrides: [],
+            renderer_ownership: [],
+            preflight_overrides: 0,
+          },
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          'import { appendFileSync } from "node:fs";',
+          `appendFileSync(${JSON.stringify(activatedLogPath)}, "import\\n", "utf8");`,
+          "export function activate(api) {",
+          "  api.hooks.beforeCommand(() => undefined);",
+          "}",
+          "export default { activate };",
+          "",
+        ].join("\n"),
+      });
+
+      const result = runSourceCli(context, ["list-open", "--json"], {
+        expectJson: true,
+      });
+      expect(result.code).toBe(0);
+      expect(await readOptionalFile(skippedLogPath)).toBe("");
+      expect(await readOptionalFile(activatedLogPath)).toBe("import\n");
     });
   });
 
@@ -448,7 +511,7 @@ describe("extension startup activation", () => {
           entry: "index.mjs",
           capabilities: ["commands", "search"],
           activation: {
-            commands: ["provider doctor"],
+            commands: ["provider doctor", "search"],
           },
         },
         entryFilename: "index.mjs",

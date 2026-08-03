@@ -38,6 +38,7 @@ const BODY_CACHE_FILENAME = "metadata-cache-bodies.json";
 const COLLECTIONS_CACHE_FILENAME = "metadata-cache-collections.json";
 const DELTA_CACHE_FILENAME = "metadata-cache-delta.json";
 const MANIFEST_CACHE_FILENAME = "metadata-cache-manifest.json";
+const MAX_CACHE_CONTEXTS = 4;
 
 /** Heavy "collection" item-metadata fields. These arrays dominate the on-disk cache (e.g. a single item's comment thread can be hundreds of KB) yet the hot list path (`pm list`, stats, deps, activity, calendar, close) never reads them. They are stored in a separate collections cache that is parsed only when a caller opts in (`includeCollections`), keeping the always-loaded light cache an order of magnitude smaller and its JSON.parse correspondingly cheaper. */
 export const HEAVY_METADATA_KEYS = [
@@ -211,6 +212,14 @@ function getManifestCachePath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", MANIFEST_CACHE_FILENAME);
 }
 
+function getContextCachePath(
+  cachePath: string,
+  contextFingerprint: string,
+): string {
+  const extension = path.extname(cachePath);
+  return `${cachePath.slice(0, -extension.length)}.${contextFingerprint}${extension}`;
+}
+
 interface MemoizedEnvelope {
   signature: StatSignature;
   envelope:
@@ -380,8 +389,12 @@ export function clearItemMetadataEnvelopeMemo(): void {
   envelopeMemo.clear();
 }
 
-async function loadCache(pmRoot: string): Promise<CacheEnvelope | null> {
-  return await loadEnvelopeMemoized(getCachePath(pmRoot), (raw) => {
+async function loadCache(
+  pmRoot: string,
+  contextFingerprint?: string,
+  diagnostics?: string[],
+): Promise<CacheEnvelope | null> {
+  const parse = (raw: string): CacheEnvelope | null => {
     const parsed = JSON.parse(raw) as CacheEnvelope;
     if (
       parsed.version !== CACHE_VERSION ||
@@ -392,13 +405,34 @@ async function loadCache(pmRoot: string): Promise<CacheEnvelope | null> {
       return null;
     }
     return parsed;
-  });
+  };
+  const cachePath = getCachePath(pmRoot);
+  const active = await loadEnvelopeMemoized(cachePath, parse);
+  if (
+    !contextFingerprint ||
+    active === null ||
+    active.context_fingerprint === contextFingerprint
+  ) {
+    return active;
+  }
+  const retained = await loadEnvelopeMemoized(
+    getContextCachePath(cachePath, contextFingerprint),
+    parse,
+  );
+  if (retained === null) {
+    appendWarning(
+      diagnostics,
+      `metadata_cache_context_changed:${active.context_fingerprint}->${contextFingerprint}`,
+    );
+  }
+  return retained;
 }
 
 async function loadBodyCache(
   pmRoot: string,
+  contextFingerprint?: string,
 ): Promise<BodyCacheEnvelope | null> {
-  return await loadEnvelopeMemoized(getBodyCachePath(pmRoot), (raw) => {
+  const parse = (raw: string): BodyCacheEnvelope | null => {
     const parsed = JSON.parse(raw) as BodyCacheEnvelope;
     if (
       parsed.version !== CACHE_VERSION ||
@@ -409,13 +443,22 @@ async function loadBodyCache(
       return null;
     }
     return parsed;
-  });
+  };
+  const cachePath = getBodyCachePath(pmRoot);
+  const active = await loadEnvelopeMemoized(cachePath, parse);
+  return contextFingerprint && active?.context_fingerprint !== contextFingerprint
+    ? await loadEnvelopeMemoized(
+        getContextCachePath(cachePath, contextFingerprint),
+        parse,
+      )
+    : active;
 }
 
 async function loadCollectionsCache(
   pmRoot: string,
+  contextFingerprint?: string,
 ): Promise<CollectionsCacheEnvelope | null> {
-  return await loadEnvelopeMemoized(getCollectionsCachePath(pmRoot), (raw) => {
+  const parse = (raw: string): CollectionsCacheEnvelope | null => {
     const parsed = JSON.parse(raw) as CollectionsCacheEnvelope;
     if (
       parsed.version !== CACHE_VERSION ||
@@ -426,7 +469,15 @@ async function loadCollectionsCache(
       return null;
     }
     return parsed;
-  });
+  };
+  const cachePath = getCollectionsCachePath(pmRoot);
+  const active = await loadEnvelopeMemoized(cachePath, parse);
+  return contextFingerprint && active?.context_fingerprint !== contextFingerprint
+    ? await loadEnvelopeMemoized(
+        getContextCachePath(cachePath, contextFingerprint),
+        parse,
+      )
+    : active;
 }
 
 async function loadDerivedIndexDelta(pmRoot: string): Promise<{
@@ -511,6 +562,69 @@ async function persistCache(
     });
   } catch {
     envelopeMemo.delete(cachePath);
+  }
+  const pmRoot = path.dirname(path.dirname(cachePath));
+  if (
+    cachePath === getCachePath(pmRoot) ||
+    cachePath === getBodyCachePath(pmRoot) ||
+    cachePath === getCollectionsCachePath(pmRoot)
+  ) {
+    const contextPath = getContextCachePath(
+      cachePath,
+      envelope.context_fingerprint,
+    );
+    await writeFileAtomic(contextPath, JSON.stringify(envelope));
+    try {
+      const contextStat = await fs.stat(contextPath);
+      memoizeEnvelope(contextPath, {
+        signature: {
+          mtime_ms: contextStat.mtimeMs,
+          ctime_ms: contextStat.ctimeMs,
+          size: contextStat.size,
+        },
+        envelope,
+      });
+    } catch {
+      envelopeMemo.delete(contextPath);
+    }
+    const directory = path.dirname(cachePath);
+    const extension = path.extname(cachePath);
+    const stem = path.basename(cachePath, extension);
+    const variants = (
+      await fs.readdir(directory, { withFileTypes: true }).catch(() => [])
+    )
+      .filter(
+        (entry) =>
+          entry.isFile() &&
+          entry.name !== path.basename(cachePath) &&
+          entry.name.startsWith(`${stem}.`) &&
+          entry.name.endsWith(extension),
+      )
+      .map((entry) => path.join(directory, entry.name));
+    if (variants.length > MAX_CACHE_CONTEXTS) {
+      const byAge = (
+        await Promise.all(
+          variants.map(async (variantPath) => {
+            try {
+              return {
+                path: variantPath,
+                mtime: (await fs.stat(variantPath)).mtimeMs,
+              };
+            } catch {
+              return null;
+            }
+          }),
+        )
+      ).filter(
+        (entry): entry is { path: string; mtime: number } => entry !== null,
+      );
+      for (const stale of byAge
+        .sort((left, right) => left.mtime - right.mtime)
+        .slice(0, Math.max(0, byAge.length - MAX_CACHE_CONTEXTS))) {
+        await fs.rm(stale.path, { force: true });
+        envelopeMemo.delete(stale.path);
+      }
+    }
   }
 }
 
@@ -1355,6 +1469,8 @@ export interface ListCacheOptions {
   forceSourceScan?: boolean;
   /** Minimum item count required before the directory-signature derived-index fast path is used. Defaults to 500 so small workspaces preserve per-file external-edit detection; tests and specialized SDK hosts may lower it explicitly. */
   derivedIndexMinimumItems?: number;
+  /** Optional cache-rebuild diagnostics kept separate from item-read warnings. */
+  cacheDiagnostics?: string[];
 }
 
 function cacheTierMatchesContext(
@@ -1516,10 +1632,16 @@ export async function listAllDocumentCandidatesCached(
 
   const delta = await loadDerivedIndexDelta(pmRoot);
   if (delta.invalid) await removeDerivedIndexFiles(pmRoot);
-  const existingCache = await loadCache(pmRoot);
-  const existingBodyCache = includeBody ? await loadBodyCache(pmRoot) : null;
+  const existingCache = await loadCache(
+    pmRoot,
+    contextFingerprint,
+    options.cacheDiagnostics,
+  );
+  const existingBodyCache = includeBody
+    ? await loadBodyCache(pmRoot, contextFingerprint)
+    : null;
   const existingCollectionsCache = includeCollections
-    ? await loadCollectionsCache(pmRoot)
+    ? await loadCollectionsCache(pmRoot, contextFingerprint)
     : null;
   applyDerivedIndexDelta(
     existingCache,

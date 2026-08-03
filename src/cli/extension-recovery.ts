@@ -4,6 +4,7 @@
  * Recovers bounded extension activation failures for parse-time diagnostics.
  */
 import path from "node:path";
+import { normalizeHelpCommandPath } from "./help-content.js";
 import {
   activateExtensions,
   loadExtensions,
@@ -19,6 +20,12 @@ export interface ExtensionRecoveryFailure {
   name: string;
   /** Actionable loader or activation error. */
   error: string;
+  /** Command paths declared statically for this extension. */
+  declared_commands?: string[];
+  /** Whether the failed extension declares the attempted command path. */
+  declared_command_match?: boolean;
+  /** Bounded commands that repair or diagnose the failed installation. */
+  recovery_commands?: string[];
 }
 
 /** Injectable recovery dependencies used to exercise loader failure boundaries. */
@@ -37,6 +44,7 @@ export interface ExtensionRecoveryDependencies {
 export async function loadExtensionRecoveryFailures(
   pmRoot: string,
   overrides: Partial<ExtensionRecoveryDependencies> = {},
+  attemptedCommandPaths: readonly string[] = [],
 ): Promise<ExtensionRecoveryFailure[]> {
   const dependencies: ExtensionRecoveryDependencies = {
     readSettings,
@@ -54,11 +62,48 @@ export async function loadExtensionRecoveryFailures(
       noExtensions: false,
     });
     const activated = await dependencies.activateExtensions(loaded);
-    return [...loaded.failed, ...activated.failed].map((entry) => ({
-      layer: entry.layer,
-      name: entry.name,
-      error: entry.error,
-    }));
+    return [...loaded.failed, ...activated.failed].map((entry) => {
+      const discovered = (loaded.effective ?? []).find(
+        (candidate) =>
+          candidate.layer === entry.layer && candidate.name === entry.name,
+      );
+      const declaredCommands = [
+        ...(discovered?.contributions?.commands ?? []),
+        ...(discovered?.contributions?.command_handlers ?? []),
+        ...(discovered?.activation?.commands ?? []),
+      ]
+        .map(normalizeHelpCommandPath)
+        .filter((command, index, commands) =>
+          command.length > 0 && commands.indexOf(command) === index,
+        )
+        .sort((left, right) => left.localeCompare(right));
+      const normalizedAttempts = attemptedCommandPaths.map(
+        normalizeHelpCommandPath,
+      );
+      const declaredCommandMatch = declaredCommands.some((command) =>
+        normalizedAttempts.some(
+          (attempt) =>
+            attempt === command || attempt.startsWith(`${command} `),
+        ),
+      );
+      return {
+        layer: entry.layer,
+        name: entry.name,
+        error: entry.error,
+        ...(declaredCommands.length > 0
+          ? { declared_commands: declaredCommands }
+          : {}),
+        ...(declaredCommandMatch
+          ? {
+              declared_command_match: true,
+              recovery_commands: [
+                "pm package doctor --project --detail deep",
+                "pm package install <package-or-path> --project",
+              ],
+            }
+          : {}),
+      };
+    });
   } catch (error: unknown) {
     return [
       {
@@ -75,9 +120,14 @@ export async function loadUnknownCommandRecoveryFailures(
   classificationCode: string,
   pmRoot: string,
   overrides: Partial<ExtensionRecoveryDependencies> = {},
+  attemptedCommandPaths: readonly string[] = [],
 ): Promise<ExtensionRecoveryFailure[]> {
   if (classificationCode !== "unknown_command") return [];
-  const failures = await loadExtensionRecoveryFailures(pmRoot, overrides);
+  const failures = await loadExtensionRecoveryFailures(
+    pmRoot,
+    overrides,
+    attemptedCommandPaths,
+  );
   const dependencies: ExtensionRecoveryDependencies = {
     readSettings,
     loadExtensions,

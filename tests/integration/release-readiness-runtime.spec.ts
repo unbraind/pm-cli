@@ -1902,6 +1902,7 @@ describe("release readiness runtime coverage", () => {
         "blocked_fallback",
         "agenda",
         "applied_limit",
+        "extension_health",
         "row_contract",
         "omission_receipt",
       ]);

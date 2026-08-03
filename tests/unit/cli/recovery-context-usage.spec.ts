@@ -36,6 +36,38 @@ describe("CLI recovery and derived usage helpers", () => {
       appendCommanderExtensionFailures("Unknown command", false, failures),
     ).toContain("- project:broken: activation failed");
     expect(appendCommanderExtensionFailures("usage", false, [])).toBe("usage");
+
+    const declaredFailure = {
+      layer: "project",
+      name: "broken-command",
+      error: "missing runtime",
+      declared_command_match: true,
+      recovery_commands: ["pm package doctor --project --detail deep"],
+    };
+    expect(
+      appendCommanderExtensionFailures("Unknown command", false, [
+        declaredFailure,
+      ]),
+    ).toContain(
+      "Extension command unavailable: project:broken-command\nmissing runtime\nRecovery:\n- pm package doctor --project --detail deep",
+    );
+    expect(
+      JSON.parse(
+        appendCommanderExtensionFailures('{"error":"unknown"}', true, [
+          { ...declaredFailure, recovery_commands: undefined },
+        ]),
+      ),
+    ).toMatchObject({
+      extension_command_failure: {
+        extension: "broken-command",
+        recovery_commands: [],
+      },
+    });
+    expect(
+      appendCommanderExtensionFailures("Unknown command", false, [
+        { ...declaredFailure, recovery_commands: undefined },
+      ]),
+    ).not.toContain("Recovery:");
   });
 
   it("contains Error and non-Error extension recovery failures", async () => {
@@ -89,6 +121,51 @@ describe("CLI recovery and derived usage helpers", () => {
     await expect(
       loadUnknownCommandRecoveryFailures("invalid_option", "/missing"),
     ).resolves.toEqual([]);
+  });
+
+  it("annotates only failures whose static command inventory matches the attempted path", async () => {
+    const result = await loadExtensionRecoveryFailures(
+      "/tracker",
+      {
+        readSettings: async () => ({}) as never,
+        loadExtensions: async () =>
+          ({
+            effective: [
+              {
+                layer: "project",
+                name: "broken",
+                contributions: {
+                  schema_version: 1,
+                  commands: ["Zulu Ping", "", "alpha ping"],
+                  command_handlers: ["alpha ping"],
+                },
+                activation: { commands: ["beta ping"] },
+              },
+            ],
+            failed: [
+              { layer: "project", name: "broken", error: "load failed" },
+              { layer: "global", name: "other", error: "other failed" },
+            ],
+          }) as never,
+        activateExtensions: async () => ({ failed: [] }) as never,
+      },
+      ["alpha ping child"],
+    );
+
+    expect(result).toEqual([
+      {
+        layer: "project",
+        name: "broken",
+        error: "load failed",
+        declared_commands: ["alpha ping", "beta ping", "zulu ping"],
+        declared_command_match: true,
+        recovery_commands: [
+          "pm package doctor --project --detail deep",
+          "pm package install <package-or-path> --project",
+        ],
+      },
+      { layer: "global", name: "other", error: "other failed" },
+    ]);
   });
 
   it("explains storage and extension-discovery relocation for unknown commands", async () => {

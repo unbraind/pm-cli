@@ -5982,6 +5982,7 @@ describe("extension manifest schema governance", () => {
       "permissions",
       "capabilities",
       "activation",
+      "contributions",
     ] satisfies Array<Exclude<keyof ExtensionManifest, "legacy_capability_aliases"> | "$schema">;
     expect(schemaFields).toEqual([...authorFacingManifestFields].sort());
   });

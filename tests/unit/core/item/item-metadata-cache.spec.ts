@@ -608,4 +608,209 @@ describe("item metadata cache", () => {
       ]);
     });
   });
+
+  it("retains bounded cache identities when extension fields alternate", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      const itemPath = path.join(tasksDir, "pm-context-cache.toon");
+      await fs.mkdir(tasksDir, { recursive: true });
+      await fs.writeFile(
+        itemPath,
+        serializeItemDocument(
+          {
+            metadata: makeTaskMetadata({ id: "pm-context-cache" }),
+            body: "stable body",
+          },
+          { format: "toon" },
+        ),
+        "utf8",
+      );
+      const options = { derivedIndexMinimumItems: 1 };
+      await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        { Task: "tasks" },
+        [],
+        undefined,
+        options,
+      );
+
+      for (let index = 0; index < 5; index += 1) {
+        const registrations = createEmptyExtensionRegistrationRegistry();
+        registrations.item_fields.push({
+          layer: "project",
+          name: `field-${index}`,
+          fields: [
+            {
+              name: `custom_field_${index}`,
+              type: "string",
+              commands: ["create"],
+            },
+          ],
+        });
+        setActiveExtensionRegistrations(registrations);
+        const diagnostics: string[] = [];
+        await listAllDocumentCandidatesCached(
+          pmRoot,
+          "toon",
+          { Task: "tasks" },
+          [],
+          undefined,
+          { ...options, cacheDiagnostics: diagnostics },
+        );
+        expect(diagnostics.some((diagnostic) => diagnostic.startsWith("metadata_cache_context_changed:"))).toBe(true);
+        if (index === 0) {
+          setActiveExtensionRegistrations(null);
+          const itemReadSpy = vi.spyOn(fs, "readFile");
+          const restored = await listAllDocumentCandidatesCached(
+            pmRoot,
+            "toon",
+            { Task: "tasks" },
+            [],
+            undefined,
+            options,
+          );
+          expect(restored[0]?.metadata.id).toBe("pm-context-cache");
+          expect(itemReadSpy).not.toHaveBeenCalledWith(itemPath, "utf8");
+          itemReadSpy.mockRestore();
+        }
+      }
+
+      const runtimeEntries = await fs.readdir(path.join(pmRoot, "runtime"));
+      const retainedContexts = runtimeEntries.filter((entry) =>
+        /^metadata-cache\.[a-f0-9]{16}\.json$/.test(entry),
+      );
+      expect(retainedContexts).toHaveLength(4);
+    });
+  });
+
+  it("keeps cache publication best-effort when retained-context enumeration fails", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      await fs.writeFile(
+        path.join(tasksDir, "pm-context-enumeration.toon"),
+        serializeItemDocument(
+          {
+            metadata: makeTaskMetadata({ id: "pm-context-enumeration" }),
+            body: "cache enumeration fallback",
+          },
+          { format: "toon" },
+        ),
+        "utf8",
+      );
+      const runtimeDir = path.join(pmRoot, "runtime");
+      const realReaddir = fs.readdir;
+      const readdirSpy = vi.spyOn(fs, "readdir").mockImplementation(
+        (async (...args: Parameters<typeof fs.readdir>) => {
+          if (
+            String(args[0]) === runtimeDir &&
+            typeof args[1] === "object" &&
+            args[1] !== null &&
+            "withFileTypes" in args[1] &&
+            args[1].withFileTypes === true
+          ) {
+            throw new Error("runtime cache directory unavailable");
+          }
+          return realReaddir(...args);
+        }) as typeof fs.readdir,
+      );
+      try {
+        const candidates = await listAllDocumentCandidatesCached(
+          pmRoot,
+          "toon",
+          { Task: "tasks" },
+          [],
+          undefined,
+          { derivedIndexMinimumItems: 1 },
+        );
+        expect(candidates[0]?.metadata.id).toBe("pm-context-enumeration");
+      } finally {
+        readdirSpy.mockRestore();
+      }
+    });
+  });
+
+  it("keeps cache publication best-effort when one retained-context stat fails", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      await fs.writeFile(
+        path.join(tasksDir, "pm-context-stat.toon"),
+        serializeItemDocument(
+          {
+            metadata: makeTaskMetadata({ id: "pm-context-stat" }),
+            body: "cache stat fallback",
+          },
+          { format: "toon" },
+        ),
+        "utf8",
+      );
+      const options = { derivedIndexMinimumItems: 1 };
+      for (let index = 0; index < 4; index += 1) {
+        const registrations = createEmptyExtensionRegistrationRegistry();
+        registrations.item_fields.push({
+          layer: "project",
+          name: `stat-field-${index}`,
+          fields: [
+            {
+              name: `stat_custom_field_${index}`,
+              type: "string",
+              commands: ["create"],
+            },
+          ],
+        });
+        setActiveExtensionRegistrations(registrations);
+        await listAllDocumentCandidatesCached(
+          pmRoot,
+          "toon",
+          { Task: "tasks" },
+          [],
+          undefined,
+          options,
+        );
+      }
+      const runtimeDir = path.join(pmRoot, "runtime");
+      const retainedVariant = (await fs.readdir(runtimeDir)).find((entry) =>
+        /^metadata-cache\.[a-f0-9]{16}\.json$/.test(entry),
+      );
+      expect(retainedVariant).toBeDefined();
+      const unavailablePath = path.join(runtimeDir, retainedVariant ?? "");
+      const realStat = fs.stat;
+      const statSpy = vi.spyOn(fs, "stat").mockImplementation(
+        (async (...args: Parameters<typeof fs.stat>) => {
+          if (String(args[0]) === unavailablePath) {
+            throw new Error("retained cache disappeared");
+          }
+          return realStat(...args);
+        }) as typeof fs.stat,
+      );
+      try {
+        const registrations = createEmptyExtensionRegistrationRegistry();
+        registrations.item_fields.push({
+          layer: "project",
+          name: "stat-field-final",
+          fields: [
+            {
+              name: "stat_custom_field_final",
+              type: "string",
+              commands: ["create"],
+            },
+          ],
+        });
+        setActiveExtensionRegistrations(registrations);
+        const candidates = await listAllDocumentCandidatesCached(
+          pmRoot,
+          "toon",
+          { Task: "tasks" },
+          [],
+          undefined,
+          options,
+        );
+        expect(candidates[0]?.metadata.id).toBe("pm-context-stat");
+      } finally {
+        statSpy.mockRestore();
+      }
+    });
+  });
 });

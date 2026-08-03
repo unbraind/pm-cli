@@ -432,6 +432,7 @@ export const TOOL_CONTEXT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "tokenBudget", flag: "--token-budget" },
   { param: "explainRanking", flag: "--explain-ranking" },
   { param: "noTags", flag: "--no-tags" },
+  { param: "noExtensionHealth", flag: "--no-extension-health" },
 ];
 
 /** Public contract for tool deps option contracts, shared by SDK and presentation-layer consumers. */

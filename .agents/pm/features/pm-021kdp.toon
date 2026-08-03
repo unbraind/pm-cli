@@ -2,22 +2,53 @@ id: pm-021kdp
 title: "Static contribution manifest: persist the install-time contribution inventory so the command registry is built from data and extension modules import only when a contribution is actually invoked"
 description: "The data required to gate activation precisely is already computed and then thrown away. 'pm extension --install' loads and activates the extension and reports registered_actions (src/sdk/extension.ts:2310, commandSummary.action_paths) - in the sandbox repro it printed registered_actions: [\"my-ext-ping\"]. The install record it writes, .agents/pm/extensions/.managed-extensions.json, persists only the coarse capabilities[] array and the manifest entry. Every subsequent invocation therefore re-derives contribution knowledge the installer already had, and because capabilities[] is the only surviving signal, the runtime must fall back to the conservative and global tiers that force eager import (see pm-j0w7j9).\n\nThe declarative authoring form does not help either, and it is worth being precise about why. composeExtension(blueprint) / ExtensionBlueprint (pm-8mxg, pm-lfdv) already describe every surface an extension contributes - renderers record, parsers record, preflights, services, hooks.afterCommand, itemTypes, itemFields, searchProviders. But the blueprint is a value inside the module, so learning it costs exactly the import the gate is trying to avoid. pm has a complete declarative description of contributions and no cheap channel to read it through.\n\nProposal - separate the contribution inventory from the contribution implementation, the pattern VS Code settled on with contributes + activation events:\n\n1. Extend the manifest (and/or the .managed-extensions.json install snapshot) with a typed contributions block: command paths, renderer targets keyed by command, hook phases with optional command scope, parser targets, preflight targets, declared item types and fields.\n2. Derive it mechanically at install time from the already-loaded blueprint or activation result, so authors do not hand-maintain it and it cannot drift from the code. Hand-authoring stays possible for extensions that want to declare ahead of a build step.\n3. Build the command registry, --help surface, unknown-command suggestions, and type/field schema from that inventory alone. Import a module only when one of its contributions is actually reached.\n4. Verify the snapshot against the module at install/update time and on version change; treat a mismatch as an install-time failure, not a runtime surprise.\n\nThis retires the capability-tier heuristic entirely rather than tuning it: with a precise per-contribution inventory there is no need for GLOBAL_ or CONSERVATIVE_ tiers, and the schema-vs-activation.commands tension pm-halx had to decide by fiat disappears because a schema contribution names the types it registers.\n\nSecond-order wins: extension-contributed commands become visible in --help and in unknown-command suggestions without paying activation; pm-qfdd's commander-singleton leak shrinks because dynamic registration moves to data; contracts/MCP surfaces can enumerate extension commands statically."
 type: Feature
-status: open
+status: in_progress
 priority: 1
 tags[8]: activation,agent-ux,architecture,"area:extensions","area:sdk",extensibility,perf,startup
 created_at: "2026-07-28T10:28:05.792Z"
-updated_at: "2026-07-28T10:31:18.036Z"
+updated_at: "2026-08-03T19:30:42.879Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
 author: "harness:claude-code"
 estimated_minutes: 900
 acceptance_criteria: "Extension discovery resolves every contributed command path, renderer target, hook phase, parser target, and item type without importing any extension module; a workspace with N installed extensions shows no per-extension cost on commands that invoke none of their contributions"
 parent: pm-ugqx
 risk: medium
 confidence: medium
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-5wb6,supersedes,"2026-07-28T10:31:17.775Z","harness:claude-code","cli:update:dep",detected
   pm-8mxg,related,"2026-07-28T10:31:17.775Z","harness:claude-code","cli:update:dep",detected
   pm-halx,related,"2026-07-28T10:31:17.775Z","harness:claude-code","cli:update:dep",detected
   pm-lfdv,related,"2026-07-28T10:31:17.775Z","harness:claude-code","cli:update:dep",detected
   pm-qfdd,related,"2026-07-28T10:31:17.775Z","harness:claude-code","cli:update:dep",detected
   pm-usfg,implements,"2026-07-28T10:31:17.775Z","harness:claude-code","cli:update:dep",detected
+  pm-4uplae,verifies,"2026-08-03T18:39:39.773Z","harness:codex","cli:update:dep",detected
+  pm-j0w7j9,verifies,"2026-08-03T18:39:39.773Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-03T18:40:10.785Z","harness:codex","Implementation evidence: introduced a schema-versioned ExtensionContributionInventory that is parsed without importing extension modules and persisted after successful activation. Loader discovery merges manifest and managed snapshots; install results expose the derived inventory; SDK authoring exports and public-surface/schema snapshots are aligned. Static discovery now supplies commands, handlers, overrides, hooks, schema, parser, renderer, service, migration, importer/exporter, search/vector, and preflight surfaces."
+  "2026-08-03T19:30:42.879Z","harness:codex","Exact-head PR evidence (PR #884, c361624e2): every hosted required check passes, including static/typecheck/coverage/smokes/compat, Ubuntu/macOS/Windows runtime smoke, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, DeepScan, CodeFactor, Codecov, ShellCheck, PSScriptAnalyzer, actionlint, and Docs/Skills. The complete sandboxed local suite passes 428 files / 6,792 tests at exact 100% statements, branches, functions, and lines; lint, zero-clone analysis, 100% docstring gates, contracts, and focused review regressions pass. All 12 CodeRabbit threads were individually replied to and reacted to; nine actionable findings were fixed in c361624e2 and all threads are resolved. The requested exact-head CodeRabbit rerun was included-review-rate-limited and the authenticated Greptile gate returned free_reviews_limit_reached; these are reviewer limitations, not clean-review claims."
+notes[1]{created_at,author,text}:
+  "2026-08-03T18:40:11.200Z","harness:codex","Design decision: manifest contributions are an optional ahead-of-time declaration while the managed install snapshot is mechanically derived from the real activation summary. Runtime discovery prefers precise inventory but retains conservative legacy fallback for packages not yet reinstalled."
+learnings[1]{created_at,author,text}:
+  "2026-08-03T18:40:11.626Z","harness:codex",A contribution registry only removes startup imports when it is available before module evaluation. Persisting the activation result converts runtime knowledge into durable static context while install-time verification prevents hand-authored manifests from becoming trusted executable truth.
+files[13]{path,scope,note}:
+  docs/schemas/extension-manifest.schema.json,project,Manifest contribution schema
+  sdk/public-surface.json,project,Public contribution inventory SDK snapshot
+  src/core/extensions/contribution-inventory.ts,project,Static manifest inventory normalization
+  src/core/extensions/extension-candidate.ts,project,Side-effect-free extension candidate discovery
+  src/core/extensions/extension-types.ts,project,Typed contribution inventory contract
+  src/core/extensions/loader.ts,project,Static discovery and persisted inventory merge
+  src/sdk/authoring.ts,project,Public authoring exports
+  src/sdk/extension.ts,project,Install-time inventory derivation
+  src/sdk/extension/managed-state.ts,project,Managed contribution persistence
+  src/sdk/extension/runtime-summary.ts,project,Runtime activation summary projection
+  tests/integration/extension-startup.integration.spec.ts,project,No-import startup acceptance
+  tests/unit/extensions/contribution-inventory.spec.ts,project,Inventory normalization coverage
+  tests/unit/extensions/extension-loader.spec.ts,project,Static loader coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/contribution-inventory.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/integration/extension-startup.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msdksm2u-7jbpw1,test,passed,"2026-08-03T18:41:26.350Z","2026-08-03T18:41:43.110Z","2026-08-03T18:41:43.110Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Contribution inventory authoring and activation semantics
 body: ""

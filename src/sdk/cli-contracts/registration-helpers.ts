@@ -1217,6 +1217,8 @@ export function normalizeContextOptions(
     activityLimit: readContextString("activityLimit"),
     staleThreshold: readContextString("staleThreshold"),
     tokenBudget: readContextStringOrNumber("tokenBudget"),
+    noExtensionHealth:
+      options.extensionHealth === false ? true : undefined,
     noTags: options.tags === false ? true : undefined,
   };
   for (const [key, value] of Object.entries(options)) {

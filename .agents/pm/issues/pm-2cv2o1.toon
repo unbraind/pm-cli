@@ -1,0 +1,43 @@
+id: pm-2cv2o1
+title: Refresh transitive brace-expansion and PostCSS patches for 2026-08-03 audit advisories
+description: "A fresh pnpm audit found GHSA-rgw5-rvv9-x895 in brace-expansion 5.0.8 through ESLint/minimatch and GHSA-fxqj-rqcc-2cmp in postcss 8.5.22 through Vite/Vitest. GitHub alert APIs currently report zero open alerts, so the lockfile must be refreshed directly to patched versions and verified with the complete release/security gate."
+type: Issue
+status: in_progress
+priority: 0
+tags[4]: dependencies,release-gate,security,vulnerability
+created_at: "2026-08-03T18:14:18.504Z"
+updated_at: "2026-08-03T19:30:45.061Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#a84422ec7f16bada67f6516e"
+author: "harness:codex"
+acceptance_criteria: brace-expansion resolves to at least 5.0.9; postcss resolves to at least 8.5.23; pnpm audit reports zero vulnerabilities; full release and consumer verification passes
+parent: pm-u9d0
+severity: high
+expected_result: "pnpm audit reports zero vulnerabilities and all repository quality, coverage, packaging, npm, and Bun acceptance gates remain green."
+actual_result: "pnpm audit reports one high and one moderate transitive vulnerability while GitHub Dependabot, code-scanning, and secret-scanning APIs each report zero open alerts."
+affected_version: 2026.8.3
+component: dependencies
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4ris,related,"2026-08-03T18:14:31.376Z","harness:codex","cli:update:dep",detected
+  pm-5q81jq,discovered_from,"2026-08-03T18:14:31.376Z","harness:codex","cli:update:dep",detected
+  pm-a24aqt,discovered_from,"2026-08-03T18:14:31.376Z","harness:codex","cli:update:dep",detected
+  pm-rnpb,related,"2026-08-03T18:14:31.376Z","harness:codex","cli:update:dep",detected
+  pm-u9d0,verifies,"2026-08-03T18:39:44.976Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-03T18:14:18.504Z","harness:codex","Duplicate check: exact advisory-id searches across all pm statuses returned zero items. Broader package searches found only closed predecessor advisories pm-5q81jq, pm-f5hy2n, and pm-a24aqt for different GHSAs; this item preserves new advisory lineage instead of reopening completed fixes."
+  "2026-08-03T18:40:17.025Z","harness:codex","Security evidence: pnpm audit initially reported high GHSA-rgw5-rvv9-x895 through brace-expansion 5.0.8 and moderate GHSA-fxqj-rqcc-2cmp through postcss 8.5.22 while GitHub Dependabot/code-scanning/secret-scanning APIs each reported zero open alerts. Overrides now require brace-expansion >=5.0.9 <6 and postcss >=8.5.23 <9; the resolved graph uses patched versions and pnpm audit reports no known vulnerabilities. tsx was refreshed to 4.23.5."
+  "2026-08-03T19:30:45.061Z","harness:codex","Exact-head PR evidence (PR #884, c361624e2): every hosted required check passes, including static/typecheck/coverage/smokes/compat, Ubuntu/macOS/Windows runtime smoke, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, DeepScan, CodeFactor, Codecov, ShellCheck, PSScriptAnalyzer, actionlint, and Docs/Skills. The complete sandboxed local suite passes 428 files / 6,792 tests at exact 100% statements, branches, functions, and lines; lint, zero-clone analysis, 100% docstring gates, contracts, and focused review regressions pass. All 12 CodeRabbit threads were individually replied to and reacted to; nine actionable findings were fixed in c361624e2 and all threads are resolved. The requested exact-head CodeRabbit rerun was included-review-rate-limited and the authenticated Greptile gate returned free_reviews_limit_reached; these are reviewer limitations, not clean-review claims."
+notes[1]{created_at,author,text}:
+  "2026-08-03T18:40:17.470Z","harness:codex","Compatibility boundary: npm-package-arg 14 is intentionally deferred because its Node engine excludes the supported Node 22.18 floor. TypeScript 7 is intentionally deferred because typescript-eslint 8.66 supports TypeScript below 6.1. These are incompatible majors rather than unattended safe updates."
+learnings[1]{created_at,author,text}:
+  "2026-08-03T18:40:17.932Z","harness:codex",GitHub alert APIs can be clean while a newly published advisory is already visible to the package-manager audit. Release readiness needs both remote alert inventories and a fresh lockfile-native audit with explicit secure override floors.
+files[3]{path,scope,note}:
+  package.json,project,Current compatible tooling patch
+  pnpm-lock.yaml,project,Patched transitive dependency graph
+  pnpm-workspace.yaml,project,Minimum secure override floors
+tests[2]{command,scope,timeout_seconds}:
+  pnpm audit,project,240
+  pnpm lint,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msdkvozm-e96476,test,passed,"2026-08-03T18:42:32.541Z","2026-08-03T18:44:06.850Z","2026-08-03T18:44:06.850Z",2,0,0
+body: ""

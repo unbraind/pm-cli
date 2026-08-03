@@ -128,6 +128,10 @@ export interface CommanderExtensionFailure {
   name: string;
   /** Actionable activation error without raw extension state. */
   error: string;
+  /** Whether this failed extension statically declares the attempted command. */
+  declared_command_match?: boolean;
+  /** Bounded repair and diagnostic commands. */
+  recovery_commands?: string[];
 }
 
 /** Append extension activation failures to text or JSON Commander usage output. */
@@ -140,9 +144,23 @@ export function appendCommanderExtensionFailures(
     return renderedUsage;
   }
   if (json) {
+    const primaryFailure = failures.find(
+      (entry) => entry.declared_command_match === true,
+    );
     return JSON.stringify(
       {
         ...(JSON.parse(renderedUsage) as Record<string, unknown>),
+        ...(primaryFailure
+          ? {
+              extension_command_failure: {
+                code: "extension_command_activation_failed",
+                extension: primaryFailure.name,
+                layer: primaryFailure.layer,
+                error: primaryFailure.error,
+                recovery_commands: primaryFailure.recovery_commands ?? [],
+              },
+            }
+          : {}),
         failed_extensions: failures,
       },
       null,
@@ -152,7 +170,16 @@ export function appendCommanderExtensionFailures(
   const details = failures
     .map((entry) => `- ${entry.layer}:${entry.name}: ${entry.error}`)
     .join("\n");
-  return `${renderedUsage}\nExtension activation failures:\n${details}`;
+  const primaryFailure = failures.find(
+    (entry) => entry.declared_command_match === true,
+  );
+  if (!primaryFailure) {
+    return `${renderedUsage}\nExtension activation failures:\n${details}`;
+  }
+  const recovery = (primaryFailure.recovery_commands ?? [])
+    .map((command) => `- ${command}`)
+    .join("\n");
+  return `Extension command unavailable: ${primaryFailure.layer}:${primaryFailure.name}\n${primaryFailure.error}${recovery.length > 0 ? `\nRecovery:\n${recovery}` : ""}\n\n${renderedUsage}\nExtension activation failures:\n${details}`;
 }
 
 /** Resolve the unknown command token from help or ordinary invocation syntax. */

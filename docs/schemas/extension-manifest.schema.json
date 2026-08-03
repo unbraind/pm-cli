@@ -115,6 +115,51 @@
           "items": { "type": "string" }
         }
       }
+    },
+    "contributions": {
+      "type": "object",
+      "description": "Versioned static inventory of extension registrations. pm install derives and persists this inventory from the real activation result.",
+      "required": ["schema_version"],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "commands": { "$ref": "#/definitions/stringList" },
+        "command_overrides": { "$ref": "#/definitions/stringList" },
+        "command_handlers": { "$ref": "#/definitions/stringList" },
+        "hooks": { "$ref": "#/definitions/stringList" },
+        "flag_commands": { "$ref": "#/definitions/stringList" },
+        "item_types": { "$ref": "#/definitions/stringList" },
+        "item_fields": { "$ref": "#/definitions/stringList" },
+        "relationship_kinds": { "$ref": "#/definitions/stringList" },
+        "migrations": { "$ref": "#/definitions/stringList" },
+        "profiles": { "$ref": "#/definitions/stringList" },
+        "importers": { "$ref": "#/definitions/stringList" },
+        "exporters": { "$ref": "#/definitions/stringList" },
+        "search_providers": { "$ref": "#/definitions/stringList" },
+        "vector_store_adapters": { "$ref": "#/definitions/stringList" },
+        "parser_overrides": { "$ref": "#/definitions/stringList" },
+        "service_overrides": { "$ref": "#/definitions/stringList" },
+        "renderer_overrides": { "$ref": "#/definitions/stringList" },
+        "renderer_ownership": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["format", "commands", "result_discriminator"],
+            "properties": {
+              "format": { "enum": ["toon", "json"] },
+              "commands": { "$ref": "#/definitions/stringList" },
+              "result_discriminator": { "type": "boolean" }
+            }
+          }
+        },
+        "preflight_overrides": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "definitions": {
+    "stringList": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
     }
   }
 }

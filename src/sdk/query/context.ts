@@ -18,6 +18,7 @@ import {
   resolvePmRoot,
   readSettings,
   resolveAuthor,
+  discoverExtensions,
 } from "../runtime-primitives.js";
 import {
   collectDependencyBlockedIds,
@@ -143,6 +144,8 @@ export interface ContextOptions {
   tokenBudget?: string | number;
   /** Omit tag arrays from every context focus-row collection. */
   noTags?: boolean;
+  /** Omit the static installed extension health summary. */
+  noExtensionHealth?: boolean;
   [key: string]: unknown;
 }
 
@@ -340,6 +343,20 @@ export interface TestHealthSummary {
   items_failing: string[];
 }
 
+/** Token-bounded static health of installed extension packages. */
+export interface ContextExtensionHealth {
+  /** Number of installed extension directories inspected. */
+  total: number;
+  /** Number of healthy installed extensions. */
+  ok: number;
+  /** Number of degraded installed extensions. */
+  degraded: number;
+  /** Per-package static discovery health. */
+  packages: Array<{ name: string; status: "ok" | "degraded" }>;
+  /** Whether package rows were capped. */
+  truncated?: true;
+}
+
 // ---------------------------------------------------------------------------
 // Agenda / summary (unchanged)
 // ---------------------------------------------------------------------------
@@ -436,6 +453,8 @@ export interface ContextResult {
   staleness?: StaleEntry[];
   /** Value that configures or reports tests for this contract. */
   tests?: TestHealthSummary;
+  /** Token-bounded installed extension health derived without module imports. */
+  extension_health?: ContextExtensionHealth;
   /** Cursor-bound historical rollups automatically attached for large workspaces. */
   workspace_memory?: {
     /** Persistence freshness for the derived projection. */
@@ -1898,6 +1917,14 @@ export function renderContextMarkdown(result: ContextResult): string {
   lines.push(
     `- blocked_fallback_used: ${result.summary.blocked_fallback_used}`,
   );
+  if (result.extension_health) {
+    const degradedNames = result.extension_health.packages
+      .filter((entry) => entry.status === "degraded")
+      .map((entry) => entry.name);
+    lines.push(
+      `- extensions: ${result.extension_health.ok} ok, ${result.extension_health.degraded} degraded${degradedNames.length > 0 ? ` (${degradedNames.join(", ")})` : ""}`,
+    );
+  }
   const renderedSections = result.sections_included.filter(
     (section) => section !== "blockers" || (result.blockers?.length ?? 0) > 0,
   );
@@ -2600,6 +2627,41 @@ async function attachContextUsageFeedback(
   }
 }
 
+/** Resolve the optional static extension-health projection without module imports. */
+export async function resolveContextExtensionHealthProjection(
+  omitted: boolean,
+  pmRoot: string,
+  settings: PmSettings,
+): Promise<Pick<ContextResult, "extension_health">> {
+  if (omitted) return {};
+  const discovery = await discoverExtensions({
+    pmRoot,
+    settings,
+    cwd: process.cwd(),
+    noExtensions: false,
+  });
+  const packages = discovery.discovered
+    .map((diagnostic) => ({
+      name: diagnostic.name ?? diagnostic.directory,
+      status:
+        diagnostic.status === "ok" ? ("ok" as const) : ("degraded" as const),
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+  const degraded = packages.filter(
+    (entry) => entry.status === "degraded",
+  ).length;
+  if (packages.length === 0) return {};
+  return {
+    extension_health: {
+      total: packages.length,
+      ok: packages.length - degraded,
+      degraded,
+      packages: packages.slice(0, 20),
+      ...(packages.length > 20 ? { truncated: true } : {}),
+    },
+  };
+}
+
 /** Implements run context for the public runtime surface of this module. */
 export async function runContext(
   options: ContextOptions,
@@ -2621,6 +2683,11 @@ export async function runContext(
     ),
   };
   const author = resolveAuthor(undefined, runtime.settings.author_default);
+  const extensionHealthPromise = resolveContextExtensionHealthProjection(
+    options.noExtensionHealth === true,
+    pmRoot,
+    runtime.settings,
+  );
   // Single shared edge-aware blocked classification (GH-578): resolved against
   // the full corpus so terminal blocker targets count as satisfied at every depth.
   const blockedIds = collectDependencyBlockedIds(
@@ -2745,6 +2812,7 @@ export async function runContext(
     workspaceMemory,
     Math.min(800, Math.floor(runtime.tokenBudget * 0.2)),
   );
+  Object.assign(result, await extensionHealthPromise);
 
   attachOptionalContextSections(result, sections);
   applyContextTagProjection(result, options.noTags === true);

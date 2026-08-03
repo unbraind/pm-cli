@@ -226,6 +226,57 @@ export type ExtensionLayer = "global" | "project";
 /** Restricts extension status values accepted by command, SDK, and storage contracts. */
 export type ExtensionStatus = "ok" | "warn";
 
+/** Static, serializable inventory of extension registrations available without importing its module. */
+export interface ExtensionContributionInventory {
+  /** Inventory schema version for forward-compatible persisted snapshots. */
+  schema_version: 1;
+  /** Declared command paths. */
+  commands?: string[];
+  /** Built-in command override targets. */
+  command_overrides?: string[];
+  /** Command paths backed by extension handlers. */
+  command_handlers?: string[];
+  /** Lifecycle hook phases contributed by the extension. */
+  hooks?: string[];
+  /** Command paths receiving extension flags. */
+  flag_commands?: string[];
+  /** Declared custom item types. */
+  item_types?: string[];
+  /** Declared custom item fields. */
+  item_fields?: string[];
+  /** Declared relationship kinds. */
+  relationship_kinds?: string[];
+  /** Declared schema migration identifiers. */
+  migrations?: string[];
+  /** Declared project profile names. */
+  profiles?: string[];
+  /** Declared importer names. */
+  importers?: string[];
+  /** Declared exporter names. */
+  exporters?: string[];
+  /** Declared search-provider names. */
+  search_providers?: string[];
+  /** Declared vector-store adapter names. */
+  vector_store_adapters?: string[];
+  /** Parser override command targets. */
+  parser_overrides?: string[];
+  /** Service override targets. */
+  service_overrides?: string[];
+  /** Renderer formats contributed by the extension. */
+  renderer_overrides?: string[];
+  /** Optional command ownership for renderer contributions. */
+  renderer_ownership?: Array<{
+    /** Output format owned by this renderer. */
+    format: OutputRendererFormat;
+    /** Command paths on which the renderer may run. */
+    commands: string[];
+    /** Whether runtime result discrimination can select the renderer. */
+    result_discriminator: boolean;
+  }>;
+  /** Number of preflight overrides in the package. */
+  preflight_overrides?: number;
+}
+
 /** Documents the extension manifest payload exchanged by command, SDK, and package integrations. */
 export interface ExtensionManifest {
   /** Value that configures or reports name for this contract. */
@@ -256,6 +307,8 @@ export interface ExtensionManifest {
   permissions?: ExtensionRuntimePermissionDeclaration;
   /** Value that configures or reports activation for this contract. */
   activation?: ExtensionActivationMetadata;
+  /** Static contribution inventory used by discovery before module import. */
+  contributions?: ExtensionContributionInventory;
   /** Value that configures or reports legacy capability aliases for this contract. */
   legacy_capability_aliases?: LegacyExtensionCapabilityAliasMapping[];
 }
@@ -326,6 +379,8 @@ export interface EffectiveExtension {
   capabilities?: string[];
   /** Value that configures or reports activation for this contract. */
   activation?: ExtensionActivationMetadata;
+  /** Static contribution inventory resolved from the manifest or install snapshot. */
+  contributions?: ExtensionContributionInventory;
 }
 
 /** Documents the extension discovery result payload exchanged by command, SDK, and package integrations. */
@@ -1663,6 +1718,8 @@ export interface ExtensionCandidate {
   source_package?: string;
   /** Install-source identities that can resolve this extension through package lifecycle commands. */
   source_aliases?: string[];
+  /** Persisted contribution inventory resolved without importing the module. */
+  contributions?: ExtensionContributionInventory;
 }
 
 /** Documents the extension layer scan result payload exchanged by command, SDK, and package integrations. */

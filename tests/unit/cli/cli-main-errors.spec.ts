@@ -1428,6 +1428,43 @@ describe("CLI main bootstrap helper coverage", () => {
       ...overrides,
     });
     expect(
+      _testOnly.hasGlobalExtensionContributions({ schema_version: 1 }),
+    ).toBe(false);
+    expect(
+      _testOnly.hasGlobalExtensionContributions({
+        schema_version: 1,
+        hooks: ["before_command"],
+        preflight_overrides: 0,
+        item_types: [],
+        item_fields: [],
+        relationship_kinds: [],
+        service_overrides: [],
+        renderer_overrides: [],
+        renderer_ownership: [],
+      }),
+    ).toBe(true);
+    expect(
+      _testOnly.extensionNeedsActivationForProbe(
+        extension({
+          capabilities: ["hooks"],
+          contributions: { schema_version: 1, hooks: ["before_command"] },
+        }),
+        { commandPath: "list" },
+      ),
+    ).toBe(true);
+    expect(
+      _testOnly.extensionNeedsActivationForProbe(
+        extension({
+          capabilities: ["commands"],
+          contributions: {
+            schema_version: 1,
+            commands: ["list"],
+          },
+        }),
+        { commandPath: "list" },
+      ),
+    ).toBe(true);
+    expect(
       _testOnly.extensionNeedsActivationForProbe(
         extension({ activation: { commands: ["standup"] }, capabilities: [] }),
         { commandPath: "standup", commandArgs: ["daily"] },
@@ -1501,7 +1538,7 @@ describe("CLI main bootstrap helper coverage", () => {
         extension({ activation: { commands: ["maintenance"] }, capabilities: ["commands", "hooks"] }),
         { commandPath: "list" },
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       _testOnly.extensionNeedsActivationForProbe(
         extension({ activation: { commands: ["maintenance"] }, capabilities: ["commands"] }),

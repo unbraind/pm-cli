@@ -90,6 +90,11 @@ import {
   normalizeCommandName,
   cloneContextSnapshot,
 } from "./extension-runtime-helpers.js";
+import { normalizeExtensionContributionInventory } from "./contribution-inventory.js";
+import {
+  buildReadyExtensionCandidate,
+  type ExtensionCandidateSourceIdentity,
+} from "./extension-candidate.js";
 export {
   parseUnknownExtensionCapabilityWarning,
   parseLegacyExtensionCapabilityAliasWarning,
@@ -454,6 +459,7 @@ interface ParsedManifestMetadata {
   capabilities: string[];
   legacy_capability_aliases: LegacyExtensionCapabilityAliasMapping[];
   activation: ExtensionManifest["activation"];
+  contributions: ExtensionManifest["contributions"];
 }
 
 /** Parse every optional manifest metadata field, returning `null` as soon as any one is malformed. */
@@ -500,6 +506,12 @@ function parseManifestMetadata(
   if (activation === null) {
     return null;
   }
+  const contributions = normalizeExtensionContributionInventory(
+    candidate.contributions,
+  );
+  if (contributions === null) {
+    return null;
+  }
   return {
     manifest_version: manifestVersion,
     pm_min_version: pmMinVersion,
@@ -512,10 +524,14 @@ function parseManifestMetadata(
     capabilities: capabilities.capabilities,
     legacy_capability_aliases: capabilities.legacy_aliases,
     activation,
+    contributions,
   };
 }
 
-function parseManifest(raw: unknown): ExtensionManifest | null {
+/** Parse and normalize one complete on-disk extension manifest contract. */
+export function parseExtensionManifestDocument(
+  raw: unknown,
+): ExtensionManifest | null {
   if (typeof raw !== "object" || raw === null) {
     return null;
   }
@@ -554,6 +570,7 @@ function parseManifest(raw: unknown): ExtensionManifest | null {
     sandbox_profile: metadata.sandbox_profile,
     permissions: metadata.permissions,
     activation: metadata.activation,
+    contributions: metadata.contributions,
     capabilities: metadata.capabilities,
     legacy_capability_aliases:
       metadata.legacy_capability_aliases.length > 0
@@ -637,6 +654,8 @@ function summarizeCandidate(candidate: ExtensionCandidate): EffectiveExtension {
           commands: [...(candidate.manifest.activation.commands as string[])],
         }
       : undefined,
+    contributions:
+      candidate.manifest.contributions ?? candidate.contributions,
   };
   if (candidate.source_package) {
     summary.source_package = candidate.source_package;
@@ -653,10 +672,7 @@ function normalizeManagedSourcePackage(value: unknown): string | undefined {
     : undefined;
 }
 
-interface ManagedExtensionSourceIdentity {
-  package_name?: string;
-  aliases: string[];
-}
+type ManagedExtensionSourceIdentity = ExtensionCandidateSourceIdentity;
 
 async function readManagedExtensionSourcePackages(
   extensionsRoot: string,
@@ -681,6 +697,7 @@ async function readManagedExtensionSourcePackages(
       const record = entry as {
         directory?: unknown;
         name?: unknown;
+        contributions?: unknown;
         source?: { input?: unknown; name?: unknown; package?: unknown };
       };
       const sourcePackage = normalizeManagedSourcePackage(
@@ -689,12 +706,13 @@ async function readManagedExtensionSourcePackages(
       const aliases = [record.source?.input, record.source?.name, sourcePackage]
         .map((value) => normalizeManagedSourcePackage(value))
         .filter((value): value is string => value !== undefined);
-      if (aliases.length === 0) {
-        continue;
-      }
+      const contributions = normalizeExtensionContributionInventory(
+        record.contributions,
+      );
       const identity: ManagedExtensionSourceIdentity = {
         aliases: [...new Set(aliases)],
         ...(sourcePackage ? { package_name: sourcePackage } : {}),
+        ...(contributions ? { contributions } : {}),
       };
       if (
         typeof record.directory === "string" &&
@@ -881,7 +899,7 @@ async function scanExtensionDirectory(
     const parsed = JSON.parse(
       await fs.readFile(manifestPath, "utf8"),
     ) as unknown;
-    manifest = parseManifest(parsed);
+    manifest = parseExtensionManifestDocument(parsed);
   } catch {
     manifest = null;
   }
@@ -948,18 +966,16 @@ async function scanExtensionDirectory(
       status: extensionReady ? "ok" : "warn",
     },
     warnings: extensionWarnings,
-    candidate:
-      extensionReady && enabledForLoad
-        ? {
-            layer,
-            directory,
-            manifest_path: manifestPath,
-            entry_path: entryPath,
-            manifest,
-            source_package: sourceIdentity?.package_name,
-            source_aliases: sourceIdentity?.aliases,
-          }
-        : null,
+    candidate: buildReadyExtensionCandidate({
+      layer,
+      directory,
+      manifestPath,
+      entryPath,
+      manifest,
+      sourceIdentity,
+      extensionReady,
+      enabledForLoad,
+    }),
   };
 }
 
@@ -3616,7 +3632,7 @@ export const _testOnlyLoader = {
   normalizeRegistrationRecordList,
   normalizeRuntimeRegistrationRecord,
   parseComparableVersion,
-  parseManifest,
+  parseManifest: parseExtensionManifestDocument,
   readCurrentPmCliVersion,
   readManagedExtensionSourcePackages: async (extensionsRoot: string) =>
     new Map(
