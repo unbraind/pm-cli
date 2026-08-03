@@ -142,6 +142,12 @@ describe("SDK entrypoint import-cost calculations", () => {
     await expect(
       readLinuxRssBytes(42, {
         platform: "linux",
+        readStatus: async () => "VmRSS:\t12 MB\n",
+      }),
+    ).resolves.toBeUndefined();
+    await expect(
+      readLinuxRssBytes(42, {
+        platform: "linux",
         readStatus: async () => {
           throw new Error("process exited");
         },
