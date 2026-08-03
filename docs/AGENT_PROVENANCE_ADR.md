@@ -9,8 +9,8 @@ Implementation lineage:
 [pm-te6elw](../.agents/pm/tasks/pm-te6elw.toon), with bounded automatic
 resolution and patch-free historical reads implemented by
 [pm-ffz0a9](../.agents/pm/issues/pm-ffz0a9.toon),
-[pm-v8gfi7](../.agents/pm/features/pm-v8gfi7.toon), and
-[pm-3yxwv5](../.agents/pm/tasks/pm-3yxwv5.toon).
+[pm-v8gfi7](../.agents/pm/issues/pm-v8gfi7.toon), and
+[pm-3yxwv5](../.agents/pm/issues/pm-3yxwv5.toon).
 
 Status: accepted amendment to
 [pm-qwuber](../.agents/pm/decisions/pm-qwuber.toon). The original stable-author

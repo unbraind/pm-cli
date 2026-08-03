@@ -23,8 +23,8 @@ Session provenance and episode continuity are tracked by
 [pm-oqo9l2](../.agents/pm/features/pm-oqo9l2.toon). Automatic bounded probes,
 historical projections, and versioned legacy identity are tracked by
 [pm-ffz0a9](../.agents/pm/issues/pm-ffz0a9.toon),
-[pm-v8gfi7](../.agents/pm/features/pm-v8gfi7.toon), and
-[pm-3yxwv5](../.agents/pm/tasks/pm-3yxwv5.toon).
+[pm-v8gfi7](../.agents/pm/issues/pm-v8gfi7.toon), and
+[pm-3yxwv5](../.agents/pm/issues/pm-3yxwv5.toon).
 
 `pm` treats project management as context management. These primitives keep
 mutation provenance, source-workspace identity, extension flags, and bounded
