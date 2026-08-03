@@ -572,10 +572,16 @@ describe("register-list-query mutation events", () => {
       "--provenance-summary",
       "--harness",
       "codex",
+      "--harness",
+      "claude-code",
       "--agent-instance",
       "instance-a",
+      "--agent-instance",
+      "instance-b",
       "--provenance-filter",
       "model=gpt-5.6-sol",
+      "--provenance-filter",
+      "effort=xhigh",
     );
     expect(vi.mocked(listMutationEvents)).toHaveBeenLastCalledWith({
       pmRoot: tmpRoot,
@@ -587,9 +593,9 @@ describe("register-list-query mutation events", () => {
       full: false,
       provenance: true,
       provenanceSummary: true,
-      harness: ["codex"],
-      agentInstance: ["instance-a"],
-      provenanceFilter: ["model=gpt-5.6-sol"],
+      harness: ["codex", "claude-code"],
+      agentInstance: ["instance-a", "instance-b"],
+      provenanceFilter: ["model=gpt-5.6-sol", "effort=xhigh"],
     });
   });
 
