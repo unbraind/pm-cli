@@ -83,10 +83,28 @@ export function summarizeImportSamples(samples) {
   };
 }
 
-async function readLinuxRssBytes(pid) {
-  if (process.platform !== "linux" || pid === undefined) return undefined;
+/**
+ * @typedef {object} LinuxRssReadOptions
+ * @property {string} [platform] Runtime platform used to gate procfs access.
+ * @property {(path: string, encoding: "utf8") => Promise<string>} [readStatus]
+ * Proc status reader used for deterministic failure-boundary testing.
+ */
+
+/**
+ * Read one Linux process RSS sample while treating procfs races as absent data.
+ *
+ * The injectable platform and reader make the failure boundary deterministic in
+ * tests; production callers retain the real platform and filesystem defaults.
+ *
+ * @param {number | undefined} pid Process identifier to sample.
+ * @param {LinuxRssReadOptions} [options] Injectable runtime boundaries.
+ */
+export async function readLinuxRssBytes(pid, options = {}) {
+  const platform = options.platform ?? process.platform;
+  const readStatus = options.readStatus ?? readFile;
+  if (platform !== "linux" || pid === undefined) return undefined;
   try {
-    const status = await readFile(`/proc/${pid}/status`, "utf8");
+    const status = await readStatus(`/proc/${pid}/status`, "utf8");
     const match = status.match(/^VmRSS:\s+(\d+)\s+kB$/mu);
     return match ? Number.parseInt(match[1], 10) * 1024 : undefined;
   } catch {
