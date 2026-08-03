@@ -85,12 +85,53 @@ export function getChangedFilesSince(lastTag) {
     .filter((line) => line.length > 0);
 }
 
+/**
+ * Parse a release tag into its calendar components.
+ *
+ * Returns null for anything that is not `v<year>.<month>.<day>` with an
+ * optional `-<ordinal>` suffix, so unrelated tags can never be mistaken for a
+ * release of a given day.
+ */
+export function parseReleaseTagDate(tag) {
+  const match = /^v(\d{4})\.(\d{1,2})\.(\d{1,2})(?:-(\d+))?$/u.exec(tag);
+  if (!match) return null;
+  const [, year, month, day, ordinal] = match;
+  return {
+    year: Number(year),
+    month: Number(month),
+    day: Number(day),
+    ordinal: ordinal === undefined ? null : Number(ordinal),
+  };
+}
+
+/**
+ * Return the release tags whose own calendar fields equal `todayKey`.
+ *
+ * The comparison is exact on parsed components rather than a `v${todayKey}*`
+ * prefix glob: unpadded date keys make that glob prefix-unsafe for days 1-9 of
+ * every month (`v2026.5.1*` also matches `v2026.5.10`), which would report
+ * `release_already_cut_today` for a day that has no release as soon as any tag
+ * exists out of chronological order.
+ */
 export function listTodayTags(todayKey) {
-  const result = git(["tag", "--list", `v${todayKey}*`]);
+  const today = parseReleaseTagDate(`v${todayKey}`);
+  if (!today) {
+    fail(`Invalid release date key "${todayKey}". Expected YYYY.M.D.`);
+  }
+  const result = git(["tag", "--list", "v*"]);
   return result.stdout
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line) => line.length > 0);
+    .filter((line) => line.length > 0)
+    .filter((tag) => {
+      const parsed = parseReleaseTagDate(tag);
+      return (
+        parsed !== null &&
+        parsed.year === today.year &&
+        parsed.month === today.month &&
+        parsed.day === today.day
+      );
+    });
 }
 
 export function ensureCleanWorkingTree() {

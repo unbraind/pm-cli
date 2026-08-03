@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: "area:security",ci,governance,history,privacy,secret-guard
 created_at: "2026-07-26T17:50:28.439Z"
-updated_at: "2026-07-26T17:50:28.439Z"
+updated_at: "2026-08-03T06:45:31.243Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The rule inventory is a single declared source consumed by both the write-time mutation guard and the static secret gate, so neither can carry a rule the other lacks; A test fails when the two rule sets diverge, rather than the divergence being discovered by a push that trips the gate; Rules that are deliberately gate-only are declared as such with a recorded reason, so an intentional asymmetry is visible instead of accidental; The guard's advise and block modes apply the full inventory across every mutation surface, matching how the credential rules already behave; Matched values stay redacted in errors, telemetry, and recovery bundles for the newly shared rules exactly as they are for the credential rules; Documentation states which rules block a write and which only fail a build, so an author knows before writing which is which"
@@ -19,16 +19,52 @@ why_now: "The gap was exercised for real this session: a host path reached an im
 parent: pm-qwoy
 risk: medium
 confidence: high
-dependencies[11]{id,kind,created_at,author,source_kind}:
-  pm-34w8za,related,"2026-07-26T17:50:28.439Z",null,null
-  pm-5ecnar,related,"2026-07-26T17:50:28.439Z",null,null
-  pm-daft,related,"2026-07-26T17:50:28.439Z",null,null
-  pm-fhhhlk,related,"2026-07-26T17:50:28.439Z",null,null
-  pm-h4zb,related,"2026-07-26T17:50:28.439Z",null,null
-  pm-h6wmtc,related,"2026-07-26T17:50:28.439Z",null,null
-  pm-kpftft,related,"2026-07-26T17:50:28.439Z",null,null
-  pm-m0fh,related,"2026-07-26T17:50:28.439Z",null,null
-  pm-pim7,discovered_from,"2026-07-26T17:50:28.439Z",null,null
-  pm-qwoy,implements,"2026-07-26T17:50:28.439Z",null,null
-  pm-w7ccmv,verifies,"2026-07-26T17:50:28.439Z",null,null
+dependencies[13]:
+  - id: pm-34w8za
+    kind: related
+    created_at: "2026-07-26T17:50:28.439Z"
+  - id: pm-5ecnar
+    kind: related
+    created_at: "2026-07-26T17:50:28.439Z"
+  - id: pm-daft
+    kind: related
+    created_at: "2026-07-26T17:50:28.439Z"
+  - id: pm-fhhhlk
+    kind: related
+    created_at: "2026-07-26T17:50:28.439Z"
+  - id: pm-h4zb
+    kind: related
+    created_at: "2026-07-26T17:50:28.439Z"
+  - id: pm-h6wmtc
+    kind: related
+    created_at: "2026-07-26T17:50:28.439Z"
+  - id: pm-kpftft
+    kind: related
+    created_at: "2026-07-26T17:50:28.439Z"
+  - id: pm-m0fh
+    kind: related
+    created_at: "2026-07-26T17:50:28.439Z"
+  - id: pm-pim7
+    kind: discovered_from
+    created_at: "2026-07-26T17:50:28.439Z"
+  - id: pm-qwoy
+    kind: implements
+    created_at: "2026-07-26T17:50:28.439Z"
+  - id: pm-w7ccmv
+    kind: verifies
+    created_at: "2026-07-26T17:50:28.439Z"
+  - id: pm-9gvazz
+    kind: incident_from
+    created_at: "2026-08-03T06:45:31.038Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ei6x66
+    kind: related
+    created_at: "2026-08-03T06:45:31.038Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-08-03T06:45:30.411Z","harness:claude-code","Live reproduction, 2026-08-03, unplanned. This item predicted the failure and the failure occurred exactly as described, so recording it as evidence rather than as a new finding.\n\nSequence. I filed pm-9gvazz with a description quoting the workspace absolute path and the harness session-file path, because those two strings ARE the evidence for that defect. The write-time mutation guard accepted the create without objection and the content was hashed into pm-9gvazz's history stream. pm validate reported ok. pm health reported ok. The content was immutable and clean by every check pm itself offers.\n\nThe CI secret gate then failed the push: four hits, two in .agents/pm/history/pm-9gvazz.jsonl and two in .agents/pm/issues/pm-9gvazz.toon, all rule absolute-home-path (scripts/check-secrets-lib.mjs). So the repository forbids content that pm had already made permanent - which is the precise statement of this item.\n\nTwo details worth keeping, because they sharpen the scope:\n\nFirst, the ordering is the whole problem. Remediation required pm history-redact, an audited rewrite of an append-only stream, rather than an edit. It worked correctly - two passes, chain re-verified, hash_mismatches_after 0, audit_entry_added true, and the technical content survived - but a write-time refusal would have cost one re-word and no rewrite at all. Every history-redact invocation is a small permanent scar on the immutability claim that a matching write-time rule would have avoided entirely.\n\nSecond, the local and hosted halves are already consistent here: node scripts/check-secrets.mjs reproduced all four hits locally with identical output. So this is not a local-versus-hosted parity gap - the parity is fine, and the gap is purely that the rule set lives at commit time and not at mutation time. That distinction matters for the fix: the rules do not need to be re-derived, they need to be shared, and check-secrets-lib.mjs is already a library rather than a script.\n\nSuggested acceptance evidence when this is fixed: creating an item whose body contains an absolute home path must be refused at mutation time with the rule name, and the resulting item must not exist - proven by the secret gate finding nothing afterwards without any redaction having run."
 body: ""

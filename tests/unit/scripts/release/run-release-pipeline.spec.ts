@@ -16,6 +16,9 @@ type PipelineModule = {
   getCommitCountSince: (lastTag: string | null) => number;
   getChangedFilesSince: (lastTag: string | null) => string[];
   listTodayTags: (todayKey: string) => string[];
+  parseReleaseTagDate: (
+    tag: string,
+  ) => { year: number; month: number; day: number; ordinal: number | null } | null;
   ensureCleanWorkingTree: () => void;
   resolveVersion: (explicit: string | null, todayKey: string) => string;
   readPackageVersion: () => string;
@@ -135,6 +138,49 @@ describe("run-release-pipeline", () => {
       expect(mod.getChangedFilesSince("v2026.6.13")).toEqual(["src/a.ts", "src/b.ts"]);
       expect(mod.getChangedFilesSince(null)).toEqual(["src/a.ts", "src/b.ts"]);
       expect(mod.listTodayTags("2026.6.15")).toEqual(["v2026.6.15", "v2026.6.15-2"]);
+    });
+
+    it("matches same-day release tags exactly and never by date-key prefix", async () => {
+      const runCommand = vi.fn((command: string, args: string[]) => {
+        if (args[0] === "tag") {
+          return {
+            status: 0,
+            stdout: [
+              "v2026.6.1",
+              "v2026.6.1-2",
+              "v2026.6.10",
+              "v2026.6.12",
+              "v2026.6.19",
+              "v2026.6.2",
+              "v2026.16.1",
+              "v2026.6.1-rc1",
+              "pm-cli-v2026.6.1",
+              "nightly",
+            ].join("\n"),
+            stderr: "",
+          };
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      });
+      mockUtils(runCommand);
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+
+      // Negative control: days 1-9 are string prefixes of 10-31 in the same
+      // month, so a `v2026.6.1*` glob would report five spurious same-day tags.
+      expect(mod.listTodayTags("2026.6.1")).toEqual(["v2026.6.1", "v2026.6.1-2"]);
+      // A month key is likewise not a prefix of a different month.
+      expect(mod.listTodayTags("2026.6.10")).toEqual(["v2026.6.10"]);
+      // A day with no release reports no release, even with prefix neighbours.
+      expect(mod.listTodayTags("2026.6.11")).toEqual([]);
+      expect(mod.parseReleaseTagDate("v2026.6.1-2")).toEqual({
+        year: 2026,
+        month: 6,
+        day: 1,
+        ordinal: 2,
+      });
+      expect(mod.parseReleaseTagDate("v2026.6.1-rc1")).toBeNull();
+      expect(mod.parseReleaseTagDate("pm-cli-v2026.6.1")).toBeNull();
+      expect(() => mod.listTodayTags("not-a-date")).toThrow();
     });
 
     it("covers empty-stdout fallback in commit-count and changed-files", async () => {
