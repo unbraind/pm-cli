@@ -1,6 +1,6 @@
 # Packages and Extensions
 
-Extension flags declared with `list: true` accumulate repeated long/short alias occurrences and comma-separated values into one array. Dynamic commands preserve flag-like variadic content after `--`, and package handlers can use the public `suppressHostOutput()` protocol when they already emitted streaming, binary, or pre-rendered output. Declarative blueprints are also checked for reserved item-field collisions during SDK lint/preflight and harness activation, so a package cannot pass author-time validation and then fail only when users create or update items. Transactional mutation guards, host-bound command test SDKs, and installed custom-type lifecycle parity are tracked by [pm-hx23u5](../.agents/pm/issues/pm-hx23u5.toon), [pm-wx2lr5](../.agents/pm/issues/pm-wx2lr5.toon), and [pm-scga6k](../.agents/pm/issues/pm-scga6k.toon).
+Extension flags declared with `list: true` accumulate repeated long/short alias occurrences and comma-separated values into one array. Dynamic commands preserve flag-like variadic content after `--`, and package handlers can use the public `suppressHostOutput()` protocol when they already emitted streaming, binary, or pre-rendered output. Declarative blueprints are also checked for reserved item-field collisions during SDK lint/preflight and harness activation, so a package cannot pass author-time validation and then fail only when users create or update items. Local archive installation, command ownership, and MCP custom-field diagnostics are tracked by [pm-lw6acw](../.agents/pm/issues/pm-lw6acw.toon), [pm-6z0wzf](../.agents/pm/issues/pm-6z0wzf.toon), and [pm-yfdav2](../.agents/pm/issues/pm-yfdav2.toon). Transactional mutation guards, host-bound command test SDKs, and installed custom-type lifecycle parity are tracked by [pm-hx23u5](../.agents/pm/issues/pm-hx23u5.toon), [pm-wx2lr5](../.agents/pm/issues/pm-wx2lr5.toon), and [pm-scga6k](../.agents/pm/issues/pm-scga6k.toon).
 
 Packages add optional `pm` workflows without changing the core CLI. A package can ship one or more runtime extensions plus metadata such as docs and examples. Prefer the package-first commands in new docs and automation:
 
@@ -22,12 +22,13 @@ pm upgrade --dry-run
 ```bash
 pm install ./local-package --project
 pm install /absolute/path/to/package --project
+pm install ./my-package-1.2.3.tgz --project
+pm install npm:./my-package-1.2.3.tar.gz --project
 pm install npm:@scope/package --project
 pm install npm:package@1.2.3 --project
 pm install https://github.com/org/repo --project
 pm install --github org/repo/path --ref main --project
 ```
-
 Bundled first-party packages live under `packages/pm-*`:
 
 ```bash
@@ -37,10 +38,10 @@ pm install calendar --project
 pm install search-advanced --project
 pm install kanban --project
 ```
-
 `pm install '*'`, `pm install all`, and shell-expanded `pm install *` are normalized to the same bundled install-all request. First-party package aliases come from each package manifest, with a fallback derived from the `packages/pm-*` directory name.
 
 External registry packages are installed by exact package name. If `npm:<name>` returns a registry 404, JSON error output includes `fallback_candidates` and `next_best_command`; unpublished first-party packages fall back to `pm install --project github.com/unbraind/<name>`. Install results include package-owned `command_paths`, `action_paths`, `command_discovery`, and a light `verification` block covering the target tracker, activation status, registered commands/actions/item types, and health verdict. Agents should consume those fields instead of guessing from the package name or immediately spending another invocation on doctor. A failed runtime activation returns `ok: false`, `activated: false`, a non-zero CLI exit, and actionable diagnostics; missing SDK resolution adds an explicit dependency recovery step. Local installs are containment-safe when the extension destination is nested inside the source checkout: pm stages the package outside the source and prunes the destination, `.agents`, `node_modules`, and install-backup directories before copying, so reinstalling cannot recursively copy tracker history, host dependencies, or prior backups.
+Local `.tgz` and `.tar.gz` npm archives are inspected and extracted in an isolated temporary directory without invoking a shell. Archives must contain one `package/package.json` root, regular files/directories only, and bounded entry and expanded-byte totals. Absolute paths, traversal, alternate roots, links, device entries, oversized entries, and decompression-ratio abuse fail before installation. The managed source remains the original archive path, so reload and upgrade provenance do not point at a temporary extraction directory.
 Registry dependency names and versions are parsed as npm package specs before the install subprocess starts. Leading-option names and shell control syntax are rejected. npm reads those validated dependencies from an isolated runtime-only manifest; no caller-controlled spec is forwarded through the Windows command shell, and the fixed invocation still ends option parsing with `--`. Runtime verification then activates a temporary snapshot of the complete installed extension directory, so an upgrade cannot silently reuse stale transitive ESM dependencies from the current process. Successful install details expose `module_graph_verification: "fresh_snapshot"` for this check.
 An explicit `--pm-path` scopes project installs to that tracker root, including extension files, managed state, settings, type-folder scaffolding, and verification output. This is the safe form for temporary package testing from inside another repository checkout.
 
@@ -51,7 +52,6 @@ pm install npm:pm-github --project
 pm package doctor --project --detail deep --trace
 pm github validate --repo owner/repo
 ```
-
 For `pm-github`, run `pm github validate --repo owner/repo` before mutating commands; write paths require `GITHUB_TOKEN`/`GH_TOKEN` or `gh auth login`.
 
 For ecosystem maintenance, use the reusable external package smoke harness after building `dist/`:
@@ -267,7 +267,7 @@ Surface tokens include command handlers/overrides, parser/preflight/services/ren
 
 ## Registration Collisions
 
-Some extension surfaces are intentionally single-winner: command overrides, parser overrides, preflight overrides, and format renderers. If multiple packages register the same single-winner surface, the later-loaded registration wins and `pm package doctor` / `pm health` report deterministic `extension_*_collision` warnings.
+Some extension surfaces are intentionally single-winner: command handlers and overrides, parser overrides, preflight overrides, and format renderers. If multiple packages register the same single-winner surface, the later-loaded registration wins and `pm package doctor` / `pm health` report deterministic `extension_*_collision` warnings. `pm package describe --json` also exposes `command_ownership`: every claimant in activation order, the effective winner, collision state, and the explicit `last_activated_wins` policy. SDK hosts can build the identical table with `buildExtensionDescribeResult` and the exported `ExtensionCommandOwnership` contracts.
 
 For definition-based commands, validation is isolated per command: a malformed definition is recorded as `extension_command_quarantined:*` with a registration trace while valid siblings continue to activate. Unknown-command recovery reports that failure without recommending reinstallation.
 Use the warning details to resolve the overlap:
@@ -294,6 +294,7 @@ Common APIs:
 - `api.registerCommand(definition)` adds package-owned commands.
 - `api.registerFlags(command, flags)` adds runtime command flags. A flag may declare `value_type` (canonical; the legacy `type` alias is honored only when `value_type` is absent), `list: true` to accumulate repeated/comma-joined values like core `--tags`, and a `default` applied when the flag is omitted.
 - `api.registerItemFields(fields)` adds custom metadata fields. Agents can set declared fields with repeatable `pm create --field name=value` and `pm update <id> --field name=value`; undeclared names are rejected. `SchemaFieldDefinition.type` is the same closed union used by `pm schema add-field`: `string | number | boolean | string_array | array | object`. Unsupported values fail at compile time for TypeScript authors and at activation for JavaScript packages, with a did-you-mean hint on typos. `string_array` is the repeatable string collection; `array` and `object` require JSON containers.
+- Custom fields whose camel-case option name is already owned by a canonical MCP input remain usable through `options.<name>`, but authoring surfaces report the collision instead of allowing silent top-level shadowing. `pm schema add-field`, `pm profile lint`, and `pm package doctor` name the field, canonical `mcp_tool_input` owner, and nested recovery path. SDK authors can preflight the same rule with `resolvePmToolCustomFieldCollision`.
 - `api.registerItemTypes(types)` adds custom item types.
 - `api.registerRelationshipKinds(definitions)` adds validated graph semantics. Definitions declare direction, inverse spelling, ordering/precedence, hierarchy, cardinality, lifecycle, aliases, payload schema, compatibility version, and self-edge policy. Active definitions are merged into native CLI, MCP, and SDK workspace graph assembly. Requires the `schema` capability and is governed by the `schema.relationshipkinds` policy surface.
 - `api.registerMigration(definition)` adds schema migrations.
@@ -342,7 +343,7 @@ Explore installed runtime entries, or describe exactly what each loaded package 
 
 ```bash
 pm package explore --project
-pm package describe --project                 # surface map of every loaded package
+pm package describe --project                 # surfaces plus deterministic command ownership
 pm package describe my-extension --markdown --output docs/my-extension-reference.md
 ```
 

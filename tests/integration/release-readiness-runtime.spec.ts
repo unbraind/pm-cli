@@ -1661,7 +1661,12 @@ describe("release readiness runtime coverage", () => {
         },
       );
       expect(commentsResult.code).toBe(0);
-      expectTopLevelKeyOrder(commentsResult.json, ["id", "comments", "count"]);
+      expectTopLevelKeyOrder(commentsResult.json, [
+        "id",
+        "comments",
+        "count",
+        "row_contract",
+      ]);
 
       const notesResult = context.runCli(
         ["notes", createdId, "--add", "runtime note", "--json"],
@@ -1670,7 +1675,12 @@ describe("release readiness runtime coverage", () => {
         },
       );
       expect(notesResult.code).toBe(0);
-      expectTopLevelKeyOrder(notesResult.json, ["id", "notes", "count"]);
+      expectTopLevelKeyOrder(notesResult.json, [
+        "id",
+        "notes",
+        "count",
+        "row_contract",
+      ]);
 
       const learningsResult = context.runCli(
         ["learnings", createdId, "--add", "runtime learning", "--json"],
@@ -1683,6 +1693,7 @@ describe("release readiness runtime coverage", () => {
         "id",
         "learnings",
         "count",
+        "row_contract",
       ]);
 
       const commentsPositionalResult = context.runCli(
@@ -1703,6 +1714,7 @@ describe("release readiness runtime coverage", () => {
         "id",
         "comments",
         "count",
+        "row_contract",
       ]);
 
       const filesResult = context.runCli(
@@ -1721,6 +1733,7 @@ describe("release readiness runtime coverage", () => {
         "files",
         "changed",
         "count",
+        "row_contract",
       ]);
 
       const docsResult = context.runCli(
@@ -1739,6 +1752,7 @@ describe("release readiness runtime coverage", () => {
         "docs",
         "changed",
         "count",
+        "row_contract",
       ]);
 
       const depsTreeResult = context.runCli(["deps", createdId, "--json"], {

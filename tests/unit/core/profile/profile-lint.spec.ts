@@ -152,6 +152,16 @@ describe("lintProjectProfile", () => {
     it("accepts distinct custom fields", () => {
       expect(codesOf(makeProfile({ fields: [{ key: "points" }, { key: "severity" }] }))).toEqual([]);
     });
+
+    it("warns when a field is shadowed by a canonical MCP input", () => {
+      const report = lintProjectProfile(makeProfile({ fields: [{ key: "cwd" }] }));
+      expect(report.findings[0]).toMatchObject({
+        code: "field_mcp_input_collision",
+        severity: "warning",
+        target: "cwd",
+      });
+      expect(report.findings[0]?.message).toContain("options.cwd");
+    });
   });
 
   describe("workflows", () => {

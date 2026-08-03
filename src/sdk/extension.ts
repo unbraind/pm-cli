@@ -87,6 +87,7 @@ import {
 } from "./extension/install-runtime.js";
 import { mapWithFixedConcurrency } from "./extension/concurrency.js";
 import { collectGlobalOutputOverrideDoctorWarnings } from "./extension/output-ownership.js";
+import { collectMcpCustomFieldCollisionDoctorWarnings } from "./extension/custom-field-collisions.js";
 import { checkGithubUpdate } from "./extension/update-check.js";
 import {
   captureExtensionInstallSnapshot,
@@ -3186,6 +3187,9 @@ const runExtensionDoctorAction = async (
       activationResult,
     ),
   );
+  warnings.push(
+    ...collectMcpCustomFieldCollisionDoctorWarnings(activationResult),
+  );
   const runtimeInstalledExtensions = applyDoctorRuntimeActivationState(
     refreshedInstalled.extensions,
     loadResult,
@@ -3486,6 +3490,7 @@ const runExtensionDescribeAction = async (
     total: describeResult.total,
     extensions: describeResult.extensions,
     union: describeResult.union,
+    command_ownership: describeResult.command_ownership,
   });
 };
 
@@ -3757,6 +3762,7 @@ export const _testOnly = {
   findActivationFailureByName,
   resolveInstallRuntimeActivationStatus,
   collectGlobalOutputOverrideDoctorWarnings,
+  collectMcpCustomFieldCollisionDoctorWarnings,
   collectSchemaNarrowActivationDoctorWarnings,
   copyExtensionDirectoryWithoutSelfNesting,
   isErrnoCode,

@@ -494,6 +494,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["core/profile/profile-lint.ts"],
   },
   {
+    code: "field_mcp_input_collision",
+    meaning: "Field mcp input collision condition.",
+    stability: "stable",
+    exit_code: 1,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/profile/profile-lint.ts"],
+  },
+  {
     code: "github_source_entry_unbuilt",
     meaning: "Github source entry unbuilt condition.",
     stability: "stable",
@@ -821,6 +830,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/query/list.ts"],
+  },
+  {
+    code: "local_package_archive_unsafe",
+    meaning: "Local package archive unsafe condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/install-sources.ts"],
   },
   {
     code: "local_source_not_found_bare_name",

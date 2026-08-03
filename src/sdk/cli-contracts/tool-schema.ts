@@ -53,6 +53,68 @@ const PM_TOOL_READ_OUTPUT_PARAMETER_KEYS = [
   "outputFormat",
 ] as const;
 
+/** Canonical top-level MCP properties that take precedence over runtime custom fields. */
+export const PM_TOOL_RESERVED_CUSTOM_FIELD_PROPERTIES: ReadonlySet<string> =
+  new Set([
+    "action",
+    "cwd",
+    "options",
+    ...Object.keys(PM_TOOL_PARAMETER_PROPERTIES).filter(
+      (property) => property !== "severity",
+    ),
+  ]);
+
+/** Author-facing description of a runtime field shadowed by a canonical MCP input. */
+export interface PmToolCustomFieldCollision {
+  /** Runtime schema key as authored. */
+  field: string;
+  /** Camel-case property name used by SDK and MCP action inputs. */
+  property: string;
+  /** Canonical surface that retains top-level ownership. */
+  owner: "mcp_tool_input";
+  /** Collision-safe path through which callers can still supply the field. */
+  nested_path: string;
+}
+
+/** Resolve a runtime custom-field collision without changing dispatch semantics. */
+export function resolvePmToolCustomFieldCollision(
+  field: string,
+): PmToolCustomFieldCollision | undefined {
+  const normalized = field.trim().toLowerCase();
+  let property = "";
+  for (let index = 0; index < normalized.length; index += 1) {
+    const character = normalized[index]!;
+    if (character !== "-" && character !== "_") {
+      property += character;
+      continue;
+    }
+    let nextIndex = index + 1;
+    while (normalized[nextIndex] === "-" || normalized[nextIndex] === "_") {
+      nextIndex += 1;
+    }
+    const nextCharacter = normalized[nextIndex];
+    if (
+      nextCharacter !== undefined &&
+      ((nextCharacter >= "a" && nextCharacter <= "z") ||
+        (nextCharacter >= "0" && nextCharacter <= "9"))
+    ) {
+      property += nextCharacter.toUpperCase();
+      index = nextIndex;
+      continue;
+    }
+    property += normalized.slice(index, nextIndex);
+    index = nextIndex - 1;
+  }
+  return PM_TOOL_RESERVED_CUSTOM_FIELD_PROPERTIES.has(property)
+    ? {
+        field,
+        property,
+        owner: "mcp_tool_input",
+        nested_path: `options.${property}`,
+      }
+    : undefined;
+}
+
 const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<
   Record<PmToolAction, readonly string[]>
 > = {

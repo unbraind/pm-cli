@@ -43,6 +43,7 @@ import { normalizeAddTypeInput } from "../schema/item-types-file.js";
 import { normalizeStatusToken } from "../schema/type-workflows.js";
 import { DEFAULT_RUNTIME_STATUS_DEFINITIONS } from "../schema/runtime-schema.js";
 import { toErrorMessage } from "../shared/primitives.js";
+import { resolvePmToolCustomFieldCollision } from "../../sdk/cli-contracts/tool-schema.js";
 import {
   normalizeProfileLookupKey,
   type ProjectProfileDefinition,
@@ -77,6 +78,7 @@ export const PROFILE_LINT_CODES = [
   "status_duplicate",
   "field_invalid",
   "field_duplicate",
+  "field_mcp_input_collision",
   "workflow_type_empty",
   "workflow_type_unknown",
   "workflow_duplicate_type",
@@ -283,6 +285,16 @@ function lintFields(
       continue;
     }
     seen.add(key);
+    const collision = resolvePmToolCustomFieldCollision(key);
+    if (collision) {
+      findings.push({
+        severity: "warning",
+        code: "field_mcp_input_collision",
+        dimension: "fields",
+        target: key,
+        message: `Field "${key}" collides with canonical MCP property "${collision.property}" owned by ${collision.owner}; callers must pass the custom value through ${collision.nested_path}.`,
+      });
+    }
   }
 }
 

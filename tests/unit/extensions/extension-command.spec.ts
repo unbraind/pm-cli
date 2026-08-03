@@ -864,6 +864,40 @@ describe("extension command runtime", () => {
     }
   });
 
+  it("reports extension custom fields shadowed by canonical MCP inputs", () => {
+    expect(
+      extensionCommandTestOnly.collectMcpCustomFieldCollisionDoctorWarnings({
+        registrations: {
+          item_fields: [
+            {
+              layer: "project",
+              name: "routing-fields",
+              fields: [{ name: "path", type: "string" }],
+            },
+            {
+              layer: "project",
+              name: "routing-fields",
+              fields: [
+                { name: "path", type: "string" },
+                { name: "safe_custom", type: "string" },
+              ],
+            },
+          ],
+          profiles: [
+            {
+              layer: "global",
+              name: "routing-profile",
+              profile: { fields: [{ key: "cwd" }, { key: undefined }] },
+            },
+          ],
+        },
+      } as never),
+    ).toEqual([
+      "extension_custom_field_mcp_input_collision:global:routing-profile:cwd:cwd:mcp_tool_input:use=options.cwd",
+      "extension_custom_field_mcp_input_collision:project:routing-fields:path:path:mcp_tool_input:use=options.path",
+    ]);
+  });
+
   it("covers extension reload and adopt residual branches", async () => {
     await withTempPmPath(async (context) => {
       const brokenLoadDirectory = path.join(context.pmPath, "extensions", "broken-load");

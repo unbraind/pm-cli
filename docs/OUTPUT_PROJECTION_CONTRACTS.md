@@ -73,8 +73,10 @@ rows:
 ```
 
 The selector is identical for list aliases, context, next, search,
-activity, history, graph, health, aggregate, duplicates, and stats. Commands
-with several collections declare every active dot-delimited path. This keeps
+activity, history, graph, health, aggregate, duplicates, stats, annotations
+(`comments`, `notes`, `learnings`), linked resources (`files`, `docs`),
+validation diagnostics, and command contracts. Commands with several
+collections declare every active dot-delimited path. This keeps
 nested dependency graph and relationship-context rows addressable as
 `graph.nodes`, `graph.edges`, `context.nodes`, and `context.edges` without
 duplicating them at the envelope root. Array collections produce their
@@ -82,7 +84,9 @@ elements; object maps such as stats counts produce jq `to_entries` rows.
 Commands without a row collection, including a dependency tree or leaf `get`,
 declare `row_kind: "none"`, an empty `row_keys` array, and omit `jq_selector`.
 The absence is therefore distinguishable from a legitimate empty collection.
-`fields` is always explicit, so an agent can distinguish a supported
+Validation declares both `checks` and `warnings`; contracts declares both
+`command_summaries` and `commands`, allowing either projection to stay
+machine-iterable without a command-specific selector. `fields` is always explicit, so an agent can distinguish a supported
 `--fields` projection from a command that intentionally owns a fixed row
 shape. NDJSON event streams do not carry an envelope and therefore do not
 publish a row contract.

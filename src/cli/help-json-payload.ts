@@ -5,6 +5,10 @@
  */
 import { Command } from "commander";
 import {
+  hasSubcommandFlagContractsForCommand,
+  PM_CORE_COMMAND_NAMES,
+} from "../sdk/cli-contracts.js";
+import {
   commandOptionFlagLabel,
   resolveCommandOptionPolicyState,
   resolveItemTypeRegistry,
@@ -70,7 +74,29 @@ function resolveCommandFromPathTokens(
   if (pathTokens.length === 0) {
     return root;
   }
-  return findCommandByPath(root, pathTokens);
+  const exactCommand = findCommandByPath(root, pathTokens);
+  if (exactCommand) {
+    return exactCommand;
+  }
+  const requestedPath = pathTokens.join(" ");
+  if (
+    !PM_CORE_COMMAND_NAMES.some(
+      (commandName) => commandName === requestedPath,
+    ) &&
+    !hasSubcommandFlagContractsForCommand(requestedPath)
+  ) {
+    return null;
+  }
+  for (let length = pathTokens.length - 1; length > 0; length -= 1) {
+    const positionalParent = findCommandByPath(
+      root,
+      pathTokens.slice(0, length),
+    );
+    if (positionalParent) {
+      return positionalParent;
+    }
+  }
+  return pathTokens.length === 1 ? root : null;
 }
 
 function extractOptionValueName(flags: string): string | null {
@@ -323,7 +349,14 @@ function buildJsonHelpPayload(
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
 ): Record<string, unknown> {
   const detailMode = resolveHelpDetailMode(argv);
-  const resolvedPath = normalizeHelpCommandPath(getCommandPath(targetCommand));
+  const commanderPath = normalizeHelpCommandPath(getCommandPath(targetCommand));
+  const requestedCommandPath = normalizeHelpCommandPath(
+    requestedPath.join(" "),
+  );
+  const resolvedPath =
+    requestedCommandPath.length > commanderPath.length
+      ? requestedCommandPath
+      : commanderPath;
   const commandPath = resolvedPath.length > 0 ? resolvedPath : undefined;
   const fallbackNarrative = resolveHelpNarrative(commandPath, detailMode);
   const extensionDescriptor = commandPath
@@ -548,10 +581,12 @@ export function attachCreateUpdatePolicyHelpText(
 export const _testOnly = {
   attachCreateUpdatePolicyHelpText,
   buildCreateUpdatePolicyHelpText,
+  buildJsonHelpPayload,
   buildHelpArgumentSummaries,
   buildHelpOptionSummaries,
   buildHelpSubcommandSummaries,
   buildOptionAliasMap,
   compactHelpOptionAliases,
   readOptionAttributeName,
+  resolveCommandFromPathTokens,
 };

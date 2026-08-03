@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-07-31T07:01:54.979Z"
-updated_at: "2026-07-31T10:15:15.394Z"
+updated_at: "2026-08-03T09:06:52.703Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Expose command-path and alias ownership through SDK and contracts; fail closed or resolve collisions by a documented deterministic policy naming all claimants; report collisions in health; namespace bundled exemplars without breaking existing invocations; cover scope-preserving package identity and dual-package activation
@@ -21,7 +21,21 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4vwcvq,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
   pm-v1yo,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
   pm-tnud,implements,"2026-07-31T10:15:13.251Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-31T07:01:54.979Z","harness:codex","Duplicate check evidence: searched all statuses for VCS alias, command registration, and collision claimants; pm-v1yo covers core-group aliases and pm-4vwcvq covers partial activation, while GH-832 is the distinct package-to-package namespace ownership gap. Source: https://github.com/unbraind/pm-cli/issues/832"
   "2026-07-31T10:15:15.393Z","harness:codex","Organization rationale 2026-07-31: this issue is the discoverability acceptance gap for pm-tnud, not a parallel package epic. Estimate 180m, medium risk, high confidence; the consolidation task now records it as an explicit completion prerequisite."
+  "2026-08-03T07:39:30.021Z","harness:codex","TDD evidence: duplicate handler ownership assertion failed before the describe projection and now reports activation-ordered claimants, the effective final winner, collision state, and last_activated_wins policy through CLI results and public SDK types."
+  "2026-08-03T08:23:07.826Z","harness:codex","Manual acceptance: package describe --json in fresh Node and Bun workspaces reports the installed command-kit handler, project claimant, last_activated_wins policy, winner, and collision=false. The packed consumer imports buildExtensionDescribeResult from @unbrained/pm-cli/sdk."
+  "2026-08-03T08:53:22.136Z","harness:codex","Tranche boundary: this PR delivers deterministic activation-ordered command claimant discovery, winner/collision projection, public SDK types, CLI JSON/Markdown output, documentation, focused tests, and Node/Bun packed acceptance. The item remains open because the acceptance criterion to namespace the bundled VCS exemplar without breaking legacy invocations is intentionally not claimed by this tranche."
+  "2026-08-03T09:06:52.703Z","harness:codex","PR evidence for delivered ownership-discovery scope: https://github.com/unbraind/pm-cli/pull/880. The canonical item remains open for the separately stated bundled VCS exemplar namespacing residual."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,public command ownership contracts snapshot
+  src/sdk/extension.ts,project,CLI lifecycle result integration
+  src/sdk/extension/describe.ts,project,deterministic command ownership projection
+  src/sdk/index.ts,project,public ownership SDK exports
+  tests/unit/extensions/extension-describe.spec.ts,project,winner and claimant contract coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-describe.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,ownership policy and discovery workflow
 body: ""

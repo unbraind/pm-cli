@@ -10,6 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import npa from "npm-package-arg";
+import { extract as extractTar, list as listTar, type ReadEntry } from "tar";
 import { collectPackageExtensionDirectories } from "../../core/packages/manifest.js";
 import { resolvePmPackageRootFromModule } from "../../core/packages/root.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
@@ -23,7 +24,20 @@ import { listBundledPackageAliases } from "./bundled-catalog.js";
 
 const execFileAsync = promisify(execFile);
 const PM_CLI_PACKAGE_NAME = "@unbrained/pm-cli";
+const LOCAL_PACKAGE_ARCHIVE_LIMITS = {
+  maxArchiveBytes: 64 * 1024 * 1024,
+  maxEntries: 4096,
+  maxExpandedBytes: 256 * 1024 * 1024,
+  maxEntryBytes: 64 * 1024 * 1024,
+} as const;
 let bundledPackageAliasesCache: { key: string; aliases: string[] } | undefined;
+
+interface LocalPackageArchiveLimits {
+  maxArchiveBytes: number;
+  maxEntries: number;
+  maxExpandedBytes: number;
+  maxEntryBytes: number;
+}
 
 interface LocalInstallSource {
   kind: "local";
@@ -567,6 +581,10 @@ async function resolveNpmSourceDirectoryWithRunner(
 }> {
   const localPackageRoot = await resolveLocalNpmPackagePath(source.spec);
   if (localPackageRoot) {
+    const localStats = await fs.stat(localPackageRoot);
+    if (localStats.isFile() && isLocalPackageArchive(localPackageRoot)) {
+      return extractLocalPackageArchive(localPackageRoot);
+    }
     const packageJsonPath = path.join(localPackageRoot, "package.json");
     const packageJson = (await pathExists(packageJsonPath))
       ? (JSON.parse(await fs.readFile(packageJsonPath, "utf8")) as {
@@ -632,6 +650,164 @@ async function resolveNpmSourceDirectoryWithRunner(
     if (wrappedError) {
       throw wrappedError;
     }
+    throw error;
+  }
+}
+
+/** Return whether a filesystem path names one supported npm package archive. */
+function isLocalPackageArchive(candidate: string): boolean {
+  const normalized = candidate.toLowerCase();
+  return normalized.endsWith(".tgz") || normalized.endsWith(".tar.gz");
+}
+
+function failLocalPackageArchive(message: string): never {
+  throw new PmCliError(message, EXIT_CODE.USAGE, {
+    code: "local_package_archive_unsafe",
+    required:
+      "Use a bounded npm .tgz or .tar.gz archive with one package/ root and no links or escaping paths.",
+    why: "Package archives are untrusted input and must be validated before any entry reaches the filesystem.",
+  });
+}
+
+function validateLocalPackageArchiveEntry(
+  entry: ReadEntry,
+  limits: LocalPackageArchiveLimits,
+  state: { entries: number; expandedBytes: number; packageJsonEntries: number },
+): void {
+  if (entry.meta) return;
+  state.entries += 1;
+  if (state.entries > limits.maxEntries) {
+    failLocalPackageArchive(
+      `Local package archive exceeds the ${limits.maxEntries} entry limit.`,
+    );
+  }
+  const archivePath = entry.path;
+  const segments = archivePath.split("/");
+  if (
+    archivePath.includes("\\") ||
+    archivePath.startsWith("/") ||
+    /^[A-Za-z]:/u.test(archivePath) ||
+    segments.some((segment) => segment === "..")
+  ) {
+    failLocalPackageArchive(
+      `Local package archive contains an escaping path: "${archivePath}".`,
+    );
+  }
+  if (segments[0] !== "package") {
+    failLocalPackageArchive(
+      `Local package archive entry "${archivePath}" is outside the required package/ root.`,
+    );
+  }
+  if (entry.type === "SymbolicLink" || entry.type === "Link") {
+    failLocalPackageArchive(
+      `Local package archive link "${archivePath}" is not supported.`,
+    );
+  }
+  if (
+    entry.type !== "File" &&
+    entry.type !== "OldFile" &&
+    entry.type !== "Directory"
+  ) {
+    failLocalPackageArchive(
+      `Local package archive entry "${archivePath}" uses unsupported type "${entry.type}".`,
+    );
+  }
+  if (entry.size > limits.maxEntryBytes) {
+    failLocalPackageArchive(
+      `Local package archive entry "${archivePath}" exceeds the ${limits.maxEntryBytes} byte entry limit.`,
+    );
+  }
+  state.expandedBytes += entry.size;
+  if (state.expandedBytes > limits.maxExpandedBytes) {
+    failLocalPackageArchive(
+      `Local package archive exceeds the ${limits.maxExpandedBytes} expanded byte limit.`,
+    );
+  }
+  if (archivePath === "package/package.json") {
+    state.packageJsonEntries += 1;
+  }
+}
+
+/** Validate and extract one local npm package archive into an isolated temporary root. */
+async function extractLocalPackageArchive(
+  archivePath: string,
+  limits: LocalPackageArchiveLimits = LOCAL_PACKAGE_ARCHIVE_LIMITS,
+): Promise<{
+  directory: string;
+  package?: string;
+  version?: string;
+  cleanup: () => Promise<void>;
+}> {
+  const archiveStats = await fs.stat(archivePath);
+  if (archiveStats.size > limits.maxArchiveBytes) {
+    failLocalPackageArchive(
+      `Local package archive exceeds the ${limits.maxArchiveBytes} archive byte limit.`,
+    );
+  }
+  const tempRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "pm-local-package-archive-"),
+  );
+  const extractDirectory = path.join(tempRoot, "extract");
+  await fs.mkdir(extractDirectory, { recursive: true });
+  const state = { entries: 0, expandedBytes: 0, packageJsonEntries: 0 };
+  let validationError: unknown;
+  try {
+    await listTar({
+      file: archivePath,
+      strict: true,
+      maxDecompressionRatio: 100,
+      onReadEntry: (entry) => {
+        if (validationError !== undefined) return;
+        try {
+          validateLocalPackageArchiveEntry(entry, limits, state);
+        } catch (error: unknown) {
+          validationError = error;
+        }
+      },
+    });
+    if (validationError !== undefined) throw validationError;
+    if (state.packageJsonEntries !== 1) {
+      failLocalPackageArchive(
+        `Local package archive must contain exactly one package/package.json entry; found ${state.packageJsonEntries}.`,
+      );
+    }
+    await extractTar({
+      file: archivePath,
+      cwd: extractDirectory,
+      strict: true,
+      preservePaths: false,
+      preserveOwner: false,
+      noMtime: true,
+      unlink: true,
+      maxDepth: 64,
+      maxDecompressionRatio: 100,
+    });
+    const packageRoot = path.join(extractDirectory, "package");
+    const packageJsonPath = path.join(packageRoot, "package.json");
+    const packageJson = JSON.parse(
+      await fs.readFile(packageJsonPath, "utf8"),
+    ) as {
+      name?: unknown;
+      version?: unknown;
+    };
+    await installNpmPackageRuntimeDependencies(packageRoot);
+    return {
+      directory: await resolvePackageExtensionDirectory(
+        packageRoot,
+        archivePath,
+      ),
+      package:
+        typeof packageJson.name === "string" ? packageJson.name : undefined,
+      version:
+        typeof packageJson.version === "string"
+          ? packageJson.version
+          : undefined,
+      cleanup: async () => {
+        await fs.rm(tempRoot, { recursive: true, force: true });
+      },
+    };
+  } catch (error: unknown) {
+    await fs.rm(tempRoot, { recursive: true, force: true });
     throw error;
   }
 }
@@ -1000,9 +1176,23 @@ export async function resolveInstallSource(
     } catch {
       throw await buildLocalSourceNotFoundError(source);
     }
+    if (localStats.isFile() && isLocalPackageArchive(source.absolute_path)) {
+      const resolved = await extractLocalPackageArchive(source.absolute_path);
+      return {
+        source,
+        directory: resolved.directory,
+        source_root: path.dirname(resolved.directory),
+        resolved_subpath: path
+          .relative(path.dirname(resolved.directory), resolved.directory)
+          .replaceAll(path.sep, "/"),
+        npm_package: resolved.package,
+        npm_version: resolved.version,
+        cleanup: resolved.cleanup,
+      };
+    }
     if (!localStats.isDirectory()) {
       throw new PmCliError(
-        `Local extension source must be a directory: "${source.absolute_path}".`,
+        `Local extension source must be a directory or npm .tgz/.tar.gz archive: "${source.absolute_path}".`,
         EXIT_CODE.USAGE,
       );
     }
@@ -1083,6 +1273,8 @@ export async function areDirectoriesEquivalent(
 
 /** Public contract for test only install sources, shared by SDK and presentation-layer consumers. */
 export const _testOnlyInstallSources = {
+  extractLocalPackageArchive,
+  validateLocalPackageArchiveEntry,
   installNpmPackageRuntimeDependencies,
   npmPackageNameFromSpec,
   parsePackedNpmPackage,

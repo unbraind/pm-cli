@@ -9903,6 +9903,16 @@
       "stability": "stable"
     },
     {
+      "code": "field_mcp_input_collision",
+      "exit_code": 1,
+      "meaning": "Field mcp input collision condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
       "code": "github_source_entry_unbuilt",
       "exit_code": 2,
       "meaning": "Github source entry unbuilt condition.",
@@ -10264,6 +10274,16 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/query/list.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "local_package_archive_unsafe",
+      "exit_code": 2,
+      "meaning": "Local package archive unsafe condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
       ],
       "stability": "stable"
     },
@@ -21147,6 +21167,15 @@
       ]
     }
   ],
+  "row_contract": {
+    "command": "contracts",
+    "fields": "unsupported",
+    "jq_selector": ".row_contract.row_keys[] as $key | getpath($key | split(\".\")) | if type == \"array\" then .[] else if type == \"object\" then to_entries[] else empty end end",
+    "row_keys": [
+      "commands"
+    ],
+    "row_kind": "collection"
+  },
   "runtime_schema": {
     "canceled_status": "canceled",
     "close_status": "closed",

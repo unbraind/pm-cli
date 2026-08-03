@@ -138,6 +138,15 @@ export {
 } from "./governance/validate.js";
 export { runExtension } from "./extension.js";
 export {
+  buildExtensionDescribeResult,
+  renderExtensionDescribeMarkdown,
+  type ExtensionCommandClaimant,
+  type ExtensionCommandOwnership,
+  type ExtensionDescribeActivationStatus,
+  type ExtensionDescribeResult,
+  type ExtensionSurfaceDescription,
+} from "./extension/describe.js";
+export {
   runEvent,
   runMeet,
   runRemind,
@@ -419,6 +428,7 @@ export {
   VALIDATE_FLAG_CONTRACTS,
   WORKSPACE_FLAG_CONTRACTS,
   buildPmActionToolInputSchema,
+  PM_TOOL_RESERVED_CUSTOM_FIELD_PROPERTIES,
   compactFlagAliasContracts,
   definePmCommandOutputBudget,
   estimatePmOutputTokens,
@@ -428,11 +438,13 @@ export {
   isPmExtensionPolicySurfaceContract,
   isPmExtensionServiceNameContract,
   isPmToolAction,
+  hasSubcommandFlagContractsForCommand,
   readFirstStringFromCommanderOptions,
   readFirstValueFromCommanderOptions,
   readStringArrayFromCommanderOptions,
   resolveSubcommandFlagContractsForCommand,
   resolvePmCommandOutputBudget,
+  resolvePmToolCustomFieldCollision,
   toCompletionFlagString,
   withFlagAliasMetadata,
 } from "./cli-contracts.js";
@@ -441,6 +453,7 @@ export type {
   OptionsFromContracts,
   PmActionSchemaContract,
   PmActionToolInputSchemaOptions,
+  PmToolCustomFieldCollision,
   PmBulkMutationControlOptions,
   PmBulkMutationFilterOptions,
   PmCloseActionOptions,

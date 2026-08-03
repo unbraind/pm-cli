@@ -84,6 +84,16 @@ export const PM_READ_ROW_CONTRACTS = {
   aggregate: { row_keys: ["groups"], fields: "unsupported" },
   duplicates: { row_keys: ["clusters"], fields: "unsupported" },
   stats: { row_keys: ["by_type", "by_status"], fields: "unsupported" },
+  comments: { row_keys: ["comments"], fields: "unsupported" },
+  notes: { row_keys: ["notes"], fields: "unsupported" },
+  learnings: { row_keys: ["learnings"], fields: "unsupported" },
+  files: { row_keys: ["files"], fields: "unsupported" },
+  docs: { row_keys: ["docs"], fields: "unsupported" },
+  validate: { row_keys: ["checks", "warnings"], fields: "unsupported" },
+  contracts: {
+    row_keys: ["command_summaries", "commands"],
+    fields: "unsupported",
+  },
 } as const satisfies Readonly<
   Record<
     string,
@@ -275,6 +285,13 @@ const READ_RESULT_SENTINEL_KEYS: Readonly<Record<string, readonly string[]>> = {
   aggregate: ["groups"],
   duplicates: ["clusters"],
   stats: ["totals", "by_type", "by_status"],
+  comments: ["comments"],
+  notes: ["notes"],
+  learnings: ["learnings"],
+  files: ["files"],
+  docs: ["docs"],
+  validate: ["checks", "warnings"],
+  contracts: ["command_summaries", "commands", "selected"],
 };
 
 /** Resolve one command's canonical row collection declaration. */

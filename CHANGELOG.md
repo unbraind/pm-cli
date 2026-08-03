@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- The model provenance resolver derives the harness session-file path with an incomplete slug encoding, so it silently resolves nothing in any workspace whose path contains an underscore - including this repository ([pm-9gvazz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9gvazz.toon))
+- GH-878: nested workspace snapshot and help paths are enumerated but not resolvable by structured help ([pm-7wx1f9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7wx1f9.toon))
+- Warn when custom schema fields collide with MCP transport or tool-specific inputs ([pm-yfdav2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yfdav2.toon))
+- GH-844: local npm package archives are rejected as install sources ([pm-lw6acw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lw6acw.toon))
 - The one-release-per-day guard compares a prefix glob against unpadded date keys, so it is correct only by accident of tag creation order and silently skips a real release for any out-of-order tag ([pm-ki67py](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ki67py.toon))
 
 ## 2026.8.3 - 2026-08-03

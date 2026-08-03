@@ -1,0 +1,49 @@
+id: pm-7wx1f9
+title: "GH-878: nested workspace snapshot and help paths are enumerated but not resolvable by structured help"
+description: "Close the self-describing CLI loop for every path emitted by pm contracts: structured help must resolve nested workspace snapshot actions and the help command itself, with a contract-to-help closure gate."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-08-03T08:27:22.410Z"
+updated_at: "2026-08-03T09:06:51.546Z"
+closed_at: "2026-08-03T08:39:20.609Z"
+completed_at: "2026-08-03T08:39:20.609Z"
+author: "harness:codex"
+acceptance_criteria: "Structured help resolves all workspace snapshot action paths and help itself; One executable gate compares every full contract path against structured help resolution; Contract generation, JSON help, CLI invocation, and docs remain generated from one canonical command path model"
+parent: pm-mpbb
+risk: medium
+confidence: high
+reporter: github
+severity: high
+environment: published pm-cli 2026.8.3; --no-extensions; Node 22/Linux
+repro_steps: "Enumerate pm --no-extensions contracts --json --full, then invoke pm --no-extensions help --json workspace snapshot list; contracts lists the runnable path but help exits unknown_command."
+resolution: "fixed: contract-backed positional and implicit commands now resolve through structured JSON help with an all-enumerated-path closure test"
+expected_result: Every command path enumerated by contracts either resolves through structured help or explicitly declares help unavailable in machine-readable contract data.
+actual_result: Five workspace snapshot actions plus help are enumerated and runnable but structured help rejects them as unknown_command.
+component: cli/help and runtime contracts
+regression: true
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jrdri,related_to,"2026-08-03T08:27:22.410Z","harness:codex","cli:create:dep",detected
+  pm-2evy,implements,"2026-08-03T08:27:22.410Z","harness:codex","cli:create:dep",detected
+  pm-6j7r1a,discovered_from,"2026-08-03T08:27:22.410Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-03T08:27:22.410Z","harness:codex","text=Duplicate check evidence: searched all 2,292 items across every status for GH-878, workspace snapshot help, unknown_command, help availability, and contracts closure. Closed pm-6j7r1a owns enumerated-versus-resolvable root spellings and closed pm-1jrdri owns rendered-versus-contracted roots; GH-878 is the distinct nested action-path and help self-resolution regression. Source: https://github.com/unbraind/pm-cli/issues/878"
+  "2026-08-03T08:38:45.431Z","harness:codex","Implementation evidence: structured JSON help now resolves contract-backed positional paths through their nearest registered Commander parent while retaining the requested canonical path; implicit help self-resolution is admitted from the core command contract. The integration gate invokes structured help for every command emitted by contracts and verifies the exact requested tokens. Focused suite passed 2/2 tests, including all 116 current command paths; both 'help --json workspace snapshot create' and 'help --json help' return exit 0 with exact resolved_path values."
+  "2026-08-03T08:46:17.117Z","harness:codex","Coverage hardening: the first repo-wide run passed all 6,759 tests but correctly failed the 100% threshold because the new path resolver branches were not directly instrumented. Added focused source-level tests for empty/exact/implicit/positional/orphaned/unknown paths and direct/lifecycle/invalid flag-contract membership; focused verification now passes 5/5 across the unit invariant and all-command integration gate. No ignore pragma or threshold exception was added."
+  "2026-08-03T09:06:51.546Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/880 closes GH-878 with structured-help closure across all 116 enumerated command paths and direct source-level branch coverage."
+files[7]{path,scope,note}:
+  sdk/public-surface.json,project,Lock the new public SDK primitive
+  src/cli/help-json-payload.ts,project,Resolve contract-backed positional and implicit structured help paths
+  src/sdk/cli-contracts.ts,project,Re-export command-path membership contract
+  src/sdk/cli-contracts/flag-contracts.ts,project,Expose canonical concrete command-path membership
+  src/sdk/index.ts,project,Publish command-path membership SDK primitive
+  tests/integration/contract-command-enumeration.integration.spec.ts,project,Enforce structured-help closure for every enumerated path
+  tests/unit/cli/help-command-path-resolution.spec.ts,project,Cover exact implicit positional orphaned and invalid path resolution branches
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/contract-command-enumeration.integration.spec.ts,project,120
+  node scripts/run-tests.mjs test -- tests/unit/cli/help-command-path-resolution.spec.ts,project,120
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mscz9krq-rdg28n,test,passed,"2026-08-03T08:38:54.788Z","2026-08-03T08:39:03.014Z","2026-08-03T08:39:03.014Z",1,0,0
+close_reason: "Resolved GH-878 by making structured JSON help recognize canonical contract-backed positional paths and the implicit help command, preserving exact requested paths while rendering from the nearest registered command. Added an executable all-command closure gate; linked test passed all 116 enumerated paths."
+body: ""

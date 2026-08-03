@@ -1,15 +1,22 @@
 import {
   lstat,
+  mkdir,
   mkdtemp,
   readFile,
   realpath,
   rm,
+  symlink,
   writeFile,
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { create as createTar } from "tar";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { _testOnlyInstallSources } from "../../../src/sdk/extension/install-sources.js";
+import {
+  _testOnlyInstallSources,
+  parseExtensionInstallSource,
+  resolveInstallSource,
+} from "../../../src/sdk/extension/install-sources.js";
 import { ensureInstalledExtensionSdkLink } from "../../../src/sdk/extension/install-runtime.js";
 
 const temporaryRoots: string[] = [];
@@ -168,4 +175,198 @@ describe("untrusted extension runtime dependencies", () => {
       ]);
     },
   );
+});
+
+describe("local npm package archives", () => {
+  async function createPackageArchive(
+    configure?: (packageRoot: string) => Promise<void>,
+  ): Promise<{ archive: string; root: string }> {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-local-archive-"));
+    temporaryRoots.push(root);
+    const packageRoot = path.join(root, "package");
+    const extensionRoot = path.join(packageRoot, "extensions", "archive-demo");
+    await mkdir(extensionRoot, { recursive: true });
+    await writeFile(
+      path.join(packageRoot, "package.json"),
+      JSON.stringify({
+        name: "@example/pm-archive-demo",
+        version: "1.2.3",
+        pm: { extensions: ["extensions/archive-demo"] },
+      }),
+      "utf8",
+    );
+    await writeFile(
+      path.join(extensionRoot, "manifest.json"),
+      JSON.stringify({
+        name: "archive-demo",
+        version: "1.2.3",
+        entry: "./index.js",
+      }),
+      "utf8",
+    );
+    await writeFile(
+      path.join(extensionRoot, "index.js"),
+      "export default {};\n",
+      "utf8",
+    );
+    await configure?.(packageRoot);
+    const archive = path.join(root, "archive-demo-1.2.3.tgz");
+    await createTar({ cwd: root, file: archive, gzip: true }, ["package"]);
+    return { archive, root };
+  }
+
+  it("resolves a standard npm tarball through the same public local-source contract", async () => {
+    const { archive } = await createPackageArchive();
+    const source = parseExtensionInstallSource(archive);
+    const resolved = await resolveInstallSource(source);
+    temporaryRoots.push(path.dirname(resolved.source_root!));
+
+    expect(source).toMatchObject({ kind: "local", absolute_path: archive });
+    expect(resolved.directory.replaceAll(path.sep, "/")).toMatch(
+      /package\/extensions\/archive-demo$/,
+    );
+    expect(
+      JSON.parse(
+        await readFile(path.join(resolved.directory, "manifest.json"), "utf8"),
+      ),
+    ).toMatchObject({
+      name: "archive-demo",
+      version: "1.2.3",
+    });
+    await resolved.cleanup?.();
+
+    const npmResolved =
+      await _testOnlyInstallSources.resolveNpmSourceDirectoryWithRunner(
+        {
+          kind: "npm",
+          input: `npm:${archive}`,
+          spec: archive,
+        },
+        async () => {
+          throw new Error("local archives must not invoke npm pack");
+        },
+      );
+    expect(npmResolved.directory.replaceAll(path.sep, "/")).toMatch(
+      /package\/extensions\/archive-demo$/,
+    );
+    await npmResolved.cleanup();
+  });
+
+  it("rejects escaping links and archives without the npm package root", async () => {
+    const linked = await createPackageArchive(async (packageRoot) => {
+      await symlink("../../outside", path.join(packageRoot, "escape"));
+    });
+    await expect(
+      resolveInstallSource(parseExtensionInstallSource(linked.archive)),
+    ).rejects.toThrow(/link.*not supported|escaping link/i);
+
+    const root = await mkdtemp(
+      path.join(os.tmpdir(), "pm-local-archive-root-"),
+    );
+    temporaryRoots.push(root);
+    await writeFile(path.join(root, "package.json"), "{}", "utf8");
+    const archive = path.join(root, "wrong-root.tar.gz");
+    await createTar({ cwd: root, file: archive, gzip: true }, ["package.json"]);
+    await expect(
+      resolveInstallSource(parseExtensionInstallSource(archive)),
+    ).rejects.toThrow(/package\/ root/);
+  });
+
+  it("enforces entry and expanded-byte limits before extraction", async () => {
+    const { archive } = await createPackageArchive();
+    await expect(
+      _testOnlyInstallSources.extractLocalPackageArchive(archive, {
+        maxArchiveBytes: 1024 * 1024,
+        maxEntries: 1,
+        maxExpandedBytes: 1024 * 1024,
+        maxEntryBytes: 1024 * 1024,
+      }),
+    ).rejects.toThrow(/entry limit/);
+    await expect(
+      _testOnlyInstallSources.extractLocalPackageArchive(archive, {
+        maxArchiveBytes: 1,
+        maxEntries: 100,
+        maxExpandedBytes: 1024 * 1024,
+        maxEntryBytes: 1024 * 1024,
+      }),
+    ).rejects.toThrow(/archive byte limit/);
+    await expect(
+      _testOnlyInstallSources.extractLocalPackageArchive(archive, {
+        maxArchiveBytes: 1024 * 1024,
+        maxEntries: 100,
+        maxExpandedBytes: 1024 * 1024,
+        maxEntryBytes: 1,
+      }),
+    ).rejects.toThrow(/byte entry limit/);
+    await expect(
+      _testOnlyInstallSources.extractLocalPackageArchive(archive, {
+        maxArchiveBytes: 1024 * 1024,
+        maxEntries: 100,
+        maxExpandedBytes: 1,
+        maxEntryBytes: 1024 * 1024,
+      }),
+    ).rejects.toThrow(/expanded byte limit/);
+  });
+
+  it("requires package metadata and rejects every unsafe entry shape", async () => {
+    const unnamed = await createPackageArchive(async (packageRoot) => {
+      await writeFile(
+        path.join(packageRoot, "package.json"),
+        JSON.stringify({ pm: { extensions: ["extensions/archive-demo"] } }),
+        "utf8",
+      );
+    });
+    const unnamedResolved =
+      await _testOnlyInstallSources.extractLocalPackageArchive(unnamed.archive);
+    expect(unnamedResolved.package).toBeUndefined();
+    expect(unnamedResolved.version).toBeUndefined();
+    await unnamedResolved.cleanup();
+
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-local-archive-empty-"));
+    temporaryRoots.push(root);
+    await mkdir(path.join(root, "package"));
+    await writeFile(path.join(root, "package", "README.md"), "missing metadata", "utf8");
+    const archive = path.join(root, "missing-package-json.tgz");
+    await createTar({ cwd: root, file: archive, gzip: true }, ["package"]);
+    await expect(
+      _testOnlyInstallSources.extractLocalPackageArchive(archive),
+    ).rejects.toThrow(/exactly one package\/package.json/);
+
+    const limits = {
+      maxArchiveBytes: 100,
+      maxEntries: 10,
+      maxExpandedBytes: 100,
+      maxEntryBytes: 100,
+    };
+    const metaState = {
+      entries: 0,
+      expandedBytes: 0,
+      packageJsonEntries: 0,
+    };
+    _testOnlyInstallSources.validateLocalPackageArchiveEntry(
+      { meta: true } as never,
+      limits,
+      metaState,
+    );
+    expect(metaState).toEqual({
+      entries: 0,
+      expandedBytes: 0,
+      packageJsonEntries: 0,
+    });
+    for (const entry of [
+      { path: "package\\escape", type: "File", size: 0 },
+      { path: "/package/escape", type: "File", size: 0 },
+      { path: "C:/package/escape", type: "File", size: 0 },
+      { path: "package/../escape", type: "File", size: 0 },
+      { path: "package/device", type: "CharacterDevice", size: 0 },
+    ]) {
+      expect(() =>
+        _testOnlyInstallSources.validateLocalPackageArchiveEntry(
+          entry as never,
+          limits,
+          { entries: 0, expandedBytes: 0, packageJsonEntries: 0 },
+        ),
+      ).toThrow(/archive/);
+    }
+  });
 });
