@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- Auto Release coverage depends on a /proc timing race in the SDK entrypoint sampler ([pm-q2a7hr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q2a7hr.toon))
 - The author field is an ungoverned free-text vocabulary: 477 distinct spellings across 41,021 immutable entries encode harness, model, session role, topic, and date because those dimensions had no fields, and the record cannot be rewritten ([pm-3yxwv5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3yxwv5.toon))
 - Recorded agent provenance is unreadable in practice: the only projection carrying it also carries every JSON Patch operation at 63.5x the compact cost, and no read surface can filter on harness, model, effort, or instance ([pm-v8gfi7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v8gfi7.toon))
 - Harness provenance can only be declared as environment variables, so the model the primary harness publishes in its own session record is inexpressible: 900 of 900 explicit entries still record model null while effort resolves ([pm-ffz0a9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ffz0a9.toon))
