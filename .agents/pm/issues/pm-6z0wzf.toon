@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T07:01:54.979Z"
-updated_at: "2026-08-03T14:35:49.730Z"
+updated_at: "2026-08-03T14:37:48.835Z"
 closed_at: "2026-08-03T14:35:31.124Z"
 completed_at: "2026-08-03T14:35:31.124Z"
 author: "harness:codex"
@@ -24,7 +24,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4vwcvq,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
   pm-v1yo,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
   pm-tnud,implements,"2026-07-31T10:15:13.251Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-07-31T07:01:54.979Z","harness:codex","Duplicate check evidence: searched all statuses for VCS alias, command registration, and collision claimants; pm-v1yo covers core-group aliases and pm-4vwcvq covers partial activation, while GH-832 is the distinct package-to-package namespace ownership gap. Source: https://github.com/unbraind/pm-cli/issues/832"
   "2026-07-31T10:15:15.393Z","harness:codex","Organization rationale 2026-07-31: this issue is the discoverability acceptance gap for pm-tnud, not a parallel package epic. Estimate 180m, medium risk, high confidence; the consolidation task now records it as an explicit completion prerequisite."
   "2026-08-03T07:39:30.021Z","harness:codex","TDD evidence: duplicate handler ownership assertion failed before the describe projection and now reports activation-ordered claimants, the effective final winner, collision state, and last_activated_wins policy through CLI results and public SDK types."
@@ -35,6 +35,7 @@ comments[10]{created_at,author,text}:
   "2026-08-03T13:51:36.428Z","harness:codex","TDD/manual acceptance evidence: package describe now resolves the persisted install alias through managed source provenance and bundled package identity. Focused extension-describe suite passes 20/20, typecheck and build pass, and the original isolated command PM_PATH=/tmp/pm-package-platform.0QLv6q/project/.agents/pm PM_GLOBAL_PATH=/tmp/pm-package-platform.0QLv6q/global/.agents/pm node dist/cli.js package describe vcs-exemplar --project --json returns ok=true, target=vcs-exemplar, total=1, canonical builtin-vcs-sdk-exemplar ownership, and all 14 canonical plus compatibility command paths."
   "2026-08-03T13:52:34.472Z","harness:codex","Live GitHub cross-check 2026-08-03: GH-832 has a direct pm item .toon link comment; all 23 open repository issues have at least one direct pm .toon link comment; there are zero open PRs, zero Dependabot alerts, zero code-scanning alerts, and zero secret-scanning alerts. Current main CI/Security/CodeQL/Scorecard/CodSpeed runs are green."
   "2026-08-03T14:34:06.957Z","harness:codex","Final local verification: repository coverage passes 100/100/100/100 across 425 files and 6,782 tests; full static/docstring/SDK parity/context/token gates pass; packed npx smoke and 88-command package-first dogfood pass. Exact install alias is now a loader-projected SDK identity rather than CLI-only special handling."
+  "2026-08-03T14:37:48.835Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/883 at initial exact head 3a184d480. Awaiting hosted checks and full Greptile/CodeRabbit review."
 files[12]{path,scope,note}:
   packages/pm-vcs/extensions/vcs/index.ts,project,canonical namespaced commands with internal compatibility spellings
   packages/pm-vcs/extensions/vcs/manifest.json,project,namespaced bundled extension identity
