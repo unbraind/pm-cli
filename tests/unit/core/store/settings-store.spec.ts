@@ -224,7 +224,16 @@ describe("core/store/settings", () => {
       ]);
       expectOrderedObjectKeys(parsed.locks, ["ttl_seconds", "wait_ms"]);
       expectOrderedObjectKeys(parsed.ids, ["token_length"]);
-      expectOrderedObjectKeys(parsed.agent_identity, ["harness_signals"]);
+      expectOrderedObjectKeys(parsed.agent_identity, [
+        "probes_enabled",
+        "identity_vocabulary",
+        "harness_signals",
+      ]);
+      expectOrderedObjectKeys(
+        (parsed.agent_identity as Record<string, unknown>)
+          .identity_vocabulary,
+        ["version", "aliases"],
+      );
       expectOrderedObjectKeys(parsed.mutation_guard, [
         "require_attributed_author",
         "secret_guard",

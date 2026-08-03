@@ -1,0 +1,17 @@
+id: pm-yds9dt
+title: Expose agent probe controls and versioned legacy-author vocabulary through pm config and SDK mutation APIs
+description: "The new agent_identity.probes_enabled and identity_vocabulary settings are validated and consumed, but pm config cannot yet read or mutate them. Add typed project config keys and SDK mutation helpers for probe enablement, vocabulary version bumps, exact alias add/remove, clear, dry-run, and residual coverage preview without direct settings-file edits."
+type: Chore
+status: open
+priority: 2
+tags[3]: cli,context-management,sdk
+created_at: "2026-08-02T23:03:26.452Z"
+updated_at: "2026-08-02T23:03:26.452Z"
+author: "harness:codex"
+acceptance_criteria: "pm config project get/list/export exposes probe policy and vocabulary revision/count without dumping unnecessary aliases; Typed CLI and SDK mutations add/remove exact aliases and monotonically update the vocabulary version through audited settings history; CLI, SDK, MCP, contracts, completions, docs, sparse settings compatibility, and temporary consumer tests remain in parity"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3yxwv5,discovered_from,"2026-08-02T23:03:26.452Z","harness:codex","cli:create:dep",detected
+  pm-mf4j,blocked_by,"2026-08-02T23:03:26.452Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-02T23:03:26.452Z","harness:codex","Duplicate check 2026-08-02: keyword and semantic searches across all statuses found pm-3yxwv5 for the read-time vocabulary, pm-mf4j for generic positional config UX, pm-9byd for earlier scalar config exposure, and pm-v68d for narrow MCP config. None owns typed agent probe/vocabulary mutation; created as the operator-facing follow-up discovered while dogfooding the live 43,561-entry residual report."
+body: ""

@@ -311,7 +311,9 @@ function resultContent(
   tokenAccounting = false,
 ): Record<string, unknown> {
   const effectiveResult = tokenAccounting
-    ? attachOutputTokenAccounting(result, (value) => JSON.stringify(value, null, 2))
+    ? attachOutputTokenAccounting(result, (value) =>
+        JSON.stringify(value, null, 2),
+      )
     : result;
   // pm-qxwu: warnings is additive — existing fields (content, structuredContent.result)
   // are never removed or renamed. The warnings array only appears when non-empty.
@@ -437,11 +439,11 @@ async function handleToolCall(
         cwd,
         typeof args.path === "string" ? args.path : undefined,
       );
-      const workspaceDescriptors = (await pathExists(getSettingsPath(pmRoot)))
-        ? (await readSettings(pmRoot)).agent_identity!.harness_signals
-        : [];
+      const workspaceIdentity = (await pathExists(getSettingsPath(pmRoot)))
+        ? (await readSettings(pmRoot)).agent_identity
+        : undefined;
       return runWithWorkspaceHarnessSignalDescriptors(
-        workspaceDescriptors,
+        workspaceIdentity?.harness_signals ?? [],
         async () => {
           // pm-qxwu: non-breaking detection of typo'd / unexpected top-level keys.
           // additionalProperties stays true so passthrough still works; we only warn.
@@ -460,6 +462,7 @@ async function handleToolCall(
           const result = await handler(args);
           return resultContent(result, warnings, args.tokenAccounting === true);
         },
+        { probesEnabled: workspaceIdentity?.probes_enabled },
       );
     },
   );

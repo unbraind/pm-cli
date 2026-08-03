@@ -2975,6 +2975,7 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
       () => runWithWorkspaceHarnessSignalDescriptors(
         invocationSettings.agent_identity!.harness_signals,
         () => program.parseAsync(invocationProcessArgv),
+        { probesEnabled: invocationSettings.agent_identity?.probes_enabled },
       ),
     );
   } catch (error: unknown) {

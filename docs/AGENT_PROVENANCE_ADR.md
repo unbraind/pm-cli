@@ -6,7 +6,11 @@ Implementation lineage:
 [pm-0zcwz6](../.agents/pm/issues/pm-0zcwz6.toon),
 [pm-1zhfls](../.agents/pm/issues/pm-1zhfls.toon),
 [pm-pwq0g5](../.agents/pm/issues/pm-pwq0g5.toon), and
-[pm-te6elw](../.agents/pm/tasks/pm-te6elw.toon).
+[pm-te6elw](../.agents/pm/tasks/pm-te6elw.toon), with bounded automatic
+resolution and patch-free historical reads implemented by
+[pm-ffz0a9](../.agents/pm/issues/pm-ffz0a9.toon),
+[pm-v8gfi7](../.agents/pm/features/pm-v8gfi7.toon), and
+[pm-3yxwv5](../.agents/pm/tasks/pm-3yxwv5.toon).
 
 Status: accepted amendment to
 [pm-qwuber](../.agents/pm/decisions/pm-qwuber.toon). The original stable-author
@@ -20,7 +24,8 @@ from the stable mutation author. `agent_provenance` is a string-keyed map whose
 values are either `{ value, source }` observations or `null` when a detected
 harness declares a dimension but cannot expose a value.
 
-The default runtime understands `model`, `effort`, and `role`. Harness
+The default runtime understands `model`, `effort`, `role`, `topic`, and
+`version`. Harness
 descriptors and trusted embedded hosts may add dimensions such as `topic`
 without a storage migration. The legacy `agent_model` and
 `agent_model_source` fields remain populated from `agent_provenance.model` for
@@ -33,6 +38,7 @@ The precedence for each dimension is:
 3. MCP client provenance;
 4. trusted embedding-host provenance;
 5. bounded argv values.
+6. an explicitly declared bounded local resolver.
 
 `detectAgentIdentity()` and `detectHarnessIdentity()` use ambient invocation
 signals when called with no argument. An explicitly supplied signal object
@@ -43,9 +49,14 @@ remains isolated from ambient state. SDK hosts that need async-safe scoping use
 
 Provenance values are descriptive context, never authentication or
 authorization principals. Values are trimmed, length-bounded, and obtained only
-from literal descriptor keys or trusted caller data. Detection does not spawn
-processes, traverse process trees, evaluate regexes, read files, or access the
-network.
+from literal descriptor keys, trusted caller data, or a named bounded resolver.
+Detection does not spawn processes, traverse process trees, evaluate user
+regexes, or access the network. The built-in Claude resolver may read only the
+tail of the current session's harness-owned JSONL file to recover its recorded
+model/version. It caps file bytes, lines, and line length, extracts only those
+two allow-listed values, and fails closed. `agent_identity.probes_enabled` or
+`PM_AGENT_PROBES=off` disables every local resolver without disabling ordinary
+environment, argv, client, or host detection.
 
 Raw session identifiers remain transient and are never written to history or
 telemetry. When a harness and session are both present, history may retain only
@@ -109,6 +120,23 @@ The aggregate and core SDK entrypoints export:
   and inert-capture reporting;
 - `analyzeSdkCliParameterCompleteness()` for a derived bidirectional CLI flag
   and strict SDK parameter matrix.
+- `projectHistoryProvenance()`, `compileHistoryProvenanceMatcher()`, and
+  `summarizeHistoryProvenance()` for immutable, patch-free reads and bounded
+  completeness reporting.
+
+`pm history <id>`, `pm activity`, and `pm events` share `--provenance`,
+`--provenance-summary`, repeatable `--harness`, repeatable `--agent-instance`,
+and repeatable `--provenance-filter dimension=value`. The provenance projection
+never returns JSON Patch operations or document hashes. History rows retain
+their original one-based stream version after filtering. Events use the same
+predicates in the durable derived index, so consumers do not need to scan raw
+history payloads.
+
+Legacy author interpretation is workspace-owned data under
+`agent_identity.identity_vocabulary`. It contains a monotonically managed
+`version` and exact literal-to-harness `aliases`. Reads disclose both the
+version and whether a harness was `recorded`, resolved by `vocabulary`, or
+remains `unresolved`; immutable authors and hashes are never rewritten.
 
 The SDK/CLI matrix classifies every input as shared, positional, transport,
 presentation, local adapter, scope selector, compatibility alias, or SDK-native.

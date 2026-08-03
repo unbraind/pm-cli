@@ -29,6 +29,14 @@ import {
   resolveModePairedOutputOmissionReceipt,
   type OutputOmissionReceipt,
 } from "../output-projection.js";
+import {
+  compileHistoryProvenanceMatcher,
+  projectHistoryProvenance,
+  resolveHistoryProvenanceDimensions,
+  summarizeHistoryProvenance,
+  type HistoryProvenanceRow,
+  type HistoryProvenanceSummary,
+} from "../history-provenance.js";
 
 const DEFAULT_COMPACT_ACTIVITY_LIMIT = 20;
 const DEFAULT_FULL_ACTIVITY_LIMIT = 5;
@@ -51,6 +59,16 @@ export interface ActivityCommandOptions {
   compact?: boolean;
   /** Explicitly disables the default activity bound. */
   unbounded?: boolean;
+  /** Return patch-free provenance rows. */
+  provenance?: boolean;
+  /** Include constant-size provenance completeness metrics. */
+  provenanceSummary?: boolean;
+  /** Filter by canonical recorded or vocabulary-resolved harness. */
+  harness?: string | readonly string[];
+  /** Filter by privacy-safe invocation fingerprint. */
+  agentInstance?: string | readonly string[];
+  /** Exact provenance dimension predicates (`dimension=value`). */
+  provenanceFilter?: string | readonly string[];
 }
 
 /** Documents the activity entry payload exchanged by command, SDK, and package integrations. */
@@ -79,14 +97,16 @@ export interface ActivityResult {
   activity?: ActivityEntry[];
   /** Value that configures or reports compact activity for this contract. */
   compact_activity?: CompactActivityEntry[];
+  /** Patch-free immutable provenance rows. */
+  provenance_activity?: HistoryProvenanceRow[];
   /** Value that configures or reports compact for this contract. */
   compact: boolean;
   /** Explicit active row projection. */
   projection: {
     /** Stable projection mode. */
-    mode: "compact" | "full";
+    mode: "compact" | "provenance" | "full";
     /** Active row collection key. */
-    row_key: "compact_activity" | "activity";
+    row_key: "compact_activity" | "provenance_activity" | "activity";
   };
   /** Constant-size disclosure of field groups withheld by the active mode. */
   omission_receipt: OutputOmissionReceipt;
@@ -106,6 +126,8 @@ export interface ActivityResult {
     source: "default" | "explicit";
     value: number | null;
   };
+  /** Constant-size provenance completeness metrics. */
+  provenance_summary?: HistoryProvenanceSummary;
 }
 
 interface ActivityFilters {
@@ -116,6 +138,9 @@ interface ActivityFilters {
   to: string | undefined;
   limit: number | undefined;
   limitSource: "default" | "explicit";
+  harness: string | readonly string[] | undefined;
+  agentInstance: string | readonly string[] | undefined;
+  provenance: string | readonly string[] | undefined;
 }
 
 interface ActivityRuntimeContext {
@@ -257,6 +282,9 @@ function resolveActivityFilters(
       options.unbounded === true || explicitLimit !== undefined
         ? "explicit"
         : "default",
+    harness: options.harness,
+    agentInstance: options.agentInstance,
+    provenance: options.provenanceFilter,
   };
 }
 
@@ -375,16 +403,37 @@ export async function runActivity(
   const context = await resolveActivityRuntimeContext(global);
   const filters = resolveActivityFilters(options);
   const historyDir = await prepareActivityHistoryRead(context);
+  const provenanceDimensions = resolveHistoryProvenanceDimensions(
+    context.settings.agent_identity!.harness_signals,
+  );
+  const vocabulary = context.settings.agent_identity!.identity_vocabulary!;
+  const matchesProvenance = compileHistoryProvenanceMatcher(
+    {
+      harness: filters.harness,
+      agentInstance: filters.agentInstance,
+      provenance: filters.provenance,
+    },
+    vocabulary,
+    provenanceDimensions,
+  );
   const matchingActivity = sortActivity(
     await collectActivityEntries(historyDir, filters),
-  );
+  ).filter(matchesProvenance);
   const activity = limitEntries(matchingActivity, filters.limit);
   const compact = options.compact === true;
   const compactActivity = compact ? formatCompactActivity(activity) : undefined;
+  const provenanceActivity =
+    options.provenance === true
+      ? activity.map((entry) =>
+          projectHistoryProvenance(entry, vocabulary, { itemId: entry.id }),
+        )
+      : undefined;
   const omittedCount = matchingActivity.length - activity.length;
-  const projectionMode = compact ? "compact" : "full";
+  const projectionMode =
+    options.provenance === true ? "provenance" : compact ? "compact" : "full";
   const rowProjection = {
     compact: { compact_activity: compactActivity },
+    provenance: { provenance_activity: provenanceActivity },
     full: { activity },
   }[projectionMode];
   return {
@@ -393,7 +442,11 @@ export async function runActivity(
     projection: {
       mode: projectionMode,
       row_key:
-        projectionMode === "compact" ? "compact_activity" : "activity",
+        projectionMode === "compact"
+          ? "compact_activity"
+          : projectionMode === "provenance"
+            ? "provenance_activity"
+            : "activity",
     },
     omission_receipt: resolveModePairedOutputOmissionReceipt(
       "activity",
@@ -404,6 +457,15 @@ export async function runActivity(
     limit: filters.limit ?? null,
     omitted_count: omittedCount,
     has_more: omittedCount > 0,
+    ...(options.provenanceSummary === true
+      ? {
+          provenance_summary: summarizeHistoryProvenance(
+            matchingActivity,
+            vocabulary,
+            provenanceDimensions,
+          ),
+        }
+      : {}),
     applied_bound: {
       kind: filters.limit === undefined ? "unbounded" : "limit",
       source: filters.limitSource,

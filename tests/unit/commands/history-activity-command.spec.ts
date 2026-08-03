@@ -35,6 +35,10 @@ import * as lockModule from "../../../src/core/lock/lock.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
+  readSettings,
+  writeSettings,
+} from "../../../src/core/store/settings.js";
+import {
   withTempPmPath,
   type TempPmContext,
 } from "../../helpers/withTempPmPath.js";
@@ -463,9 +467,7 @@ describe("runHistory and runActivity", () => {
         row_key: "compact_history",
       });
       expect(compact.omission_receipt).toMatchObject({
-        omitted_field_groups: [
-          { name: "raw_history", restore_with: "--full" },
-        ],
+        omitted_field_groups: [{ name: "raw_history", restore_with: "--full" }],
       });
       expect(
         compact.compact_history?.some((entry) =>
@@ -532,6 +534,161 @@ describe("runHistory and runActivity", () => {
       await rm(historyPath, { force: true });
       const missingHistory = await runHistory(id, {}, { path: context.pmPath });
       expect(missingHistory.count).toBe(0);
+    });
+  });
+
+  it("returns patch-free provenance projections and shared filters for history and activity", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Provenance Context Reads");
+      const settings = await readSettings(context.pmPath);
+      settings.agent_identity!.identity_vocabulary = {
+        version: 3,
+        aliases: { "legacy-codex": "codex" },
+      };
+      await writeSettings(context.pmPath, settings, "settings:write");
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      await appendFile(
+        historyPath,
+        `${JSON.stringify({
+          ts: "2026-08-02T00:00:00.000Z",
+          author: "legacy-codex",
+          agent_instance: "instance-a",
+          agent_provenance: {
+            effort: { value: "xhigh", source: "environment" },
+            model: { value: "gpt-5.6-sol", source: "probe" },
+          },
+          op: "update",
+          patch: [{ op: "replace", path: "/metadata/status", value: "closed" }],
+          before_hash: "before",
+          after_hash: "after",
+          message: "Recorded provenance",
+        })}\n`,
+        "utf8",
+      );
+
+      const history = await runHistory(
+        id,
+        {
+          provenance: true,
+          provenanceSummary: true,
+          harness: "codex",
+          agentInstance: "instance-a",
+          provenanceFilter: ["model=gpt-5.6-sol", "effort=xhigh"],
+        },
+        { path: context.pmPath },
+      );
+      expect(history).toMatchObject({
+        compact: false,
+        projection: { mode: "provenance", row_key: "provenance_history" },
+        count: 1,
+        provenance_history: [
+          {
+            item_id: id,
+            version: 2,
+            author: "legacy-codex",
+            agent_harness: "codex",
+            harness_source: "vocabulary",
+            vocabulary_version: 3,
+          },
+        ],
+        provenance_summary: {
+          entries: 1,
+          harness: { resolved: 1, unresolved: 0 },
+        },
+      });
+      expect(history.provenance_history?.[0]).not.toHaveProperty("patch");
+      expect(history).not.toHaveProperty("history");
+
+      const activity = await runActivity(
+        {
+          provenance: true,
+          provenanceSummary: true,
+          id,
+          harness: "codex",
+          provenanceFilter: "effort=xhigh",
+        },
+        { path: context.pmPath },
+      );
+      expect(activity).toMatchObject({
+        projection: {
+          mode: "provenance",
+          row_key: "provenance_activity",
+        },
+        count: 1,
+        total_count: 1,
+        provenance_activity: [
+          { item_id: id, agent_harness: "codex", vocabulary_version: 3 },
+        ],
+        provenance_summary: { entries: 1 },
+      });
+      expect(activity.provenance_activity?.[0]).not.toHaveProperty("patch");
+
+      const cliHistory = context.runCli(
+        [
+          "history",
+          id,
+          "--json",
+          "--provenance",
+          "--harness",
+          "codex",
+          "--provenance-filter",
+          "model=gpt-5.6-sol",
+        ],
+        { expectJson: true },
+      );
+      expect(cliHistory.json).toMatchObject({
+        projection: { mode: "provenance" },
+        provenance_history: [{ version: 2, agent_harness: "codex" }],
+      });
+      const cliActivity = context.runCli(
+        [
+          "activity",
+          "--json",
+          "--provenance",
+          "--id",
+          id,
+          "--harness",
+          "codex",
+          "--provenance-filter",
+          "effort=xhigh",
+        ],
+        { expectJson: true },
+      );
+      expect(cliActivity.json).toMatchObject({
+        projection: { mode: "provenance" },
+        provenance_activity: [{ item_id: id, agent_harness: "codex" }],
+      });
+
+      const legacySettings = await readSettings(context.pmPath);
+      delete legacySettings.agent_identity;
+      await writeSettings(context.pmPath, legacySettings, "settings:write");
+      await expect(
+        runHistory(id, { provenance: true }, { path: context.pmPath }),
+      ).resolves.toMatchObject({
+        projection: { mode: "provenance" },
+        provenance_history: expect.arrayContaining([
+          expect.objectContaining({ vocabulary_version: 1 }),
+        ]),
+      });
+      await expect(
+        runActivity(
+          { provenance: true, id },
+          { path: context.pmPath },
+        ),
+      ).resolves.toMatchObject({
+        projection: { mode: "provenance" },
+        provenance_activity: expect.arrayContaining([
+          expect.objectContaining({ vocabulary_version: 1 }),
+        ]),
+      });
+
+      await expect(
+        runHistory(
+          id,
+          { provenanceFilter: "private=value" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow(/Unknown provenance dimension/u);
     });
   });
 
@@ -1086,7 +1243,17 @@ describe("runHistory and runActivity", () => {
       const id = createItem(context, "History Redact Release Failure");
       const leakedToken = "release-failure-token-123";
       context.runCli(
-        ["append", id, "--json", "--body", `secret ${leakedToken}`, "--author", "test-author", "--message", "append release failure token"],
+        [
+          "append",
+          id,
+          "--json",
+          "--body",
+          `secret ${leakedToken}`,
+          "--author",
+          "test-author",
+          "--message",
+          "append release failure token",
+        ],
         { expectJson: true },
       );
       const releaseSpy = vi
@@ -1099,7 +1266,11 @@ describe("runHistory and runActivity", () => {
         await expect(
           runHistoryRedact(
             id,
-            { literal: leakedToken, replacement: "[redacted_token]", author: "test-author" },
+            {
+              literal: leakedToken,
+              replacement: "[redacted_token]",
+              author: "test-author",
+            },
             { path: context.pmPath },
           ),
         ).rejects.toThrow("synthetic derived-index release failure");

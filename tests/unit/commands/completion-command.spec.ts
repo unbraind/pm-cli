@@ -439,6 +439,29 @@ describe("generateBashScript", () => {
     expect(script).toContain("--stream");
   });
 
+  it("includes patch-free provenance reads across history, activity, and events in every shell", () => {
+    const flags = [
+      "provenance",
+      "provenance-summary",
+      "harness",
+      "agent-instance",
+      "provenance-filter",
+    ];
+    const bash = generateBashScript();
+    const zsh = generateZshScript();
+    const fish = generateFishScript();
+    for (const command of ["history", "activity", "events"]) {
+      expect(bash).toContain(`    ${command})`);
+      expect(zsh).toContain(`        ${command})`);
+      expect(fish).toContain(`__fish_seen_subcommand_from ${command}`);
+    }
+    for (const flag of flags) {
+      expect(bash).toContain(`--${flag}`);
+      expect(zsh).toContain(`--${flag}[`);
+      expect(fish).toContain(`-l ${flag}`);
+    }
+  });
+
   it("includes history-compact flags across completion scripts", () => {
     const bashScript = generateBashScript();
     expect(bashScript).toContain("history-compact)");

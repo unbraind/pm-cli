@@ -478,11 +478,7 @@ function registerListCommand(
     "Alias for --assignee-filter",
   );
   addHiddenOption(command, "--tree_depth <n>", "Alias for --tree-depth");
-  addHiddenOption(
-    command,
-    "--token_budget <n>",
-    "Alias for --token-budget",
-  );
+  addHiddenOption(command, "--token_budget <n>", "Alias for --token-budget");
   addHiddenOption(
     command,
     "--all",
@@ -658,8 +654,12 @@ async function runGetAction(
   const startedAt = Date.now();
   const intentOptions = applyContextIntentProjection("get", options);
   const result = await runGet(id, globalOptions, {
-    depth: typeof intentOptions.depth === "string" ? intentOptions.depth : undefined,
-    fields: typeof intentOptions.fields === "string" ? intentOptions.fields : undefined,
+    depth:
+      typeof intentOptions.depth === "string" ? intentOptions.depth : undefined,
+    fields:
+      typeof intentOptions.fields === "string"
+        ? intentOptions.fields
+        : undefined,
     full: Boolean(intentOptions.full),
     tree: intentOptions.tree === true,
     treeDepth:
@@ -686,9 +686,13 @@ async function runHistoryAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  if (options.compact === true && options.full === true) {
+  if (
+    [options.compact, options.full, options.provenance].filter(
+      (value) => value === true,
+    ).length > 1
+  ) {
     throw new PmCliError(
-      "History projection options are mutually exclusive. Use either --compact or --full.",
+      "History projection options are mutually exclusive. Use --compact, --provenance, or --full.",
       EXIT_CODE.USAGE,
     );
   }
@@ -704,7 +708,16 @@ async function runHistoryAction(
     id,
     {
       limit: typeof options.limit === "string" ? options.limit : undefined,
-      compact: options.full === true ? false : true,
+      compact:
+        options.full === true || options.provenance === true ? false : true,
+      provenance: options.provenance === true,
+      provenanceSummary: options.provenanceSummary === true,
+      harness: readRepeatableStringOption(options, "harness"),
+      agentInstance: readRepeatableStringOption(options, "agentInstance"),
+      provenanceFilter: readRepeatableStringOption(
+        options,
+        "provenanceFilter",
+      ),
       diff: Boolean(options.diff) || field !== undefined,
       field,
       verify: Boolean(options.verify),
@@ -726,26 +739,56 @@ async function runHistoryAction(
   }
 }
 
+function readRepeatableStringOption(
+  options: Record<string, unknown>,
+  key: string,
+): string[] | undefined {
+  const value = options[key];
+  return Array.isArray(value) ? (value as string[]) : undefined;
+}
+
+function buildMutationEventOptions(
+  options: Record<string, unknown>,
+  pmRoot: string | undefined,
+) {
+  const harness = readRepeatableStringOption(options, "harness");
+  const agentInstance = readRepeatableStringOption(options, "agentInstance");
+  const provenanceFilter = readRepeatableStringOption(
+    options,
+    "provenanceFilter",
+  );
+  return {
+    pmRoot,
+    since: typeof options.since === "string" ? options.since : undefined,
+    type: readRepeatableStringOption(options, "type"),
+    author: readRepeatableStringOption(options, "author"),
+    item: readRepeatableStringOption(options, "item"),
+    limit: typeof options.limit === "string" ? Number(options.limit) : undefined,
+    full: options.full === true,
+    ...(options.provenance === true ? { provenance: true } : {}),
+    ...(options.provenanceSummary === true
+      ? { provenanceSummary: true }
+      : {}),
+    ...(harness === undefined ? {} : { harness }),
+    ...(agentInstance === undefined ? {} : { agentInstance }),
+    ...(provenanceFilter === undefined ? {} : { provenanceFilter }),
+  };
+}
+
 async function runEventsAction(
   options: Record<string, unknown>,
   command: Command,
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const limit =
-    typeof options.limit === "string" ? Number(options.limit) : undefined;
-  const eventOptions = {
-    pmRoot: globalOptions.path,
-    since: typeof options.since === "string" ? options.since : undefined,
-    type: Array.isArray(options.type) ? (options.type as string[]) : undefined,
-    author: Array.isArray(options.author)
-      ? (options.author as string[])
-      : undefined,
-    item: Array.isArray(options.item) ? (options.item as string[]) : undefined,
-    limit,
-    full: options.full === true,
-  };
+  const eventOptions = buildMutationEventOptions(options, globalOptions.path);
   if (options.follow === true) {
+    if (options.provenanceSummary === true) {
+      throw new PmCliError(
+        "Events --provenance-summary is bounded to one page and cannot be combined with --follow.",
+        EXIT_CODE.USAGE,
+      );
+    }
     const intervalMs =
       typeof options.intervalMs === "string"
         ? Number(options.intervalMs)
@@ -762,7 +805,17 @@ async function runEventsAction(
   }
   const page = await listMutationEvents(eventOptions);
   setActiveCommandResult(page);
-  const rendered = serializeNdjsonRows(page.events);
+  const rendered = serializeNdjsonRows([
+    ...page.events,
+    ...(page.provenance_summary === undefined
+      ? []
+      : [
+          {
+            type: "provenance_summary",
+            provenance_summary: page.provenance_summary,
+          },
+        ]),
+  ]);
   if (!globalOptions.quiet && rendered.length > 0) {
     writeStdout(`${rendered}\n`);
   }
@@ -777,9 +830,13 @@ async function runActivityAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  if (options.compact === true && options.full === true) {
+  if (
+    [options.compact, options.full, options.provenance].filter(
+      (value) => value === true,
+    ).length > 1
+  ) {
     throw new PmCliError(
-      "Activity projection options are mutually exclusive. Use either --compact or --full.",
+      "Activity projection options are mutually exclusive. Use --compact, --provenance, or --full.",
       EXIT_CODE.USAGE,
     );
   }
@@ -1322,6 +1379,29 @@ export function registerListQueryCommands(
       )
       .option("--full", "Show full history entries with JSON Patch payloads")
       .option(
+        "--provenance",
+        "Show patch-free author, harness, instance, and extensible provenance",
+      )
+      .option(
+        "--provenance-summary",
+        "Include bounded provenance completeness counts",
+      )
+      .option(
+        "--harness <value>",
+        "Filter by recorded or vocabulary-resolved harness (repeatable)",
+        collect,
+      )
+      .option(
+        "--agent-instance <value>",
+        "Filter by privacy-safe agent instance (repeatable)",
+        collect,
+      )
+      .option(
+        "--provenance-filter <dimension=value>",
+        "Filter by an exact declared provenance value (repeatable)",
+        collect,
+      )
+      .option(
         "--diff",
         "Include per-entry field-level before/after value diffs computed by replaying the history chain",
       )
@@ -1368,6 +1448,29 @@ export function registerListQueryCommands(
       .option("--limit <n>", "Return at most 1,000 events (default: 100)")
       .option("--full", "Include each complete authoritative history entry")
       .option(
+        "--provenance",
+        "Include patch-free author, harness, instance, and extensible provenance",
+      )
+      .option(
+        "--provenance-summary",
+        "Include bounded provenance completeness counts",
+      )
+      .option(
+        "--harness <value>",
+        "Filter by recorded or vocabulary-resolved harness (repeatable)",
+        collect,
+      )
+      .option(
+        "--agent-instance <value>",
+        "Filter by privacy-safe agent instance (repeatable)",
+        collect,
+      )
+      .option(
+        "--provenance-filter <dimension=value>",
+        "Filter by an exact declared provenance value (repeatable)",
+        collect,
+      )
+      .option(
         "--follow",
         "Continue emitting committed events as newline-delimited JSON",
       )
@@ -1405,6 +1508,29 @@ export function registerListQueryCommands(
         "Condensed output: show only id, op, ts, author, msg per entry",
       )
       .option("--full", "Show full activity entries with JSON Patch payloads")
+      .option(
+        "--provenance",
+        "Show patch-free author, harness, instance, and extensible provenance",
+      )
+      .option(
+        "--provenance-summary",
+        "Include bounded provenance completeness counts",
+      )
+      .option(
+        "--harness <value>",
+        "Filter by recorded or vocabulary-resolved harness (repeatable)",
+        collect,
+      )
+      .option(
+        "--agent-instance <value>",
+        "Filter by privacy-safe agent instance (repeatable)",
+        collect,
+      )
+      .option(
+        "--provenance-filter <dimension=value>",
+        "Filter by an exact declared provenance value (repeatable)",
+        collect,
+      )
       .option(
         "--stream [mode]",
         "Emit line-delimited JSON rows (requires --json). Optional mode: rows|ndjson|jsonl",

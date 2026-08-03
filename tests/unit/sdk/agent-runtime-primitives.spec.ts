@@ -181,6 +181,128 @@ describe("agent runtime SDK primitives", () => {
     });
   });
 
+  it("extracts only bounded model and version fields from a harness session file", async () => {
+    const home = await mkdtemp(path.join(os.tmpdir(), "pm-provenance-probe-"));
+    tempRoots.push(home);
+    const cwd = "/tmp/provenance workspace";
+    const sessionDirectory = path.join(
+      home,
+      ".claude",
+      "projects",
+      cwd.replaceAll("/", "-"),
+    );
+    await mkdir(sessionDirectory, { recursive: true });
+    await writeFile(
+      path.join(sessionDirectory, "session-123.jsonl"),
+      `${JSON.stringify({
+        type: "assistant",
+        version: "2.1.220",
+        message: {
+          model: "claude-opus-5",
+          content: "private session content must never be retained",
+        },
+      })}\n`,
+      "utf8",
+    );
+    const identity = detectAgentIdentity({
+      cwd,
+      home_dir: home,
+      env: {
+        CLAUDECODE: "1",
+        CLAUDE_CODE_SESSION_ID: "session-123",
+      },
+    });
+    expect(identity).toMatchObject({
+      harness: "claude-code",
+      model: "claude-opus-5",
+      model_source: "probe",
+      provenance: {
+        model: { source: "probe", value: "claude-opus-5" },
+        version: { source: "probe", value: "2.1.220" },
+      },
+    });
+    expect(JSON.stringify(identity)).not.toContain("private session content");
+    expect(
+      detectAgentIdentity({
+        cwd,
+        home_dir: home,
+        probes_enabled: false,
+        env: {
+          CLAUDECODE: "1",
+          CLAUDE_CODE_SESSION_ID: "session-123",
+        },
+      }).provenance,
+    ).not.toHaveProperty("version");
+    expect(
+      runWithWorkspaceHarnessSignalDescriptors(
+        [],
+        () =>
+          detectAgentIdentity({
+            cwd,
+            home_dir: home,
+            env: {
+              CLAUDECODE: "1",
+              CLAUDE_CODE_SESSION_ID: "session-123",
+            },
+          }).provenance,
+        { probesEnabled: false },
+      ),
+    ).not.toHaveProperty("version");
+    expect(
+      detectAgentIdentity({
+        cwd,
+        home_dir: home,
+        env: {
+          CLAUDECODE: "1",
+          CLAUDE_CODE_SESSION_ID: "../invalid",
+        },
+      }).provenance,
+    ).not.toHaveProperty("version");
+    await writeFile(
+      path.join(sessionDirectory, "invalid-session.jsonl"),
+      `${"x".repeat(262_145)}\nnot-json\nnull\n42\n[]\n{"message":"not-an-object"}\n`,
+      "utf8",
+    );
+    expect(
+      detectAgentIdentity({
+        cwd,
+        home_dir: home,
+        env: {
+          CLAUDECODE: "1",
+          CLAUDE_CODE_SESSION_ID: "invalid-session",
+        },
+      }).provenance,
+    ).not.toHaveProperty("version");
+    expect(
+      detectAgentIdentity({
+        env: {
+          CLAUDECODE: "1",
+          CLAUDE_CODE_SESSION_ID: "missing-default-path-session",
+        },
+      }).provenance,
+    ).not.toHaveProperty("version");
+    expect(
+      detectAgentIdentity({
+        cwd,
+        home_dir: home,
+        env: {
+          CLAUDECODE: "1",
+          CLAUDE_CODE_SESSION_ID: "missing-session",
+        },
+      }).provenance,
+    ).not.toHaveProperty("version");
+    expect(
+      detectAgentIdentity({
+        env: { CODEX_HOME: "/tmp/codex", AI_AGENT: "codex/v1.7.3-beta.1" },
+      }).provenance,
+    ).toMatchObject({ version: { source: "probe", value: "1.7.3-beta.1" } });
+    expect(
+      detectAgentIdentity({
+        env: { CODEX_HOME: "/tmp/codex", AI_AGENT: "codex-development" },
+      }).provenance,
+    ).not.toHaveProperty("version");
+  });
+
   it("uses ambient signals by default and records extensible effort and role provenance", async () => {
     await withIsolatedHarnessEnvironment(
       {

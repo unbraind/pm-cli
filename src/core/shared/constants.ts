@@ -285,6 +285,11 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   },
   author_default: "",
   agent_identity: {
+    probes_enabled: true,
+    identity_vocabulary: {
+      version: 1,
+      aliases: {},
+    },
     harness_signals: [],
   },
   mutation_guard: {

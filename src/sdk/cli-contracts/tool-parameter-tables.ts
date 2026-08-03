@@ -125,6 +125,14 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   activeOnly: { type: "boolean" },
   eagerTags: { type: "boolean" },
   fullChangedFields: { type: "boolean" },
+  provenance: { type: "boolean" },
+  provenanceSummary: { type: "boolean" },
+  agentInstance: {
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+  },
+  provenanceFilter: {
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+  },
   idOnly: { type: "boolean" },
   allowMissingParent: { type: "boolean" },
   allowDuplicate: { type: "boolean" },
@@ -559,6 +567,14 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
 export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
   Record<PmToolAction, Record<string, unknown>>
 > = {
+  activity: {
+    harness: {
+      anyOf: [
+        { type: "string" },
+        { type: "array", items: { type: "string" } },
+      ],
+    },
+  },
   events: {
     since: { type: "string", minLength: 1 },
     type: {
@@ -571,6 +587,17 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
       anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
     },
     limit: { type: "integer", minimum: 0, maximum: 1000 },
+    harness: {
+      anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+    },
+  },
+  history: {
+    harness: {
+      anyOf: [
+        { type: "string" },
+        { type: "array", items: { type: "string" } },
+      ],
+    },
   },
   remind: {
     at: { type: "string", minLength: 1 },
@@ -1347,6 +1374,24 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   offset: {
     description: "Number of matching rows to skip before limit is applied.",
     examples: [0, 50, "100"],
+  },
+  provenance: {
+    description:
+      "Return patch-free immutable author, harness, instance, and extensible provenance rows.",
+  },
+  provenanceSummary: {
+    description:
+      "Include bounded observed, unavailable, legacy-missing, and unresolved-author counts.",
+  },
+  agentInstance: {
+    description:
+      "Privacy-safe agent invocation fingerprint filter, supplied once or as a list.",
+    examples: ["a1b2c3d4", ["a1b2c3d4", "e5f6g7h8"]],
+  },
+  provenanceFilter: {
+    description:
+      "Exact extensible provenance predicate in dimension=value form, supplied once or as a list.",
+    examples: ["model=gpt-5.6-sol", ["effort=xhigh", "role=reviewer"]],
   },
   before: {
     description:

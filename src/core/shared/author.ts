@@ -5,6 +5,9 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import {
   resolveAgentSessionContextFromSignals,
   type AgentEpisodeIdentity,
@@ -21,7 +24,8 @@ export type AgentModelSource =
   | "mcp_client"
   | "argv"
   | "host"
-  | "session";
+  | "session"
+  | "probe";
 
 /** Stable built-in provenance dimensions understood by the default runtime. */
 export const AGENT_PROVENANCE_DIMENSIONS = [
@@ -29,7 +33,13 @@ export const AGENT_PROVENANCE_DIMENSIONS = [
   "effort",
   "role",
   "topic",
+  "version",
 ] as const;
+
+/** Built-in, bounded local resolver names accepted by harness descriptors. */
+export type AgentProvenanceResolver =
+  | "ai_agent_version"
+  | "claude_session_file";
 
 /** One bounded provenance value and the signal class that supplied it. */
 export interface AgentProvenanceObservation {
@@ -76,6 +86,10 @@ export interface HarnessSignalDescriptor {
   /** Extensible provenance dimension to ordered environment-key mappings. */
   provenance_environment_keys?: Readonly<
     Record<string, readonly string[] | undefined>
+  >;
+  /** Provenance dimensions mapped to audited built-in local resolvers. */
+  provenance_resolvers?: Readonly<
+    Record<string, AgentProvenanceResolver | undefined>
   >;
   /** Dimensions the harness is known not to expose through environment keys. */
   provenance_unavailable_dimensions?: readonly string[];
@@ -129,14 +143,24 @@ export interface HarnessDetectionSignals {
   session_context?: AgentSessionContext;
   /** Invocation-local descriptors appended after built-in and package signals. */
   descriptors?: readonly HarnessSignalDescriptor[];
+  /** Disable local provenance probes for this invocation. */
+  probes_enabled?: boolean;
+  /** Working directory used to derive harness-owned session paths. */
+  cwd?: string;
+  /** Home directory override used by embedders and isolated tests. */
+  home_dir?: string;
 }
 
 const authorIdentityStorage = new AsyncLocalStorage<ResolvedAuthorIdentity>();
 const harnessDetectionStorage =
   new AsyncLocalStorage<HarnessDetectionSignals>();
-const workspaceHarnessSignalsStorage = new AsyncLocalStorage<
-  readonly NormalizedHarnessSignalDescriptor[]
->();
+interface WorkspaceHarnessSignals {
+  descriptors: readonly NormalizedHarnessSignalDescriptor[];
+  probesEnabled: boolean;
+}
+
+const workspaceHarnessSignalsStorage =
+  new AsyncLocalStorage<WorkspaceHarnessSignals>();
 
 /** Built-in agent descriptors evaluated before package and workspace additions. */
 export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescriptor[] =
@@ -148,8 +172,13 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
       session_environment_keys: ["CLAUDE_CODE_SESSION_ID"],
       provenance_environment_keys: {
         effort: ["CLAUDE_EFFORT"],
+        role: ["CLAUDE_CODE_CHILD_SESSION"],
       },
-      provenance_unavailable_dimensions: ["role", "topic"],
+      provenance_resolvers: {
+        model: "claude_session_file",
+        version: "claude_session_file",
+      },
+      provenance_unavailable_dimensions: ["topic"],
       argv_markers: ["claude", "claude-code"],
       client_names: ["claude", "claude-code", "claude code"],
     },
@@ -162,6 +191,7 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
         effort: ["CODEX_REASONING_EFFORT", "CODEX_EFFORT"],
         role: ["CODEX_SESSION_ROLE"],
       },
+      provenance_resolvers: { version: "ai_agent_version" },
       provenance_unavailable_dimensions: ["topic"],
       argv_markers: ["codex"],
       client_names: ["codex"],
@@ -278,6 +308,21 @@ function normalizeHarnessSignalDescriptor(
           HARNESS_NAMESPACE_PATTERN.test(dimension as string),
         ),
     ),
+    provenance_resolvers: Object.fromEntries(
+      Object.entries(descriptor.provenance_resolvers ?? {})
+        .slice(0, 32)
+        .map(([dimension, resolver]) => [
+          dimension.trim().toLowerCase().slice(0, 64),
+          resolver,
+        ])
+        .filter(
+          (entry): entry is [string, AgentProvenanceResolver] =>
+            typeof entry[0] === "string" &&
+            HARNESS_NAMESPACE_PATTERN.test(entry[0]) &&
+            (entry[1] === "ai_agent_version" ||
+              entry[1] === "claude_session_file"),
+        ),
+    ),
     provenance_unavailable_dimensions: boundedUniqueStrings(
       descriptor.provenance_unavailable_dimensions,
     ).map((value) => value.toLowerCase()),
@@ -317,7 +362,7 @@ function currentHarnessSignalDescriptors(
     ...[...registeredHarnessSignalDescriptors.values()].map(
       (entry) => entry.descriptor,
     ),
-    ...(workspaceHarnessSignalsStorage.getStore() ?? []),
+    ...(workspaceHarnessSignalsStorage.getStore()?.descriptors ?? []),
     ...localDescriptors.map(normalizeHarnessSignalDescriptor),
   ];
   const seen = new Set<string>();
@@ -370,6 +415,94 @@ function boundedProvenanceValue(
   dimension: string,
 ): string | undefined {
   return nonBlank(provenance?.[dimension])?.slice(0, 256);
+}
+
+const MAX_PROVENANCE_PROBE_BYTES = 1_048_576;
+
+function parseClaudeProvenanceLine(
+  line: string,
+  dimension: string,
+): string | undefined {
+  if (line.length === 0 || line.length > 262_144) return undefined;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(line) as unknown;
+  } catch {
+    return undefined;
+  }
+  if (typeof parsed !== "object" || parsed === null) return undefined;
+  const record = parsed as Record<string, unknown>;
+  const message =
+    typeof record.message === "object" && record.message !== null
+      ? (record.message as Record<string, unknown>)
+      : undefined;
+  const value = dimension === "model" ? message?.model : record.version;
+  return nonBlank(value)?.slice(0, 256);
+}
+
+function readClaudeSessionProvenance(
+  dimension: string,
+  signals: HarnessDetectionSignals,
+  env: Readonly<Record<string, string | undefined>>,
+): string | undefined {
+  const session = nonBlank(env.CLAUDE_CODE_SESSION_ID);
+  if (!session || !/^[A-Za-z0-9_-]{1,128}$/u.test(session)) return undefined;
+  const workspace = path.resolve(signals.cwd ?? process.cwd());
+  const encodedWorkspace = workspace.replaceAll("\\", "/").replaceAll("/", "-");
+  const sessionPath = path.join(
+    signals.home_dir ?? os.homedir(),
+    ".claude",
+    "projects",
+    encodedWorkspace,
+    `${session}.jsonl`,
+  );
+  try {
+    const file = fs.openSync(sessionPath, "r");
+    try {
+      const size = fs.fstatSync(file).size;
+      const length = Math.min(size, MAX_PROVENANCE_PROBE_BYTES);
+      const buffer = Buffer.alloc(length);
+      fs.readSync(file, buffer, 0, length, Math.max(0, size - length));
+      const lines = buffer.toString("utf8").split("\n").reverse();
+      for (const line of lines.slice(0, 4_096)) {
+        const value = parseClaudeProvenanceLine(line, dimension);
+        if (value) return value;
+      }
+      return undefined;
+    } finally {
+      fs.closeSync(file);
+    }
+  } catch {
+    return undefined;
+  }
+}
+
+function resolveProvenanceProbe(
+  dimension: string,
+  signals: HarnessDetectionSignals,
+  env: Readonly<Record<string, string | undefined>>,
+  descriptor: NormalizedHarnessSignalDescriptor | undefined,
+): string | undefined {
+  const workspaceSignals = workspaceHarnessSignalsStorage.getStore();
+  const enabled =
+    signals.probes_enabled !== false &&
+    workspaceSignals?.probesEnabled !== false &&
+    !["0", "false", "off"].includes(
+      nonBlank(env.PM_AGENT_PROBES)?.toLowerCase() ?? "",
+    );
+  if (!enabled) return undefined;
+  const resolver = descriptor?.provenance_resolvers[dimension];
+  if (resolver === "claude_session_file") {
+    return readClaudeSessionProvenance(dimension, signals, env);
+  }
+  if (resolver === "ai_agent_version") {
+    const value = nonBlank(env.AI_AGENT);
+    if (!value) return undefined;
+    const match =
+      /(?:^|[@/\s])v?(\d+\.\d+(?:\.\d+)?(?:[-+][A-Za-z0-9.-]+)?)$/u.exec(value);
+    return match?.[1]?.slice(0, 256);
+  }
+  return undefined;
 }
 
 function effectiveHarnessDetectionSignals(
@@ -443,6 +576,7 @@ function resolveAgentProvenanceObservation(
     boundedProvenanceValue(clientProvenance, dimension),
     boundedProvenanceValue(signals.provenance, dimension),
     argvValue,
+    resolveProvenanceProbe(dimension, signals, env, descriptor),
   ];
   const sources: readonly AgentModelSource[] = [
     "override",
@@ -451,6 +585,7 @@ function resolveAgentProvenanceObservation(
     "mcp_client",
     "host",
     "argv",
+    "probe",
   ];
   const candidates = sources.map((source, index) => ({
     value: values[index],
@@ -474,6 +609,7 @@ function resolveAgentProvenance(
   const dimensions = new Set([
     ...AGENT_PROVENANCE_DIMENSIONS,
     ...descriptorDimensions,
+    ...Object.keys(descriptor?.provenance_resolvers ?? {}),
     ...Object.keys(signals.provenance ?? {}),
     ...Object.keys(signals.client_info?.provenance ?? {}),
     ...Object.keys(sessionContext?.provenance ?? {}),
@@ -489,7 +625,11 @@ function resolveAgentProvenance(
     );
     if (observed) {
       observations[dimension] = observed;
-    } else if (descriptor) {
+    } else if (
+      descriptor &&
+      (dimension !== "version" ||
+        descriptor.provenance_unavailable_dimensions.includes(dimension))
+    ) {
       observations[dimension] = null;
     }
   }
@@ -568,10 +708,17 @@ export function runWithHarnessDetectionSignals<T>(
 export function runWithWorkspaceHarnessSignalDescriptors<T>(
   descriptors: readonly HarnessSignalDescriptor[],
   callback: () => T,
+  options: { probesEnabled?: boolean } = {},
 ): T {
   const normalized = descriptors.map(normalizeHarnessSignalDescriptor);
   currentHarnessSignalDescriptors(normalized);
-  return workspaceHarnessSignalsStorage.run(normalized, callback);
+  return workspaceHarnessSignalsStorage.run(
+    {
+      descriptors: normalized,
+      probesEnabled: options.probesEnabled !== false,
+    },
+    callback,
+  );
 }
 
 /**

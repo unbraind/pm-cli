@@ -1154,11 +1154,9 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
     item_format: normalizeSettingsItemFormat(settings, defaults),
     locks: { ...defaults.locks, ...settings.locks },
     ids: { ...defaults.ids, ...settings.ids },
-    agent_identity: {
-      harness_signals: structuredClone(
-        settings.agent_identity?.harness_signals ?? [],
-      ),
-    },
+    agent_identity: structuredClone(
+      settings.agent_identity ?? defaults.agent_identity,
+    ),
     mutation_guard: {
       ...defaults.mutation_guard,
       ...settings.mutation_guard,
@@ -1215,8 +1213,18 @@ function orderSerializedSettingsSections(
 ): void {
   ordered.agent_identity = orderObject(
     ordered.agent_identity as Record<string, unknown>,
-    ["harness_signals"],
+    ["probes_enabled", "identity_vocabulary", "harness_signals"],
   );
+  const orderedAgentIdentity = ordered.agent_identity as Record<
+    string,
+    unknown
+  >;
+  if (Object.hasOwn(orderedAgentIdentity, "identity_vocabulary")) {
+    orderedAgentIdentity.identity_vocabulary = orderObject(
+      recordOrEmpty(orderedAgentIdentity.identity_vocabulary),
+      ["version", "aliases"],
+    );
+  }
   (ordered.agent_identity as Record<string, unknown>).harness_signals =
     arrayOrEmpty(
       (ordered.agent_identity as Record<string, unknown>).harness_signals,
@@ -1227,6 +1235,7 @@ function orderSerializedSettingsSections(
         "model_environment_keys",
         "session_environment_keys",
         "provenance_environment_keys",
+        "provenance_resolvers",
         "provenance_unavailable_dimensions",
         "argv_markers",
         "client_names",
@@ -1773,9 +1782,7 @@ export function serializeSettings(
     };
     baselineSettings.schema = {
       ...baselineSettings.schema,
-      statuses: structuredClone(
-        options.persist_source.runtime_schema_statuses,
-      ),
+      statuses: structuredClone(options.persist_source.runtime_schema_statuses),
       fields: structuredClone(options.persist_source.runtime_schema_fields),
       type_workflows: structuredClone(
         options.persist_source.runtime_schema_type_workflows,

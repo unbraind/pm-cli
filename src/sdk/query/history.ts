@@ -38,6 +38,14 @@ import {
   resolveModePairedOutputOmissionReceipt,
   type OutputOmissionReceipt,
 } from "../output-projection.js";
+import {
+  compileHistoryProvenanceMatcher,
+  projectHistoryProvenance,
+  resolveHistoryProvenanceDimensions,
+  summarizeHistoryProvenance,
+  type HistoryProvenanceRow,
+  type HistoryProvenanceSummary,
+} from "../history-provenance.js";
 
 export { verifyHistoryChain };
 /** Documents the history command options payload exchanged by command, SDK, and package integrations. */
@@ -52,6 +60,16 @@ export interface HistoryCommandOptions {
   verify?: boolean;
   /** Value that configures or reports compact for this contract. */
   compact?: boolean;
+  /** Return patch-free provenance rows. */
+  provenance?: boolean;
+  /** Include constant-size provenance completeness metrics. */
+  provenanceSummary?: boolean;
+  /** Filter by canonical recorded or vocabulary-resolved harness. */
+  harness?: string | readonly string[];
+  /** Filter by privacy-safe invocation fingerprint. */
+  agentInstance?: string | readonly string[];
+  /** Exact provenance dimension predicates (`dimension=value`). */
+  provenanceFilter?: string | readonly string[];
 }
 
 /** Documents the history diff entry payload exchanged by command, SDK, and package integrations. */
@@ -78,14 +96,16 @@ export interface HistoryResult {
   history?: HistoryEntry[];
   /** Value that configures or reports compact history for this contract. */
   compact_history?: HistoryDiffEntry[];
+  /** Patch-free immutable provenance rows. */
+  provenance_history?: HistoryProvenanceRow[];
   /** Value that configures or reports compact for this contract. */
   compact: boolean;
   /** Explicit active row projection. */
   projection: {
     /** Stable projection mode. */
-    mode: "compact" | "full";
+    mode: "compact" | "provenance" | "full";
     /** Active row collection key. */
-    row_key: "compact_history" | "history";
+    row_key: "compact_history" | "provenance_history" | "history";
   };
   /** Constant-size disclosure of field groups withheld by the active mode. */
   omission_receipt: OutputOmissionReceipt;
@@ -97,6 +117,8 @@ export interface HistoryResult {
   diff?: HistoryDiffValueEntry[];
   /** Value that configures or reports verification for this contract. */
   verification?: HistoryVerificationResult;
+  /** Constant-size provenance completeness metrics. */
+  provenance_summary?: HistoryProvenanceSummary;
 }
 
 function limitEntries<T>(values: T[], limit: number | undefined): T[] {
@@ -130,12 +152,7 @@ function buildDiffEntries(
   });
 }
 
-/** Implements run history for the public runtime surface of this module. */
-export async function runHistory(
-  id: string,
-  options: HistoryCommandOptions,
-  global: GlobalOptions,
-): Promise<HistoryResult> {
+async function resolveHistoryReadTarget(id: string, global: GlobalOptions) {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
@@ -143,8 +160,6 @@ export async function runHistory(
       EXIT_CODE.NOT_FOUND,
     );
   }
-
-  const limit = parseLimit(options.limit);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
     settings,
@@ -177,9 +192,38 @@ export async function runHistory(
       commandLabel: "history",
     });
   }
+  return { historyPath, located, resolvedId, settings };
+}
+
+/** Implements run history for the public runtime surface of this module. */
+export async function runHistory(
+  id: string,
+  options: HistoryCommandOptions,
+  global: GlobalOptions,
+): Promise<HistoryResult> {
+  const limit = parseLimit(options.limit);
+  const { historyPath, located, resolvedId, settings } =
+    await resolveHistoryReadTarget(id, global);
 
   const fullHistory = await readHistoryEntries(historyPath, resolvedId);
-  const history = limitEntries(fullHistory, limit);
+  const vocabulary = settings.agent_identity!.identity_vocabulary!;
+  const provenanceDimensions = resolveHistoryProvenanceDimensions(
+    settings.agent_identity!.harness_signals,
+  );
+  const matchesProvenance = compileHistoryProvenanceMatcher(
+    {
+      harness: options.harness,
+      agentInstance: options.agentInstance,
+      provenance: options.provenanceFilter,
+    },
+    vocabulary,
+    provenanceDimensions,
+  );
+  const filteredHistory = fullHistory
+    .map((entry, index) => ({ entry, version: index + 1 }))
+    .filter(({ entry }) => matchesProvenance(entry));
+  const selectedHistory = limitEntries(filteredHistory, limit);
+  const history = selectedHistory.map(({ entry }) => entry);
   const compact = options.compact === true;
   const compactHistory = compact
     ? buildDiffEntries(
@@ -187,13 +231,25 @@ export async function runHistory(
         Math.max(0, fullHistory.length - history.length),
       )
     : undefined;
-  const projectionMode = compact ? "compact" : "full";
+  const provenanceHistory =
+    options.provenance === true
+      ? selectedHistory.map(({ entry, version }) =>
+          projectHistoryProvenance(entry, vocabulary, {
+            itemId: resolvedId,
+            version,
+          }),
+        )
+      : undefined;
+  const projectionMode =
+    options.provenance === true ? "provenance" : compact ? "compact" : "full";
   const rowProjection = {
     compact: { compact_history: compactHistory },
+    provenance: { provenance_history: provenanceHistory },
     full: { history },
   }[projectionMode];
   const rowKey = {
     compact: "compact_history",
+    provenance: "provenance_history",
     full: "history",
   } as const;
   const result: HistoryResult = {
@@ -210,6 +266,15 @@ export async function runHistory(
     ),
     count: history.length,
     limit: limit ?? null,
+    ...(options.provenanceSummary === true
+      ? {
+          provenance_summary: summarizeHistoryProvenance(
+            filteredHistory.map(({ entry }) => entry),
+            vocabulary,
+            provenanceDimensions,
+          ),
+        }
+      : {}),
   };
 
   if (options.diff || options.field !== undefined) {

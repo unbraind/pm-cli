@@ -553,6 +553,52 @@ describe("register-list-query mutation events", () => {
     );
   });
 
+  it("maps provenance projections, summaries, and repeatable predicates", async () => {
+    vi.mocked(listMutationEvents).mockResolvedValueOnce({
+      events: [],
+      count: 0,
+      has_more: false,
+      source: "derived_index",
+      provenance_summary: {
+        entries: 0,
+        vocabulary_version: 1,
+        harness: { resolved: 0, unresolved: 0, unresolved_authors: [] },
+        dimensions: [],
+      },
+    });
+    await runRaw(
+      "events",
+      "--provenance",
+      "--provenance-summary",
+      "--harness",
+      "codex",
+      "--agent-instance",
+      "instance-a",
+      "--provenance-filter",
+      "model=gpt-5.6-sol",
+    );
+    expect(vi.mocked(listMutationEvents)).toHaveBeenLastCalledWith({
+      pmRoot: tmpRoot,
+      since: undefined,
+      type: undefined,
+      author: undefined,
+      item: undefined,
+      limit: undefined,
+      full: false,
+      provenance: true,
+      provenanceSummary: true,
+      harness: ["codex"],
+      agentInstance: ["instance-a"],
+      provenanceFilter: ["model=gpt-5.6-sol"],
+    });
+  });
+
+  it("rejects unbounded provenance summaries before following", async () => {
+    await expect(
+      runRaw("events", "--follow", "--provenance-summary"),
+    ).rejects.toThrow(/cannot be combined with --follow/u);
+  });
+
   it("follows events with explicit and default intervals while respecting quiet output", async () => {
     await runRaw("events", "--follow", "--interval-ms", "25");
     expect(vi.mocked(subscribeMutationEvents)).toHaveBeenLastCalledWith(

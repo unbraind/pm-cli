@@ -11,13 +11,16 @@ import {
 describe("agent provenance SDK analysis", () => {
   it("declares a signal or an explicit no-signal disposition for every built-in dimension", () => {
     for (const descriptor of BUILTIN_HARNESS_SIGNAL_DESCRIPTORS) {
-      for (const dimension of AGENT_PROVENANCE_DIMENSIONS) {
+      for (const dimension of AGENT_PROVENANCE_DIMENSIONS.filter(
+        (value) => value !== "version",
+      )) {
         const keys =
           dimension === "model"
             ? descriptor.model_environment_keys
             : descriptor.provenance_environment_keys?.[dimension];
         expect(
           (keys?.length ?? 0) > 0 ||
+            descriptor.provenance_resolvers?.[dimension] !== undefined ||
             descriptor.provenance_unavailable_dimensions?.includes(dimension),
           `${descriptor.harness}:${dimension}`,
         ).toBe(true);
@@ -47,13 +50,18 @@ describe("agent provenance SDK analysis", () => {
       },
       {
         dimension: "role",
-        harnesses: ["codex"],
+        harnesses: ["claude-code", "codex"],
         covered: true,
       },
       {
         dimension: "topic",
         harnesses: [],
         covered: false,
+      },
+      {
+        dimension: "version",
+        harnesses: ["claude-code", "codex"],
+        covered: true,
       },
     ]);
     expect(

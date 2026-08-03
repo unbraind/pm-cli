@@ -312,6 +312,7 @@ export {
   DOCS_FLAG_CONTRACTS,
   EVAL_FLAG_CONTRACTS,
   EVENT_FLAG_CONTRACTS,
+  EVENTS_FLAG_CONTRACTS,
   EXTENSION_ACTIVATE_FLAG_CONTRACTS,
   EXTENSION_ADOPT_ALL_FLAG_CONTRACTS,
   EXTENSION_ADOPT_FLAG_CONTRACTS,
@@ -483,6 +484,7 @@ export * from "./dependency-provenance.js";
 export * from "./duplicates.js";
 export * from "./history-compact.js";
 export * from "./history-read.js";
+export * from "./history-provenance.js";
 export * from "./mutation-events.js";
 export {
   appendWorkspaceAuditEvent,

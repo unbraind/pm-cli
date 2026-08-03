@@ -1089,6 +1089,11 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
   limit?: string;
   compact?: boolean;
   unbounded?: boolean;
+  provenance?: boolean;
+  provenanceSummary?: boolean;
+  harness?: string[];
+  agentInstance?: string[];
+  provenanceFilter?: string[];
 } {
   const readActivityString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
@@ -1106,8 +1111,23 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
     to: readActivityString("to"),
     limit: readActivityString("limit"),
     compact:
-      options.full === true ? false : options.compact === false ? false : true,
+      options.full === true || options.provenance === true
+        ? false
+        : options.compact === false
+          ? false
+          : true,
     unbounded: optionTrue(options, "unbounded"),
+    provenance: optionTrue(options, "provenance"),
+    provenanceSummary: optionTrue(options, "provenanceSummary"),
+    harness: Array.isArray(options.harness)
+      ? (options.harness as string[])
+      : undefined,
+    agentInstance: Array.isArray(options.agentInstance)
+      ? (options.agentInstance as string[])
+      : undefined,
+    provenanceFilter: Array.isArray(options.provenanceFilter)
+      ? (options.provenanceFilter as string[])
+      : undefined,
   };
 }
 
