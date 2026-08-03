@@ -47,9 +47,11 @@ export function validatePackageArtifact(report, budget) {
       violations.push(`forbidden_suffix:${suffix}:${matches.length}`);
     }
   }
-  for (const required of budget.required_paths) {
-    if (!paths.includes(required)) violations.push(`required_path_missing:${required}`);
-  }
+  violations.push(
+    ...budget.required_paths
+      .filter((required) => !paths.includes(required))
+      .map((required) => `required_path_missing:${required}`),
+  );
   if (violations.length > 0) {
     throw new Error(`Package artifact gate failed:\n${violations.join("\n")}`);
   }
