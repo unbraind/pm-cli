@@ -1,0 +1,28 @@
+id: pm-q2a7hr
+title: Auto Release coverage depends on a /proc timing race in the SDK entrypoint sampler
+description: "The August 3 production Auto Release run 30775382287 failed its exact 100% coverage gate because scripts/bench/sdk-entrypoint-costs.mjs line 93 is covered only when a sampled child exits between pid observation and /proc status read. Local full coverage happened to exercise the catch; hosted Node 24 did not, yielding 99.99% statements/lines. The sampler must expose deterministic bounded I/O injection so the failure path is proven without timing, process, or platform luck."
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-08-03T01:01:22.454Z"
+updated_at: "2026-08-03T01:09:08.128Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#aea157f022b12643c556d387"
+author: "harness:codex"
+acceptance_criteria: The /proc read failure path is deterministically testable without relying on child-process timing; the focused test proves read failure returns undefined and mutations of that behavior fail coverage or assertions; full exact 100/100/100/100 coverage passes; the production Auto Release rerun passes without weakening thresholds or exclusions
+parent: pm-u9d0
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f2ne,discovered_from,"2026-08-03T01:01:22.454Z","harness:codex","cli:create:dep",detected
+  pm-rtn5h6,implements,"2026-08-03T01:01:22.454Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-03T01:01:22.454Z","harness:codex","Duplicate check: searched all statuses for sdk entrypoint coverage, RSS/proc race, and auto-release 99.99. pm-f2ne is the closed historical release-script coverage tranche; pm-cg1sjb owns cold-cache latency noise; pm-rtn5h6 owns the defect-escape ratchet. None owns nondeterministic coverage of the /proc disappearance catch. GitHub run: https://github.com/unbraind/pm-cli/actions/runs/30775382287."
+  "2026-08-03T01:09:08.128Z","harness:codex","TDD evidence: added deterministic injected platform/readStatus controls around the procfs sampler and assertions for undefined pid, non-Linux, valid VmRSS, missing VmRSS, and read failure. Focused suite passes 11/11; repository coverage passes 422/422 files and 6,748/6,748 tests at exact 100% statements, branches, functions, and lines. pnpm lint, typecheck, zero-duplicate, docstring 100%, SDK boundary/parity, token/context, SDK surface, benchmark, transport, and diff checks pass."
+files[2]{path,scope,note}:
+  scripts/bench/sdk-entrypoint-costs.mjs,project,Injectable bounded proc status reader
+  tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project,Deterministic proc read failure regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mscj6yxl-vaxbxj,test,passed,"2026-08-03T01:08:58.574Z","2026-08-03T01:09:07.544Z","2026-08-03T01:09:07.544Z",1,0,0
+body: ""

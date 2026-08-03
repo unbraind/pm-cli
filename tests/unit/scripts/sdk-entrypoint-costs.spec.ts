@@ -9,6 +9,7 @@ import {
   main,
   measureEntrypointProcess,
   nearestRank,
+  readLinuxRssBytes,
   renderEntrypointCostMarkdown,
   runEntrypoint,
   summarizeImportSamples,
@@ -108,6 +109,44 @@ describe("SDK entrypoint import-cost calculations", () => {
     expect(
       summarizeImportSamples([{ duration_ms: 1 }]).max_peak_rss_bytes,
     ).toBeNull();
+  });
+
+  it("reads Linux RSS and fails closed on unavailable proc status", async () => {
+    const unexpectedRead = async (): Promise<string> => {
+      throw new Error("reader must not run");
+    };
+    await expect(
+      readLinuxRssBytes(undefined, {
+        platform: "linux",
+        readStatus: unexpectedRead,
+      }),
+    ).resolves.toBeUndefined();
+    await expect(
+      readLinuxRssBytes(42, {
+        platform: "darwin",
+        readStatus: unexpectedRead,
+      }),
+    ).resolves.toBeUndefined();
+    await expect(
+      readLinuxRssBytes(42, {
+        platform: "linux",
+        readStatus: async () => "Name:\tnode\nVmRSS:\t12 kB\n",
+      }),
+    ).resolves.toBe(12 * 1024);
+    await expect(
+      readLinuxRssBytes(42, {
+        platform: "linux",
+        readStatus: async () => "Name:\tnode\n",
+      }),
+    ).resolves.toBeUndefined();
+    await expect(
+      readLinuxRssBytes(42, {
+        platform: "linux",
+        readStatus: async () => {
+          throw new Error("process exited");
+        },
+      }),
+    ).resolves.toBeUndefined();
   });
 
   it("measures every entrypoint and derives aggregate reductions", async () => {

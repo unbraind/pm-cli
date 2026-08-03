@@ -83,10 +83,18 @@ export function summarizeImportSamples(samples) {
   };
 }
 
-async function readLinuxRssBytes(pid) {
-  if (process.platform !== "linux" || pid === undefined) return undefined;
+/**
+ * Read one Linux process RSS sample while treating procfs races as absent data.
+ *
+ * The injectable platform and reader make the failure boundary deterministic in
+ * tests; production callers retain the real platform and filesystem defaults.
+ */
+export async function readLinuxRssBytes(pid, options = {}) {
+  const platform = options.platform ?? process.platform;
+  const readStatus = options.readStatus ?? readFile;
+  if (platform !== "linux" || pid === undefined) return undefined;
   try {
-    const status = await readFile(`/proc/${pid}/status`, "utf8");
+    const status = await readStatus(`/proc/${pid}/status`, "utf8");
     const match = status.match(/^VmRSS:\s+(\d+)\s+kB$/mu);
     return match ? Number.parseInt(match[1], 10) * 1024 : undefined;
   } catch {
