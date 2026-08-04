@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: observability,pm-cli,telemetry,validation
 created_at: "2026-04-26T08:38:49.149Z"
-updated_at: "2026-07-26T17:28:03.250Z"
+updated_at: "2026-08-04T15:47:15.982Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Ingestion path validates UUID-typed identifiers before queueing; invalid payloads are dropped/quarantined with explicit counters and do not repeatedly fail worker inserts.
@@ -15,10 +15,15 @@ release: v2026.5.1
 resolution: "Telemetry API now rejects invalid UUID payloads with explicit counters, and the worker drops legacy malformed UUID events without requeue churn."
 expected_result: Invalid UUID telemetry payloads are rejected at ingestion and do not create persistent queue or worker insert failures.
 actual_result: Invalid UUID payloads now return 400 with field-level detail; rejected UUID counters increment; worker drained poison backlog and queue remains at 0/0 without recurring UUID insert-failed loops.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-lnq3,parent,"2026-04-26T08:38:49.149Z",codex-agent,null
-  pm-lnq3,implements,"2026-07-26T17:28:03.010Z",null,null
-comments[11]{created_at,author,text}:
+dependencies[2]:
+  - id: pm-lnq3
+    kind: parent
+    created_at: "2026-04-26T08:38:49.149Z"
+    author: codex-agent
+  - id: pm-lnq3
+    kind: implements
+    created_at: "2026-07-26T17:28:03.010Z"
+comments[12]{created_at,author,text}:
   "2026-04-26T08:38:49.149Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'telemetry worker invalid uuid' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because current telemetry open items cover docs/health visibility but not ingestion boundary UUID validation and worker retry churn."
   "2026-04-26T08:42:50.281Z",codex-agent,"Remote verification evidence 2026-04-26: docker compose services healthy on [redacted_user]@[redacted_host] (telemetry-api/worker/rabbitmq/postgres/prometheus/loki/tempo/alloy/grafana); /healthz returned ok queue pm.telemetry.events; synthetic POST /v1/events accepted=1; Postgres telemetry_events count increased (9516->9519) and live command ingest confirmed (stats delta +1); DSAR export/delete scripts executed successfully for probe installation UUID. Outstanding failure signal: telemetry-worker logs repeated worker_insert_failed invalid UUID errors for non-UUID identifiers, indicating ingestion boundary lacks strict UUID validation before worker insert."
   "2026-04-26T09:56:01.971Z",codex-agent,"Remote telemetry verification 2026-04-26: all stack services are running and healthy, public /healthz and Grafana API health respond (200), and a UUID-based synthetic event command=remote-audit-smoke was accepted and persisted in Postgres. RabbitMQ queue depth remains non-zero (messages=4, messages_unacknowledged=4) while telemetry-worker logs repeatedly show worker_insert_failed invalid UUID errors for non-UUID identifiers, confirming poison-message churn when ingestion accepts malformed UUID fields."
@@ -30,23 +35,18 @@ comments[11]{created_at,author,text}:
   "2026-04-27T19:44:37.688Z",codex-agent,"Final evidence 2026-04-27: remote smoke checks show telemetry-api healthz ok and queue pm.telemetry.events at 0/0; worker churn no longer loops with worker_insert_failed UUID failures after boundary hardening rollout."
   "2026-05-01T19:29:31.935Z",cursor-agent,"History drift audit: hash mismatch is from pre-history-tracking era edits. Accepted as historical legacy drift."
   "2026-05-03T12:11:42.443Z",audit-agent,"author=audit-agent,created_at=now,text=SECURITY REDACTION: Prior linked files and tests reference remote host paths for UUID validation fix. These are internal infrastructure references and do not expose credentials."
+  "2026-08-04T15:47:15.982Z","harness:codex","Context hygiene 2026-08-04: pm-j8z6 removed stale current-state links to ignored local telemetry/operations artifacts. Historical outcome and release attribution remain unchanged; public tracked evidence now points only to repository-owned files."
 notes[2]{created_at,author,text}:
   "2026-04-27T19:29:23.382Z",codex-agent,"Current failure mode is queue poison churn: invalid UUID payloads are accepted at ingress and repeatedly fail at worker insert, causing perpetual backlog growth and noisy worker logs."
   "2026-04-27T19:36:10.924Z",codex-agent,"Dual boundary hardening is now in place: ingress rejects malformed UUID payloads for new events, while worker ack-drop logic clears any legacy poison messages already in RabbitMQ without requeue loops."
 learnings[1]{created_at,author,text}:
   "2026-04-27T19:36:14.819Z",codex-agent,"When a queue already contains poison telemetry events, API-only validation is insufficient; adding worker-side ack-drop validation prevents indefinite nack/requeue churn and restores queue drain deterministically."
-files[5]{path,scope,note}:
-  .agents/pm/search/operations/REMOTE_TELEMETRY_STACK.md,project,Remote telemetry stack runbook used during verification
+files[2]{path,scope,note}:
   .gitignore,project,Telemetry runtime and search caches excluded from git
-  scripts/prod/telemetry/2026-04-27-remote-telemetry-api-app.py,project,local patch snapshot for remote app.py update
-  scripts/prod/telemetry/2026-04-27-remote-telemetry-api-worker.py,project,local patch snapshot for remote worker.py update
   src/core/telemetry/runtime.ts,project,Client-side telemetry event shaping and redaction
 tests[1]{command,scope,timeout_seconds,note}:
   echo remote-uuid-validation-verification-redacted,project,120,remote-health-and-queue-zero-verification-redacted
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mohllgbf-5s3s5x,test,passed,"2026-04-27T19:36:21.505Z","2026-04-27T19:36:24.027Z","2026-04-27T19:36:24.027Z",1,0,0
-docs[2]{path,scope,note}:
-  scripts/prod/telemetry/2026-04-27-backlog-wave-baseline.md,project,telemetry wave kickoff baseline
-  scripts/prod/telemetry/2026-04-27-pm-vhdc-execution-log.md,project,remote UUID validation execution log
 close_reason: UUID boundary validation enforced at ingress and worker poison requeue loop eliminated with passing remote verification.
 body: ""

@@ -138,31 +138,33 @@ export function measureDependencyContributors(items, declarations) {
       .filter((entry) => entry?.selector?.source === "dependency_kind")
       .map((entry) => [entry.selector.kind, entry.measured_on]),
   );
-  const candidates = (Array.isArray(items) ? items : []).flatMap((item) =>
-    (Array.isArray(item?.dependencies) ? item.dependencies : []).map((dependency) => ({
-      item,
-      dependency,
-      measuredOn: measuredOnByKind.get(dependency?.kind),
-    })),
-  );
   const contributors = new Map();
-  for (const { item, dependency } of candidates.filter(
-    (entry) =>
-      typeof entry.measuredOn === "string" &&
-      typeof entry.dependency?.created_at === "string" &&
-      entry.dependency.created_at.slice(0, 10) > entry.measuredOn,
-  )) {
-    const key = `dependency_kind:${dependency.kind}`;
-    contributors.set(key, [
-      ...(contributors.get(key) ?? []),
-      {
-        item_id: item?.id,
-        target_id: dependency?.id,
-        created_at: dependency.created_at,
-        author: dependency?.author ?? null,
-        source_kind: dependency?.source_kind ?? null,
-      },
-    ]);
+  for (const item of Array.isArray(items) ? items : []) {
+    for (const dependency of Array.isArray(item?.dependencies) ? item.dependencies : []) {
+      if (typeof dependency !== "object" || dependency === null) {
+        continue;
+      }
+      const measuredOn = measuredOnByKind.get(dependency.kind);
+      const createdAt = dependency.created_at;
+      if (
+        typeof measuredOn !== "string" ||
+        typeof createdAt !== "string" ||
+        createdAt.slice(0, 10) <= measuredOn
+      ) {
+        continue;
+      }
+      const key = `dependency_kind:${dependency.kind}`;
+      contributors.set(key, [
+        ...(contributors.get(key) ?? []),
+        {
+          item_id: item?.id,
+          target_id: dependency.id,
+          created_at: createdAt,
+          author: dependency.author ?? null,
+          source_kind: dependency.source_kind ?? null,
+        },
+      ]);
+    }
   }
   return contributors;
 }

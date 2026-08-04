@@ -205,6 +205,8 @@ describe("tracker measurement gate: measurement primitives", () => {
         {
           id: "pm-holder",
           dependencies: [
+            null,
+            "not-a-dependency",
             { id: "pm-old", kind: "blocks", created_at: "2026-08-04T01:00:00Z" },
             {
               id: "pm-new",

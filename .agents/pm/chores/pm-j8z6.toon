@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: context-management,linked-files,review
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-08-03T11:21:11.612Z"
+updated_at: "2026-08-04T16:11:18.534Z"
 author: codex-ecosystem-auditor
 estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs.; A linked file path that is generated or ignored is refused at write time, so a link whose target is reconstructed by a build cannot be created and the missing-path count cannot be permanently non-zero for that reason"
@@ -26,7 +26,7 @@ dependencies[3]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[21]:
+comments[23]:
   - created_at: "2026-06-25T05:01:11.314Z"
     author: codex-ecosystem-auditor
     text: "Duplicate check: searched all statuses for linked-file validation, orphaned paths, missing linked paths, and stale linked artifacts. Prior canonical items (for example pm-xz1p and pm-0v2m) are closed; this item tracks the current 2026-06-25 audit finding under pm-57vh."
@@ -91,6 +91,12 @@ comments[21]:
   - created_at: "2026-08-03T11:21:11.612Z"
     author: "harness:codex"
     text: "Live tracked-all file census 2026-08-03: 1,470 linked project paths and eight remote links were compared with 1,223 non-PM tracked candidate files. Validation reports 195 missing linked paths, classified as 140 moved and 55 deleted, plus 21 currently unowned tracked candidates. No links were pruned and no historical item was bulk-mutated; this canonical chore remains the evidence-batched owner."
+  - created_at: "2026-08-04T15:43:13.321Z"
+    author: "harness:codex"
+    text: "Duplicate-check evidence: pm-j8z6 remains the canonical all-status owner for missing linked paths. PR #894 clean-clone CI measured 220 versus local 195 because ignored generated artifacts masked public-tree staleness; this pass will remove or migrate at least the 25 environment-dependent rows rather than widening the ceiling."
+  - created_at: "2026-08-04T16:11:17.602Z"
+    author: "harness:codex"
+    text: "Execution evidence 2026-08-04: clean-clone diagnosis identified 25 ignored or locally generated paths represented by 43 file/doc links across 14 terminal holders. Removed those current-state links through pm commands and appended provenance comments without reopening or reassigning historical delivery. Local and independent fresh-clone validation now agree at 195 missing paths, classified 134 moved and 61 deleted, with 0 orphaned paths. The linked tracker-context test passed. Remaining scope is the deliberate 195-row historical migration plus write-time refusal of generated or ignored paths, so this item returns to open rather than being falsely closed."
 notes[6]{created_at,author,text}:
   "2026-07-06T08:22:48.232Z",maintainer-agent,"2026-07-06 audit #8 recount — pm validate now reports validate_files_missing_linked_paths 146 and validate_files_orphaned_paths 131 (workspace-wide, 2545 linked commands scanned). Counts unchanged in character since filing; still the single tracked owner of both warning classes."
   "2026-07-10T12:16:07.271Z",maintainer-agent,"2026-07-10 review pass: validate_files_missing_linked_paths rose 147 -> 154 (+7); orphaned_paths steady at 124. Likely cause: commits 21a7d884 (untracked vendored pm-changelog extension dist) and b573ef14 (contracts-snapshot gate rework) relocated/removed files still referenced by item linked paths. Worklist ids via pm validate --json .details.*_item_ids when picking this up."
@@ -100,7 +106,8 @@ notes[6]{created_at,author,text}:
   "2026-07-25T17:55:55.499Z","harness:claude-code","Files-baseline drift check 2026-07-25: `validate` reports `validate_files_missing_linked_paths:173`, against 168 recorded at the last measurement (2026-07-15) and 161 before that. Orphaned paths remain 0, so the drift is entirely on the missing side and the linking discipline for new work is holding.\n\nThe +5 since 2026-07-15 is consistent with continued source relocations (the SDK subpath moves and the packages/ boundary work both move files that closed items still link by their old path), not with new work failing to link. The classification split this item owns — mechanically relinkable moved rows versus judgment-required deleted rows — is what makes that distinction cheap to confirm, and it should be re-run before the next remediation batch so the moved half can be swept without touching the deleted half."
 tests[1]{command,scope,timeout_seconds,pm_context_mode}:
   pm validate --check-files --verbose-file-lists --json,project,120,tracker
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqt1mkhm-v3qfvq,test,failed,"2026-06-25T05:10:01.864Z","2026-06-25T05:10:02.554Z","2026-06-25T05:10:02.554Z",0,1,0
   test-local-mqt1n279-hbfrtd,test,passed,"2026-06-25T05:10:22.545Z","2026-06-25T05:10:25.509Z","2026-06-25T05:10:25.509Z",1,0,0
+  test-local-mseuuktm-v64pdy,test,passed,"2026-08-04T16:10:49.900Z","2026-08-04T16:10:57.130Z","2026-08-04T16:10:57.130Z",1,0,0
 body: "## Context\npm validate --check-files currently reports validate_files_missing_linked_paths:146 and validate_files_orphaned_paths:134. Source/test relocations (cli-contracts split PR#396, module-mirrored test reorg 2026-06-16, all-src <2000 LOC splits 2026-05-25, SDK bundle move pm-4oww) moved files out from under their linked-file rows, and newer modules were created without owners.\n\n## Approach\n1. Missing paths (146): for each linked row whose path no longer exists, find the successor file(s) (git log --follow) and re-point the row via pm files commands on the owning item — do NOT hand-edit .toon storage.\n2. Orphaned paths (134): assign each unowned src/tests file to the item that delivered it (git blame → PR → pm id from session memory/CHANGELOG links); files with no traceable owner go to the owning capability epic.\n3. Batch by directory; record before/after warning counts as comments here.\n\n## Definition of done\nBoth validate --check-files counters at (or near) zero with every remaining exception justified in a comment; spot-check that `pm files` on touched items renders valid paths."

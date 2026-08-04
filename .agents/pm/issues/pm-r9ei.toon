@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: external-audit,grafana,observability,pm-cli,prometheus,telemetry
 created_at: "2026-04-26T09:56:16.564Z"
-updated_at: "2026-07-26T17:24:47.551Z"
+updated_at: "2026-08-04T15:47:14.991Z"
 author: codex-agent
 estimated_minutes: 90
 acceptance_criteria: Grafana queue panels render live queue depth and unacked values in production by aligning panel queries with actual metric labels (or by exposing the queue label in exporter config).
@@ -15,26 +15,26 @@ release: v2026.5.1
 resolution: Grafana queue panel PromQL now uses job-scoped aggregates that match the RabbitMQ exporter label model on this stack.
 expected_result: Queue depth and unacked panels evaluate successfully without relying on absent queue labels.
 actual_result: "Dashboard expressions now use sum(rabbitmq_queue_messages{job=\"rabbitmq\"}) and sum(rabbitmq_queue_messages_unacked{job=\"rabbitmq\"}); Prometheus returns non-empty vectors and Grafana remains healthy."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-lnq3,parent,"2026-04-26T09:56:16.564Z",codex-agent,null
-  pm-lnq3,implements,"2026-07-26T17:24:47.247Z",null,null
-comments[1]{created_at,author,text}:
+dependencies[2]:
+  - id: pm-lnq3
+    kind: parent
+    created_at: "2026-04-26T09:56:16.564Z"
+    author: codex-agent
+  - id: pm-lnq3
+    kind: implements
+    created_at: "2026-07-26T17:24:47.247Z"
+comments[2]{created_at,author,text}:
   "2026-05-03T13:33:58.503Z",codex-audit,"Sanitized current comments: Grafana/RabbitMQ selector evidence is preserved in resolution/notes/learnings and prior comments were cleared from the current item because one contained a private remote operations path. History-stream redaction requires a dedicated audited pm command to preserve replay integrity."
+  "2026-08-04T15:47:14.991Z","harness:codex","Context hygiene 2026-08-04: pm-j8z6 removed stale current-state links to ignored local telemetry/operations artifacts. Historical outcome and release attribution remain unchanged; public tracked evidence now points only to repository-owned files."
 notes[2]{created_at,author,text}:
   "2026-04-27T19:29:32.022Z",codex-agent,"Fix strategy gate: inspect live Grafana dashboard JSON first, then patch query expressions to match actual exported RabbitMQ series labels unless exporter-level label restoration is clearly lower-risk."
   "2026-04-27T19:39:00.791Z",codex-agent,"Root cause is label-model mismatch: RabbitMQ exporter emits queue gauges with instance/job labels in this profile, not queue label selectors, so panel queries should aggregate over job-scoped series."
 learnings[1]{created_at,author,text}:
   "2026-04-27T19:39:04.640Z",codex-agent,"For host-level diagnostics on this stack, use Prometheus published port 19090 (not container-internal 9090) to avoid false-negative query conclusions during dashboard triage."
-files[1]{path,scope,note}:
-  scripts/prod/telemetry/2026-04-27-pm-cli-telemetry-overview.json,project,local snapshot of patched Grafana dashboard JSON
 tests[1]{command,scope,timeout_seconds,note}:
   "ssh -o BatchMode=yes [redacted_user]@[redacted_host] 'curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages\" && curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages_unacked\"'",project,180,promql queue metric availability smoke
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mohlp2dy-ew2asp,test,failed,"2026-04-27T19:39:11.580Z","2026-04-27T19:39:12.598Z","2026-04-27T19:39:12.598Z",0,1,0
   test-local-mohlpwx1-kyik2u,test,passed,"2026-04-27T19:39:51.148Z","2026-04-27T19:39:52.165Z","2026-04-27T19:39:52.165Z",1,0,0
-docs[3]{path,scope,note}:
-  .agents/pm/search/operations/REMOTE_TELEMETRY_STACK.md,project,Remote telemetry stack runbook used for panel diagnostics
-  scripts/prod/telemetry/2026-04-27-backlog-wave-baseline.md,project,telemetry wave kickoff baseline
-  scripts/prod/telemetry/2026-04-27-pm-r9ei-execution-log.md,project,grafana queue panel execution log
 close_reason: Grafana queue panel queries aligned with rabbitmq exporter labels and verified via PromQL + health checks.
 body: ""
