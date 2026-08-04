@@ -1,0 +1,280 @@
+id: pm-gzyt2j
+title: "2026-08-04 holistic pm CLI, SDK, and ecosystem manual review and optimization plan"
+description: "Tracker-only manual review of current main across the complete CLI, public SDK, repository architecture, agent UX and token economics, performance, security, code quality, tests, docs, skills, built-in and external packages, GitHub reports, dependency posture, multi-agent merge safety, provenance, and daily npm/Bun release behavior. This session records evidence, canonical findings, sequencing, and typed relationships only; it does not implement product changes."
+type: Plan
+status: closed
+priority: 1
+tags[10]: agent-ux,architecture,audit,ecosystem,github,packages,performance,planning,sdk,security
+created_at: "2026-08-04T08:36:03.297Z"
+updated_at: "2026-08-04T09:34:43.070Z"
+closed_at: "2026-08-04T09:34:05.008Z"
+completed_at: "2026-08-04T09:34:05.008Z"
+author: "harness:codex"
+estimated_minutes: 360
+acceptance_criteria: "Current main, live all-status PM history, repository structure, command contracts, SDK and extension surfaces, GitHub PRs/issues/reports, dependency and vulnerability state, external pm packages, multi-agent merge behavior, and release pipeline are manually reviewed; Every confirmed gap is deduplicated against all statuses and recorded on a canonical PM item with rich metadata, evidence, and typed graph relationships; Every GitHub PR and issue in scope has a comment containing its corresponding pm item link, or a precise documented limitation if GitHub refuses mutation; No product code, tests, docs, workflows, packages, or issue implementation is changed in this session; only PM tracker planning and evidence are committed; Tracker graph, history, lifecycle, storage, duplicate state, security scan, commit scope, remote SHA equality, and hosted main checks are verified before closeout"
+definition_of_ready: Required bootstrap and all-status duplicate orientation completed on current main
+outcome: "A prioritized, dependency-aware, deep-linked roadmap that makes future implementation cohesive while preserving every existing capability"
+why_now: Rapid SDK and CLI changes plus external packages and daily releases require a fresh evidence-backed plan before the next implementation tranche
+parent: pm-doxj
+risk: high
+confidence: medium
+resolution: completed
+expected_result: "An approved, deduplicated, dependency-aware PM roadmap backed by current CLI, SDK, ecosystem, GitHub, security, performance, merge, and release evidence, with no product implementation."
+actual_result: The ten-step research plan is 100% complete and approved; canonical items contain findings and typed relationships; all 28 open GitHub issues are PM-linked; remaining historical GitHub backfill and verification-context limitations have explicit open owners; only PM tracker records changed.
+dependencies[15]:
+  - id: pm-doxj
+    kind: parent
+    created_at: "2026-08-04T08:36:03.297Z"
+    author: "harness:codex"
+    source_kind: "cli:create:dep"
+    author_source: detected
+  - id: pm-srns
+    kind: discovered_from
+    created_at: "2026-08-04T08:45:49.673Z"
+    author: "harness:codex"
+  - id: pm-6sc8jq
+    kind: discovered_from
+    created_at: "2026-08-04T08:45:50.078Z"
+    author: "harness:codex"
+  - id: pm-6mjxgq
+    kind: discovered_from
+    created_at: "2026-08-04T08:45:50.484Z"
+    author: "harness:codex"
+  - id: pm-fbrz7p
+    kind: discovered_from
+    created_at: "2026-08-04T08:45:50.899Z"
+    author: "harness:codex"
+  - id: pm-ykdt4m
+    kind: discovered_from
+    created_at: "2026-08-04T08:45:51.306Z"
+    author: "harness:codex"
+  - id: pm-5uclvd
+    kind: discovered_from
+    created_at: "2026-08-04T08:45:51.703Z"
+    author: "harness:codex"
+  - id: pm-96h7
+    kind: implements
+    created_at: "2026-08-04T09:20:15.065Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-a8zm
+    kind: implements
+    created_at: "2026-08-04T09:20:15.065Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-dj98
+    kind: verifies
+    created_at: "2026-08-04T09:20:15.065Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-n7rr
+    kind: implements
+    created_at: "2026-08-04T09:20:15.065Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-t9e3bc
+    kind: supersedes
+    created_at: "2026-08-04T09:20:15.065Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-u9d0
+    kind: implements
+    created_at: "2026-08-04T09:20:15.065Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-usfg
+    kind: implements
+    created_at: "2026-08-04T09:20:15.065Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-qwoy
+    kind: implements
+    created_at: "2026-08-04T09:23:04.630Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[4]{created_at,author,text}:
+  "2026-08-04T08:36:03.297Z","harness:codex","Duplicate check 2026-08-04: searched all-status ecosystem audit, SDK, CLI simplification, graph, package, provenance, security, dependency, release, GitHub, and agent-context terms. Closed pm-t9e3bc owns the 2026-07-26 point-in-time review; open pm-a8zm owns relationship reconstruction only; canonical epics own implementation themes. This plan is the non-numbered current-main review artifact and will create no implementation duplicates."
+  "2026-08-04T09:22:18.823Z","harness:codex","Audit synthesis 2026-08-04: reviewed the live 2,310-item tracker and complete status graph; current repository and SDK boundaries; 76-command contract summary; 18-package published ecosystem; GitHub issues, PRs, alerts, workflows, releases, and dependencies; code topology, duplication, suppressions, docs, performance, retrieval, security, provenance, merge safety, and release consumers. No product implementation was performed. Canonical existing owners were updated before new work was created. New owners are limited to the six current GitHub reports, historical GitHub linkage backfill pm-w2krlt, and bounded annotation mutation output pm-9stazf."
+  "2026-08-04T09:30:25.193Z","harness:codex","Linked verification boundary 2026-08-04: the first aggregate pm test run recorded 2 passes and 2 failures. Build+typecheck and published-release verification pass under the default schema sandbox. The focused merge suite passes directly 120/120 but fails linked 119/120 because the schema context adds validate_merge_driver_configuration warnings. The 10k scale gate passes directly but linked schema context fails CLI/SDK get/context token thresholds and CLI create latency. New canonical issue pm-e97jyf owns execution-context parity; these failures are preserved and are not described as product-test success."
+  "2026-08-04T09:33:52.703Z","harness:codex","Final validation 2026-08-04: tracker health is OK for 2,313 items, 2,327 history streams, and 44,285 immutable events; no active or stale locks, no drift, hash/chain mismatch, parse/conflict-marker failure, tracked runtime cache, pending merge decision, or merge-driver/fence error exists. Resolution validation retains 295 classified legacy closed records missing modern resolution fields. Graph is one component with zero active isolates/degree-one nodes and 11 informational legacy findings. Duplicate scan returns the same 14 historical or intentional clusters and no new audit owner. GitHub has zero open PRs and all 28 open issues now have verified PM-link comments. Archive-wide coverage is 537 of 892 PR/issue artifacts after 113 successful backfills; GitHub secondary content-creation throttling stopped mutation with 355 closed artifacts remaining, owned by pm-w2krlt. Product code, tests, docs, workflows, and package sources were not changed."
+notes[1]{created_at,author,text}:
+  "2026-08-04T09:22:19.412Z","harness:codex","Execution order: first restore trustworthy agent feedback loops by bounding annotation writes, completing command intents/token budgets, fixing positional help recovery, and making import/transport gates statistically robust. Next preserve feature parity while decomposing SDK and CLI ownership, draining flat directories, pruning suppressions/dead exports, and unifying retrieval evaluation. In parallel harden extension composition/collision policy, automatic provenance dimensions, merge-recovery guidance, and terminal lifecycle recovery. Treat historical GitHub backfill as paced governance work and dependency majors as compatibility-gated, not urgent security updates."
+learnings[1]{created_at,author,text}:
+  "2026-08-04T09:22:20.027Z","harness:codex","An isolated green package fleet proves install and activation compatibility but not multi-package composition; collision and global override semantics require an all-at-once fixture. A green current release proves the immutable artifact, not historical scheduled reliability. Deep graph quality comes from truthful typed causality and verification edges, not arbitrary density. Agent-token budgets must exercise long-lived mutation responses because small read fixtures can pass while one append emits an entire project history."
+files[5]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,Audited schedule triggers and one-release-per-day policy
+  .github/workflows/release.yml,project,Audited immutable tag publication and recovery workflow
+  package.json,project,Audited scripts dependencies exports engines and release gates
+  scripts/smoke-external-packages.mjs,project,Audited and executed external package fleet harness including explicit author overrides
+  sdk/public-surface.json,project,Audited aggregate and narrow SDK entrypoint contract
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/cli/merge-reconcile-registration.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/lock/lock-gc.spec.ts,project,240
+  "pnpm benchmark:scale:check",project,300
+  pnpm build && pnpm typecheck,project,240
+  "pnpm release:verify-published -- --version 2026.8.4",project,300
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msegcv3s-tkal41,test,failed,"2026-08-04T09:23:18.343Z","2026-08-04T09:25:16.024Z","2026-08-04T09:25:16.024Z",2,2,0
+  test-local-msege44c-vs6hpg,test,failed,"2026-08-04T09:25:57.880Z","2026-08-04T09:26:14.364Z","2026-08-04T09:26:14.364Z",0,1,0
+  test-local-msegfqgh-eifup6,test,failed,"2026-08-04T09:26:38.753Z","2026-08-04T09:27:29.969Z","2026-08-04T09:27:29.969Z",0,1,0
+  test-local-mseggh4m-7htri7,test,passed,"2026-08-04T09:27:39.233Z","2026-08-04T09:28:04.534Z","2026-08-04T09:28:04.534Z",1,0,0
+  test-local-mseggys0-40ge72,test,passed,"2026-08-04T09:28:08.353Z","2026-08-04T09:28:27.408Z","2026-08-04T09:28:27.408Z",1,0,0
+docs[8]{path,scope,note}:
+  docs/AGENT_PROVENANCE_ADR.md,project,Reviewed privacy-safe automatic harness model effort role and topic contract
+  docs/ARCHITECTURE.md,project,Reviewed system layering source tree SDK boundary output and extension architecture
+  docs/MERGE_SAFETY.md,project,Reviewed multi-branch merge fence receipts and collision policy
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Reviewed token bounded output and omission contracts
+  docs/PACKAGE_SDK_CONTRACT_CONFORMANCE.md,project,Reviewed package authoring and SDK drift controls
+  docs/PERFORMANCE.md,project,Reviewed scale startup and transport budgets
+  docs/RELEASING.md,project,Reviewed daily guard npm Bun npx bunx and immutable recovery policy
+  docs/SDK_PRIMITIVE_INVENTORY.md,project,Reviewed SDK promotion completeness and zero-private-edge contract
+close_reason: "Completed the current-main whole-ecosystem manual audit and approved a ten-step evidence-backed roadmap. Reconciled findings across all PM statuses; documented CLI, SDK, packages, architecture, agent UX, performance, security, dependencies, merge safety, provenance, GitHub governance, and release behavior; created only deduplicated canonical execution items; verified tracker integrity and exact limitations. No product implementation was performed."
+plan_mode: completed
+plan_scope: "Current-main whole-ecosystem evidence collection, duplicate-safe finding reconciliation, and durable execution planning"
+plan_harness: codex
+plan_steps[10]:
+  - id: plan-step-001
+    order: 1
+    title: "Establish live tracker, repository, command-contract, and goal baseline"
+    status: completed
+    created_at: "2026-08-04T08:36:36.647Z"
+    updated_at: "2026-08-04T09:30:41.600Z"
+    body: "Read all lifecycle states plus metadata, comments, notes, learnings, history, plans, claims, relationships, and current repository topology before forming findings."
+    owner: future implementation tranche
+    evidence: "Live all-status tracker, history, comments, notes, learnings, claims, stats, health, validation, graph, contracts, repository topology, and goals reviewed."
+    completed_at: "2026-08-04T09:30:41.600Z"
+  - id: plan-step-002
+    order: 2
+    title: "Reconcile GitHub PR, issue, advisory, dependency, and report coverage"
+    status: completed
+    created_at: "2026-08-04T08:36:37.054Z"
+    updated_at: "2026-08-04T09:30:42.057Z"
+    body: "Inventory open and closed PRs/issues, Dependabot, code scanning, secret scanning, security advisories, dependency updates, workflow failures, and release reports; require a PM link comment on each PR/issue."
+    owner: GitHub governance tranche
+    evidence: Zero open PRs; all 28 open issues PM-linked; six current reports mapped; zero security alerts; dependency and workflow inventories recorded; 113 historical links backfilled and 355 remaining owned by pm-w2krlt after secondary throttling.
+    completed_at: "2026-08-04T09:30:42.057Z"
+    linked_items[3]{id,kind,note}:
+      pm-srns,discovered_from,GitHub #888 maps to existing output-contract owner
+      pm-6sc8jq,discovered_from,GitHub #891 external blocker finding
+      pm-w2krlt,discovered_from,Archive-wide GitHub linkage governance gap and rate-limit boundary
+  - id: plan-step-003
+    order: 3
+    title: Review complete CLI grammar and agent recovery UX
+    status: completed
+    created_at: "2026-08-04T08:36:37.435Z"
+    updated_at: "2026-08-04T09:30:42.501Z"
+    body: "Evaluate command/flag/positional lexicons, help, contracts, aliases, output projections, token budgets, retries, refusal recovery, exit codes, bulk workflows, and feature-preserving simplification."
+    owner: CLI and contracts tranche
+    evidence: "76-command contract, help, flags, positional recovery, output sizes, token budgets, and dogfood paths reviewed; placeholder intents and unbounded annotation writes documented."
+    completed_at: "2026-08-04T09:30:42.501Z"
+    linked_items[5]{id,kind,note}:
+      pm-ykdt4m,discovered_from,GitHub #887 terminal-create finding
+      pm-5uclvd,discovered_from,GitHub #885 recovery finding
+      pm-7i97c3,verifies,Current 31 of 76 placeholder-intent census
+      pm-2tan,verifies,Manual plan help and recovery reproduction
+      pm-9stazf,discovered_from,Dogfood exposed unbounded annotation mutation output
+  - id: plan-step-004
+    order: 4
+    title: "Review SDK completeness, layering, and package-author primitives"
+    status: completed
+    created_at: "2026-08-04T08:36:37.829Z"
+    updated_at: "2026-08-04T09:30:42.919Z"
+    body: "Audit public exports, narrow entrypoints, typed actions, runtime adapters, extension composition, schemas, lifecycle policies, compatibility, error contracts, docs, and CLI/MCP parity."
+    owner: SDK-first architecture tranche
+    evidence: "Aggregate plus nine narrow SDK exports, zero private CLI/MCP edges, surface/type/contracts parity, provenance dimensions, and shared mutation receipt gaps reviewed."
+    completed_at: "2026-08-04T09:30:42.919Z"
+    linked_items[4]{id,kind,note}:
+      pm-usfg,verifies,"SDK boundary, type, contract, and surface review"
+      pm-c0lrdm,verifies,Current Codex provenance dimensions
+      pm-3zgh2c,verifies,Current role and topic attribution absence
+      pm-9stazf,implements,Shared SDK mutation receipt should keep CLI and MCP aligned
+  - id: plan-step-005
+    order: 5
+    title: Review built-in and external pm package ecosystem
+    status: completed
+    created_at: "2026-08-04T08:36:38.253Z"
+    updated_at: "2026-08-04T09:30:43.334Z"
+    body: "Inventory discovered, installed, managed, published, and source-owned packages; check manifests, capabilities, activation isolation, conflicts, provenance, update/release policy, npm and Bun consumption, docs, tests, and trust model."
+    owner: Package platform tranche
+    evidence: All 18 npm ecosystem packages at 2026.8.4 passed isolated init/install/doctor/contracts with zero activation/blocking failures; composition and collision policy remain documented.
+    completed_at: "2026-08-04T09:30:43.334Z"
+    linked_items[2]{id,kind,note}:
+      pm-6mjxgq,discovered_from,GitHub #890 package collision finding
+      pm-6mjxgq,verifies,All 18 external packages pass in isolation; composition remains open
+  - id: plan-step-006
+    order: 6
+    title: "Review architecture, repository organization, duplication, and maintainability"
+    status: completed
+    created_at: "2026-08-04T08:36:38.651Z"
+    updated_at: "2026-08-04T09:30:43.789Z"
+    body: "Map folder ownership, dependency direction, file and directory load, long files, complexity, duplication, dead/legacy code, orphan modules, duplicated tests/docs/skills/information, generated artifacts, and dependency boundaries."
+    owner: Architecture and quality tranche
+    evidence: "Whole tree reviewed: zero jscpd clones; 51 source files over 1,000 lines; 112 flat SDK files; suppression populations, docs reachability, dead exports, and linked-test parity assigned to canonical owners."
+    completed_at: "2026-08-04T09:30:43.789Z"
+    linked_items[6]{id,kind,note}:
+      pm-yh8r,verifies,Fresh 51-file long-source census
+      pm-kb5h,verifies,Fresh source and test directory fan-out census
+      pm-j8vq,verifies,Fresh suppression population census
+      pm-f4yn,implements,Existing dead-export and knip execution owner
+      pm-s4y3z4,verifies,Docs reachability and large-reference review
+      pm-e97jyf,discovered_from,Linked verification context changed direct test semantics
+  - id: plan-step-007
+    order: 7
+    title: Review performance and instant-feel budgets
+    status: completed
+    created_at: "2026-08-04T08:36:39.044Z"
+    updated_at: "2026-08-04T09:30:44.220Z"
+    body: "Measure CLI cold start, SDK imports, common read/write paths, extension activation, serialization, locking, search, graph, telemetry, and multi-item scaling; separate model-bound vector latency."
+    owner: Performance tranche
+    evidence: 10k direct scale gate passed; transport and SDK import gates showed rerun instability; real-corpus retrieval eval split reproduced; package install and common-output costs measured.
+    completed_at: "2026-08-04T09:30:44.220Z"
+    linked_items[3]{id,kind,note}:
+      pm-cg1sjb,verifies,Reproduced import-cost gate instability on current head
+      pm-ag9nka,verifies,Cold transport floor instability versus passing scale gate
+      pm-p1g43q,verifies,Real-corpus retrieval gate split reproduced
+  - id: plan-step-008
+    order: 8
+    title: "Review security, privacy, supply chain, and immutable history"
+    status: completed
+    created_at: "2026-08-04T08:36:39.423Z"
+    updated_at: "2026-08-04T09:30:44.617Z"
+    body: "Assess secrets, redaction, injection/path handling, dependency vulnerabilities, CodeQL/Semgrep/Trivy results, provenance, release artifacts, history hashes, recovery operations, and public/private evidence boundaries."
+    owner: Security and integrity tranche
+    evidence: "pnpm audit, Trivy vulnerability/secret scan, credential scan, GitHub Dependabot/code/secret/advisory inventories, hosted security workflows, history integrity, and published artifact checks reviewed."
+    completed_at: "2026-08-04T09:30:44.617Z"
+    linked_items[1]{id,kind,note}:
+      pm-qwoy,verifies,Local Trivy pnpm and GitHub security inventory
+  - id: plan-step-009
+    order: 9
+    title: "Review multi-agent concurrency, branch merge, and context federation"
+    status: completed
+    created_at: "2026-08-04T08:36:39.810Z"
+    updated_at: "2026-08-04T09:30:45.116Z"
+    body: "Audit claims, locks, concurrent mutations, merge drivers, deterministic storage, field-wise convergence, ID collision, history reconciliation, cross-branch context, graph scheduling, provenance, and fleet occupancy."
+    owner: Concurrency and context tranche
+    evidence: "Merge fence/driver health, reconciliation, receipts, lock behavior, graph scheduling, provenance, and focused 120-test direct suite reviewed; linked sandbox variance and GitHub recovery guidance documented."
+    completed_at: "2026-08-04T09:30:45.116Z"
+    linked_items[3]{id,kind,note}:
+      pm-fbrz7p,discovered_from,GitHub #889 merge recovery finding
+      pm-dj98,verifies,"Merge, reconciliation, receipt, and lock evidence"
+      pm-e97jyf,verifies,Merge sandbox warning variance and safe context contract
+  - id: plan-step-010
+    order: 10
+    title: "Synthesize canonical roadmap, typed graph, milestones, and execution order"
+    status: completed
+    created_at: "2026-08-04T08:36:40.198Z"
+    updated_at: "2026-08-04T09:30:45.564Z"
+    body: "Deduplicate every finding across all statuses, update existing owners first, create only genuinely new items, replace weak related-only links with evidence-backed typed edges, define acceptance and gates, and publish tracker-only changes directly to main."
+    owner: Roadmap governance tranche
+    evidence: Existing canonical work enriched first; only evidence-backed new items created; plan edges retyped to implements/verifies/discovered_from/supersedes; execution order and limitations recorded.
+    completed_at: "2026-08-04T09:30:45.564Z"
+    linked_items[1]{id,kind,note}:
+      pm-a8zm,implements,All-status typed graph reconciliation programme
+body: ""

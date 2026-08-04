@@ -1,0 +1,30 @@
+id: pm-6mjxgq
+title: "GH-890: extension collision diagnostics omit the effective winner and cannot distinguish safe scoped overlap"
+description: "GitHub issue #890 reproduces a 17-package workspace where renderer, parser, and preflight registrations collide. Health names contenders but not the effective winner, equal-priority tie-breaking is undocumented, and registration-time diagnostics cannot distinguish safe scoped renderer fallthrough from genuine shadowing. Package authors and agents therefore cannot act on twenty warnings without source inspection."
+type: Issue
+status: open
+priority: 1
+tags[8]: agent-ux,"area:extensions","area:health","area:sdk",collision,determinism,github-report,packages
+created_at: "2026-08-04T08:44:04.821Z"
+updated_at: "2026-08-04T09:19:18.204Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: The SDK defines deterministic priority and tie-break contracts for every override class and publishes them in contracts and package-author docs; Health and package doctor name the effective winner and explain resolution provenance for genuine collisions; Scoped renderer ownership declarations avoid false collision findings while an unscoped shadowing negative control still fails; The full published external package fleet has a documented expected-collision policy and a stable integration fixture
+parent: pm-ugqx
+risk: high
+confidence: high
+severity: high
+environment: pm-cli 2026.8.3 with 17 published external pm packages installed in one project
+repro_steps: "Install the package fleet from GitHub issue #890; run pm health --json; inspect extension_renderer_collision, extension_parser_override_collision, and extension_preflight_override_collision warnings"
+expected_result: "Diagnostics identify deterministic resolution, explicit default priority, and safe scoped overlaps separately from genuine shadowing"
+actual_result: "Warnings identify contenders only, health becomes not-ok with zero load or activation failures, and agents cannot tell which behavior is active"
+customer_impact: A normal package-catalog installation trains agents to ignore health warnings or remove compatible packages
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gzyt2j,discovered_from,"2026-08-04T08:44:04.821Z","harness:codex","cli:create:dep",detected
+  pm-nf7q,discovered_from,"2026-08-04T08:44:04.821Z","harness:codex","cli:create:dep",detected
+  pm-ugqx,implements,"2026-08-04T08:44:04.821Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-04T08:44:04.821Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-04T08:44:04.821Z","harness:codex","Duplicate check 2026-08-04: all-status searches covered extension collisions, scoped renderer ownership, winner selection, default priority, package doctor, and health. Closed pm-nf7q handled scoped renderer ownership in isolation, but no active item owns deterministic winner reporting plus equal-priority policy across the full external package fleet. GitHub source: https://github.com/unbraind/pm-cli/issues/890"
+  "2026-08-04T09:19:18.204Z","harness:codex","External-fleet evidence 2026-08-04: the isolated npm registry smoke discovered and tested 18 published external packages, all at 2026.8.4, with init, install, deep package doctor, and runtime contracts passing for every package; activation failures=0 and blocking failures=0. The run still surfaces intentional/global override warnings, and pm-graph installation took about 22.8s of a 24.1s smoke while pm-ops completed in 3.9s. This fleet pass does not remove the collision/winner ambiguity reported by GitHub #890; it proves the current packages succeed in isolation, not when composed together."
+body: ""

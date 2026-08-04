@@ -1,0 +1,28 @@
+id: pm-6sc8jq
+title: "GH-891: external blockers make graph stale_lifecycle_block impossible to resolve truthfully"
+description: GitHub issue #891 reports that pm graph audit treats blocked work without an open tracker predecessor as stale even when blocked_reason precisely documents a real external party or event that should not be fabricated as a PM item. The audit needs an honest first-class external-blocker policy or a blocked_reason-backed classification so machine governance remains actionable.
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:governance","area:graph",external-blocker,github-report,truthfulness
+created_at: "2026-08-04T08:43:47.536Z"
+updated_at: "2026-08-04T08:43:47.536Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "The SDK governance policy distinguishes missing blocker evidence from documented external blockers without inventing graph nodes; CLI, SDK, MCP, contracts, docs, and tests expose one deterministic externally-blocked representation and severity policy; The existing genuinely stale blocked case remains actionable and a negative control proves the audit still catches it"
+parent: pm-6x7o
+risk: medium
+confidence: high
+severity: high
+environment: pm-cli 2026.8.3; external fleet tracker; pm graph audit --json
+repro_steps: Create or inspect a blocked item with a precise non-empty blocked_reason and no internal ordering predecessor; run pm graph audit --json; observe stale_lifecycle_block with remediation that requires fabricating or reopening a tracker item
+expected_result: Externally blocked work has a truthful machine-readable representation and does not emit an actionable stale-lifecycle defect when its evidence is complete
+actual_result: The audit reports stale_lifecycle_block and recommends an internal edge or active status even when neither is truthful
+customer_impact: "Agents learn to ignore graph audits or fabricate placeholder work, weakening governance and context truth"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6x7o,implements,"2026-08-04T08:43:47.536Z","harness:codex","cli:create:dep",detected
+  pm-96h7,implements,"2026-08-04T08:43:47.536Z","harness:codex","cli:create:dep",detected
+  pm-gzyt2j,discovered_from,"2026-08-04T08:43:47.536Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-04T08:43:47.536Z","harness:codex","Duplicate check 2026-08-04: all-status searches for stale_lifecycle_block, external party, blocked_reason, graph governance, and blocker semantics found pm-6x7o as the broad audit owner but no item for honest external-blocker classification. GitHub source: https://github.com/unbraind/pm-cli/issues/891"
+body: ""

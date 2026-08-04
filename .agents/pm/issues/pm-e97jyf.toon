@@ -1,0 +1,29 @@
+id: pm-e97jyf
+title: "Linked-test schema context changes non-PM repository checks, so commands that pass directly fail when recorded and run through pm test"
+description: "The 2026-08-04 audit linked existing sandbox-safe repository commands to its PM plan. The focused merge suite passed directly at 120/120, but pm test default schema context failed 1/120 because validate_merge_driver_configuration warnings appeared only under the linked sandbox. The 10k scale gate passed directly, but failed under the same inherited PM_PATH context with token and latency threshold changes. Build/typecheck and published-release verification passed in both contexts. The runner correctly isolates tracker mutations, but it silently changes semantics for non-PM commands that already create their own fixtures."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-04T09:30:07.005Z"
+updated_at: "2026-08-04T09:30:24.732Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Per-test execution context is explicit, persisted, and visible before command execution.; Self-sandboxing repository test and benchmark commands have parity between direct and linked execution without access to real tracker data.; Merge and scale regression fixtures cover schema, tracker-copy, and self-sandboxing modes with guided recovery.; The runner distinguishes assertion failure caused by execution context from an actual product gate regression."
+parent: pm-92if
+risk: medium
+confidence: high
+severity: high
+environment: "pm CLI 2026.8.4, linked-test default pm_context_mode=schema"
+repro_steps: "Link the focused merge suite and pnpm benchmark:scale:check to a PM item, run pm test <id> --run --progress, then run the same commands directly through scripts/run-tests.mjs and pnpm."
+expected_result: "Sandbox-safe commands produce the same assertions and performance contract directly and through pm test, with explicit context metadata where semantic differences are intentional."
+actual_result: Direct merge tests pass 120/120 and direct scale gate passes; linked schema context produces merge-driver configuration warnings and scale token/latency threshold failures.
+customer_impact: Agents cannot trust the canonical linked-test evidence loop and may misclassify orchestration-context failures as product regressions.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-92if,implements,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
+  pm-gzyt2j,discovered_from,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
+  pm-oslr,verifies,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
+  pm-uawujr,discovered_from,"2026-08-04T09:30:07.005Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-04T09:30:24.732Z","harness:codex","Duplicate check 2026-08-04: searched all statuses for linked-test schema sandbox, PM_PATH merge-driver warnings, non-PM benchmark context drift, direct-versus-linked parity, and self-sandboxing repository commands. Closed pm-uawujr fixed package prepare source fallback; closed pm-oslr delivered linked execution; open pm-ed28wi owns trust/allowlisting. None owns the reproduced semantic parity failure for already-sandboxed non-PM commands."
+body: "Design a deterministic execution-context contract for linked tests. Detect commands that use scripts/run-tests.mjs or self-contained benchmark fixtures; do not inject an empty schema PM_PATH when it changes their meaning, or require and persist an explicit per-test context mode with a clear add-time diagnostic. The output must show the effective context before execution and recommend the correct bounded retry. Preserve the rule that tests never read or write real repository PM data."

@@ -1,0 +1,29 @@
+id: pm-5uclvd
+title: "GH-885: create-time close_reason_required recovery recommends an impossible different-command retry"
+description: "GitHub issue #885 proves that when create requests a terminal status without closure evidence, close_reason_required lists only pm close examples against an item that was never created. The working create --resolution recovery is omitted, so the otherwise structured recovery bundle is not independently actionable."
+type: Issue
+status: open
+priority: 1
+tags[7]: agent-ux,"area:cli","area:contracts",github-report,lifecycle,never-block,recovery
+created_at: "2026-08-04T08:45:12.392Z"
+updated_at: "2026-08-04T08:45:12.392Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Recovery examples and next steps are generated from the failing action contract and lead with the smallest valid same-command retry; CLI and SDK structured error contracts expose the same typed recovery with exact flag domains; A recovery-closure gate proves the refusal is actionable without help or source lookup and retains correct update/close-specific advice
+parent: pm-n7rr
+risk: low
+confidence: high
+severity: medium
+environment: pm-cli 2026.8.3; default governance.require_close_reason; pm create --status closed without resolution
+repro_steps: "Run pm --json create with a terminal status and no closure evidence; inspect examples, next_steps, and recovery fields"
+expected_result: The recovery bundle names the valid same-command flag and produces a directly executable minimal retry
+actual_result: Every example uses pm close against a nonexistent ID and next_steps omit --resolution
+customer_impact: "Agents take an avoidable help/exploration loop, disable governance, or fall back to a non-atomic create-then-close sequence"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f05lsg,implements,"2026-08-04T08:45:12.392Z","harness:codex","cli:create:dep",detected
+  pm-gzyt2j,discovered_from,"2026-08-04T08:45:12.392Z","harness:codex","cli:create:dep",detected
+  pm-n7rr,implements,"2026-08-04T08:45:12.392Z","harness:codex","cli:create:dep",detected
+  pm-ykdt4m,discovered_from,"2026-08-04T08:45:12.392Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-04T08:45:12.392Z","harness:codex","Duplicate check 2026-08-04: all-status searches covered close_reason_required, create --resolution, recovery examples, context-sensitive retries, and recovery closure. No existing item owns this exact same-command recovery defect; pm-f05lsg owns the measured recovery-closure programme and pm-ykdt4m owns the broader terminal-create contract. GitHub source: https://github.com/unbraind/pm-cli/issues/885"
+body: ""

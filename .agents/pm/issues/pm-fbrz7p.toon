@@ -1,0 +1,29 @@
+id: pm-fbrz7p
+title: "GH-889: merge-conflict recovery guidance hides the durable discarded-value report"
+description: "GitHub issue #889 proves that the field-aware merge driver tells agents to re-apply a losing change but does not name pm merge report, the only durable surface containing base, ours, theirs, retained, and discarded values. The working item contains only the retained side, so the prescribed recovery is impossible from the refusal context."
+type: Issue
+status: open
+priority: 1
+tags[7]: agent-ux,"area:concurrency","area:merge",context-management,github-report,multi-agent,recovery
+created_at: "2026-08-04T08:44:27.650Z"
+updated_at: "2026-08-04T09:18:26.565Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: "Every conflict guidance envelope points directly to pm merge report and a stable receipt or item correlation key; CLI, SDK, help, docs, and tests prove an agent can recover discarded values using only the emitted recovery bundle; Multi-item and multi-conflict fixtures prove the guidance is unambiguous without leaking private content into generic logs"
+parent: pm-dj98
+risk: low
+confidence: high
+severity: high
+environment: pm-cli 2026.8.3 field-aware merge driver in a two-branch same-field conflict
+repro_steps: "Create divergent title and priority mutations on two branches, merge them with the configured pm driver, and read the emitted guidance before separately running pm merge report"
+expected_result: Conflict guidance names the exact report command and receipt identity required to recover every discarded value
+actual_result: Guidance says to re-apply the losing change without exposing or pointing to the losing value
+customer_impact: Resolving agents silently discard valid concurrent work or spelunk Git history outside the structured PM workflow
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dj98,implements,"2026-08-04T08:44:27.650Z","harness:codex","cli:create:dep",detected
+  pm-gzyt2j,discovered_from,"2026-08-04T08:44:27.650Z","harness:codex","cli:create:dep",detected
+  pm-rh98vo,discovered_from,"2026-08-04T08:44:27.650Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-04T08:44:27.650Z","harness:codex","Duplicate check 2026-08-04: all-status searches covered merge guidance, discarded values, pm merge report, durable receipts, and post-merge settlement. Closed pm-rh98vo created durable conflict reports; open pm-lwmstb owns receipt settlement after merge. Neither owns the missing recovery pointer at conflict time. GitHub source: https://github.com/unbraind/pm-cli/issues/889"
+  "2026-08-04T09:18:26.565Z","harness:codex","Graph correction 2026-08-04: removed the initial blocked_by edge to pm-lwmstb after reviewing both scopes. Durable receipt settlement is adjacent downstream work, but it does not prevent conflict-time recovery guidance from exposing the existing report. The remaining implements and discovered_from edges state the evidence-backed lineage without inventing execution order."
+body: ""

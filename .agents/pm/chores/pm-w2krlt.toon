@@ -1,0 +1,23 @@
+id: pm-w2krlt
+title: "Historical GitHub artifact linkage: backfill canonical pm-item comments with resumable, rate-limit-aware evidence"
+description: "Complete and continuously verify the repository-wide invariant that every GitHub issue and pull request has a public comment linking its canonical pm item. The 2026-08-04 audit found all 28 open issues compliant, then identified 468 historical closed artifacts without a PM-link comment before attempting a deterministic body-ID backfill. GitHub accepted a bounded subset and then returned a secondary content-creation rate limit; subsequent GraphQL census calls were intermittently unavailable with unexpected EOF. This item owns a resumable archive census, canonical-ID reconstruction for artifacts whose bodies contain no live PM ID, write pacing, verification, and a recurrence gate."
+type: Chore
+status: open
+priority: 2
+tags: []
+created_at: "2026-08-04T09:16:47.188Z"
+updated_at: "2026-08-04T09:22:18.406Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "A read-only full census reports every GitHub issue and pull request and the exact comment-linked count.; Every artifact has a verified comment linking a live canonical pm item; ambiguous historical artifacts have documented manual mapping decisions.; Backfill is resumable and idempotent, uses conservative pacing, and never reports an attempted comment as successful without read-back.; A regression check detects newly created GitHub artifacts without a PM link comment."
+why_now: "The open backlog is compliant, but historical GitHub discussion still cannot reconstruct canonical PM lineage and bulk repair is constrained by GitHub secondary write throttling."
+parent: pm-u9d0
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gzyt2j,discovered_from,"2026-08-04T09:16:47.188Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-04T09:16:47.188Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-04T09:18:03.576Z","harness:codex","Duplicate check 2026-08-04: searched every PM status for historical GitHub issue and pull-request PM-link comments, artifact linkage backfill, and secondary content-creation rate limits. Existing roadmap, release, and quality items contain point-in-time open-artifact censuses, but no active or terminal item owns complete archive-wide verified comment linkage, ambiguous-ID reconstruction, paced writes, and recurrence detection. Initial census was 892 artifacts with 424 linked and 468 missing; all missing artifacts were closed. A deterministic body-ID backfill was attempted only for resolvable IDs, accepted a bounded subset, then GitHub returned a secondary content-creation limit. Read-back is required before the remaining count is trusted."
+  "2026-08-04T09:22:18.406Z","harness:codex","Verified checkpoint 2026-08-04: 119 PM-link comments were read back from GitHub during this audit window. Six are the newly mapped open issues 885, 887, 888, 889, 890, and 891; 113 are historical closed artifacts accepted before secondary throttling. Starting from the post-open-intake census of 424 linked out of 892, the verified archive state is therefore 537 linked and 355 remaining. The remaining set must be re-censused and processed conservatively; no attempted parallel write is counted without read-back."
+body: "Outcome: every issue and pull request has at least one verified comment containing a live .agents/pm/issues/pm-*.toon link. Preserve existing comments and immutable artifact history. Use read-only census first, derive links from valid body PM IDs where possible, manually resolve the remaining no-ID or retired-ID artifacts, write at a conservative bounded rate, and re-census after each checkpoint. Never treat attempted writes as success. Record GitHub rate-limit receipts and exact remaining artifact numbers."
