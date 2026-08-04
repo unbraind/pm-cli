@@ -1,0 +1,34 @@
+id: pm-ips23h
+title: "Filed defect populations grow after they are measured and nothing turns a tracker measurement into a ceiling: the maintenance passes that record the count are the writer that widens it"
+description: "The project ratchets its source code and does not ratchet its own system of record.\n\nThree shipped code ratchets prove the pattern is understood here. pm-9x6e froze the SDK import-boundary baseline into a hard gate, pm-bkcv froze the complexity ceiling and the ESLint suppressions baseline, and pm-cu1i froze token cost over a command-output corpus. Each takes a measured number, writes it into a checked-in baseline, and fails a build that exceeds it. All three are closed.\n\nNo equivalent exists for the data under .agents/pm. The tracker-integrity gate registered in scripts/release/gate-registry.json under owner pm-k6t4yb declares exactly three failure modes: tracker_validation_failed, history_drift, merge_driver_drift. It protects the hash chain and the merge fence. It never reads the relationship graph, and it has no way to know that a pm item has ever recorded a population count.\n\nThe consequence is measurable today on two open items that each recorded one.\n\npm-jkbqt8 was filed 2026-07-28 and states in its own description that 219 blocks rows exist. A census of every tracked item file counts 241 now. Twenty-two were minted after that item was filed: three on 07-28, two on 07-31, seven on 08-01, ten on 08-03. The single largest day is six days after the defect naming that spelling unreachable by the scheduler was written down. Nineteen of the twenty-two carry author harness:claude-code and three carry harness:codex. The items minting them are the items recent review passes filed: pm-9gvazz, pm-oqo9l2, pm-1zhfls, pm-1wujzi, pm-hu92i3, pm-1wiugq.\n\npm-4020c5 measured sixteen related_to rows against 2,189 related rows on 2026-07-25. The census counts 43 related_to against 5,512 related now. Thirty-five of the 43 postdate that measurement and twenty-seven of those carry author harness:codex. The alias population the item exists to retire has grown 2.7 times while the item stayed open.\n\nNeither growth is a new defect. Each is the defect its owning item already describes, continuing to spread at its documented rate, written by the same agents that read the item. The gap is not detection and not diagnosis, both of which were done correctly and early. The gap is that a measurement recorded in an item body is inert. It is prose. Nothing reads it, so nothing can fail on it, so the only feedback an agent receives for widening a known-bad population is none at all.\n\nThis bounds what any future pass can achieve. Every review pass enriches the graph, enrichment is edge writing, and so every pass is a writer of the populations that open items are trying to shrink. Under the current arrangement the tracker's own maintenance is an unbounded source of the drift that maintenance exists to remove, and the rate is highest immediately after a measurement is published because that is when attention is on the affected items.\n\nScope is the general mechanism, not the two instances. pm-jkbqt8 keeps the blocks resolution rule and pm-4020c5 keeps the lexicon canonicalization; both remain the correct owners of their fixes and neither is superseded. What is unowned is that a filed measurement never becomes a checked one."
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:ci","area:governance",graph,quality-gate,recurrence
+created_at: "2026-08-04T05:48:43.072Z"
+updated_at: "2026-08-04T05:50:38.920Z"
+author: "harness:claude-code"
+estimated_minutes: 900
+acceptance_criteria: "A filed item can declare a machine-readable population measurement carrying selector, count, and owning item, so the number in the description and the number a gate enforces are the same number; A check recomputes every declared population from tracked data and fails when an observed count exceeds its declared ceiling, naming the item, selector, declared count, observed count, and the mutations that added the difference; The check runs identically in the local pre-push gate set and in hosted CI, and drift between the two selected sets fails; Closing an owning item retires its ceiling, so no ceiling outlives the defect it guards and no waiver is needed to close honest work; The two populations proved here are declared first: pm-jkbqt8 blocks rows at 241 and pm-4020c5 related_to rows at 43, each recording the growth already observed since it was measured; A negative control proves the check can fail: adding one row beyond a declared ceiling in a sandbox tracker turns the gate red, and the fixture is registered in the gate registry alongside the existing tracker-integrity control"
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: high
+environment: "pm 2026.8.3 tracker at HEAD, census over all 2301 tracked item files"
+expected_result: A population a filed item measured cannot silently grow before that item closes
+actual_result: "Both measured populations grew after filing, fastest in the days right after publication, written by the maintenance agents themselves"
+dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1qkivy,implements,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-2zjs0g,related,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-4020c5,discovered_from,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-4020c5,verifies,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-6olc95,related,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-9x6e,related,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-bkcv,related,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-cu1i,related,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-jkbqt8,discovered_from,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-jkbqt8,verifies,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-k6t4yb,related,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-ouyq3n,related,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+  pm-xp1xsw,implements,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
+body: ""
