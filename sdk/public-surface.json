@@ -775,6 +775,14 @@
       ],
       "package_version": "2026.8.4",
       "reason": "Output contracts now expose format-aware budgets, envelope families, and classified error metadata; existing call forms and runtime fields remain compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:parseMutationReceipt",
+        "signature ./sdk/contracts:parseMutationReceipt"
+      ],
+      "package_version": "2026.8.4",
+      "reason": "PR 895 pre-merge correction: expose explicit string JSON and decoded unknown mutation-receipt overloads before the new API is released."
     }
   ],
   "entrypoints": {
@@ -7409,7 +7417,7 @@
           "classification": "contract_data",
           "kind": "function",
           "name": "parseMutationReceipt",
-          "signature": "(input: string | unknown) => PmMutationReceipt | calls: (input: string | unknown) => PmMutationReceipt"
+          "signature": "{ (json: string): PmMutationReceipt; (value: unknown): PmMutationReceipt; } | calls: (json: string) => PmMutationReceipt ; (value: unknown) => PmMutationReceipt"
         },
         {
           "classification": "advanced_export",
@@ -15455,7 +15463,7 @@
           "classification": "contract_data",
           "kind": "function",
           "name": "parseMutationReceipt",
-          "signature": "(input: string | unknown) => PmMutationReceipt | calls: (input: string | unknown) => PmMutationReceipt"
+          "signature": "{ (json: string): PmMutationReceipt; (value: unknown): PmMutationReceipt; } | calls: (json: string) => PmMutationReceipt ; (value: unknown) => PmMutationReceipt"
         },
         {
           "classification": "contract_data",

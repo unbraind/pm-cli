@@ -72,13 +72,19 @@ const MUTATION_COMMANDS = new Set([
   "append",
   "claim",
   "close",
+  "close-task",
   "copy",
   "create",
   "delete",
+  "focus",
+  "pause-task",
   "release",
   "restore",
+  "start-task",
   "update",
 ]);
+
+const COLLECTION_MUTATION_COMMANDS = new Set(["close-many", "update-many"]);
 
 const COLLECTION_COMMANDS = new Set([
   "activity",
@@ -119,6 +125,15 @@ function createOutputEnvelopeContract(
 ): PmCommandOutputEnvelopeContract {
   const normalizedCommand = command.trim().replace(/\s+/gu, " ");
   const [rootCommand = normalizedCommand] = normalizedCommand.split(" ");
+  if (COLLECTION_MUTATION_COMMANDS.has(rootCommand)) {
+    return definePmCommandOutputEnvelope({
+      command: normalizedCommand,
+      kind: "collection",
+      wrapper_key: "rows",
+      cardinality: "many",
+      format_flag: "--json",
+    });
+  }
   if (MUTATION_COMMANDS.has(rootCommand)) {
     return definePmCommandOutputEnvelope({
       command: normalizedCommand,
@@ -175,10 +190,10 @@ export function resolvePmCommandOutputEnvelope(
     throw new TypeError("command must be a non-empty command path");
   }
   const [rootCommand = normalized] = normalized.split(" ");
-  return (
-    OUTPUT_ENVELOPE_BY_COMMAND.get(rootCommand) ??
-    createOutputEnvelopeContract(normalized)
-  );
+  const declared = OUTPUT_ENVELOPE_BY_COMMAND.get(rootCommand);
+  return declared
+    ? { ...declared, command: normalized }
+    : createOutputEnvelopeContract(normalized);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -211,9 +226,11 @@ export function isPmMutationReceipt(
  * Wrapped read envelopes are rejected so a wrong consumer assumption fails at
  * the integration boundary instead of silently returning an undefined id.
  */
-export function parseMutationReceipt(
-  input: string | unknown,
-): PmMutationReceipt {
+export function parseMutationReceipt(json: string): PmMutationReceipt;
+/** Parse and normalize an already decoded mutation receipt value. */
+export function parseMutationReceipt(value: unknown): PmMutationReceipt;
+/** Implement string parsing and decoded-value validation at one boundary. */
+export function parseMutationReceipt(input: unknown): PmMutationReceipt {
   let value: unknown = input;
   if (typeof input === "string") {
     try {

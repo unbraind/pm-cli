@@ -31,6 +31,8 @@ const EXIT_CODE_CLASSES = new Map([
   [5, "dependency_failed"],
 ]);
 
+const FALLBACK_EXIT_CODES_BY_CODE = new Map([["unknown_error", 1]]);
+
 function resolveExplicitExitCode(property) {
   const declaration = ts.findAncestor(
     property,
@@ -132,6 +134,8 @@ function collectSourceDeclarations(sourceFile, sourcePath, sourcesByCode) {
 }
 
 function resolveFallbackExitCode(code) {
+  const explicitFallback = FALLBACK_EXIT_CODES_BY_CODE.get(code);
+  if (explicitFallback !== undefined) return explicitFallback;
   if (code.includes("not_found") || code.startsWith("missing_item")) return 3;
   if (code.includes("conflict") || code.includes("already_")) return 4;
   if (code.includes("dependency_failed")) return 5;
@@ -148,18 +152,34 @@ function resolveFallbackExitCode(code) {
 
 function inferEmittingCommands(sources) {
   const commands = new Set();
+  let hasCrossCuttingSource = false;
   for (const source of sources) {
     const commandMatch = source.match(/^cli\/commands\/([^/]+)\.ts$/u);
     const lifecycleMatch = source.match(/^sdk\/lifecycle\/([^/]+)\.ts$/u);
     const queryMatch = source.match(/^sdk\/query\/([^/]+)\.ts$/u);
     const matched = commandMatch ?? lifecycleMatch ?? queryMatch;
-    if (matched?.[1]) commands.add(matched[1]);
+    if (matched?.[1]) {
+      commands.add(matched[1]);
+    } else {
+      hasCrossCuttingSource = true;
+    }
   }
-  return commands.size > 0 ? [...commands].sort() : ["*"];
+  if (hasCrossCuttingSource) commands.add("*");
+  return [...commands].sort();
 }
 
 async function readStabilityLedger(stabilityPath) {
-  const content = await readFile(stabilityPath, "utf8").catch(() => null);
+  const content = await readFile(stabilityPath, "utf8").catch((error) => {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return null;
+    }
+    throw error;
+  });
   if (content === null) return null;
   const parsed = JSON.parse(content);
   if (
@@ -184,7 +204,7 @@ function renderCatalogRow(code, entry, stableCodes) {
   if (!errorClass) {
     throw new Error(`Unsupported public exit code for ${code}: ${exitCode}`);
   }
-  const meaning = `Indicates ${code.replaceAll("_", " ")}.`;
+  const meaning = `${code.replaceAll("_", " ")} condition.`;
   return [
     "  {",
     `    code: ${JSON.stringify(code)},`,
@@ -230,17 +250,12 @@ export async function main(
 
   const discoveredCodes = [...sourcesByCode.keys()].sort();
   let stableCodes = await readStabilityLedger(stabilityPath);
+  const shouldCreateStabilityLedger = stableCodes === null;
   if (stableCodes === null) {
     if (args.includes("--check")) {
       throw new Error("Error-code stability ledger is missing.");
     }
     stableCodes = new Set(discoveredCodes);
-    await mkdir(path.dirname(stabilityPath), { recursive: true });
-    await writeFile(
-      stabilityPath,
-      `${JSON.stringify({ schema_version: 1, stable_codes: discoveredCodes }, null, 2)}\n`,
-      "utf8",
-    );
   }
   const removedStableCodes = [...stableCodes].filter(
     (code) => !sourcesByCode.has(code),
@@ -254,6 +269,15 @@ export async function main(
   const rows = [...sourcesByCode.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([code, entry]) => renderCatalogRow(code, entry, stableCodes));
+
+  if (shouldCreateStabilityLedger) {
+    await mkdir(path.dirname(stabilityPath), { recursive: true });
+    await writeFile(
+      stabilityPath,
+      `${JSON.stringify({ schema_version: 1, stable_codes: discoveredCodes }, null, 2)}\n`,
+      "utf8",
+    );
+  }
 
   const generated = `/**
  * @module sdk/generated-error-code-catalog

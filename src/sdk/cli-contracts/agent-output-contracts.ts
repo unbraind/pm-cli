@@ -210,12 +210,15 @@ export function resolvePmCommandOutputBudget(
   command: string,
   options: { generateFallback?: boolean } = {},
 ): PmCommandOutputBudgetContract | null {
-  const [rootCommand] = command.trim().split(/\s+/u);
+  const normalizedCommand = command.trim().replace(/\s+/gu, " ");
+  const [rootCommand] = normalizedCommand.split(" ");
   const declared = OUTPUT_BUDGET_BY_COMMAND.get(
     rootCommand as (typeof PM_CORE_COMMAND_NAMES)[number],
   );
-  if (declared) return declared;
-  return options.generateFallback ? createPmCommandOutputBudget(command) : null;
+  if (declared) return { ...declared, command: normalizedCommand };
+  return options.generateFallback
+    ? createPmCommandOutputBudget(normalizedCommand)
+    : null;
 }
 
 /** Estimate conservative token usage from UTF-8 output bytes. */

@@ -19,6 +19,18 @@ describe("SDK output envelope contracts", () => {
       cardinality: "one",
       format_flag: "--json",
     });
+    expect(resolvePmCommandOutputEnvelope("start-task")).toMatchObject({
+      kind: "mutation_receipt",
+      cardinality: "one",
+    });
+    expect(resolvePmCommandOutputEnvelope("close-many")).toMatchObject({
+      kind: "collection",
+      wrapper_key: "rows",
+      cardinality: "many",
+    });
+    expect(resolvePmCommandOutputEnvelope("extension install")).toMatchObject({
+      command: "extension install",
+    });
     expect(resolvePmCommandOutputEnvelope("get")).toMatchObject({
       kind: "entity",
       wrapper_key: "item",

@@ -32,7 +32,10 @@ fi
 Mutation and read envelopes are intentionally different. Single-item mutation
 commands emit a flat receipt whose `id`, `status`, and `changed_field_count`
 are top-level fields. Reads wrap their primary entity or rows under documented
-keys such as `item` or `items`. Never infer one shape from the other.
+keys such as `item` or `items`. Bulk mutations such as `close-many` and
+`update-many` use collection envelopes under `rows`; consult
+`command_output_contracts` for the exact command path. Never infer one shape
+from another.
 
 TypeScript package consumers should parse mutation stdout with the SDK boundary
 helper so a wrapped or malformed result fails loudly:

@@ -8056,11 +8056,11 @@
         "token_estimate": "ceil(utf8_bytes / 4)"
       },
       "envelope": {
-        "cardinality": "none",
+        "cardinality": "many",
         "command": "close-many",
         "format_flag": "--json",
-        "kind": "diagnostic",
-        "wrapper_key": null
+        "kind": "collection",
+        "wrapper_key": "rows"
       }
     },
     {
@@ -8083,10 +8083,10 @@
         "token_estimate": "ceil(utf8_bytes / 4)"
       },
       "envelope": {
-        "cardinality": "none",
+        "cardinality": "one",
         "command": "close-task",
         "format_flag": "--json",
-        "kind": "diagnostic",
+        "kind": "mutation_receipt",
         "wrapper_key": null
       }
     },
@@ -8499,7 +8499,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension activate",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8516,7 +8516,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension activate",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8526,7 +8526,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension adopt",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8543,7 +8543,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension adopt",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8553,7 +8553,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension adopt-all",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8570,7 +8570,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension adopt-all",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8580,7 +8580,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension catalog",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8597,7 +8597,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension catalog",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8607,7 +8607,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension deactivate",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8624,7 +8624,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension deactivate",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8634,7 +8634,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension describe",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8651,7 +8651,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension describe",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8661,7 +8661,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension doctor",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8678,7 +8678,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension doctor",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8688,7 +8688,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension explore",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8705,7 +8705,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension explore",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8715,7 +8715,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension init",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8732,7 +8732,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension init",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8742,7 +8742,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension install",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8759,7 +8759,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension install",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8769,7 +8769,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension manage",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8786,7 +8786,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension manage",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8796,7 +8796,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension reload",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8813,7 +8813,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension reload",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8823,7 +8823,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "extension",
+        "command": "extension uninstall",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -8840,7 +8840,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "extension",
+        "command": "extension uninstall",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -8893,10 +8893,10 @@
         "token_estimate": "ceil(utf8_bytes / 4)"
       },
       "envelope": {
-        "cardinality": "none",
+        "cardinality": "one",
         "command": "focus",
         "format_flag": "--json",
-        "kind": "diagnostic",
+        "kind": "mutation_receipt",
         "wrapper_key": null
       }
     },
@@ -9255,7 +9255,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
-        "command": "item",
+        "command": "item mutate",
         "default_max_estimated_tokens": 2000,
         "default_max_estimated_tokens_by_format": {
           "json": 3000,
@@ -9272,7 +9272,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "item",
+        "command": "item mutate",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9660,7 +9660,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package activate",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9677,7 +9677,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package activate",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9687,7 +9687,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package adopt",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9704,7 +9704,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package adopt",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9714,7 +9714,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package adopt-all",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9731,7 +9731,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package adopt-all",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9741,7 +9741,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package catalog",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9758,7 +9758,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package catalog",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9768,7 +9768,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package deactivate",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9785,7 +9785,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package deactivate",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9795,7 +9795,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package describe",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9812,7 +9812,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package describe",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9822,7 +9822,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package doctor",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9839,7 +9839,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package doctor",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9849,7 +9849,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package explore",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9866,7 +9866,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package explore",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9876,7 +9876,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package init",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9893,7 +9893,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package init",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9903,7 +9903,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package install",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9920,7 +9920,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package install",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9930,7 +9930,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package manage",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9947,7 +9947,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package manage",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9957,7 +9957,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package reload",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -9974,7 +9974,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
+        "command": "package reload",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -9984,7 +9984,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "package",
+        "command": "package uninstall",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10001,34 +10001,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "package",
-        "format_flag": "--json",
-        "kind": "diagnostic",
-        "wrapper_key": null
-      }
-    },
-    {
-      "budget": {
-        "allows_unbounded_opt_out": true,
-        "budget_class": "discovery",
-        "command": "packages",
-        "default_max_estimated_tokens": 3000,
-        "default_max_estimated_tokens_by_format": {
-          "json": 4500,
-          "toon": 3000
-        },
-        "degradation_ladder": [
-          "full",
-          "compact",
-          "brief",
-          "summary",
-          "counts"
-        ],
-        "token_estimate": "ceil(utf8_bytes / 4)"
-      },
-      "envelope": {
-        "cardinality": "none",
-        "command": "packages",
+        "command": "package uninstall",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10065,7 +10038,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages activate",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10082,7 +10055,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages activate",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10092,7 +10065,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages adopt",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10109,7 +10082,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages adopt",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10119,7 +10092,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages adopt-all",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10136,7 +10109,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages adopt-all",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10146,7 +10119,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages catalog",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10163,7 +10136,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages catalog",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10173,7 +10146,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages deactivate",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10190,7 +10163,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages deactivate",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10200,7 +10173,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages describe",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10217,7 +10190,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages describe",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10227,7 +10200,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages doctor",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10244,7 +10217,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages doctor",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10254,7 +10227,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages explore",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10271,7 +10244,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages explore",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10281,7 +10254,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages init",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10298,7 +10271,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages init",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10308,7 +10281,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages install",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10325,7 +10298,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages install",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10335,7 +10308,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages manage",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10352,7 +10325,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages manage",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10362,7 +10335,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
-        "command": "packages",
+        "command": "packages reload",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
           "json": 4500,
@@ -10379,7 +10352,34 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "packages",
+        "command": "packages reload",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages uninstall",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages uninstall",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10405,10 +10405,10 @@
         "token_estimate": "ceil(utf8_bytes / 4)"
       },
       "envelope": {
-        "cardinality": "none",
+        "cardinality": "one",
         "command": "pause-task",
         "format_flag": "--json",
-        "kind": "diagnostic",
+        "kind": "mutation_receipt",
         "wrapper_key": null
       }
     },
@@ -10621,10 +10621,10 @@
         "token_estimate": "ceil(utf8_bytes / 4)"
       },
       "envelope": {
-        "cardinality": "none",
+        "cardinality": "one",
         "command": "start-task",
         "format_flag": "--json",
-        "kind": "diagnostic",
+        "kind": "mutation_receipt",
         "wrapper_key": null
       }
     },
@@ -10783,11 +10783,11 @@
         "token_estimate": "ceil(utf8_bytes / 4)"
       },
       "envelope": {
-        "cardinality": "none",
+        "cardinality": "many",
         "command": "update-many",
         "format_flag": "--json",
-        "kind": "diagnostic",
-        "wrapper_key": null
+        "kind": "collection",
+        "wrapper_key": "rows"
       }
     },
     {
@@ -10875,7 +10875,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "read",
-        "command": "workspace",
+        "command": "workspace snapshot",
         "default_max_estimated_tokens": 4000,
         "default_max_estimated_tokens_by_format": {
           "json": 6000,
@@ -10892,7 +10892,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "workspace",
+        "command": "workspace snapshot",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10902,7 +10902,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "read",
-        "command": "workspace",
+        "command": "workspace snapshot create",
         "default_max_estimated_tokens": 4000,
         "default_max_estimated_tokens_by_format": {
           "json": 6000,
@@ -10919,7 +10919,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "workspace",
+        "command": "workspace snapshot create",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10929,7 +10929,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "read",
-        "command": "workspace",
+        "command": "workspace snapshot delete",
         "default_max_estimated_tokens": 4000,
         "default_max_estimated_tokens_by_format": {
           "json": 6000,
@@ -10946,7 +10946,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "workspace",
+        "command": "workspace snapshot delete",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10956,7 +10956,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "read",
-        "command": "workspace",
+        "command": "workspace snapshot inspect",
         "default_max_estimated_tokens": 4000,
         "default_max_estimated_tokens_by_format": {
           "json": 6000,
@@ -10973,7 +10973,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "workspace",
+        "command": "workspace snapshot inspect",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -10983,7 +10983,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "read",
-        "command": "workspace",
+        "command": "workspace snapshot list",
         "default_max_estimated_tokens": 4000,
         "default_max_estimated_tokens_by_format": {
           "json": 6000,
@@ -11000,7 +11000,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "workspace",
+        "command": "workspace snapshot list",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -11010,7 +11010,7 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "read",
-        "command": "workspace",
+        "command": "workspace snapshot restore",
         "default_max_estimated_tokens": 4000,
         "default_max_estimated_tokens_by_format": {
           "json": 6000,
@@ -11027,7 +11027,7 @@
       },
       "envelope": {
         "cardinality": "none",
-        "command": "workspace",
+        "command": "workspace snapshot restore",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -12604,7 +12604,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates acceptance criteria semicolon forbidden.",
+      "meaning": "Acceptance criteria semicolon forbidden condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/item/parse.ts"
@@ -12618,7 +12618,7 @@
         "claim"
       ],
       "exit_code": 4,
-      "meaning": "Indicates already claimed by.",
+      "meaning": "Already claimed by condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/claim.ts"
@@ -12632,7 +12632,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates ambiguous list all.",
+      "meaning": "Ambiguous list all condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/register-list-query.ts"
@@ -12646,7 +12646,7 @@
         "plan"
       ],
       "exit_code": 2,
-      "meaning": "Indicates ambiguous option combination.",
+      "meaning": "Ambiguous option combination condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/plan.ts"
@@ -12660,7 +12660,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates annotation flag like value.",
+      "meaning": "Annotation flag like value condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/annotations.ts"
@@ -12674,7 +12674,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates annotation message without text.",
+      "meaning": "Annotation message without text condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/annotations.ts"
@@ -12688,7 +12688,7 @@
         "append"
       ],
       "exit_code": 2,
-      "meaning": "Indicates append empty body.",
+      "meaning": "Append empty body condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/append.ts"
@@ -12702,7 +12702,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates body file conflicts with body.",
+      "meaning": "Body file conflicts with body condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/io/body-file.ts"
@@ -12716,7 +12716,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates body file missing path.",
+      "meaning": "Body file missing path condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/io/body-file.ts"
@@ -12730,7 +12730,7 @@
         "*"
       ],
       "exit_code": 3,
-      "meaning": "Indicates body file unreadable.",
+      "meaning": "Body file unreadable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/io/body-file.ts"
@@ -12744,7 +12744,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates bundle integrity torn install.",
+      "meaning": "Bundle integrity torn install condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/bundle-integrity.ts"
@@ -12758,7 +12758,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates capability undeclared.",
+      "meaning": "Capability undeclared condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/compose.ts"
@@ -12772,7 +12772,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates capability unused.",
+      "meaning": "Capability unused condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/compose.ts"
@@ -12786,7 +12786,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates child projection item bound exceeded.",
+      "meaning": "Child projection item bound exceeded condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/item-children.ts"
@@ -12797,10 +12797,11 @@
       "class": "usage",
       "code": "close_reason_required",
       "emitting_commands": [
+        "*",
         "close-many"
       ],
       "exit_code": 2,
-      "meaning": "Indicates close reason required.",
+      "meaning": "Close reason required condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle-policy.ts",
@@ -12815,7 +12816,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates close through update.",
+      "meaning": "Close through update condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/telemetry/observability.ts"
@@ -12829,7 +12830,7 @@
         "close"
       ],
       "exit_code": 2,
-      "meaning": "Indicates close validation missing fields.",
+      "meaning": "Close validation missing fields condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/close.ts"
@@ -12843,7 +12844,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates collected zero items.",
+      "meaning": "Collected zero items condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/test/execution.ts"
@@ -12857,7 +12858,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates command failed.",
+      "meaning": "Command failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts"
@@ -12871,7 +12872,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates command namespace.",
+      "meaning": "Command namespace condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/cli-contracts/runtime-contracts.ts"
@@ -12885,7 +12886,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates command override conflict.",
+      "meaning": "Command override conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/compose.ts"
@@ -12899,7 +12900,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates config duplicate.",
+      "meaning": "Config duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -12913,7 +12914,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates config key unknown.",
+      "meaning": "Config key unknown condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -12927,7 +12928,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates config value invalid.",
+      "meaning": "Config value invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -12941,7 +12942,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates conflicting lifecycle owner.",
+      "meaning": "Conflicting lifecycle owner condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/register-operations.ts"
@@ -12955,7 +12956,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates context takes no item argument.",
+      "meaning": "Context takes no item argument condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts"
@@ -12969,7 +12970,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates core item field requires dedicated flag.",
+      "meaning": "Core item field requires dedicated flag condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/extensions/item-fields.ts"
@@ -12983,7 +12984,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates create positional type without title.",
+      "meaning": "Create positional type without title condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/register-mutation.ts"
@@ -12997,7 +12998,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates dependency edge not allowed.",
+      "meaning": "Dependency edge not allowed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/dependency-flag-validation.ts"
@@ -13011,7 +13012,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates duplicate command.",
+      "meaning": "Duplicate command condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/compose.ts"
@@ -13025,7 +13026,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates duplicate edge.",
+      "meaning": "Duplicate edge condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/graph/remediation.ts"
@@ -13039,7 +13040,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates duplicate sweep cost limit.",
+      "meaning": "Duplicate sweep cost limit condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/similarity.ts"
@@ -13053,7 +13054,7 @@
         "close"
       ],
       "exit_code": 2,
-      "meaning": "Indicates duplicate target circular.",
+      "meaning": "Duplicate target circular condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/close.ts"
@@ -13067,7 +13068,7 @@
         "close"
       ],
       "exit_code": 2,
-      "meaning": "Indicates duplicate target is duplicate.",
+      "meaning": "Duplicate target is duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/close.ts"
@@ -13081,7 +13082,7 @@
         "close"
       ],
       "exit_code": 2,
-      "meaning": "Indicates duplicate target missing.",
+      "meaning": "Duplicate target missing condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/close.ts"
@@ -13095,7 +13096,7 @@
         "close"
       ],
       "exit_code": 2,
-      "meaning": "Indicates duplicate target self.",
+      "meaning": "Duplicate target self condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/close.ts"
@@ -13109,7 +13110,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates empty surface.",
+      "meaning": "Empty surface condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/compose.ts"
@@ -13123,7 +13124,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates event cursor query mismatch.",
+      "meaning": "Event cursor query mismatch condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/mutation-events.ts"
@@ -13137,7 +13138,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates event index unavailable.",
+      "meaning": "Event index unavailable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/mutation-events.ts"
@@ -13151,7 +13152,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates extension command activation failed.",
+      "meaning": "Extension command activation failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/commander-usage.ts"
@@ -13165,7 +13166,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates extension dependency name unsafe.",
+      "meaning": "Extension dependency name unsafe condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/extension/install-sources.ts"
@@ -13179,7 +13180,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates extension dependency spec invalid.",
+      "meaning": "Extension dependency spec invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/extension/install-sources.ts"
@@ -13193,7 +13194,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates extension dependency version unsafe.",
+      "meaning": "Extension dependency version unsafe condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/extension/install-sources.ts"
@@ -13207,7 +13208,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates extension install soft failed.",
+      "meaning": "Extension install soft failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/register-setup.ts"
@@ -13221,7 +13222,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates extension install source contains destination.",
+      "meaning": "Extension install source contains destination condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/extension/install-runtime.ts"
@@ -13235,7 +13236,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates extension item field reserved.",
+      "meaning": "Extension item field reserved condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/extensions/item-fields.ts"
@@ -13249,7 +13250,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates extension item field type conflict.",
+      "meaning": "Extension item field type conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/extensions/item-fields.ts"
@@ -13263,7 +13264,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates extension item field unknown.",
+      "meaning": "Extension item field unknown condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/extensions/item-fields.ts"
@@ -13277,7 +13278,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates extension mutation guard failed.",
+      "meaning": "Extension mutation guard failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/extensions/extension-hook-runtime.ts"
@@ -13291,7 +13292,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates extension mutation guard invalid decision.",
+      "meaning": "Extension mutation guard invalid decision condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/extensions/extension-hook-runtime.ts"
@@ -13305,7 +13306,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates extension mutation guard invalid denial.",
+      "meaning": "Extension mutation guard invalid denial condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/extensions/extension-hook-runtime.ts"
@@ -13319,7 +13320,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates extension mutation guard timed out.",
+      "meaning": "Extension mutation guard timed out condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/extensions/extension-hook-runtime.ts"
@@ -13333,7 +13334,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates extension update health partial coverage.",
+      "meaning": "Extension update health partial coverage condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13347,7 +13348,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates field duplicate.",
+      "meaning": "Field duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -13361,7 +13362,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates field invalid.",
+      "meaning": "Field invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -13375,7 +13376,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates field mcp input collision.",
+      "meaning": "Field mcp input collision condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -13389,7 +13390,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates github source entry unbuilt.",
+      "meaning": "Github source entry unbuilt condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/extension/shared.ts"
@@ -13403,7 +13404,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates history author acknowledge selector required.",
+      "meaning": "History author acknowledge selector required condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/register-history-author.ts"
@@ -13417,7 +13418,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates history drift chain mismatch.",
+      "meaning": "History drift chain mismatch condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13431,7 +13432,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates history drift hash mismatch.",
+      "meaning": "History drift hash mismatch condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13445,7 +13446,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates history drift missing stream.",
+      "meaning": "History drift missing stream condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13459,7 +13460,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates history drift unreadable stream.",
+      "meaning": "History drift unreadable stream condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13473,7 +13474,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates history merge conflict markers detected.",
+      "meaning": "History merge conflict markers detected condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/history/read.ts"
@@ -13487,7 +13488,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates history stream over compact threshold.",
+      "meaning": "History stream over compact threshold condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13501,7 +13502,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates history target out of range.",
+      "meaning": "History target out of range condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/history/projection.ts"
@@ -13515,7 +13516,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates history unknown author events.",
+      "meaning": "History unknown author events condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13529,7 +13530,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates init existing settings requires force.",
+      "meaning": "Init existing settings requires force condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/init.ts"
@@ -13543,7 +13544,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates init gitignore unwritable.",
+      "meaning": "Init gitignore unwritable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/workspace.ts"
@@ -13557,7 +13558,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates init id prefix conflict.",
+      "meaning": "Init id prefix conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/init.ts"
@@ -13571,7 +13572,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates init id prefix path like.",
+      "meaning": "Init id prefix path like condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/init.ts"
@@ -13585,7 +13586,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates integrity history conflict marker.",
+      "meaning": "Integrity history conflict marker condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13599,7 +13600,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates integrity history invalid json.",
+      "meaning": "Integrity history invalid json condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13613,7 +13614,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates integrity history unreadable.",
+      "meaning": "Integrity history unreadable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13627,7 +13628,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates integrity item ahead format version.",
+      "meaning": "Integrity item ahead format version condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13641,7 +13642,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates integrity item conflict marker.",
+      "meaning": "Integrity item conflict marker condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13655,7 +13656,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates integrity item outdated format version.",
+      "meaning": "Integrity item outdated format version condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13669,7 +13670,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates integrity item parse failed.",
+      "meaning": "Integrity item parse failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13683,7 +13684,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates integrity item unreadable.",
+      "meaning": "Integrity item unreadable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13694,10 +13695,11 @@
       "class": "usage",
       "code": "invalid_argument_value",
       "emitting_commands": [
+        "*",
         "create"
       ],
       "exit_code": 2,
-      "meaning": "Indicates invalid argument value.",
+      "meaning": "Invalid argument value condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
@@ -13714,7 +13716,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates invalid command usage.",
+      "meaning": "Invalid command usage condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
@@ -13729,7 +13731,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates invalid event cursor.",
+      "meaning": "Invalid event cursor condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/mutation-events.ts"
@@ -13743,7 +13745,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates invalid event follow interval.",
+      "meaning": "Invalid event follow interval condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/mutation-events.ts"
@@ -13757,7 +13759,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates invalid event limit.",
+      "meaning": "Invalid event limit condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/mutation-events.ts"
@@ -13771,7 +13773,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates invalid event since.",
+      "meaning": "Invalid event since condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/mutation-events.ts"
@@ -13785,7 +13787,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates invalid provenance predicate.",
+      "meaning": "Invalid provenance predicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/history-provenance.ts"
@@ -13799,7 +13801,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates invalid query cursor.",
+      "meaning": "Invalid query cursor condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/pagination.ts"
@@ -13813,7 +13815,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates invalid workspace snapshot target.",
+      "meaning": "Invalid workspace snapshot target condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/workspace-snapshot.ts"
@@ -13827,7 +13829,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates item document invalid.",
+      "meaning": "Item document invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/item/item-format.ts"
@@ -13841,7 +13843,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates item document roundtrip failed.",
+      "meaning": "Item document roundtrip failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/item/item-format.ts"
@@ -13855,7 +13857,7 @@
         "copy"
       ],
       "exit_code": 4,
-      "meaning": "Indicates item id collision.",
+      "meaning": "Item id collision condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/copy.ts"
@@ -13869,7 +13871,7 @@
         "*"
       ],
       "exit_code": 3,
-      "meaning": "Indicates item not found.",
+      "meaning": "Item not found condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
@@ -13884,7 +13886,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates likely duplicate.",
+      "meaning": "Likely duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/similarity.ts"
@@ -13898,7 +13900,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates linked test value not quoted.",
+      "meaning": "Linked test value not quoted condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts"
@@ -13912,7 +13914,7 @@
         "list"
       ],
       "exit_code": 1,
-      "meaning": "Indicates list source incomplete.",
+      "meaning": "List source incomplete condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/query/list.ts"
@@ -13926,7 +13928,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates local package archive unsafe.",
+      "meaning": "Local package archive unsafe condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/extension/install-sources.ts"
@@ -13940,7 +13942,7 @@
         "*"
       ],
       "exit_code": 3,
-      "meaning": "Indicates local source not found bare name.",
+      "meaning": "Local source not found bare name condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/extension/install-sources.ts"
@@ -13954,7 +13956,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates lock conflict.",
+      "meaning": "Lock conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
@@ -13970,7 +13972,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates locks stale count.",
+      "meaning": "Locks stale count condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13984,7 +13986,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates locks unreadable.",
+      "meaning": "Locks unreadable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -13998,7 +14000,7 @@
         "plan"
       ],
       "exit_code": 2,
-      "meaning": "Indicates malformed plan step evidence.",
+      "meaning": "Malformed plan step evidence condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/plan.ts"
@@ -14012,7 +14014,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates manifest capabilities absent.",
+      "meaning": "Manifest capabilities absent condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/compose.ts"
@@ -14026,7 +14028,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates merge conflict markers detected.",
+      "meaning": "Merge conflict markers detected condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/item/item-format.ts"
@@ -14040,7 +14042,7 @@
         "*"
       ],
       "exit_code": 5,
-      "meaning": "Indicates merge git config unwritable.",
+      "meaning": "Merge git config unwritable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/merge/install.ts"
@@ -14054,7 +14056,7 @@
         "*"
       ],
       "exit_code": 3,
-      "meaning": "Indicates merge root not found.",
+      "meaning": "Merge root not found condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/merge/install.ts"
@@ -14068,7 +14070,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates missing directory.",
+      "meaning": "Missing directory condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14082,7 +14084,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates missing lifecycle target.",
+      "meaning": "Missing lifecycle target condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/extension.ts"
@@ -14096,7 +14098,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates missing required argument.",
+      "meaning": "Missing required argument condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
@@ -14112,11 +14114,12 @@
       "class": "usage",
       "code": "missing_required_option",
       "emitting_commands": [
+        "*",
         "create",
         "plan"
       ],
       "exit_code": 2,
-      "meaning": "Indicates missing required option.",
+      "meaning": "Missing required option condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
@@ -14134,7 +14137,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates module import failed.",
+      "meaning": "Module import failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts"
@@ -14148,7 +14151,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates multi target github install ambiguous.",
+      "meaning": "Multi target github install ambiguous condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/register-setup.ts"
@@ -14162,7 +14165,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates mutation author required.",
+      "meaning": "Mutation author required condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/mutation-guard.ts"
@@ -14176,7 +14179,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates mutation secret guard blocked.",
+      "meaning": "Mutation secret guard blocked condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/mutation-guard.ts"
@@ -14190,7 +14193,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates no matching tests.",
+      "meaning": "No matching tests condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/test/execution.ts"
@@ -14204,7 +14207,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates no projects matched filters.",
+      "meaning": "No projects matched filters condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/test/execution.ts"
@@ -14218,7 +14221,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates no test files found.",
+      "meaning": "No test files found condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/test/execution.ts"
@@ -14232,7 +14235,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates no tests found.",
+      "meaning": "No tests found condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/test/execution.ts"
@@ -14246,7 +14249,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates no update fields.",
+      "meaning": "No update fields condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
@@ -14261,7 +14264,7 @@
         "*"
       ],
       "exit_code": 3,
-      "meaning": "Indicates npm package not found.",
+      "meaning": "Npm package not found condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/extension/install-sources.ts"
@@ -14275,7 +14278,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates ownership conflict.",
+      "meaning": "Ownership conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
@@ -14291,7 +14294,7 @@
         "update"
       ],
       "exit_code": 1,
-      "meaning": "Indicates ownership dependency bypass restricted options.",
+      "meaning": "Ownership dependency bypass restricted options condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/update.ts"
@@ -14305,7 +14308,7 @@
         "update"
       ],
       "exit_code": 1,
-      "meaning": "Indicates ownership metadata bypass restricted options.",
+      "meaning": "Ownership metadata bypass restricted options condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/update.ts"
@@ -14319,7 +14322,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates package spec empty.",
+      "meaning": "Package spec empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -14333,7 +14336,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates profile name empty.",
+      "meaning": "Profile name empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -14347,7 +14350,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates profile name not normalized.",
+      "meaning": "Profile name not normalized condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -14361,7 +14364,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates profile summary empty.",
+      "meaning": "Profile summary empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -14375,7 +14378,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates profile title empty.",
+      "meaning": "Profile title empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -14389,7 +14392,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates redundant edge.",
+      "meaning": "Redundant edge condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/graph/remediation.ts"
@@ -14403,7 +14406,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates reindex already running.",
+      "meaning": "Reindex already running condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/governance/reindex.ts"
@@ -14417,7 +14420,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates reserved item field.",
+      "meaning": "Reserved item field condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/compose.ts"
@@ -14431,7 +14434,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates schema migration input required.",
+      "meaning": "Schema migration input required condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/migration-gates.ts"
@@ -14445,7 +14448,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates settings read fs error.",
+      "meaning": "Settings read fs error condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14459,7 +14462,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates settings read invalid json.",
+      "meaning": "Settings read invalid json condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14473,7 +14476,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates settings read invalid schema.",
+      "meaning": "Settings read invalid schema condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14487,7 +14490,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates settings read merge failed.",
+      "meaning": "Settings read merge failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14501,7 +14504,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates status duplicate.",
+      "meaning": "Status duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -14515,7 +14518,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates status invalid.",
+      "meaning": "Status invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -14529,7 +14532,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates stdin json invalid.",
+      "meaning": "Stdin json invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/structured-mutations.ts"
@@ -14543,7 +14546,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates stdin json unknown key.",
+      "meaning": "Stdin json unknown key condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/structured-mutations.ts"
@@ -14557,7 +14560,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates structured event immutable.",
+      "meaning": "Structured event immutable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/annotations.ts"
@@ -14571,7 +14574,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates structured event input conflict.",
+      "meaning": "Structured event input conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/notes.ts"
@@ -14585,7 +14588,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates structured event json empty.",
+      "meaning": "Structured event json empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/notes.ts"
@@ -14599,7 +14602,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates structured event json invalid.",
+      "meaning": "Structured event json invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/notes.ts"
@@ -14613,7 +14616,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates structured event since invalid.",
+      "meaning": "Structured event since invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/notes.ts"
@@ -14627,7 +14630,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates telemetry endpoint probe failed.",
+      "meaning": "Telemetry endpoint probe failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14641,7 +14644,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates telemetry endpoint probe http status.",
+      "meaning": "Telemetry endpoint probe http status condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14655,7 +14658,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates telemetry otel export failing.",
+      "meaning": "Telemetry otel export failing condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14669,7 +14672,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates telemetry queue high retries.",
+      "meaning": "Telemetry queue high retries condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14683,7 +14686,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates telemetry queue invalid rows.",
+      "meaning": "Telemetry queue invalid rows condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14697,7 +14700,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates telemetry queue pending.",
+      "meaning": "Telemetry queue pending condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14711,7 +14714,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates telemetry schema version behind.",
+      "meaning": "Telemetry schema version behind condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14725,7 +14728,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates telemetry state invalid json.",
+      "meaning": "Telemetry state invalid json condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14739,7 +14742,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates template type unknown.",
+      "meaning": "Template type unknown condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -14753,7 +14756,7 @@
         "plan"
       ],
       "exit_code": 4,
-      "meaning": "Indicates terminal plan mutation.",
+      "meaning": "Terminal plan mutation condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/plan.ts"
@@ -14767,7 +14770,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates terminal state conflict.",
+      "meaning": "Terminal state conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/telemetry/observability.ts"
@@ -14781,7 +14784,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates tracked runtime cache files.",
+      "meaning": "Tracked runtime cache files condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -14795,7 +14798,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates tracker not initialized.",
+      "meaning": "Tracker not initialized condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
@@ -14810,7 +14813,7 @@
         "*"
       ],
       "exit_code": 3,
-      "meaning": "Indicates tracker root missing.",
+      "meaning": "Tracker root missing condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/store/item-store.ts"
@@ -14824,7 +14827,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates tracker root not directory.",
+      "meaning": "Tracker root not directory condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/store/item-store.ts"
@@ -14838,7 +14841,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates type duplicate.",
+      "meaning": "Type duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -14852,7 +14855,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates type invalid.",
+      "meaning": "Type invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -14866,7 +14869,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates unknown command.",
+      "meaning": "Unknown command condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
@@ -14882,7 +14885,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates unknown context intent.",
+      "meaning": "Unknown context intent condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/context-intent-contracts.ts"
@@ -14890,13 +14893,13 @@
       "stability": "stable"
     },
     {
-      "class": "usage",
+      "class": "generic_failure",
       "code": "unknown_error",
       "emitting_commands": [
         "*"
       ],
-      "exit_code": 2,
-      "meaning": "Indicates unknown error.",
+      "exit_code": 1,
+      "meaning": "Unknown error condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts"
@@ -14910,7 +14913,7 @@
         "*"
       ],
       "exit_code": 3,
-      "meaning": "Indicates unknown field.",
+      "meaning": "Unknown field condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/schema.ts"
@@ -14925,7 +14928,7 @@
         "list"
       ],
       "exit_code": 2,
-      "meaning": "Indicates unknown field projection.",
+      "meaning": "Unknown field projection condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/query/get.ts",
@@ -14940,7 +14943,7 @@
         "*"
       ],
       "exit_code": 3,
-      "meaning": "Indicates unknown item type.",
+      "meaning": "Unknown item type condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/schema.ts"
@@ -14954,7 +14957,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates unknown lifecycle action.",
+      "meaning": "Unknown lifecycle action condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/extension.ts"
@@ -14968,7 +14971,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates unknown option.",
+      "meaning": "Unknown option condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
@@ -14983,7 +14986,7 @@
         "plan"
       ],
       "exit_code": 2,
-      "meaning": "Indicates unknown plan template.",
+      "meaning": "Unknown plan template condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/plan.ts"
@@ -14997,7 +15000,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates unknown provenance dimension.",
+      "meaning": "Unknown provenance dimension condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/history-provenance.ts"
@@ -15011,7 +15014,7 @@
         "*"
       ],
       "exit_code": 3,
-      "meaning": "Indicates unknown status.",
+      "meaning": "Unknown status condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/schema.ts"
@@ -15025,7 +15028,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates unknown subcommand.",
+      "meaning": "Unknown subcommand condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/register-mutation.ts",
@@ -15042,7 +15045,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates unsupported update option.",
+      "meaning": "Unsupported update option condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts"
@@ -15056,7 +15059,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate command references stale pm ids.",
+      "meaning": "Validate command references stale pm ids condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15070,7 +15073,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate files missing linked paths.",
+      "meaning": "Validate files missing linked paths condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15084,7 +15087,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate files orphaned paths.",
+      "meaning": "Validate files orphaned paths condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15098,7 +15101,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate files tracked all strict forces pm internals.",
+      "meaning": "Validate files tracked all strict forces pm internals condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15112,7 +15115,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate format version ahead items.",
+      "meaning": "Validate format version ahead items condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15126,7 +15129,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate format version outdated items.",
+      "meaning": "Validate format version outdated items condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15140,7 +15143,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate hierarchy parent cycle.",
+      "meaning": "Validate hierarchy parent cycle condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15154,7 +15157,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate hierarchy parent cycle error.",
+      "meaning": "Validate hierarchy parent cycle error condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15168,7 +15171,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate history drift chain mismatches.",
+      "meaning": "Validate history drift chain mismatches condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15182,7 +15185,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate history drift hash mismatches.",
+      "meaning": "Validate history drift hash mismatches condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15196,7 +15199,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate history drift missing streams.",
+      "meaning": "Validate history drift missing streams condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15210,7 +15213,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate history drift unreadable streams.",
+      "meaning": "Validate history drift unreadable streams condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15224,7 +15227,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates validate history unknown author events.",
+      "meaning": "Validate history unknown author events condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15238,7 +15241,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate lifecycle active closure like metadata.",
+      "meaning": "Validate lifecycle active closure like metadata condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15252,7 +15255,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate lifecycle active terminal parent.",
+      "meaning": "Validate lifecycle active terminal parent condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15266,7 +15269,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate lifecycle dependency cycles.",
+      "meaning": "Validate lifecycle dependency cycles condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15280,7 +15283,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate lifecycle dependency cycles error.",
+      "meaning": "Validate lifecycle dependency cycles error condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15294,7 +15297,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate lifecycle stale blockers.",
+      "meaning": "Validate lifecycle stale blockers condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15308,7 +15311,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate merge fence drift.",
+      "meaning": "Validate merge fence drift condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15322,7 +15325,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates validate metadata custom profile missing required fields.",
+      "meaning": "Validate metadata custom profile missing required fields condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15336,7 +15339,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate metadata duplicate issue codes.",
+      "meaning": "Validate metadata duplicate issue codes condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15350,7 +15353,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate metadata missing acceptance criteria.",
+      "meaning": "Validate metadata missing acceptance criteria condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15364,7 +15367,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate metadata missing close reason.",
+      "meaning": "Validate metadata missing close reason condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15378,7 +15381,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate metadata missing confidence.",
+      "meaning": "Validate metadata missing confidence condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15392,7 +15395,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate metadata missing estimate.",
+      "meaning": "Validate metadata missing estimate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15406,7 +15409,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate metadata missing release.",
+      "meaning": "Validate metadata missing release condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15420,7 +15423,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate metadata missing reviewer.",
+      "meaning": "Validate metadata missing reviewer condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15434,7 +15437,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate metadata missing risk.",
+      "meaning": "Validate metadata missing risk condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15448,7 +15451,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate metadata missing sprint.",
+      "meaning": "Validate metadata missing sprint condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15462,7 +15465,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate resolution missing fields.",
+      "meaning": "Validate resolution missing fields condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15476,7 +15479,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate storage duplicate item ids.",
+      "meaning": "Validate storage duplicate item ids condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15490,7 +15493,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates validate storage history conflict markers.",
+      "meaning": "Validate storage history conflict markers condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15504,7 +15507,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate storage resurrected items.",
+      "meaning": "Validate storage resurrected items condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15518,7 +15521,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate storage tracked runtime cache files.",
+      "meaning": "Validate storage tracked runtime cache files condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15532,7 +15535,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate storage unparseable config.",
+      "meaning": "Validate storage unparseable config condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15546,7 +15549,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate storage unparseable history.",
+      "meaning": "Validate storage unparseable history condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15560,7 +15563,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates validate storage unreadable items.",
+      "meaning": "Validate storage unreadable items condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15574,7 +15577,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates vectorization embedding identity changed.",
+      "meaning": "Vectorization embedding identity changed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15588,7 +15591,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates vectorization stale items remaining.",
+      "meaning": "Vectorization stale items remaining condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/diagnostics/remediation.ts"
@@ -15602,7 +15605,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates workflow duplicate type.",
+      "meaning": "Workflow duplicate type condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -15616,7 +15619,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates workflow status unknown.",
+      "meaning": "Workflow status unknown condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -15630,7 +15633,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates workflow transition malformed.",
+      "meaning": "Workflow transition malformed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -15644,7 +15647,7 @@
         "*"
       ],
       "exit_code": 1,
-      "meaning": "Indicates workflow type empty.",
+      "meaning": "Workflow type empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -15658,7 +15661,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates workflow type unknown.",
+      "meaning": "Workflow type unknown condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/profile/profile-lint.ts"
@@ -15672,7 +15675,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates workspace history state conflict.",
+      "meaning": "Workspace history state conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/history/workspace-history.ts"
@@ -15686,7 +15689,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates workspace root pm path.",
+      "meaning": "Workspace root pm path condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/init.ts"
@@ -15700,7 +15703,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates workspace snapshot force required.",
+      "meaning": "Workspace snapshot force required condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/workspace-snapshot.ts"
@@ -15714,7 +15717,7 @@
         "*"
       ],
       "exit_code": 4,
-      "meaning": "Indicates workspace snapshot manifest mismatch.",
+      "meaning": "Workspace snapshot manifest mismatch condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/workspace-snapshot.ts"
@@ -15728,7 +15731,7 @@
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Indicates workspace snapshot name reserved fingerprint.",
+      "meaning": "Workspace snapshot name reserved fingerprint condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/workspace-snapshot.ts"
@@ -15742,7 +15745,7 @@
         "*"
       ],
       "exit_code": 3,
-      "meaning": "Indicates workspace snapshot not found.",
+      "meaning": "Workspace snapshot not found condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/workspace-snapshot.ts"
@@ -15756,7 +15759,7 @@
         "plan"
       ],
       "exit_code": 2,
-      "meaning": "Indicates wrong item type.",
+      "meaning": "Wrong item type condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/plan.ts"

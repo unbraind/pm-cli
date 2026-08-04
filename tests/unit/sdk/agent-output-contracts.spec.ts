@@ -34,8 +34,8 @@ describe("agent output contracts", () => {
   });
 
   it("resolves root commands, rejects unknown commands, and estimates UTF-8 tokens", () => {
-    expect(resolvePmCommandOutputBudget("contracts --summary")).toMatchObject({
-      command: "contracts",
+    expect(resolvePmCommandOutputBudget("extension install")).toMatchObject({
+      command: "extension install",
       budget_class: "discovery",
     });
     expect(resolvePmCommandOutputBudget("unknown")).toBeNull();
@@ -101,6 +101,17 @@ describe("agent output contracts", () => {
         token_estimate: "ceil(utf8_bytes / 4)",
       }),
     ).toThrow("default_max_estimated_tokens_by_format.toon");
+    expect(() =>
+      definePmCommandOutputBudget({
+        command: "get",
+        budget_class: "read",
+        default_max_estimated_tokens: 800,
+        default_max_estimated_tokens_by_format: { toon: 800, json: -1 },
+        degradation_ladder: ["summary"],
+        allows_unbounded_opt_out: false,
+        token_estimate: "ceil(utf8_bytes / 4)",
+      }),
+    ).toThrow("default_max_estimated_tokens_by_format.json");
     expect(() => createPmCommandOutputBudget(" ")).toThrow(
       "command must be a non-empty command path",
     );

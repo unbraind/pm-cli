@@ -9,7 +9,7 @@ import { definePmErrorCodeCatalog } from "./error-code-catalog.js";
 export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   {
     code: "acceptance_criteria_semicolon_forbidden",
-    meaning: "Indicates acceptance criteria semicolon forbidden.",
+    meaning: "Acceptance criteria semicolon forbidden condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -20,7 +20,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "already_claimed_by",
-    meaning: "Indicates already claimed by.",
+    meaning: "Already claimed by condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -31,7 +31,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "ambiguous_list_all",
-    meaning: "Indicates ambiguous list all.",
+    meaning: "Ambiguous list all condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -42,7 +42,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "ambiguous_option_combination",
-    meaning: "Indicates ambiguous option combination.",
+    meaning: "Ambiguous option combination condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -53,7 +53,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "annotation_flag_like_value",
-    meaning: "Indicates annotation flag like value.",
+    meaning: "Annotation flag like value condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -64,7 +64,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "annotation_message_without_text",
-    meaning: "Indicates annotation message without text.",
+    meaning: "Annotation message without text condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -75,7 +75,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "append_empty_body",
-    meaning: "Indicates append empty body.",
+    meaning: "Append empty body condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -86,7 +86,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "body_file_conflicts_with_body",
-    meaning: "Indicates body file conflicts with body.",
+    meaning: "Body file conflicts with body condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -97,7 +97,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "body_file_missing_path",
-    meaning: "Indicates body file missing path.",
+    meaning: "Body file missing path condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -108,7 +108,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "body_file_unreadable",
-    meaning: "Indicates body file unreadable.",
+    meaning: "Body file unreadable condition.",
     stability: "stable",
     exit_code: 3,
     class: "not_found",
@@ -119,7 +119,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "bundle_integrity_torn_install",
-    meaning: "Indicates bundle integrity torn install.",
+    meaning: "Bundle integrity torn install condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -130,7 +130,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "capability_undeclared",
-    meaning: "Indicates capability undeclared.",
+    meaning: "Capability undeclared condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -141,7 +141,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "capability_unused",
-    meaning: "Indicates capability unused.",
+    meaning: "Capability unused condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -152,7 +152,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "child_projection_item_bound_exceeded",
-    meaning: "Indicates child projection item bound exceeded.",
+    meaning: "Child projection item bound exceeded condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -163,18 +163,18 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "close_reason_required",
-    meaning: "Indicates close reason required.",
+    meaning: "Close reason required condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle-policy.ts", "sdk/lifecycle/close-many.ts"],
-    emitting_commands: ["close-many"],
+    emitting_commands: ["*", "close-many"],
   },
   {
     code: "close_through_update",
-    meaning: "Indicates close through update.",
+    meaning: "Close through update condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -185,7 +185,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "close_validation_missing_fields",
-    meaning: "Indicates close validation missing fields.",
+    meaning: "Close validation missing fields condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -196,7 +196,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "collected_zero_items",
-    meaning: "Indicates collected zero items.",
+    meaning: "Collected zero items condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -207,7 +207,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "command_failed",
-    meaning: "Indicates command failed.",
+    meaning: "Command failed condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -218,7 +218,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "command_namespace",
-    meaning: "Indicates command namespace.",
+    meaning: "Command namespace condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -229,7 +229,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "command_override_conflict",
-    meaning: "Indicates command override conflict.",
+    meaning: "Command override conflict condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -240,7 +240,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "config_duplicate",
-    meaning: "Indicates config duplicate.",
+    meaning: "Config duplicate condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -251,7 +251,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "config_key_unknown",
-    meaning: "Indicates config key unknown.",
+    meaning: "Config key unknown condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -262,7 +262,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "config_value_invalid",
-    meaning: "Indicates config value invalid.",
+    meaning: "Config value invalid condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -273,7 +273,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "conflicting_lifecycle_owner",
-    meaning: "Indicates conflicting lifecycle owner.",
+    meaning: "Conflicting lifecycle owner condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -284,7 +284,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "context_takes_no_item_argument",
-    meaning: "Indicates context takes no item argument.",
+    meaning: "Context takes no item argument condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -295,7 +295,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "core_item_field_requires_dedicated_flag",
-    meaning: "Indicates core item field requires dedicated flag.",
+    meaning: "Core item field requires dedicated flag condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -306,7 +306,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "create_positional_type_without_title",
-    meaning: "Indicates create positional type without title.",
+    meaning: "Create positional type without title condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -317,7 +317,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "dependency_edge_not_allowed",
-    meaning: "Indicates dependency edge not allowed.",
+    meaning: "Dependency edge not allowed condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -328,7 +328,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "duplicate_command",
-    meaning: "Indicates duplicate command.",
+    meaning: "Duplicate command condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -339,7 +339,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "duplicate_edge",
-    meaning: "Indicates duplicate edge.",
+    meaning: "Duplicate edge condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -350,7 +350,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "duplicate_sweep_cost_limit",
-    meaning: "Indicates duplicate sweep cost limit.",
+    meaning: "Duplicate sweep cost limit condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -361,7 +361,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "duplicate_target_circular",
-    meaning: "Indicates duplicate target circular.",
+    meaning: "Duplicate target circular condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -372,7 +372,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "duplicate_target_is_duplicate",
-    meaning: "Indicates duplicate target is duplicate.",
+    meaning: "Duplicate target is duplicate condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -383,7 +383,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "duplicate_target_missing",
-    meaning: "Indicates duplicate target missing.",
+    meaning: "Duplicate target missing condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -394,7 +394,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "duplicate_target_self",
-    meaning: "Indicates duplicate target self.",
+    meaning: "Duplicate target self condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -405,7 +405,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "empty_surface",
-    meaning: "Indicates empty surface.",
+    meaning: "Empty surface condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -416,7 +416,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "event_cursor_query_mismatch",
-    meaning: "Indicates event cursor query mismatch.",
+    meaning: "Event cursor query mismatch condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -427,7 +427,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "event_index_unavailable",
-    meaning: "Indicates event index unavailable.",
+    meaning: "Event index unavailable condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -438,7 +438,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_command_activation_failed",
-    meaning: "Indicates extension command activation failed.",
+    meaning: "Extension command activation failed condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -449,7 +449,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_dependency_name_unsafe",
-    meaning: "Indicates extension dependency name unsafe.",
+    meaning: "Extension dependency name unsafe condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -460,7 +460,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_dependency_spec_invalid",
-    meaning: "Indicates extension dependency spec invalid.",
+    meaning: "Extension dependency spec invalid condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -471,7 +471,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_dependency_version_unsafe",
-    meaning: "Indicates extension dependency version unsafe.",
+    meaning: "Extension dependency version unsafe condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -482,7 +482,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_install_soft_failed",
-    meaning: "Indicates extension install soft failed.",
+    meaning: "Extension install soft failed condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -493,7 +493,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_install_source_contains_destination",
-    meaning: "Indicates extension install source contains destination.",
+    meaning: "Extension install source contains destination condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -504,7 +504,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_item_field_reserved",
-    meaning: "Indicates extension item field reserved.",
+    meaning: "Extension item field reserved condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -515,7 +515,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_item_field_type_conflict",
-    meaning: "Indicates extension item field type conflict.",
+    meaning: "Extension item field type conflict condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -526,7 +526,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_item_field_unknown",
-    meaning: "Indicates extension item field unknown.",
+    meaning: "Extension item field unknown condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -537,7 +537,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_mutation_guard_failed",
-    meaning: "Indicates extension mutation guard failed.",
+    meaning: "Extension mutation guard failed condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -548,7 +548,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_mutation_guard_invalid_decision",
-    meaning: "Indicates extension mutation guard invalid decision.",
+    meaning: "Extension mutation guard invalid decision condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -559,7 +559,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_mutation_guard_invalid_denial",
-    meaning: "Indicates extension mutation guard invalid denial.",
+    meaning: "Extension mutation guard invalid denial condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -570,7 +570,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_mutation_guard_timed_out",
-    meaning: "Indicates extension mutation guard timed out.",
+    meaning: "Extension mutation guard timed out condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -581,7 +581,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "extension_update_health_partial_coverage",
-    meaning: "Indicates extension update health partial coverage.",
+    meaning: "Extension update health partial coverage condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -592,7 +592,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "field_duplicate",
-    meaning: "Indicates field duplicate.",
+    meaning: "Field duplicate condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -603,7 +603,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "field_invalid",
-    meaning: "Indicates field invalid.",
+    meaning: "Field invalid condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -614,7 +614,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "field_mcp_input_collision",
-    meaning: "Indicates field mcp input collision.",
+    meaning: "Field mcp input collision condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -625,7 +625,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "github_source_entry_unbuilt",
-    meaning: "Indicates github source entry unbuilt.",
+    meaning: "Github source entry unbuilt condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -636,7 +636,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "history_author_acknowledge_selector_required",
-    meaning: "Indicates history author acknowledge selector required.",
+    meaning: "History author acknowledge selector required condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -647,7 +647,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "history_drift_chain_mismatch",
-    meaning: "Indicates history drift chain mismatch.",
+    meaning: "History drift chain mismatch condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -658,7 +658,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "history_drift_hash_mismatch",
-    meaning: "Indicates history drift hash mismatch.",
+    meaning: "History drift hash mismatch condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -669,7 +669,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "history_drift_missing_stream",
-    meaning: "Indicates history drift missing stream.",
+    meaning: "History drift missing stream condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -680,7 +680,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "history_drift_unreadable_stream",
-    meaning: "Indicates history drift unreadable stream.",
+    meaning: "History drift unreadable stream condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -691,7 +691,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "history_merge_conflict_markers_detected",
-    meaning: "Indicates history merge conflict markers detected.",
+    meaning: "History merge conflict markers detected condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -702,7 +702,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "history_stream_over_compact_threshold",
-    meaning: "Indicates history stream over compact threshold.",
+    meaning: "History stream over compact threshold condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -713,7 +713,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "history_target_out_of_range",
-    meaning: "Indicates history target out of range.",
+    meaning: "History target out of range condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -724,7 +724,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "history_unknown_author_events",
-    meaning: "Indicates history unknown author events.",
+    meaning: "History unknown author events condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -735,7 +735,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "init_existing_settings_requires_force",
-    meaning: "Indicates init existing settings requires force.",
+    meaning: "Init existing settings requires force condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -746,7 +746,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "init_gitignore_unwritable",
-    meaning: "Indicates init gitignore unwritable.",
+    meaning: "Init gitignore unwritable condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -757,7 +757,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "init_id_prefix_conflict",
-    meaning: "Indicates init id prefix conflict.",
+    meaning: "Init id prefix conflict condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -768,7 +768,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "init_id_prefix_path_like",
-    meaning: "Indicates init id prefix path like.",
+    meaning: "Init id prefix path like condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -779,7 +779,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "integrity_history_conflict_marker",
-    meaning: "Indicates integrity history conflict marker.",
+    meaning: "Integrity history conflict marker condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -790,7 +790,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "integrity_history_invalid_json",
-    meaning: "Indicates integrity history invalid json.",
+    meaning: "Integrity history invalid json condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -801,7 +801,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "integrity_history_unreadable",
-    meaning: "Indicates integrity history unreadable.",
+    meaning: "Integrity history unreadable condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -812,7 +812,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "integrity_item_ahead_format_version",
-    meaning: "Indicates integrity item ahead format version.",
+    meaning: "Integrity item ahead format version condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -823,7 +823,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "integrity_item_conflict_marker",
-    meaning: "Indicates integrity item conflict marker.",
+    meaning: "Integrity item conflict marker condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -834,7 +834,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "integrity_item_outdated_format_version",
-    meaning: "Indicates integrity item outdated format version.",
+    meaning: "Integrity item outdated format version condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -845,7 +845,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "integrity_item_parse_failed",
-    meaning: "Indicates integrity item parse failed.",
+    meaning: "Integrity item parse failed condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -856,7 +856,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "integrity_item_unreadable",
-    meaning: "Indicates integrity item unreadable.",
+    meaning: "Integrity item unreadable condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -867,7 +867,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "invalid_argument_value",
-    meaning: "Indicates invalid argument value.",
+    meaning: "Invalid argument value condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -879,11 +879,11 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "sdk/context-intent-contracts.ts",
       "sdk/lifecycle/create.ts",
     ],
-    emitting_commands: ["create"],
+    emitting_commands: ["*", "create"],
   },
   {
     code: "invalid_command_usage",
-    meaning: "Indicates invalid command usage.",
+    meaning: "Invalid command usage condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -894,7 +894,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "invalid_event_cursor",
-    meaning: "Indicates invalid event cursor.",
+    meaning: "Invalid event cursor condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -905,7 +905,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "invalid_event_follow_interval",
-    meaning: "Indicates invalid event follow interval.",
+    meaning: "Invalid event follow interval condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -916,7 +916,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "invalid_event_limit",
-    meaning: "Indicates invalid event limit.",
+    meaning: "Invalid event limit condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -927,7 +927,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "invalid_event_since",
-    meaning: "Indicates invalid event since.",
+    meaning: "Invalid event since condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -938,7 +938,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "invalid_provenance_predicate",
-    meaning: "Indicates invalid provenance predicate.",
+    meaning: "Invalid provenance predicate condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -949,7 +949,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "invalid_query_cursor",
-    meaning: "Indicates invalid query cursor.",
+    meaning: "Invalid query cursor condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -960,7 +960,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "invalid_workspace_snapshot_target",
-    meaning: "Indicates invalid workspace snapshot target.",
+    meaning: "Invalid workspace snapshot target condition.",
     stability: "provisional",
     exit_code: 2,
     class: "usage",
@@ -971,7 +971,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "item_document_invalid",
-    meaning: "Indicates item document invalid.",
+    meaning: "Item document invalid condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -982,7 +982,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "item_document_roundtrip_failed",
-    meaning: "Indicates item document roundtrip failed.",
+    meaning: "Item document roundtrip failed condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -993,7 +993,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "item_id_collision",
-    meaning: "Indicates item id collision.",
+    meaning: "Item id collision condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -1004,7 +1004,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "item_not_found",
-    meaning: "Indicates item not found.",
+    meaning: "Item not found condition.",
     stability: "stable",
     exit_code: 3,
     class: "not_found",
@@ -1015,7 +1015,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "likely_duplicate",
-    meaning: "Indicates likely duplicate.",
+    meaning: "Likely duplicate condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -1026,7 +1026,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "linked_test_value_not_quoted",
-    meaning: "Indicates linked test value not quoted.",
+    meaning: "Linked test value not quoted condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1037,7 +1037,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "list_source_incomplete",
-    meaning: "Indicates list source incomplete.",
+    meaning: "List source incomplete condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1048,7 +1048,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "local_package_archive_unsafe",
-    meaning: "Indicates local package archive unsafe.",
+    meaning: "Local package archive unsafe condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1059,7 +1059,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "local_source_not_found_bare_name",
-    meaning: "Indicates local source not found bare name.",
+    meaning: "Local source not found bare name condition.",
     stability: "stable",
     exit_code: 3,
     class: "not_found",
@@ -1070,7 +1070,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "lock_conflict",
-    meaning: "Indicates lock conflict.",
+    meaning: "Lock conflict condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -1085,7 +1085,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "locks_stale_count",
-    meaning: "Indicates locks stale count.",
+    meaning: "Locks stale count condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1096,7 +1096,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "locks_unreadable",
-    meaning: "Indicates locks unreadable.",
+    meaning: "Locks unreadable condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1107,7 +1107,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "malformed_plan_step_evidence",
-    meaning: "Indicates malformed plan step evidence.",
+    meaning: "Malformed plan step evidence condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1118,7 +1118,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "manifest_capabilities_absent",
-    meaning: "Indicates manifest capabilities absent.",
+    meaning: "Manifest capabilities absent condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1129,7 +1129,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "merge_conflict_markers_detected",
-    meaning: "Indicates merge conflict markers detected.",
+    meaning: "Merge conflict markers detected condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1140,7 +1140,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "merge_git_config_unwritable",
-    meaning: "Indicates merge git config unwritable.",
+    meaning: "Merge git config unwritable condition.",
     stability: "stable",
     exit_code: 5,
     class: "dependency_failed",
@@ -1151,7 +1151,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "merge_root_not_found",
-    meaning: "Indicates merge root not found.",
+    meaning: "Merge root not found condition.",
     stability: "stable",
     exit_code: 3,
     class: "not_found",
@@ -1162,7 +1162,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "missing_directory",
-    meaning: "Indicates missing directory.",
+    meaning: "Missing directory condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1173,7 +1173,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "missing_lifecycle_target",
-    meaning: "Indicates missing lifecycle target.",
+    meaning: "Missing lifecycle target condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1184,7 +1184,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "missing_required_argument",
-    meaning: "Indicates missing required argument.",
+    meaning: "Missing required argument condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1202,7 +1202,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "missing_required_option",
-    meaning: "Indicates missing required option.",
+    meaning: "Missing required option condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1215,11 +1215,11 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "sdk/lifecycle/create.ts",
       "sdk/lifecycle/plan.ts",
     ],
-    emitting_commands: ["create", "plan"],
+    emitting_commands: ["*", "create", "plan"],
   },
   {
     code: "module_import_failed",
-    meaning: "Indicates module import failed.",
+    meaning: "Module import failed condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1230,7 +1230,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "multi_target_github_install_ambiguous",
-    meaning: "Indicates multi target github install ambiguous.",
+    meaning: "Multi target github install ambiguous condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1241,7 +1241,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "mutation_author_required",
-    meaning: "Indicates mutation author required.",
+    meaning: "Mutation author required condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1252,7 +1252,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "mutation_secret_guard_blocked",
-    meaning: "Indicates mutation secret guard blocked.",
+    meaning: "Mutation secret guard blocked condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -1263,7 +1263,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "no_matching_tests",
-    meaning: "Indicates no matching tests.",
+    meaning: "No matching tests condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1274,7 +1274,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "no_projects_matched_filters",
-    meaning: "Indicates no projects matched filters.",
+    meaning: "No projects matched filters condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1285,7 +1285,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "no_test_files_found",
-    meaning: "Indicates no test files found.",
+    meaning: "No test files found condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1296,7 +1296,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "no_tests_found",
-    meaning: "Indicates no tests found.",
+    meaning: "No tests found condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1307,7 +1307,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "no_update_fields",
-    meaning: "Indicates no update fields.",
+    meaning: "No update fields condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1318,7 +1318,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "npm_package_not_found",
-    meaning: "Indicates npm package not found.",
+    meaning: "Npm package not found condition.",
     stability: "stable",
     exit_code: 3,
     class: "not_found",
@@ -1329,7 +1329,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "ownership_conflict",
-    meaning: "Indicates ownership conflict.",
+    meaning: "Ownership conflict condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -1344,7 +1344,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "ownership_dependency_bypass_restricted_options",
-    meaning: "Indicates ownership dependency bypass restricted options.",
+    meaning: "Ownership dependency bypass restricted options condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1355,7 +1355,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "ownership_metadata_bypass_restricted_options",
-    meaning: "Indicates ownership metadata bypass restricted options.",
+    meaning: "Ownership metadata bypass restricted options condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1366,7 +1366,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "package_spec_empty",
-    meaning: "Indicates package spec empty.",
+    meaning: "Package spec empty condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1377,7 +1377,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "profile_name_empty",
-    meaning: "Indicates profile name empty.",
+    meaning: "Profile name empty condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1388,7 +1388,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "profile_name_not_normalized",
-    meaning: "Indicates profile name not normalized.",
+    meaning: "Profile name not normalized condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1399,7 +1399,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "profile_summary_empty",
-    meaning: "Indicates profile summary empty.",
+    meaning: "Profile summary empty condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1410,7 +1410,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "profile_title_empty",
-    meaning: "Indicates profile title empty.",
+    meaning: "Profile title empty condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1421,7 +1421,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "redundant_edge",
-    meaning: "Indicates redundant edge.",
+    meaning: "Redundant edge condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1432,7 +1432,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "reindex_already_running",
-    meaning: "Indicates reindex already running.",
+    meaning: "Reindex already running condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -1443,7 +1443,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "reserved_item_field",
-    meaning: "Indicates reserved item field.",
+    meaning: "Reserved item field condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1454,7 +1454,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "schema_migration_input_required",
-    meaning: "Indicates schema migration input required.",
+    meaning: "Schema migration input required condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1465,7 +1465,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "settings_read_fs_error",
-    meaning: "Indicates settings read fs error.",
+    meaning: "Settings read fs error condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1476,7 +1476,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "settings_read_invalid_json",
-    meaning: "Indicates settings read invalid json.",
+    meaning: "Settings read invalid json condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1487,7 +1487,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "settings_read_invalid_schema",
-    meaning: "Indicates settings read invalid schema.",
+    meaning: "Settings read invalid schema condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1498,7 +1498,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "settings_read_merge_failed",
-    meaning: "Indicates settings read merge failed.",
+    meaning: "Settings read merge failed condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1509,7 +1509,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "status_duplicate",
-    meaning: "Indicates status duplicate.",
+    meaning: "Status duplicate condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1520,7 +1520,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "status_invalid",
-    meaning: "Indicates status invalid.",
+    meaning: "Status invalid condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1531,7 +1531,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "stdin_json_invalid",
-    meaning: "Indicates stdin json invalid.",
+    meaning: "Stdin json invalid condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1542,7 +1542,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "stdin_json_unknown_key",
-    meaning: "Indicates stdin json unknown key.",
+    meaning: "Stdin json unknown key condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1553,7 +1553,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "structured_event_immutable",
-    meaning: "Indicates structured event immutable.",
+    meaning: "Structured event immutable condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1564,7 +1564,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "structured_event_input_conflict",
-    meaning: "Indicates structured event input conflict.",
+    meaning: "Structured event input conflict condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1575,7 +1575,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "structured_event_json_empty",
-    meaning: "Indicates structured event json empty.",
+    meaning: "Structured event json empty condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1586,7 +1586,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "structured_event_json_invalid",
-    meaning: "Indicates structured event json invalid.",
+    meaning: "Structured event json invalid condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1597,7 +1597,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "structured_event_since_invalid",
-    meaning: "Indicates structured event since invalid.",
+    meaning: "Structured event since invalid condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1608,7 +1608,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "telemetry_endpoint_probe_failed",
-    meaning: "Indicates telemetry endpoint probe failed.",
+    meaning: "Telemetry endpoint probe failed condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1619,7 +1619,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "telemetry_endpoint_probe_http_status",
-    meaning: "Indicates telemetry endpoint probe http status.",
+    meaning: "Telemetry endpoint probe http status condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1630,7 +1630,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "telemetry_otel_export_failing",
-    meaning: "Indicates telemetry otel export failing.",
+    meaning: "Telemetry otel export failing condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1641,7 +1641,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "telemetry_queue_high_retries",
-    meaning: "Indicates telemetry queue high retries.",
+    meaning: "Telemetry queue high retries condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1652,7 +1652,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "telemetry_queue_invalid_rows",
-    meaning: "Indicates telemetry queue invalid rows.",
+    meaning: "Telemetry queue invalid rows condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1663,7 +1663,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "telemetry_queue_pending",
-    meaning: "Indicates telemetry queue pending.",
+    meaning: "Telemetry queue pending condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1674,7 +1674,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "telemetry_schema_version_behind",
-    meaning: "Indicates telemetry schema version behind.",
+    meaning: "Telemetry schema version behind condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1685,7 +1685,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "telemetry_state_invalid_json",
-    meaning: "Indicates telemetry state invalid json.",
+    meaning: "Telemetry state invalid json condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1696,7 +1696,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "template_type_unknown",
-    meaning: "Indicates template type unknown.",
+    meaning: "Template type unknown condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1707,7 +1707,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "terminal_plan_mutation",
-    meaning: "Indicates terminal plan mutation.",
+    meaning: "Terminal plan mutation condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -1718,7 +1718,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "terminal_state_conflict",
-    meaning: "Indicates terminal state conflict.",
+    meaning: "Terminal state conflict condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -1729,7 +1729,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "tracked_runtime_cache_files",
-    meaning: "Indicates tracked runtime cache files.",
+    meaning: "Tracked runtime cache files condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1740,7 +1740,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "tracker_not_initialized",
-    meaning: "Indicates tracker not initialized.",
+    meaning: "Tracker not initialized condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1751,7 +1751,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "tracker_root_missing",
-    meaning: "Indicates tracker root missing.",
+    meaning: "Tracker root missing condition.",
     stability: "stable",
     exit_code: 3,
     class: "not_found",
@@ -1762,7 +1762,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "tracker_root_not_directory",
-    meaning: "Indicates tracker root not directory.",
+    meaning: "Tracker root not directory condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1773,7 +1773,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "type_duplicate",
-    meaning: "Indicates type duplicate.",
+    meaning: "Type duplicate condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1784,7 +1784,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "type_invalid",
-    meaning: "Indicates type invalid.",
+    meaning: "Type invalid condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1795,7 +1795,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_command",
-    meaning: "Indicates unknown command.",
+    meaning: "Unknown command condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1810,7 +1810,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_context_intent",
-    meaning: "Indicates unknown context intent.",
+    meaning: "Unknown context intent condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1821,10 +1821,10 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_error",
-    meaning: "Indicates unknown error.",
+    meaning: "Unknown error condition.",
     stability: "stable",
-    exit_code: 2,
-    class: "usage",
+    exit_code: 1,
+    class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
@@ -1832,7 +1832,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_field",
-    meaning: "Indicates unknown field.",
+    meaning: "Unknown field condition.",
     stability: "stable",
     exit_code: 3,
     class: "not_found",
@@ -1843,7 +1843,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_field_projection",
-    meaning: "Indicates unknown field projection.",
+    meaning: "Unknown field projection condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1854,7 +1854,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_item_type",
-    meaning: "Indicates unknown item type.",
+    meaning: "Unknown item type condition.",
     stability: "stable",
     exit_code: 3,
     class: "not_found",
@@ -1865,7 +1865,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_lifecycle_action",
-    meaning: "Indicates unknown lifecycle action.",
+    meaning: "Unknown lifecycle action condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1876,7 +1876,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_option",
-    meaning: "Indicates unknown option.",
+    meaning: "Unknown option condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1887,7 +1887,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_plan_template",
-    meaning: "Indicates unknown plan template.",
+    meaning: "Unknown plan template condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1898,7 +1898,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_provenance_dimension",
-    meaning: "Indicates unknown provenance dimension.",
+    meaning: "Unknown provenance dimension condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1909,7 +1909,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_status",
-    meaning: "Indicates unknown status.",
+    meaning: "Unknown status condition.",
     stability: "stable",
     exit_code: 3,
     class: "not_found",
@@ -1920,7 +1920,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unknown_subcommand",
-    meaning: "Indicates unknown subcommand.",
+    meaning: "Unknown subcommand condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -1936,7 +1936,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "unsupported_update_option",
-    meaning: "Indicates unsupported update option.",
+    meaning: "Unsupported update option condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1947,7 +1947,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_command_references_stale_pm_ids",
-    meaning: "Indicates validate command references stale pm ids.",
+    meaning: "Validate command references stale pm ids condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1958,7 +1958,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_files_missing_linked_paths",
-    meaning: "Indicates validate files missing linked paths.",
+    meaning: "Validate files missing linked paths condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1969,7 +1969,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_files_orphaned_paths",
-    meaning: "Indicates validate files orphaned paths.",
+    meaning: "Validate files orphaned paths condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1980,7 +1980,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_files_tracked_all_strict_forces_pm_internals",
-    meaning: "Indicates validate files tracked all strict forces pm internals.",
+    meaning: "Validate files tracked all strict forces pm internals condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -1991,7 +1991,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_format_version_ahead_items",
-    meaning: "Indicates validate format version ahead items.",
+    meaning: "Validate format version ahead items condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2002,7 +2002,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_format_version_outdated_items",
-    meaning: "Indicates validate format version outdated items.",
+    meaning: "Validate format version outdated items condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2013,7 +2013,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_hierarchy_parent_cycle",
-    meaning: "Indicates validate hierarchy parent cycle.",
+    meaning: "Validate hierarchy parent cycle condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2024,7 +2024,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_hierarchy_parent_cycle_error",
-    meaning: "Indicates validate hierarchy parent cycle error.",
+    meaning: "Validate hierarchy parent cycle error condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2035,7 +2035,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_history_drift_chain_mismatches",
-    meaning: "Indicates validate history drift chain mismatches.",
+    meaning: "Validate history drift chain mismatches condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2046,7 +2046,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_history_drift_hash_mismatches",
-    meaning: "Indicates validate history drift hash mismatches.",
+    meaning: "Validate history drift hash mismatches condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2057,7 +2057,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_history_drift_missing_streams",
-    meaning: "Indicates validate history drift missing streams.",
+    meaning: "Validate history drift missing streams condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2068,7 +2068,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_history_drift_unreadable_streams",
-    meaning: "Indicates validate history drift unreadable streams.",
+    meaning: "Validate history drift unreadable streams condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2079,7 +2079,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_history_unknown_author_events",
-    meaning: "Indicates validate history unknown author events.",
+    meaning: "Validate history unknown author events condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -2090,7 +2090,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_lifecycle_active_closure_like_metadata",
-    meaning: "Indicates validate lifecycle active closure like metadata.",
+    meaning: "Validate lifecycle active closure like metadata condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2101,7 +2101,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_lifecycle_active_terminal_parent",
-    meaning: "Indicates validate lifecycle active terminal parent.",
+    meaning: "Validate lifecycle active terminal parent condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2112,7 +2112,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_lifecycle_dependency_cycles",
-    meaning: "Indicates validate lifecycle dependency cycles.",
+    meaning: "Validate lifecycle dependency cycles condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2123,7 +2123,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_lifecycle_dependency_cycles_error",
-    meaning: "Indicates validate lifecycle dependency cycles error.",
+    meaning: "Validate lifecycle dependency cycles error condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2134,7 +2134,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_lifecycle_stale_blockers",
-    meaning: "Indicates validate lifecycle stale blockers.",
+    meaning: "Validate lifecycle stale blockers condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2145,7 +2145,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_merge_fence_drift",
-    meaning: "Indicates validate merge fence drift.",
+    meaning: "Validate merge fence drift condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2157,7 +2157,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   {
     code: "validate_metadata_custom_profile_missing_required_fields",
     meaning:
-      "Indicates validate metadata custom profile missing required fields.",
+      "Validate metadata custom profile missing required fields condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -2168,7 +2168,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_metadata_duplicate_issue_codes",
-    meaning: "Indicates validate metadata duplicate issue codes.",
+    meaning: "Validate metadata duplicate issue codes condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2179,7 +2179,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_metadata_missing_acceptance_criteria",
-    meaning: "Indicates validate metadata missing acceptance criteria.",
+    meaning: "Validate metadata missing acceptance criteria condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2190,7 +2190,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_metadata_missing_close_reason",
-    meaning: "Indicates validate metadata missing close reason.",
+    meaning: "Validate metadata missing close reason condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2201,7 +2201,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_metadata_missing_confidence",
-    meaning: "Indicates validate metadata missing confidence.",
+    meaning: "Validate metadata missing confidence condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2212,7 +2212,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_metadata_missing_estimate",
-    meaning: "Indicates validate metadata missing estimate.",
+    meaning: "Validate metadata missing estimate condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2223,7 +2223,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_metadata_missing_release",
-    meaning: "Indicates validate metadata missing release.",
+    meaning: "Validate metadata missing release condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2234,7 +2234,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_metadata_missing_reviewer",
-    meaning: "Indicates validate metadata missing reviewer.",
+    meaning: "Validate metadata missing reviewer condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2245,7 +2245,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_metadata_missing_risk",
-    meaning: "Indicates validate metadata missing risk.",
+    meaning: "Validate metadata missing risk condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2256,7 +2256,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_metadata_missing_sprint",
-    meaning: "Indicates validate metadata missing sprint.",
+    meaning: "Validate metadata missing sprint condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2267,7 +2267,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_resolution_missing_fields",
-    meaning: "Indicates validate resolution missing fields.",
+    meaning: "Validate resolution missing fields condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2278,7 +2278,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_storage_duplicate_item_ids",
-    meaning: "Indicates validate storage duplicate item ids.",
+    meaning: "Validate storage duplicate item ids condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2289,7 +2289,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_storage_history_conflict_markers",
-    meaning: "Indicates validate storage history conflict markers.",
+    meaning: "Validate storage history conflict markers condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -2300,7 +2300,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_storage_resurrected_items",
-    meaning: "Indicates validate storage resurrected items.",
+    meaning: "Validate storage resurrected items condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2311,7 +2311,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_storage_tracked_runtime_cache_files",
-    meaning: "Indicates validate storage tracked runtime cache files.",
+    meaning: "Validate storage tracked runtime cache files condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2322,7 +2322,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_storage_unparseable_config",
-    meaning: "Indicates validate storage unparseable config.",
+    meaning: "Validate storage unparseable config condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2333,7 +2333,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_storage_unparseable_history",
-    meaning: "Indicates validate storage unparseable history.",
+    meaning: "Validate storage unparseable history condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2344,7 +2344,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "validate_storage_unreadable_items",
-    meaning: "Indicates validate storage unreadable items.",
+    meaning: "Validate storage unreadable items condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2355,7 +2355,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "vectorization_embedding_identity_changed",
-    meaning: "Indicates vectorization embedding identity changed.",
+    meaning: "Vectorization embedding identity changed condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2366,7 +2366,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "vectorization_stale_items_remaining",
-    meaning: "Indicates vectorization stale items remaining.",
+    meaning: "Vectorization stale items remaining condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2377,7 +2377,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "workflow_duplicate_type",
-    meaning: "Indicates workflow duplicate type.",
+    meaning: "Workflow duplicate type condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2388,7 +2388,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "workflow_status_unknown",
-    meaning: "Indicates workflow status unknown.",
+    meaning: "Workflow status unknown condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -2399,7 +2399,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "workflow_transition_malformed",
-    meaning: "Indicates workflow transition malformed.",
+    meaning: "Workflow transition malformed condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2410,7 +2410,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "workflow_type_empty",
-    meaning: "Indicates workflow type empty.",
+    meaning: "Workflow type empty condition.",
     stability: "stable",
     exit_code: 1,
     class: "generic_failure",
@@ -2421,7 +2421,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "workflow_type_unknown",
-    meaning: "Indicates workflow type unknown.",
+    meaning: "Workflow type unknown condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -2432,7 +2432,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "workspace_history_state_conflict",
-    meaning: "Indicates workspace history state conflict.",
+    meaning: "Workspace history state conflict condition.",
     stability: "stable",
     exit_code: 4,
     class: "conflict",
@@ -2443,7 +2443,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "workspace_root_pm_path",
-    meaning: "Indicates workspace root pm path.",
+    meaning: "Workspace root pm path condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
@@ -2454,7 +2454,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "workspace_snapshot_force_required",
-    meaning: "Indicates workspace snapshot force required.",
+    meaning: "Workspace snapshot force required condition.",
     stability: "provisional",
     exit_code: 2,
     class: "usage",
@@ -2465,7 +2465,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "workspace_snapshot_manifest_mismatch",
-    meaning: "Indicates workspace snapshot manifest mismatch.",
+    meaning: "Workspace snapshot manifest mismatch condition.",
     stability: "provisional",
     exit_code: 4,
     class: "conflict",
@@ -2476,7 +2476,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "workspace_snapshot_name_reserved_fingerprint",
-    meaning: "Indicates workspace snapshot name reserved fingerprint.",
+    meaning: "Workspace snapshot name reserved fingerprint condition.",
     stability: "provisional",
     exit_code: 2,
     class: "usage",
@@ -2487,7 +2487,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "workspace_snapshot_not_found",
-    meaning: "Indicates workspace snapshot not found.",
+    meaning: "Workspace snapshot not found condition.",
     stability: "provisional",
     exit_code: 3,
     class: "not_found",
@@ -2498,7 +2498,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   },
   {
     code: "wrong_item_type",
-    meaning: "Indicates wrong item type.",
+    meaning: "Wrong item type condition.",
     stability: "stable",
     exit_code: 2,
     class: "usage",
