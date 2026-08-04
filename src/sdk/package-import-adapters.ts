@@ -33,7 +33,6 @@ import { PmCliError } from "../core/shared/errors.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { nowIso } from "../core/shared/time.js";
 import type {
-  Dependency,
   ConfidenceTextLevel,
   ItemDocument,
   ItemMetadata,

@@ -1863,11 +1863,10 @@ describe("runValidate", () => {
 
   it("keeps default resolution diagnostics compact and expands them with verbose diagnostics", async () => {
     await withTempPmPath(async (context) => {
-      const closedIds: string[] = [];
-      for (let index = 0; index < 7; index += 1) {
+      const closedItemCount = 7;
+      for (let index = 0; index < closedItemCount; index += 1) {
         const id = createTask(context, `validate-resolution-gap-${index}`);
         await runClose(id, "done", {}, { path: context.pmPath });
-        closedIds.push(id);
       }
 
       const compact = await runValidate({ checkResolution: true }, { path: context.pmPath });
@@ -1888,7 +1887,7 @@ describe("runValidate", () => {
         missing_resolution_remediation_hints: string[];
         missing_resolution_remediation_hints_truncated: boolean;
       };
-      expect(verboseDetails.missing_resolution_remediation_hints).toHaveLength(closedIds.length);
+      expect(verboseDetails.missing_resolution_remediation_hints).toHaveLength(closedItemCount);
       expect(verboseDetails.missing_resolution_remediation_hints_truncated).toBe(false);
     });
   });

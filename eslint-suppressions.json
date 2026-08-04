@@ -163,11 +163,6 @@
       "count": 4
     }
   },
-  "src/core/shared/constants.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "src/core/shared/levenshtein.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
@@ -178,16 +173,6 @@
       "count": 1
     },
     "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "src/core/store/item-store.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/core/store/settings.ts": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
@@ -262,11 +247,6 @@
       "count": 1
     }
   },
-  "src/sdk/package-import-adapters.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "src/sdk/profile.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
@@ -324,9 +304,6 @@
     }
   },
   "tests/integration/release-readiness-runtime.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     }
@@ -337,9 +314,6 @@
     }
   },
   "tests/unit/commands/contracts-command.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
       "count": 4
     }
@@ -357,15 +331,7 @@
       "count": 1
     }
   },
-  "tests/unit/commands/register-commands.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "tests/unit/commands/test-all-command.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     }
@@ -375,22 +341,7 @@
       "count": 3
     }
   },
-  "tests/unit/core/history/history-diff.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "tests/unit/core/lock/lock-gc.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "tests/unit/core/schema/runtime-field-values.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "tests/unit/core/schema/runtime-schema-command-flags.spec.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -405,11 +356,6 @@
       "count": 4
     }
   },
-  "tests/unit/docs-examples/policy-restricted-extension.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "tests/unit/docs-examples/sdk-app-embedding.spec.ts": {
     "complexity": {
       "count": 1
@@ -417,11 +363,6 @@
   },
   "tests/unit/docs-examples/sdk-contract-consumer.spec.ts": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "tests/unit/docs-examples/starter-extension.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },

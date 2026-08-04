@@ -32,11 +32,6 @@ function makeLockPayload(overrides: {
   );
 }
 
-/** epoch-ms for a timestamp N seconds in the past */
-function msAgo(seconds: number): number {
-  return Date.now() - seconds * 1000;
-}
-
 // ---------------------------------------------------------------------------
 // Setup/teardown
 // ---------------------------------------------------------------------------

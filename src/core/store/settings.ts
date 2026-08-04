@@ -42,7 +42,6 @@ import type {
   ExtensionSandboxProfile,
   ExtensionPolicyMode,
   ExtensionPolicyOverrideSettings,
-  ExtensionPolicySettings,
   ExtensionTrustMode,
   GovernanceSettings,
   ItemTypeDefinition,

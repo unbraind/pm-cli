@@ -770,11 +770,7 @@ describe("CLI bootstrap and usage helper tails", () => {
     const repeated = coalesceRepeatedListFlags(["--title", "--literal-flag"], new Set(["--tag"]), new Set(["--title"]));
     expect(repeated.argv).toEqual(["--title", "--literal-flag"]);
 
-    const normalized = normalizeBootstrapInvocation(["create", "--titel", "x"], {
-      knownFlags: ["--title", "--tile"],
-      listFlags: [],
-      valueConsumingFlags: [],
-    });
+    const normalized = normalizeBootstrapInvocation(["create", "--titel", "x"]);
     expect(normalized.trace.some((event) => event.reason === "flag_typo")).toBe(true);
 
     expect(stripGlobalBootstrapTokens(["create", "--title", "x"], new Set(["--json"]))).toEqual(["create", "--title", "x"]);

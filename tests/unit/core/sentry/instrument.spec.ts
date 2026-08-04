@@ -28,6 +28,14 @@ const {
 } = _testOnly;
 let sentryLoaderMock: ReturnType<typeof vi.fn>;
 
+function requireSentryInitOptions<T>(): T {
+  const options = sentryNodeMock.init.mock.calls[0]?.[0];
+  if (options === undefined) {
+    throw new Error("Expected Sentry.init to receive options");
+  }
+  return options as T;
+}
+
 describe("instrument residual branches", () => {
   const originalEnv = { ...process.env };
 
@@ -84,10 +92,10 @@ describe("instrument residual branches", () => {
     await ensureSentryInit();
 
     expect(rootMock.resolvePmCliVersion).toHaveBeenCalled();
-    const options = sentryNodeMock.init.mock.calls[0]?.[0] as {
+    const options = requireSentryInitOptions<{
       release: string;
       beforeSend: (event: Record<string, unknown>) => Record<string, unknown> | null;
-    };
+    }>();
     expect(options.release).toBe("pm-cli@0.0.0");
 
     // Drive scrubStackFrame with a post_context array that mixes strings and
@@ -124,10 +132,10 @@ describe("instrument residual branches", () => {
 
   it("leaves message-less / data-less breadcrumbs and falsy contexts untouched in the transaction and breadcrumb hooks", async () => {
     await ensureSentryInit();
-    const options = sentryNodeMock.init.mock.calls[0]?.[0] as {
+    const options = requireSentryInitOptions<{
       beforeSendTransaction: (event: Record<string, unknown>) => Record<string, unknown>;
       beforeBreadcrumb: (breadcrumb: Record<string, unknown>) => Record<string, unknown> | null;
-    };
+    }>();
 
     // beforeSendTransaction: a surviving breadcrumb with neither message nor
     // data (skips both the message-scrub and data-scrub branches), plus a
@@ -152,9 +160,9 @@ describe("instrument residual branches", () => {
 
   it("leaves message-less / data-less breadcrumbs and falsy contexts untouched in beforeSend", async () => {
     await ensureSentryInit();
-    const options = sentryNodeMock.init.mock.calls[0]?.[0] as {
+    const options = requireSentryInitOptions<{
       beforeSend: (event: Record<string, unknown>) => Record<string, unknown> | null;
-    };
+    }>();
 
     // beforeSend breadcrumb loop: a breadcrumb with neither message nor data
     // (skips both inner scrubs) plus an event.contexts map with a falsy entry

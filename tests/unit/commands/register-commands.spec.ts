@@ -339,7 +339,6 @@ import {
   SETTINGS_DEFAULTS,
 } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { writeSettings } from "../../../src/core/store/settings.js";
 
 let tmpRoot: string;
 
