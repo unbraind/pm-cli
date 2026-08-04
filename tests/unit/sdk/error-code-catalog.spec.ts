@@ -38,6 +38,8 @@ describe("error code catalog", () => {
     ).toMatchObject({
       exit_code: 2,
       stability: "stable",
+      class: "usage",
+      emitting_commands: ["help"],
     });
   });
 
