@@ -10,8 +10,71 @@ import { importExampleScript, resetExampleScriptHarness } from "./example-script
 afterEach(resetExampleScriptHarness);
 
 const SCRIPT = "docs/examples/sdk-contract-consumer/inspect-contracts.mjs";
+const RECEIPT_SCRIPT =
+  "docs/examples/sdk-contract-consumer/parse-receipt.mjs";
 
 describe("sdk-contract-consumer example", () => {
+  it("covers mutation receipt success and subprocess failures", async () => {
+    const outputSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+    vi.doMock("@unbrained/pm-cli/sdk", () => ({
+      parseMutationReceipt: vi.fn(() => ({
+        id: "pm-example",
+        status: "open",
+        changedFieldCount: 1,
+      })),
+    }));
+    vi.doMock("node:child_process", () => ({
+      spawnSync: vi.fn(() => ({
+        status: 0,
+        stdout: '{"id":"pm-example"}',
+        stderr: "",
+      })),
+    }));
+    await importExampleScript(RECEIPT_SCRIPT, "receiptSuccess");
+    expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain(
+      '"changedFieldCount": 1',
+    );
+
+    vi.resetModules();
+    vi.doMock("node:child_process", () => ({
+      spawnSync: vi.fn(() => ({
+        error: new Error("spawn pm ENOENT"),
+        status: null,
+        stdout: "",
+        stderr: "",
+      })),
+    }));
+    await expect(
+      importExampleScript(RECEIPT_SCRIPT, "receiptSpawnFailure"),
+    ).rejects.toThrow("Failed to run pm create: spawn pm ENOENT");
+
+    vi.resetModules();
+    vi.doMock("node:child_process", () => ({
+      spawnSync: vi.fn(() => ({
+        status: 4,
+        stdout: "",
+        stderr: "create conflict",
+      })),
+    }));
+    await expect(
+      importExampleScript(RECEIPT_SCRIPT, "receiptCommandFailure"),
+    ).rejects.toThrow("create conflict");
+
+    vi.resetModules();
+    vi.doMock("node:child_process", () => ({
+      spawnSync: vi.fn(() => ({
+        status: 5,
+        stdout: "",
+        stderr: "",
+      })),
+    }));
+    await expect(
+      importExampleScript(RECEIPT_SCRIPT, "receiptStatusFailure"),
+    ).rejects.toThrow("pm create failed with 5");
+  });
+
   it("covers inspect-contracts script branches with mocked contract responses", async () => {
     vi.doUnmock("@unbrained/pm-cli/sdk");
     const outputSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);

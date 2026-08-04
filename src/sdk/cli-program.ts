@@ -23,7 +23,10 @@ export function createPmCliProgram(version: string): Command {
       },
       writeErr: () => {},
     })
-    .option("--json", "Output JSON instead of TOON")
+    .option(
+      "--json",
+      "Output JSON instead of TOON; mutations emit a flat receipt with top-level id/status/changed_field_count while reads use documented entity or collection envelopes",
+    )
     .option("--lean", "Omit null and empty containers from JSON output")
     .option(
       "--token-accounting",

@@ -75,8 +75,21 @@ The default summary stays bounded. Larger intent and error catalogs are emitted 
 - the stable snake-case code;
 - meaning and stability;
 - CLI exit code;
+- semantic exit class (`generic_failure`, `usage`, `not_found`, `conflict`, or `dependency_failed`);
 - recovery guidance;
 - source modules that emit the code.
+- inferred CLI command roots (`*` for cross-cutting runtime failures).
+
+Existing catalog entries are recorded in `scripts/error-code-stability.json`.
+The generator refuses to remove one of those stable codes unless the reviewed
+compatibility ledger is changed explicitly. Newly discovered codes are emitted
+as provisional until deliberately promoted, so adding a runtime declaration
+does not accidentally promise permanent compatibility.
+
+`PM_ERROR_CODE_EXIT_CLASS_CONTRACTS` is the portable shell taxonomy: exit 1 is
+generic failure, 2 is usage, 3 is not-found, 4 is conflict, and 5 is dependency
+failure. Catalog validation rejects a code whose declared semantic class and
+transport exit disagree.
 
 Run the drift gate after adding or removing a structured error:
 

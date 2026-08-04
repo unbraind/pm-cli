@@ -26,26 +26,20 @@ describe("workspace snapshot CLI integration", () => {
       );
       expect(named.code).toBe(0);
       expect(
-        (named.json as { manifest: { fingerprint: string } }).manifest.fingerprint,
+        (named.json as { manifest: { fingerprint: string } }).manifest
+          .fingerprint,
       ).toBe(fingerprint);
 
       const inspected = await context.runCliInProcess(
         ["workspace", "snapshot", "inspect", "baseline", "--json"],
         { expectJson: true },
       );
-      expect(
-        (inspected.json as { fingerprint: string }).fingerprint,
-      ).toBe(fingerprint);
+      expect((inspected.json as { fingerprint: string }).fingerprint).toBe(
+        fingerprint,
+      );
 
       const preview = await context.runCliInProcess(
-        [
-          "workspace",
-          "snapshot",
-          "restore",
-          "baseline",
-          "--dry-run",
-          "--json",
-        ],
+        ["workspace", "snapshot", "restore", "baseline", "--dry-run", "--json"],
         { expectJson: true },
       );
       expect(preview.code).toBe(0);
@@ -83,14 +77,7 @@ describe("workspace snapshot CLI integration", () => {
         (restored.json as { audit_operation: string }).audit_operation,
       ).toBe("workspace_snapshot_restore");
       const defaultAuthorRestore = await context.runCliInProcess(
-        [
-          "workspace",
-          "snapshot",
-          "restore",
-          "baseline",
-          "--force",
-          "--json",
-        ],
+        ["workspace", "snapshot", "restore", "baseline", "--force", "--json"],
         { expectJson: true },
       );
       expect(defaultAuthorRestore.code).toBe(0);
@@ -124,6 +111,22 @@ describe("workspace snapshot CLI integration", () => {
       ]);
       expect(missingTarget.code).not.toBe(0);
       expect(missingTarget.stderr).toContain("requires a snapshot name");
+
+      const invalidTarget = await context.runCliInProcess([
+        "workspace",
+        "snapshot",
+        "inspect",
+        "INVALID TARGET",
+        "--json",
+      ]);
+      expect(invalidTarget.code).toBe(2);
+      expect(JSON.parse(invalidTarget.stderr)).toMatchObject({
+        code: "invalid_workspace_snapshot_target",
+        exit_code: 2,
+        recovery: {
+          suggested_retry: "pm workspace snapshot list --json",
+        },
+      });
 
       const unknown = await context.runCliInProcess([
         "workspace",

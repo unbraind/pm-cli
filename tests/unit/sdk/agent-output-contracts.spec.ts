@@ -3,6 +3,7 @@ import {
   PM_COMMAND_OUTPUT_BUDGET_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   PM_OUTPUT_DEGRADATION_STEPS,
+  createPmCommandOutputBudget,
   definePmCommandOutputBudget,
   estimatePmOutputTokens,
   resolvePmCommandOutputBudget,
@@ -15,16 +16,18 @@ describe("agent output contracts", () => {
     );
     expect(
       new Set(
-        PM_COMMAND_OUTPUT_BUDGET_CONTRACTS.map(
-          (contract) => contract.command,
-        ),
+        PM_COMMAND_OUTPUT_BUDGET_CONTRACTS.map((contract) => contract.command),
       ).size,
     ).toBe(PM_CORE_COMMAND_NAMES.length);
     for (const contract of PM_COMMAND_OUTPUT_BUDGET_CONTRACTS) {
       expect(contract.default_max_estimated_tokens).toBeGreaterThan(0);
-      expect(contract.degradation_ladder).toEqual(
-        PM_OUTPUT_DEGRADATION_STEPS,
+      expect(contract.default_max_estimated_tokens_by_format.toon).toBe(
+        contract.default_max_estimated_tokens,
       );
+      expect(
+        contract.default_max_estimated_tokens_by_format.json,
+      ).toBeGreaterThan(contract.default_max_estimated_tokens);
+      expect(contract.degradation_ladder).toEqual(PM_OUTPUT_DEGRADATION_STEPS);
       expect(contract.allows_unbounded_opt_out).toBe(true);
       expect(contract.token_estimate).toBe("ceil(utf8_bytes / 4)");
     }
@@ -36,6 +39,15 @@ describe("agent output contracts", () => {
       budget_class: "discovery",
     });
     expect(resolvePmCommandOutputBudget("unknown")).toBeNull();
+    expect(
+      resolvePmCommandOutputBudget("package-custom report", {
+        generateFallback: true,
+      }),
+    ).toMatchObject({
+      command: "package-custom report",
+      budget_class: "read",
+      default_max_estimated_tokens_by_format: { toon: 4000, json: 6000 },
+    });
     expect(estimatePmOutputTokens(0)).toBe(0);
     expect(estimatePmOutputTokens(5)).toBe(2);
     expect(estimatePmOutputTokens(-4)).toBe(0);
@@ -46,6 +58,7 @@ describe("agent output contracts", () => {
       command: "get",
       budget_class: "read",
       default_max_estimated_tokens: 800,
+      default_max_estimated_tokens_by_format: { toon: 800, json: 1200 },
       degradation_ladder: ["compact", "summary"],
       allows_unbounded_opt_out: false,
       token_estimate: "ceil(utf8_bytes / 4)",
@@ -63,6 +76,7 @@ describe("agent output contracts", () => {
           command: "get",
           budget_class: "read",
           default_max_estimated_tokens: defaultMaxEstimatedTokens,
+          default_max_estimated_tokens_by_format: { toon: 800, json: 1200 },
           degradation_ladder: ["summary"],
           allows_unbounded_opt_out: false,
           token_estimate: "ceil(utf8_bytes / 4)",
@@ -74,4 +88,21 @@ describe("agent output contracts", () => {
       );
     },
   );
+
+  it("rejects invalid format budgets and empty generated command paths", () => {
+    expect(() =>
+      definePmCommandOutputBudget({
+        command: "get",
+        budget_class: "read",
+        default_max_estimated_tokens: 800,
+        default_max_estimated_tokens_by_format: { toon: 0, json: 1200 },
+        degradation_ladder: ["summary"],
+        allows_unbounded_opt_out: false,
+        token_estimate: "ceil(utf8_bytes / 4)",
+      }),
+    ).toThrow("default_max_estimated_tokens_by_format.toon");
+    expect(() => createPmCommandOutputBudget(" ")).toThrow(
+      "command must be a non-empty command path",
+    );
+  });
 });

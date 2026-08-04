@@ -6,6 +6,7 @@ This example shows how to consume `pm` contracts programmatically in a script an
 
 - `package.json` -> installs `@unbrained/pm-cli` and script aliases
 - `inspect-contracts.mjs` -> loads contracts + SDK helpers and prints required/optional parameter metadata
+- `parse-receipt.mjs` -> executes a real create and parses its flat mutation receipt with the SDK
 
 ## Run
 
@@ -20,6 +21,7 @@ npm install "$PM_CLI_REPO_ROOT"
 # npm install @unbrained/pm-cli@latest
 
 node inspect-contracts.mjs create
+npm run parse:receipt
 ```
 
 Expected output shape:
@@ -27,7 +29,14 @@ Expected output shape:
 ```json
 {
   "action": "create",
-  "required_parameters": ["title", "description", "type", "status", "priority", "message"],
+  "required_parameters": [
+    "title",
+    "description",
+    "type",
+    "status",
+    "priority",
+    "message"
+  ],
   "optional_parameters": ["template", "createMode", "schedulePreset"],
   "any_of_required_groups": [],
   "runtime_available": true,
@@ -55,3 +64,4 @@ node inspect-contracts.mjs extension-reload
 - Uses `PM_TOOL_ACTION_PARAMETER_CONTRACTS` for deterministic required/optional metadata.
 - Uses runtime `pm contracts --json` so extension-provided actions and command availability are reflected.
 - Includes policy-state and compatibility metadata so CI/app callers can gate behavior during v1 -> v2 migrations.
+- Uses `parseMutationReceipt()` at the process boundary instead of guessing that mutation output has the read-only `{ item: ... }` wrapper.

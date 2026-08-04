@@ -17,17 +17,17 @@ pm guide release --json
 
 ## Read Path
 
-| Reader | First page | Then read |
-|--------|------------|-----------|
-| New user | [Quickstart](QUICKSTART.md) | [Command Reference](COMMANDS.md) |
-| New maintainer | [Onboarding](ONBOARDING.md) | [Agent Guide](AGENT_GUIDE.md), [Testing](TESTING.md), [Releasing](RELEASING.md) |
-| Coding agent | [Agent Guide](AGENT_GUIDE.md) | [Configuration](CONFIGURATION.md), then command help |
-| Maintainer | [Contributing](../CONTRIBUTING.md) | [Testing](TESTING.md), [Releasing](RELEASING.md), [Architecture](ARCHITECTURE.md) |
-| Package author | [Packages and Extensions](EXTENSIONS.md) | [SDK](SDK.md), [starter extension](examples/starter-extension/README.md) |
-| Codex or ChatGPT plugin implementer | [Codex Plugin](CODEX_PLUGIN.md) | [Native ChatGPT and Codex Plugin Implementation Plan](CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md) |
-| Codex user | [Codex Plugin](CODEX_PLUGIN.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md) |
-| Claude Code user | [Claude Code Plugin](CLAUDE_CODE_PLUGIN.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md) |
-| Machine client | `pm contracts --json` | [CLI Scripting Contract](SCRIPTING.md), [Command Reference](COMMANDS.md#machine-contracts), optionally `pm install guide-shell --project && pm guide commands` |
+| Reader                              | First page                                  | Then read                                                                                                                                                      |
+| ----------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New user                            | [Quickstart](QUICKSTART.md)                 | [Command Reference](COMMANDS.md)                                                                                                                               |
+| New maintainer                      | [Onboarding](ONBOARDING.md)                 | [Agent Guide](AGENT_GUIDE.md), [Testing](TESTING.md), [Releasing](RELEASING.md)                                                                                |
+| Coding agent                        | [Agent Guide](AGENT_GUIDE.md)               | [Configuration](CONFIGURATION.md), then command help                                                                                                           |
+| Maintainer                          | [Contributing](../CONTRIBUTING.md)          | [Testing](TESTING.md), [Releasing](RELEASING.md), [Architecture](ARCHITECTURE.md)                                                                              |
+| Package author                      | [Packages and Extensions](EXTENSIONS.md)    | [SDK](SDK.md), [starter extension](examples/starter-extension/README.md)                                                                                       |
+| Codex or ChatGPT plugin implementer | [Codex Plugin](CODEX_PLUGIN.md)             | [Native ChatGPT and Codex Plugin Implementation Plan](CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md)                                                                  |
+| Codex user                          | [Codex Plugin](CODEX_PLUGIN.md)             | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md)                                                                                           |
+| Claude Code user                    | [Claude Code Plugin](CLAUDE_CODE_PLUGIN.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md)                                                                                           |
+| Machine client                      | `pm contracts --json`                       | [CLI Scripting Contract](SCRIPTING.md), [Command Reference](COMMANDS.md#machine-contracts), optionally `pm install guide-shell --project && pm guide commands` |
 
 ## Documentation Map
 
@@ -35,7 +35,7 @@ pm guide release --json
 - [Onboarding](ONBOARDING.md) - first-two-hours maintainer and contributor setup.
 - [Agent Guide](AGENT_GUIDE.md) - canonical agent loop, tracker linking, and token-minimal command choices.
 - [Command Reference](COMMANDS.md) - command families with examples and when to use each family.
-- [CLI Scripting Contract](SCRIPTING.md) - exit codes, stdout/stderr boundaries, stable JSON fields, uniform OR filters, and shell composition recipes.
+- [CLI Scripting Contract](SCRIPTING.md) - exit codes, flat mutation receipts versus read envelopes, stdout/stderr boundaries, stable JSON fields, uniform OR filters, and shell composition recipes.
 - [Configuration](CONFIGURATION.md) - settings, storage formats, output, search, validation, and environment variables.
 - [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.
 - [Security Governance](SECURITY_GOVERNANCE.md) - vulnerability reporting, review discipline, property fuzzing, and OpenSSF limitations.
@@ -72,16 +72,16 @@ pm guide release --json
 
 ## Guide Topic Map
 
-| Optional `pm guide` topic | Primary docs |
-|-----------------------------|--------------|
-| `quickstart` | [Quickstart](QUICKSTART.md), [Command Reference](COMMANDS.md) |
-| `commands` | [Command Reference](COMMANDS.md), [Configuration](CONFIGURATION.md) |
-| `workflows` | [Agent Guide](AGENT_GUIDE.md), [Testing](TESTING.md) |
-| `sdk` | [SDK](SDK.md), [Architecture](ARCHITECTURE.md) |
-| `extensions`, `packages` | [Packages and Extensions](EXTENSIONS.md), [starter extension](examples/starter-extension/README.md) |
-| `skills` | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/*` |
-| `harnesses` | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/HARNESS_COMPATIBILITY.md` |
-| `release` | [Releasing](RELEASING.md), [CHANGELOG](../CHANGELOG.md) |
+| Optional `pm guide` topic | Primary docs                                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------------------------- |
+| `quickstart`              | [Quickstart](QUICKSTART.md), [Command Reference](COMMANDS.md)                                       |
+| `commands`                | [Command Reference](COMMANDS.md), [Configuration](CONFIGURATION.md)                                 |
+| `workflows`               | [Agent Guide](AGENT_GUIDE.md), [Testing](TESTING.md)                                                |
+| `sdk`                     | [SDK](SDK.md), [Architecture](ARCHITECTURE.md)                                                      |
+| `extensions`, `packages`  | [Packages and Extensions](EXTENSIONS.md), [starter extension](examples/starter-extension/README.md) |
+| `skills`                  | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/*`                                               |
+| `harnesses`               | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/HARNESS_COMPATIBILITY.md`                        |
+| `release`                 | [Releasing](RELEASING.md), [CHANGELOG](../CHANGELOG.md)                                             |
 
 Community files:
 

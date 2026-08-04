@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:cli","area:testing",context-integrity,developer-experience,sandbox
 created_at: "2026-07-28T14:04:06.683Z"
-updated_at: "2026-07-28T15:15:34.204Z"
+updated_at: "2026-08-04T19:54:05.741Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Direct and pm-linked executions of node scripts/run-tests.mjs coverage produce the same test and coverage result; No unit or integration test reads or writes the real repository .agents/pm tracker; Schema and tracker linked-test modes retain their documented semantics for genuine pm commands
@@ -29,6 +29,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-jd3m6p,discovered_from,"2026-07-28T14:04:06.683Z","harness:codex","cli:create:dep",detected
   pm-w13j,verifies,"2026-07-28T14:04:06.683Z","harness:codex","cli:create:dep",detected
   pm-wo8,implements,"2026-07-28T14:04:06.683Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-28T14:04:06.683Z","harness:codex","Duplicate check: searched all statuses for linked-test coverage outer PM_PATH repository ownership fixtures and run-tests coverage tracker isolation. Results covered general coverage and CI lineage but no item owned this reproducible nested-sandbox parity gap."
+  "2026-08-04T19:54:05.741Z","harness:codex","Reproduction 2026-08-04: pm test pm-5t33or --run nested the linked node scripts/run-tests.mjs coverage command under the default schema PM_PATH. Direct coverage on the identical checkout passed 433 files and 6,850 tests at 100/100/100/100; nested execution failed 12 validate-command repository ownership/path-classification assertions because it inspected the empty outer schema context. This exactly reproduces the canonical direct-green/linked-red acceptance gap; no duplicate item created."
 body: ""

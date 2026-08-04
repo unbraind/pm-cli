@@ -568,18 +568,20 @@ Tracked by [pm-5t33or](../.agents/pm/features/pm-5t33or.toon),
 [pm-gmdzaa](../.agents/pm/issues/pm-gmdzaa.toon), and
 [pm-dpqa3h](../.agents/pm/chores/pm-dpqa3h.toon).
 
-`PM_COMMAND_OUTPUT_BUDGET_CONTRACTS` declares one default estimated-token
-ceiling for every built-in command. Each row also carries its workload class,
+`PM_COMMAND_OUTPUT_BUDGET_CONTRACTS` declares generated TOON and JSON
+estimated-token ceilings for every built-in command. Each row also carries its workload class,
 the stable `ceil(UTF-8 bytes / 4)` estimate, whether an explicit unbounded
 request is allowed, and the shared deterministic degradation ladder:
 `full → compact → brief → summary → counts`. These contracts are policy data,
 not renderer-specific code, so package authors can reuse
-`definePmCommandOutputBudget`, `resolvePmCommandOutputBudget`, and
+`createPmCommandOutputBudget`, `definePmCommandOutputBudget`,
+`resolvePmCommandOutputBudget`, and
 `estimatePmOutputTokens` in custom transports.
 
 ```ts
 import {
   definePmCommandOutputBudget,
+  parseMutationReceipt,
   estimatePmOutputTokens,
   resolvePmCommandOutputBudget,
 } from "@unbraind/pm-cli/sdk/contracts";
@@ -588,6 +590,7 @@ const compactRead = definePmCommandOutputBudget({
   command: "get",
   budget_class: "read",
   default_max_estimated_tokens: 800,
+  default_max_estimated_tokens_by_format: { toon: 800, json: 1200 },
   degradation_ladder: ["compact", "summary"],
   allows_unbounded_opt_out: false,
   token_estimate: "ceil(utf8_bytes / 4)",
@@ -597,7 +600,20 @@ const builtIn = resolvePmCommandOutputBudget("contracts --summary");
 const measured = estimatePmOutputTokens(
   new TextEncoder().encode(JSON.stringify(result)).byteLength,
 );
+
+const receipt = parseMutationReceipt(mutationStdout);
+// receipt.id and receipt.changedFieldCount are typed; wrapped read envelopes
+// throw instead of silently producing an undefined id.
 ```
+
+`PM_COMMAND_OUTPUT_ENVELOPE_CONTRACTS` and
+`resolvePmCommandOutputEnvelope` declare whether the default structured result
+is a flat mutation receipt, wrapped entity, collection, diagnostic, or stream.
+The contracts command keeps summary bootstrap output compact and publishes
+complete budget/envelope pairs under `command_output_contracts` only in the
+explicit full projection. Active package commands receive deterministic
+fallback contracts, so extension authors can discover a bounded surface before
+they invoke it.
 
 `pm activity` applies a compact 20-row default bound; direct SDK calls default
 to five full rows. Results disclose `total_count`, `omitted_count`, `has_more`,

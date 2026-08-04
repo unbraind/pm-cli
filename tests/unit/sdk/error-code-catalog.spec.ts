@@ -11,16 +11,20 @@ describe("error code catalog", () => {
       meaning: "The requested command is not registered.",
       stability: "stable",
       exit_code: 2,
+      class: "usage",
       recovery: "Use a command returned by pm contracts.",
       sources: ["cli"],
+      emitting_commands: ["help"],
     },
     {
       code: "extension_unavailable",
       meaning: "A package-owned command is not active.",
       stability: "provisional",
       exit_code: 1,
+      class: "generic_failure",
       recovery: "Install or activate the package.",
       sources: ["extension"],
+      emitting_commands: ["package"],
     },
   ]);
 
@@ -29,7 +33,9 @@ describe("error code catalog", () => {
       "extension_unavailable",
       "unknown_command",
     ]);
-    expect(resolvePmErrorCodeContract("unknown_command", catalog)).toMatchObject({
+    expect(
+      resolvePmErrorCodeContract("unknown_command", catalog),
+    ).toMatchObject({
       exit_code: 2,
       stability: "stable",
     });
@@ -55,7 +61,9 @@ describe("error code catalog", () => {
       { ...catalog[0]!, meaning: " " },
       { ...catalog[0]!, recovery: " " },
       { ...catalog[0]!, sources: [] },
+      { ...catalog[0]!, emitting_commands: [] },
       { ...catalog[0]!, exit_code: 9 as 1 },
+      { ...catalog[0]!, class: "conflict" as const },
     ]) {
       expect(() => definePmErrorCodeCatalog([invalid])).toThrow(
         "Invalid pm error code contract",
