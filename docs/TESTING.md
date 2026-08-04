@@ -248,6 +248,31 @@ step also fails until stale policy is reconciled. Public source claims are
 mapped to exact evidence strings and an enforced registry entry so
 documentation cannot silently advertise advisory behavior.
 
+## Tracker Context-Quality Ratchets
+
+Tracked by [pm-ips23h](../.agents/pm/issues/pm-ips23h.toon) and
+[pm-kpftft](../.agents/pm/tasks/pm-kpftft.toon).
+
+`scripts/release/tracker-measurements.json` turns measured tracker populations
+into reviewed, shrinking-only ceilings. Each declaration names its canonical
+pm owner and a selector over stored dependency kinds, validator warnings,
+graph-profile fields, or health-check severity. Open owners enforce their
+ceiling; terminal owners retire it. Validator warnings and health checks are
+exhaustive, so a newly observed class fails until it has a canonical owner and
+reviewed declaration.
+
+Run the same gate used by hosted CI:
+
+```bash
+pnpm quality:tracker-measurements
+node scripts/release/tracker-measurement-gate.mjs --negative-control
+```
+
+`--update` can only lower a ceiling. It refuses to write while any population
+has regressed or remains undeclared, so updating the baseline cannot absorb a
+failure. Dependency-kind regressions include the post-measurement item, target,
+author, timestamp, and mutation-source rows in the JSON receipt.
+
 ## Agent Output Token Budgets
 
 Run the required PR gate locally:

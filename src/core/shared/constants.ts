@@ -491,6 +491,7 @@ export const TELEMETRY_ERROR_CATEGORY_BY_CODE: Readonly<
   lock_conflict: "conflict",
   terminal_state_conflict: "conflict",
   dependency_failed: "runtime",
+  init_gitignore_unwritable: "runtime",
   merge_git_config_unwritable: "runtime",
   command_failed: "runtime",
   unknown_error: "runtime",

@@ -207,6 +207,12 @@ jobs:
           representative_id="$(node dist/cli.js list --status all --limit 1 --sort created_at --order desc --json --no-extensions | jq -er '.items[0].id')"
           node dist/cli.js history "${representative_id}" --verify --strict-exit --json --no-extensions > /dev/null
 
+      - name: Run tracker context-quality ratchets
+        if: matrix.gate == 'static'
+        run: |
+          node scripts/release/tracker-measurement-gate.mjs --negative-control
+          node scripts/release/tracker-measurement-gate.mjs
+
       - name: Run compatibility migration gate
         if: matrix.gate == 'compat'
         timeout-minutes: 6

@@ -611,6 +611,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["sdk/init.ts"],
   },
   {
+    code: "init_gitignore_unwritable",
+    meaning: "Init gitignore unwritable condition.",
+    stability: "stable",
+    exit_code: 1,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/workspace.ts"],
+  },
+  {
     code: "init_id_prefix_conflict",
     meaning: "Init id prefix conflict condition.",
     stability: "stable",

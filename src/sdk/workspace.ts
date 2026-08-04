@@ -5,6 +5,8 @@
  */
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
 
 /** Opening marker for the init-owned ignore block. */
 export const PM_GITIGNORE_START = "# pm-cli:runtime-cache:start";
@@ -40,6 +42,37 @@ export interface EnsurePmGitignoreResult {
   path: string;
   /** Whether the file content changed. */
   changed: boolean;
+}
+
+/** Convert expected workspace permission failures into stable, path-safe recovery. */
+async function withGitignorePermissionRecovery<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error: unknown) {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      typeof error.code === "string" &&
+      ["EACCES", "EPERM", "EROFS"].includes(error.code)
+    ) {
+      throw new PmCliError(
+        "The workspace .gitignore is not writable.",
+        EXIT_CODE.GENERIC_FAILURE,
+        {
+          code: "init_gitignore_unwritable",
+          reason: error.code.toLowerCase(),
+          required:
+            "Grant the current user write access to the workspace .gitignore before initialization.",
+          why: "pm init must publish its managed runtime-cache ignore fence without replacing unrelated entries.",
+          nextSteps: [
+            "Grant write access to the workspace .gitignore and rerun pm init.",
+            "If the workspace is intentionally read-only, initialize pm in a writable workspace or clone.",
+          ],
+        },
+      );
+    }
+    throw error;
+  }
 }
 
 function normalizeTrackerRelativeRoot(trackerRelativeRoot: string): string {
@@ -106,7 +139,9 @@ export async function ensurePmGitignore(
   }
   let current = "";
   try {
-    current = await readFile(gitignorePath, "utf8");
+    current = await withGitignorePermissionRecovery(() =>
+      readFile(gitignorePath, "utf8"),
+    );
   } catch (error: unknown) {
     if (
       !(error instanceof Error && "code" in error && error.code === "ENOENT")
@@ -125,6 +160,8 @@ export async function ensurePmGitignore(
   if (next === current) {
     return { path: gitignorePath, changed: false };
   }
-  await writeFile(gitignorePath, next, "utf8");
+  await withGitignorePermissionRecovery(() =>
+    writeFile(gitignorePath, next, "utf8"),
+  );
   return { path: gitignorePath, changed: true };
 }

@@ -1,7 +1,9 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import { PmCliError } from "../../../../src/core/shared/errors.js";
 import {
   ensurePmGitignore,
   getPmGitignoreBlock,
@@ -53,6 +55,37 @@ describe("ensurePmGitignore", () => {
         code: expect.stringMatching(/^(EISDIR|EACCES)$/),
       });
     } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("classifies a permission-constrained managed file without replacing its bytes", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-permission-"));
+    const gitignorePath = path.join(root, ".gitignore");
+    try {
+      await writeFile(gitignorePath, "sentinel\n", "utf8");
+      await chmod(gitignorePath, 0o000);
+
+      const failure = await ensurePmGitignore(root).catch((error: unknown) => error);
+      expect(failure).toBeInstanceOf(PmCliError);
+      expect(failure).toMatchObject({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        code: "init_gitignore_unwritable",
+        context: {
+          code: "init_gitignore_unwritable",
+          reason: "eacces",
+          required: expect.stringContaining("write access"),
+          nextSteps: expect.arrayContaining([
+            expect.stringContaining("writable workspace"),
+          ]),
+        },
+      });
+      expect(String((failure as Error).message)).not.toContain(root);
+
+      await chmod(gitignorePath, 0o600);
+      expect(await readFile(gitignorePath, "utf8")).toBe("sentinel\n");
+    } finally {
+      await chmod(gitignorePath, 0o600).catch(() => undefined);
       await rm(root, { recursive: true, force: true });
     }
   });

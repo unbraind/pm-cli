@@ -146,6 +146,27 @@
       }
     },
     {
+      "id": "tracker-context-quality",
+      "owner": "pm-kpftft",
+      "pipelines": [
+        "ci.yml#Run tracker context-quality ratchets"
+      ],
+      "failure_taxonomy": [
+        "tracker_population_regressed",
+        "tracker_population_undeclared",
+        "tracker_health_regressed",
+        "tracker_measurement_control_failed"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Filed tracker measurements are shrinking-only context-quality ceilings, not advisory prose."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/tracker-measurement-gate.spec.ts",
+        "assertion": "proves the gate can fail by seeding a row beyond a declared ceiling of zero"
+      }
+    },
+    {
       "id": "context-retrieval",
       "owner": "pm-b2hc4x",
       "pipelines": [

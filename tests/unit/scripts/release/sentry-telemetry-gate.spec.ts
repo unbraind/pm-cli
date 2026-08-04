@@ -345,6 +345,48 @@ describe("scripts/release/sentry-telemetry-gate: telemetry modes", () => {
     expect(json.sentry.threshold_ok).toBe(true);
   });
 
+  it("ignores only the structured managed-gitignore permission failure", async () => {
+    const message = "The workspace .gitignore is not writable.";
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "2"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: buildSentryFetch([
+        {
+          shortId: "PM-GITIGNORE-HANDLED",
+          level: "error",
+          logger: "node",
+          isUnhandled: false,
+          title: `PmCliError: ${message}`,
+          metadata: { value: message, type: "PmCliError" },
+        },
+        {
+          shortId: "PM-GITIGNORE-RAW",
+          level: "error",
+          logger: "node",
+          isUnhandled: false,
+          title: "Error: EACCES: permission denied, open",
+          metadata: { value: "EACCES: permission denied, open", type: "Error" },
+        },
+        {
+          shortId: "PM-GITIGNORE-UNHANDLED",
+          level: "error",
+          logger: "node",
+          isUnhandled: true,
+          title: `PmCliError: ${message}`,
+          metadata: { value: message, type: "PmCliError" },
+        },
+      ]),
+    });
+    expect(json.sentry.ignored_expected_handled_short_ids).toEqual([
+      "PM-GITIGNORE-HANDLED",
+    ]);
+    expect(json.sentry.blocking_short_ids).toEqual([
+      "PM-GITIGNORE-RAW",
+      "PM-GITIGNORE-UNHANDLED",
+    ]);
+    expect(json.sentry.threshold_ok).toBe(true);
+  });
+
   it("ignores only the proven torn-bundle code while genuine module failures stay blocking", async () => {
     const { json } = await runSentryGate({
       argv: ["--json", "--telemetry-mode", "off", "--max-high", "2"],

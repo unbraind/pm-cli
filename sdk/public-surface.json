@@ -23840,6 +23840,7 @@
     "history_target_out_of_range",
     "history_unknown_author_events",
     "init_existing_settings_requires_force",
+    "init_gitignore_unwritable",
     "init_id_prefix_conflict",
     "init_id_prefix_path_like",
     "integrity_history_conflict_marker",
