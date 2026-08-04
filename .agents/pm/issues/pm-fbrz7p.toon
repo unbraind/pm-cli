@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[7]: agent-ux,"area:concurrency","area:merge",context-management,github-report,multi-agent,recovery
 created_at: "2026-08-04T08:44:27.650Z"
-updated_at: "2026-08-04T11:47:54.043Z"
+updated_at: "2026-08-04T11:52:04.240Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#e5139491a52f7c630a58be71"
 author: "harness:codex"
@@ -25,10 +25,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,implements,"2026-08-04T08:44:27.650Z","harness:codex","cli:create:dep",detected
   pm-gzyt2j,discovered_from,"2026-08-04T08:44:27.650Z","harness:codex","cli:create:dep",detected
   pm-rh98vo,discovered_from,"2026-08-04T08:44:27.650Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-04T08:44:27.650Z","harness:codex","Duplicate check 2026-08-04: all-status searches covered merge guidance, discarded values, pm merge report, durable receipts, and post-merge settlement. Closed pm-rh98vo created durable conflict reports; open pm-lwmstb owns receipt settlement after merge. Neither owns the missing recovery pointer at conflict time. GitHub source: https://github.com/unbraind/pm-cli/issues/889"
   "2026-08-04T09:18:26.565Z","harness:codex","Graph correction 2026-08-04: removed the initial blocked_by edge to pm-lwmstb after reviewing both scopes. Durable receipt settlement is adjacent downstream work, but it does not prevent conflict-time recovery guidance from exposing the existing report. The remaining implements and discovered_from edges state the evidence-backed lineage without inventing execution order."
   "2026-08-04T11:47:38.550Z","harness:codex","Evidence: unresolved merge guidance now always points to pm merge report and, when present, includes privacy-safe receipt_id/item_id correlation without exposing discarded values. Linked merge safety/receipt tests passed; full coverage and lint gates passed."
+  "2026-08-04T11:52:04.240Z","harness:codex","Review handoff: PR #893 https://github.com/unbraind/pm-cli/pull/893 at initial head 6c31a5f18 packages this item with the related SDK/CLI governance tranche."
 learnings[1]{created_at,author,text}:
   "2026-08-04T11:47:54.043Z","harness:codex","Generic merge results should expose correlation identifiers and recovery commands, while discarded values remain exclusively in clone-local receipts."
 files[1]{path,scope,note}:

@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[6]: agent-ux,"area:governance","area:graph",external-blocker,github-report,truthfulness
 created_at: "2026-08-04T08:43:47.536Z"
-updated_at: "2026-08-04T11:47:54.591Z"
+updated_at: "2026-08-04T11:52:04.709Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#e5139491a52f7c630a58be71"
 author: "harness:codex"
@@ -25,9 +25,10 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-6x7o,implements,"2026-08-04T08:43:47.536Z","harness:codex","cli:create:dep",detected
   pm-96h7,implements,"2026-08-04T08:43:47.536Z","harness:codex","cli:create:dep",detected
   pm-gzyt2j,discovered_from,"2026-08-04T08:43:47.536Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-04T08:43:47.536Z","harness:codex","Duplicate check 2026-08-04: all-status searches for stale_lifecycle_block, external party, blocked_reason, graph governance, and blocker semantics found pm-6x7o as the broad audit owner but no item for honest external-blocker classification. GitHub source: https://github.com/unbraind/pm-cli/issues/891"
   "2026-08-04T11:47:39.156Z","harness:codex","Evidence: source_kind=external is accepted and canonicalized to global; external blocked_by edges satisfy lifecycle governance without fabricated local items, while the true missing-edge stale finding remains covered. Linked provenance/graph tests and an isolated packed npx graph-audit consumer passed."
+  "2026-08-04T11:52:04.709Z","harness:codex","Review handoff: PR #893 https://github.com/unbraind/pm-cli/pull/893 at initial head 6c31a5f18 packages this item with the related SDK/CLI governance tranche."
 learnings[1]{created_at,author,text}:
   "2026-08-04T11:47:54.591Z","harness:codex",An external blocker is a real ordering predecessor even without a local item; canonical storage can remain global while accepting external as the clearer authoring alias.
 files[3]{path,scope,note}:

@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: agent-workflow,"area:ci",changelog,governance,tracker-only
 created_at: "2026-08-04T09:41:11.527Z"
-updated_at: "2026-08-04T11:47:55.173Z"
+updated_at: "2026-08-04T11:52:05.152Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#e5139491a52f7c630a58be71"
 author: "harness:codex"
@@ -23,11 +23,12 @@ actual_result: "The tracker-only audit commit reached main, but the required CI 
 component: CI and changelog governance
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gzyt2j,discovered_from,"2026-08-04T09:41:11.527Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-04T09:41:11.527Z","harness:codex","Duplicate check 2026-08-04: searched every status for tracker-only commit, changelog out-of-date, generated changelog governance, direct-main, and changelog drag. Existing pm-6san defines generated ownership, pm-pivf owns a specific GH-209 warning cleanup, and pm-u9d0 owns CI/release capability; no active or terminal item owns the general required-check policy conflict reproduced on exact head. This item is the focused canonical owner."
   "2026-08-04T09:41:30.260Z","harness:codex","Hosted evidence: exact-head CI run https://github.com/unbraind/pm-cli/actions/runs/30897051387, static job https://github.com/unbraind/pm-cli/actions/runs/30897051387/job/91952524714. The job checked out 9d28e08b96b1caa36d41e68ef82e09ebb2e46c78 and failed with Changelog is out of date after successfully installing pm-changelog 2026.8.4. This audit does not regenerate CHANGELOG.md because the user explicitly limited mutations to PM planning/documentation; the failure is preserved as policy evidence, not repaired in this session."
   "2026-08-04T09:41:57.367Z","harness:codex","Exact-head hosted inventory is complete: Security and Script Quality, OSSF Scorecard, CodSpeed, and CodeQL all succeeded on 9d28e08b96b1caa36d41e68ef82e09ebb2e46c78. CI completed with 13 successful jobs and exactly one failed job, Gates (static) 91952524714; the failing step was changelog:pm:check reporting only that CHANGELOG.md was out of date. This isolates the policy conflict from product build, typecheck, compatibility, smoke, coverage, Windows, benchmark, and security outcomes."
   "2026-08-04T11:47:39.693Z","harness:codex","Evidence: release relevance now ignores only .agents/pm/** plus generated CHANGELOG.md, with product paths as the negative control; daily release guards and npm publication checks remain covered. Linked release tests passed; direct pm-changelog 2026.8.4 check passed; only one v2026.8.4 release exists today; npm and Bun packed consumers plus npx/bunx execution passed; audit and secret scan are clean."
+  "2026-08-04T11:52:05.152Z","harness:codex","Review handoff: PR #893 https://github.com/unbraind/pm-cli/pull/893 at initial head 6c31a5f18 packages this item with the related SDK/CLI governance tranche."
 learnings[1]{created_at,author,text}:
   "2026-08-04T11:47:55.173Z","harness:codex","Release relevance should classify source inputs, not generated projections: tracker history plus its generated changelog must not manufacture a package release, while any product path remains a fail-safe negative control."
 files[5]{path,scope,note}:
