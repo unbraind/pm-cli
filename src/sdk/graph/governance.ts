@@ -478,7 +478,7 @@ function collectOrderingFindings(
     "warning",
     "A blocked lifecycle status must be backed by at least one open ordering predecessor.",
     (count) => `${count} status-blocked item(s) with no open blocker edge`,
-    "Re-open the missing prerequisite as an edge, or move the item back to an active status.",
+    'Add a local blocker edge, declare an external blocker with --dep "id=<external-ref>,kind=blocked_by,source_kind=external", or move the item back to an active status.',
   );
   return findings;
 }

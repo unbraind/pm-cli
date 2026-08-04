@@ -414,6 +414,10 @@ describe("public merge-safety SDK primitives", () => {
 
     expect(result.ok).toBe(false);
     expect(result.conflicts).toEqual(["value"]);
+    expect(result.guidance).toEqual([
+      expect.stringContaining('Run "pm merge report"'),
+    ]);
+    expect(result.guidance[0]).not.toContain('"value":');
     expect(JSON.parse(await readFile(ours, "utf8"))).toEqual({ value: 2 });
 
     const priorCwd = process.cwd();
@@ -517,6 +521,27 @@ describe("public merge-safety SDK primitives", () => {
       expect(itemResult.ok).toBe(true);
       expect(itemResult.receipt?.item_id).toBe("pm-merge");
       expect(await listMergeReceipts(workspace)).toHaveLength(1);
+      await writeFile(
+        theirs,
+        serializeItemDocument(item("theirs", "2026-07-19T00:02:00.000Z"), {
+          format: "json_markdown",
+        }),
+        "utf8",
+      );
+      const conflictedItemResult = await runMergeDriver(
+        {
+          artifact: "item",
+          basePath: base,
+          oursPath: ours,
+          theirsPath: theirs,
+          itemPath: ".agents/pm/tasks/pm-conflict.md",
+        },
+        { path: path.join(workspace, "missing-pm") },
+      );
+      expect(conflictedItemResult.ok).toBe(false);
+      expect(conflictedItemResult.guidance[0]).toContain(
+        `receipt ${conflictedItemResult.receipt?.receipt_id} with item pm-conflict`,
+      );
       await expect(
         runMergeDriver(
           {
@@ -530,7 +555,7 @@ describe("public merge-safety SDK primitives", () => {
           { path: path.join(workspace, "missing-pm") },
         ),
       ).rejects.toThrow();
-      expect(await listMergeReceipts(workspace)).toHaveLength(1);
+      expect(await listMergeReceipts(workspace)).toHaveLength(2);
     } finally {
       process.chdir(priorItemCwd);
     }

@@ -2,11 +2,13 @@ id: pm-5uclvd
 title: "GH-885: create-time close_reason_required recovery recommends an impossible different-command retry"
 description: "GitHub issue #885 proves that when create requests a terminal status without closure evidence, close_reason_required lists only pm close examples against an item that was never created. The working create --resolution recovery is omitted, so the otherwise structured recovery bundle is not independently actionable."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[7]: agent-ux,"area:cli","area:contracts",github-report,lifecycle,never-block,recovery
 created_at: "2026-08-04T08:45:12.392Z"
-updated_at: "2026-08-04T08:45:12.392Z"
+updated_at: "2026-08-04T11:47:52.885Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#e5139491a52f7c630a58be71"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Recovery examples and next steps are generated from the failing action contract and lead with the smallest valid same-command retry; CLI and SDK structured error contracts expose the same typed recovery with exact flag domains; A recovery-closure gate proves the refusal is actionable without help or source lookup and retains correct update/close-specific advice
@@ -24,6 +26,18 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gzyt2j,discovered_from,"2026-08-04T08:45:12.392Z","harness:codex","cli:create:dep",detected
   pm-n7rr,implements,"2026-08-04T08:45:12.392Z","harness:codex","cli:create:dep",detected
   pm-ykdt4m,discovered_from,"2026-08-04T08:45:12.392Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-04T08:45:12.392Z","harness:codex","Duplicate check 2026-08-04: all-status searches covered close_reason_required, create --resolution, recovery examples, context-sensitive retries, and recovery closure. No existing item owns this exact same-command recovery defect; pm-f05lsg owns the measured recovery-closure programme and pm-ykdt4m owns the broader terminal-create contract. GitHub source: https://github.com/unbraind/pm-cli/issues/885"
+  "2026-08-04T11:47:37.449Z","harness:codex","Evidence: close_reason_required recovery is now operation-aware, so create failures provide executable same-command pm create examples while close retains pm close guidance. Linked lifecycle/create tests passed; full coverage passed 6807/6807 at 100/100/100/100."
+learnings[1]{created_at,author,text}:
+  "2026-08-04T11:47:52.885Z","harness:codex",Structured recovery examples must be generated for the operation that failed; a valid close retry is not actionable guidance for an atomic create request.
+files[2]{path,scope,note}:
+  src/sdk/lifecycle-policy.ts,project,Operation-aware close-reason recovery
+  src/sdk/lifecycle/create.ts,project,Create-specific recovery context
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle-policy.spec.ts tests/unit/commands/create-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msekowhg-l3y660,test,passed,"2026-08-04T11:26:22.971Z","2026-08-04T11:26:36.148Z","2026-08-04T11:26:36.148Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Same-command terminal-create recovery
 body: ""

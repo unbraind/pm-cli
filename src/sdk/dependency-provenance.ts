@@ -8,12 +8,18 @@ import { normalizeItemId } from "../core/item/id.js";
 
 /** Provenance value declaring that a dependency id belongs to another workspace. */
 export const EXTERNAL_DEPENDENCY_SOURCE_KIND = "global";
+/** Human-facing alias accepted wherever external dependency provenance is parsed. */
+export const EXTERNAL_DEPENDENCY_SOURCE_KIND_ALIAS = "external";
 
 /** Return whether a dependency provenance value identifies an external workspace target. */
 export function isExternalDependencySourceKind(
   sourceKind: string | undefined,
 ): boolean {
-  return sourceKind?.trim().toLowerCase() === EXTERNAL_DEPENDENCY_SOURCE_KIND;
+  const normalized = sourceKind?.trim().toLowerCase();
+  return (
+    normalized === EXTERNAL_DEPENDENCY_SOURCE_KIND ||
+    normalized === EXTERNAL_DEPENDENCY_SOURCE_KIND_ALIAS
+  );
 }
 
 /** Canonicalize external provenance while preserving other named source kinds. */

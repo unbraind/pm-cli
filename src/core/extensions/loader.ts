@@ -3418,6 +3418,9 @@ function collectRendererCollisionWarnings(
     }
     const winner = bucket[bucket.length - 1];
     for (const displaced of bucket.slice(0, -1)) {
+      if (winner.commands?.length && displaced.commands?.length && !displaced.commands.some((command) => winner.commands?.includes(command))) {
+        continue;
+      }
       warnings.push(
         `extension_renderer_collision:${format}:${winner.layer}:${winner.name}:${displaced.layer}:${displaced.name}`,
       );

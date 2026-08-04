@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Security
+
+- 2026-08-04 holistic pm CLI, SDK, and ecosystem manual review and optimization plan ([pm-gzyt2j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-gzyt2j.toon))
+
 ### Other
 
 - Eliminate July static-analysis nullability, dead-code, and redundant-allocation findings ([pm-cp5pbo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cp5pbo.toon))

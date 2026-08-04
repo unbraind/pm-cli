@@ -74,7 +74,7 @@ import {
   readSettings,
   resolveAuthor,
 } from "../runtime-primitives.js";
-import { requireTerminalReason } from "../lifecycle-policy.js";
+import { requireTerminalReasonWithRecovery } from "../lifecycle-policy.js";
 import {
   evaluateSimilarityGovernance,
   similarityAdvisoryWarnings,
@@ -180,6 +180,10 @@ export interface CreateCommandOptions
   type?: string;
   /** Lifecycle state reported for status. */
   status?: string;
+  /** Author-controlled reason when creating directly in a terminal status. */
+  closeReason?: string;
+  /** Actual completion time when importing an already-completed item. */
+  completedAt?: string;
   /** Value that configures or reports priority for this contract. */
   priority?: string | number;
   /** Value that configures or reports tags for this contract. */
@@ -2342,18 +2346,47 @@ function resolveCreateCloseReason(
   settings: PmSettings,
   resolvedOptions: CreateCommandOptions,
   resolution: string | undefined,
-): { closeReason: string | undefined; warnings: string[] } {
+  nowValue: string,
+): {
+  closeReason: string | undefined;
+  completedAt: string | undefined;
+  warnings: string[];
+} {
   if (
-    status !== statusRegistry.close_status ||
-    !settings.governance.require_close_reason
+    resolvedOptions.completedAt !== undefined &&
+    status !== statusRegistry.close_status
   ) {
-    return { closeReason: undefined, warnings: [] };
+    throw new PmCliError(
+      "--completed-at requires a terminal create status.",
+      EXIT_CODE.USAGE,
+    );
   }
+  const completedAt =
+    status !== statusRegistry.close_status
+      ? undefined
+      : resolvedOptions.completedAt === undefined
+        ? nowValue
+        : resolveIsoOrRelative(
+            resolvedOptions.completedAt,
+            new Date(nowValue),
+            "completed-at",
+          );
+  if (status !== statusRegistry.close_status) {
+    return { closeReason: undefined, completedAt, warnings: [] };
+  }
+  const reasonInput = settings.governance.require_close_reason
+    ? {
+        explicit: resolvedOptions.closeReason ?? resolvedOptions.message,
+        resolution,
+      }
+    : { explicit: resolvedOptions.closeReason };
   return {
-    closeReason: requireTerminalReason(
-      { explicit: resolvedOptions.message, resolution },
-      true,
+    closeReason: requireTerminalReasonWithRecovery(
+      reasonInput,
+      settings.governance.require_close_reason,
+      { operation: "create", status },
     ).closeReason,
+    completedAt,
     warnings: [],
   };
 }
@@ -2952,10 +2985,12 @@ export async function runCreate(
     settings,
     resolvedOptions,
     resolution,
+    nowValue,
   );
   const closeReason = closeReasonResolution.closeReason;
   const closedAt =
     status === statusRegistry.close_status ? nowValue : undefined;
+  const completedAt = closeReasonResolution.completedAt;
   validationWarnings.push(...closeReasonResolution.warnings);
 
   const itemMetadata: ItemMetadata = normalizeItemMetadata({
@@ -2966,7 +3001,7 @@ export async function runCreate(
     type_options: validatedTypeOptions.normalized,
     status,
     closed_at: closedAt,
-    completed_at: closedAt,
+    completed_at: completedAt,
     close_reason: closeReason,
     priority,
     tags,

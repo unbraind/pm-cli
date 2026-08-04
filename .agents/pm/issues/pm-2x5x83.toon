@@ -2,11 +2,13 @@ id: pm-2x5x83
 title: Tracker-only PM governance commits cannot satisfy required CI without changing the generated changelog
 description: "The required static CI lane runs changelog:pm:check against every push. A deliberately tracker-only audit that closes PM items changes the generated changelog input, so exact-head CI fails unless the session also edits CHANGELOG.md, contradicting a valid PM-only/no-docs scope and making direct tracker governance unable to produce a green required-check set."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[5]: agent-workflow,"area:ci",changelog,governance,tracker-only
 created_at: "2026-08-04T09:41:11.527Z"
-updated_at: "2026-08-04T09:41:57.367Z"
+updated_at: "2026-08-04T11:47:55.173Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#e5139491a52f7c630a58be71"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Decide and document whether tracker-only closed-item mutations must always regenerate CHANGELOG.md or may be classified outside product changelog inputs; CI, contributor guidance, pm-changelog generation, and auto-release change classification share one explicit contract; a clean fixture proves a tracker-only planning commit can follow that contract without an empty npm/Bun release; a negative control proves a product-visible closed item still fails when its generated changelog is stale; direct-main and PR paths report the same policy; regression evidence references an exact source SHA and generated artifact diff; no manual CHANGELOG edits are introduced"
@@ -21,16 +23,25 @@ actual_result: "The tracker-only audit commit reached main, but the required CI 
 component: CI and changelog governance
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gzyt2j,discovered_from,"2026-08-04T09:41:11.527Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-04T09:41:11.527Z","harness:codex","Duplicate check 2026-08-04: searched every status for tracker-only commit, changelog out-of-date, generated changelog governance, direct-main, and changelog drag. Existing pm-6san defines generated ownership, pm-pivf owns a specific GH-209 warning cleanup, and pm-u9d0 owns CI/release capability; no active or terminal item owns the general required-check policy conflict reproduced on exact head. This item is the focused canonical owner."
   "2026-08-04T09:41:30.260Z","harness:codex","Hosted evidence: exact-head CI run https://github.com/unbraind/pm-cli/actions/runs/30897051387, static job https://github.com/unbraind/pm-cli/actions/runs/30897051387/job/91952524714. The job checked out 9d28e08b96b1caa36d41e68ef82e09ebb2e46c78 and failed with Changelog is out of date after successfully installing pm-changelog 2026.8.4. This audit does not regenerate CHANGELOG.md because the user explicitly limited mutations to PM planning/documentation; the failure is preserved as policy evidence, not repaired in this session."
   "2026-08-04T09:41:57.367Z","harness:codex","Exact-head hosted inventory is complete: Security and Script Quality, OSSF Scorecard, CodSpeed, and CodeQL all succeeded on 9d28e08b96b1caa36d41e68ef82e09ebb2e46c78. CI completed with 13 successful jobs and exactly one failed job, Gates (static) 91952524714; the failing step was changelog:pm:check reporting only that CHANGELOG.md was out of date. This isolates the policy conflict from product build, typecheck, compatibility, smoke, coverage, Windows, benchmark, and security outcomes."
-files[3]{path,scope,note}:
+  "2026-08-04T11:47:39.693Z","harness:codex","Evidence: release relevance now ignores only .agents/pm/** plus generated CHANGELOG.md, with product paths as the negative control; daily release guards and npm publication checks remain covered. Linked release tests passed; direct pm-changelog 2026.8.4 check passed; only one v2026.8.4 release exists today; npm and Bun packed consumers plus npx/bunx execution passed; audit and secret scan are clean."
+learnings[1]{created_at,author,text}:
+  "2026-08-04T11:47:55.173Z","harness:codex","Release relevance should classify source inputs, not generated projections: tracker history plus its generated changelog must not manufacture a package release, while any product path remains a fail-safe negative control."
+files[5]{path,scope,note}:
   .github/workflows/ci.yml,project,Required static lane that runs generated changelog freshness check on tracker-only pushes
   CHANGELOG.md,project,Generated artifact intentionally left unchanged by the PM-only audit scope
   package.json,project,"changelog:pm:check and lint gate composition"
+  scripts/release/release-relevance.mjs,project,Tracker and generated-changelog release relevance
+  scripts/release/run-release-pipeline.mjs,project,Accurate governance-only skip reporting
 tests[1]{command,scope,timeout_seconds}:
-  "pnpm changelog:pm:check",project,120
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-relevance.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,project,300
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msekqy6q-5wjbmc,test,failed,"2026-08-04T11:27:58.684Z","2026-08-04T11:28:11.666Z","2026-08-04T11:28:11.666Z",1,1,0
+  test-local-msekrnb3-lb5752,test,failed,"2026-08-04T11:28:27.921Z","2026-08-04T11:28:44.223Z","2026-08-04T11:28:44.223Z",1,1,0
+  test-local-mseksm5k-kv2ah3,test,passed,"2026-08-04T11:29:20.801Z","2026-08-04T11:29:29.383Z","2026-08-04T11:29:29.383Z",1,0,0
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Release and generated changelog operating contract
 body: ""

@@ -2,11 +2,13 @@ id: pm-fbrz7p
 title: "GH-889: merge-conflict recovery guidance hides the durable discarded-value report"
 description: "GitHub issue #889 proves that the field-aware merge driver tells agents to re-apply a losing change but does not name pm merge report, the only durable surface containing base, ours, theirs, retained, and discarded values. The working item contains only the retained side, so the prescribed recovery is impossible from the refusal context."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[7]: agent-ux,"area:concurrency","area:merge",context-management,github-report,multi-agent,recovery
 created_at: "2026-08-04T08:44:27.650Z"
-updated_at: "2026-08-04T09:18:26.565Z"
+updated_at: "2026-08-04T11:47:54.043Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#e5139491a52f7c630a58be71"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Every conflict guidance envelope points directly to pm merge report and a stable receipt or item correlation key; CLI, SDK, help, docs, and tests prove an agent can recover discarded values using only the emitted recovery bundle; Multi-item and multi-conflict fixtures prove the guidance is unambiguous without leaking private content into generic logs"
@@ -23,7 +25,19 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,implements,"2026-08-04T08:44:27.650Z","harness:codex","cli:create:dep",detected
   pm-gzyt2j,discovered_from,"2026-08-04T08:44:27.650Z","harness:codex","cli:create:dep",detected
   pm-rh98vo,discovered_from,"2026-08-04T08:44:27.650Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-04T08:44:27.650Z","harness:codex","Duplicate check 2026-08-04: all-status searches covered merge guidance, discarded values, pm merge report, durable receipts, and post-merge settlement. Closed pm-rh98vo created durable conflict reports; open pm-lwmstb owns receipt settlement after merge. Neither owns the missing recovery pointer at conflict time. GitHub source: https://github.com/unbraind/pm-cli/issues/889"
   "2026-08-04T09:18:26.565Z","harness:codex","Graph correction 2026-08-04: removed the initial blocked_by edge to pm-lwmstb after reviewing both scopes. Durable receipt settlement is adjacent downstream work, but it does not prevent conflict-time recovery guidance from exposing the existing report. The remaining implements and discovered_from edges state the evidence-backed lineage without inventing execution order."
+  "2026-08-04T11:47:38.550Z","harness:codex","Evidence: unresolved merge guidance now always points to pm merge report and, when present, includes privacy-safe receipt_id/item_id correlation without exposing discarded values. Linked merge safety/receipt tests passed; full coverage and lint gates passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-04T11:47:54.043Z","harness:codex","Generic merge results should expose correlation identifiers and recovery commands, while discarded values remain exclusively in clone-local receipts."
+files[1]{path,scope,note}:
+  src/sdk/merge/driver.ts,project,Actionable receipt-correlated conflict guidance
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/merge-receipts.spec.ts,project,300
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msekpt6i-53xegh,test,failed,"2026-08-04T11:27:02.828Z","2026-08-04T11:27:18.521Z","2026-08-04T11:27:18.521Z",0,1,0
+  test-local-msekqgif-gvsl5h,test,passed,"2026-08-04T11:27:32.725Z","2026-08-04T11:27:48.759Z","2026-08-04T11:27:48.759Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Privacy-safe merge report recovery contract
 body: ""

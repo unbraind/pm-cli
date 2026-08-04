@@ -20,12 +20,17 @@ interface FullItemPayload {
 describe("dependency provenance contracts", () => {
   it("preserves explicit external ids while retaining local prefix normalization", () => {
     expect(isExternalDependencySourceKind(" GLOBAL ")).toBe(true);
+    expect(isExternalDependencySourceKind(" external ")).toBe(true);
     expect(isExternalDependencySourceKind("imported")).toBe(false);
     expect(normalizeDependencySourceKind(" GLOBAL ")).toBe("global");
+    expect(normalizeDependencySourceKind(" EXTERNAL ")).toBe("global");
     expect(normalizeDependencySourceKind(" imported ")).toBe("imported");
     expect(normalizeDependencySourceKind("   ")).toBeUndefined();
     expect(normalizeDependencySeedId(" foreign-work ", "pm", "global")).toBe(
       "foreign-work",
+    );
+    expect(normalizeDependencySeedId(" Foreign-Alias ", "pm", "external")).toBe(
+      "Foreign-Alias",
     );
     expect(normalizeDependencySeedId(" local-work ", "pm", undefined)).toBe(
       "pm-local-work",

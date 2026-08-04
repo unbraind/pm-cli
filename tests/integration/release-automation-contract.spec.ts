@@ -344,6 +344,7 @@ describe("release automation contract", () => {
     expect(
       pipelineModule.isReleaseRelevantPath(".agents\\pm\\tasks\\pm-example.md"),
     ).toBe(false);
+    expect(pipelineModule.isReleaseRelevantPath("CHANGELOG.md")).toBe(false);
     expect(pipelineModule.isReleaseRelevantPath("src/cli/main.ts")).toBe(true);
   });
 

@@ -66,7 +66,7 @@ pnpm version:check
 Policy:
 
 - release only when commits exist after the latest release tag
-- ignore `.agents/pm`-only tracker commits for publish eligibility so post-release evidence and closure updates do not create a package release by themselves
+- ignore tracker-governance-only commits for publish eligibility: `.agents/pm/**` and the mechanically generated `CHANGELOG.md` projection do not create a package release by themselves, while any product, test, documentation, workflow, or other changed path remains release-relevant
 - create at most one production tag and npm version per UTC day; if no tag was
   created, a non-`github-actions[bot]` closure of the exact bot-created
   `Auto Release blocked` issue on the same UTC day triggers one preparation
@@ -337,7 +337,7 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
 
 When auto-release exits green but does not cut a version, inspect the pipeline's JSON skip `reason` from `scripts/release/run-release-pipeline.mjs` (or rerun locally with `pnpm release:pipeline:dry-run -- --json`):
 
-- tracker-only skip family: `tracker_only_changes_since_last_tag` (all changed paths are `.agents/pm` only)
+- tracker-only skip family: `tracker_only_changes_since_last_tag` (all changed paths are `.agents/pm/**` and/or the generated `CHANGELOG.md` projection; a product-visible path is the required negative control)
 - changelog-empty skip family: `empty_generated_changelog_section_for_target_version` (generated release section exists but has no non-empty entries)
 
 `pm-changelog` is maintained in a separate repository/package. Classifier or release-window bugs must be fixed and released there first, then consumed here via the latest npm package (`pm install npm:pm-changelog --project`) before rerunning release generation.

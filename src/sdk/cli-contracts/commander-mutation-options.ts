@@ -74,6 +74,30 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       description: "Item status",
     },
     {
+      target: "closeReason",
+      keys: ["closeReason", "close_reason"],
+      option: "--close-reason <value>",
+      description: "Close reason when creating directly in a terminal status",
+      aliasOptions: [
+        {
+          option: "--close_reason <value>",
+          description: "Alias for --close-reason",
+        },
+      ],
+    },
+    {
+      target: "completedAt",
+      keys: ["completedAt", "completed_at"],
+      option: "--completed-at <value>",
+      description: "Actual completion time for a terminal imported item",
+      aliasOptions: [
+        {
+          option: "--completed_at <value>",
+          description: "Alias for --completed-at",
+        },
+      ],
+    },
+    {
       target: "priority",
       keys: ["priority"],
       option: "--priority, -p <value>",

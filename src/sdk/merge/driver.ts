@@ -271,8 +271,12 @@ export async function runMergeDriver(
   }
   const guidance: string[] = [];
   if (conflicts.length > 0) {
+    const receiptGuidance =
+      result.receipt === undefined
+        ? 'Run "pm merge report" to inspect clone-local merge evidence.'
+        : `Run "pm merge report" and correlate receipt ${result.receipt.receipt_id} with item ${result.receipt.item_id}; clone-local discarded values are never copied into this result.`;
     guidance.push(
-      `Both branches changed ${conflicts.join(", ")}; the ${preferred} value was kept. Review the merged file, re-apply the losing change if needed, then "git add" it.`,
+      `Both branches changed ${conflicts.join(", ")}; the ${preferred} value was kept. ${receiptGuidance} Review the merged file, re-apply the losing change if needed, then "git add" it.`,
     );
   }
   if (artifact === "history" && result.history?.reanchored) {

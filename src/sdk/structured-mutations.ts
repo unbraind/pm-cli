@@ -33,13 +33,16 @@ const READ_ONLY_ITEM_KEYS = new Set([
   "created_at",
   "updated_at",
   "closed_at",
-  "completed_at",
   "version",
   "format_version",
   "path",
   "author",
 ]);
-const UPDATE_READ_ONLY_ITEM_KEYS = new Set([...READ_ONLY_ITEM_KEYS, "id"]);
+const UPDATE_READ_ONLY_ITEM_KEYS = new Set([
+  ...READ_ONLY_ITEM_KEYS,
+  "completed_at",
+  "id",
+]);
 const ITEM_FIELD_KEYS = new Set([
   "id",
   "title",
@@ -63,6 +66,7 @@ const ITEM_FIELD_KEYS = new Set([
   "regression",
   "customer_impact",
   "close_reason",
+  "completed_at",
   "dependencies",
   "comments",
   "notes",

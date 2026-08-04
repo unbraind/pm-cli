@@ -296,7 +296,7 @@ function maybeSkipForTrackerOnlyChanges(lastTag, commitsSinceLastTag, changedFil
       ignored_change_paths: changedFilesSinceLastTag,
     },
     outputJson,
-    "Only .agents/pm tracker changes exist since the last release tag. Skipping release pipeline.",
+    "Only tracker changes and the generated CHANGELOG.md projection exist since the last release tag. Skipping release pipeline.",
   );
   return true;
 }

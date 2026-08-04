@@ -4997,6 +4997,63 @@ describe("extension loader", () => {
       "extension_renderer_collision:json:project:runtime-two:global:runtime-one",
     ]);
   });
+
+  it("does not report renderer collisions for disjoint command ownership", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: { global: "/tmp/global", project: "/tmp/project" },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded: [
+        {
+          layer: "global",
+          directory: "items-renderer",
+          manifest_path: "/tmp/global/items-renderer/manifest.json",
+          name: "items-renderer",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 10,
+          entry_path: "/tmp/global/items-renderer/index.mjs",
+          capabilities: ["renderers"],
+          module: {
+            activate(api: ExtensionApi) {
+              api.registerRenderer("json", () => "{}", {
+                commands: ["get"],
+              });
+            },
+          },
+        },
+        {
+          layer: "project",
+          directory: "graph-renderer",
+          manifest_path: "/tmp/project/graph-renderer/manifest.json",
+          name: "graph-renderer",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 20,
+          entry_path: "/tmp/project/graph-renderer/index.mjs",
+          capabilities: ["renderers"],
+          module: {
+            activate(api: ExtensionApi) {
+              api.registerRenderer("json", () => "{}", {
+                commands: ["graph analyze"],
+              });
+            },
+          },
+        },
+      ],
+      failed: [],
+    });
+    expect(activation.renderer_override_count).toBe(2);
+    expect(activation.warnings).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("extension_renderer_collision"),
+      ]),
+    );
+  });
 });
 
 function inMemoryLoadResult(

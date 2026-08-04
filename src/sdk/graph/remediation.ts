@@ -146,7 +146,7 @@ const FINDING_STEP_TEMPLATES: Record<
     op: "investigate",
     confidence: "medium",
     rationale:
-      "Re-open the missing prerequisite as an ordering edge, or move the item back to an active status; only the holder's owner knows which is true.",
+      'Add a local ordering edge, declare an external blocker with --dep "id=<external-ref>,kind=blocked_by,source_kind=external", or move the item back to an active status; only the holder\'s owner knows which is true.',
   },
   isolated_active_node: {
     op: "investigate",
