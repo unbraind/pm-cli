@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Other
+
+- Eliminate July static-analysis nullability, dead-code, and redundant-allocation findings ([pm-cp5pbo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cp5pbo.toon))
+
 ## 2026.8.4 - 2026-08-04
 
 ### Added
