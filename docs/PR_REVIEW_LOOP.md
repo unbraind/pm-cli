@@ -11,7 +11,7 @@ reaction state, thread resolution, outdated markers, and the reviewed head SHA.
 node scripts/reviews/pr-review-loop.mjs inventory --pr 123 > /tmp/pr-123-review-inventory.json
 node scripts/reviews/pr-review-loop.mjs watch --pr 123 --interval 30 > /tmp/pr-123-review-inventory.json
 node scripts/reviews/pr-review-loop.mjs react --node-id IC_kw... --reaction THUMBS_UP
-node scripts/reviews/pr-review-loop.mjs acknowledge --pr 123 --node-id PRR_kw... --reaction THUMBS_UP --body "Review summary acknowledged: https://github.com/owner/repo/pull/123#pullrequestreview-456. The suggested edge case is covered by test X."
+node scripts/reviews/pr-review-loop.mjs acknowledge --pr 123 --node-id PRR_kw... --reaction THUMBS_UP --body "CodeRabbit feedback implemented: https://github.com/owner/repo/pull/123#pullrequestreview-456. The suggested edge case is covered by test X."
 node scripts/reviews/pr-review-loop.mjs reply-inline --pr 123 --comment-id 456 --body "Addressed in abc123."
 node scripts/reviews/pr-review-loop.mjs acknowledge-inline --pr 123 --comment-id 456 --node-id PRRC_kw... --reaction THUMBS_UP --body "Addressed in abc123."
 ```
@@ -23,6 +23,10 @@ a reply thread for top-level PR conversation comments or submitted review summar
 Use `acknowledge` for those surfaces: its PR comment must identify the bot, link the
 exact GitHub artifact, and explain whether the feedback was implemented or declined.
 That keeps the response auditable without pretending GitHub created a direct thread.
+The command adds a hidden artifact marker and reuses an existing marked comment on
+retry, so a lost response cannot create duplicate acknowledgements. It reports a
+partial result and exits unsuccessfully when either the comment or reaction write
+fails, allowing the missing write to be retried safely.
 
 After every push or reviewer retrigger, run `watch`. It delegates waiting to
 `gh pr checks --watch`, because reviewer agents report completion through GitHub

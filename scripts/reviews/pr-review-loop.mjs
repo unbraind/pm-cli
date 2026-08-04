@@ -34,9 +34,9 @@ export function parseArgs(argv) {
     const value = rest[index + 1];
     if (!flag?.startsWith("--") || value === undefined) {
       usage(`Invalid argument: ${flag ?? ""}`);
-      continue;
+    } else {
+      options[flag.slice(2)] = value;
     }
-    options[flag.slice(2)] = value;
   }
   return { command, options };
 }
@@ -170,6 +170,27 @@ export function pullRequestCommentPath(repo, pr) {
   return `repos/${repo}/issues/${pr}/comments`;
 }
 
+function acknowledgementMarker(nodeId) {
+  return `<!-- pm-review-ack:${nodeId} -->`;
+}
+
+function acknowledgementComment(target, nodeId, body, executeGh) {
+  const path = pullRequestCommentPath(target.repo, target.pr);
+  const marker = acknowledgementMarker(nodeId);
+  const pages = JSON.parse(executeGh(["api", path, "--paginate", "--slurp"]));
+  const existing = pages.flat().find((comment) => comment?.body?.includes(marker));
+  if (existing) return JSON.stringify(existing);
+  return executeGh(["api", path, "-f", `body=${body}\n\n${marker}`]);
+}
+
+function attemptGitHubWrite(write) {
+  try {
+    return { ok: true, value: JSON.parse(write()) };
+  } catch (error) {
+    return { ok: false, error: String(error?.message ?? error) };
+  }
+}
+
 export function addReaction(nodeId, reaction, executeGh = runGh) {
   if (!nodeId || !reaction) usage("A reaction requires --node-id and --reaction.");
   if (!validReactions.has(reaction)) usage(`Invalid reaction: ${reaction}`);
@@ -233,10 +254,20 @@ function handleTopLevelConversationWrite(command, options, executeGh, write) {
     write(executeGh(commentArgs));
     return true;
   }
-  const reaction = addReaction(options["node-id"], options.reaction, executeGh);
-  const comment = executeGh(commentArgs);
-  write(JSON.stringify({ reaction: JSON.parse(reaction), comment: JSON.parse(comment) }));
-  return true;
+  const nodeId = options["node-id"];
+  if (!nodeId || !options.reaction) usage("A reaction requires --node-id and --reaction.");
+  if (!validReactions.has(options.reaction)) usage(`Invalid reaction: ${options.reaction}`);
+  const comment = attemptGitHubWrite(() => acknowledgementComment(
+    target, nodeId, options.body, executeGh,
+  ));
+  const reaction = attemptGitHubWrite(() => addReaction(nodeId, options.reaction, executeGh));
+  if (comment.ok && reaction.ok) {
+    write(JSON.stringify({ reaction: reaction.value, comment: comment.value }));
+    return true;
+  }
+  const result = { status: "partial", reaction, comment };
+  write(JSON.stringify(result));
+  throw new Error(`GitHub acknowledgement partially completed: ${JSON.stringify(result)}`);
 }
 
 export function main(argv = process.argv.slice(2), dependencies = {}) {

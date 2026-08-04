@@ -6,15 +6,16 @@ status: in_progress
 priority: 1
 tags[4]: "area:quality",codefactor,deepscan,static-analysis
 created_at: "2026-08-04T06:06:49.202Z"
-updated_at: "2026-08-04T06:47:44.834Z"
+updated_at: "2026-08-04T07:08:32.965Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#867917289da55728242603b6"
 author: "harness:codex"
 acceptance_criteria: "Every supplied finding is removed at its reported semantic site; Focused tests, typecheck, lint, and full coverage pass; The PR review inventory cannot miss unacknowledged bot feedback"
 parent: pm-92if
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-04T06:06:49.202Z","harness:codex","Duplicate check 2026-08-04: searched all statuses for the exact graph/run.ts, item-format.ts, Sentry, normalizeBootstrapInvocation, and static-analysis terms. pm-zt1c and pm-xsth are closed historical spread waves at different or earlier sites; pm-92if is the canonical open quality parent and no matching active child exists."
   "2026-08-04T06:47:44.834Z","harness:codex","Evidence before publication: removed every supplied unnecessary-spread, undefined-value, insufficient-null-check, unused declaration/import/parameter, useless-array, and stale-call-signature finding without suppressions. Added complete top-level bot acknowledgement commands to scripts/reviews/pr-review-loop.mjs and documented exact-head blocking review workflow. Linked focused suite passed 674/674; full coverage passed 6800/6800 at 100/100/100/100; linked ESLint/duplication/static gate and typecheck passed; full pnpm lint passed including SDK entrypoint and CLI transport floors. pm validate reports history drift 0 and storage integrity ok; pre-existing resolution metadata warning remains 295 closed items."
+  "2026-08-04T07:08:32.965Z","harness:codex","Review round evidence: PR #892 exact head 2e47758 received three actionable bot threads. Implemented marker-based idempotent top-level acknowledgements with explicit partial-write reporting, both comment-first and reaction-first failure coverage, the missing success-output assertion, and a bot/outcome-explicit documentation example. Focused review-loop suite passes 11/11; first full coverage run passed 6801/6801 tests and identified only the newly added uncovered branches, which are now covered. Repository lint semantic gates passed; the local SDK import timing gate was host-load limited at 423-424ms versus 367ms without changing its budget, while the prior exact head and hosted exact-head gate passed."
 files[26]{path,scope,note}:
   eslint-suppressions.json,project,Prune suppressions made obsolete by dead-code cleanup
   package.json,project,Lower suppression ratchet after cleanup
