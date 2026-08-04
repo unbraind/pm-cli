@@ -2,13 +2,13 @@ id: pm-6sc8jq
 title: "GH-891: external blockers make graph stale_lifecycle_block impossible to resolve truthfully"
 description: GitHub issue #891 reports that pm graph audit treats blocked work without an open tracker predecessor as stale even when blocked_reason precisely documents a real external party or event that should not be fabricated as a PM item. The audit needs an honest first-class external-blocker policy or a blocked_reason-backed classification so machine governance remains actionable.
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:governance","area:graph",external-blocker,github-report,truthfulness
 created_at: "2026-08-04T08:43:47.536Z"
-updated_at: "2026-08-04T11:52:04.709Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#e5139491a52f7c630a58be71"
+updated_at: "2026-08-04T12:24:57.205Z"
+closed_at: "2026-08-04T12:24:56.632Z"
+completed_at: "2026-08-04T12:24:56.632Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "The SDK governance policy distinguishes missing blocker evidence from documented external blockers without inventing graph nodes; CLI, SDK, MCP, contracts, docs, and tests expose one deterministic externally-blocked representation and severity policy; The existing genuinely stale blocked case remains actionable and a negative control proves the audit still catches it"
@@ -18,17 +18,19 @@ confidence: high
 severity: high
 environment: pm-cli 2026.8.3; external fleet tracker; pm graph audit --json
 repro_steps: Create or inspect a blocked item with a precise non-empty blocked_reason and no internal ordering predecessor; run pm graph audit --json; observe stale_lifecycle_block with remediation that requires fabricating or reopening a tracker item
+resolution: "External blocker provenance is now authorable, canonical, and lifecycle-aware."
 expected_result: Externally blocked work has a truthful machine-readable representation and does not emit an actionable stale-lifecycle defect when its evidence is complete
-actual_result: The audit reports stale_lifecycle_block and recommends an internal edge or active status even when neither is truthful
+actual_result: "source_kind=external canonicalizes to global, preserves cross-workspace identity, and prevents false stale lifecycle findings while genuine missing-edge blocks remain flagged."
 customer_impact: "Agents learn to ignore graph audits or fabricate placeholder work, weakening governance and context truth"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-6x7o,implements,"2026-08-04T08:43:47.536Z","harness:codex","cli:create:dep",detected
   pm-96h7,implements,"2026-08-04T08:43:47.536Z","harness:codex","cli:create:dep",detected
   pm-gzyt2j,discovered_from,"2026-08-04T08:43:47.536Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-04T08:43:47.536Z","harness:codex","Duplicate check 2026-08-04: all-status searches for stale_lifecycle_block, external party, blocked_reason, graph governance, and blocker semantics found pm-6x7o as the broad audit owner but no item for honest external-blocker classification. GitHub source: https://github.com/unbraind/pm-cli/issues/891"
   "2026-08-04T11:47:39.156Z","harness:codex","Evidence: source_kind=external is accepted and canonicalized to global; external blocked_by edges satisfy lifecycle governance without fabricated local items, while the true missing-edge stale finding remains covered. Linked provenance/graph tests and an isolated packed npx graph-audit consumer passed."
   "2026-08-04T11:52:04.709Z","harness:codex","Review handoff: PR #893 https://github.com/unbraind/pm-cli/pull/893 at initial head 6c31a5f18 packages this item with the related SDK/CLI governance tranche."
+  "2026-08-04T12:23:28.472Z","harness:codex","Final review evidence: PR #893 exact head a8ea2b426 passed every hosted check, including static, 4 coverage shards plus coverage gate, typecheck, compatibility, smokes, Windows, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, DeepScan, CodeFactor, Codecov, and CodSpeed. Sourcery's actionable flag-normalization thread was implemented/replied/resolved; all bot comments/reviews were reacted to and acknowledged. CodeRabbit was quota-limited and Greptile supplied no response within the review window."
 learnings[1]{created_at,author,text}:
   "2026-08-04T11:47:54.591Z","harness:codex",An external blocker is a real ordering predecessor even without a local item; canonical storage can remain global while accepting external as the clearer authoring alias.
 files[3]{path,scope,note}:
@@ -41,4 +43,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msekqnu9-iwklma,test,passed,"2026-08-04T11:27:49.248Z","2026-08-04T11:27:58.257Z","2026-08-04T11:27:58.257Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SDK.md,project,External blocker SDK contract
+close_reason: "External blocker provenance is now authorable, canonical, and lifecycle-aware. Verified in PR #893 at exact head a8ea2b426 with all required hosted checks green."
 body: ""

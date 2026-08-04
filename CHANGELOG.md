@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Fixed
+
+- Tracker-only PM governance commits cannot satisfy required CI without changing the generated changelog ([pm-2x5x83](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2x5x83.toon))
+- GH-891: external blockers make graph stale_lifecycle_block impossible to resolve truthfully ([pm-6sc8jq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6sc8jq.toon))
+- GH-889: merge-conflict recovery guidance hides the durable discarded-value report ([pm-fbrz7p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fbrz7p.toon))
+- GH-890: extension collision diagnostics omit the effective winner and cannot distinguish safe scoped overlap ([pm-6mjxgq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6mjxgq.toon))
+- GH-885: create-time close_reason_required recovery recommends an impossible different-command retry ([pm-5uclvd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5uclvd.toon))
+- GH-887: terminal create contract is non-atomic and inconsistent across importer-facing closure metadata ([pm-ykdt4m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ykdt4m.toon))
+
 ### Security
 
 - 2026-08-04 holistic pm CLI, SDK, and ecosystem manual review and optimization plan ([pm-gzyt2j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-gzyt2j.toon))

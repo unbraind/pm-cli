@@ -2,13 +2,13 @@ id: pm-ykdt4m
 title: "GH-887: terminal create contract is non-atomic and inconsistent across importer-facing closure metadata"
 description: "GitHub issue #887 reports that importers upgrading to 2026.8.3 repeatedly implemented create-then-parse-id-then-close workflows for source records already terminal. Although create can currently satisfy close-reason governance through --resolution, the contract does not present a coherent create-time closure surface for close reason, completion time, expected/actual evidence, and source provenance, and the multi-command fallback is non-atomic and slow."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[8]: agent-ux,"area:cli","area:importers","area:sdk",atomicity,github-report,lifecycle,performance
 created_at: "2026-08-04T08:44:51.089Z"
-updated_at: "2026-08-04T12:11:20.420Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#e5139491a52f7c630a58be71"
+updated_at: "2026-08-04T12:23:20.107Z"
+closed_at: "2026-08-04T12:23:19.513Z"
+completed_at: "2026-08-04T12:23:19.513Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: "A single SDK primitive is authoritative for atomic create-plus-terminal-transition semantics and governance validation; CLI, MCP, contracts, completion, docs, and external package examples expose coherent close reason, completion time, resolution, expected, actual, and source provenance inputs; The mutation receipt is stable and typed; imported terminal records cannot silently degrade to open on parser mismatch or partial failure; Batch and isolated npm/Bun package consumers prove performance and behavior across GitHub, CSV, and Beads importer patterns"
@@ -18,20 +18,22 @@ confidence: medium
 severity: high
 environment: "pm-cli 2026.8.3 with GitHub, CSV, and Beads external importers"
 repro_steps: Import an already-closed source record while require_close_reason is enabled; compare create flags with close flags and implement the documented fallback across hundreds of records
+resolution: "Atomic terminal-create closure metadata now flows through SDK, CLI, MCP/tool schemas, structured JSON, generated contracts, and packed npm/Bun consumers."
 expected_result: One typed SDK/CLI mutation atomically creates terminal source records with complete author-supplied closure provenance and stable receipt semantics
-actual_result: Importers couple to a partial create contract or perform multiple subprocess calls with a crash window and duplicated parsing logic
+actual_result: "Single terminal create preserves author-supplied close reason, source completed_at, resolution, expected/actual evidence, and local closed_at atomically; direct Commander normalization and full contract baselines are covered."
 customer_impact: "Bulk migrations are slower, non-atomic, and can silently leave terminal source work open"
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-2ew0w3,discovered_from,"2026-08-04T08:44:51.089Z","harness:codex","cli:create:dep",detected
   pm-gzyt2j,discovered_from,"2026-08-04T08:44:51.089Z","harness:codex","cli:create:dep",detected
   pm-n7rr,implements,"2026-08-04T08:44:51.089Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-04T08:44:51.089Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-04T08:44:51.089Z","harness:codex","Duplicate check 2026-08-04: all-status searches covered terminal create, require_close_reason, --resolution, importer closure, atomic lifecycle mutation, and create/update/close policy. Closed pm-2ew0w3 fixed contradictory terminal transition policy, but no active item owns the complete atomic importer-facing terminal-create contract described by GitHub #887. GitHub source: https://github.com/unbraind/pm-cli/issues/887"
   "2026-08-04T11:47:36.827Z","harness:codex","Evidence: terminal create now accepts closeReason/completedAt across SDK, CLI, tool schema, and JSON-document ingestion; explicit reason wins over message/resolution and completed_at remains distinct from local closed_at. Focused linked tests passed; isolated packed npm/npx consumer created and reread a terminal item with source timestamp; full coverage passed 6807/6807 at 100/100/100/100."
   "2026-08-04T11:52:02.850Z","harness:codex","Review handoff: PR #893 https://github.com/unbraind/pm-cli/pull/893 at initial head 6c31a5f18 packages this item with the related SDK/CLI governance tranche."
   "2026-08-04T11:59:41.320Z","harness:codex","Hosted CI correction: PR #893 static job 91983398581 failed only because the generated full contract fixture omitted the new create flags/tool fields. pnpm contracts:update added the four additive contract projections and pnpm contracts:check now passes."
   "2026-08-04T12:11:20.420Z","harness:codex","Review feedback: Sourcery correctly identified missing direct normalizeCreateOptions coverage for closeReason/completedAt; added it without any type escape. Its claim that create lacks resolution/expected/actual is stale against the live contracts: those flags and persistence already exist in commander-mutation-options.ts, registration-helpers.ts, tool-schema.ts, and lifecycle/create.ts."
+  "2026-08-04T12:23:18.406Z","harness:codex","Final review evidence: PR #893 exact head a8ea2b426 passed every hosted check, including static, 4 coverage shards plus coverage gate, typecheck, compatibility, smokes, Windows, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, DeepScan, CodeFactor, Codecov, and CodSpeed. Sourcery's actionable flag-normalization thread was implemented/replied/resolved; all bot comments/reviews were reacted to and acknowledged. CodeRabbit was quota-limited and Greptile supplied no response within the review window."
 learnings[1]{created_at,author,text}:
   "2026-08-04T11:47:52.390Z","harness:codex",Imported completion time and local closure mutation time are different facts; terminal creation must preserve both in one transaction instead of rewriting source history.
 files[8]{path,scope,note}:
@@ -51,4 +53,5 @@ test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msekom06-nw20ip,test,passed,"2026-08-04T11:25:51.936Z","2026-08-04T11:26:22.566Z","2026-08-04T11:26:22.566Z",2,0,0
 docs[1]{path,scope,note}:
   docs/SDK.md,project,Terminal-create SDK and importer contract
+close_reason: "Atomic terminal-create closure metadata now flows through SDK, CLI, MCP/tool schemas, structured JSON, generated contracts, and packed npm/Bun consumers. Verified in PR #893 at exact head a8ea2b426 with all required hosted checks green."
 body: ""
