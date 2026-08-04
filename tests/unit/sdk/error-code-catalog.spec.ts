@@ -61,7 +61,9 @@ describe("error code catalog", () => {
       { ...catalog[0]!, meaning: " " },
       { ...catalog[0]!, recovery: " " },
       { ...catalog[0]!, sources: [] },
+      { ...catalog[0]!, sources: [" "] },
       { ...catalog[0]!, emitting_commands: [] },
+      { ...catalog[0]!, emitting_commands: [" "] },
       { ...catalog[0]!, exit_code: 9 as 1 },
       { ...catalog[0]!, class: "conflict" as const },
     ]) {

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: agent-ux,"area:cli","area:contracts",diagnostics,error-contract,scripting,simplification
 created_at: "2026-07-26T06:02:22.287Z"
-updated_at: "2026-08-04T20:56:51.483Z"
+updated_at: "2026-08-04T21:26:10.823Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "pm contracts emits an error-code catalog generated from the same declarations the runtime uses, so it cannot drift; each entry carries code, stable exit code, stable-or-provisional status, emitting commands, and a one-line meaning; a snapshot gate in the shape of contracts:check and sdk:surface:check makes adding a code a reviewed change and makes renaming or removing a stable code fail the build; a deduplication pass applies the one-spelling-per-concept rule from pm-fs8q9x to the 195 codes, merging near-synonyms behind aliases rather than deleting them; a documented code-class to exit-code mapping lets a shell consumer classify a failure from exit status alone, closing the exit-code half of pm-psy1; the catalog is emitted under a surface tier so the default pm contracts payload does not grow"
@@ -48,7 +48,7 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-07-26T14:27:05.518Z","harness:codex","GitHub report linkage: GH-745 https://github.com/unbraind/pm-cli/issues/745 demonstrates unsupported PmClient actions returning literal 64 while EXIT_CODE.USAGE is 2. Reusing this canonical all-status error-contract feature; no duplicate item created."
   "2026-07-26T14:47:00.511Z","harness:codex","Evidence: SDK native dispatch now imports and uses the canonical EXIT_CODE.USAGE contract for every unsupported extension-action branch. Focused regression tests passed, full coverage passed 374/374 files and 6420/6420 tests at literal 100/100/100/100, lint/static quality/contracts passed, and an unrelated temporary consumer installed the packed tarball and observed exitCode=2 matching the exported EXIT_CODE.USAGE."
   "2026-07-26T15:12:40.567Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/748. Initial exact implementation commit 004790f7; hosted exact-head checks and AI review loop pending."
@@ -63,6 +63,7 @@ comments[14]{created_at,author,text}:
   "2026-08-04T19:54:38.932Z","harness:codex","Implementation tranche evidence 2026-08-04: the generated error catalog now exposes semantic exit classes and emitting-command ownership, with an explicit stable/provisional compatibility ledger. Generation fails closed on malformed ledger data, unsupported exits, stable-code removal, and drift; new codes default provisional. Workspace snapshot negative paths now emit typed usage/not-found/conflict classes. All four linked catalog suites passed; direct full coverage is 100/100/100/100 and contracts generation is current. Alias-preserving deduplication and exhaustive grammar-to-code conformance remain open."
   "2026-08-04T20:56:33.386Z","harness:codex","Review evidence: CodeRabbit findings drove fail-closed stability-ledger reads (only ENOENT means absent), write-after-render ordering, unknown_error generic-failure exit 1, cross-cutting '*' emitter retention, and child_process mock parity. Added direct regressions including failed initial generation leaving no ledger, EISDIR propagation, mixed command/cross-cutting sources, and the stable unknown_error mapping. The broader authored per-code meaning/remediation vocabulary remains within this open item's planned runtime-owned metadata scope; this revision preserves the pre-existing generated meaning wording rather than claiming generic text is complete."
   "2026-08-04T20:56:35.007Z","harness:codex","Verification: direct repository coverage passed 433 files / 6850 tests at exactly 100% statements (48776/48776), branches (35358/35358), functions (9975/9975), and lines (47275/47275). Focused generator/output/budget/example suite passed 23/23; linked workspace snapshot CLI integration passed 2/2. Typecheck, ESLint, zero-clone JSCPD, 100% docstring static gate, contracts snapshots, package SDK parity, secrets scan, token/context/retrieval gates, docs/skills, and packed artifact gates passed. Import-cost timing remains locally noisy under load from two unrelated high-CPU Tokenwerk pytest workers and Chrome; no baseline was weakened, and hosted exact-head checks remain authoritative."
+  "2026-08-04T21:26:09.300Z","harness:codex","Final outside-diff review correction: definePmErrorCodeCatalog now trims, filters, deduplicates, and sorts sources/emitting_commands before enforcing the non-empty invariant, so whitespace-only declarations fail closed. Regression covers both arrays. Focused test, typecheck, ESLint, contracts check, and direct full coverage passed: 433 files / 6850 tests; 100% statements (48778/48778), branches (35358/35358), functions (9975/9975), lines (47277/47277)."
 files[17]{path,scope,note}:
   package.json,project,Generated error catalog drift scripts and gate integration
   scripts/error-code-stability.json,project,Stable-code compatibility ledger

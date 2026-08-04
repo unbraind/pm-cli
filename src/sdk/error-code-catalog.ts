@@ -34,6 +34,13 @@ const ERROR_CLASS_BY_EXIT_CODE = new Map(
   ),
 );
 
+/** Normalize a declared non-empty string set into stable contract order. */
+function normalizeContractList(values: readonly string[]): string[] {
+  return [
+    ...new Set(values.map((value) => value.trim()).filter(Boolean)),
+  ].sort();
+}
+
 /** One machine-readable error and its portable recovery contract. */
 export interface PmErrorCodeContract {
   /** Stable snake_case identifier. */
@@ -70,12 +77,16 @@ export function definePmErrorCodeCatalog(
       throw new TypeError(`Duplicate pm error code: ${code}`);
     }
     seen.add(code);
+    const sources = normalizeContractList(declaration.sources);
+    const emittingCommands = normalizeContractList(
+      declaration.emitting_commands,
+    );
     if (
       ![1, 2, 3, 4, 5].includes(declaration.exit_code) ||
       declaration.meaning.trim().length === 0 ||
       declaration.recovery.trim().length === 0 ||
-      declaration.sources.length === 0 ||
-      declaration.emitting_commands.length === 0 ||
+      sources.length === 0 ||
+      emittingCommands.length === 0 ||
       ERROR_CLASS_BY_EXIT_CODE.get(declaration.exit_code) !== declaration.class
     ) {
       throw new TypeError(`Invalid pm error code contract: ${code}`);
@@ -85,18 +96,8 @@ export function definePmErrorCodeCatalog(
       code,
       meaning: declaration.meaning.trim(),
       recovery: declaration.recovery.trim(),
-      sources: [
-        ...new Set(
-          declaration.sources.map((source) => source.trim()).filter(Boolean),
-        ),
-      ].sort(),
-      emitting_commands: [
-        ...new Set(
-          declaration.emitting_commands
-            .map((command) => command.trim())
-            .filter(Boolean),
-        ),
-      ].sort(),
+      sources,
+      emitting_commands: emittingCommands,
     });
   });
   return Object.freeze(
