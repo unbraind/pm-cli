@@ -80,13 +80,14 @@ async function loadGate(options: {
     writes[String(file)] = contents;
   });
   const mkdtempSync = vi.fn((prefix: string) => `${String(prefix)}fixed`);
+  const rmSync = vi.fn();
   vi.doMock("node:child_process", () => ({ spawnSync }));
-  vi.doMock("node:fs", () => ({ mkdtempSync, readFileSync, writeFileSync }));
+  vi.doMock("node:fs", () => ({ mkdtempSync, readFileSync, rmSync, writeFileSync }));
   const exit = harness.mockProcessExit();
   const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
   const stderr = vi.spyOn(console, "error").mockImplementation(() => undefined);
   const module = await harness.importModule<GateModule>(SCRIPT);
-  return { module, spawnSync, readFileSync, writeFileSync, writes, exit, stdout, stderr };
+  return { module, spawnSync, readFileSync, rmSync, writeFileSync, writes, exit, stdout, stderr };
 }
 
 function stdoutText(stdout: { mock: { calls: unknown[][] } }): string {
@@ -529,6 +530,18 @@ describe("tracker measurement gate: tracker access", () => {
     expect(errorText(stderr)).toContain("boom");
     expect(exit).toHaveBeenCalledWith(1);
   });
+
+  it("fails closed with bounded output when a tracker command emits invalid JSON", async () => {
+    const invalid = `warning banner ${"x".repeat(600)}UNIQUE_TRUNCATED_TAIL`;
+    const { module, exit, stderr } = await loadGate({
+      spawn: () => ({ status: 0, stdout: invalid, stderr: "" }),
+    });
+    expect(() => module.measureTracker(module.cliContext(new Map()), [DECLARATION])).toThrow("EXIT:1");
+    expect(errorText(stderr)).toContain("Tracker measurement command returned unparsable JSON");
+    expect(errorText(stderr)).toContain(invalid.slice(0, 500));
+    expect(errorText(stderr)).not.toContain("UNIQUE_TRUNCATED_TAIL");
+    expect(exit).toHaveBeenCalledWith(1);
+  });
 });
 
 describe("tracker measurement gate: entrypoint", () => {
@@ -622,10 +635,14 @@ describe("tracker measurement gate: entrypoint", () => {
       }
       return { status: 0, stdout: "{}", stderr: "" };
     };
-    const { module, stdout } = await loadGate({ spawn });
+    const { module, rmSync, stdout } = await loadGate({ spawn });
     module.main(["--negative-control"]);
     expect(stdoutText(stdout)).toContain("Tracker measurement negative control passed");
     expect(stdoutText(stdout)).toContain("declared 0, observed 1");
+    expect(rmSync).toHaveBeenCalledWith(expect.stringContaining("pm-tracker-ratchet-fixed"), {
+      recursive: true,
+      force: true,
+    });
   });
 
   it("fails the negative control when the seeded overshoot is not detected", async () => {
@@ -643,9 +660,13 @@ describe("tracker measurement gate: entrypoint", () => {
       }
       return { status: 0, stdout: "{}", stderr: "" };
     };
-    const { module, exit, stderr } = await loadGate({ spawn });
+    const { module, exit, rmSync, stderr } = await loadGate({ spawn });
     expect(() => module.runNegativeControl(new Map())).toThrow("EXIT:1");
     expect(errorText(stderr)).toContain("negative control did not fail");
     expect(exit).toHaveBeenCalledWith(1);
+    expect(rmSync).toHaveBeenCalledWith(expect.stringContaining("pm-tracker-ratchet-fixed"), {
+      recursive: true,
+      force: true,
+    });
   });
 });

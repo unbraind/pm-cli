@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Filed defect populations grow after they are measured and nothing turns a tracker measurement into a ceiling: the maintenance passes that record the count are the writer that widens it ([pm-ips23h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ips23h.toon))
 - Sentry PM-CLI-2V: pm init surfaces raw EACCES when the managed workspace .gitignore cannot be written ([pm-3gh457](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3gh457.toon))
+- Filed defect populations grow after they are measured and nothing turns a tracker measurement into a ceiling: the maintenance passes that record the count are the writer that widens it ([pm-ips23h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ips23h.toon))
 - Tracker-only PM governance commits cannot satisfy required CI without changing the generated changelog ([pm-2x5x83](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2x5x83.toon))
 - GH-891: external blockers make graph stale_lifecycle_block impossible to resolve truthfully ([pm-6sc8jq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6sc8jq.toon))
 - GH-889: merge-conflict recovery guidance hides the durable discarded-value report ([pm-fbrz7p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fbrz7p.toon))

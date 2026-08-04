@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:ci","area:governance",graph,quality-gate,recurrence
 created_at: "2026-08-04T05:48:43.072Z"
-updated_at: "2026-08-04T16:11:15.688Z"
-closed_at: "2026-08-04T16:11:15.217Z"
-completed_at: "2026-08-04T16:11:15.217Z"
+updated_at: "2026-08-04T16:43:05.509Z"
+closed_at: "2026-08-04T16:43:04.970Z"
+completed_at: "2026-08-04T16:43:04.970Z"
 author: "harness:claude-code"
 estimated_minutes: 900
 acceptance_criteria: "A filed item can declare a machine-readable population measurement carrying selector, count, and owning item, so the number in the description and the number a gate enforces are the same number; A check recomputes every declared population from tracked data and fails when an observed count exceeds its declared ceiling, naming the item, selector, declared count, observed count, and the mutations that added the difference; The check runs identically in the local pre-push gate set and in hosted CI, and drift between the two selected sets fails; Closing an owning item retires its ceiling, so no ceiling outlives the defect it guards and no waiver is needed to close honest work; The two populations proved here are declared first: pm-jkbqt8 blocks rows at 241 and pm-4020c5 related_to rows at 43, each recording the growth already observed since it was measured; A negative control proves the check can fail: adding one row beyond a declared ceiling in a sandbox tracker turns the gate red, and the fixture is registered in the gate registry alongside the existing tracker-integrity control"
@@ -35,11 +35,12 @@ dependencies[14]{id,kind,created_at,author,source_kind,author_source}:
   pm-ouyq3n,related,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-04T05:50:38.834Z","harness:claude-code","cli:update:dep",detected
   pm-kpftft,verifies,"2026-08-04T14:53:36.506Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-04T14:21:06.966Z","harness:codex","Duplicate check evidence: all-status searches for tracker measurement, ratchet, population, dependency-kind aliases, blocks/blocked_by, and related_to found this item as the canonical arbitrary-population owner; pm-kpftft remains the distinct repository validate/health baseline owner and is bundled rather than duplicated."
   "2026-08-04T14:52:20.478Z","harness:codex","Evidence 2026-08-04: implemented a generic shrinking-only tracker measurement gate with exhaustive pm validate warning and pm health check classes, dependency-kind and graph-profile ceilings, terminal-owner retirement, fail-closed update behavior, bounded mutation attribution receipts, and a sandbox negative control. Wired it into quality:static, mandatory CI, and the release gate registry. Verification passed: 432 files / 6836 tests; coverage 100% statements (48644/48644), branches (35239/35239), functions (9955/9955), lines (47149/47149); quality:static; typecheck; docs/links; secret scan; pnpm audit; package artifact gate; 88-command package-first dogfood; packed npx smoke; isolated packed Bun install/init/create/search. The first static run observed a 193ms query import against a 172ms ceiling; unchanged exact rerun and the full suite passed without altering the ceiling, identifying environment variance rather than accepting regression."
   "2026-08-04T15:43:12.041Z","harness:codex","Review evidence: DeepScan PR #894 reports three records, all the same INSUFFICIENT_NULL_CHECK in dependency contributor attribution. All-status search found pm-ips23h as the canonical implementation owner; no duplicate analyzer item was created."
   "2026-08-04T16:11:14.682Z","harness:codex","Review remediation evidence 2026-08-04: PR #894 DeepScan findings were three duplicate reports for one nullable dependency-contributor access. Replaced optional-chain narrowing with explicit object/null guards and guarded measuredOn/createdAt locals; malformed null and scalar dependency rows are covered. Linked suite passed 47/47, full repository coverage passed 6838/6838 at 100% statements/branches/functions/lines, and CI-mode quality:static passed all 19 live ratchets."
+  "2026-08-04T16:43:01.687Z","harness:codex","CodeRabbit remediation evidence: runCliJson now converts zero-exit malformed stdout into the same fail-closed diagnostic surface with command context and a 500-character disclosure bound; negative-control trackers are removed recursively in finally on both pass and failure. Focused tests pass 46/46 and full coverage passes 6839/6839 at exact 100/100/100/100; static, type, contracts, token/context, import-cost, and transport gates pass."
 learnings[1]{created_at,author,text}:
   "2026-08-04T14:53:37.047Z","harness:codex","A tracker measurement becomes durable project context only when selector, ceiling, owner, provenance, and retirement semantics are executable. Exhaustive sources must fail on undeclared keys, while bounded mutation receipts keep regression output actionable and token-efficient."
 files[9]{path,scope,note}:
@@ -60,5 +61,5 @@ test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated changelog entry for the completed tracker context-quality tranche.
   docs/TESTING.md,project,operator contract for tracker ratchets
-close_reason: "Completed tracker measurement ratchets and exact-head static-analysis hardening; 19 owner-linked ceilings enforce locally and in hosted CI with fail-closed update semantics, clean nullable contributor attribution, negative control, and exact 100% coverage."
+close_reason: "Completed CodeRabbit tracker-gate remediation with bounded parse diagnostics, unconditional negative-control cleanup, and exact full coverage."
 body: ""

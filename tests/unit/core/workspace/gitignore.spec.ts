@@ -74,8 +74,9 @@ describe("ensurePmGitignore", () => {
         context: {
           code: "init_gitignore_unwritable",
           reason: "eacces",
-          required: expect.stringContaining("write access"),
+          required: expect.stringContaining("read and write access"),
           nextSteps: expect.arrayContaining([
+            expect.stringContaining("read and write access"),
             expect.stringContaining("writable workspace"),
           ]),
         },

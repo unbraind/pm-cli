@@ -25,7 +25,7 @@
 //   node scripts/release/tracker-measurement-gate.mjs --negative-control # prove the gate can fail
 
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -368,7 +368,13 @@ function runCliJson(context, args) {
       `Tracker measurement command failed: ${context.pmBin} ${argv.join(" ")}\n${(result.stderr ?? "").trim()}`,
     );
   }
-  return JSON.parse(result.stdout);
+  try {
+    return JSON.parse(result.stdout);
+  } catch {
+    fail(
+      `Tracker measurement command returned unparsable JSON: ${context.pmBin} ${argv.join(" ")}\n${result.stdout.slice(0, 500)}`,
+    );
+  }
 }
 
 /**
@@ -429,39 +435,43 @@ export function cliContext(flags) {
 export function runNegativeControl(flags) {
   const context = { ...cliContext(flags) };
   const root = mkdtempSync(path.join(tmpdir(), "pm-tracker-ratchet-"));
-  context.cwd = root;
-  context.env = {
-    PM_PATH: path.join(root, ".agents", "pm"),
-    PM_GLOBAL_PATH: path.join(root, ".global"),
-    PM_NO_TELEMETRY: "1",
-  };
-  runCliJson(context, ["init", "ctl"]);
-  const blocker = runCliJson(context, ["create", "--title", "control blocker", "--type", "Task"]);
-  const dependent = runCliJson(context, [
-    "create",
-    "--title",
-    "control dependent",
-    "--type",
-    "Task",
-    "--dep",
-    `id=${String(blocker.id)},kind=blocks`,
-  ]);
-  const declarations = [
-    {
-      id: "negative-control",
-      owner: String(dependent.id),
-      selector: { source: "dependency_kind", kind: "blocks" },
-      ceiling: 0,
-    },
-  ];
-  const { measurements, ownerStatuses } = measureTracker(context, declarations);
-  const evaluation = evaluateDeclarations({ declarations, measurements, ownerStatuses });
-  if (evaluation.violations.length === 0) {
-    fail("Tracker measurement negative control did not fail on a row beyond its declared ceiling.");
+  try {
+    context.cwd = root;
+    context.env = {
+      PM_PATH: path.join(root, ".agents", "pm"),
+      PM_GLOBAL_PATH: path.join(root, ".global"),
+      PM_NO_TELEMETRY: "1",
+    };
+    runCliJson(context, ["init", "ctl"]);
+    const blocker = runCliJson(context, ["create", "--title", "control blocker", "--type", "Task"]);
+    const dependent = runCliJson(context, [
+      "create",
+      "--title",
+      "control dependent",
+      "--type",
+      "Task",
+      "--dep",
+      `id=${String(blocker.id)},kind=blocks`,
+    ]);
+    const declarations = [
+      {
+        id: "negative-control",
+        owner: String(dependent.id),
+        selector: { source: "dependency_kind", kind: "blocks" },
+        ceiling: 0,
+      },
+    ];
+    const { measurements, ownerStatuses } = measureTracker(context, declarations);
+    const evaluation = evaluateDeclarations({ declarations, measurements, ownerStatuses });
+    if (evaluation.violations.length === 0) {
+      fail("Tracker measurement negative control did not fail on a row beyond its declared ceiling.");
+    }
+    process.stdout.write(
+      `Tracker measurement negative control passed: ${formatViolation(evaluation.violations[0])}\n`,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
-  process.stdout.write(
-    `Tracker measurement negative control passed: ${formatViolation(evaluation.violations[0])}\n`,
-  );
 }
 
 /** Entrypoint: check by default, `--update` to re-declare, `--negative-control` to prove failure. */

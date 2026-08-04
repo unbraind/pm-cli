@@ -148,7 +148,7 @@ describe("GitHub workflow contract", () => {
       "pnpm version:check",
       "pnpm security:scan",
       "pnpm lint",
-      "node dist/cli.js merge install --no-extensions --json",
+      "node dist/cli.js merge install --no-extensions",
       "git diff --exit-code -- .gitattributes",
       "node dist/cli.js validate --check-storage-integrity --check-history-drift --strict-exit --json --no-extensions",
       'node dist/cli.js history "${representative_id}" --verify --strict-exit --json --no-extensions > /dev/null',
@@ -173,10 +173,13 @@ describe("GitHub workflow contract", () => {
       "files: ./coverage/junit.xml",
       "name: pm-cli-test-results",
     ]);
-    expect(gatesJob.indexOf("node dist/cli.js merge install --no-extensions --json")).toBeLessThan(
+    expect(gatesJob.indexOf("node dist/cli.js merge install --no-extensions")).toBeLessThan(
       gatesJob.indexOf("pnpm lint"),
     );
-    expect(gatesJob.match(/node dist\/cli\.js merge install --no-extensions --json/g)).toHaveLength(1);
+    expect(gatesJob.indexOf("node dist/cli.js merge install --no-extensions")).toBeLessThan(
+      gatesJob.indexOf("node scripts/release/tracker-measurement-gate.mjs"),
+    );
+    expect(gatesJob.match(/node dist\/cli\.js merge install --no-extensions/g)).toHaveLength(1);
     expectContainsAll(coverageShardsJob, [
       "needs: build-foundation",
       "persist-credentials: false",

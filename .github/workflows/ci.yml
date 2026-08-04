@@ -181,7 +181,7 @@ jobs:
       - name: Prepare tracker clone invariants
         if: matrix.gate == 'static'
         run: |
-          node dist/cli.js merge install --no-extensions --json
+          node dist/cli.js merge install --no-extensions
           git diff --exit-code -- .gitattributes
 
       - name: Run typecheck gate

@@ -62,10 +62,10 @@ async function withGitignorePermissionRecovery<T>(operation: () => Promise<T>): 
           code: "init_gitignore_unwritable",
           reason: error.code.toLowerCase(),
           required:
-            "Grant the current user write access to the workspace .gitignore before initialization.",
+            "Grant the current user read and write access to the workspace .gitignore before initialization.",
           why: "pm init must publish its managed runtime-cache ignore fence without replacing unrelated entries.",
           nextSteps: [
-            "Grant write access to the workspace .gitignore and rerun pm init.",
+            "Grant read and write access to the workspace .gitignore and rerun pm init.",
             "If the workspace is intentionally read-only, initialize pm in a writable workspace or clone.",
           ],
         },
