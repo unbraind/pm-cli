@@ -173,6 +173,22 @@ describe("structured mutation input", () => {
       file: ["path=src/index.ts,scope=project,note=implementation"],
     });
 
+    expect(
+      itemDocumentToMutationOptions(
+        JSON.stringify({
+          title: "Imported terminal item",
+          type: "Task",
+          status: "closed",
+          close_reason: "Delivered upstream",
+          completed_at: "2025-12-31T23:59:00.000Z",
+        }),
+        "create",
+      ),
+    ).toMatchObject({
+      closeReason: "Delivered upstream",
+      completedAt: "2025-12-31T23:59:00.000Z",
+    });
+
     const rich = itemDocumentToMutationOptions(
       JSON.stringify({
         title: "Rich",
@@ -240,6 +256,7 @@ describe("structured mutation input", () => {
     });
     expect(envelope).not.toHaveProperty("id");
     expect(envelope).not.toHaveProperty("author");
+    expect(envelope).not.toHaveProperty("completedAt");
 
     const flatUpdate = itemDocumentToMutationOptions(
       JSON.stringify({

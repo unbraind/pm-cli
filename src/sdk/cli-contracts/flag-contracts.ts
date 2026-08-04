@@ -1156,6 +1156,10 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--schedule-preset" },
   { flag: "--schedule_preset" },
   { short: "-s", flag: "--status" },
+  { flag: "--close-reason" },
+  { flag: "--close_reason" },
+  { flag: "--completed-at" },
+  { flag: "--completed_at" },
   { short: "-p", flag: "--priority" },
   { flag: "--tags", aliases: ["--tag"], list: true },
   // NOT list:true — these use Commander's repeatable collector. Marking them

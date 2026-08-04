@@ -246,6 +246,8 @@ const CREATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_CREATE_OPTION_CONTRACTS.map((entry) => entry.param),
   ...TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
   "assignee",
+  "closeReason",
+  "completedAt",
 ]);
 
 const UPDATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([

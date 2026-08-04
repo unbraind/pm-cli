@@ -17,6 +17,11 @@ describe("external dependency graph assembly", () => {
           { id: "Foreign-Z", kind: "related", source_kind: "global" },
           { id: "foreign-z", kind: "blocks", source_kind: "global" },
           { id: "foreign-a", kind: "related", source_kind: "global" },
+          {
+            id: "foreign-blocker",
+            kind: "blocked_by",
+            source_kind: "external",
+          },
           { id: "pm-local-missing", kind: "related" },
         ],
       },
@@ -24,6 +29,7 @@ describe("external dependency graph assembly", () => {
 
     expect(collectExternalDependencyTargetIds(items as never)).toEqual([
       "foreign-a",
+      "foreign-blocker",
       "Foreign-Z",
     ]);
     const assembled = assembleWorkspaceRelationshipGraph(items as never);

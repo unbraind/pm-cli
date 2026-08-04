@@ -52,6 +52,13 @@ function readCreateHistory(context: TempPmContext, id: string): Array<{ op: stri
   return (history.json as { history: Array<{ op: string; author: string; message?: string }> }).history;
 }
 
+async function configureReviewUrlField(context: TempPmContext): Promise<void> {
+  const settingsPath = path.join(context.pmPath, "settings.json");
+  const settings = JSON.parse(await readFile(settingsPath, "utf8")) as { schema?: { fields?: Array<Record<string, unknown>> } };
+  settings.schema = { ...settings.schema, fields: [{ key: "reviewUrl", metadata_key: "review_url", type: "string", cli_flag: "review-url", commands: ["create"] }] };
+  await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+}
+
 describe("runCreate", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
@@ -3135,23 +3142,7 @@ describe("runCreate", () => {
 
   it("rejects unset conflicts with runtime schema fields", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        schema?: { fields?: Array<Record<string, unknown>> };
-      };
-      settings.schema = {
-        ...settings.schema,
-        fields: [
-          {
-            key: "reviewUrl",
-            metadata_key: "review_url",
-            type: "string",
-            cli_flag: "review-url",
-            commands: ["create"],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await configureReviewUrlField(context);
 
       await expect(
         runCreate(
@@ -3770,23 +3761,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
 
   it("persists runtime schema field values into the created item", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        schema?: { fields?: Array<Record<string, unknown>> };
-      };
-      settings.schema = {
-        ...settings.schema,
-        fields: [
-          {
-            key: "reviewUrl",
-            metadata_key: "review_url",
-            type: "string",
-            cli_flag: "review-url",
-            commands: ["create"],
-          },
-        ],
-      };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await configureReviewUrlField(context);
 
       const result = await runCreate(
         baseCreateOptions({
@@ -4129,6 +4104,77 @@ describe("repeatable metadata parser helpers", () => {
         );
         expect(result.item.close_reason).toBe("resolved by an upstream fix");
         expect(result.warnings).not.toContain("close_reason_defaulted");
+      });
+    });
+
+    it("preserves explicit closure reason and actual completion time atomically", async () => {
+      await withTempPmPath(async (context) => {
+        const result = await runCreate(
+          {
+            title: "imported-terminal-item",
+            description: "terminal source record",
+            type: "Task",
+            status: "closed",
+            closeReason: "delivered by the source system",
+            completedAt: "2025-12-31T23:59:00.000Z",
+            message: "imported with provenance",
+            createMode: "progressive",
+          },
+          { path: context.pmPath },
+        );
+        expect(result.item).toMatchObject({
+          status: "closed",
+          close_reason: "delivered by the source system",
+          completed_at: "2025-12-31T23:59:00.000Z",
+        });
+        expect(result.item.closed_at).not.toBe(result.item.completed_at);
+      });
+    });
+
+    it("rejects completion timestamps on non-terminal creates", async () => {
+      await withTempPmPath(async (context) => {
+        await expect(
+          runCreate(
+            {
+              title: "invalid-completion",
+              type: "Task",
+              status: "open",
+              completedAt: "2025-12-31T23:59:00.000Z",
+              createMode: "progressive",
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toThrow("--completed-at requires a terminal create status");
+      });
+    });
+
+    it("preserves an explicit close reason when reason governance is disabled", async () => {
+      await withTempPmPath(async (context) => {
+        const settingsPath = path.join(context.pmPath, "settings.json");
+        const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+          governance?: Record<string, unknown>;
+        };
+        settings.governance = {
+          ...settings.governance,
+          require_close_reason: false,
+        };
+        await writeFile(
+          settingsPath,
+          `${JSON.stringify(settings, null, 2)}\n`,
+          "utf8",
+        );
+
+        const result = await runCreate(
+          {
+            title: "direct-closed-explicit-reason",
+            type: "Task",
+            status: "closed",
+            closeReason: "source-owned closure evidence",
+            createMode: "progressive",
+          },
+          { path: context.pmPath },
+        );
+        expect(result.item.close_reason).toBe("source-owned closure evidence");
       });
     });
 

@@ -78,6 +78,14 @@ export interface TerminalReasonResolution {
   source: TerminalReasonSource;
 }
 
+/** Presentation context used to make terminal-policy recovery actionable. */
+export interface TerminalReasonRecoveryContext {
+  /** Operation whose input failed terminal-reason governance. */
+  operation: "close" | "create";
+  /** Terminal status requested by a create operation. */
+  status?: string;
+}
+
 /** Result of applying ordering-edge lifecycle policy to mutable item metadata. */
 export interface TerminalOrderingMutation {
   /** Metadata fields changed by the policy. */
@@ -126,10 +134,34 @@ export function requireTerminalReason(
   input: TerminalReasonInput,
   required: boolean,
 ): TerminalReasonResolution {
+  return requireTerminalReasonWithRecovery(input, required, {
+    operation: "close",
+  });
+}
+
+/** Enforce close-reason governance with recovery for a specific operation. */
+export function requireTerminalReasonWithRecovery(
+  input: TerminalReasonInput,
+  required: boolean,
+  recovery: TerminalReasonRecoveryContext,
+): TerminalReasonResolution {
   const resolution = resolveTerminalReason(input);
   if (!required || resolution.closeReason !== undefined) {
     return resolution;
   }
+  const examples =
+    recovery.operation === "create"
+      ? [
+          `pm create --title "<title>" --type <type> --status ${recovery.status ?? "closed"} --close-reason "<closing summary>"`,
+          `pm create --title "<title>" --type <type> --status ${recovery.status ?? "closed"} --resolution "<resolution summary>"`,
+          `pm create --stdin-json < item.json`,
+        ]
+      : [
+          'pm close <id> "Done: <what changed and why>"',
+          'pm close <id> --reason "<closing summary>"',
+          'pm close <id> -m "<closing summary>"',
+          "pm close <id> --duplicate-of <canonical-id>",
+        ];
   throw new PmCliError(
     "Close reason text is required because governance.require_close_reason is enabled",
     EXIT_CODE.USAGE,
@@ -138,14 +170,9 @@ export function requireTerminalReason(
       required:
         "Provide an author-controlled closing summary as the reason, message, resolution, or duplicate target.",
       why: "governance.require_close_reason is enabled, so tools must not invent immutable closure evidence.",
-      examples: [
-        'pm close <id> "Done: <what changed and why>"',
-        'pm close <id> --reason "<closing summary>"',
-        'pm close <id> -m "<closing summary>"',
-        "pm close <id> --duplicate-of <canonical-id>",
-      ],
+      examples,
       nextSteps: [
-        "Re-run the terminal transition with a closing summary.",
+        `Re-run the ${recovery.operation} operation with a closing summary.`,
         "To stop requiring reasons, run: pm config set governance-require-close-reason --policy disabled",
       ],
     },

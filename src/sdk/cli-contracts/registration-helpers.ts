@@ -484,6 +484,8 @@ export function normalizeCreateOptions(
     createMode: readCreateString("createMode"),
     schedulePreset: readCreateString("schedulePreset"),
     status: readCreateString("status"),
+    closeReason: readCreateString("closeReason"),
+    completedAt: readCreateString("completedAt"),
     priority: readCreateString("priority"),
     tags: readCreateString("tags"),
     addTags: readCreateList("addTags"),

@@ -4564,6 +4564,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "value",
+          "name": "EXTERNAL_DEPENDENCY_SOURCE_KIND_ALIAS",
+          "signature": "\"external\""
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "extractPatchFailureContext",
           "signature": "(patch: HistoryPatchOp[], error: unknown) => PatchFailureContext | calls: (patch: HistoryPatchOp[], error: unknown) => PatchFailureContext"
@@ -9855,6 +9861,12 @@
           "signature": "(input: TerminalReasonInput, required: boolean) => TerminalReasonResolution | calls: (input: TerminalReasonInput, required: boolean) => TerminalReasonResolution"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "requireTerminalReasonWithRecovery",
+          "signature": "(input: TerminalReasonInput, required: boolean, recovery: TerminalReasonRecoveryContext) => TerminalReasonResolution | calls: (input: TerminalReasonInput, required: boolean, recovery: TerminalReasonRecoveryContext) => TerminalReasonResolution"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "RESERVED_ITEM_FIELD_NAMES",
@@ -12325,6 +12337,12 @@
           "kind": "interface",
           "name": "TerminalReasonInput",
           "signature": "export interface TerminalReasonInput { explicit?: string; duplicateOf?: string; resolution?: string; message?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TerminalReasonRecoveryContext",
+          "signature": "export interface TerminalReasonRecoveryContext { operation: \"close\" | \"create\"; status?: string; }"
         },
         {
           "classification": "advanced_export",

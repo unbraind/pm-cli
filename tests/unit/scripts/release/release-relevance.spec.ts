@@ -11,6 +11,7 @@ describe("scripts/release/release-relevance", () => {
     >("scripts/release/release-relevance.mjs");
     expect(module.isReleaseRelevantPath(".agents/pm/tasks/pm-1.md")).toBe(false);
     expect(module.isReleaseRelevantPath(".agents\\pm\\tasks\\pm-1.md")).toBe(false);
+    expect(module.isReleaseRelevantPath("CHANGELOG.md")).toBe(false);
     expect(module.isReleaseRelevantPath("src/cli/main.ts")).toBe(true);
   });
 });

@@ -9,6 +9,7 @@ import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   applyTerminalOrderingPolicy,
   requireTerminalReason,
+  requireTerminalReasonWithRecovery,
   resolveTerminalReason,
 } from "../../../src/sdk/lifecycle-policy.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
@@ -51,6 +52,24 @@ describe("SDK terminal lifecycle policy", () => {
       );
     }
     expect(requireTerminalReason({}, false)).toEqual({ source: "none" });
+  });
+
+  it("returns same-operation recovery examples for terminal create failures", () => {
+    expect(() => requireTerminalReasonWithRecovery({}, true, { operation: "create", status: "closed" })).toThrow(
+      expect.objectContaining<PmCliError>({
+        context: expect.objectContaining({
+          examples: expect.arrayContaining([expect.stringContaining("pm create")]),
+          nextSteps: expect.arrayContaining([expect.stringContaining("create operation")]),
+        }),
+      }),
+    );
+    expect(() => requireTerminalReasonWithRecovery({}, true, { operation: "create" })).toThrow(
+      expect.objectContaining<PmCliError>({
+        context: expect.objectContaining({
+          examples: expect.arrayContaining([expect.stringContaining("--status closed")]),
+        }),
+      }),
+    );
   });
 
   it("preserves predecessor edges while clearing transient blocked-state scalars", () => {

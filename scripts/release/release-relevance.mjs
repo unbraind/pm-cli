@@ -1,3 +1,4 @@
 export function isReleaseRelevantPath(filePath) {
-  return !filePath.replaceAll("\\", "/").startsWith(".agents/pm/");
+  const normalized = filePath.replaceAll("\\", "/");
+  return normalized !== "CHANGELOG.md" && !normalized.startsWith(".agents/pm/");
 }

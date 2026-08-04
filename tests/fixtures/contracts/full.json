@@ -1767,6 +1767,18 @@
           "short": "-s"
         },
         {
+          "aliases": [
+            "--close_reason"
+          ],
+          "flag": "--close-reason"
+        },
+        {
+          "aliases": [
+            "--completed_at"
+          ],
+          "flag": "--completed-at"
+        },
+        {
           "flag": "--priority",
           "short": "-p"
         },
@@ -8306,6 +8318,20 @@
       },
       {
         "keys": [
+          "closeReason",
+          "close_reason"
+        ],
+        "target": "closeReason"
+      },
+      {
+        "keys": [
+          "completedAt",
+          "completed_at"
+        ],
+        "target": "completedAt"
+      },
+      {
+        "keys": [
           "priority"
         ],
         "target": "priority"
@@ -13525,12 +13551,21 @@
             "description": "When true, clear type option metadata.",
             "type": "boolean"
           },
+          "closeReason": {
+            "description": "Close Reason.",
+            "type": "string"
+          },
           "comment": {
             "description": "Comment.",
             "items": {
               "type": "string"
             },
             "type": "array"
+          },
+          "completedAt": {
+            "description": "Completed At.",
+            "format": "date-time",
+            "type": "string"
           },
           "component": {
             "description": "Component.",
@@ -24633,12 +24668,21 @@
             "description": "When true, clear type option metadata.",
             "type": "boolean"
           },
+          "closeReason": {
+            "description": "Close Reason.",
+            "type": "string"
+          },
           "comment": {
             "description": "Comment.",
             "items": {
               "type": "string"
             },
             "type": "array"
+          },
+          "completedAt": {
+            "description": "Completed At.",
+            "format": "date-time",
+            "type": "string"
           },
           "component": {
             "description": "Component.",

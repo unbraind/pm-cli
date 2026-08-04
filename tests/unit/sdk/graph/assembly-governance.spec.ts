@@ -371,6 +371,38 @@ describe("relationship graph governance", () => {
     ).toEqual(["pm-stale"]);
   });
 
+  it("treats declared external blockers as live predecessors without hiding true stale blocks", () => {
+    const report = auditWorkspaceRelationshipGraph(
+      assembleWorkspaceRelationshipGraph([
+        {
+          id: "pm-external-blocked",
+          title: "Waiting on another workspace",
+          status: "blocked",
+          dependencies: [
+            {
+              id: "upstream/release",
+              kind: "blocked_by",
+              source_kind: "external",
+            },
+          ],
+        },
+        {
+          id: "pm-actually-stale",
+          title: "No declared blocker",
+          status: "blocked",
+        },
+      ] as never),
+    );
+    expect(
+      report.findings.find(
+        (finding) => finding.code === "stale_lifecycle_block",
+      ),
+    ).toMatchObject({
+      sample: ["pm-actually-stale"],
+      remediation: expect.stringContaining("source_kind=external"),
+    });
+  });
+
   it("handles an empty workspace without findings", () => {
     expect(
       auditWorkspaceRelationshipGraph(assembleWorkspaceRelationshipGraph([])),
