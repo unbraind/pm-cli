@@ -8,6 +8,8 @@ import {
 } from "@unbrained/pm-cli/sdk/authoring";
 import {
   PM_TOOL_ACTIONS,
+  parseMutationReceipt,
+  type PmMutationReceipt,
   type PmToolAction,
 } from "@unbrained/pm-cli/sdk/contracts";
 import { PmClient, type ItemDocument } from "@unbrained/pm-cli/sdk/core";
@@ -27,6 +29,9 @@ import {
 } from "@unbrained/pm-cli/sdk/testing";
 
 const action: PmToolAction = PM_TOOL_ACTIONS[0];
+const receipt: PmMutationReceipt = parseMutationReceipt(
+  '{"id":"pm-demo","status":"open","changed_field_count":1}',
+);
 const capability: ExtensionCapability = "commands";
 const client = new PmClient({ noExtensions: true });
 const extension = defineExtension({ activate: () => undefined });
@@ -65,6 +70,7 @@ const invalidSchemaOption: SchemaItemTypeOptionDefinition = {
 };
 
 void action;
+void receipt;
 void capability;
 void client;
 void extension;

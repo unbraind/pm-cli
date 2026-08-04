@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "../../../scripts/generate-error-code-catalog.mjs";
@@ -19,8 +19,9 @@ describe("generate error code catalog", () => {
         'const d = { code: "unknown_flag" };',
         'const e = { code: "runtime_failure" };',
         'const f = new PmCliError("Ambiguous", EXIT_CODE.USAGE, { code: "ambiguous_list_all" });',
-        'const g = new PmCliError("Protocol", 64, { "code": "protocol_failure" });',
+        'const g = new PmCliError("Protocol", 5, { "code": "protocol_failure" });',
         'const h = new PmCliError("Dynamic", error.exitCode, { code: "dynamic_failure" });',
+        'const generic = { code: "unknown_error" };',
         'const typed = { code: "typed_failure" as const };',
         'const long = { code: "validate_metadata_custom_profile_missing_required_fields" };',
         'const ignored = { code: dynamicCode, other: "value" };',
@@ -54,12 +55,45 @@ describe("generate error code catalog", () => {
     expect(output).toContain("exit_code: 5");
     expect(output).toContain("exit_code: 2");
     expect(output).toContain("exit_code: 1");
+    expect(output).toContain('class: "usage"');
+    expect(output).toMatch(
+      /code: "unknown_error",[\s\S]*?exit_code: 1,[\s\S]*?class: "generic_failure"/u,
+    );
+    expect(output).toContain('emitting_commands: ["*"]');
     expect(output).toContain('code: "ambiguous_list_all"');
     expect(output).toContain('code: "protocol_failure"');
-    expect(output).toContain("exit_code: 64");
+    expect(output).not.toContain("exit_code: 64");
     expect(output).not.toContain("dynamicCode");
     expect(output.match(/code: "item_not_found"/g)).toHaveLength(1);
     await expect(main(root, ["--check"])).resolves.toBeUndefined();
+
+    await mkdir(path.join(root, "src", "cli", "commands"), {
+      recursive: true,
+    });
+    await writeFile(
+      path.join(root, "src", "cli", "commands", "create.ts"),
+      'const added = { code: "new_create_failure" };',
+      "utf8",
+    );
+    await main(root, []);
+    const expanded = await readFile(
+      path.join(root, "src", "sdk", "generated-error-code-catalog.ts"),
+      "utf8",
+    );
+    expect(expanded).toContain('code: "new_create_failure"');
+    expect(expanded).toContain('stability: "provisional"');
+    expect(expanded).toContain('emitting_commands: ["create"]');
+    await writeFile(
+      path.join(root, "src", "cli", "error-guidance.ts"),
+      'const shared = { code: "new_create_failure" };',
+      "utf8",
+    );
+    await main(root, []);
+    const shared = await readFile(
+      path.join(root, "src", "sdk", "generated-error-code-catalog.ts"),
+      "utf8",
+    );
+    expect(shared).toContain('emitting_commands: ["*", "create"]');
   });
 
   it("fails closed for missing and stale generated output", async () => {
@@ -70,6 +104,11 @@ describe("generate error code catalog", () => {
       'const failure = { code: "invalid_fixture" };',
       "utf8",
     );
+    await expect(main(root, ["--check"])).rejects.toThrow(
+      "stability ledger is missing",
+    );
+    await main(root, []);
+    await rm(path.join(root, "src", "sdk", "generated-error-code-catalog.ts"));
     await expect(main(root, ["--check"])).rejects.toThrow(
       "error-code catalog is stale",
     );
@@ -98,5 +137,56 @@ describe("generate error code catalog", () => {
     await expect(main(root, [])).rejects.toThrow(
       "Conflicting explicit exit codes for shared_failure: 2, 4",
     );
+    await expect(
+      readFile(path.join(root, "scripts", "error-code-stability.json"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("refuses to remove a stable code without an explicit ledger change", async () => {
+    const root = await harness.createTempRoot("pm-error-catalog-removal-");
+    await mkdir(path.join(root, "src", "sdk"), { recursive: true });
+    const sourcePath = path.join(root, "src", "sdk", "source.ts");
+    await writeFile(
+      sourcePath,
+      'const failure = { code: "stable_failure" };',
+      "utf8",
+    );
+    await main(root, []);
+    await writeFile(sourcePath, "export {};", "utf8");
+    await expect(main(root, [])).rejects.toThrow(
+      "Stable error codes cannot be removed",
+    );
+  });
+
+  it("rejects malformed stability ledgers and unsupported public exits", async () => {
+    const root = await harness.createTempRoot("pm-error-catalog-invalid-");
+    await mkdir(path.join(root, "src", "sdk"), { recursive: true });
+    await mkdir(path.join(root, "scripts"), { recursive: true });
+    const sourcePath = path.join(root, "src", "sdk", "source.ts");
+    const ledgerPath = path.join(root, "scripts", "error-code-stability.json");
+    await writeFile(
+      sourcePath,
+      'new PmCliError("Unsupported", 64, { code: "unsupported_exit" });',
+      "utf8",
+    );
+    await writeFile(
+      ledgerPath,
+      '{"schema_version":2,"stable_codes":[]}',
+      "utf8",
+    );
+    await expect(main(root, [])).rejects.toThrow(
+      "Invalid error-code stability ledger",
+    );
+    await writeFile(
+      ledgerPath,
+      '{"schema_version":1,"stable_codes":[]}',
+      "utf8",
+    );
+    await expect(main(root, [])).rejects.toThrow(
+      "Unsupported public exit code for unsupported_exit: 64",
+    );
+    await rm(ledgerPath);
+    await mkdir(ledgerPath);
+    await expect(main(root, [])).rejects.toMatchObject({ code: "EISDIR" });
   });
 });

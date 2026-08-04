@@ -1,19 +1,19 @@
 # CLI Scripting Contract
 
-Tracked by [pm-psy1](../.agents/pm/tasks/pm-psy1.toon), [pm-gknu](../.agents/pm/issues/pm-gknu.toon), and [pm-999jh7](../.agents/pm/issues/pm-999jh7.toon).
+Tracked by [pm-psy1](../.agents/pm/tasks/pm-psy1.toon), [pm-gknu](../.agents/pm/issues/pm-gknu.toon), [pm-999jh7](../.agents/pm/issues/pm-999jh7.toon), and [pm-srns](../.agents/pm/issues/pm-srns.toon).
 
 Use this contract when composing `pm` with shells, CI runners, `jq`, or another process. Exact flags remain discoverable from `pm <command> --help --json` and `pm contracts --command <command> --flags-only --json`.
 
 ## Process Contract
 
-| Exit | Meaning | Script response |
-|------|---------|-----------------|
-| `0` | The requested operation completed. A successful read may still return zero rows. | Parse stdout. |
-| `1` | Runtime or unexpected failure. | Preserve stderr and stop. |
-| `2` | Invalid flags, values, or command composition. | Correct the invocation; do not retry unchanged. |
-| `3` | Requested tracker or resource was not found. | Correct the path or ID. |
-| `4` | State or concurrency conflict. | Refresh live state before deciding whether to retry. |
-| `5` | A required dependency operation failed. | Inspect the dependency evidence before retrying. |
+| Exit | Meaning                                                                          | Script response                                      |
+| ---- | -------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `0`  | The requested operation completed. A successful read may still return zero rows. | Parse stdout.                                        |
+| `1`  | Runtime or unexpected failure.                                                   | Preserve stderr and stop.                            |
+| `2`  | Invalid flags, values, or command composition.                                   | Correct the invocation; do not retry unchanged.      |
+| `3`  | Requested tracker or resource was not found.                                     | Correct the path or ID.                              |
+| `4`  | State or concurrency conflict.                                                   | Refresh live state before deciding whether to retry. |
+| `5`  | A required dependency operation failed.                                          | Inspect the dependency evidence before retrying.     |
 
 Successful structured results are written to stdout. Diagnostics, warnings, profiles, and errors are written to stderr so `--json`, `--format ndjson`, CSV, and table stdout remain pipe-safe. Never merge stderr into stdout before parsing structured output.
 
@@ -28,6 +28,29 @@ fi
 ```
 
 ## Stable Structured Fields
+
+Mutation and read envelopes are intentionally different. Single-item mutation
+commands emit a flat receipt whose `id`, `status`, and `changed_field_count`
+are top-level fields. Reads wrap their primary entity or rows under documented
+keys such as `item` or `items`. Bulk mutations such as `close-many` and
+`update-many` use collection envelopes under `rows`; consult
+`command_output_contracts` for the exact command path. Never infer one shape
+from another.
+
+TypeScript package consumers should parse mutation stdout with the SDK boundary
+helper so a wrapped or malformed result fails loudly:
+
+```ts
+import { parseMutationReceipt } from "@unbrained/pm-cli/sdk/contracts";
+
+const { id, status, changedFieldCount } = parseMutationReceipt(stdout);
+```
+
+`pm contracts --summary --json` keeps bootstrap discovery compact while
+declaring every command's default token ceiling. Use `pm contracts --full
+--json` for `command_output_contracts`, which pairs the envelope declaration
+with TOON- and JSON-specific token ceilings for every active core or package
+command.
 
 JSON object field order is not an API. Consume fields by name. Read envelopes keep the stable pagination vocabulary `items`, `count`, `total`, `has_more`, and, when another page exists, `next_cursor`. The `filters` object echoes the effective query scope. Plain `pm list` and `pm search` are all-status reads and disclose `filters.status: "all"`; lifecycle-specific commands such as `pm list-open` remain explicit shortcuts.
 

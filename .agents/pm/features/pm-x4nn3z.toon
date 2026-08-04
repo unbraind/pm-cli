@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: agent-ux,"area:cli","area:contracts",diagnostics,error-contract,scripting,simplification
 created_at: "2026-07-26T06:02:22.287Z"
-updated_at: "2026-07-30T08:15:45.362Z"
+updated_at: "2026-08-04T21:38:54.887Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "pm contracts emits an error-code catalog generated from the same declarations the runtime uses, so it cannot drift; each entry carries code, stable exit code, stable-or-provisional status, emitting commands, and a one-line meaning; a snapshot gate in the shape of contracts:check and sdk:surface:check makes adding a code a reviewed change and makes renaming or removing a stable code fail the build; a deduplication pass applies the one-spelling-per-concept rule from pm-fs8q9x to the 195 codes, merging near-synonyms behind aliases rather than deleting them; a documented code-class to exit-code mapping lets a shell consumer classify a failure from exit status alone, closing the exit-code half of pm-psy1; the catalog is emitted under a surface tier so the default pm contracts payload does not grow"
@@ -17,16 +17,38 @@ why_now: "The simplification epic has censused commands and flags twice and neve
 parent: pm-n7rr
 risk: low
 confidence: high
-dependencies[8]{id,kind,created_at}:
-  pm-185870,related,"2026-07-26T06:02:22.287Z"
-  pm-cha95z,related,"2026-07-26T06:02:22.287Z"
-  pm-cyrfjq,discovered_from,"2026-07-26T06:02:22.287Z"
-  pm-e6tm5c,related,"2026-07-26T06:02:22.287Z"
-  pm-fs8q9x,related,"2026-07-26T06:02:22.287Z"
-  pm-n7rr,implements,"2026-07-26T06:02:22.287Z"
-  pm-psy1,related,"2026-07-26T06:02:22.287Z"
-  pm-yqe0mo,discovered_from,"2026-07-26T06:02:22.287Z"
-comments[11]{created_at,author,text}:
+dependencies[9]:
+  - id: pm-185870
+    kind: related
+    created_at: "2026-07-26T06:02:22.287Z"
+  - id: pm-cha95z
+    kind: related
+    created_at: "2026-07-26T06:02:22.287Z"
+  - id: pm-cyrfjq
+    kind: discovered_from
+    created_at: "2026-07-26T06:02:22.287Z"
+  - id: pm-e6tm5c
+    kind: related
+    created_at: "2026-07-26T06:02:22.287Z"
+  - id: pm-fs8q9x
+    kind: related
+    created_at: "2026-07-26T06:02:22.287Z"
+  - id: pm-n7rr
+    kind: implements
+    created_at: "2026-07-26T06:02:22.287Z"
+  - id: pm-psy1
+    kind: related
+    created_at: "2026-07-26T06:02:22.287Z"
+  - id: pm-yqe0mo
+    kind: discovered_from
+    created_at: "2026-07-26T06:02:22.287Z"
+  - id: pm-srns
+    kind: related
+    created_at: "2026-08-04T18:46:52.359Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[16]{created_at,author,text}:
   "2026-07-26T14:27:05.518Z","harness:codex","GitHub report linkage: GH-745 https://github.com/unbraind/pm-cli/issues/745 demonstrates unsupported PmClient actions returning literal 64 while EXIT_CODE.USAGE is 2. Reusing this canonical all-status error-contract feature; no duplicate item created."
   "2026-07-26T14:47:00.511Z","harness:codex","Evidence: SDK native dispatch now imports and uses the canonical EXIT_CODE.USAGE contract for every unsupported extension-action branch. Focused regression tests passed, full coverage passed 374/374 files and 6420/6420 tests at literal 100/100/100/100, lint/static quality/contracts passed, and an unrelated temporary consumer installed the packed tarball and observed exitCode=2 matching the exported EXIT_CODE.USAGE."
   "2026-07-26T15:12:40.567Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/748. Initial exact implementation commit 004790f7; hosted exact-head checks and AI review loop pending."
@@ -38,8 +60,14 @@ comments[11]{created_at,author,text}:
   "2026-07-30T07:40:07.290Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/822 carries the cohesive SDK/CLI self-describing context-contract bundle. Initial implementation commit e1fabaa97; final exact-head checks and review evidence will be recorded in the PR because post-review tracker mutations would create a new unreviewed Git tree."
   "2026-07-30T07:50:35.989Z","harness:codex","Greptile P1 review correction on PR #822: error exit codes can no longer rely only on vocabulary heuristics. The generator now parses TypeScript syntax, derives explicit PmCliError EXIT_CODE/numeric declarations, fails closed on conflicting declarations, and retains fallback classification only where no executable transport declaration exists."
   "2026-07-30T08:15:45.362Z","harness:codex","Review-fix evidence for PR #822: error catalog generation now parses TypeScript AST declarations, preserves explicit PmCliError transport exits including EXIT_CODE constants and numeric literals, fails closed on conflicting explicit exits, and uses fallback classification only where no explicit transport exists. Generator coverage is exact 100/100/100/100; full quality, secrets scan, and dependency audit passed with no known vulnerabilities."
-files[14]{path,scope,note}:
+  "2026-08-04T19:54:38.932Z","harness:codex","Implementation tranche evidence 2026-08-04: the generated error catalog now exposes semantic exit classes and emitting-command ownership, with an explicit stable/provisional compatibility ledger. Generation fails closed on malformed ledger data, unsupported exits, stable-code removal, and drift; new codes default provisional. Workspace snapshot negative paths now emit typed usage/not-found/conflict classes. All four linked catalog suites passed; direct full coverage is 100/100/100/100 and contracts generation is current. Alias-preserving deduplication and exhaustive grammar-to-code conformance remain open."
+  "2026-08-04T20:56:33.386Z","harness:codex","Review evidence: CodeRabbit findings drove fail-closed stability-ledger reads (only ENOENT means absent), write-after-render ordering, unknown_error generic-failure exit 1, cross-cutting '*' emitter retention, and child_process mock parity. Added direct regressions including failed initial generation leaving no ledger, EISDIR propagation, mixed command/cross-cutting sources, and the stable unknown_error mapping. The broader authored per-code meaning/remediation vocabulary remains within this open item's planned runtime-owned metadata scope; this revision preserves the pre-existing generated meaning wording rather than claiming generic text is complete."
+  "2026-08-04T20:56:35.007Z","harness:codex","Verification: direct repository coverage passed 433 files / 6850 tests at exactly 100% statements (48776/48776), branches (35358/35358), functions (9975/9975), and lines (47275/47275). Focused generator/output/budget/example suite passed 23/23; linked workspace snapshot CLI integration passed 2/2. Typecheck, ESLint, zero-clone JSCPD, 100% docstring static gate, contracts snapshots, package SDK parity, secrets scan, token/context/retrieval gates, docs/skills, and packed artifact gates passed. Import-cost timing remains locally noisy under load from two unrelated high-CPU Tokenwerk pytest workers and Chrome; no baseline was weakened, and hosted exact-head checks remain authoritative."
+  "2026-08-04T21:26:09.300Z","harness:codex","Final outside-diff review correction: definePmErrorCodeCatalog now trims, filters, deduplicates, and sorts sources/emitting_commands before enforcing the non-empty invariant, so whitespace-only declarations fail closed. Regression covers both arrays. Focused test, typecheck, ESLint, contracts check, and direct full coverage passed: 433 files / 6850 tests; 100% statements (48778/48778), branches (35358/35358), functions (9975/9975), lines (47277/47277)."
+  "2026-08-04T21:38:52.367Z","harness:codex","Final CodeRabbit correction for PR #895: the SDK catalog resolver regression now asserts class=usage and emitting_commands=[help] in addition to the stable usage exit code. PM-linked catalog tests were normalized from overlapping entries to one canonical generator plus both catalog suites, leaving three distinct gates total. Focused catalog/generator verification passed 2 files and 7 tests; repository typecheck and focused ESLint passed."
+files[17]{path,scope,note}:
   package.json,project,Generated error catalog drift scripts and gate integration
+  scripts/error-code-stability.json,project,Stable-code compatibility ledger
   scripts/generate-error-code-catalog.mjs,project,Catalog drift generator and gate
   sdk/public-surface.json,project,Reviewed additive SDK surface snapshot
   src/cli/commands/contracts.ts,project,contracts table that must gain the error-code catalog tier
@@ -49,17 +77,22 @@ files[14]{path,scope,note}:
   src/sdk/generated-error-code-catalog.ts,project,Generated exhaustive executable error catalog
   src/sdk/index.ts,project,Public error catalog exports
   src/sdk/runtime.ts,project,Replace unsupported SDK action magic exit codes with the exported usage contract
+  src/sdk/workspace-snapshot.ts,project,Grammar failures mapped to typed usage not-found and conflict classes
   tests/fixtures/contracts/full.json,project,Generated complete error catalog snapshot
+  tests/integration/workspace-snapshot-cli.integration.spec.ts,project,Negative control for typed invalid grammar error
   tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,Assert usage exit-code parity across unsupported extension dispatch branches
   tests/unit/scripts/generate-error-code-catalog.spec.ts,project,Generator drift and failure coverage
   tests/unit/sdk/error-code-catalog.spec.ts,project,Error catalog contract coverage
 tests[3]{command,scope,timeout_seconds}:
-  node scripts/generate-error-code-catalog.mjs --check && node scripts/run-tests.mjs test -- tests/unit/sdk/error-code-catalog.spec.ts,project,240
+  node scripts/generate-error-code-catalog.mjs --check && node scripts/run-tests.mjs test -- tests/unit/sdk/error-code-catalog.spec.ts tests/unit/scripts/generate-error-code-catalog.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/integration/workspace-snapshot-cli.integration.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/sdk/error-code-catalog.spec.ts tests/unit/scripts/generate-error-code-catalog.spec.ts,project,240
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms1wwe4a-4qujw5,test,passed,"2026-07-26T14:47:07.252Z","2026-07-26T14:47:20.699Z","2026-07-26T14:47:20.699Z",1,0,0
   test-local-ms76ge1e-p0hzpe,test,passed,"2026-07-30T07:13:15.994Z","2026-07-30T07:13:41.138Z","2026-07-30T07:13:41.138Z",3,0,0
+  test-local-msf2tj8i-udf38z,test,passed,"2026-08-04T19:53:28.106Z","2026-08-04T19:54:05.346Z","2026-08-04T19:54:05.346Z",4,0,0
+  test-local-msf3wxg5-4l4max,test,passed,"2026-08-04T20:24:35.524Z","2026-08-04T20:24:43.349Z","2026-08-04T20:24:43.349Z",1,0,0
+  test-local-msf3xi7j-ryi34i,test,passed,"2026-08-04T20:24:57.010Z","2026-08-04T20:25:10.255Z","2026-08-04T20:25:10.255Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SELF_DESCRIBING_CONTEXT_CONTRACTS.md,project,Error catalog consumer guide
 body: "## The third surface\n\nThe simplification epic has censused this CLI carefully and twice. Both censuses counted the same two surfaces:\n\n| surface | measured | contracted | governed by |\n|---|---|---|---|\n| commands | 77 | yes (`pm contracts`) | `pm-n7rr` noun grammar, `pm-wt43zj` gate |\n| flags | 1,712 declarations / 470 spellings | yes (`*_FLAG_CONTRACTS`) | `pm-fs8q9x` lexicon + budget |\n| **error codes** | **195** | **no** | **nothing** |\n\nMeasured 2026-07-26 on the shipped 2026.7.26 build: `grep -rhoE 'code: \"[a-z_]+\"' src/ --include=*.ts | sort -u | wc -l` returns **195**. `pm contracts --json | jq keys` returns fourteen keys — `actions`, `commands`, `command_aliases`, `governance_contracts`, `runtime_schema`, and others — and none of them enumerates an error code. Grepping `docs/` for a representative code (`item_not_found`) returns nothing.\n\nSo the surface an agent hits when it is *wrong* — the surface it reads most carefully, under the most pressure, and the one this repository invests most in making structured — is the only one of the three that an agent cannot enumerate in advance.\n\n## What follows from that, concretely\n\n- **Handlers cannot be pre-written.** An integration that wants to branch on \"the item is locked by another agent\" versus \"the item does not exist\" has to discover `lock_conflict` and `item_not_found` by triggering them. At a thousand-agent fleet, that is a lot of deliberate failure.\n- **Stability is unstated.** Nothing declares whether a code is permanent. `pm-e6tm5c` freezes the SDK export surface and `pnpm contracts:check` freezes the command/flag contracts; a code can be renamed in a patch release with no gate objecting, which quietly breaks every consumer that branched on it.\n- **The taxonomy cannot be reviewed.** 195 codes across 94 CLI files is well past the size where a human notices that two codes mean the same thing. Duplicates and near-synonyms are invisible without an enumeration, which is exactly the argument `pm-fs8q9x` makes for flags (\"one spelling per concept\") applied to a vocabulary three times as large as the flag vocabulary it is compared against here.\n- **Exit codes carry almost no information.** Source declares `exit_code: 0` and `exit_code: 1` as literals; the richer values observed at runtime (`2` for usage, `3` for not-found) come from elsewhere. Nothing maps the 195 codes onto that small integer set as a documented contract, so a shell consumer that can only see `$?` has no documented way to classify a failure.\n\n## Why this belongs to the simplification epic rather than beside it\n\nThe epic's thesis is that agents are paying too much to learn this CLI. It has been measured against the noun count and the flag count. Reducing 77 nouns to 12 while leaving 195 undocumented error codes simplifies the happy path and leaves the recovery path exactly as expensive as it was — and the recovery path is where agents spend tokens they did not plan for.\n\nThe two defects found in the same session as this census make the point without hypotheticals: `pm-yqe0mo` (a recovery hint that silently truncates its candidate list to three of six) and `pm-cyrfjq` (mode-paired envelopes that zero-fill the inactive key). Neither would have shipped if the error and envelope surface were enumerated and reviewed as a contract, because both are visible the moment you look at the surface as a whole rather than one command at a time.\n\n## Deliverable\n\n- An error-code catalog in `pm contracts`, generated from the same declarations the runtime uses, so it cannot drift from reality. Each entry carries: code, stable exit code, whether the code is stable or provisional, the commands that can emit it, and a one-line meaning.\n- A snapshot gate in the shape already used by `contracts:check` and `sdk:surface:check`: adding a code is a reviewed change, renaming or removing a stable code fails the build.\n- A deduplication pass over the 195, applying `pm-fs8q9x`'s one-spelling-per-concept rule to codes. Near-synonyms are merged behind aliases rather than deleted, matching the alias-preserving policy the grammar ADR already established for commands.\n- A documented mapping from code class to exit code, so `$?` alone classifies a failure for shell consumers, satisfying the part of `pm-psy1`'s scripting contract that concerns exit codes.\n- The catalog is emitted under a tier so it does not inflate the default `pm contracts` payload, which is itself a token-budgeted surface.\n\n## Relationship to neighbours\n\n- `pm-n7rr` owns the surface census. This item extends the census to its third dimension and is scoped as a child of the same epic.\n- `pm-fs8q9x` establishes one spelling per concept and a per-command flag budget. The same rule applied to a 195-entry vocabulary is this item's deduplication pass; the two should share a checker rather than build two.\n- `pm-185870` unifies the unknown-subcommand error across families. That is one code done well; this is the enumeration that would show which other codes need the same treatment.\n- `pm-psy1` owns the scripting contract's exit-code guarantees. The code-to-exit-code mapping is the data that contract needs and does not currently have.\n- `pm-cha95z` budgets diagnostic output. A catalog makes it possible to budget per code class rather than per command.\n- `pm-yqe0mo` and `pm-cyrfjq` are the two concrete escapes that motivate the enumeration; both are recorded as `discovered_from` neighbours of the same review.\n- `pm-e6tm5c` (closed) is the precedent for the gate shape: a reviewed snapshot of a public surface with a breaking-change check."

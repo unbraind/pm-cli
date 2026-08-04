@@ -6,23 +6,55 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli","area:contracts",simplification,token-efficiency
 created_at: "2026-07-11T10:47:29.123Z"
-updated_at: "2026-08-04T08:45:28.306Z"
+updated_at: "2026-08-04T20:56:48.126Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "Every command accepts one identical output-format flag contract; a single written envelope spec covers all read/mutation/diagnostic shapes; the per-command trap class is gone (search --format-only vs notes/validate --json-only vs activity .activity decoy); zero feature loss: all current spellings kept as deprecation-tracked aliases; contract tests assert flag+envelope parity across the full surface"
 parent: pm-mpbb
 risk: medium
 confidence: medium
-dependencies[5]{id,kind,created_at}:
-  pm-cfed,related,"2026-07-11T10:47:29.123Z"
-  pm-gdi7,related,"2026-07-11T10:47:29.123Z"
-  pm-p3x4,related,"2026-07-11T10:47:29.123Z"
-  pm-pbyu,related,"2026-07-11T10:47:29.123Z"
-  pm-m9xv,implements,"2026-07-25T20:44:33.322Z"
-comments[2]{created_at,author,text}:
+dependencies[6]:
+  - id: pm-cfed
+    kind: related
+    created_at: "2026-07-11T10:47:29.123Z"
+  - id: pm-gdi7
+    kind: related
+    created_at: "2026-07-11T10:47:29.123Z"
+  - id: pm-p3x4
+    kind: related
+    created_at: "2026-07-11T10:47:29.123Z"
+  - id: pm-pbyu
+    kind: related
+    created_at: "2026-07-11T10:47:29.123Z"
+  - id: pm-m9xv
+    kind: implements
+    created_at: "2026-07-25T20:44:33.322Z"
+  - id: pm-x4nn3z
+    kind: blocked_by
+    created_at: "2026-08-04T18:46:51.162Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[5]{created_at,author,text}:
   "2026-07-13T17:28:00.718Z",maintainer-agent,"Territory update 2026-07-13 (PR#545): the output-truth slice shipped — pm update changed_fields is now derived from the persisted before/after document diff and true no-op writes are suppressed (pm-45mb closed; JSON and TOON now agree). What srns still owns is the UNIFORM envelope grammar itself: one format-flag spelling + one envelope spec across every command, alias-preserving. Input-side MCP shape parity (pm_copy flat camelCase) also landed via pm-hno5 using the derive-from-flag-contracts pattern — that pattern (schemas generated from *_FLAG_CONTRACTS, never hand-declared) is the recommended mechanism for srns's envelope convergence too."
   "2026-08-04T08:45:28.306Z","harness:codex","GitHub report reconciliation 2026-08-04: issue #888 is canonical evidence for this existing uniform output-contract scope. External package authors guessed a wrapped create result, silently received undefined IDs, skipped closure/comment sync, and imported terminal records as open. The execution plan must publish typed flat mutation receipts versus wrapped query entities in CLI help, SDK types, contracts, scripting docs, package examples, and real-boundary fixtures. Source: https://github.com/unbraind/pm-cli/issues/888"
+  "2026-08-04T19:54:38.051Z","harness:codex","Implementation tranche evidence 2026-08-04: added the public SDK output-envelope registry and safe mutation-receipt parser; paired every active runtime command with an envelope contract; documented flat mutation versus wrapped read shapes in global help, scripting guidance, SDK docs, and an executable package-consumer example; typed workspace snapshot grammar failures as usage, not-found, or conflict errors. Linked envelope/snapshot tests passed 9/9. Direct repository coverage passed 433 files and 6,850 tests at 100/100/100/100. Packed-artifact npm/npx and Bun/bunx consumers both initialized trackers and parsed real create receipts. This is a cohesive advancement, while alias-preserving one-flag grammar across every legacy command remains open."
+  "2026-08-04T20:56:34.004Z","harness:codex","Review evidence: corrected command-output contracts so start-task/pause-task/close-task/focus are single mutation receipts; close-many/update-many are explicit rows collections; declared lookups retain normalized full subcommand paths; parseMutationReceipt now exposes string and decoded-value overloads. Updated scripting documentation and regression tests."
+  "2026-08-04T20:56:35.602Z","harness:codex","Manual isolated consumer evidence: packed @unbrained/pm-cli 2026.8.4 into /tmp/pm-sdk-review-offline-5BLZQZ, installed from the exact tarball in unrelated npm and Bun roots using offline caches, initialized real trackers, and parsed successful flat create receipts through npx (manual-nb4u/open) and bunx (bunmanual-zzqw/open)."
 notes[2]{created_at,author,text}:
   "2026-07-11T16:23:33.766Z",maintainer-agent,"Scope addition (pm-mpbb ledger lever c, promoted 2026-07-11 when the a22j baseline gate opened): the uniform output contract this item owns must ALSO specify a semantic exit-code contract (documented, uniform across commands, machine-checkable) - today create/update failures hide under pipes (exit codes invisible under `| tail`, see the shell-safety trap class this item already owns). One spec covers both the envelope shape and the exit-code semantics; the pm-0z7n alias deprecation fields (ledger lever b) also land in this spec."
   "2026-07-25T06:21:59.962Z","harness:claude-code","Token-efficiency doctrine, drafted 2026-07-25 to give the individual output items one ordered account of where agent tokens actually go and which lever addresses each. Measured baseline for orientation: the MCP tool surface alone costs roughly 8.2k tokens cold (28 tools, 32,979 bytes), and JSON costs 48-53 percent more than TOON for the same payload.\n\nThe levers, ordered by measured or expected saving per unit of implementation cost:\n\n1. Do not send what the caller already has. The largest remaining waste is repeat orientation: an agent re-reads a workspace that has not changed. Owned by the delta read projection filed as pm-tuadp2; an unchanged workspace should cost a header and a count, not a projection.\n2. Do not send what the caller did not ask for. Lean output shipped (null/empty omission, lean mutation echo, tag folding, counts-only validate, omitted-note counts). The remaining gap is that omission is per-command rather than contract-declared, which is exactly what pm-srns's single envelope spec fixes.\n3. Send a ceiling, not a hope. Contract-declared per-command budgets with a deterministic degradation ladder, owned by pm-5t33or. Unbounded output is the failure mode that turns one bad call into a lost context window.\n4. Send structure once. TOON's header-once tabular form already does this for rows; the same principle is unexploited for nested facets, where each item repeats its facet keys. A facet-table projection is the natural extension and belongs to the same envelope spec.\n5. Do not make the caller ask twice. Round trips cost more than payload: an envelope that omits a count forces a second call, a blocked summary without blocker ids forces a second call, an error without the valid domain forces a retry. Several tracked issues are instances of this one principle, and the envelope spec should state it as a rule: every response either answers the obvious follow-up or names the exact call that will.\n6. Move stable context out of the tool channel entirely. MCP resources and prompts, filed as pm-yf07b7, let the host carry orientation without a model-initiated call and without growing the tool count that costs roughly 500 cold-start tokens per tool.\n7. Charge the session, not the call. Per-call budgets misallocate across a session; catalog entry (27) on pm-4k6b proposes the allocation policy that makes early orientation expensive and repeat orientation nearly free.\n\nAnti-lever, recorded so it is not proposed again: shortening field names to save bytes. The measured saving is small against TOON's header-once form, and it costs the scripting contract its stable machine-readable names, which pm-psy1 guarantees and which every jq pipeline in the ecosystem depends on. Compress structure and redundancy, never identifiers.\n\nMeasurement discipline: every lever above must be argued against pm-8pnj (tokens per completed task) rather than against payload bytes in isolation, because levers 5 and 7 trade payload for round trips and only the task-level number captures that correctly."
+files[5]{path,scope,note}:
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Full and summary contract discovery exposes envelope families
+  src/sdk/output-contracts.ts,project,Typed envelope registry and mutation receipt parser
+  src/sdk/workspace-snapshot.ts,project,Typed workspace snapshot usage and conflict errors
+  tests/integration/workspace-snapshot-cli.integration.spec.ts,project,Real CLI structured error conformance
+  tests/unit/sdk/output-contracts.spec.ts,project,Envelope and receipt boundary coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts tests/integration/workspace-snapshot-cli.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msf2ma7z-l3l6cz,test,passed,"2026-08-04T19:48:12.824Z","2026-08-04T19:48:27.070Z","2026-08-04T19:48:27.070Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/examples/sdk-contract-consumer/README.md,project,Package consumer receipt guidance
+  docs/SCRIPTING.md,project,Flat mutation and wrapped read scripting contract
 body: "## Why (agent-DX defect class, 2026-07-11 maintainer DX directive)\nEvery entry in the maintainer-agent gotchas ledger about output exists because commands negotiated their own contracts: `pm search` takes `--format json|toon` only (`--format table` errors and looks like zero hits), `pm validate`/`pm notes` take `--json` only (wrong flag looks like zero notes), `pm list --json` projects, `pm get --json` wraps under `.item`, comments/notes bodies live at `.text`, `pm activity` ships an always-empty `.activity` decoy next to `.compact_activity` (pm-p3x4). Agents pay for this in retries and silent-empty misreads — the traps ARE the DX problem, per-command memorization is the tax.\n\n## What\nOne flag grammar (same spelling, same accepted values, same default) and one envelope specification (documented shapes for list/get/mutation/diagnostic/annotation results) applied across every command. TOON and JSON stay; projections stay; nothing is removed — existing spellings become aliases tracked by the alias shim (pm-0z7n) with deprecation counters (pm-0mox).\n\n## Sequencing\nLand AFTER ADR pm-pbyu acceptance and on top of the pm-0z7n shim (flags are spellings too); coordinate with pm-cfed (lean JSON redesign — one envelope spec should serve both) and pm-gdi7 (unknown-option suggestions). Walk the full wiring checklist per surface change; token before/after via pm-a22j baseline."

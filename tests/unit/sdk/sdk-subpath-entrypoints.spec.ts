@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import * as sdk from "@unbrained/pm-cli/sdk";
 import { defineExtension } from "@unbrained/pm-cli/sdk/authoring";
-import { PM_TOOL_ACTIONS } from "@unbrained/pm-cli/sdk/contracts";
+import {
+  PM_TOOL_ACTIONS,
+  parseMutationReceipt,
+} from "@unbrained/pm-cli/sdk/contracts";
 import {
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
   PmClient,
@@ -32,6 +35,13 @@ describe("public SDK capability entrypoints", () => {
   it("resolve independently through the package export map", () => {
     expect(defineExtension).toBeTypeOf("function");
     expect(PM_TOOL_ACTIONS).toContain("create");
+    expect(
+      parseMutationReceipt({
+        id: "pm-demo",
+        status: "open",
+        changed_field_count: 1,
+      }),
+    ).toMatchObject({ id: "pm-demo", changedFieldCount: 1 });
     expect(PmClient).toBeTypeOf("function");
     expect(PM_READ_OUTPUT_SURFACE_CONTRACTS).toHaveLength(19);
     expect(

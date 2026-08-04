@@ -430,8 +430,10 @@ export {
   buildPmActionToolInputSchema,
   PM_TOOL_RESERVED_CUSTOM_FIELD_PROPERTIES,
   compactFlagAliasContracts,
+  createPmCommandOutputBudget,
   definePmCommandOutputBudget,
   estimatePmOutputTokens,
+  inferPmOutputBudgetClass,
   analyzeSdkCliParameterCompleteness,
   isPmExtensionCapabilityContract,
   isPmExtensionPolicyModeContract,
@@ -562,6 +564,7 @@ export * from "./pagination.js";
 export * from "./query/item-filter-options.js";
 export * from "./query/parsers.js";
 export * from "./output.js";
+export * from "./output-contracts.js";
 export * from "./relationship-analytics.js";
 export * from "./relationship-context.js";
 export * from "./relationship-history.js";

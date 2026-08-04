@@ -20,6 +20,8 @@ import { writeFileAtomic } from "../core/fs/fs-utils.js";
 import { appendWorkspaceAuditEvent } from "../core/history/workspace-history.js";
 import { acquireLock } from "../core/lock/lock.js";
 import { getLockPath } from "../core/store/paths.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
 
 /** Current content-addressed workspace snapshot manifest schema identifier. */
 export const SNAPSHOT_SCHEMA =
@@ -319,8 +321,25 @@ async function snapshotContents(
 
 function validateSnapshotTarget(target: string): void {
   if (!SNAPSHOT_TARGET_PATTERN.test(target)) {
-    throw new Error(
+    throw new PmCliError(
       "Snapshot names and fingerprints must use lowercase letters, digits, dots, underscores, or hyphens",
+      EXIT_CODE.USAGE,
+      {
+        code: "invalid_workspace_snapshot_target",
+        required:
+          "Provide a non-empty lowercase snapshot name or 64-character hexadecimal fingerprint.",
+        why: "Snapshot targets are used as portable reference filenames and content identities.",
+        examples: [
+          "pm workspace snapshot list --json",
+          "pm workspace snapshot inspect baseline --json",
+        ],
+        nextSteps: [
+          "List available snapshots, then retry with a returned name or fingerprint.",
+        ],
+        recovery: {
+          suggested_retry: "pm workspace snapshot list --json",
+        },
+      },
     );
   }
 }
@@ -338,14 +357,27 @@ function snapshotStore(pmRoot: string): string {
   return path.join(pmRoot, SNAPSHOT_RUNTIME_PATH);
 }
 
+function workspaceSnapshotNotFound(target: string): PmCliError {
+  return new PmCliError(
+    `Unknown workspace snapshot: ${target}`,
+    EXIT_CODE.NOT_FOUND,
+    {
+      code: "workspace_snapshot_not_found",
+      required: "Use a snapshot name or fingerprint returned by snapshot list.",
+      why: "The requested reference or immutable snapshot object does not exist.",
+      examples: ["pm workspace snapshot list --json"],
+      nextSteps: ["List available snapshots and retry with an exact target."],
+      recovery: { suggested_retry: "pm workspace snapshot list --json" },
+    },
+  );
+}
+
 async function readSnapshotJson<T>(file: string, target: string): Promise<T> {
   try {
     return JSON.parse(await readFile(file, "utf8")) as T;
   } catch (error: unknown) {
     if (isErrno(error, "ENOENT")) {
-      throw new Error(`Unknown workspace snapshot: ${target}`, {
-        cause: error,
-      });
+      throw workspaceSnapshotNotFound(target);
     }
     throw error;
   }
@@ -360,9 +392,7 @@ async function removeSnapshotEntry(
     await rm(entry, { recursive });
   } catch (error: unknown) {
     if (isErrno(error, "ENOENT")) {
-      throw new Error(`Unknown workspace snapshot: ${target}`, {
-        cause: error,
-      });
+      throw workspaceSnapshotNotFound(target);
     }
     throw error;
   }
@@ -453,8 +483,17 @@ export async function createWorkspaceSnapshot(
   if (options.name !== undefined) {
     validateSnapshotTarget(options.name);
     if (/^[a-f0-9]{64}$/.test(options.name)) {
-      throw new Error(
+      throw new PmCliError(
         "Snapshot names must not be 64-character lowercase hexadecimal fingerprints",
+        EXIT_CODE.USAGE,
+        {
+          code: "workspace_snapshot_name_reserved_fingerprint",
+          required:
+            "Choose a human-readable reference name that cannot be mistaken for a content fingerprint.",
+          why: "Exact 64-character hexadecimal values address immutable objects.",
+          examples: ["pm workspace snapshot create baseline --json"],
+          nextSteps: ["Retry with a shorter descriptive snapshot name."],
+        },
       );
     }
   }
@@ -534,7 +573,18 @@ export async function inspectWorkspaceSnapshot(
     manifest.schema !== SNAPSHOT_SCHEMA ||
     manifest.fingerprint !== fingerprint
   ) {
-    throw new Error(`Snapshot manifest identity mismatch: ${target}`);
+    throw new PmCliError(
+      `Snapshot manifest identity mismatch: ${target}`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "workspace_snapshot_manifest_mismatch",
+        required:
+          "Use an intact snapshot whose manifest fingerprint matches its object path.",
+        why: "Content identity must be verified before snapshot data is trusted.",
+        examples: ["pm workspace snapshot list --json"],
+        nextSteps: ["Inspect or recreate the snapshot before restoring it."],
+      },
+    );
   }
   return manifest;
 }
@@ -677,8 +727,23 @@ export async function restoreWorkspaceSnapshotWithRecovery(
   options: RestoreWorkspaceSnapshotOptions = {},
 ): Promise<RestoreWorkspaceSnapshotResult> {
   if (options.force !== true) {
-    throw new Error(
+    throw new PmCliError(
       "Workspace snapshot restore requires explicit force confirmation; inspect the impact with planWorkspaceSnapshotRestore or pm workspace snapshot restore <target> --dry-run, then retry with force",
+      EXIT_CODE.USAGE,
+      {
+        code: "workspace_snapshot_force_required",
+        required:
+          "Preview the destructive impact, then explicitly confirm the restore.",
+        why: "A restore replaces the complete authoritative tracker state.",
+        examples: [
+          `pm workspace snapshot restore ${target} --dry-run --json`,
+          `pm workspace snapshot restore ${target} --force --json`,
+        ],
+        nextSteps: ["Review the dry-run counts before retrying with --force."],
+        recovery: {
+          suggested_retry: `pm workspace snapshot restore ${target} --dry-run --json`,
+        },
+      },
     );
   }
   const author = options.author?.trim() || "pm-sdk";

@@ -128,6 +128,7 @@ import {
   resolvePmCommandOutputBudget,
   type CliFlagContract,
   type CommanderOptionAliasContract,
+  type PmCommandOutputBudgetContract,
 } from "../cli-contracts.js";
 import {
   GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES,
@@ -160,6 +161,10 @@ import {
 } from "../agent-capability-contracts.js";
 import { PM_ERROR_CODE_CATALOG } from "../generated-error-code-catalog.js";
 import type { PmErrorCodeContract } from "../error-code-catalog.js";
+import {
+  resolvePmCommandOutputEnvelope,
+  type PmCommandOutputEnvelopeContract,
+} from "../output-contracts.js";
 
 /** Documents the contracts command options payload exchanged by command, SDK, and package integrations. */
 export interface ContractsCommandOptions {
@@ -302,6 +307,11 @@ export interface ContractsResult {
   read_output_dimensions?: readonly PmReadOutputSurfaceContract[];
   /** Exhaustive stable and provisional machine-readable failure vocabulary. */
   error_codes?: readonly PmErrorCodeContract[];
+  /** Format-aware budgets and envelope families for every active command. */
+  command_output_contracts?: Array<{
+    budget: PmCommandOutputBudgetContract;
+    envelope: PmCommandOutputEnvelopeContract;
+  }>;
 }
 
 type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
@@ -370,7 +380,7 @@ interface CommandSummarySurface {
   aliases?: string[];
   intent: string;
   flags?: string[];
-  default_max_estimated_tokens: number | null;
+  default_max_estimated_tokens: number;
 }
 
 const AGENT_BOOTSTRAP_FLAGS = new Map<string, readonly string[]>([
@@ -2473,7 +2483,9 @@ function buildCommandSummarySurface(
     .filter((command) => command.length > 0)
     .sort((left, right) => left.localeCompare(right));
   return rootCommands.map((command) => {
-    const budget = resolvePmCommandOutputBudget(command);
+    const budget = resolvePmCommandOutputBudget(command, {
+      generateFallback: true,
+    });
     const availableFlags = new Set(
       resolveCoreCommandFlags(command).map((contract) => contract.flag),
     );
@@ -2488,10 +2500,20 @@ function buildCommandSummarySurface(
       ...(aliases.length > 0 ? { aliases } : {}),
       intent: summarizeCommandIntent(command),
       ...(flags.length > 0 ? { flags } : {}),
-      default_max_estimated_tokens:
-        budget?.default_max_estimated_tokens ?? null,
+      default_max_estimated_tokens: budget.default_max_estimated_tokens,
     };
   });
+}
+
+function buildCommandOutputContracts(
+  commands: readonly string[],
+): NonNullable<ContractsResult["command_output_contracts"]> {
+  return commands.map((command) => ({
+    budget: resolvePmCommandOutputBudget(command, {
+      generateFallback: true,
+    }),
+    envelope: resolvePmCommandOutputEnvelope(command),
+  }));
 }
 
 function resolveExtensionCommandContracts(
@@ -2750,6 +2772,8 @@ export async function runContracts(
     result.context_intents = getActiveContextIntentContracts();
     result.read_output_dimensions = PM_READ_OUTPUT_SURFACE_CONTRACTS;
     result.error_codes = PM_ERROR_CODE_CATALOG;
+    result.command_output_contracts =
+      buildCommandOutputContracts(outputCommands);
   }
 
   return result;
@@ -2761,6 +2785,7 @@ export const _testOnlyContractsCommand = {
   attachCreateRequiredOptionContracts,
   buildExtensionActionSchemaBranch,
   buildCommandSummarySurface,
+  buildCommandOutputContracts,
   buildRuntimeFieldFlagContracts,
   collectActionContractDescriptors,
   collectExtensionCommandContracts,

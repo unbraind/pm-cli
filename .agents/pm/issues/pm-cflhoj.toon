@@ -1,0 +1,40 @@
+id: pm-cflhoj
+title: Reindex coverage test leaks semantic refresh HTTP beyond its mock lifetime
+description: "The residual reindex branch test reproducibly exceeds the 30-second gate because it creates items after configuring remote semantic endpoints but before installing the shared semantic HTTP fixture. Background mutation refresh escapes the intended mock boundary and waits on network retries. Keep every semantic side effect deterministic and local, and reduce the focused test below the gate timeout without weakening assertions."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-08-04T18:54:48.188Z"
+updated_at: "2026-08-04T19:54:40.891Z"
+closed_at: "2026-08-04T19:54:40.424Z"
+completed_at: "2026-08-04T19:54:40.424Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: The residual reindex test never reaches external semantic endpoints; focused reindex coverage completes below 30 seconds; full 100 percent coverage remains unchanged; the shared semantic mock owns every mutation-triggered semantic side effect.
+goal: Deterministic offline test gates
+objective: Keep semantic reindex coverage independent of host network and provider configuration
+value: Coverage failures remain actionable instead of waiting on detached HTTP retries
+impact: The focused residual case falls from repeated 49 to 98 second failures to about one second
+outcome: Mutation refresh is explicitly cache-only inside the reindex-specific branch test while reindex HTTP behavior remains covered by its typed fixture
+why_now: The mandatory full coverage gate reproduced the timeout twice during this delivery tranche
+parent: pm-92if
+resolution: "The residual reindex test sets mutation refresh to cache_only before fixture creation, leaving explicit reindex HTTP behavior under the intended mock."
+expected_result: "No external semantic requests occur before the reindex HTTP fixture is active, and the focused case completes below 30 seconds."
+actual_result: Focused linked execution passed in 705ms test time and 2.87s total; direct full coverage passed 100/100/100/100.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7rlp,related,"2026-08-04T18:54:48.188Z","harness:codex","cli:create:dep",detected
+  pm-gvk2,discovered_from,"2026-08-04T18:54:48.188Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-04T18:54:48.188Z","harness:codex","Duplicate check 2026-08-04: searched all statuses for reindex network timeout and background semantic mutation refresh. Closed pm-gvk2 owns the shared HTTP fixture and pm-7rlp owns historical suite performance, but neither records this newly reproduced mock-lifetime escape; created this child issue with lineage to both."
+  "2026-08-04T19:54:39.425Z","harness:codex","Verification evidence 2026-08-04: mutation refresh is cache-only before this test creates fixtures, so no detached semantic HTTP request escapes the reindex mock. The linked residual test passed in 705ms (2.87s including runner startup), below its 30-second acceptance ceiling; the direct full suite passed 433 files and 6,850 tests at exact 100/100/100/100."
+learnings[1]{created_at,author,text}:
+  "2026-08-04T19:54:39.879Z","harness:codex","When a test configures remote semantic endpoints but creates fixtures before installing its HTTP mock, set mutation_refresh_policy=cache_only before those mutations; this preserves explicit reindex transport coverage while keeping incidental mutation refresh deterministic and offline."
+files[1]{path,scope,note}:
+  tests/unit/commands/reindex-command.spec.ts,project,Prevent detached mutation refresh from escaping the semantic mock boundary
+tests[1]{command,scope,timeout_seconds}:
+  "PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/commands/reindex-command.spec.ts -t covers\\ residual\\ reindex",project,60
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msf2lyvu-47rnam,test,passed,"2026-08-04T19:48:07.820Z","2026-08-04T19:48:12.378Z","2026-08-04T19:48:12.378Z",1,0,0
+close_reason: Prevented mutation-triggered semantic refresh from escaping the reindex fixture; focused linked proof and full 100 percent coverage pass.
+body: ""

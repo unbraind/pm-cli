@@ -1495,6 +1495,8 @@ describe("runReindex", () => {
   it("covers residual reindex embedding and warning branches", async () => {
     await withTempPmPath(async (context) => {
       const settings = await readSettings(context.pmPath);
+      settings.search.mutation_refresh_policy = "cache_only";
+      await writeSettings(context.pmPath, settings);
       const sampleDocs = [
         {
           metadata: {

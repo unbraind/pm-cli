@@ -7900,6 +7900,3140 @@
       "provider": "core"
     }
   ],
+  "command_output_contracts": [
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "activity",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "activity",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "aggregate",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "aggregate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "append",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "append",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "claim",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "claim",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "close",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "close",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "close-many",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "close-many",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "rows"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "close-task",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "close-task",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "comments",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "comments",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "config",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "config",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "context",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "context",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "contracts",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "contracts",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "copy",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "copy",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "create",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "create",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "ctx",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "ctx",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "delete",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "delete",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "deps",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "deps",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "docs",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "docs",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "duplicates",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "duplicates",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "eval",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "eval",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "event",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "event",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "events",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "events",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension activate",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension activate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension adopt",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension adopt",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension adopt-all",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension adopt-all",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension catalog",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension catalog",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension deactivate",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension deactivate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension describe",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension describe",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension doctor",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension doctor",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension explore",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension explore",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension init",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension init",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension install",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension install",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension manage",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension manage",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension reload",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension reload",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "extension uninstall",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension uninstall",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "files",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "files",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "focus",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "focus",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "gc",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "gc",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "get",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "get",
+        "format_flag": "--json",
+        "kind": "entity",
+        "wrapper_key": "item"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "graph",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "graph",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "health",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "health",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "help",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "help",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "history",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "history",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "history-author-acknowledge",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "history-author-acknowledge",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "history-compact",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "history-compact",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "history-redact",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "history-redact",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "history-repair",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "history-repair",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "init",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "init",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "install",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "install",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "item",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "item",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "item mutate",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "item mutate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "learnings",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "learnings",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "list",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "list",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "list-all",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "list-all",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "list-blocked",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "list-blocked",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "list-canceled",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "list-canceled",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "list-closed",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "list-closed",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "list-draft",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "list-draft",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "list-in-progress",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "list-in-progress",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "list-open",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "list-open",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "meet",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "meet",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "merge",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "merge",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "next",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "next",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "notes",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "notes",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package activate",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package activate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package adopt",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package adopt",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package adopt-all",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package adopt-all",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package catalog",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package catalog",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package deactivate",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package deactivate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package describe",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package describe",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package doctor",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package doctor",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package explore",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package explore",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package init",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package init",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package install",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package install",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package manage",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package manage",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package reload",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package reload",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "package uninstall",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package uninstall",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages activate",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages activate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages adopt",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages adopt",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages adopt-all",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages adopt-all",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages catalog",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages catalog",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages deactivate",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages deactivate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages describe",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages describe",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages doctor",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages doctor",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages explore",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages explore",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages init",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages init",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages install",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages install",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages manage",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages manage",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages reload",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages reload",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages uninstall",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages uninstall",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "pause-task",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "pause-task",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "plan",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "plan",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "profile",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "profile",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "release",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "release",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "remind",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "remind",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "restore",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "restore",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "schema",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "schema",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "search",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "search",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "start-task",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "start-task",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "stats",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "stats",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "telemetry",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "telemetry",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "test",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "test",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "test-all",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "test-all",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "update",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "update",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "update-many",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "update-many",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "rows"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "upgrade",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "upgrade",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "validate",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "validate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "workspace",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "workspace snapshot",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace snapshot",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "workspace snapshot create",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace snapshot create",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "workspace snapshot delete",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace snapshot delete",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "workspace snapshot inspect",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace snapshot inspect",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "workspace snapshot list",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace snapshot list",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "workspace snapshot restore",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace snapshot restore",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    }
+  ],
   "commander_aliases": {
     "activity_string_options": [
       {
@@ -9464,7 +12598,11 @@
   ],
   "error_codes": [
     {
+      "class": "usage",
       "code": "acceptance_criteria_semicolon_forbidden",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Acceptance criteria semicolon forbidden condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9474,7 +12612,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "already_claimed_by",
+      "emitting_commands": [
+        "claim"
+      ],
       "exit_code": 4,
       "meaning": "Already claimed by condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9484,7 +12626,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "ambiguous_list_all",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Ambiguous list all condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9494,7 +12640,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "ambiguous_option_combination",
+      "emitting_commands": [
+        "plan"
+      ],
       "exit_code": 2,
       "meaning": "Ambiguous option combination condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9504,7 +12654,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "annotation_flag_like_value",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Annotation flag like value condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9514,7 +12668,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "annotation_message_without_text",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Annotation message without text condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9524,7 +12682,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "append_empty_body",
+      "emitting_commands": [
+        "append"
+      ],
       "exit_code": 2,
       "meaning": "Append empty body condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9534,7 +12696,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "body_file_conflicts_with_body",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Body file conflicts with body condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9544,7 +12710,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "body_file_missing_path",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Body file missing path condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9554,7 +12724,11 @@
       "stability": "stable"
     },
     {
+      "class": "not_found",
       "code": "body_file_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 3,
       "meaning": "Body file unreadable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9564,7 +12738,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "bundle_integrity_torn_install",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Bundle integrity torn install condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9574,7 +12752,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "capability_undeclared",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Capability undeclared condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9584,7 +12766,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "capability_unused",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Capability unused condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9594,7 +12780,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "child_projection_item_bound_exceeded",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Child projection item bound exceeded condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9604,7 +12794,12 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "close_reason_required",
+      "emitting_commands": [
+        "*",
+        "close-many"
+      ],
       "exit_code": 2,
       "meaning": "Close reason required condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9615,7 +12810,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "close_through_update",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Close through update condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9625,7 +12824,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "close_validation_missing_fields",
+      "emitting_commands": [
+        "close"
+      ],
       "exit_code": 2,
       "meaning": "Close validation missing fields condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9635,7 +12838,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "collected_zero_items",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Collected zero items condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9645,7 +12852,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "command_failed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Command failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9655,7 +12866,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "command_namespace",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Command namespace condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9665,7 +12880,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "command_override_conflict",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Command override conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9675,7 +12894,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "config_duplicate",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Config duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9685,7 +12908,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "config_key_unknown",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Config key unknown condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9695,7 +12922,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "config_value_invalid",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Config value invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9705,7 +12936,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "conflicting_lifecycle_owner",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Conflicting lifecycle owner condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9715,7 +12950,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "context_takes_no_item_argument",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Context takes no item argument condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9725,7 +12964,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "core_item_field_requires_dedicated_flag",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Core item field requires dedicated flag condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9735,7 +12978,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "create_positional_type_without_title",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Create positional type without title condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9745,7 +12992,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "dependency_edge_not_allowed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Dependency edge not allowed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9755,7 +13006,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "duplicate_command",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Duplicate command condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9765,7 +13020,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "duplicate_edge",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Duplicate edge condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9775,7 +13034,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "duplicate_sweep_cost_limit",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Duplicate sweep cost limit condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9785,7 +13048,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "duplicate_target_circular",
+      "emitting_commands": [
+        "close"
+      ],
       "exit_code": 2,
       "meaning": "Duplicate target circular condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9795,7 +13062,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "duplicate_target_is_duplicate",
+      "emitting_commands": [
+        "close"
+      ],
       "exit_code": 2,
       "meaning": "Duplicate target is duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9805,7 +13076,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "duplicate_target_missing",
+      "emitting_commands": [
+        "close"
+      ],
       "exit_code": 2,
       "meaning": "Duplicate target missing condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9815,7 +13090,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "duplicate_target_self",
+      "emitting_commands": [
+        "close"
+      ],
       "exit_code": 2,
       "meaning": "Duplicate target self condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9825,7 +13104,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "empty_surface",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Empty surface condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9835,7 +13118,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "event_cursor_query_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Event cursor query mismatch condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9845,7 +13132,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "event_index_unavailable",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Event index unavailable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9855,7 +13146,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "extension_command_activation_failed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Extension command activation failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9865,7 +13160,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "extension_dependency_name_unsafe",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Extension dependency name unsafe condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9875,7 +13174,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "extension_dependency_spec_invalid",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Extension dependency spec invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9885,7 +13188,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "extension_dependency_version_unsafe",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Extension dependency version unsafe condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9895,7 +13202,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "extension_install_soft_failed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Extension install soft failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9905,7 +13216,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "extension_install_source_contains_destination",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Extension install source contains destination condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9915,7 +13230,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "extension_item_field_reserved",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Extension item field reserved condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9925,7 +13244,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "extension_item_field_type_conflict",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Extension item field type conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9935,7 +13258,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "extension_item_field_unknown",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Extension item field unknown condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9945,7 +13272,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "extension_mutation_guard_failed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Extension mutation guard failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9955,7 +13286,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "extension_mutation_guard_invalid_decision",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Extension mutation guard invalid decision condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9965,7 +13300,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "extension_mutation_guard_invalid_denial",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Extension mutation guard invalid denial condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9975,7 +13314,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "extension_mutation_guard_timed_out",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Extension mutation guard timed out condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9985,7 +13328,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "extension_update_health_partial_coverage",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Extension update health partial coverage condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -9995,7 +13342,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "field_duplicate",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Field duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10005,7 +13356,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "field_invalid",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Field invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10015,7 +13370,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "field_mcp_input_collision",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Field mcp input collision condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10025,7 +13384,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "github_source_entry_unbuilt",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Github source entry unbuilt condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10035,7 +13398,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "history_author_acknowledge_selector_required",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "History author acknowledge selector required condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10045,7 +13412,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "history_drift_chain_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "History drift chain mismatch condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10055,7 +13426,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "history_drift_hash_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "History drift hash mismatch condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10065,7 +13440,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "history_drift_missing_stream",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "History drift missing stream condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10075,7 +13454,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "history_drift_unreadable_stream",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "History drift unreadable stream condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10085,7 +13468,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "history_merge_conflict_markers_detected",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "History merge conflict markers detected condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10095,7 +13482,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "history_stream_over_compact_threshold",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "History stream over compact threshold condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10105,7 +13496,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "history_target_out_of_range",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "History target out of range condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10115,7 +13510,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "history_unknown_author_events",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "History unknown author events condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10125,7 +13524,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "init_existing_settings_requires_force",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Init existing settings requires force condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10135,7 +13538,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "init_gitignore_unwritable",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Init gitignore unwritable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10145,7 +13552,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "init_id_prefix_conflict",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Init id prefix conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10155,7 +13566,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "init_id_prefix_path_like",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Init id prefix path like condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10165,7 +13580,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "integrity_history_conflict_marker",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Integrity history conflict marker condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10175,7 +13594,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "integrity_history_invalid_json",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Integrity history invalid json condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10185,7 +13608,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "integrity_history_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Integrity history unreadable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10195,7 +13622,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "integrity_item_ahead_format_version",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Integrity item ahead format version condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10205,7 +13636,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "integrity_item_conflict_marker",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Integrity item conflict marker condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10215,7 +13650,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "integrity_item_outdated_format_version",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Integrity item outdated format version condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10225,7 +13664,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "integrity_item_parse_failed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Integrity item parse failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10235,7 +13678,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "integrity_item_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Integrity item unreadable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10245,7 +13692,12 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "invalid_argument_value",
+      "emitting_commands": [
+        "*",
+        "create"
+      ],
       "exit_code": 2,
       "meaning": "Invalid argument value condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10258,7 +13710,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "invalid_command_usage",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Invalid command usage condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10269,7 +13725,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "invalid_event_cursor",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Invalid event cursor condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10279,7 +13739,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "invalid_event_follow_interval",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Invalid event follow interval condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10289,7 +13753,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "invalid_event_limit",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Invalid event limit condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10299,7 +13767,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "invalid_event_since",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Invalid event since condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10309,7 +13781,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "invalid_provenance_predicate",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Invalid provenance predicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10319,7 +13795,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "invalid_query_cursor",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Invalid query cursor condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10329,7 +13809,25 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
+      "code": "invalid_workspace_snapshot_target",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Invalid workspace snapshot target condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-snapshot.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "class": "generic_failure",
       "code": "item_document_invalid",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Item document invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10339,7 +13837,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "item_document_roundtrip_failed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Item document roundtrip failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10349,7 +13851,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "item_id_collision",
+      "emitting_commands": [
+        "copy"
+      ],
       "exit_code": 4,
       "meaning": "Item id collision condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10359,7 +13865,11 @@
       "stability": "stable"
     },
     {
+      "class": "not_found",
       "code": "item_not_found",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 3,
       "meaning": "Item not found condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10370,7 +13880,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "likely_duplicate",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Likely duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10380,7 +13894,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "linked_test_value_not_quoted",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Linked test value not quoted condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10390,7 +13908,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "list_source_incomplete",
+      "emitting_commands": [
+        "list"
+      ],
       "exit_code": 1,
       "meaning": "List source incomplete condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10400,7 +13922,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "local_package_archive_unsafe",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Local package archive unsafe condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10410,7 +13936,11 @@
       "stability": "stable"
     },
     {
+      "class": "not_found",
       "code": "local_source_not_found_bare_name",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 3,
       "meaning": "Local source not found bare name condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10420,7 +13950,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "lock_conflict",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Lock conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10432,7 +13966,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "locks_stale_count",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Locks stale count condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10442,7 +13980,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "locks_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Locks unreadable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10452,7 +13994,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "malformed_plan_step_evidence",
+      "emitting_commands": [
+        "plan"
+      ],
       "exit_code": 2,
       "meaning": "Malformed plan step evidence condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10462,7 +14008,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "manifest_capabilities_absent",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Manifest capabilities absent condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10472,7 +14022,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "merge_conflict_markers_detected",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Merge conflict markers detected condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10482,7 +14036,11 @@
       "stability": "stable"
     },
     {
+      "class": "dependency_failed",
       "code": "merge_git_config_unwritable",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 5,
       "meaning": "Merge git config unwritable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10492,7 +14050,11 @@
       "stability": "stable"
     },
     {
+      "class": "not_found",
       "code": "merge_root_not_found",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 3,
       "meaning": "Merge root not found condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10502,7 +14064,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "missing_directory",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Missing directory condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10512,7 +14078,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "missing_lifecycle_target",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Missing lifecycle target condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10522,7 +14092,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "missing_required_argument",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Missing required argument condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10537,7 +14111,13 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "missing_required_option",
+      "emitting_commands": [
+        "*",
+        "create",
+        "plan"
+      ],
       "exit_code": 2,
       "meaning": "Missing required option condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10551,7 +14131,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "module_import_failed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Module import failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10561,7 +14145,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "multi_target_github_install_ambiguous",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Multi target github install ambiguous condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10571,7 +14159,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "mutation_author_required",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Mutation author required condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10581,7 +14173,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "mutation_secret_guard_blocked",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Mutation secret guard blocked condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10591,7 +14187,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "no_matching_tests",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "No matching tests condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10601,7 +14201,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "no_projects_matched_filters",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "No projects matched filters condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10611,7 +14215,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "no_test_files_found",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "No test files found condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10621,7 +14229,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "no_tests_found",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "No tests found condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10631,7 +14243,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "no_update_fields",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "No update fields condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10642,7 +14258,11 @@
       "stability": "stable"
     },
     {
+      "class": "not_found",
       "code": "npm_package_not_found",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 3,
       "meaning": "Npm package not found condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10652,7 +14272,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "ownership_conflict",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Ownership conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10664,7 +14288,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "ownership_dependency_bypass_restricted_options",
+      "emitting_commands": [
+        "update"
+      ],
       "exit_code": 1,
       "meaning": "Ownership dependency bypass restricted options condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10674,7 +14302,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "ownership_metadata_bypass_restricted_options",
+      "emitting_commands": [
+        "update"
+      ],
       "exit_code": 1,
       "meaning": "Ownership metadata bypass restricted options condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10684,7 +14316,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "package_spec_empty",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Package spec empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10694,7 +14330,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "profile_name_empty",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Profile name empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10704,7 +14344,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "profile_name_not_normalized",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Profile name not normalized condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10714,7 +14358,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "profile_summary_empty",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Profile summary empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10724,7 +14372,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "profile_title_empty",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Profile title empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10734,7 +14386,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "redundant_edge",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Redundant edge condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10744,7 +14400,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "reindex_already_running",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Reindex already running condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10754,7 +14414,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "reserved_item_field",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Reserved item field condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10764,7 +14428,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "schema_migration_input_required",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Schema migration input required condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10774,7 +14442,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "settings_read_fs_error",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Settings read fs error condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10784,7 +14456,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "settings_read_invalid_json",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Settings read invalid json condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10794,7 +14470,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "settings_read_invalid_schema",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Settings read invalid schema condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10804,7 +14484,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "settings_read_merge_failed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Settings read merge failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10814,7 +14498,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "status_duplicate",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Status duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10824,7 +14512,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "status_invalid",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Status invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10834,7 +14526,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "stdin_json_invalid",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Stdin json invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10844,7 +14540,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "stdin_json_unknown_key",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Stdin json unknown key condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10854,7 +14554,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "structured_event_immutable",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Structured event immutable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10864,7 +14568,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "structured_event_input_conflict",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Structured event input conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10874,7 +14582,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "structured_event_json_empty",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Structured event json empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10884,7 +14596,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "structured_event_json_invalid",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Structured event json invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10894,7 +14610,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "structured_event_since_invalid",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Structured event since invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10904,7 +14624,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "telemetry_endpoint_probe_failed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Telemetry endpoint probe failed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10914,7 +14638,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "telemetry_endpoint_probe_http_status",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Telemetry endpoint probe http status condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10924,7 +14652,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "telemetry_otel_export_failing",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Telemetry otel export failing condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10934,7 +14666,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "telemetry_queue_high_retries",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Telemetry queue high retries condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10944,7 +14680,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "telemetry_queue_invalid_rows",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Telemetry queue invalid rows condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10954,7 +14694,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "telemetry_queue_pending",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Telemetry queue pending condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10964,7 +14708,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "telemetry_schema_version_behind",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Telemetry schema version behind condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10974,7 +14722,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "telemetry_state_invalid_json",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Telemetry state invalid json condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10984,7 +14736,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "template_type_unknown",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Template type unknown condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -10994,7 +14750,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "terminal_plan_mutation",
+      "emitting_commands": [
+        "plan"
+      ],
       "exit_code": 4,
       "meaning": "Terminal plan mutation condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11004,7 +14764,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "terminal_state_conflict",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Terminal state conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11014,7 +14778,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "tracked_runtime_cache_files",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Tracked runtime cache files condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11024,7 +14792,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "tracker_not_initialized",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Tracker not initialized condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11035,7 +14807,11 @@
       "stability": "stable"
     },
     {
+      "class": "not_found",
       "code": "tracker_root_missing",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 3,
       "meaning": "Tracker root missing condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11045,7 +14821,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "tracker_root_not_directory",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Tracker root not directory condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11055,7 +14835,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "type_duplicate",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Type duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11065,7 +14849,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "type_invalid",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Type invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11075,7 +14863,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "unknown_command",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Unknown command condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11087,7 +14879,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "unknown_context_intent",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Unknown context intent condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11097,8 +14893,12 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "unknown_error",
-      "exit_code": 2,
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
       "meaning": "Unknown error condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -11107,7 +14907,11 @@
       "stability": "stable"
     },
     {
+      "class": "not_found",
       "code": "unknown_field",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 3,
       "meaning": "Unknown field condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11117,7 +14921,12 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "unknown_field_projection",
+      "emitting_commands": [
+        "get",
+        "list"
+      ],
       "exit_code": 2,
       "meaning": "Unknown field projection condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11128,7 +14937,11 @@
       "stability": "stable"
     },
     {
+      "class": "not_found",
       "code": "unknown_item_type",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 3,
       "meaning": "Unknown item type condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11138,7 +14951,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "unknown_lifecycle_action",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Unknown lifecycle action condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11148,7 +14965,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "unknown_option",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Unknown option condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11159,7 +14980,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "unknown_plan_template",
+      "emitting_commands": [
+        "plan"
+      ],
       "exit_code": 2,
       "meaning": "Unknown plan template condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11169,7 +14994,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "unknown_provenance_dimension",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Unknown provenance dimension condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11179,7 +15008,11 @@
       "stability": "stable"
     },
     {
+      "class": "not_found",
       "code": "unknown_status",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 3,
       "meaning": "Unknown status condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11189,7 +15022,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "unknown_subcommand",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Unknown subcommand condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11202,7 +15039,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "unsupported_update_option",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Unsupported update option condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11212,7 +15053,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_command_references_stale_pm_ids",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate command references stale pm ids condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11222,7 +15067,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_files_missing_linked_paths",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate files missing linked paths condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11232,7 +15081,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_files_orphaned_paths",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate files orphaned paths condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11242,7 +15095,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_files_tracked_all_strict_forces_pm_internals",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate files tracked all strict forces pm internals condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11252,7 +15109,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_format_version_ahead_items",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate format version ahead items condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11262,7 +15123,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_format_version_outdated_items",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate format version outdated items condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11272,7 +15137,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_hierarchy_parent_cycle",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate hierarchy parent cycle condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11282,7 +15151,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_hierarchy_parent_cycle_error",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate hierarchy parent cycle error condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11292,7 +15165,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_history_drift_chain_mismatches",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate history drift chain mismatches condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11302,7 +15179,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_history_drift_hash_mismatches",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate history drift hash mismatches condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11312,7 +15193,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_history_drift_missing_streams",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate history drift missing streams condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11322,7 +15207,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_history_drift_unreadable_streams",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate history drift unreadable streams condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11332,7 +15221,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "validate_history_unknown_author_events",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Validate history unknown author events condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11342,7 +15235,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_lifecycle_active_closure_like_metadata",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate lifecycle active closure like metadata condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11352,7 +15249,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_lifecycle_active_terminal_parent",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate lifecycle active terminal parent condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11362,7 +15263,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_lifecycle_dependency_cycles",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate lifecycle dependency cycles condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11372,7 +15277,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_lifecycle_dependency_cycles_error",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate lifecycle dependency cycles error condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11382,7 +15291,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_lifecycle_stale_blockers",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate lifecycle stale blockers condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11392,7 +15305,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_merge_fence_drift",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate merge fence drift condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11402,7 +15319,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "validate_metadata_custom_profile_missing_required_fields",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Validate metadata custom profile missing required fields condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11412,7 +15333,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_metadata_duplicate_issue_codes",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate metadata duplicate issue codes condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11422,7 +15347,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_metadata_missing_acceptance_criteria",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate metadata missing acceptance criteria condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11432,7 +15361,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_metadata_missing_close_reason",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate metadata missing close reason condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11442,7 +15375,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_metadata_missing_confidence",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate metadata missing confidence condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11452,7 +15389,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_metadata_missing_estimate",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate metadata missing estimate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11462,7 +15403,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_metadata_missing_release",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate metadata missing release condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11472,7 +15417,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_metadata_missing_reviewer",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate metadata missing reviewer condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11482,7 +15431,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_metadata_missing_risk",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate metadata missing risk condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11492,7 +15445,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_metadata_missing_sprint",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate metadata missing sprint condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11502,7 +15459,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_resolution_missing_fields",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate resolution missing fields condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11512,7 +15473,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_storage_duplicate_item_ids",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate storage duplicate item ids condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11522,7 +15487,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "validate_storage_history_conflict_markers",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Validate storage history conflict markers condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11532,7 +15501,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_storage_resurrected_items",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate storage resurrected items condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11542,7 +15515,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_storage_tracked_runtime_cache_files",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate storage tracked runtime cache files condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11552,7 +15529,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_storage_unparseable_config",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate storage unparseable config condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11562,7 +15543,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_storage_unparseable_history",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate storage unparseable history condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11572,7 +15557,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "validate_storage_unreadable_items",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Validate storage unreadable items condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11582,7 +15571,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "vectorization_embedding_identity_changed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Vectorization embedding identity changed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11592,7 +15585,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "vectorization_stale_items_remaining",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Vectorization stale items remaining condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11602,7 +15599,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "workflow_duplicate_type",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Workflow duplicate type condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11612,7 +15613,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "workflow_status_unknown",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Workflow status unknown condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11622,7 +15627,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "workflow_transition_malformed",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Workflow transition malformed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11632,7 +15641,11 @@
       "stability": "stable"
     },
     {
+      "class": "generic_failure",
       "code": "workflow_type_empty",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 1,
       "meaning": "Workflow type empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11642,7 +15655,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "workflow_type_unknown",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Workflow type unknown condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11652,7 +15669,11 @@
       "stability": "stable"
     },
     {
+      "class": "conflict",
       "code": "workspace_history_state_conflict",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 4,
       "meaning": "Workspace history state conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11662,7 +15683,11 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
       "code": "workspace_root_pm_path",
+      "emitting_commands": [
+        "*"
+      ],
       "exit_code": 2,
       "meaning": "Workspace root pm path condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
@@ -11672,7 +15697,67 @@
       "stability": "stable"
     },
     {
+      "class": "usage",
+      "code": "workspace_snapshot_force_required",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Workspace snapshot force required condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-snapshot.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "class": "conflict",
+      "code": "workspace_snapshot_manifest_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Workspace snapshot manifest mismatch condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-snapshot.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "class": "usage",
+      "code": "workspace_snapshot_name_reserved_fingerprint",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Workspace snapshot name reserved fingerprint condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-snapshot.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "class": "not_found",
+      "code": "workspace_snapshot_not_found",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 3,
+      "meaning": "Workspace snapshot not found condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-snapshot.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "class": "usage",
       "code": "wrong_item_type",
+      "emitting_commands": [
+        "plan"
+      ],
       "exit_code": 2,
       "meaning": "Wrong item type condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
