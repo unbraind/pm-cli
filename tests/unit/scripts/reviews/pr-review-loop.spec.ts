@@ -7,6 +7,7 @@ import {
   inlineReplyPath,
   main,
   parseArgs,
+  pullRequestCommentPath,
   resolveTarget,
   runCliIfDirect,
   runGh,
@@ -26,6 +27,9 @@ describe("PR review loop helper", () => {
     });
     expect(inlineReplyPath("unbraind/pm-cli", 531, "42")).toBe(
       "repos/unbraind/pm-cli/pulls/531/comments/42/replies",
+    );
+    expect(pullRequestCommentPath("unbraind/pm-cli", 531)).toBe(
+      "repos/unbraind/pm-cli/issues/531/comments",
     );
   });
 
@@ -125,6 +129,12 @@ describe("PR review loop helper", () => {
     const executeGh = vi.fn().mockReturnValue('{"ok":true}');
     const log = vi.fn();
     main(["react", "--node-id", "node-1", "--reaction", "THUMBS_UP"], { runGh: executeGh, log });
+    main(["comment", "--repo", "unbraind/pm-cli", "--pr", "531", "--body", "linked acknowledgement"], { runGh: executeGh, log });
+    main([
+      "acknowledge", "--repo", "unbraind/pm-cli", "--pr", "531",
+      "--node-id", "node-review", "--reaction", "THUMBS_UP",
+      "--body", "Review summary acknowledged: https://github.test/review/1",
+    ], { runGh: executeGh, log });
     main(["reply-inline", "--repo", "unbraind/pm-cli", "--pr", "531", "--comment-id", "42", "--body", "done"], { runGh: executeGh, log });
     main([
       "acknowledge-inline", "--repo", "unbraind/pm-cli", "--pr", "531",
@@ -133,10 +143,13 @@ describe("PR review loop helper", () => {
     ], { runGh: executeGh, log });
 
     expect(executeGh.mock.calls[0]?.[0]).toContain("subjectId=node-1");
-    expect(executeGh.mock.calls[1]?.[0]).toContain("repos/unbraind/pm-cli/pulls/531/comments/42/replies");
-    expect(executeGh.mock.calls[2]?.[0]).toContain("subjectId=node-2");
-    expect(executeGh.mock.calls[3]?.[0]).toContain("repos/unbraind/pm-cli/pulls/531/comments/42/replies");
-    expect(JSON.parse(log.mock.calls[2]?.[0])).toEqual({
+    expect(executeGh.mock.calls[1]?.[0]).toContain("repos/unbraind/pm-cli/issues/531/comments");
+    expect(executeGh.mock.calls[2]?.[0]).toContain("subjectId=node-review");
+    expect(executeGh.mock.calls[3]?.[0]).toContain("repos/unbraind/pm-cli/issues/531/comments");
+    expect(executeGh.mock.calls[4]?.[0]).toContain("repos/unbraind/pm-cli/pulls/531/comments/42/replies");
+    expect(executeGh.mock.calls[5]?.[0]).toContain("subjectId=node-2");
+    expect(executeGh.mock.calls[6]?.[0]).toContain("repos/unbraind/pm-cli/pulls/531/comments/42/replies");
+    expect(JSON.parse(log.mock.calls[4]?.[0])).toEqual({
       reaction: { ok: true }, reply: { ok: true },
     });
   });
@@ -253,6 +266,8 @@ describe("PR review loop helper", () => {
     expect(() => main(["react"])).toThrow("exit");
     expect(() => main(["react", "--node-id", "node-1", "--reaction", "INVALID"])).toThrow("exit");
     expect(() => addReaction("node-1", "INVALID")).toThrow("exit");
+    expect(() => main(["comment", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
+    expect(() => main(["acknowledge", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
     expect(() => main(["reply-inline", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
     expect(() => main(["acknowledge-inline", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
     expect(() => main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531", "--interval", "9"])).toThrow("exit");

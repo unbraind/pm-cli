@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   computeHistoryDiff,
   patchPathToChangedField,
-  type HistoryDiffValueEntry,
   type HistoryFieldChange,
 } from "../../../../src/core/history/history-diff.js";
 import type { HistoryEntry, HistoryPatchOp } from "../../../../src/types/index.js";

@@ -1335,7 +1335,6 @@ function buildUnknownCommandGuidance(
 function buildLinkedTestValueNotQuotedGuidance(
   message: string,
   commandName: string | undefined,
-  allowedTypes: string,
   context: CommanderGuidanceContext | undefined,
 ): GuidanceMessage | null {
   if (!/too many arguments/i.test(message) || commandName !== "test") {
@@ -1471,7 +1470,6 @@ function buildCommanderErrorGuidance(
     buildLinkedTestValueNotQuotedGuidance(
       message,
       commandName,
-      allowedTypes,
       context,
     ) ??
     buildContextItemArgumentGuidance(message, commandName, context);

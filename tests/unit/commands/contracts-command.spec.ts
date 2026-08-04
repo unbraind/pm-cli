@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -2705,7 +2705,10 @@ describe("contracts command runtime", () => {
       }
 
       expect(thrown).toBeInstanceOf(PmCliError);
-      const error = thrown as PmCliError;
+      if (!(thrown instanceof PmCliError)) {
+        throw new Error("Expected runContracts to throw PmCliError");
+      }
+      const error = thrown;
       const errorContext = error.context as {
         recovery?: {
           fallback_candidates?: Array<{ command: string }>;

@@ -19,6 +19,8 @@ export function usage(message, dependencies = {}) {
   node scripts/reviews/pr-review-loop.mjs inventory [--pr <number>] [--repo <owner/name>]
   node scripts/reviews/pr-review-loop.mjs watch [--pr <number>] [--repo <owner/name>] [--interval <seconds>]
   node scripts/reviews/pr-review-loop.mjs react --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...>
+  node scripts/reviews/pr-review-loop.mjs comment --body <text> [--pr <number>] [--repo <owner/name>]
+  node scripts/reviews/pr-review-loop.mjs acknowledge --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...> --body <text> [--pr <number>] [--repo <owner/name>]
   node scripts/reviews/pr-review-loop.mjs reply-inline --comment-id <id> --body <text> [--pr <number>] [--repo <owner/name>]
   node scripts/reviews/pr-review-loop.mjs acknowledge-inline --comment-id <id> --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...> --body <text> [--pr <number>] [--repo <owner/name>]`);
   exit(2);
@@ -30,7 +32,10 @@ export function parseArgs(argv) {
   for (let index = 0; index < rest.length; index += 2) {
     const flag = rest[index];
     const value = rest[index + 1];
-    if (!flag?.startsWith("--") || value === undefined) usage(`Invalid argument: ${flag ?? ""}`);
+    if (!flag?.startsWith("--") || value === undefined) {
+      usage(`Invalid argument: ${flag ?? ""}`);
+      continue;
+    }
     options[flag.slice(2)] = value;
   }
   return { command, options };
@@ -161,6 +166,10 @@ export function inlineReplyPath(repo, pr, commentId) {
   return `repos/${repo}/pulls/${pr}/comments/${commentId}/replies`;
 }
 
+export function pullRequestCommentPath(repo, pr) {
+  return `repos/${repo}/issues/${pr}/comments`;
+}
+
 export function addReaction(nodeId, reaction, executeGh = runGh) {
   if (!nodeId || !reaction) usage("A reaction requires --node-id and --reaction.");
   if (!validReactions.has(reaction)) usage(`Invalid reaction: ${reaction}`);
@@ -212,6 +221,24 @@ export function watchChecksAndInventory(target, interval, executeGh = runGh) {
   throw new Error("PR head changed during three consecutive check-watch attempts.");
 }
 
+function handleTopLevelConversationWrite(command, options, executeGh, write) {
+  if (command !== "comment" && command !== "acknowledge") return false;
+  const target = resolveTarget(options, executeGh);
+  if (!options.body) usage(`${command} requires --body.`);
+  const commentArgs = [
+    "api", pullRequestCommentPath(target.repo, target.pr),
+    "-f", `body=${options.body}`,
+  ];
+  if (command === "comment") {
+    write(executeGh(commentArgs));
+    return true;
+  }
+  const reaction = addReaction(options["node-id"], options.reaction, executeGh);
+  const comment = executeGh(commentArgs);
+  write(JSON.stringify({ reaction: JSON.parse(reaction), comment: JSON.parse(comment) }));
+  return true;
+}
+
 export function main(argv = process.argv.slice(2), dependencies = {}) {
   const { command, options } = parseArgs(argv);
   const executeGh = dependencies.runGh ?? runGh;
@@ -227,6 +254,8 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
     write(JSON.stringify(watchChecksAndInventory(target, interval, executeGh), null, 2));
   } else if (command === "react") {
     write(addReaction(options["node-id"], options.reaction, executeGh));
+  } else if (handleTopLevelConversationWrite(command, options, executeGh, write)) {
+    return;
   } else if (command === "reply-inline") {
     const target = resolveTarget(options, executeGh);
     if (!options["comment-id"] || !options.body) usage("reply-inline requires --comment-id and --body.");

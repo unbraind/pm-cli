@@ -1055,9 +1055,10 @@ function runGraphCentrality(
   invocation: GraphInvocation,
 ): GraphCentralityResult {
   const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
-  const result = computeRelationshipCentrality(invocation.assembly.graph, {
-    ...(invocation.kinds === undefined ? {} : { kinds: invocation.kinds }),
-  });
+  const result = computeRelationshipCentrality(
+    invocation.assembly.graph,
+    invocation.kinds === undefined ? {} : { kinds: invocation.kinds },
+  );
   const analysis = result.value;
   return {
     subcommand: "centrality",
@@ -1089,9 +1090,10 @@ function runGraphArticulation(
   invocation: GraphInvocation,
 ): GraphArticulationResult {
   const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
-  const result = findRelationshipCutStructure(invocation.assembly.graph, {
-    ...(invocation.kinds === undefined ? {} : { kinds: invocation.kinds }),
-  });
+  const result = findRelationshipCutStructure(
+    invocation.assembly.graph,
+    invocation.kinds === undefined ? {} : { kinds: invocation.kinds },
+  );
   const { articulationPoints, bridges } = result.value;
   return {
     subcommand: "articulation",

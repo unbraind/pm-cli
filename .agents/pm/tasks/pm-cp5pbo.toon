@@ -1,0 +1,61 @@
+id: pm-cp5pbo
+title: "Eliminate July static-analysis nullability, dead-code, and redundant-allocation findings"
+description: "Resolve the supplied DeepScan/CodeFactor findings across graph SDK option assembly, metadata validators, telemetry and Sentry tests, CLI normalization tests, dead imports/declarations, and review-loop argument safety without suppressions or weakened assertions."
+type: Task
+status: in_progress
+priority: 1
+tags[4]: "area:quality",codefactor,deepscan,static-analysis
+created_at: "2026-08-04T06:06:49.202Z"
+updated_at: "2026-08-04T06:47:44.834Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#867917289da55728242603b6"
+author: "harness:codex"
+acceptance_criteria: "Every supplied finding is removed at its reported semantic site; Focused tests, typecheck, lint, and full coverage pass; The PR review inventory cannot miss unacknowledged bot feedback"
+parent: pm-92if
+comments[2]{created_at,author,text}:
+  "2026-08-04T06:06:49.202Z","harness:codex","Duplicate check 2026-08-04: searched all statuses for the exact graph/run.ts, item-format.ts, Sentry, normalizeBootstrapInvocation, and static-analysis terms. pm-zt1c and pm-xsth are closed historical spread waves at different or earlier sites; pm-92if is the canonical open quality parent and no matching active child exists."
+  "2026-08-04T06:47:44.834Z","harness:codex","Evidence before publication: removed every supplied unnecessary-spread, undefined-value, insufficient-null-check, unused declaration/import/parameter, useless-array, and stale-call-signature finding without suppressions. Added complete top-level bot acknowledgement commands to scripts/reviews/pr-review-loop.mjs and documented exact-head blocking review workflow. Linked focused suite passed 674/674; full coverage passed 6800/6800 at 100/100/100/100; linked ESLint/duplication/static gate and typecheck passed; full pnpm lint passed including SDK entrypoint and CLI transport floors. pm validate reports history drift 0 and storage integrity ok; pre-existing resolution metadata warning remains 295 closed items."
+files[26]{path,scope,note}:
+  eslint-suppressions.json,project,Prune suppressions made obsolete by dead-code cleanup
+  package.json,project,Lower suppression ratchet after cleanup
+  scripts/release/static-quality-gate.mts,project,Lower suppression ratchet after cleanup
+  scripts/reviews/pr-review-loop.mjs,project,Static-analysis remediation or regression coverage
+  src/cli/error-guidance.ts,project,Static-analysis remediation or regression coverage
+  src/core/item/item-format.ts,project,Static-analysis remediation or regression coverage
+  src/core/shared/constants.ts,project,Static-analysis remediation or regression coverage
+  src/core/store/item-store.ts,project,Static-analysis remediation or regression coverage
+  src/core/store/settings.ts,project,Static-analysis remediation or regression coverage
+  src/sdk/graph/run.ts,project,Static-analysis remediation or regression coverage
+  src/sdk/package-import-adapters.ts,project,Static-analysis remediation or regression coverage
+  tests/integration/release-automation-contract.spec.ts,project,Lock lowered suppression ratchet
+  tests/integration/release-readiness-runtime.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/cli/cli-main-errors.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/commands/contracts-command.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/commands/register-commands.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/commands/test-all-command.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/commands/validate-command.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/core/history/history-diff.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/core/lock/lock-gc.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/core/schema/runtime-schema-command-flags.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/core/sentry/instrument.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/core/telemetry/telemetry-runtime.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/docs-examples/policy-restricted-extension.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/docs-examples/starter-extension.spec.ts,project,Static-analysis remediation or regression coverage
+  tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,Static-analysis remediation or regression coverage
+tests[4]{command,scope,timeout_seconds,note}:
+  env -u PM_PATH -u PM_GLOBAL_PATH -u PM_SOURCE_PM_PATH -u PM_SOURCE_WORKSPACE_ROOT node scripts/run-tests.mjs coverage,project,1200,Full repository coverage with child-owned PM sandboxes
+  env -u PM_PATH -u PM_GLOBAL_PATH -u PM_SOURCE_PM_PATH -u PM_SOURCE_WORKSPACE_ROOT node scripts/run-tests.mjs test -- tests/unit/sdk/graph/run.spec.ts tests/unit/sdk/graph/run-defensive.spec.ts tests/unit/core/item/item-format-validation.spec.ts tests/unit/core/item/item-format-internal.spec.ts tests/unit/core/sentry/instrument.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/commands/validate-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/lock/lock-gc.spec.ts tests/unit/docs-examples/policy-restricted-extension.spec.ts tests/unit/docs-examples/starter-extension.spec.ts tests/unit/core/schema/runtime-schema-command-flags.spec.ts tests/unit/core/history/history-diff.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/test-all-command.spec.ts tests/unit/scripts/reviews/pr-review-loop.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts,project,600,Focused regression suite with child-owned PM sandboxes
+  "pnpm build && pnpm lint:eslint && pnpm lint:duplicates && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 114 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100",project,600,Static analysis duplication and suppression ratchet
+  pnpm typecheck,project,600,TypeScript contract verification
+test_runs[8]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mse9oyyl-tfg7ud,test,failed,"2026-08-04T06:14:16.769Z","2026-08-04T06:18:43.581Z","2026-08-04T06:18:43.581Z",1,3,0
+  test-local-mse9yij9-gddrl0,test,failed,"2026-08-04T06:20:10.114Z","2026-08-04T06:26:08.853Z","2026-08-04T06:26:08.853Z",1,3,0
+  test-local-msead3q4-9tn26a,test,failed,"2026-08-04T06:32:11.254Z","2026-08-04T06:37:29.500Z","2026-08-04T06:37:29.500Z",2,2,0
+  test-local-mseaelzn-ihlo7q,test,failed,"2026-08-04T06:38:16.505Z","2026-08-04T06:38:39.827Z","2026-08-04T06:38:39.827Z",0,1,0
+  test-local-mseafmio-cmn0m6,test,passed,"2026-08-04T06:39:03.723Z","2026-08-04T06:39:27.168Z","2026-08-04T06:39:27.168Z",1,0,0
+  test-local-mseakkdf-7zed12,test,passed,"2026-08-04T06:39:31.675Z","2026-08-04T06:43:17.667Z","2026-08-04T06:43:17.667Z",1,0,0
+  test-local-msealxtu-06jtuf,test,passed,"2026-08-04T06:43:27.435Z","2026-08-04T06:44:21.762Z","2026-08-04T06:44:21.762Z",1,0,0
+  test-local-mseamdm8-1k96zt,test,passed,"2026-08-04T06:44:22.186Z","2026-08-04T06:44:42.224Z","2026-08-04T06:44:42.224Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/PR_REVIEW_LOOP.md,project,Document complete bot acknowledgement workflow
+body: ""

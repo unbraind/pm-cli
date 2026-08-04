@@ -202,6 +202,16 @@ function assertItemMetadataCondition(
   }
 }
 
+function requireItemMetadataRecord(
+  value: unknown,
+  message: string,
+): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    validationError(message);
+  }
+  return value as Record<string, unknown>;
+}
+
 function assertTimestampField(
   record: Record<string, unknown>,
   fieldName: "created_at" | "updated_at" | "deadline",
@@ -312,13 +322,10 @@ function assertRecurrenceExdates(value: unknown): void {
 }
 
 function assertValidRecurrenceRule(recurrence: unknown): void {
-  assertItemMetadataCondition(
-    typeof recurrence === "object" &&
-      recurrence !== null &&
-      !Array.isArray(recurrence),
+  const recurrenceRecord = requireItemMetadataRecord(
+    recurrence,
     "event.recurrence must be an object",
   );
-  const recurrenceRecord = recurrence as Record<string, unknown>;
   assertItemMetadataCondition(
     typeof recurrenceRecord.freq === "string",
     "event.recurrence.freq must be a string",
@@ -494,13 +501,10 @@ function assertReminderEntries(record: Record<string, unknown>): void {
     "reminders must be an array",
   );
   for (const reminder of reminders as unknown[]) {
-    assertItemMetadataCondition(
-      typeof reminder === "object" &&
-        reminder !== null &&
-        !Array.isArray(reminder),
+    const reminderRecord = requireItemMetadataRecord(
+      reminder,
       "reminders entries must be objects",
     );
-    const reminderRecord = reminder as Record<string, unknown>;
     assertItemMetadataCondition(
       typeof reminderRecord.at === "string",
       "reminder.at must be a string",
@@ -557,11 +561,10 @@ function assertEventRecurrence(eventRecord: Record<string, unknown>): void {
 }
 
 function assertCalendarEventEntry(event: unknown): void {
-  assertItemMetadataCondition(
-    typeof event === "object" && event !== null && !Array.isArray(event),
+  const eventRecord = requireItemMetadataRecord(
+    event,
     "events entries must be objects",
   );
-  const eventRecord = event as Record<string, unknown>;
   assertItemMetadataCondition(
     typeof eventRecord.start_at === "string",
     "event.start_at must be a string",
@@ -632,15 +635,11 @@ function assertTypeOptionsField(record: Record<string, unknown>): void {
   if (typeOptions === undefined) {
     return;
   }
-  assertItemMetadataCondition(
-    typeof typeOptions === "object" &&
-      typeOptions !== null &&
-      !Array.isArray(typeOptions),
+  const typeOptionsRecord = requireItemMetadataRecord(
+    typeOptions,
     "type_options must be an object",
   );
-  for (const [optionKey, optionValue] of Object.entries(
-    typeOptions as Record<string, unknown>,
-  )) {
+  for (const [optionKey, optionValue] of Object.entries(typeOptionsRecord)) {
     assertItemMetadataCondition(
       optionKey.trim().length > 0,
       "type_options keys must be non-empty",
@@ -721,14 +720,10 @@ function assertValidItemMetadata(
   itemMetadata: unknown,
   runtimeContext?: RuntimeSchemaValidationContext,
 ): asserts itemMetadata is ItemMetadata {
-  assertItemMetadataCondition(
-    typeof itemMetadata === "object" &&
-      itemMetadata !== null &&
-      !Array.isArray(itemMetadata),
+  const record = requireItemMetadataRecord(
+    itemMetadata,
     "item metadata must be an object",
   );
-
-  const record = itemMetadata as Record<string, unknown>;
   const itemType = assertRequiredItemMetadataFields(record);
   assertStatusItemMetadataField(record, runtimeContext);
   assertPriorityAndTags(record);

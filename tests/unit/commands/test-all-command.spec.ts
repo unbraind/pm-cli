@@ -7,7 +7,6 @@ import {
   runTestAll,
 } from "../../../src/cli/commands/test-all.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
-import { PmCliError } from "../../../src/core/shared/errors.js";
 import * as itemTestRunTracking from "../../../src/core/test/item-test-run-tracking.js";
 import {
   loadTaskMetadata,

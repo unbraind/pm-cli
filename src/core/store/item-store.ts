@@ -43,7 +43,6 @@ import {
 } from "./item-metadata-cache.js";
 import {
   getHistoryPath,
-  getItemFormatFromPath,
   getItemPath,
   ITEM_FILE_EXTENSIONS,
 } from "./paths.js";

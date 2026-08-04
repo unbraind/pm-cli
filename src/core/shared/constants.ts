@@ -7,7 +7,6 @@ import type {
   BuiltinItemType,
   GovernancePreset,
   GovernanceSettings,
-  ItemMetadata,
   PmSettings,
   RuntimeStatusDefinition,
   RuntimeWorkflowDefinition,

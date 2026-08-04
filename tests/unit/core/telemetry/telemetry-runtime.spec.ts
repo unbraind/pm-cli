@@ -2080,8 +2080,10 @@ describe("core/telemetry/runtime", () => {
         "not-a-date",
         7.9,
       );
-      expect(otelRequest).not.toBeNull();
-      const body = otelRequest?.payload as {
+      if (otelRequest === null) {
+        throw new Error("Expected a configured OTLP request");
+      }
+      const body = otelRequest.payload as {
         resourceSpans: Array<{ scopeSpans: Array<{ spans: Array<{ status: unknown; name: string }> }> }>;
       };
       const span = body.resourceSpans[0].scopeSpans[0].spans[0];
@@ -2155,8 +2157,11 @@ describe("core/telemetry/runtime", () => {
         "2026-01-01T00:00:01.000Z",
         1234,
       );
-      expect(okRequest?.endpoint).toBe("https://otel.example.test/v1/traces");
-      const okBody = okRequest?.payload as {
+      if (okRequest === null) {
+        throw new Error("Expected a configured OTLP request");
+      }
+      expect(okRequest.endpoint).toBe("https://otel.example.test/v1/traces");
+      const okBody = okRequest.payload as {
         resourceSpans: Array<{
           resource: { attributes: Array<{ key: string; value: { stringValue?: string } }> };
           scopeSpans: Array<{
