@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[8]: agent-ux,"area:cli","area:importers","area:sdk",atomicity,github-report,lifecycle,performance
 created_at: "2026-08-04T08:44:51.089Z"
-updated_at: "2026-08-04T11:59:41.320Z"
+updated_at: "2026-08-04T12:11:20.420Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#e5139491a52f7c630a58be71"
 author: "harness:codex"
@@ -26,14 +26,15 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gzyt2j,discovered_from,"2026-08-04T08:44:51.089Z","harness:codex","cli:create:dep",detected
   pm-n7rr,implements,"2026-08-04T08:44:51.089Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-04T08:44:51.089Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-04T08:44:51.089Z","harness:codex","Duplicate check 2026-08-04: all-status searches covered terminal create, require_close_reason, --resolution, importer closure, atomic lifecycle mutation, and create/update/close policy. Closed pm-2ew0w3 fixed contradictory terminal transition policy, but no active item owns the complete atomic importer-facing terminal-create contract described by GitHub #887. GitHub source: https://github.com/unbraind/pm-cli/issues/887"
   "2026-08-04T11:47:36.827Z","harness:codex","Evidence: terminal create now accepts closeReason/completedAt across SDK, CLI, tool schema, and JSON-document ingestion; explicit reason wins over message/resolution and completed_at remains distinct from local closed_at. Focused linked tests passed; isolated packed npm/npx consumer created and reread a terminal item with source timestamp; full coverage passed 6807/6807 at 100/100/100/100."
   "2026-08-04T11:52:02.850Z","harness:codex","Review handoff: PR #893 https://github.com/unbraind/pm-cli/pull/893 at initial head 6c31a5f18 packages this item with the related SDK/CLI governance tranche."
   "2026-08-04T11:59:41.320Z","harness:codex","Hosted CI correction: PR #893 static job 91983398581 failed only because the generated full contract fixture omitted the new create flags/tool fields. pnpm contracts:update added the four additive contract projections and pnpm contracts:check now passes."
+  "2026-08-04T12:11:20.420Z","harness:codex","Review feedback: Sourcery correctly identified missing direct normalizeCreateOptions coverage for closeReason/completedAt; added it without any type escape. Its claim that create lacks resolution/expected/actual is stale against the live contracts: those flags and persistence already exist in commander-mutation-options.ts, registration-helpers.ts, tool-schema.ts, and lifecycle/create.ts."
 learnings[1]{created_at,author,text}:
   "2026-08-04T11:47:52.390Z","harness:codex",Imported completion time and local closure mutation time are different facts; terminal creation must preserve both in one transaction instead of rewriting source history.
-files[7]{path,scope,note}:
+files[8]{path,scope,note}:
   sdk/public-surface.json,project,Records additive SDK lifecycle recovery exports
   src/sdk/cli-contracts/commander-mutation-options.ts,project,Create CLI registration contracts
   src/sdk/cli-contracts/flag-contracts.ts,project,Create flags for contracts and completions
@@ -41,8 +42,9 @@ files[7]{path,scope,note}:
   src/sdk/lifecycle/create.ts,project,Atomic terminal-create SDK fields and persistence
   src/sdk/structured-mutations.ts,project,Full-document terminal import mapping
   tests/fixtures/contracts/full.json,project,Generated CLI and tool contract baseline for terminal-create flags
+  tests/unit/cli/registration-helpers.spec.ts,project,Direct Commander create-option normalization coverage
 tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/sdk/structured-mutations.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/sdk/structured-mutations.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,240
   "node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts && pnpm sdk:surface:check",project,240
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msekn80w-8avvy5,test,failed,"2026-08-04T11:24:59.937Z","2026-08-04T11:25:17.792Z","2026-08-04T11:25:17.792Z",1,1,0
