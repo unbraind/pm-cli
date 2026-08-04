@@ -176,6 +176,14 @@ jobs:
           name: dist-node24-ubuntu
           path: dist
 
+      # Bootstrap clone-local merge-driver configuration before any static
+      # command invokes the repository's own tracker health/validation gate.
+      - name: Prepare tracker clone invariants
+        if: matrix.gate == 'static'
+        run: |
+          node dist/cli.js merge install --no-extensions
+          git diff --exit-code -- .gitattributes
+
       - name: Run typecheck gate
         if: matrix.gate == 'typecheck'
         run: pnpm typecheck
@@ -201,11 +209,15 @@ jobs:
       - name: Run tracker merge-safety gates
         if: matrix.gate == 'static'
         run: |
-          node dist/cli.js merge install --no-extensions --json
-          git diff --exit-code -- .gitattributes
           node dist/cli.js validate --check-storage-integrity --check-history-drift --strict-exit --json --no-extensions
           representative_id="$(node dist/cli.js list --status all --limit 1 --sort created_at --order desc --json --no-extensions | jq -er '.items[0].id')"
           node dist/cli.js history "${representative_id}" --verify --strict-exit --json --no-extensions > /dev/null
+
+      - name: Run tracker context-quality ratchets
+        if: matrix.gate == 'static'
+        run: |
+          node scripts/release/tracker-measurement-gate.mjs --negative-control
+          node scripts/release/tracker-measurement-gate.mjs
 
       - name: Run compatibility migration gate
         if: matrix.gate == 'compat'

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: deployment,gdpr,observability,pm-cli,telemetry
 created_at: "2026-04-25T21:33:07.558Z"
-updated_at: "2026-07-26T17:21:31.602Z"
+updated_at: "2026-08-04T15:47:14.144Z"
 deadline: "2026-05-02T21:33:07.558Z"
 author: codex-agent
 estimated_minutes: 900
@@ -16,10 +16,11 @@ release: v2026.5.1
 resolution: "Completed telemetry rollout across CLI runtime, remote stack deployment, routing, backup/restore, and documentation."
 expected_result: "Telemetry ingestion, observability, routing, and operational docs are fully validated and tracked."
 actual_result: Rollout comments show end-to-end verification evidence; missing repo docs are now backfilled in this run for linked-path parity.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-5v5w,implements,"2026-07-26T17:21:31.394Z",null,null
-comments[1]{created_at,author,text}:
+dependencies[1]{id,kind,created_at}:
+  pm-5v5w,implements,"2026-07-26T17:21:31.394Z"
+comments[2]{created_at,author,text}:
   "2026-05-03T13:33:58.522Z",codex-audit,"Sanitized current comments: telemetry rollout evidence is preserved in resolution/linked artifacts and prior comments were cleared from the current item because they contained private remote operations paths. History-stream redaction requires a dedicated audited pm command to preserve replay integrity."
+  "2026-08-04T15:47:14.144Z","harness:codex","Context hygiene 2026-08-04: pm-j8z6 removed stale current-state links to ignored local telemetry/operations artifacts. Historical outcome and release attribution remain unchanged; public tracked evidence now points only to repository-owned files."
 files[13]{path,scope,note}:
   src/cli/commands/config.ts,project,telemetry config key policy handling
   src/cli/help-content.ts,project,config help examples include telemetry opt-out
@@ -36,9 +37,7 @@ files[13]{path,scope,note}:
   tests/unit/telemetry-runtime.spec.ts,project,runtime queue/redaction telemetry unit coverage
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/telemetry-runtime.spec.ts tests/unit/telemetry-consent.spec.ts tests/integration/cli.integration.spec.ts,project,3600,telemetry settings/runtime and integration coverage
-docs[5]{path,scope,note}:
-  .agents/pm/search/operations/REMOTE_TELEMETRY_STACK.md,project,remote deployment and operations runbook (current location)
-  .agents/pm/search/TELEMETRY.md,project,GDPR-oriented telemetry operations guide (current location)
+docs[3]{path,scope,note}:
   docs/ARCHITECTURE.md,project,telemetry pipeline architecture and settings
   README.md,project,telemetry policy and documentation links
   SECURITY.md,project,telemetry privacy and DSAR security controls

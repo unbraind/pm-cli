@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: developer-experience,metadata,refactor,toon,vocabulary
 created_at: "2026-07-12T20:24:28.207Z"
-updated_at: "2026-07-26T17:15:56.445Z"
+updated_at: "2026-08-04T15:47:12.703Z"
 closed_at: "2026-07-13T08:56:20.378Z"
 author: codex-frontmatter-vocabulary
 estimated_minutes: 240
@@ -18,9 +18,9 @@ release: v2026.7.14
 resolution: completed
 expected_result: No obsolete front-matter vocabulary remains for item records; ItemMetadata is the canonical term everywhere except genuine YAML/legacy front-matter compatibility surfaces
 actual_result: "PR#531 renamed readers, normalizers, cache modules, helpers, fixtures, and prose; 74-test focused suite + full coverage green"
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-n7rr,implements,"2026-07-26T17:15:56.237Z",null,null
-comments[10]{created_at,author,text}:
+dependencies[1]{id,kind,created_at}:
+  pm-n7rr,implements,"2026-07-26T17:15:56.237Z"
+comments[11]{created_at,author,text}:
   "2026-07-12T20:42:43.447Z",codex-frontmatter-vocabulary,"Implementation evidence before external review: renamed the canonical item type and APIs to ItemMetadata/listAllItemMetadata/normalizeItemMetadata; renamed the cache module and test file to item-metadata-cache; updated CLI, SDK, package runtimes, tests, fixtures, import-boundary baseline, diagnostics, and TOON-specific prose; removed the obsolete ItemFrontMatter compatibility alias; retained splitFrontMatter plus YAML/JSON front-matter wording only where the files genuinely contain front matter; added scripts/reviews/pr-review-loop.mjs and docs/PR_REVIEW_LOOP.md for complete thread/reaction inventory and acknowledgements. Verification passed: pnpm build; focused 74-test item format/cache/record suite; full node scripts/run-tests.mjs test; full coverage; pnpm quality:static; pnpm quality:docs-skills; git diff --check; node --check review helper."
   "2026-07-12T20:50:50.050Z",codex-frontmatter-vocabulary,"Pre-push Greptile attempt evidence: review 84e236fa-46b4-4529-95fb-b0c3b21573cd was dispatched against main and allowed three uninterrupted five-minute windows, then failed unexpectedly without returning findings. This is an external reviewer failure, not a clean review; retrying the same committed diff before push."
   "2026-07-12T20:55:16.991Z",codex-frontmatter-vocabulary,"Pre-push Greptile retry evidence: review 4e722269-603b-4468-aecc-845f5df4a177 was dispatched against the same committed main diff and given the full 20-minute maximum (7 + 7 + 6 minute uninterrupted windows). It also ended with Greptile's external 'review failed unexpectedly' result and returned no findings. Both local Greptile attempts were run before push but cannot be treated as approval; hosted Greptile review remains mandatory on the PR current head before merge."
@@ -31,7 +31,8 @@ comments[10]{created_at,author,text}:
   "2026-07-12T21:50:35.005Z",codex-gpt5,"Pre-push review evidence: local Greptile review 2e239c8e-b7b6-4c40-8a1a-8423d73ea937 completed and identified two valid findings. Fixed multi-connection GraphQL pagination by freezing exhausted cursors, expanded the regression to a three-page comments/two-page reviews scenario, and corrected the ItemMetadata canonical-type comment. Verification: focused helper coverage 100% statements/branches/functions/lines (87/65/11/77), full sandboxed coverage 278 files and 5,596 tests at 100% across all dimensions, quality:static passed, contracts:check passed, git diff --check passed."
   "2026-07-12T22:03:42.532Z",codex-gpt5,"Hosted current-head CI follow-up: all Linux/macOS build, coverage, static, typecheck, compatibility, smoke, docs, security, CodeQL, Codecov, and Greptile gates passed. Windows alone exposed a platform-specific test fixture using a hard-coded file URL; changed the direct-execution test to derive URLs with node:pathToFileURL for POSIX and Windows paths. Focused Windows-relevant suites pass 14/14 and quality:static passes."
   "2026-07-12T22:35:32.161Z",codex-gpt5,"Final bot inventory follow-up on head 5fe950f6: found and triaged five previously unresolved CodeRabbit threads. Accepted reaction enum validation and two duplicated-word findings; declined two requests to add work-item IDs inside existing public docs because those files are already linked via pm docs and inline tracker references are required for newly created docs. Reacted according to usefulness, replied individually, resolved all five threads, and acknowledged/reacted to every previously unhandled bot comment/review. Verification: review helper 100% coverage (90 statements, 67 branches, 11 functions, 79 lines), quality:static passed, contracts:check passed, git diff --check passed."
-files[638]{path,scope,note}:
+  "2026-08-04T15:47:12.703Z","harness:codex","Context hygiene 2026-08-04: pm-j8z6 removed stale current-state links to ignored local telemetry/operations artifacts. Historical outcome and release attribution remain unchanged; public tracked evidence now points only to repository-owned files."
+files[632]{path,scope,note}:
   .gitignore,project,Renamed runtime cache ignore path
   packages/pm-beads/extensions/beads/index.ts,project,Package runtime metadata rename
   packages/pm-beads/extensions/beads/runtime-loader.ts,project,Package runtime metadata rename
@@ -81,12 +82,6 @@ files[638]{path,scope,note}:
   scripts/measure-agent-token-surface.mjs,project,Review automation and release scripts
   scripts/plugin-mcp-smoke-harness.mjs,project,Review automation and release scripts
   scripts/prepare-build-cache.mjs,project,Review automation and release scripts
-  scripts/prod/telemetry/2026-04-27-pm-cli-telemetry-overview.json,project,SDK boundary baseline rename
-  scripts/prod/telemetry/dashboards/pm-cli-telemetry-overview.json,project,SDK boundary baseline rename
-  scripts/prod/telemetry/grafana-dashboards/error-rate.json,project,SDK boundary baseline rename
-  scripts/prod/telemetry/reports/sentry-correlation-20260503T200858Z-issues.json,project,SDK boundary baseline rename
-  scripts/prod/telemetry/reports/sentry-correlation-20260503T200858Z-releases.json,project,SDK boundary baseline rename
-  scripts/prod/telemetry/reports/sentry-correlation-20260503T200858Z-traces.json,project,SDK boundary baseline rename
   scripts/release-version.mjs,project,Review automation and release scripts
   scripts/release/compatibility-check.mjs,project,Review automation and release scripts
   scripts/release/context-eval-gate.mjs,project,Review automation and release scripts

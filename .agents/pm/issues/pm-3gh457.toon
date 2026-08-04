@@ -1,0 +1,51 @@
+id: pm-3gh457
+title: "Sentry PM-CLI-2V: pm init surfaces raw EACCES when the managed workspace .gitignore cannot be written"
+description: "Release 2026.8.4 recorded one handled high-priority Sentry event when pm init reached ensurePmGitignore and writeFile failed with EACCES. The public SDK/CLI init boundary must return a stable actionable permission error, preserve existing workspace bytes, and classify the expected environment constraint without an unstructured high-severity exception."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-08-04T15:09:53.826Z"
+updated_at: "2026-08-04T16:43:08.766Z"
+closed_at: "2026-08-04T16:43:08.341Z"
+completed_at: "2026-08-04T16:43:08.341Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "A real permission-constrained .gitignore write produces a stable structured pm error rather than raw EACCES; Existing .gitignore bytes are preserved on failure; SDK and CLI callers receive actionable remediation without leaking the scrubbed path; Regression coverage exercises the real filesystem boundary and keeps successful/idempotent behavior unchanged; Full coverage, static quality, packed consumer, telemetry, and Sentry release gates pass; The Sentry issue is resolved only after exact-head verification"
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: high
+environment: pm-cli@2026.8.4 on a permission-constrained Arch Linux workspace
+repro_steps: Run pm init against a valid workspace whose .gitignore path cannot be opened for writing.
+resolution: "Managed .gitignore reads and writes now convert EACCES, EPERM, and EROFS into the public init_gitignore_unwritable PmCliError with path-safe recovery; telemetry classifies it as runtime and the Sentry gate ignores only the handled structured form."
+expected_result: "Permission-constrained init returns stable actionable SDK/CLI recovery, preserves unrelated .gitignore bytes, and cannot hide raw or unhandled filesystem defects."
+actual_result: "Real chmod EACCES and packed npx/bunx acceptance return init_gitignore_unwritable without private path disclosure, preserve sentinel bytes, and pass exact 100% repository coverage and static contracts."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-bnmlsc,related,"2026-08-04T15:09:53.826Z","harness:codex","cli:create:dep",detected
+  pm-hous,discovered_from,"2026-08-04T15:09:53.826Z","harness:codex","cli:create:dep",detected
+  pm-ips23h,discovered_from,"2026-08-04T15:09:53.826Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-04T15:09:53.826Z","harness:codex","Duplicate check 2026-08-04: searched all statuses for PM-CLI-2V, EACCES permission denied open, gitignore permission, read-only init workspace, and neighboring Sentry/merge-install failures. pm-hous owns successful managed .gitignore creation and pm-bnmlsc owns .git/config permission classification; neither owns failure to write the managed .gitignore. Live Sentry evidence: PM-CLI-2V id 138799498, unresolved/high, handled, count 1, release pm-cli@2026.8.4, first/last seen 2026-08-04T13:15:45.639Z, stack ensurePmGitignore -> node writeFile."
+  "2026-08-04T15:16:53.860Z","harness:codex","TDD evidence: the new real permission-constrained .gitignore test failed first because ensurePmGitignore propagated raw EACCES; after implementation the 3-file focused suite passes 63/63, targeted ESLint and typecheck pass, generated error catalog/contracts are current, and the SDK surface records one intentional additive error code."
+  "2026-08-04T15:24:16.692Z","harness:codex","Exact-head evidence: quality:static passes including tracker ratchets and SDK import/CLI transport floors; contracts and generated error catalog are current; full coverage passes 432 files / 6838 tests at 100% statements (48651/48651), branches (35245/35245), functions (9958/9958), and lines (47154/47154). The linked 3-file acceptance suite passes 63/63. A fresh packed consumer proves both npx and bunx return exit 1 with code init_gitignore_unwritable, omit the private /tmp path from detail, and preserve sentinel .gitignore bytes. Sentry PM-CLI-2V will be resolved against the resulting exact commit, then the live gate will be rerun."
+  "2026-08-04T16:43:07.755Z","harness:codex","CodeRabbit remediation evidence: init_gitignore_unwritable recovery now accurately requires read and write access because the guarded boundary covers both readFile and writeFile. The real permission test asserts both required and next-step guidance; focused and full exact-coverage gates pass."
+learnings[1]{created_at,author,text}:
+  "2026-08-04T15:24:17.180Z","harness:codex","Expected filesystem constraints need a stable public SDK error at the narrow I/O boundary, path-safe recovery context, and an observability allowlist keyed to the structured PmCliError message and handled state; raw Error and unhandled variants must remain release-blocking."
+files[8]{path,scope,note}:
+  scripts/release/sentry-telemetry-gate.mjs,project,Recognizes only the new handled structured permission error while raw and unhandled EACCES remain blocking.
+  sdk/public-surface.json,project,Records the additive public SDK error-code surface.
+  src/core/shared/constants.ts,project,Maps init_gitignore_unwritable into runtime telemetry classification.
+  src/sdk/generated-error-code-catalog.ts,project,Generated public SDK error-code guidance for init_gitignore_unwritable.
+  src/sdk/workspace.ts,project,Classifies managed .gitignore permission boundaries as a stable path-safe PmCliError.
+  tests/fixtures/contracts/full.json,project,Regenerates the runtime contract snapshot with the new error code.
+  tests/unit/core/workspace/gitignore.spec.ts,project,Real chmod-based EACCES regression preserving existing bytes and path privacy.
+  tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,Proves structured handled permission errors are expected while raw or unhandled equivalents still block.
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/core/shared/shared-constants-errors.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mset4zfe-reuksk,test,passed,"2026-08-04T15:22:56.126Z","2026-08-04T15:23:03.386Z","2026-08-04T15:23:03.386Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated release note for the resolved Sentry permission-boundary issue.
+close_reason: Completed exact-head permission-recovery guidance remediation with read/write-accurate public SDK context and regression coverage.
+body: ""

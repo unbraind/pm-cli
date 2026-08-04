@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "description": "Population measurements filed by pm items, enforced as ceilings (pm-ips23h). Each declaration names the item that owns the defect, a selector that recomputes the population from tracked data, and the count that was filed. A ceiling retires automatically when its owner reaches a terminal status.",
+  "declarations": [
+    {
+      "id": "dependency-kind-blocks",
+      "owner": "pm-jkbqt8",
+      "selector": {
+        "source": "dependency_kind",
+        "kind": "blocks"
+      },
+      "ceiling": 241,
+      "measured_on": "2026-08-04",
+      "note": "blocks rows are resolved by pm graph but invisible to the readiness resolver behind pm next, so an item gated only by a blocks row is classified ready. The owning item measured 219; the population had already grown to 241 before anything could fail on it."
+    },
+    {
+      "id": "dependency-kind-related-to",
+      "owner": "pm-4020c5",
+      "selector": {
+        "source": "dependency_kind",
+        "kind": "related_to"
+      },
+      "ceiling": 43,
+      "measured_on": "2026-08-04",
+      "note": "related_to is stored verbatim and folded into related only at read time, so a jq or grep pipeline over the store selects the wrong token. The owning item measured 16; the alias population it exists to retire had grown to 43."
+    },
+    {
+      "id": "graph-isolated-active-nodes",
+      "owner": "pm-bzmeaa",
+      "selector": {
+        "source": "graph_profile",
+        "field": "isolated_active_nodes"
+      },
+      "ceiling": 0,
+      "measured_on": "2026-08-04",
+      "note": "Active items unreachable from the relationship graph. Held at zero since the typed-connectivity work landed; this declaration keeps it there."
+    },
+    {
+      "id": "graph-degree-leq-one-active-nodes",
+      "owner": "pm-bzmeaa",
+      "selector": {
+        "source": "graph_profile",
+        "field": "degree_leq_one_active_nodes"
+      },
+      "ceiling": 0,
+      "measured_on": "2026-08-04",
+      "note": "Active items reachable by at most one edge, which is the shape a spine-only lineage leaves behind. Held at zero; a new item filed without typed relationships fails here."
+    },
+    {
+      "id": "validate-duplicate-issue-codes",
+      "owner": "pm-pivf",
+      "selector": {
+        "source": "validate_warning",
+        "code": "validate_metadata_duplicate_issue_codes"
+      },
+      "ceiling": 2,
+      "measured_on": "2026-08-04",
+      "note": "Two known pairs, each two genuine defects sharing one upstream issue code. The fix is check-side; neither pair may be renamed or merged. The ceiling stops a third pair appearing unnoticed."
+    },
+    {
+      "id": "validate-files-missing-linked-paths",
+      "owner": "pm-j8z6",
+      "selector": {
+        "source": "validate_warning",
+        "code": "validate_files_missing_linked_paths"
+      },
+      "ceiling": 195,
+      "measured_on": "2026-08-04",
+      "note": "Linked file paths that no longer exist, dominated by generated artifacts. The owning fix refuses such links at write time; until it lands the population may not grow."
+    },
+    {
+      "id": "validate-files-orphaned-paths",
+      "owner": "pm-j8z6",
+      "selector": {
+        "source": "validate_warning",
+        "code": "validate_files_orphaned_paths"
+      },
+      "ceiling": 1,
+      "measured_on": "2026-08-04",
+      "note": "A tracked path with no live owner remains in the linked-resource cleanup lineage and may not multiply."
+    },
+    {
+      "id": "validate-metadata-missing-close-reason",
+      "owner": "pm-e9zh",
+      "selector": {
+        "source": "validate_warning",
+        "code": "validate_metadata_missing_close_reason"
+      },
+      "ceiling": 16,
+      "measured_on": "2026-08-04",
+      "note": "Historical terminal items missing close reasons remain owned by the evidence-preserving metadata backfill and may only shrink."
+    },
+    {
+      "id": "validate-resolution-missing-fields",
+      "owner": "pm-wenq",
+      "selector": {
+        "source": "validate_warning",
+        "code": "validate_resolution_missing_fields"
+      },
+      "ceiling": 295,
+      "measured_on": "2026-08-04",
+      "note": "Closed items missing the resolution triple. Every close from here on must carry it, so this ceiling only ever falls."
+    },
+    {
+      "id": "health-settings",
+      "owner": "pm-33cw",
+      "selector": { "source": "health_check", "name": "settings" },
+      "ceiling": 0,
+      "measured_on": "2026-08-04"
+    },
+    {
+      "id": "health-directories",
+      "owner": "pm-33cw",
+      "selector": { "source": "health_check", "name": "directories" },
+      "ceiling": 0,
+      "measured_on": "2026-08-04"
+    },
+    {
+      "id": "health-settings-values",
+      "owner": "pm-33cw",
+      "selector": { "source": "health_check", "name": "settings_values" },
+      "ceiling": 0,
+      "measured_on": "2026-08-04"
+    },
+    {
+      "id": "health-telemetry",
+      "owner": "pm-7zs0",
+      "selector": { "source": "health_check", "name": "telemetry" },
+      "ceiling": 1,
+      "measured_on": "2026-08-04",
+      "note": "A pending local delivery queue remains an explicit observability limitation; an error status is a regression."
+    },
+    {
+      "id": "health-extensions",
+      "owner": "pm-33cw",
+      "selector": { "source": "health_check", "name": "extensions" },
+      "ceiling": 0,
+      "measured_on": "2026-08-04"
+    },
+    {
+      "id": "health-storage",
+      "owner": "pm-33cw",
+      "selector": { "source": "health_check", "name": "storage" },
+      "ceiling": 0,
+      "measured_on": "2026-08-04"
+    },
+    {
+      "id": "health-locks",
+      "owner": "pm-33cw",
+      "selector": { "source": "health_check", "name": "locks" },
+      "ceiling": 0,
+      "measured_on": "2026-08-04"
+    },
+    {
+      "id": "health-integrity",
+      "owner": "pm-33cw",
+      "selector": { "source": "health_check", "name": "integrity" },
+      "ceiling": 0,
+      "measured_on": "2026-08-04"
+    },
+    {
+      "id": "health-history-drift",
+      "owner": "pm-33cw",
+      "selector": { "source": "health_check", "name": "history_drift" },
+      "ceiling": 0,
+      "measured_on": "2026-08-04"
+    },
+    {
+      "id": "health-vectorization",
+      "owner": "pm-33cw",
+      "selector": { "source": "health_check", "name": "vectorization" },
+      "ceiling": 0,
+      "measured_on": "2026-08-04"
+    }
+  ]
+}

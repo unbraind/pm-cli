@@ -145,6 +145,9 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   "pm-web exited with code",
   "github api returned http 422",
   "drift detected:",
+  // A managed .gitignore fence is mandatory, but a read-only workspace is an
+  // expected environmental boundary once init surfaces path-safe recovery.
+  "workspace .gitignore is not writable",
   // The package import dogfood deliberately runs merge-strategy=fail twice to
   // prove duplicate detection aborts before writes. Sentry records that handled
   // CommandError when expected-error capture is enabled for release smokes.

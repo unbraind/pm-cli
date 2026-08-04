@@ -78,6 +78,7 @@ describe("GitHub workflow contract", () => {
     const ciPath = path.resolve(repoRoot, ".github/workflows/ci.yml");
     const ciWorkflow = normalizeWorkflow(await readFile(ciPath, "utf8"));
     const runtimeSmokeJob = extractWorkflowJob(ciWorkflow, "build-test");
+    const gatesJob = extractWorkflowJob(ciWorkflow, "gates");
     const coverageShardsJob = extractWorkflowJob(ciWorkflow, "coverage-shards");
     const coverageJob = extractWorkflowJob(ciWorkflow, "coverage");
     const windowsRegressionJob = extractWorkflowJob(ciWorkflow, "windows-regression");
@@ -140,13 +141,14 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.downloadArtifact,
       "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1",
       "name: Download dist artifact",
+      "name: Prepare tracker clone invariants",
       "name: Dist artifact version smoke",
       "run: node dist/cli.js --version",
       "run: pnpm build",
       "pnpm version:check",
       "pnpm security:scan",
       "pnpm lint",
-      "node dist/cli.js merge install --no-extensions --json",
+      "node dist/cli.js merge install --no-extensions",
       "git diff --exit-code -- .gitattributes",
       "node dist/cli.js validate --check-storage-integrity --check-history-drift --strict-exit --json --no-extensions",
       'node dist/cli.js history "${representative_id}" --verify --strict-exit --json --no-extensions > /dev/null',
@@ -171,6 +173,13 @@ describe("GitHub workflow contract", () => {
       "files: ./coverage/junit.xml",
       "name: pm-cli-test-results",
     ]);
+    expect(gatesJob.indexOf("node dist/cli.js merge install --no-extensions")).toBeLessThan(
+      gatesJob.indexOf("pnpm lint"),
+    );
+    expect(gatesJob.indexOf("node dist/cli.js merge install --no-extensions")).toBeLessThan(
+      gatesJob.indexOf("node scripts/release/tracker-measurement-gate.mjs"),
+    );
+    expect(gatesJob.match(/node dist\/cli\.js merge install --no-extensions/g)).toHaveLength(1);
     expectContainsAll(coverageShardsJob, [
       "needs: build-foundation",
       "persist-credentials: false",

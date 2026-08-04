@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: gdpr,observability,ops,pm-cli,telemetry
 created_at: "2026-04-25T21:32:54.868Z"
-updated_at: "2026-07-26T22:17:30.784Z"
+updated_at: "2026-08-04T15:47:13.239Z"
 deadline: "2026-05-09T21:32:54.868Z"
 author: codex-agent
 estimated_minutes: 720
@@ -15,14 +15,14 @@ release: v2026.5.1
 resolution: "Telemetry rollout child scope is fully delivered and terminal in this backlog wave, with no remaining active descendants under the epic."
 expected_result: Epic closes once rollout children are terminal and closure evidence records no active descendant work.
 actual_result: "Parent-filtered scans show 0 open + 0 in_progress + 12 closed children for pm-lnq3, and closure synthesis narrative is appended."
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-300m,related,"2026-07-26T17:19:26.905Z",null,null
-  pm-35wb,related,"2026-07-26T17:19:26.905Z",null,null
-  pm-pxx0,related,"2026-07-26T17:19:26.905Z",null,null
-  pm-r9ei,related,"2026-07-26T17:19:26.905Z",null,null
-  pm-vhdc,related,"2026-07-26T17:19:26.905Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:30.539Z",null,null
-comments[8]{created_at,author,text}:
+dependencies[6]{id,kind,created_at}:
+  pm-300m,related,"2026-07-26T17:19:26.905Z"
+  pm-35wb,related,"2026-07-26T17:19:26.905Z"
+  pm-pxx0,related,"2026-07-26T17:19:26.905Z"
+  pm-r9ei,related,"2026-07-26T17:19:26.905Z"
+  pm-vhdc,related,"2026-07-26T17:19:26.905Z"
+  pm-doxj,blocks,"2026-07-26T22:17:30.539Z"
+comments[9]{created_at,author,text}:
   "2026-04-25T21:32:54.868Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'telemetry observability gdpr' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; pm search 'telemetry' --mode keyword --limit 20; pm list-open --tag telemetry --limit 20. Net-new scope because no active telemetry rollout lineage existed."
   "2026-04-25T23:13:44.662Z",audit-agent,"Tracker hygiene follow-up completed: created and closed pm-35wb to backfill missing docs/TELEMETRY.md and docs/operations/REMOTE_TELEMETRY_STACK.md references from telemetry rollout lineage. Post-fix validate and health checks are clean."
   "2026-04-26T00:31:13.065Z",codex-agent,"Remote telemetry verification 2026-04-26: health endpoint [redacted_health_endpoint] returned ok true queue [redacted_queue_name]; synthetic POST to /v1/events accepted one event with schema_version 1; [redacted_monitoring_ui] endpoint [redacted_monitoring_endpoint] returned authenticated login redirect. Remaining gap observed in local CLI: pm health output does not include telemetry runtime/export status despite operations guidance expecting telemetry visibility."
@@ -31,14 +31,10 @@ comments[8]{created_at,author,text}:
   "2026-04-27T19:46:02.711Z",codex-agent,"Telemetry backlog wave 2026-04-27 completed: closed child issues pm-vhdc (UUID boundary validation + worker poison-drain remediation), pm-r9ei ([redacted_monitoring_ui] queue panel query alignment to exporter label model), and pm-pxx0 (local retention_days queue pruning). Evidence artifacts are linked under scripts/prod/telemetry (baseline + per-item execution logs). Final verification includes remote healthz ok, queue depth 0/0, PromQL queue vectors non-empty for patched expressions, and local telemetry/health unit suites passing (34 tests)."
   "2026-04-27T21:29:37.428Z",codex-agent,"Closure-readiness evidence 2026-04-27: parent-filtered lifecycle scans show no remaining active children (pm list-open --parent pm-lnq3 --limit 50 => 0; pm list-in-progress --parent pm-lnq3 --limit 50 => 0) and full delivered lineage remains terminal (pm list-closed --parent pm-lnq3 --limit 50 => 12)."
   "2026-04-27T21:33:23.820Z",codex-agent,"Final handoff 2026-04-27: post-closure governance gate -> pm validate --check-resolution --check-history-drift --json (warn limited to 10 legacy resolution rows + 2 legacy history mismatches), pm normalize --dry-run --json (closed_resolution_backfill count=10), pm context --limit 20 (no active backlog)."
+  "2026-08-04T15:47:13.239Z","harness:codex","Context hygiene 2026-08-04: pm-j8z6 removed stale current-state links to ignored local telemetry/operations artifacts. Historical outcome and release attribution remain unchanged; public tracked evidence now points only to repository-owned files."
 notes[1]{created_at,author,text}:
   "2026-04-27T19:46:07.175Z",codex-agent,Close-readiness validate check (resolution + history drift) was run for this wave; history drift is clean and remaining resolution warnings are limited to unrelated historical closed items outside this telemetry lineage.
 learnings[1]{created_at,author,text}:
   "2026-04-26T20:20:28.544Z",audit-agent,"Telemetry pipeline fully operational: 9 [redacted_service_group], E2E event flow, [redacted_observability_stack] verified 2026-04-26"
-docs[4]{path,scope,note}:
-  scripts/prod/telemetry/2026-04-27-backlog-wave-baseline.md,project,telemetry backlog wave baseline and remote diagnostics
-  scripts/prod/telemetry/2026-04-27-pm-pxx0-execution-log.md,project,local retention-days pruning execution log
-  scripts/prod/telemetry/2026-04-27-pm-r9ei-execution-log.md,project,"[redacted_monitoring_ui] queue panel alignment execution log"
-  scripts/prod/telemetry/2026-04-27-pm-vhdc-execution-log.md,project,UUID ingestion boundary remediation execution log
 close_reason: Telemetry rollout child scope is fully closed with documented closure evidence.
 body: "Track end-to-end rollout for opt-out telemetry, remote ingestion, observability stack, backups, and verification.\n\n\\n## 2026-04-27 closure synthesis\\nTelemetry and observability rollout child backlog is fully terminal with zero active follow-up items currently attached to this epic. Current scan records 12 closed descendants and no open/in-progress children, so epic lifecycle state can close without creating new child scope in this wave.\\n"

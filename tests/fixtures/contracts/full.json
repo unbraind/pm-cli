@@ -10135,6 +10135,16 @@
       "stability": "stable"
     },
     {
+      "code": "init_gitignore_unwritable",
+      "exit_code": 1,
+      "meaning": "Init gitignore unwritable condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace.ts"
+      ],
+      "stability": "stable"
+    },
+    {
       "code": "init_id_prefix_conflict",
       "exit_code": 2,
       "meaning": "Init id prefix conflict condition.",
