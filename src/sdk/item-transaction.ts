@@ -5,15 +5,18 @@
  * `commitWorkspaceTransaction`: atomic, resumable create/update/close batches
  * with correct-by-construction inspection and compensation wiring.
  */
+import crypto from "node:crypto";
 import path from "node:path";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { stableStringify } from "../core/shared/serialization.js";
 import { readHistoryEntries } from "./history-read.js";
 import {
   close,
   create,
   deleteItem,
   get,
+  release,
   restore,
   update,
   type PmClientFullMutationOptions,
@@ -62,11 +65,22 @@ export interface BulkItemCloseMutation {
   options?: PmClientFullMutationOptions;
 }
 
+/** One atomic claim release inside a bulk mutation batch. */
+export interface BulkItemReleaseMutation {
+  /** Discriminates the claim-release operation. */
+  op: "release";
+  /** Target item id. */
+  id: string;
+  /** Release options forwarded to the public `release` runtime primitive. */
+  options?: PmClientFullMutationOptions;
+}
+
 /** Union of the item mutations a bulk transaction batch can carry. */
 export type BulkItemMutation =
   | BulkItemCreateMutation
   | BulkItemUpdateMutation
-  | BulkItemCloseMutation;
+  | BulkItemCloseMutation
+  | BulkItemReleaseMutation;
 
 /** Options accepted by the bulk item-mutation transaction helper. */
 export interface CommitItemMutationsOptions {
@@ -116,6 +130,8 @@ interface LocatedItemSnapshot {
   id: string;
   closedAt: string | undefined;
   updatedAt: string;
+  assignee: string | undefined;
+  claimPrincipal: string | undefined;
 }
 
 /** Read one item's transaction-relevant fields, mapping not-found to undefined. */
@@ -129,25 +145,37 @@ async function readItemSnapshot(
       id: string;
       closed_at?: string;
       updated_at: string;
+      assignee?: string;
+      claim_principal?: string;
     };
     return {
       id: item.id,
       closedAt: item.closed_at,
       updatedAt: item.updated_at,
+      assignee: item.assignee,
+      claimPrincipal: item.claim_principal,
     };
   } catch (error) {
-    if (
-      error instanceof PmCliError &&
-      error.exitCode === EXIT_CODE.NOT_FOUND
-    ) {
+    if (error instanceof PmCliError && error.exitCode === EXIT_CODE.NOT_FOUND) {
       return undefined;
     }
     throw error;
   }
 }
 
-/** Derive a journal-safe step id from one mutation's position and target. */
+/** Derive a journal-safe step id bound to position, target, and payload. */
 function deriveStepId(mutation: BulkItemMutation, index: number): string {
+  const sanitizedTarget = mutation.id.replaceAll(/[^a-zA-Z0-9._-]/gu, "_");
+  const fingerprint = crypto
+    .createHash("sha256")
+    .update(stableStringify(mutation))
+    .digest("hex")
+    .slice(0, 12);
+  return `${index + 1}-${mutation.op}-${sanitizedTarget}-${fingerprint}`;
+}
+
+/** Derive the stable public outcome key without exposing journal internals. */
+function deriveOutcomeKey(mutation: BulkItemMutation, index: number): string {
   const sanitizedTarget = mutation.id.replaceAll(/[^a-zA-Z0-9._-]/gu, "_");
   return `${index + 1}-${mutation.op}-${sanitizedTarget}`;
 }
@@ -162,10 +190,10 @@ function bulkHistoryMarker(
 }
 
 /**
- * Report whether an update step's forward mutation is durably applied. Updates
- * cannot be inferred from field values (a moving target), so the applied apply
- * marker in the item's immutable history is the source of truth; a later
- * compensate marker means the mutation was rolled back and must re-apply.
+ * Report whether a step's forward mutation is durably applied. Mutable item
+ * fields cannot prove transaction ownership, so the apply marker in immutable
+ * history is the source of truth; a later compensation marker means the
+ * mutation was rolled back and must re-apply.
  */
 async function isUpdateMarkerApplied(
   pmRoot: string,
@@ -178,7 +206,11 @@ async function isUpdateMarkerApplied(
     canonicalId,
   );
   const applyMarker = bulkHistoryMarker(transactionId, stepId, "apply");
-  const compensateMarker = bulkHistoryMarker(transactionId, stepId, "compensate");
+  const compensateMarker = bulkHistoryMarker(
+    transactionId,
+    stepId,
+    "compensate",
+  );
   for (let index = entries.length - 1; index >= 0; index -= 1) {
     const message = entries[index].message;
     if (message === applyMarker) {
@@ -333,9 +365,7 @@ function buildUpdateStep(
       const updatedItem = updated.item as Record<string, unknown>;
       return { id: String(updatedItem.id), op: "update" };
     },
-    async compensate(
-      data?: WorkspaceTransactionJsonValue,
-    ): Promise<void> {
+    async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
       await compensateByRestore(config, mutation.id, stepId, data);
     },
   };
@@ -353,7 +383,20 @@ function buildCloseStep(
     // fight legitimate prior closure, and recovery must adopt completed work.
     async inspect(): Promise<WorkspaceTransactionStepInspection> {
       const snapshot = await readItemSnapshot(config.pmRoot, mutation.id);
-      if (snapshot?.closedAt === undefined) {
+      if (snapshot === undefined) {
+        return { state: "pending" };
+      }
+      if (
+        await isUpdateMarkerApplied(
+          config.pmRoot,
+          snapshot.id,
+          config.transactionId,
+          stepId,
+        )
+      ) {
+        return { state: "applied", result: { id: snapshot.id, op: "close" } };
+      }
+      if (snapshot.closedAt === undefined) {
         return { state: "pending" };
       }
       return { state: "applied", result: { id: snapshot.id, op: "close" } };
@@ -365,15 +408,70 @@ function buildCloseStep(
       const closed = await close(
         mutation.id,
         mutation.reason,
-        { ...mutation.options, author: config.author },
+        {
+          ...mutation.options,
+          author: config.author,
+          message: bulkHistoryMarker(config.transactionId, stepId, "apply"),
+        },
         { pmRoot: config.pmRoot },
       );
       const closedItem = closed.item as Record<string, unknown>;
       return { id: String(closedItem.id), op: "close" };
     },
-    async compensate(
-      data?: WorkspaceTransactionJsonValue,
-    ): Promise<void> {
+    async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
+      await compensateByRestore(config, mutation.id, stepId, data);
+    },
+  };
+}
+
+/** Build the workspace-transaction step for one claim release. */
+function buildReleaseStep(
+  config: { pmRoot: string; author: string; transactionId: string },
+  mutation: BulkItemReleaseMutation,
+  stepId: string,
+): WorkspaceTransactionStep {
+  return {
+    id: stepId,
+    async inspect(): Promise<WorkspaceTransactionStepInspection> {
+      const snapshot = await readItemSnapshot(config.pmRoot, mutation.id);
+      if (snapshot === undefined) {
+        return { state: "pending" };
+      }
+      if (
+        await isUpdateMarkerApplied(
+          config.pmRoot,
+          snapshot.id,
+          config.transactionId,
+          stepId,
+        )
+      ) {
+        return { state: "applied", result: { id: snapshot.id, op: "release" } };
+      }
+      if (
+        snapshot.assignee !== undefined ||
+        snapshot.claimPrincipal !== undefined
+      ) {
+        return { state: "pending" };
+      }
+      return { state: "applied", result: { id: snapshot.id, op: "release" } };
+    },
+    async prepareCompensation(): Promise<WorkspaceTransactionJsonValue> {
+      return prepareRestoreCompensation(config.pmRoot, mutation);
+    },
+    async apply(): Promise<WorkspaceTransactionJsonValue> {
+      const released = await release(
+        mutation.id,
+        {
+          ...mutation.options,
+          author: config.author,
+          message: bulkHistoryMarker(config.transactionId, stepId, "apply"),
+        },
+        { pmRoot: config.pmRoot },
+      );
+      const releasedItem = released.item as Record<string, unknown>;
+      return { id: String(releasedItem.id), op: "release" };
+    },
+    async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
       await compensateByRestore(config, mutation.id, stepId, data);
     },
   };
@@ -391,13 +489,16 @@ function buildStepForMutation(
   index: number,
 ): WorkspaceTransactionStep {
   const stepId = deriveStepId(mutation, index);
-  if (mutation.op === "create") {
-    return buildCreateStep(config, mutation, stepId);
+  switch (mutation.op) {
+    case "create":
+      return buildCreateStep(config, mutation, stepId);
+    case "update":
+      return buildUpdateStep(config, mutation, stepId);
+    case "close":
+      return buildCloseStep(config, mutation, stepId);
+    case "release":
+      return buildReleaseStep(config, mutation, stepId);
   }
-  if (mutation.op === "update") {
-    return buildUpdateStep(config, mutation, stepId);
-  }
-  return buildCloseStep(config, mutation, stepId);
 }
 
 /** Reject malformed bulk mutation rows before any journal or lock work. */
@@ -412,9 +513,9 @@ function assertValidBulkMutation(
   ) {
     throw new TypeError(`Bulk mutation ${index + 1} must be an object`);
   }
-  if (!["create", "update", "close"].includes(mutation.op)) {
+  if (!["create", "update", "close", "release"].includes(mutation.op)) {
     throw new TypeError(
-      `Bulk mutation ${index + 1} op must be create, update, or close`,
+      `Bulk mutation ${index + 1} op must be create, update, close, or release`,
     );
   }
   if (typeof mutation.id !== "string" || mutation.id.trim().length === 0) {
@@ -481,10 +582,13 @@ export async function commitItemMutations(
       : { onTransition: options.onTransition }),
   });
   const results: Record<string, BulkItemMutationOutcome> = {};
-  for (const [stepId, value] of Object.entries(committed.results)) {
+  for (const [index, mutation] of mutations.entries()) {
+    const stepId = deriveStepId(mutation, index);
+    const value = committed.results[stepId]!;
     // Journal values round-trip this module's own step outputs, which are
     // always {id, op} objects — the cast restores the concrete outcome shape.
-    results[stepId] = value as unknown as BulkItemMutationOutcome;
+    results[deriveOutcomeKey(mutation, index)] =
+      value as unknown as BulkItemMutationOutcome;
   }
   return {
     transactionId: committed.transactionId,
@@ -492,6 +596,92 @@ export async function commitItemMutations(
     recovered: committed.recovered,
     results,
   };
+}
+
+/** Options for completing one item as a single atomic SDK transaction. */
+export interface CommitItemCompletionOptions {
+  /** Tracker root that owns the item and transaction journal. */
+  pmRoot: string;
+  /** Stable idempotency key for the composed completion. */
+  transactionId: string;
+  /** Attributable actor for evidence, closure, and claim release. */
+  author: string;
+  /** Item being completed. */
+  id: string;
+  /** Durable close reason. */
+  reason: string;
+  /** Evidence and linked-resource updates recorded before closure. */
+  evidence?: PmClientFullMutationOptions;
+  /** Structured closure fields and validation policy. */
+  closeOptions?: PmClientFullMutationOptions;
+  /** Claim-release controls. */
+  releaseOptions?: PmClientFullMutationOptions;
+  /** Workspace transaction lock lifetime in seconds. */
+  lockTtlSeconds?: number;
+  /** Maximum time to wait for the workspace transaction lock. */
+  lockWaitMs?: number;
+  /** Optional transition observer used by telemetry and crash tests. */
+  onTransition?: CommitWorkspaceTransactionOptions["onTransition"];
+}
+
+/** Build the ordered mutation sequence used by atomic item completion. */
+export function buildItemCompletionMutations(
+  options: Pick<
+    CommitItemCompletionOptions,
+    "id" | "reason" | "evidence" | "closeOptions" | "releaseOptions"
+  >,
+): BulkItemMutation[] {
+  const mutations: BulkItemMutation[] = [];
+  if (
+    options.evidence !== undefined &&
+    Object.keys(options.evidence).length > 0
+  ) {
+    mutations.push({ op: "update", id: options.id, options: options.evidence });
+  }
+  mutations.push(
+    {
+      op: "close",
+      id: options.id,
+      reason: options.reason,
+      ...(options.closeOptions === undefined
+        ? {}
+        : { options: options.closeOptions }),
+    },
+    {
+      op: "release",
+      id: options.id,
+      ...(options.releaseOptions === undefined
+        ? {}
+        : { options: options.releaseOptions }),
+    },
+  );
+  return mutations;
+}
+
+/**
+ * Record evidence, close an item, and release its claim as one compensating
+ * transaction. A failure restores the exact pre-completion item version, so
+ * callers never observe the protocol's otherwise possible half-finished
+ * states through a committed result.
+ */
+export function commitItemCompletion(
+  options: CommitItemCompletionOptions,
+): Promise<CommitItemMutationsResult> {
+  return commitItemMutations({
+    pmRoot: options.pmRoot,
+    transactionId: options.transactionId,
+    author: options.author,
+    mutations: buildItemCompletionMutations(options),
+    ...(options.lockTtlSeconds === undefined
+      ? {}
+      : { lockTtlSeconds: options.lockTtlSeconds }),
+    ...(options.lockWaitMs === undefined
+      ? {}
+      : { lockWaitMs: options.lockWaitMs }),
+    ...(options.onTransition === undefined
+      ? {}
+      : { onTransition: options.onTransition }),
+  });
 }
 
 /** Public contract for test only item transaction internals, shared with white-box specs. */

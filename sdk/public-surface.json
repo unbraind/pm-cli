@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1431,
+    "covered_symbols": 1432,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1432
+    "required_symbols": 1433
   },
   "breaking_acknowledgements": [
     {
@@ -783,6 +783,13 @@
       ],
       "package_version": "2026.8.4",
       "reason": "PR 895 pre-merge correction: expose explicit string JSON and decoded unknown mutation-receipt overloads before the new API is released."
+    },
+    {
+      "changes": [
+        "signature ./sdk:BulkItemMutation"
+      ],
+      "package_version": "2026.8.4",
+      "reason": "Add the release mutation variant required for atomic evidence-close-release completion; exhaustive BulkItemMutation consumers must handle release"
     }
   ],
   "entrypoints": {
@@ -1744,6 +1751,12 @@
           "signature": "(parentId: string, corpus: Iterable<ItemMetadata>, statusRegistry: RuntimeStatusRegistry, sampleLimit?: number) => ChildRollupContext | calls: (parentId: string, corpus: Iterable<ItemMetadata>, statusRegistry: RuntimeStatusRegistry, sampleLimit?: number) => ChildRollupContext"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "buildItemCompletionMutations",
+          "signature": "(options: Pick<CommitItemCompletionOptions, \"closeOptions\" | \"evidence\" | \"id\" | \"reason\" | \"releaseOptions\">) => BulkItemMutation[] | calls: (options: Pick<CommitItemCompletionOptions, \"id\" | \"reason\" | \"evidence\" | \"closeOptions\" | \"releaseOptions\">) => BulkItemMutation[]"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "buildItemContextRelevanceCandidates",
@@ -1867,13 +1880,19 @@
           "classification": "advanced_export",
           "kind": "type",
           "name": "BulkItemMutation",
-          "signature": "export type BulkItemMutation = BulkItemCreateMutation | BulkItemUpdateMutation | BulkItemCloseMutation;"
+          "signature": "export type BulkItemMutation = BulkItemCreateMutation | BulkItemUpdateMutation | BulkItemCloseMutation | BulkItemReleaseMutation;"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "BulkItemMutationOutcome",
           "signature": "export interface BulkItemMutationOutcome { id: string; op: BulkItemMutation[\"op\"]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "BulkItemReleaseMutation",
+          "signature": "export interface BulkItemReleaseMutation { op: \"release\"; id: string; options?: PmClientFullMutationOptions; }"
         },
         {
           "classification": "advanced_export",
@@ -2348,6 +2367,18 @@
           "kind": "type",
           "name": "CommitImportedItemResult",
           "signature": "export type CommitImportedItemResult = { committed: true; writeWarnings: string[]; } | { committed: false; conflictWarning: string; };"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "commitItemCompletion",
+          "signature": "(options: CommitItemCompletionOptions) => Promise<CommitItemMutationsResult> | calls: (options: CommitItemCompletionOptions) => Promise<CommitItemMutationsResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CommitItemCompletionOptions",
+          "signature": "export interface CommitItemCompletionOptions { pmRoot: string; transactionId: string; author: string; id: string; reason: string; evidence?: PmClientFullMutationOptions; closeOptions?: PmClientFullMutationOptions; releaseOptions?: PmClientFullMutationOptions; lockTtlSeconds?: number; lockWaitMs?: number; onTransition?: CommitWorkspaceTransactionOptions[\"onTransition\"]; }"
         },
         {
           "classification": "advanced_export",
@@ -5936,6 +5967,12 @@
           "kind": "function",
           "name": "isTimestampLiteral",
           "signature": "(input: string) => boolean | calls: (input: string) => boolean"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "ITEM_COMPLETE_FLAG_CONTRACTS",
+          "signature": "CliFlagContract[]"
         },
         {
           "classification": "supported",
@@ -10110,6 +10147,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "ResolvedItemMutationDocument",
+          "signature": "export interface ResolvedItemMutationDocument { schema_version: 1; mutations: BulkItemMutation[]; references: Record<string, string>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "ResolvedItemTypeDefinition",
           "signature": "export interface ResolvedItemTypeDefinition { name: string; description?: string; folder: string; aliases: string[]; default_status?: string; required_create_fields: string[]; required_create_repeatables: string[]; options: ItemTypeOptionDefinition[]; command_option_policies: ItemTypeCommandOptionPolicy[]; }"
         },
@@ -10184,6 +10227,18 @@
           "kind": "function",
           "name": "resolveItemBlockers",
           "signature": "(item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\">, itemsById: Map<string, ItemMetadata>, statusRegistry: RuntimeStatusRegistry) => ResolvedBlocker[] | calls: (item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\">, itemsById: Map<string, ItemMetadata>, statusRegistry: RuntimeStatusRegistry) => ResolvedBlocker[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveItemMutationDocument",
+          "signature": "(input: string, options: ResolveItemMutationDocumentOptions) => ResolvedItemMutationDocument | calls: (input: string, options: ResolveItemMutationDocumentOptions) => ResolvedItemMutationDocument"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ResolveItemMutationDocumentOptions",
+          "signature": "export interface ResolveItemMutationDocumentOptions { transactionId: string; idPrefix: string; }"
         },
         {
           "classification": "advanced_export",
@@ -15386,6 +15441,12 @@
           "kind": "function",
           "name": "isReadOutputBudgetExceeded",
           "signature": "(result: unknown) => result is PmReadOutputBudgetExceeded | calls: (result: unknown) => result is PmReadOutputBudgetExceeded"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "ITEM_COMPLETE_FLAG_CONTRACTS",
+          "signature": "CliFlagContract[]"
         },
         {
           "classification": "contract_data",

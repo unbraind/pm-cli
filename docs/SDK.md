@@ -1070,7 +1070,10 @@ tools that need to own item state without spawning `pm`.
 Tracked by [pm-4e12](../.agents/pm/features/pm-4e12.toon), with the VCS
 acceptance story [pm-8ngt](../.agents/pm/stories/pm-8ngt.toon) and the structured
 SDK adapters tracked by [pm-xm7c](../.agents/pm/features/pm-xm7c.toon) and
-[pm-kipd](../.agents/pm/features/pm-kipd.toon).
+[pm-kipd](../.agents/pm/features/pm-kipd.toon), versioned batch-local
+references tracked by [pm-o8z748](../.agents/pm/issues/pm-o8z748.toon), and
+atomic evidence-backed completion tracked by
+[pm-cyn0y6](../.agents/pm/issues/pm-cyn0y6.toon).
 
 `commitWorkspaceTransaction` is the public unit-of-work primitive for domain
 commands that must coordinate several SDK mutations. A plan supplies a stable
@@ -1210,12 +1213,15 @@ previously compensated retry without package-private file access.
 For the ubiquitous "commit N item mutations atomically" case (bulk import,
 bulk sync), `commitItemMutations` wraps the coordinator so callers describe
 the mutations instead of hand-writing a step array. The helper wires the
-crash-consistency contract for you: creates use their explicit stable `id` as
+crash-consistency contract for you: creates use their resolved stable `id` as
 the idempotency key (exists-by-id inspection) and are compensated by closing
 the item (or deleting it with `createCompensation: "delete"`); updates stamp a
 durable history marker for applied-detection and are compensated by restoring
 the captured pre-mutation version; closes treat an already-terminal target as
-applied and are likewise compensated by version restore. A stable
+applied and are likewise compensated by version restore; releases restore the
+prior claim when a later step fails. The journal step identity includes a
+canonical mutation fingerprint, so reusing a transaction id with changed
+payload fails before new work. A stable
 `transactionId` makes interrupted batches resumable across processes and
 agents.
 
@@ -1266,7 +1272,7 @@ each `addAc`/`removeAc` entry must be semicolon-free; unmatched removals are
 reported as `remove_ac_unmatched:<text>` warnings rather than disappearing as
 silent no-ops.
 
-`parseItemMutationBatch` is the strict JSON boundary for that primitive. It
+`parseItemMutationBatch` is the strict legacy JSON boundary for that primitive. It
 accepts either a non-empty mutation array or `{ "mutations": [...] }`, derives
 allowed option names from the exported create/update/close command contracts,
 and rejects unknown row or option keys with a did-you-mean diagnostic before a
@@ -1288,6 +1294,61 @@ await commitItemMutations({
 });
 ```
 
+For coherent heterogeneous specifications, use
+`resolveItemMutationDocument`. It accepts the legacy array or a versioned
+`{ schema_version: 1, mutations }` document. Create rows may declare a unique
+`ref`, omit `id`, and use exact `@ref` values in target ids, `parent`,
+`blockedBy`, and dependency `id` fields. Omitted ids are derived from the
+transaction id, alias, and workspace prefix; explicit ids are normalized.
+Malformed, duplicate, unknown, and cyclic references fail before tracker
+mutation. Commit the returned mutations and retain its alias-to-id receipt:
+
+```ts
+import {
+  commitItemMutations,
+  resolveItemMutationDocument,
+} from "@unbrained/pm-cli/sdk";
+import path from "node:path";
+
+const pmRoot = path.join(process.cwd(), ".agents", "pm");
+const specificationJson = JSON.stringify({
+  schema_version: 1,
+  mutations: [
+    {
+      op: "create",
+      ref: "initiative",
+      options: { title: "Initiative", type: "Epic" },
+    },
+    {
+      op: "create",
+      ref: "delivery",
+      options: {
+        title: "Delivery",
+        type: "Feature",
+        parent: "@initiative",
+      },
+    },
+  ],
+});
+
+const resolved = resolveItemMutationDocument(specificationJson, {
+  transactionId: "specification-2026-08-05-001",
+  idPrefix: "pm-",
+});
+await commitItemMutations({
+  pmRoot,
+  author: "specification-agent",
+  transactionId: "specification-2026-08-05-001",
+  mutations: resolved.mutations,
+});
+```
+
+`buildItemCompletionMutations` creates the ordered evidence/update, close, and
+release plan for inspection. `commitItemCompletion` executes that plan through
+the same durable coordinator, restoring annotations, linked artifacts,
+lifecycle fields, and claim ownership on failure. It is the SDK primitive
+behind `pm item complete`.
+
 `itemDocumentToMutationOptions` is the companion full-document adapter. It
 accepts either a direct `ItemDocument` or the envelope returned by
 `pm get <id> --json`, strips read-only metadata, maps canonical snake-case item
@@ -1298,9 +1359,11 @@ through the public `field` escape hatch.
 
 The built-in adapters stay deliberately thin:
 
-- `pm item mutate --transaction-id <stable-id> --stdin-json` validates and
-  commits a batch with `commitItemMutations`; `--dry-run` performs validation
-  only, and reusing the transaction id resumes or replays the durable journal.
+- `pm item mutate --transaction-id <stable-id> --stdin-json` resolves aliases,
+  validates, and commits a versioned batch; `--dry-run` returns the concrete
+  graph and alias receipt without writes.
+- `pm item complete <id> <reason> --transaction-id <stable-id>` records linked
+  evidence, closes, and releases a claim as one compensating transaction.
 - `pm create --stdin-json` and `pm update <id> --stdin-json` accept a whole item
   document. This supports the lossless `get → edit → update` agent workflow
   without translating every field into argv.

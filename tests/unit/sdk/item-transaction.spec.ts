@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   _testOnlyItemTransaction,
   WorkspaceTransactionInterruptedError,
+  buildItemCompletionMutations,
+  commitItemCompletion,
   commitItemMutations,
   get,
   type BulkItemMutation,
@@ -9,7 +11,10 @@ import {
 } from "../../../src/sdk/index.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
 function createSeedItem(context: TempPmContext, title: string): string {
   const created = context.runCli(
@@ -83,15 +88,19 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
       const committed = await commitItemMutations(options);
       expect(committed.status).toBe("committed");
       expect(committed.recovered).toBe(false);
-      expect(committed.results["2-update-" + updateTarget.replaceAll(/[^a-zA-Z0-9._-]/gu, "_")]).toMatchObject({
+      expect(
+        committed.results[
+          "2-update-" + updateTarget.replaceAll(/[^a-zA-Z0-9._-]/gu, "_")
+        ],
+      ).toMatchObject({
         op: "update",
         id: updateTarget,
       });
-      expect(Object.values(committed.results).map((row) => row.op).sort()).toEqual([
-        "close",
-        "create",
-        "update",
-      ]);
+      expect(
+        Object.values(committed.results)
+          .map((row) => row.op)
+          .sort(),
+      ).toEqual(["close", "create", "update"]);
 
       const created = await readItem(context.pmPath, "bulkitem1");
       expect(created.title).toBe("Bulk created item");
@@ -105,6 +114,19 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
       const replay = await commitItemMutations(options);
       expect(replay.recovered).toBe(true);
       expect(replay.status).toBe("committed");
+      await expect(
+        commitItemMutations({
+          ...options,
+          mutations: options.mutations.map((mutation, index) =>
+            index === 1 && mutation.op === "update"
+              ? {
+                  ...mutation,
+                  options: { description: "replay payload mismatch" },
+                }
+              : mutation,
+          ),
+        }),
+      ).rejects.toThrow("journal does not match the supplied plan");
     });
   });
 
@@ -159,7 +181,14 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
           context.pmPath,
           updateTarget,
           "bulk-batch-compensate",
-          `2-update-${updateTarget}`,
+          _testOnlyItemTransaction.deriveStepId(
+            {
+              op: "update",
+              id: updateTarget,
+              options: { description: "mutated before failure" },
+            },
+            1,
+          ),
         ),
       ).resolves.toBe(false);
       const reopened = await readItem(context.pmPath, closeTarget);
@@ -194,9 +223,11 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
         }),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
 
-      await expect(readItem(context.pmPath, "bulkitem3")).rejects.toMatchObject({
-        exitCode: EXIT_CODE.NOT_FOUND,
-      });
+      await expect(readItem(context.pmPath, "bulkitem3")).rejects.toMatchObject(
+        {
+          exitCode: EXIT_CODE.NOT_FOUND,
+        },
+      );
     });
   });
 
@@ -256,7 +287,14 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
     await withTempPmPath(async (context) => {
       const closedTarget = createSeedItem(context, "bulk-preclosed");
       const preClose = context.runCli(
-        ["close", closedTarget, "Closed before the batch", "--author", "bulk-seed", "--json"],
+        [
+          "close",
+          closedTarget,
+          "Closed before the batch",
+          "--author",
+          "bulk-seed",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(preClose.code).toBe(0);
@@ -273,6 +311,235 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
       expect((await readItem(context.pmPath, closedTarget)).close_reason).toBe(
         "Closed before the batch",
       );
+    });
+  });
+
+  it("records evidence, closes, and releases one claimed item atomically", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "atomic-completion");
+      expect(
+        context.runCli(["claim", target, "--author", "bulk-agent", "--json"])
+          .code,
+      ).toBe(0);
+
+      const committed = await commitItemCompletion({
+        pmRoot: context.pmPath,
+        transactionId: "complete-item-42",
+        author: "bulk-agent",
+        id: target,
+        reason: "Acceptance evidence passed",
+        evidence: {
+          comment: ["text=Verified in an isolated consumer"],
+          learning: ["text=Completion is one governed transaction"],
+        },
+        closeOptions: {
+          resolution: "Delivered atomically",
+          expectedResult: "All evidence and closure land together",
+          actualResult: "All evidence and closure landed together",
+        },
+        lockTtlSeconds: 30,
+        lockWaitMs: 1_000,
+        onTransition: async () => undefined,
+      });
+
+      expect(Object.values(committed.results).map((row) => row.op)).toEqual([
+        "update",
+        "close",
+        "release",
+      ]);
+      const completed = await readItem(context.pmPath, target);
+      expect(completed.status).toBe("closed");
+      expect(completed.close_reason).toBe("Acceptance evidence passed");
+      expect(completed.resolution).toBe("Delivered atomically");
+      expect(completed).not.toHaveProperty("assignee");
+      expect(completed).not.toHaveProperty("claim_principal");
+      const fullCompleted = context.runCli(
+        ["get", target, "--json", "--full"],
+        { expectJson: true },
+      ).json as { item: Record<string, unknown> };
+      expect(fullCompleted.item.comments).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ text: "Verified in an isolated consumer" }),
+        ]),
+      );
+    });
+  });
+
+  it("builds minimal and force-release completion plans without empty evidence", () => {
+    expect(
+      buildItemCompletionMutations({ id: "pm-minimal", reason: "Done" }),
+    ).toEqual([
+      { op: "close", id: "pm-minimal", reason: "Done" },
+      { op: "release", id: "pm-minimal" },
+    ]);
+    expect(
+      buildItemCompletionMutations({
+        id: "pm-minimal",
+        reason: "Done",
+        evidence: {},
+        releaseOptions: { force: true },
+      }),
+    ).toEqual([
+      { op: "close", id: "pm-minimal", reason: "Done" },
+      { op: "release", id: "pm-minimal", options: { force: true } },
+    ]);
+  });
+
+  it("commits a minimal unclaimed completion with default transaction controls", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "minimal-completion");
+      const committed = await commitItemCompletion({
+        pmRoot: context.pmPath,
+        transactionId: "minimal-completion-defaults",
+        author: "bulk-agent",
+        id: target,
+        reason: "Minimal completion passed",
+      });
+      expect(Object.values(committed.results).map((row) => row.op)).toEqual([
+        "close",
+        "release",
+      ]);
+    });
+  });
+
+  it("rejects a release mutation whose target does not exist", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        commitItemMutations({
+          pmRoot: context.pmPath,
+          transactionId: "release-missing-target",
+          author: "bulk-agent",
+          mutations: [{ op: "release", id: "pm-missing-release" }],
+        }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+    });
+  });
+
+  it("does not reclose a later reopen when recovering an already-applied close", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "close-recovery-marker");
+      const options = {
+        pmRoot: context.pmPath,
+        transactionId: "close-recovery-marker",
+        author: "bulk-agent",
+        mutations: [
+          {
+            op: "close" as const,
+            id: target,
+            reason: "Close before interrupted journal write",
+          },
+        ],
+      };
+
+      await expect(
+        commitItemMutations({
+          ...options,
+          onTransition(transition: WorkspaceTransactionTransitionContext) {
+            if (transition.transition === "step_applied") {
+              throw new WorkspaceTransactionInterruptedError(
+                "crash after close before journal recording",
+              );
+            }
+          },
+        }),
+      ).rejects.toBeInstanceOf(WorkspaceTransactionInterruptedError);
+
+      expect(
+        context.runCli([
+          "update",
+          target,
+          "--status",
+          "open",
+          "--author",
+          "later-agent",
+          "--json",
+        ]).code,
+      ).toBe(0);
+      await expect(commitItemMutations(options)).resolves.toMatchObject({
+        recovered: true,
+        status: "committed",
+      });
+      expect((await readItem(context.pmPath, target)).status).toBe("open");
+    });
+  });
+
+  it("does not release a later claim when recovering an already-applied release", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "release-recovery-marker");
+      expect(
+        context.runCli(["claim", target, "--author", "bulk-agent", "--json"])
+          .code,
+      ).toBe(0);
+      const options = {
+        pmRoot: context.pmPath,
+        transactionId: "release-recovery-marker",
+        author: "bulk-agent",
+        mutations: [{ op: "release" as const, id: target }],
+      };
+
+      await expect(
+        commitItemMutations({
+          ...options,
+          onTransition(transition: WorkspaceTransactionTransitionContext) {
+            if (transition.transition === "step_applied") {
+              throw new WorkspaceTransactionInterruptedError(
+                "crash after release before journal recording",
+              );
+            }
+          },
+        }),
+      ).rejects.toBeInstanceOf(WorkspaceTransactionInterruptedError);
+
+      expect(
+        context.runCli(["claim", target, "--author", "later-agent", "--json"])
+          .code,
+      ).toBe(0);
+      await expect(commitItemMutations(options)).resolves.toMatchObject({
+        recovered: true,
+        status: "committed",
+      });
+      expect((await readItem(context.pmPath, target)).assignee).toBe(
+        "later-agent",
+      );
+    });
+  });
+
+  it("restores evidence, lifecycle, and claim when a post-release step fails", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "compensated-completion");
+      expect(
+        context.runCli(["claim", target, "--author", "bulk-agent", "--json"])
+          .code,
+      ).toBe(0);
+      const before = await readItem(context.pmPath, target);
+
+      await expect(
+        commitItemMutations({
+          pmRoot: context.pmPath,
+          transactionId: "complete-item-compensate",
+          author: "bulk-agent",
+          mutations: [
+            {
+              op: "update",
+              id: target,
+              options: { comment: ["text=Must roll back"] },
+            },
+            { op: "close", id: target, reason: "Must roll back" },
+            { op: "release", id: target },
+            {
+              op: "update",
+              id: "pm-missing-after-release",
+              options: { title: "failure" },
+            },
+          ],
+        }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+
+      const restored = await readItem(context.pmPath, target);
+      expect(restored.status).toBe("open");
+      expect(restored.assignee).toBe(before.assignee);
+      expect(restored.claim_principal).toBe(before.claim_principal);
+      expect(restored.comments).toEqual(before.comments);
     });
   });
 
@@ -327,7 +594,12 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
             history: Array<{ message?: string }>;
           }
         ).history.at(-1)?.message,
-      ).toBe("bulk-item-transaction bulk-batch-author 1-update-" + updateTarget + " apply");
+      ).toMatch(
+        new RegExp(
+          `^bulk-item-transaction bulk-batch-author 1-update-${updateTarget}-[a-f0-9]{12} apply$`,
+          "u",
+        ),
+      );
     });
   });
 
@@ -430,7 +702,7 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
             { op: "destroy", id: "pm-x" } as unknown as BulkItemMutation,
           ],
         }),
-      ).rejects.toThrow("op must be create, update, or close");
+      ).rejects.toThrow("op must be create, update, close, or release");
       await expect(
         commitItemMutations({
           ...base,

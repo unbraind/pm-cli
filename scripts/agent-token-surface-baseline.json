@@ -4,15 +4,15 @@
   "headroom": 1.1,
   "surfaces": {
     "root_help": 15817,
-    "per_command_total": 227990,
-    "full_help_surface": 243807,
+    "per_command_total": 228222,
+    "full_help_surface": 244039,
     "contracts": {
       "summary_toon": 11975,
       "summary_json": 15212,
       "json": 15212,
-      "full": 1273776
+      "full": 1275835
     },
-    "mcp_tools_list": 43131,
+    "mcp_tools_list": 43246,
     "required_commands": [
       "activity",
       "aggregate",
@@ -155,6 +155,7 @@
       "profile": 638,
       "pause-task": 611,
       "start-task": 608,
+      "item": 568,
       "focus": 547,
       "release": 537,
       "duplicates": 535,
@@ -164,7 +165,6 @@
       "workspace": 483,
       "templates": 416,
       "changelog": 381,
-      "item": 336,
       "command-kit": 313,
       "todos": 311,
       "beads": 235,

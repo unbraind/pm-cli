@@ -27,7 +27,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Bootstrap    | `init`, `config`, `health`, `telemetry`                                                                                        | create and inspect tracker setup                                                                                                                                                                                                                       |
 | Lifecycle    | `create`, `copy`, `focus`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state                                                                                                                                                                                                                                      |
-| Bulk         | `item mutate`, `update-many`, `close-many`                                                                                     | atomically commit heterogeneous SDK mutation batches, or apply one change across a matched, dry-run-previewed set with a rollback checkpoint                                                                                                           |
+| Bulk         | `item mutate`, `item complete`, `update-many`, `close-many`                                                                    | atomically commit heterogeneous SDK mutation batches or evidence-backed completion, or apply one change across a matched, dry-run-previewed set with a rollback checkpoint                                                                             |
 | Scheduling   | `meet`, `event`, `remind`                                                                                                      | low-friction Meeting/Event/Reminder creation                                                                                                                                                                                                           |
 | Planning     | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize`      | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization                                                                                                                                                  |
 | Links        | `files`, `docs`, `test`, `deps`                                                                                                | connect items to artifacts, tests, and relationships                                                                                                                                                                                                   |
@@ -516,20 +516,30 @@ row summaries. See tracker item [pm-awe3t6](../.agents/pm/issues/pm-awe3t6.toon)
 
 ### Atomic heterogeneous mutation batches
 
-`pm item mutate` is the noun-first CLI adapter over the public SDK
-`commitItemMutations` primitive. Pipe a non-empty JSON array (or an object with a
-`mutations` array), provide one stable transaction id, and mix create/update/
-close operations in order:
+Tracked by [pm-o8z748](../.agents/pm/issues/pm-o8z748.toon) and
+[pm-cyn0y6](../.agents/pm/issues/pm-cyn0y6.toon).
+
+`pm item mutate` is the noun-first CLI adapter over the public SDK resolver and
+`commitItemMutations` primitive. Pipe either the legacy non-empty JSON array or
+a versioned `{ "schema_version": 1, "mutations": [...] }` document, provide one
+stable transaction id, and mix create/update/close/release operations in order.
+Create rows may declare a unique `ref` and omit `id`; exact `@ref` values work
+in target ids, `parent`, `blockedBy`, and dependency `id` fields. The resolver
+derives replay-stable ids before the writer lock and returns a `references`
+receipt:
 
 ```bash
 pm item mutate \
   --transaction-id sync-2026-07-20-001 \
   --stdin-json <<'JSON'
-[
-  {"op":"create","id":"ext-1042","options":{"title":"Imported issue","type":"Issue"}},
-  {"op":"update","id":"pm-a1b2","options":{"priority":"1","addTags":["synced"]}},
-  {"op":"close","id":"pm-c3d4","reason":"Resolved upstream"}
-]
+{
+  "schema_version": 1,
+  "mutations": [
+    {"op":"create","ref":"initiative","options":{"title":"Imported initiative","type":"Epic"}},
+    {"op":"create","ref":"delivery","options":{"title":"Deliver it","type":"Feature","parent":"@initiative","dep":["id=@initiative,kind=implements"]}},
+    {"op":"update","id":"@initiative","options":{"addTags":["synced"]}}
+  ]
+}
 JSON
 ```
 
@@ -539,6 +549,26 @@ journal resumes pending steps and never duplicates a successfully applied
 step. `--create-compensation close|delete`, `--lock-ttl-seconds`, and
 `--lock-wait-ms` expose the transaction safety controls. The equivalent MCP
 surface is `pm_mutate`.
+
+`pm item complete` composes evidence, governed closure, and claim release into
+one compensating SDK transaction. It accepts the normal repeatable evidence
+flags and can preview the exact ordered mutations before writing:
+
+```bash
+pm item complete pm-a1b2 "Implemented and verified" \
+  --transaction-id complete-pm-a1b2-v1 \
+  --file path=src/index.ts,scope=project,note=implementation \
+  --doc path=docs/SDK.md,scope=project,note=contract \
+  --test command="pnpm test",scope=project,timeout_seconds=240 \
+  --comment "Evidence: full verification passed" \
+  --validate-close warn
+```
+
+If any phase fails, the SDK restores the evidence, lifecycle, and prior claim.
+Reusing the exact transaction id and payload returns the committed result;
+changing a replayed payload fails against the journal plan fingerprint.
+`--lock-ttl-seconds` and `--lock-wait-ms` tune the same workspace transaction
+controls exposed by `pm item mutate` for slow or contended trackers.
 
 ## Focus (session default parent)
 

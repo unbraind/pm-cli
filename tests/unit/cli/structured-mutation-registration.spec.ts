@@ -10,6 +10,7 @@ import { formatOutput } from "../../../src/core/output/output.js";
 
 const mocks = vi.hoisted(() => ({
   stdin: "" as string | undefined,
+  commitItemCompletion: vi.fn(),
   commitItemMutations: vi.fn(),
   runCreate: vi.fn(),
   runUpdate: vi.fn(),
@@ -27,7 +28,11 @@ vi.mock("../../../src/core/item/parse.js", async (importOriginal) => {
 
 vi.mock("../../../src/sdk/item-transaction.js", async (importOriginal) => {
   const actual = await importOriginal<typeof itemTransactionModule>();
-  return { ...actual, commitItemMutations: mocks.commitItemMutations };
+  return {
+    ...actual,
+    commitItemCompletion: mocks.commitItemCompletion,
+    commitItemMutations: mocks.commitItemMutations,
+  };
 });
 
 vi.mock("../../../src/cli/commands/create.js", () => ({
@@ -64,6 +69,16 @@ describe("structured mutation command registration", () => {
       status: "committed",
       recovered: false,
       results: {},
+    });
+    mocks.commitItemCompletion.mockResolvedValue({
+      transactionId: "complete",
+      status: "committed",
+      recovered: false,
+      results: {
+        "1-update-pm-a": { id: "pm-a", op: "update" },
+        "2-close-pm-a": { id: "pm-a", op: "close" },
+        "3-release-pm-a": { id: "pm-a", op: "release" },
+      },
     });
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
   });
@@ -130,10 +145,9 @@ describe("structured mutation command registration", () => {
 
     const updateProgram = programWithGlobals();
     registerMutationCommands(updateProgram);
-    await updateProgram.parseAsync(
-      ["update", "pm-a", "--description", "-"],
-      { from: "user" },
-    );
+    await updateProgram.parseAsync(["update", "pm-a", "--description", "-"], {
+      from: "user",
+    });
     expect(mocks.runUpdate).toHaveBeenCalledWith(
       "pm-a",
       expect.objectContaining({ description: "Multiline\nproject context" }),
@@ -151,10 +165,9 @@ describe("structured mutation command registration", () => {
       expect.objectContaining({ description: "" }),
       expect.any(Object),
     );
-    await emptyProgram.parseAsync(
-      ["update", "pm-a", "--description", "-"],
-      { from: "user" },
-    );
+    await emptyProgram.parseAsync(["update", "pm-a", "--description", "-"], {
+      from: "user",
+    });
     expect(mocks.runUpdate).toHaveBeenLastCalledWith(
       "pm-a",
       expect.objectContaining({ description: "" }),
@@ -223,8 +236,6 @@ describe("structured mutation command registration", () => {
     registerStructuredMutationCommands(commitProgram);
     await commitProgram.parseAsync(
       [
-        "--pm-path",
-        "/tmp/pm-structured-unit",
         "item",
         "mutate",
         "--transaction-id",
@@ -249,6 +260,43 @@ describe("structured mutation command registration", () => {
         lockWaitMs: 900,
       }),
     );
+
+    mocks.stdin = JSON.stringify({
+      schema_version: 1,
+      mutations: [
+        {
+          op: "create",
+          ref: "parent",
+          options: { title: "Parent", type: "Epic" },
+        },
+        {
+          op: "create",
+          ref: "child",
+          options: { title: "Child", type: "Feature", parent: "@parent" },
+        },
+      ],
+    });
+    await commitProgram.parseAsync(
+      ["item", "mutate", "--transaction-id", "referenced-batch"],
+      { from: "user" },
+    );
+    const referencedCall = mocks.commitItemMutations.mock.lastCall;
+    if (referencedCall === undefined) {
+      throw new Error(
+        "Expected the referenced mutation batch to be committed.",
+      );
+    }
+    const committedBatch = referencedCall[0] as {
+      mutations: Array<{
+        op: string;
+        id: string;
+        options?: { parent?: string };
+      }>;
+    };
+    const [parentMutation, childMutation] = committedBatch.mutations;
+    expect(parentMutation?.op).toBe("create");
+    expect(parentMutation?.id).not.toMatch(/^@/u);
+    expect(childMutation?.options?.parent).toBe(parentMutation?.id);
 
     const invalidProgram = programWithGlobals();
     registerStructuredMutationCommands(invalidProgram);
@@ -275,6 +323,97 @@ describe("structured mutation command registration", () => {
         invalidProgram,
       ),
     ).rejects.toThrow("createCompensation must be close or delete");
+  });
+
+  it("previews and commits evidence, closure, and release as one completion", async () => {
+    const dryRunProgram = programWithGlobals();
+    registerStructuredMutationCommands(dryRunProgram);
+    await dryRunProgram.parseAsync(
+      [
+        "item",
+        "complete",
+        "pm-a",
+        "All gates passed",
+        "--transaction-id",
+        "complete-dry",
+        "--comment",
+        "text=Verified",
+        "--dry-run",
+      ],
+      { from: "user" },
+    );
+    expect(mocks.commitItemCompletion).not.toHaveBeenCalled();
+
+    const commitProgram = programWithGlobals();
+    registerStructuredMutationCommands(commitProgram);
+    await commitProgram.parseAsync(
+      [
+        "item",
+        "complete",
+        "pm-a",
+        "--transaction-id",
+        "complete-42",
+        "--reason",
+        "All gates passed",
+        "--file",
+        "path=src/a.ts",
+        "--doc",
+        "path=docs/SDK.md",
+        "--test",
+        "command=pnpm test",
+        "--comment",
+        "text=Verified",
+        "--note",
+        "text=Decision",
+        "--learning",
+        "text=Reusable",
+        "--resolution",
+        "Delivered",
+        "--expected-result",
+        "Green",
+        "--actual-result",
+        "Green",
+        "--completed-at",
+        "2026-08-05T00:00:00.000Z",
+        "--validate-close",
+        "warn",
+        "--lock-ttl-seconds",
+        "45",
+        "--lock-wait-ms",
+        "900",
+        "--force",
+        "--author",
+        "completion-agent",
+      ],
+      { from: "user" },
+    );
+    expect(mocks.commitItemCompletion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "pm-a",
+        reason: "All gates passed",
+        transactionId: "complete-42",
+        author: "completion-agent",
+        evidence: {
+          file: ["path=src/a.ts"],
+          doc: ["path=docs/SDK.md"],
+          test: ["command=pnpm test"],
+          comment: ["text=Verified"],
+          note: ["text=Decision"],
+          learning: ["text=Reusable"],
+        },
+        closeOptions: expect.objectContaining({
+          resolution: "Delivered",
+          expectedResult: "Green",
+          actualResult: "Green",
+          completedAt: "2026-08-05T00:00:00.000Z",
+          validateClose: "warn",
+          force: true,
+        }),
+        releaseOptions: { force: true },
+        lockTtlSeconds: 45,
+        lockWaitMs: 900,
+      }),
+    );
   });
 
   it("covers missing input, invalid transaction ids, defaults, and existing groups", async () => {
@@ -327,6 +466,54 @@ describe("structured mutation command registration", () => {
     existingGroupProgram.command("item");
     registerStructuredMutationCommands(existingGroupProgram);
     expect(existingGroupProgram.commands).toHaveLength(1);
+
+    await expect(
+      structuredMutationTestOnly.runItemCompleteAction(
+        "pm-a",
+        undefined,
+        { transactionId: 42 },
+        command,
+      ),
+    ).rejects.toThrow("requires --transaction-id");
+    await expect(
+      structuredMutationTestOnly.runItemCompleteAction(
+        "pm-a",
+        undefined,
+        { transactionId: "" },
+        command,
+      ),
+    ).rejects.toThrow("requires --transaction-id");
+    await expect(
+      structuredMutationTestOnly.runItemCompleteAction(
+        "pm-a",
+        undefined,
+        { transactionId: "complete" },
+        command,
+      ),
+    ).rejects.toThrow("requires a close reason");
+    await structuredMutationTestOnly.runItemCompleteAction(
+      "pm-a",
+      "Minimal completion",
+      { transactionId: "complete-minimal" },
+      globalAuthorCommand,
+    );
+    expect(mocks.commitItemCompletion).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        author: "global-agent",
+        id: "pm-a",
+        reason: "Minimal completion",
+        transactionId: "complete-minimal",
+      }),
+    );
+    await structuredMutationTestOnly.runItemCompleteAction(
+      "pm-a",
+      "Direct author completion",
+      { author: "direct-agent", transactionId: "complete-direct-author" },
+      command,
+    );
+    expect(mocks.commitItemCompletion).toHaveBeenLastCalledWith(
+      expect.objectContaining({ author: "direct-agent" }),
+    );
   });
 
   it("covers lean bootstrap, command, JSON, and actionable error projections", async () => {

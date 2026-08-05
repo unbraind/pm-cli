@@ -58,6 +58,149 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
     });
   });
 
+  it("creates a heterogeneous forward-referenced specification and completes work in one call", async () => {
+    await withTempPmPath(async (context) => {
+      const specification = {
+        schema_version: 1,
+        mutations: [
+          {
+            op: "create",
+            ref: "initiative",
+            options: { title: "Initiative", type: "Epic" },
+          },
+          {
+            op: "create",
+            ref: "delivery",
+            options: {
+              title: "Delivery",
+              type: "Feature",
+              parent: "@initiative",
+              dep: ["id=@initiative,kind=implements"],
+            },
+          },
+          {
+            op: "create",
+            ref: "decision",
+            options: {
+              title: "Decision",
+              type: "Decision",
+              parent: "@initiative",
+            },
+          },
+        ],
+      };
+      const preview = context.runCli(
+        [
+          "item",
+          "mutate",
+          "--transaction-id",
+          "specification-forward-refs",
+          "--dry-run",
+          "--json",
+        ],
+        { input: JSON.stringify(specification), expectJson: true },
+      );
+      expect(preview.json).toMatchObject({
+        dry_run: true,
+        mutation_count: 3,
+        references: {
+          initiative: expect.stringMatching(/^pm-/u),
+          delivery: expect.stringMatching(/^pm-/u),
+          decision: expect.stringMatching(/^pm-/u),
+        },
+      });
+      const references = (preview.json as {
+        references: Record<string, string>;
+      }).references;
+      expect(context.runCli(["get", references.initiative, "--json"]).code).toBe(
+        3,
+      );
+
+      const committed = context.runCli(
+        [
+          "item",
+          "mutate",
+          "--transaction-id",
+          "specification-forward-refs",
+          "--json",
+        ],
+        { input: JSON.stringify(specification), expectJson: true },
+      );
+      expect(committed.json).toMatchObject({ references });
+      expect(
+        context.runCli(["get", references.delivery, "--full", "--json"], {
+          expectJson: true,
+        }).json,
+      ).toMatchObject({
+        item: {
+          parent: references.initiative,
+          dependencies: expect.arrayContaining([
+            expect.objectContaining({
+              id: references.initiative,
+              kind: "implements",
+            }),
+          ]),
+        },
+      });
+
+      expect(
+        context.runCli([
+          "claim",
+          references.delivery,
+          "--author",
+          "completion-agent",
+          "--json",
+        ]).code,
+      ).toBe(0);
+      const completed = context.runCli(
+        [
+          "item",
+          "complete",
+          references.delivery,
+          "Delivered with evidence",
+          "--transaction-id",
+          "complete-delivery",
+          "--comment",
+          "text=Isolated acceptance passed",
+          "--test",
+          "command=pnpm test",
+          "--resolution",
+          "Delivered atomically",
+          "--expected-result",
+          "One governed completion",
+          "--actual-result",
+          "One governed completion",
+          "--author",
+          "completion-agent",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(completed.json).toMatchObject({
+        status: "committed",
+        mutation_count: 3,
+      });
+      expect(
+        context.runCli(["get", references.delivery, "--full", "--json"], {
+          expectJson: true,
+        }).json,
+      ).toMatchObject({
+        item: {
+          status: "closed",
+          close_reason: "Delivered with evidence",
+          resolution: "Delivered atomically",
+          comments: expect.arrayContaining([
+            expect.objectContaining({ text: "Isolated acceptance passed" }),
+          ]),
+          tests: expect.arrayContaining([
+            expect.objectContaining({ command: "pnpm test" }),
+          ]),
+        },
+        claim_state: { claimed: false },
+      });
+    });
+  });
+
   it("round-trips full item JSON while flags win and compact mutation output is selectable", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli(
@@ -237,6 +380,44 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
           status: "committed",
           transaction_id: "mcp-batch",
           mutation_count: 1,
+        },
+      });
+
+      const referenced = await handleRequest({
+        jsonrpc: "2.0",
+        id: 6,
+        method: "tools/call",
+        params: {
+          name: "pm_mutate",
+          arguments: {
+            path: context.pmPath,
+            transactionId: "mcp-referenced-batch",
+            mutations: [
+              {
+                op: "create",
+                ref: "parent",
+                options: { title: "MCP referenced parent", type: "Epic" },
+              },
+              {
+                op: "create",
+                ref: "child",
+                options: {
+                  title: "MCP referenced child",
+                  type: "Task",
+                  parent: "@parent",
+                },
+              },
+            ],
+          },
+        },
+      });
+      expect(referenced?.structuredContent).toMatchObject({
+        result: {
+          status: "committed",
+          references: {
+            parent: expect.stringMatching(/^pm-/u),
+            child: expect.stringMatching(/^pm-/u),
+          },
         },
       });
       if (committed === undefined) {
