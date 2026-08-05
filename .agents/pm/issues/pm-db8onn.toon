@@ -1,0 +1,39 @@
+id: pm-db8onn
+title: Auto Release blocker closure ignores successful recovery dispatch and reruns the stale tag-push workflow
+description: "After v2026.8.5 was successfully recovered by workflow_dispatch run 31001951195, closing GitHub blocker #898 started Auto Release run 31002881238. Its same-day recovery query filtered Release runs to event=push and selected failed historical tag-push run 30994468126, ignoring the newer successful workflow_dispatch run. It reran the stale tag workflow, failed static quality on historical checkout state, and reopened a resolved blocker."
+type: Issue
+status: open
+priority: 1
+tags[6]: "area:release",auto-release,exact-tag-recovery,github-actions,reliability,run-selection
+created_at: "2026-08-05T11:59:56.790Z"
+updated_at: "2026-08-05T12:05:56.620Z"
+author: "harness:codex"
+estimated_minutes: 360
+acceptance_criteria: "Run selection considers both tag-push and guarded workflow_dispatch Release runs for the exact tag; a newer successful immutable recovery wins over an older failed push run; reruns execute the reviewed current workflow with exact-tag source selection rather than historical workflow code; executable contracts cover successful dispatch plus failed historical push, current-day retry markers, and issue close/reopen behavior; GitHub #898 closes after production proof without creating or moving another same-day tag"
+goal: project management = context management
+objective: Make blocker recovery select the authoritative successful exact-tag run
+value: Resolved release incidents must remain resolved instead of spawning redundant expensive reruns and false blocker state
+impact: "Prevents stale workflow execution, misleading open incidents, and wasted CI/review capacity after a successful immutable recovery"
+outcome: Issue-closure retry logic uses an explicit authoritative run-selection contract across push and dispatch recovery events
+why_now: "The production v2026.8.5 recovery succeeded, but the cleanup closure immediately reopened its blocker through stale run selection"
+parent: pm-e70zh5
+risk: high
+confidence: high
+severity: high
+environment: GitHub Actions issue-closure Auto Release run 31002881238; successful Release recovery run 31001951195; tag-push Release run 30994468126; GitHub issue #898
+repro_steps: "Successfully recover an existing daily tag through release.yml workflow_dispatch, then close the same-day Auto Release blocker. Observe auto-release.yml query only event=push, rerun the failed historical tag-push workflow, and reopen the blocker even though npm and GitHub Release are healthy."
+expected_result: "Blocker closure recognizes the newest successful exact-tag Release run regardless of whether it was triggered by tag push or guarded workflow_dispatch, records the existing immutable tag as recovered, and leaves the resolved blocker closed without rerunning stale workflow code."
+actual_result: "Issue closure ignored successful run 31001951195, reran failed tag-push run 30994468126, failed after 7m45s, and reopened #898 despite npm latest and GitHub Release both being 2026.8.5."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e70zh5,discovered_from,"2026-08-05T11:59:56.790Z","harness:codex","cli:create:dep",detected
+  pm-ei6x66,related,"2026-08-05T11:59:56.790Z","harness:codex","cli:create:dep",detected
+  pm-lwnifd,discovered_from,"2026-08-05T11:59:56.790Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-05T11:59:56.790Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-05T11:59:56.790Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for retry_already_attempted, tag-push Release selection, workflow_dispatch recovery, and blocker closure. Closed pm-lwnifd owns successful exact-tag publication; open pm-e70zh5 owns aggregate release reliability; open pm-ei6x66 owns cross-environment gate governance. None owns the issue-closure query selecting a stale failed push run over a newer successful dispatch recovery. Direct evidence: runs 31001951195, 31002881238, 30994468126 and GitHub #898."
+  "2026-08-05T12:05:56.600Z","harness:codex","CI evidence: PR #906 exact-head static gate failed only tracker-measurement validation because this newly filed open item omitted estimated_minutes. Declared a 360-minute ceiling for the workflow, executable contracts, operator docs, and production verification scope; item remains open and unclaimed for a future implementation tranche."
+files[1]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,issue-closure authoritative Release run selection
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,operator contract for successful dispatch recovery cleanup
+body: ""
