@@ -2351,12 +2351,6 @@
           "flag": "--deactivate"
         },
         {
-          "flag": "--migrate"
-        },
-        {
-          "flag": "--dry-run"
-        },
-        {
           "flag": "--project"
         },
         {
@@ -5369,12 +5363,6 @@
           "flag": "--deactivate"
         },
         {
-          "flag": "--migrate"
-        },
-        {
-          "flag": "--dry-run"
-        },
-        {
           "flag": "--project"
         },
         {
@@ -5758,12 +5746,6 @@
         },
         {
           "flag": "--deactivate"
-        },
-        {
-          "flag": "--migrate"
-        },
-        {
-          "flag": "--dry-run"
         },
         {
           "flag": "--project"
