@@ -561,8 +561,7 @@ export async function commitItemMutations(
   const results: Record<string, BulkItemMutationOutcome> = {};
   for (const [index, mutation] of mutations.entries()) {
     const stepId = deriveStepId(mutation, index);
-    const value = committed.results[stepId];
-    if (value === undefined) continue;
+    const value = committed.results[stepId]!;
     // Journal values round-trip this module's own step outputs, which are
     // always {id, op} objects — the cast restores the concrete outcome shape.
     results[deriveOutcomeKey(mutation, index)] =

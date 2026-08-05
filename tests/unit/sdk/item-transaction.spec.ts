@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   _testOnlyItemTransaction,
   WorkspaceTransactionInterruptedError,
+  buildItemCompletionMutations,
   commitItemCompletion,
   commitItemMutations,
   get,
@@ -173,7 +174,14 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
           context.pmPath,
           updateTarget,
           "bulk-batch-compensate",
-          `2-update-${updateTarget}`,
+          _testOnlyItemTransaction.deriveStepId(
+            {
+              op: "update",
+              id: updateTarget,
+              options: { description: "mutated before failure" },
+            },
+            1,
+          ),
         ),
       ).resolves.toBe(false);
       const reopened = await readItem(context.pmPath, closeTarget);
@@ -313,6 +321,9 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
           expectedResult: "All evidence and closure land together",
           actualResult: "All evidence and closure landed together",
         },
+        lockTtlSeconds: 30,
+        lockWaitMs: 1_000,
+        onTransition: async () => undefined,
       });
 
       expect(Object.values(committed.results).map((row) => row.op)).toEqual([
@@ -335,6 +346,56 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
           expect.objectContaining({ text: "Verified in an isolated consumer" }),
         ]),
       );
+    });
+  });
+
+  it("builds minimal and force-release completion plans without empty evidence", () => {
+    expect(
+      buildItemCompletionMutations({ id: "pm-minimal", reason: "Done" }),
+    ).toEqual([
+      { op: "close", id: "pm-minimal", reason: "Done" },
+      { op: "release", id: "pm-minimal" },
+    ]);
+    expect(
+      buildItemCompletionMutations({
+        id: "pm-minimal",
+        reason: "Done",
+        evidence: {},
+        releaseOptions: { force: true },
+      }),
+    ).toEqual([
+      { op: "close", id: "pm-minimal", reason: "Done" },
+      { op: "release", id: "pm-minimal", options: { force: true } },
+    ]);
+  });
+
+  it("commits a minimal unclaimed completion with default transaction controls", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "minimal-completion");
+      const committed = await commitItemCompletion({
+        pmRoot: context.pmPath,
+        transactionId: "minimal-completion-defaults",
+        author: "bulk-agent",
+        id: target,
+        reason: "Minimal completion passed",
+      });
+      expect(Object.values(committed.results).map((row) => row.op)).toEqual([
+        "close",
+        "release",
+      ]);
+    });
+  });
+
+  it("rejects a release mutation whose target does not exist", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        commitItemMutations({
+          pmRoot: context.pmPath,
+          transactionId: "release-missing-target",
+          author: "bulk-agent",
+          mutations: [{ op: "release", id: "pm-missing-release" }],
+        }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
     });
   });
 

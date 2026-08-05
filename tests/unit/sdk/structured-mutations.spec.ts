@@ -164,10 +164,22 @@ describe("structured mutation input", () => {
     ).toThrow('Unknown mutation reference "@missing"');
     expect(() =>
       resolveItemMutationDocument(
+        '[{"op":"create","ref":"child","options":{"dep":"id=@missing,kind=implements"}}]',
+        options,
+      ),
+    ).toThrow('Unknown mutation reference "@missing"');
+    expect(() =>
+      resolveItemMutationDocument(
         '[{"op":"create","ref":"a","id":"pm-same","options":{}},{"op":"create","ref":"b","id":"pm-same","options":{}}]',
         options,
       ),
     ).toThrow("Duplicate resolved create id");
+    expect(() =>
+      resolveItemMutationDocument(
+        '[{"op":"create","ref":"missing-options"}]',
+        options,
+      ),
+    ).toThrow("requires an options object");
     expect(() =>
       resolveItemMutationDocument(
         '[{"op":"create","ref":"a","options":{"parent":"@b"}},{"op":"create","ref":"b","options":{"blockedBy":"@a"}}]',
@@ -180,6 +192,85 @@ describe("structured mutation input", () => {
         options,
       ),
     ).toThrow("schema_version must be 1");
+    expect(() => resolveItemMutationDocument("null", options)).toThrow(
+      "must be a JSON array or object",
+    );
+    expect(() =>
+      resolveItemMutationDocument(
+        '{"schema_version":1,"mutations":[],"extra":true}',
+        options,
+      ),
+    ).toThrow("does not recognize key");
+    expect(() =>
+      resolveItemMutationDocument('{"schema_version":1,"mutations":[]}', options),
+    ).toThrow("non-empty mutations array");
+    expect(() =>
+      resolveItemMutationDocument('{"schema_version":1,"mutations":"bad"}', options),
+    ).toThrow("non-empty mutations array");
+    expect(() =>
+      resolveItemMutationDocument('{"schema_version":1,"mutations":[null]}', options),
+    ).toThrow("Mutation 1 must be an object");
+    expect(() =>
+      resolveItemMutationDocument(
+        '{"schema_version":1,"mutations":[{"op":"create","id":"pm-a","unknown":true,"options":{}}]}',
+        options,
+      ),
+    ).toThrow("does not recognize key");
+  });
+
+  it("resolves scalar dependency references and traverses converging alias graphs", () => {
+    const resolved = resolveItemMutationDocument(
+      JSON.stringify({
+        schema_version: 1,
+        mutations: [
+          { op: "create", ref: "root", options: { title: "Root" } },
+          {
+            op: "create",
+            ref: "left",
+            options: { title: "Left", parent: "@root" },
+          },
+          {
+            op: "create",
+            ref: "right",
+            options: { title: "Right", parent: "@root" },
+          },
+          {
+            op: "create",
+            ref: "leaf",
+            options: {
+              title: "Leaf",
+              parent: "@left",
+              blockedBy: "@right",
+              dep: "id=@root,kind=implements",
+            },
+          },
+          { op: "release", id: "@leaf", options: { force: true } },
+          { op: "release", id: "@right" },
+        ],
+      }),
+      { transactionId: "converging", idPrefix: "pm-" },
+    );
+    expect(resolved.mutations.at(-2)).toEqual({
+      op: "release",
+      id: resolved.references.leaf,
+      options: { force: true },
+    });
+    expect(resolved.mutations.at(-1)).toEqual({
+      op: "release",
+      id: resolved.references.right,
+    });
+    expect(resolved.mutations[3]?.options).toMatchObject({
+      dep: `id=${resolved.references.root},kind=implements`,
+    });
+  });
+
+  it("preserves non-string dependency entries for downstream SDK validation", () => {
+    expect(
+      resolveItemMutationDocument(
+        '[{"op":"create","ref":"root","options":{"title":"Root","dep":[42]}}]',
+        { transactionId: "bad-dependency", idPrefix: "pm-" },
+      ).mutations[0]?.options,
+    ).toMatchObject({ dep: [42] });
   });
 
   it("normalizes explicit referenced ids through the workspace prefix", () => {

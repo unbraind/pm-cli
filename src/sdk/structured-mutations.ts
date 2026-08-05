@@ -30,6 +30,12 @@ const REFERENCED_MUTATION_ROW_KEYS = [
 ] as const;
 const MUTATION_DOCUMENT_KEYS = ["schema_version", "mutations"] as const;
 const MUTATION_REFERENCE_PATTERN = /^[a-z][a-z0-9._-]{0,63}$/u;
+const flagToOptionKey = (flag: string): string =>
+  flag
+    .slice(2)
+    .replaceAll(/-([a-z])/gu, (_match, letter: string) =>
+      letter.toUpperCase(),
+    );
 const ITEM_ENVELOPE_KEYS = [
   "item",
   "linked",
@@ -99,18 +105,10 @@ const MUTATION_OPTION_KEYS: Readonly<
     (contract) => contract.target,
   ),
   close: CLOSE_FLAG_CONTRACTS.map((contract) =>
-    contract.flag
-      .slice(2)
-      .replaceAll(/-([a-z])/gu, (_match, letter: string) =>
-        letter.toUpperCase(),
-      ),
+    flagToOptionKey(contract.flag),
   ).filter((key) => key !== "reason"),
   release: RELEASE_FLAG_CONTRACTS.map((contract) =>
-    contract.flag
-      .slice(2)
-      .replaceAll(/-([a-z])/gu, (_match, letter: string) =>
-        letter.toUpperCase(),
-      ),
+    flagToOptionKey(contract.flag),
   ),
 };
 
@@ -454,7 +452,7 @@ function assertAcyclicCreateReferences(
     }
     if (visited.has(reference)) return;
     visiting.add(reference);
-    for (const dependency of graph.get(reference) ?? []) {
+    for (const dependency of graph.get(reference)!) {
       if (graph.has(dependency)) visit(dependency);
     }
     visiting.delete(reference);

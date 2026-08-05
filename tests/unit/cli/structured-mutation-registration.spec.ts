@@ -461,6 +461,14 @@ describe("structured mutation command registration", () => {
       structuredMutationTestOnly.runItemCompleteAction(
         "pm-a",
         undefined,
+        { transactionId: 42 },
+        command,
+      ),
+    ).rejects.toThrow("requires --transaction-id");
+    await expect(
+      structuredMutationTestOnly.runItemCompleteAction(
+        "pm-a",
+        undefined,
         { transactionId: "" },
         command,
       ),
@@ -473,6 +481,29 @@ describe("structured mutation command registration", () => {
         command,
       ),
     ).rejects.toThrow("requires a close reason");
+    await structuredMutationTestOnly.runItemCompleteAction(
+      "pm-a",
+      "Minimal completion",
+      { transactionId: "complete-minimal" },
+      globalAuthorCommand,
+    );
+    expect(mocks.commitItemCompletion).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        author: "global-agent",
+        id: "pm-a",
+        reason: "Minimal completion",
+        transactionId: "complete-minimal",
+      }),
+    );
+    await structuredMutationTestOnly.runItemCompleteAction(
+      "pm-a",
+      "Direct author completion",
+      { author: "direct-agent", transactionId: "complete-direct-author" },
+      command,
+    );
+    expect(mocks.commitItemCompletion).toHaveBeenLastCalledWith(
+      expect.objectContaining({ author: "direct-agent" }),
+    );
   });
 
   it("covers lean bootstrap, command, JSON, and actionable error projections", async () => {

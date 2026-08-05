@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: agent-ux,"area:cli","area:sdk",atomic,context-management,github-report,structured-input,token-efficiency
 created_at: "2026-08-05T06:02:29.591Z"
-updated_at: "2026-08-05T06:43:03.442Z"
+updated_at: "2026-08-05T07:05:20.954Z"
 closed_at: "2026-08-05T06:43:02.920Z"
 completed_at: "2026-08-05T06:43:02.920Z"
 author: "harness:codex"
@@ -36,11 +36,13 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-xm7c,discovered_from,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
   pm-y9hq,discovered_from,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
   pm-42p9nk,discovered_from,"2026-08-05T06:39:37.256Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-05T06:02:29.591Z","harness:codex","text=Duplicate check 2026-08-05: searched all statuses for the exact GH-896 title and for batch item creation, plan materialize, heterogeneous create, commitWorkspaceTransaction, commitItemMutations, structured mutation, atomic create, and forward references. Closed pm-y9hq owns the SDK transaction primitive and closed pm-xm7c owns the existing CLI/MCP JSON batch; neither provides batch-local references or fixes discovery from create/plan. GitHub source: https://github.com/unbraind/pm-cli/issues/896"
   "2026-08-05T06:39:37.946Z","harness:codex","Packed npm and Bun acceptance exposed a structured-mutation attribution bypass: pm item mutate resolved an omitted author against literal unknown instead of tracker author_default. Reused closed canonical pm-42p9nk, linked it as discovered_from, and migrated the adapter to the canonical resolveAuthor precedence using live settings; no duplicate item created."
   "2026-08-05T06:42:41.304Z","harness:codex","Implementation evidence 2026-08-05: public resolveItemMutationDocument accepts version 1 heterogeneous create/update/close/release documents, derives deterministic prefix-aware ids, resolves forward aliases in targets/hierarchy/dependencies, rejects malformed/duplicate/unknown/cyclic aliases before writes, and returns alias receipts through CLI and MCP. Durable bulk step ids now fingerprint canonical payloads so transaction-id replay mismatch fails. Focused linked run passed 63/63; full repository coverage and lint passed; isolated packed npm/npx and Bun/bunx consumers created mixed Epic/Feature/Decision graphs, read typed edges, and completed a claimed item atomically. Latest npm pm-changelog 2026.8.4 verified and installed."
-files[8]{path,scope,note}:
+  "2026-08-05T07:05:20.954Z","harness:codex","CI follow-up 2026-08-05 on PR 901 exact head e98cbdcb3: coverage aggregation exposed new branch gaps and the smokes gate showed commands.item grew from 336 to 516 bytes because item complete became discoverable. Added real malformed-envelope, unknown dependency, graph convergence, release recovery, minimal/default completion, author precedence, and option-variant tests; focused V8 coverage is now 100/100/100/100 for all three changed runtime modules. Refreshed the measured token baseline for the intentional bounded command addition."
+files[9]{path,scope,note}:
+  scripts/agent-token-surface-baseline.json,project,item-command-discovery-budget
   sdk/public-surface.json,project,public-SDK-contract
   src/cli/register-structured-mutation.ts,project,CLI-adapter
   src/mcp/server.ts,project,MCP-adapter
