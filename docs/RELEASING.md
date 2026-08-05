@@ -319,9 +319,9 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   ordinal recovery version. Rerun `.github/workflows/release.yml` with
   `workflow_dispatch` and `tag=v<version>` (or close the current bot-created
   blocker once to trigger the guarded exact-run recovery). The workflow skips
-  duplicate npm publication for an anonymously visible version and attempts
-  protected access recovery before anonymous probes. Before installing or
-  running gates, dispatch performs an authenticated exact-version probe. An
+  duplicate npm publication for an anonymously visible version. Before
+  installing or running gates, dispatch performs an authenticated exact-version
+  probe. An
   existing version keeps the reviewed dispatch-time `main` source and cannot
   be republished. A definitive missing-version response pins the checkout to
   the existing immutable tag, reapplies the version guard, installs the managed
@@ -331,9 +331,12 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
 - If an immutable published package contains a defect that cannot be repaired
   by rerunning the same tag workflow, document the incident and ship the code
   fix in the next UTC day's release.
-- A manual exact-tag `workflow_dispatch` recovery reasserts public npm package
-  access before consulting anonymous registry metadata. This prevents a stale
-  public cache hit from bypassing access repair; an already-visible immutable
+- A manual exact-tag `workflow_dispatch` recovery uses isolated anonymous
+  registry probes before any account-level access mutation. A visible package
+  with a missing target version proceeds directly to exact-tag publication, so
+  a publish-capable automation token is not required to change package access.
+  Access recovery is reserved for the ambiguous case where neither the package
+  nor target version is anonymously visible. An already-visible immutable
   version is still verified and never republished. Recovery starts from the
   dispatch-time commit SHA and fails unless the dispatch ref is the repository
   default branch (`main`). It remains on that reviewed source when the exact

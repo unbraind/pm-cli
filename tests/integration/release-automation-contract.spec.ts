@@ -482,15 +482,23 @@ describe("release automation contract", () => {
     expect(workflow).toContain(
       'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
     );
-    expect(
-      workflow.indexOf(
-        'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
-      ),
-    ).toBeLessThan(
-      workflow.indexOf(
-        'if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then',
-      ),
+    expect(workflow).not.toContain(
+      "Exact-tag recovery is restoring public package access before anonymous probes.",
     );
+    const exactVersionProbeIndex = workflow.indexOf(
+      'if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then',
+    );
+    const packageProbeIndex = workflow.indexOf(
+      'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
+    );
+    const accessRecoveryIndex = workflow.indexOf(
+      "${NPM_PACKAGE} is not public; attempting access recovery before immutable publication.",
+    );
+    expect(exactVersionProbeIndex).toBeGreaterThanOrEqual(0);
+    expect(packageProbeIndex).toBeGreaterThanOrEqual(0);
+    expect(accessRecoveryIndex).toBeGreaterThanOrEqual(0);
+    expect(exactVersionProbeIndex).toBeLessThan(packageProbeIndex);
+    expect(packageProbeIndex).toBeLessThan(accessRecoveryIndex);
     expect(workflow).not.toContain("@unbrained/pm-cli");
     expect(workflow).toContain("env -u NODE_AUTH_TOKEN -u NPM_TOKEN");
     expect(workflow).toContain('npm_config_userconfig="${PUBLIC_NPMRC}"');
@@ -519,9 +527,6 @@ describe("release automation contract", () => {
     );
     expect(workflow).toContain(
       'if [ "${GITHUB_REF_NAME}" != "${DEFAULT_BRANCH}" ]; then',
-    );
-    expect(workflow).toContain(
-      'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
     );
     expect(workflow).toMatch(
       /if \[ "\$\{GITHUB_EVENT_NAME\}" = "workflow_dispatch" \] && \[ "\$\{RECOVERY_SOURCE_MODE\}" = "main" \]; then[\s\S]*?else\s+node scripts\/release-version\.mjs check --tag "\$\{RELEASE_TAG\}"\s+fi/u,
@@ -760,14 +765,14 @@ esac
       });
       expect(exactTagRecovery.status).toBe(0);
       expect(exactTagRecovery.stdout).toContain(
-        "Exact-tag recovery restored public access for @unbrained/pm-cli.",
+        "@unbrained/pm-cli@2026.7.27 is publicly available; skipping npm publish.",
       );
       invocations = await readFile(npmLog, "utf8");
       expect(invocations).toContain(
-        "access set status=public @unbrained/pm-cli",
-      );
-      expect(invocations).toContain(
         "view @unbrained/pm-cli@2026.7.27 version --json",
+      );
+      expect(invocations).not.toContain(
+        "access set status=public @unbrained/pm-cli",
       );
       expect(invocations).not.toContain("publish --access public");
 
@@ -803,6 +808,9 @@ esac
       invocations = await readFile(npmLog, "utf8");
       expect(invocations).toContain(
         "publish --access public --provenance --tag latest",
+      );
+      expect(invocations).not.toContain(
+        "access set status=public @unbrained/pm-cli",
       );
 
       await writeFile(npmLog, "", "utf8");
