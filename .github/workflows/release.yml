@@ -31,6 +31,7 @@ jobs:
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      RECOVERY_SOURCE_MODE: ${{ github.event_name == 'workflow_dispatch' && 'main' || 'tag' }}
 
     steps:
       - name: Checkout
@@ -59,6 +60,42 @@ jobs:
           node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
+
+      - name: Select exact-tag recovery source
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          NPM_PACKAGE="$(node -p 'require("./package.json").name')"
+          probe_output="$(mktemp)"
+          trap 'rm -f "${probe_output}"' EXIT
+
+          case "${RELEASE_TAG}" in
+            v*.*.*) ;;
+            *)
+              echo "Release tag must have v<major>.<minor>.<patch> shape" >&2
+              exit 1
+              ;;
+          esac
+
+          if npm view "${NPM_PACKAGE}@${VERSION}" version --json >"${probe_output}" 2>&1; then
+            echo "Exact ${NPM_PACKAGE}@${VERSION} exists; recovery will use reviewed ${DEFAULT_BRANCH} source and cannot republish it."
+            echo "RECOVERY_SOURCE_MODE=main" >> "${GITHUB_ENV}"
+            exit 0
+          else
+            probe_status=$?
+          fi
+          if ! grep -Eq 'E404|ETARGET|404 Not Found|No match found for version' "${probe_output}"; then
+            echo "Authenticated exact-version probe failed without a definitive missing-version response (status ${probe_status})." >&2
+            exit "${probe_status}"
+          fi
+
+          tag_commit="$(git rev-parse --verify "refs/tags/${RELEASE_TAG}^{commit}")"
+          git checkout --detach "${tag_commit}"
+          echo "Exact ${NPM_PACKAGE}@${VERSION} is unpublished; recovery pinned source to ${RELEASE_TAG} (${tag_commit})."
+          echo "RECOVERY_SOURCE_MODE=tag" >> "${GITHUB_ENV}"
 
       - name: Restore TypeScript and Vitest caches
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -93,7 +130,7 @@ jobs:
               exit 2
               ;;
           esac
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${RECOVERY_SOURCE_MODE}" = "main" ]; then
             echo "Exact-tag recovery uses reviewed repository default-branch source and verifies ${RELEASE_TAG} without requiring historical source-version equality."
           else
             node scripts/release-version.mjs check --tag "${RELEASE_TAG}"
@@ -104,6 +141,9 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Prepare tracker clone invariants
+        run: node dist/cli.js merge install --no-extensions
 
       - name: Typecheck
         run: pnpm typecheck
@@ -237,8 +277,8 @@ jobs:
 
           if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then
             echo "${NPM_PACKAGE}@${VERSION} is publicly available; skipping npm publish."
-          elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            echo "Exact-tag recovery requires an existing public ${NPM_PACKAGE}@${VERSION}; refusing to publish different source under an immutable tag." >&2
+          elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${RECOVERY_SOURCE_MODE}" != "tag" ]; then
+            echo "Main-source exact-tag recovery requires an existing public ${NPM_PACKAGE}@${VERSION}; refusing to publish different source under an immutable tag." >&2
             exit 1
           elif anonymous_npm_view "${NPM_PACKAGE}" name; then
             echo "${NPM_PACKAGE} is publicly available but ${VERSION} is not; publishing."

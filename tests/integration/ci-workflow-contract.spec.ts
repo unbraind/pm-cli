@@ -3,10 +3,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fg from "fast-glob";
 import { describe, expect, it } from "vitest";
-import { checkDirectoryLoad, collectTypeScriptFiles, relativeToRepo } from "../../scripts/release/static-quality-gate.mts";
+import {
+  checkDirectoryLoad,
+  collectTypeScriptFiles,
+  relativeToRepo,
+} from "../../scripts/release/static-quality-gate.mts";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+);
 
 /**
  * Per-directory `.ts` file cap enforced by `scripts/release/static-quality-gate.mts`
@@ -31,7 +39,9 @@ const PINNED_ACTIONS = {
   pnpmSetup: new RegExp(`uses: pnpm/action-setup@${SHA_PATTERN}`),
   setupNode: new RegExp(`uses: actions/setup-node@${SHA_PATTERN}`),
   actionsCache: new RegExp(`uses: actions/cache@${SHA_PATTERN}`),
-  downloadArtifact: new RegExp(`uses: actions/download-artifact@${SHA_PATTERN}`),
+  downloadArtifact: new RegExp(
+    `uses: actions/download-artifact@${SHA_PATTERN}`,
+  ),
   setupBun: new RegExp(`uses: oven-sh/setup-bun@${SHA_PATTERN}`),
   uploadArtifact: new RegExp(`uses: actions/upload-artifact@${SHA_PATTERN}`),
 };
@@ -40,7 +50,10 @@ function normalizeWorkflow(content: string): string {
   return content.replaceAll("\r\n", "\n");
 }
 
-function expectContainsAll(content: string, requiredSnippets: Array<string | RegExp>): void {
+function expectContainsAll(
+  content: string,
+  requiredSnippets: Array<string | RegExp>,
+): void {
   for (const snippet of requiredSnippets) {
     if (snippet instanceof RegExp) {
       expect(content).toMatch(snippet);
@@ -57,7 +70,11 @@ function expectContainsNone(content: string, blockedSnippets: string[]): void {
 }
 
 function extractWorkflowJob(content: string, jobName: string): string {
-  const match = content.match(new RegExp(`\\n  ${jobName}:\\n[\\s\\S]*?(?=\\n  [a-zA-Z0-9_-]+:\\n|\\n?$)`));
+  const match = content.match(
+    new RegExp(
+      `\\n  ${jobName}:\\n[\\s\\S]*?(?=\\n  [a-zA-Z0-9_-]+:\\n|\\n?$)`,
+    ),
+  );
   if (!match) {
     throw new Error(`Expected workflow job ${jobName} to exist`);
   }
@@ -81,7 +98,10 @@ describe("GitHub workflow contract", () => {
     const gatesJob = extractWorkflowJob(ciWorkflow, "gates");
     const coverageShardsJob = extractWorkflowJob(ciWorkflow, "coverage-shards");
     const coverageJob = extractWorkflowJob(ciWorkflow, "coverage");
-    const windowsRegressionJob = extractWorkflowJob(ciWorkflow, "windows-regression");
+    const windowsRegressionJob = extractWorkflowJob(
+      ciWorkflow,
+      "windows-regression",
+    );
 
     expectContainsAll(ciWorkflow, [
       "on:",
@@ -95,7 +115,7 @@ describe("GitHub workflow contract", () => {
       '- "plugins/**"',
       "permissions:",
       "contents: read",
-      "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: \"true\"",
+      'FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"',
       "concurrency:",
       "cancel-in-progress: true",
       "build-foundation:",
@@ -173,13 +193,17 @@ describe("GitHub workflow contract", () => {
       "files: ./coverage/junit.xml",
       "name: pm-cli-test-results",
     ]);
-    expect(gatesJob.indexOf("node dist/cli.js merge install --no-extensions")).toBeLessThan(
-      gatesJob.indexOf("pnpm lint"),
-    );
-    expect(gatesJob.indexOf("node dist/cli.js merge install --no-extensions")).toBeLessThan(
+    expect(
+      gatesJob.indexOf("node dist/cli.js merge install --no-extensions"),
+    ).toBeLessThan(gatesJob.indexOf("pnpm lint"));
+    expect(
+      gatesJob.indexOf("node dist/cli.js merge install --no-extensions"),
+    ).toBeLessThan(
       gatesJob.indexOf("node scripts/release/tracker-measurement-gate.mjs"),
     );
-    expect(gatesJob.match(/node dist\/cli\.js merge install --no-extensions/g)).toHaveLength(1);
+    expect(
+      gatesJob.match(/node dist\/cli\.js merge install --no-extensions/g),
+    ).toHaveLength(1);
     expectContainsAll(coverageShardsJob, [
       "needs: build-foundation",
       "persist-credentials: false",
@@ -240,9 +264,9 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.actionsCache,
       "run: pnpm install --frozen-lockfile",
       "run: pnpm build",
-      "PM_RUN_TESTS_SKIP_BUILD: \"1\"",
+      'PM_RUN_TESTS_SKIP_BUILD: "1"',
       "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts",
-      "run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"installs runtime dependencies for packed npm package extensions\"",
+      'run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t "installs runtime dependencies for packed npm package extensions"',
     ]);
     expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(5);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
@@ -286,9 +310,8 @@ describe("GitHub workflow contract", () => {
         { expectJson: true },
       );
       expect(representative.code).toBe(0);
-      const representativeId = (
-        representative.json as { item: { id: string } }
-      ).item.id;
+      const representativeId = (representative.json as { item: { id: string } })
+        .item.id;
       const historyPath = path.join(
         context.pmPath,
         "history",
@@ -306,13 +329,7 @@ describe("GitHub workflow contract", () => {
       );
 
       const representativeHistory = context.runCli(
-        [
-          "history",
-          representativeId,
-          "--verify",
-          "--strict-exit",
-          "--json",
-        ],
+        ["history", representativeId, "--verify", "--strict-exit", "--json"],
         { expectJson: true },
       );
       const validation = context.runCli(
@@ -350,7 +367,7 @@ describe("GitHub workflow contract", () => {
       "name: Docs and Skills",
       "permissions:",
       "contents: read",
-      "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: \"true\"",
+      'FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"',
       "concurrency:",
       "cancel-in-progress: true",
       PINNED_ACTIONS.checkout,
@@ -370,7 +387,9 @@ describe("GitHub workflow contract", () => {
 
   it("keeps nightly regression workflow sandbox-safe and non-publishing", async () => {
     const nightlyPath = path.resolve(repoRoot, ".github/workflows/nightly.yml");
-    const nightlyWorkflow = normalizeWorkflow(await readFile(nightlyPath, "utf8"));
+    const nightlyWorkflow = normalizeWorkflow(
+      await readFile(nightlyPath, "utf8"),
+    );
 
     expectContainsAll(nightlyWorkflow, [
       "schedule:",
@@ -416,7 +435,9 @@ describe("GitHub workflow contract", () => {
       "gh issue create --title",
       "gh issue comment",
     ]);
-    expect(nightlyWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(2);
+    expect(nightlyWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(
+      2,
+    );
     expect(nightlyWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(nightlyWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
@@ -424,7 +445,9 @@ describe("GitHub workflow contract", () => {
 
   it("keeps release workflow aligned with tag-trigger npm publish contract", async () => {
     const releasePath = path.resolve(repoRoot, ".github/workflows/release.yml");
-    const releaseWorkflow = normalizeWorkflow(await readFile(releasePath, "utf8"));
+    const releaseWorkflow = normalizeWorkflow(
+      await readFile(releasePath, "utf8"),
+    );
 
     expectContainsAll(releaseWorkflow, [
       "on:",
@@ -449,6 +472,12 @@ describe("GitHub workflow contract", () => {
       PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
       "node-version: 24",
+      "name: Select exact-tag recovery source",
+      "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}",
+      'npm view "${NPM_PACKAGE}@${VERSION}" version --json',
+      'git rev-parse --verify "refs/tags/${RELEASE_TAG}^{commit}"',
+      'git checkout --detach "${tag_commit}"',
+      'echo "RECOVERY_SOURCE_MODE=tag" >> "${GITHUB_ENV}"',
       "name: Restore TypeScript and Vitest caches",
       PINNED_ACTIONS.actionsCache,
       ".cache/tsbuildinfo",
@@ -457,9 +486,11 @@ describe("GitHub workflow contract", () => {
       "name: Restore LanceDB cache",
       ".agents/pm/search/lancedb",
       "key: pm-cli-observability-cache-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}",
-      "node scripts/release-version.mjs check --tag \"${RELEASE_TAG}\"",
+      'node scripts/release-version.mjs check --tag "${RELEASE_TAG}"',
       "run: pnpm security:scan",
       "run: pnpm build",
+      "name: Prepare tracker clone invariants",
+      "run: node dist/cli.js merge install --no-extensions",
       "run: pnpm typecheck",
       "run: pnpm test:coverage",
       "run: pnpm quality:static",
@@ -477,7 +508,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm smoke:npx",
       "run: pnpm dogfood:package-first",
       "fetch-depth: 0",
-      "run: node scripts/generate-release-notes.mjs --version \"${RELEASE_TAG#v}\" --output \"$RUNNER_TEMP/release-notes.md\"",
+      'run: node scripts/generate-release-notes.mjs --version "${RELEASE_TAG#v}" --output "$RUNNER_TEMP/release-notes.md"',
       "name: release-notes-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}",
       "path: ${{ runner.temp }}/release-notes.md",
       "body_path: ${{ runner.temp }}/release-notes.md",
@@ -493,7 +524,7 @@ describe("GitHub workflow contract", () => {
       "Exact-tag recovery is restoring public package access before anonymous probes.",
       'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
       "Exact-tag recovery restored public access for ${NPM_PACKAGE}.",
-      "Exact-tag recovery requires an existing public ${NPM_PACKAGE}@${VERSION}; refusing to publish different source under an immutable tag.",
+      "Main-source exact-tag recovery requires an existing public ${NPM_PACKAGE}@${VERSION}; refusing to publish different source under an immutable tag.",
       "attempting access recovery before immutable publication.",
       'npm access set status=public "${NPM_PACKAGE}"',
       "grep -Eq 'E404|404 Not Found|Package not found'",
@@ -501,16 +532,33 @@ describe("GitHub workflow contract", () => {
       "env -u NODE_AUTH_TOKEN -u NPM_TOKEN",
       'npm_config_userconfig="${PUBLIC_NPMRC}"',
       'npm_config_cache="${PUBLIC_NPM_CACHE}"',
-      "node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-github-release --json",
-      "node scripts/release/verify-installed-agent-session.mjs --version \"${RELEASE_TAG#v}\" --manager both --json",
-      "node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-package --json",
+      'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --json',
+      'node scripts/release/verify-installed-agent-session.mjs --version "${RELEASE_TAG#v}" --manager both --json',
+      'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
       "uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228",
       "tag_name: ${{ env.RELEASE_TAG }}",
       PINNED_ACTIONS.uploadArtifact,
       "path: coverage",
       "if-no-files-found: ignore",
     ]);
-    expect(releaseWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(1);
+    expect(releaseWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(
+      1,
+    );
+    expect(releaseWorkflow.indexOf("run: pnpm build")).toBeLessThan(
+      releaseWorkflow.indexOf(
+        "run: node dist/cli.js merge install --no-extensions",
+      ),
+    );
+    expect(
+      releaseWorkflow.indexOf(
+        "run: node dist/cli.js merge install --no-extensions",
+      ),
+    ).toBeLessThan(releaseWorkflow.indexOf("run: pnpm quality:static"));
+    expect(
+      releaseWorkflow.match(
+        /node dist\/cli\.js merge install --no-extensions/g,
+      ),
+    ).toHaveLength(1);
     expect(releaseWorkflow).not.toContain("Sandboxed PM regression");
     const untaggedNpmPublish =
       /(?:^|[!;&|(){}]|\b(?:then|do)\b)\s*npm publish\b(?![^;&|\n]*--tag\s+latest\b)/m;
@@ -532,7 +580,7 @@ describe("GitHub workflow contract", () => {
       'if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then',
     );
     const publicationRefusalIndex = releaseWorkflow.indexOf(
-      'elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
+      'elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${RECOVERY_SOURCE_MODE}" != "tag" ]; then',
     );
     const packageProbeIndex = releaseWorkflow.indexOf(
       'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
@@ -552,11 +600,14 @@ describe("GitHub workflow contract", () => {
   });
 
   it("rejects the unclaimed npm scope from production workflows, scripts, and source", async () => {
-    const productionFiles = await fg([".github/workflows/**/*", "scripts/**/*", "src/**/*"], {
-      cwd: repoRoot,
-      dot: true,
-      onlyFiles: true,
-    });
+    const productionFiles = await fg(
+      [".github/workflows/**/*", "scripts/**/*", "src/**/*"],
+      {
+        cwd: repoRoot,
+        dot: true,
+        onlyFiles: true,
+      },
+    );
     const exposures = (
       await Promise.all(
         productionFiles.map(async (file) => ({
@@ -571,8 +622,13 @@ describe("GitHub workflow contract", () => {
   });
 
   it("keeps auto-release workflow aligned with one-production-release-per-day policy", async () => {
-    const autoReleasePath = path.resolve(repoRoot, ".github/workflows/auto-release.yml");
-    const autoReleaseWorkflow = normalizeWorkflow(await readFile(autoReleasePath, "utf8"));
+    const autoReleasePath = path.resolve(
+      repoRoot,
+      ".github/workflows/auto-release.yml",
+    );
+    const autoReleaseWorkflow = normalizeWorkflow(
+      await readFile(autoReleasePath, "utf8"),
+    );
 
     expectContainsAll(autoReleaseWorkflow, [
       "schedule:",
@@ -589,7 +645,7 @@ describe("GitHub workflow contract", () => {
       "issues: write",
       "concurrency:",
       "cancel-in-progress: false",
-      'if: "${{ github.event_name != \'issues\' || (github.actor != \'github-actions[bot]\' && github.event.issue.title == \'Auto Release blocked: scheduled run failed\' && github.event.issue.user.login == \'github-actions[bot]\') }}"',
+      "if: \"${{ github.event_name != 'issues' || (github.actor != 'github-actions[bot]' && github.event.issue.title == 'Auto Release blocked: scheduled run failed' && github.event.issue.user.login == 'github-actions[bot]') }}\"",
       PINNED_ACTIONS.checkout,
       "persist-credentials: false",
       PINNED_ACTIONS.pnpmSetup,
@@ -617,8 +673,8 @@ describe("GitHub workflow contract", () => {
       "retry_skip_reason=same_day_window_expired",
       "Auto Release retry refused because the blocker issue number was unavailable.",
       "retry_skip_reason=retry_issue_number_unavailable",
-      "retry_marker=\"<!-- auto-release-retry-attempted:${current_day} -->\"",
-      "trusted_issue_comments=\"$(gh issue view \"${ISSUE_NUMBER}\" --json comments --jq '.comments[] | select(.author.login? == \"github-actions[bot]\") | .body')\"",
+      'retry_marker="<!-- auto-release-retry-attempted:${current_day} -->"',
+      'trusted_issue_comments="$(gh issue view "${ISSUE_NUMBER}" --json comments --jq \'.comments[] | select(.author.login? == "github-actions[bot]") | .body\')"',
       "Could not inspect Auto Release blocker issue #${ISSUE_NUMBER}; refusing untracked production retry.",
       "retry_skip_reason=retry_state_unavailable",
       "Auto Release retry refused because this blocker issue already recorded a current-day retry attempt.",
@@ -626,22 +682,22 @@ describe("GitHub workflow contract", () => {
       "Auto Release retry attempt recorded for ${current_day} UTC.",
       "This marker prevents repeated production retries for the same blocker issue",
       "Could not record Auto Release retry marker on blocker issue #${ISSUE_NUMBER}; refusing untracked production retry.",
-      "existing_release_tag=\"$(git tag --list \"v${today_version}\" | head -n 1)\"",
+      'existing_release_tag="$(git tag --list "v${today_version}" | head -n 1)"',
       "Same-day tag ${existing_release_tag} already exists; retrying its exact Release workflow instead of creating another version.",
       "No tag-push Release workflow run exists for ${existing_release_tag}; refusing to create a replacement version.",
-      "gh run rerun \"${RELEASE_RUN_ID}\" --failed",
+      'gh run rerun "${RELEASE_RUN_ID}" --failed',
       "Existing Release workflow for ${existing_release_tag} is already successful.",
       "published_tag=${existing_release_tag}",
       "node scripts/release/run-release-pipeline.mjs",
       "--telemetry-mode",
       "Waiting for tag-push Release workflow for ${NEW_TAG}.",
-      "gh run list --workflow Release --event push --branch \"${NEW_TAG}\"",
-      "gh run watch \"${RELEASE_RUN_ID}\" --compact --exit-status --interval 30",
+      'gh run list --workflow Release --event push --branch "${NEW_TAG}"',
+      'gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30',
       "retry_skip_reason=no_new_pushed_release_tag",
       "id: auto_release",
-      "PUBLISHED_SHA=\"$(git rev-list -n 1 \"${NEW_TAG}\")\"",
-      "echo \"published_tag=${NEW_TAG}\" >> \"${GITHUB_OUTPUT}\"",
-      "echo \"published_sha=${PUBLISHED_SHA}\" >> \"${GITHUB_OUTPUT}\"",
+      'PUBLISHED_SHA="$(git rev-list -n 1 "${NEW_TAG}")"',
+      'echo "published_tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"',
+      'echo "published_sha=${PUBLISHED_SHA}" >> "${GITHUB_OUTPUT}"',
       "name: Resolve blocked scheduled auto-release issue",
       "if: success() && github.event_name == 'schedule' && steps.auto_release.outputs.published_tag",
       "RELEASE_SHA: ${{ steps.auto_release.outputs.published_sha }}",
@@ -650,14 +706,14 @@ describe("GitHub workflow contract", () => {
       "No open blocked auto-release issue found.",
       "Scheduled Auto Release succeeded and published",
       "Could not close blocked auto-release issue #${existing_issue} after successful publish; leaving release status successful.",
-      "gh issue close \"${existing_issue}\" --comment \"${body}\" --reason completed",
+      'gh issue close "${existing_issue}" --comment "${body}" --reason completed',
       "name: Record resolved-issue auto-release retry success",
-      'if: "${{ success() && github.event_name == \'issues\' && steps.auto_release.outputs.published_tag }}"',
+      "if: \"${{ success() && github.event_name == 'issues' && steps.auto_release.outputs.published_tag }}\"",
       "ISSUE_NUMBER: ${{ github.event.issue.number }}",
       "Auto Release retry after blocker resolution succeeded and published",
       "Could not comment on resolved Auto Release blocker issue #${ISSUE_NUMBER}; leaving retry status successful.",
       "name: Record resolved-issue auto-release retry skip",
-      'if: "${{ success() && github.event_name == \'issues\' && !steps.auto_release.outputs.published_tag }}"',
+      "if: \"${{ success() && github.event_name == 'issues' && !steps.auto_release.outputs.published_tag }}\"",
       "RETRY_SKIP_REASON: ${{ steps.auto_release.outputs.retry_skip_reason || 'no_new_pushed_release_tag' }}",
       "Auto Release retry after blocker resolution completed without publishing a new tag.",
       "Retry skip reason: \\`${RETRY_SKIP_REASON}\\`",
@@ -667,23 +723,23 @@ describe("GitHub workflow contract", () => {
       "The retry was skipped because this blocker issue already recorded a current-day retry attempt.",
       "The retry completed but found no new pushed release tag",
       "name: Alert on blocked scheduled auto-release",
-      'if: "${{ failure() && (github.event_name == \'schedule\' || github.event_name == \'issues\') }}"',
+      "if: \"${{ failure() && (github.event_name == 'schedule' || github.event_name == 'issues') }}\"",
       "GH_TOKEN: ${{ github.token }}",
       "RELEASE_SHA: ${{ github.sha }}",
       "CLOSED_ISSUE_NUMBER: ${{ github.event.issue.number || '' }}",
       "SENTRY_PERSONAL_ADMIN_TOKEN_CONFIGURED: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN != '' }}",
       "Auto Release blocked: scheduled run failed",
-      "gh issue view \"${existing_issue}\" --json createdAt --jq '.createdAt // \"\"'",
+      'gh issue view "${existing_issue}" --json createdAt --jq \'.createdAt // ""\'',
       "printf -v superseded_body '%s\\n\\nRun: %s\\nCommit: %s\\n\\n%s'",
       "Superseded by a new Auto Release blocker for the current UTC day.",
       "Closing this stale blocker so same-day retry detection uses the most recent scheduled failure date.",
-      "gh issue close \"${existing_issue}\" --comment \"${superseded_body}\" || true",
+      'gh issue close "${existing_issue}" --comment "${superseded_body}" || true',
       "The Auto Release retry after blocker resolution did not complete.",
       "The scheduled daily Auto Release run did not complete.",
       "A tag or npm package may already exist if the downstream Release workflow failed after publication",
-      "release_path_description=\"the blocker-resolution retry\"",
-      "release_path_description=\"the scheduled production release\"",
-      "body=\"${failure_intro}",
+      'release_path_description="the blocker-resolution retry"',
+      'release_path_description="the scheduled production release"',
+      'body="${failure_intro}',
       "Detected preflight state:",
       "release_pat_configured:",
       "sentry_personal_admin_token_configured:",
@@ -694,7 +750,7 @@ describe("GitHub workflow contract", () => {
       "Post-publish package execution or GitHub Release verification failed after npm accepted the package.",
       'gh issue list --state open --search "\\"${title}\\" in:title"',
       "Could not comment on blocked Auto Release issue #${existing_issue}; continuing blocker state update.",
-      "gh issue reopen \"${existing_issue}\"",
+      'gh issue reopen "${existing_issue}"',
       "Could not reopen blocked Auto Release issue #${existing_issue} after retry failure.",
       "gh issue create --title",
       "gh issue comment",
@@ -702,14 +758,24 @@ describe("GitHub workflow contract", () => {
     expect(autoReleaseWorkflow).not.toContain("gh workflow run release.yml");
     expect(autoReleaseWorkflow).not.toContain("allow_same_day_release");
     expect(autoReleaseWorkflow).not.toContain("--allow-same-day-release");
-    expect(autoReleaseWorkflow).not.toContain("token: ${{ secrets.RELEASE_PAT || github.token }}");
+    expect(autoReleaseWorkflow).not.toContain(
+      "token: ${{ secrets.RELEASE_PAT || github.token }}",
+    );
   });
 
   it("keeps security workflow downloads pinned and hash-verified", async () => {
-    const securityPath = path.resolve(repoRoot, ".github/workflows/security.yml");
-    const securityWorkflow = normalizeWorkflow(await readFile(securityPath, "utf8"));
+    const securityPath = path.resolve(
+      repoRoot,
+      ".github/workflows/security.yml",
+    );
+    const securityWorkflow = normalizeWorkflow(
+      await readFile(securityPath, "utf8"),
+    );
     const truffleHogExclusions = normalizeWorkflow(
-      await readFile(path.resolve(repoRoot, ".trufflehog-exclude-paths.txt"), "utf8"),
+      await readFile(
+        path.resolve(repoRoot, ".trufflehog-exclude-paths.txt"),
+        "utf8",
+      ),
     )
       .trim()
       .split("\n");
@@ -728,12 +794,12 @@ describe("GitHub workflow contract", () => {
       "shellcheck --severity=style",
       "$moduleVersion = '1.24.0'",
       "$expectedSha256 = 'e86c97d44bb1bc8a1de35e753b85ea1d938f6f9f881639a181507e079bca4556'",
-      "Invoke-WebRequest -Uri \"https://www.powershellgallery.com/api/v2/package/$moduleName/$moduleVersion\" -OutFile $packagePath",
+      'Invoke-WebRequest -Uri "https://www.powershellgallery.com/api/v2/package/$moduleName/$moduleVersion" -OutFile $packagePath',
       "Get-FileHash -Path $packagePath -Algorithm SHA256",
       "Expand-Archive -Path $packagePath -DestinationPath $modulePath -Force",
       "Import-Module (Join-Path $modulePath 'PSScriptAnalyzer.psd1') -Force",
       "Invoke-ScriptAnalyzer -Path $_ -Severity @('Error', 'Warning', 'Information')",
-      "expected_sha=\"8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8\"",
+      'expected_sha="8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"',
       "sha256sum --check --strict",
       "./actionlint -color",
     ]);
@@ -742,12 +808,17 @@ describe("GitHub workflow contract", () => {
       "\\.agents/pm/history/pm-4ris\\.jsonl",
       "\\.agents/pm/tasks/pm-4ris\\.toon",
     ]);
-    expectContainsNone(securityWorkflow, ["Install-Module PSScriptAnalyzer", "Set-PSRepository PSGallery"]);
+    expectContainsNone(securityWorkflow, [
+      "Install-Module PSScriptAnalyzer",
+      "Set-PSRepository PSGallery",
+    ]);
   });
 
   it("keeps CodeQL actions SHA-pinned for supply-chain safety (pm-ji5c)", async () => {
     const codeqlPath = path.resolve(repoRoot, ".github/workflows/codeql.yml");
-    const codeqlWorkflow = normalizeWorkflow(await readFile(codeqlPath, "utf8"));
+    const codeqlWorkflow = normalizeWorkflow(
+      await readFile(codeqlPath, "utf8"),
+    );
 
     expectContainsAll(codeqlWorkflow, [
       PINNED_ACTIONS.checkout,
@@ -757,22 +828,37 @@ describe("GitHub workflow contract", () => {
     // No mutable tag refs (e.g. @v3) may remain — every `uses:` must be a 40-char SHA.
     const unpinnedUses = codeqlWorkflow
       .split("\n")
-      .filter((line) => /uses:/.test(line) && !new RegExp(`@${SHA_PATTERN}(\\s|$)`).test(line));
-    expect(unpinnedUses, `codeql.yml has unpinned actions: ${unpinnedUses.join(", ")}`).toEqual([]);
+      .filter(
+        (line) =>
+          /uses:/.test(line) &&
+          !new RegExp(`@${SHA_PATTERN}(\\s|$)`).test(line),
+      );
+    expect(
+      unpinnedUses,
+      `codeql.yml has unpinned actions: ${unpinnedUses.join(", ")}`,
+    ).toEqual([]);
   });
 });
 
 describe("static-quality-gate directory-load contract (pm-wc0d)", () => {
   it("keeps the per-directory file cap pinned to the gate default", async () => {
-    const gateSource = await readFile(path.resolve(repoRoot, "scripts/release/static-quality-gate.mts"), "utf8");
+    const gateSource = await readFile(
+      path.resolve(repoRoot, "scripts/release/static-quality-gate.mts"),
+      "utf8",
+    );
     // The cap this guardrail asserts must match the gate's own default so the
     // two cannot drift out of sync (e.g. the gate raising it without updating us).
-    expect(gateSource).toContain(`parseNumberFlag(flags, "max-files-per-dir", ${MAX_FILES_PER_DIRECTORY})`);
+    expect(gateSource).toContain(
+      `parseNumberFlag(flags, "max-files-per-dir", ${MAX_FILES_PER_DIRECTORY})`,
+    );
   });
 
   it("keeps every source/test/package directory at or below the 120-file cap", () => {
     const files = collectTypeScriptFiles();
-    const violations = checkDirectoryLoad(files, MAX_FILES_PER_DIRECTORY) as Array<{
+    const violations = checkDirectoryLoad(
+      files,
+      MAX_FILES_PER_DIRECTORY,
+    ) as Array<{
       directory: string;
       file_count: number;
     }>;
@@ -780,7 +866,9 @@ describe("static-quality-gate directory-load contract (pm-wc0d)", () => {
       violations,
       `Directories over the ${MAX_FILES_PER_DIRECTORY}-file cap: ${violations
         .map((entry) => `${entry.directory} (${entry.file_count})`)
-        .join(", ")}. Split the directory (e.g. tests/unit/<area>/) rather than adding more files.`,
+        .join(
+          ", ",
+        )}. Split the directory (e.g. tests/unit/<area>/) rather than adding more files.`,
     ).toEqual([]);
 
     // Sanity-check the tests/unit subdirectory split that keeps each area under
@@ -791,6 +879,10 @@ describe("static-quality-gate directory-load contract (pm-wc0d)", () => {
       counts.set(directory, (counts.get(directory) ?? 0) + 1);
     }
     expect(counts.get("tests/unit") ?? 0).toBe(0);
-    expect([...counts.keys()].some((directory) => directory.startsWith("tests/unit/"))).toBe(true);
+    expect(
+      [...counts.keys()].some((directory) =>
+        directory.startsWith("tests/unit/"),
+      ),
+    ).toBe(true);
   });
 });

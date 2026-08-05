@@ -20,7 +20,8 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon),
 [pm-4s24d2](../.agents/pm/issues/pm-4s24d2.toon),
 [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), stable peer compatibility
 [pm-csuce0](../.agents/pm/issues/pm-csuce0.toon), and artifact budgets
-[pm-998juj](../.agents/pm/tasks/pm-998juj.toon).
+[pm-998juj](../.agents/pm/tasks/pm-998juj.toon), plus exact-tag recovery
+[pm-lwnifd](../.agents/pm/issues/pm-lwnifd.toon).
 
 ## Version Policy
 
@@ -232,11 +233,11 @@ git push origin v<version>
 `.github/workflows/release.yml` runs on `v*.*.*` tags and handles:
 
 - full-history checkout
-- manual `workflow_dispatch` by tag for recovery when an immutable npm version already exists; the reviewed current `main` source runs the gates so a historical tag cannot be blocked by an expired external fixture
+- manual `workflow_dispatch` by tag for recovery. An authenticated exact-version probe keeps already-published access recovery on the reviewed dispatch-time `main` source; when the immutable tag exists but npm publication never completed, recovery checks out that exact tagged source and retains the original version guard
 - pnpm install with frozen lockfile
 - version policy and tag guard
 - secret scan
-- build, typecheck, test, and coverage
+- build, clone-local merge-driver installation, typecheck, test, and coverage
 - static quality gate (shared complexity, duplication, dead/orphan module, file/folder hygiene, source/exported docstring coverage profile)
 - temporary-project compatibility gate against latest published tracker data
 - reliability threshold gate (Sentry severity threshold, bounded to a recent-activity window via `--sentry-window-days` (default `14`, `0` = unbounded) so a stale benign unresolved issue cannot block every scheduled release; `--telemetry-mode` gate policy: `off` | `best-effort` | `required`). Scheduled `auto-release.yml` failures open/update an `Auto Release blocked` GitHub issue so blocked daily releases are never silently skipped.
@@ -248,7 +249,10 @@ git push origin v<version>
 - `npm publish --access public --provenance --tag latest`, skipped on retry
   only when the exact version is anonymously visible from a fresh npm cache.
   If the package is public but the target version is absent, the workflow
-  publishes immediately without attempting a package-access mutation. Only
+  publishes immediately without attempting a package-access mutation. A
+  dispatch may do so only when its source-selection preflight pinned the
+  checkout to the requested immutable tag; reviewed-main recovery continues
+  to refuse publication of a missing target. Only
   when neither the target nor package metadata is anonymously visible does the
   same-tag recovery path attempt to restore public package access, because a
   hidden version can also return 404 to authenticated metadata reads. After a
@@ -313,24 +317,25 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   `workflow_dispatch` and `tag=v<version>` (or close the current bot-created
   blocker once to trigger the guarded exact-run recovery). The workflow skips
   duplicate npm publication for an anonymously visible version and attempts
-  protected access recovery before anonymous probes. A dispatch refuses to
-  publish when that immutable version is absent; first publication remains owned
-  by the original tag-push run.
-  Authenticated metadata is not used as the existence oracle because a hidden
-  immutable version can return 404 there as well.
+  protected access recovery before anonymous probes. Before installing or
+  running gates, dispatch performs an authenticated exact-version probe. An
+  existing version keeps the reviewed dispatch-time `main` source and cannot
+  be republished. A definitive missing-version response pins the checkout to
+  the existing immutable tag, reapplies the version guard, and permits first
+  publication only from that exact tagged source. Other registry failures stop
+  before source selection or publication.
 - If an immutable published package contains a defect that cannot be repaired
   by rerunning the same tag workflow, document the incident and ship the code
   fix in the next UTC day's release.
 - A manual exact-tag `workflow_dispatch` recovery reasserts public npm package
   access before consulting anonymous registry metadata. This prevents a stale
   public cache hit from bypassing access repair; an already-visible immutable
-  version is still verified and never republished. Recovery checks out the
+  version is still verified and never republished. Recovery starts from the
   dispatch-time commit SHA and fails unless the dispatch ref is the repository
-  default branch (`main`), while `RELEASE_TAG` keeps the requested immutable
-  version as the verification target. Historical recovery validates
-  the tag shape but intentionally does not require current `package.json` to
-  equal that older version; dispatch cannot publish, so this does not weaken the
-  original tag-push version guard.
+  default branch (`main`). It remains on that reviewed source when the exact
+  npm version exists. When the version is definitively absent, it switches to
+  the resolved commit behind `RELEASE_TAG`, requires `package.json` to match the
+  tag, installs the clone-local merge driver, and may publish that exact source.
 - Record failure evidence and remediation in the release `pm` item.
 
 ### Silent skip debugging
