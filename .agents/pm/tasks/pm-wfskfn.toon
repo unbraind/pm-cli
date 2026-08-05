@@ -1,0 +1,26 @@
+id: pm-wfskfn
+title: "search and search-advanced are two top-level spellings of one noun, which the grammar charter forbids: advanced retrieval must be a facet of search, not a sibling command"
+description: ""
+type: Task
+status: open
+priority: 2
+tags[3]: cli-grammar,consolidation,search
+created_at: "2026-08-05T18:07:35.264Z"
+updated_at: "2026-08-05T18:08:44.751Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: Advanced retrieval is reachable as a facet or subcommand of the search noun with identical capability; search-advanced keeps working as a hidden alias with a one-line migration hint; The package that provides advanced search registers into the search noun rather than claiming a second top-level name
+parent: pm-n7rr
+risk: low
+confidence: high
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0z7n,blocked_by,"2026-08-05T18:08:40.980Z","harness:claude-code","cli:update:dep",detected
+  pm-j82fd3,implements,"2026-08-05T18:08:40.980Z","harness:claude-code","cli:update:dep",detected
+  pm-pbyu,related,"2026-08-05T18:08:40.980Z","harness:claude-code","cli:update:dep",detected
+  pm-wt43zj,verifies,"2026-08-05T18:08:40.980Z","harness:claude-code","cli:update:dep",detected
+  pm-yy8rmx,blocked_by,"2026-08-05T18:08:40.980Z","harness:claude-code","cli:update:dep",detected
+  pm-yy8rmx,discovered_from,"2026-08-05T18:08:40.980Z","harness:claude-code","cli:update:dep",detected
+  pm-2rj1,related,"2026-08-05T18:08:44.639Z","harness:claude-code","cli:update:dep",detected
+  pm-bqpg,related,"2026-08-05T18:08:44.639Z","harness:claude-code","cli:update:dep",detected
+  pm-ydp6,related,"2026-08-05T18:08:44.639Z","harness:claude-code","cli:update:dep",detected
+body: ""

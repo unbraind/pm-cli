@@ -1,0 +1,34 @@
+id: pm-o0sqz5
+title: "Recursive self-improvement loop: the immutable record selects, gates, and re-measures the next improvement to pm itself, so each cycle proves a number moved"
+description: ""
+type: Epic
+status: open
+priority: 1
+tags[4]: agent-loop,measurement,self-improvement,strategy
+created_at: "2026-08-05T18:09:34.908Z"
+updated_at: "2026-08-05T18:10:28.694Z"
+author: "harness:claude-code"
+estimated_minutes: 2400
+acceptance_criteria: "A declared cycle exists — observe, propose, gate, land, re-measure — whose every turn is a tracked item carrying a receipt naming the metric, the baseline, and the post-change value; Candidate selection is derived from evidence already in the record rather than from filing recency; Every shipped cycle can answer, from tracked data alone, whether pm got better and by how much; The loop composes the existing measurement surfaces rather than duplicating them: the population ratchet, the defect-recurrence gate, the escape ratchet, the dogfood ratchet, trajectory projection, and the token corpus"
+parent: pm-doxj
+risk: medium
+confidence: medium
+dependencies[15]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1qkivy,blocked_by,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-2vs1za,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-4k6b,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-8pnj,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-atfm,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-doxj,implements,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-e1vkee,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-g8t7b9,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-gw6uyq,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-ips23h,blocked_by,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-klxax7,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-pww8ax,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-qd6gvf,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-rtn5h6,blocked_by,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+  pm-xp1xsw,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-05T18:10:28.694Z","harness:claude-code","Duplicate check before filing (2026-08-05): searched the full corpus for recursive self improvement, self-improvement loops, and 'pm improves itself using its own tracker data'. The hits are all narrower and all real neighbours rather than duplicates — pm-cc04 is an ADR for agent self-repair through a remediation registry, pm-dhrp was a validation auto-fix session, pm-0682l4 and pm-k9t17l are self-reference guards in install and ordering. Nothing composes the measurement surfaces into a cycle.\n\nWhat exists is substrate, not a loop: pm-ips23h ratchets filed populations so they cannot grow, pm-1qkivy turns resolved incident patterns into gates, pm-rtn5h6 requires every escaped defect to land the gate that would have caught it, pm-pww8ax ratchets dogfood coverage, pm-qd6gvf projects the record as trajectories, pm-8pnj measures tokens per completed task, pm-2vs1za compares measured cost against forecast value. Each answers one question about one pass. None answers 'is pm getting better, by how much, measured how' across passes.\n\nThe asymmetry that motivates the ledger child: a ceiling can only ever prove a number did not grow. Every measurement the project ratchets is therefore blind to improvement — the one direction the loop needs to observe."
+body: ""

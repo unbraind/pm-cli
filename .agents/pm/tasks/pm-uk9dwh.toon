@@ -1,0 +1,26 @@
+id: pm-uk9dwh
+title: "templates, workspace and guide are authoring and orientation surfaces with no declared noun, and the orientation protocol agents are routed to spans three of them"
+description: ""
+type: Task
+status: open
+priority: 3
+tags[3]: cli-grammar,consolidation,onboarding
+created_at: "2026-08-05T18:07:59.920Z"
+updated_at: "2026-08-05T18:08:46.823Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "Each of templates, workspace and guide carries a recorded disposition: target noun, package-owned, or keep-as-is with a reason; The recorded disposition is consistent with the two-call agent cold start the project documents"
+parent: pm-n7rr
+risk: low
+confidence: medium
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0z7n,blocked_by,"2026-08-05T18:08:43.222Z","harness:claude-code","cli:update:dep",detected
+  pm-j82fd3,implements,"2026-08-05T18:08:43.222Z","harness:claude-code","cli:update:dep",detected
+  pm-pbyu,related,"2026-08-05T18:08:43.222Z","harness:claude-code","cli:update:dep",detected
+  pm-wt43zj,verifies,"2026-08-05T18:08:43.222Z","harness:claude-code","cli:update:dep",detected
+  pm-yy8rmx,blocked_by,"2026-08-05T18:08:43.222Z","harness:claude-code","cli:update:dep",detected
+  pm-yy8rmx,discovered_from,"2026-08-05T18:08:43.222Z","harness:claude-code","cli:update:dep",detected
+  pm-3dyec2,related,"2026-08-05T18:08:46.725Z","harness:claude-code","cli:update:dep",detected
+  pm-ka6d,related,"2026-08-05T18:08:46.725Z","harness:claude-code","cli:update:dep",detected
+  pm-z436,related,"2026-08-05T18:08:46.725Z","harness:claude-code","cli:update:dep",detected
+body: ""

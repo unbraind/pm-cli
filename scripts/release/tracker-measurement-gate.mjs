@@ -22,10 +22,20 @@
 //   node scripts/release/tracker-measurement-gate.mjs                   # check (default)
 //   node scripts/release/tracker-measurement-gate.mjs --json            # machine-readable report
 //   node scripts/release/tracker-measurement-gate.mjs --update          # re-declare from observation
+//   node scripts/release/tracker-measurement-gate.mjs --working-copy    # measure this checkout as-is
 //   node scripts/release/tracker-measurement-gate.mjs --negative-control # prove the gate can fail
 
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  linkSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -415,6 +425,80 @@ export function measureTracker(context, declarations) {
   };
 }
 
+/**
+ * Materialize a commit view: a throwaway tree holding exactly the files the next
+ * commit would contain, and no `.git`.
+ *
+ * A release gate must return a verdict about a commit. Three of these selectors
+ * did not. Linked-path existence is decided by looking at the filesystem, so a
+ * link into `.agents/pm/extensions/` — installed packages, gitignored by
+ * design — resolves for the developer who ran `pm install` and is missing for
+ * every fresh checkout. The merge-driver audit reads clone-local `git config`
+ * that `pm merge install` writes and no commit can carry, and `pm health` folds
+ * that same audit into its integrity status. The result was a gate that passed
+ * on a maintainer's machine and failed on the identical commit in CI, which is
+ * the one thing a release gate must never do.
+ *
+ * Membership is `git ls-files --cached --others --exclude-standard`: tracked
+ * files plus untracked files that are not ignored, which is precisely what the
+ * next commit would carry and is derived entirely from the committed ignore
+ * rules. Uncommitted work stays visible, so `--update` and pre-push checks still
+ * measure what the author is about to publish. The view has no `.git`, so every
+ * clone-local audit is skipped rather than answered differently per machine.
+ *
+ * Hardlinks make the copy near-free; a filesystem that refuses them falls back
+ * to a byte copy. Nothing in the measurement pass writes to the view.
+ */
+export function materializeCommitView(root = repoRoot) {
+  const listed = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: CLI_MAX_BUFFER_BYTES,
+  });
+  if ((listed.status ?? 1) !== 0) {
+    fail(
+      `Tracker measurement gate could not enumerate committable files in ${root}\n${(listed.stderr ?? "").trim()}`,
+    );
+  }
+  const relativePaths = (listed.stdout ?? "").split("\0").filter((entry) => entry.length > 0);
+  const viewRoot = mkdtempSync(path.join(tmpdir(), "pm-tracker-commit-view-"));
+  let materialized = 0;
+  let pendingDeletions = 0;
+  for (const relativePath of relativePaths) {
+    const source = path.join(root, relativePath);
+    // A tracked path already deleted in the working tree is a pending deletion:
+    // the next commit drops it, so the view drops it too, and the count is
+    // reported rather than silently absorbed.
+    if (!existsSync(source)) {
+      pendingDeletions += 1;
+      continue;
+    }
+    const destination = path.join(viewRoot, relativePath);
+    mkdirSync(path.dirname(destination), { recursive: true });
+    try {
+      linkSync(source, destination);
+    } catch {
+      copyFileSync(source, destination);
+    }
+    materialized += 1;
+  }
+  return { root: viewRoot, materialized_file_count: materialized, pending_deletion_count: pendingDeletions };
+}
+
+/** Point a measurement context at a materialized commit view instead of this checkout. */
+export function contextForCommitView(context, view) {
+  return {
+    ...context,
+    cwd: view.root,
+    env: {
+      ...context.env,
+      PM_PATH: path.join(view.root, ".agents", "pm"),
+      PM_GLOBAL_PATH: path.join(view.root, ".global"),
+      PM_NO_TELEMETRY: "1",
+    },
+  };
+}
+
 /** Resolve how the gate invokes pm: this checkout's dist build, or an explicit bin and tracker. */
 export function cliContext(flags) {
   const pmBin = flagString(flags, "pm-bin", null);
@@ -483,17 +567,31 @@ export function main(argv = process.argv.slice(2)) {
   }
   const declarationsPath = flagString(flags, "declarations", DEFAULT_DECLARATIONS_PATH);
   const document = loadDocument(declarationsPath);
-  const context = cliContext(flags);
-  const { measurements, ownerStatuses, contributors, item_count } = measureTracker(
-    context,
-    document.declarations,
-  );
+  // An explicit tracker path is a sandbox or a foreign workspace; a commit view
+  // of this checkout would measure the wrong data, so honour the caller.
+  const measureWorkingCopy =
+    flagBool(flags, "working-copy", false) || flagString(flags, "pm-path", null) !== null;
+  const view = measureWorkingCopy ? null : materializeCommitView();
+  let collected;
+  try {
+    const context = view === null ? cliContext(flags) : contextForCommitView(cliContext(flags), view);
+    collected = measureTracker(context, document.declarations);
+  } finally {
+    if (view !== null) {
+      rmSync(view.root, { recursive: true, force: true });
+    }
+  }
+  const { measurements, ownerStatuses, contributors, item_count } = collected;
   const evaluation = evaluateDeclarations({
     declarations: document.declarations,
     measurements,
     ownerStatuses,
     contributors,
   });
+  const scope =
+    view === null
+      ? "working copy"
+      : `commit view of ${String(view.materialized_file_count)} committable files`;
 
   if (flagBool(flags, "update", false)) {
     if (evaluation.violations.length > 0) {
@@ -510,13 +608,13 @@ export function main(argv = process.argv.slice(2)) {
 
   if (flagBool(flags, "json", false)) {
     process.stdout.write(
-      `${JSON.stringify({ ok: evaluation.violations.length === 0, item_count, ...evaluation }, null, 2)}\n`,
+      `${JSON.stringify({ ok: evaluation.violations.length === 0, item_count, scope, ...evaluation }, null, 2)}\n`,
     );
   }
 
   if (evaluation.violations.length > 0) {
     fail(
-      `Tracker measurement ratchet failed:\n${evaluation.violations.map((violation) => `- ${formatViolation(violation)}`).join("\n")}\n` +
+      `Tracker measurement ratchet failed (${scope}):\n${evaluation.violations.map((violation) => `- ${formatViolation(violation)}`).join("\n")}\n` +
         "A filed measurement is a ceiling. Shrink the population, or move the owning item to a terminal status to retire it.",
     );
   }
@@ -524,7 +622,7 @@ export function main(argv = process.argv.slice(2)) {
   const enforced = evaluation.observations.filter((observation) => !observation.retired).length;
   if (!flagBool(flags, "json", false)) {
     process.stdout.write(
-      `Tracker measurement ratchet passed (${enforced} enforced, ${evaluation.observations.length - enforced} retired, ${item_count} items).\n`,
+      `Tracker measurement ratchet passed (${enforced} enforced, ${evaluation.observations.length - enforced} retired, ${item_count} items, ${scope}).\n`,
     );
   }
 }

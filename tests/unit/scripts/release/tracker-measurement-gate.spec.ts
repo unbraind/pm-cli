@@ -52,6 +52,15 @@ interface GateModule {
     item_count: number;
   };
   cliContext: (flags: Map<string, string | true>) => Record<string, unknown>;
+  materializeCommitView: (root?: string) => {
+    root: string;
+    materialized_file_count: number;
+    pending_deletion_count: number;
+  };
+  contextForCommitView: (
+    context: Record<string, unknown>,
+    view: { root: string },
+  ) => Record<string, unknown>;
   runNegativeControl: (flags: Map<string, string | true>) => void;
   main: (argv?: readonly string[]) => void;
 }
@@ -64,6 +73,8 @@ interface GateModule {
 async function loadGate(options: {
   spawn?: SpawnHandler;
   files?: Record<string, string>;
+  missingSources?: readonly string[];
+  refuseLinks?: boolean;
 } = {}) {
   const spawnSync = vi.fn((command: string, args: readonly string[]) =>
     (options.spawn ?? (() => ({ status: 0, stdout: "{}", stderr: "" })))(command, args),
@@ -81,13 +92,45 @@ async function loadGate(options: {
   });
   const mkdtempSync = vi.fn((prefix: string) => `${String(prefix)}fixed`);
   const rmSync = vi.fn();
+  const missing = new Set(options.missingSources ?? []);
+  const existsSync = vi.fn((file: string) => !missing.has(String(file)));
+  const mkdirSync = vi.fn();
+  const linkSync = vi.fn(() => {
+    if (options.refuseLinks === true) {
+      throw new Error("EXDEV: cross-device link not permitted");
+    }
+  });
+  const copyFileSync = vi.fn();
   vi.doMock("node:child_process", () => ({ spawnSync }));
-  vi.doMock("node:fs", () => ({ mkdtempSync, readFileSync, rmSync, writeFileSync }));
+  vi.doMock("node:fs", () => ({
+    copyFileSync,
+    existsSync,
+    linkSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    writeFileSync,
+  }));
   const exit = harness.mockProcessExit();
   const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
   const stderr = vi.spyOn(console, "error").mockImplementation(() => undefined);
   const module = await harness.importModule<GateModule>(SCRIPT);
-  return { module, spawnSync, readFileSync, rmSync, writeFileSync, writes, exit, stdout, stderr };
+  return {
+    module,
+    spawnSync,
+    readFileSync,
+    rmSync,
+    writeFileSync,
+    writes,
+    exit,
+    stdout,
+    stderr,
+    copyFileSync,
+    linkSync,
+    mkdirSync,
+    existsSync,
+  };
 }
 
 function stdoutText(stdout: { mock: { calls: unknown[][] } }): string {
@@ -118,9 +161,19 @@ const VALIDATE = { warnings: ["validate_files_missing_linked_paths:7"] };
 const GRAPH = { profile: { isolated_active_nodes: 0, edges_by_kind: { blocks: 2 } } };
 const HEALTH = { checks: [{ name: "storage", status: "ok" }] };
 
+/** Two committable paths, NUL-separated, exactly as `git ls-files -z` emits them. */
+const COMMITTABLE = "src/kept.ts\0src/deleted.ts\0";
+
 function trackerSpawn(overrides: Partial<Record<string, unknown>> = {}): SpawnHandler {
-  return (_command, args) => {
+  return (command, args) => {
     const argv = args.join(" ");
+    if (command === "git") {
+      return {
+        status: overrides.gitStatus === undefined ? 0 : Number(overrides.gitStatus),
+        stdout: overrides.committable === undefined ? COMMITTABLE : String(overrides.committable),
+        stderr: "not a git repository",
+      };
+    }
     if (argv.includes(" list ") || argv.includes("list ")) {
       return { status: 0, stdout: JSON.stringify(overrides.listing ?? LISTING), stderr: "" };
     }
@@ -487,6 +540,54 @@ describe("tracker measurement gate: tracker access", () => {
     expect(remote.env).toMatchObject({ PM_PATH: "/sandbox/.agents/pm", PM_NO_TELEMETRY: "1" });
   });
 
+  it("materializes only the files the next commit would carry, and reports pending deletions", async () => {
+    const { module, spawnSync, linkSync, copyFileSync, mkdirSync } = await loadGate({
+      spawn: trackerSpawn(),
+      missingSources: ["/repo/src/deleted.ts"],
+    });
+    const view = module.materializeCommitView("/repo");
+    expect(spawnSync).toHaveBeenCalledWith(
+      "git",
+      ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+      expect.objectContaining({ cwd: "/repo" }),
+    );
+    expect(view.root).toContain("pm-tracker-commit-view-");
+    expect(view.materialized_file_count).toBe(1);
+    expect(view.pending_deletion_count).toBe(1);
+    expect(mkdirSync).toHaveBeenCalledTimes(1);
+    expect(linkSync).toHaveBeenCalledTimes(1);
+    expect(copyFileSync).not.toHaveBeenCalled();
+  });
+
+  it("falls back to a byte copy on a filesystem that refuses hardlinks", async () => {
+    const { module, linkSync, copyFileSync } = await loadGate({
+      spawn: trackerSpawn(),
+      refuseLinks: true,
+    });
+    expect(module.materializeCommitView("/repo").materialized_file_count).toBe(2);
+    expect(linkSync).toHaveBeenCalledTimes(2);
+    expect(copyFileSync).toHaveBeenCalledTimes(2);
+  });
+
+  it("fails closed when the committable file set cannot be enumerated", async () => {
+    const { module, exit, stderr } = await loadGate({ spawn: trackerSpawn({ gitStatus: 128 }) });
+    expect(() => module.materializeCommitView("/repo")).toThrow("EXIT:1");
+    expect(errorText(stderr)).toContain("could not enumerate committable files in /repo");
+    expect(exit).toHaveBeenCalledWith(1);
+  });
+
+  it("redirects a measurement context at the commit view without losing its bin resolution", async () => {
+    const { module } = await loadGate();
+    const redirected = module.contextForCommitView(module.cliContext(new Map()), { root: "/view" });
+    expect(redirected.cwd).toBe("/view");
+    expect(redirected.env).toMatchObject({
+      PM_PATH: expect.stringContaining("view"),
+      PM_GLOBAL_PATH: expect.stringContaining("view"),
+      PM_NO_TELEMETRY: "1",
+    });
+    expect((redirected.pmPrefixArgs as string[])[0]).toContain("cli.js");
+  });
+
   it("renders a violation whose declaration carries no id, owner, or owner status", async () => {
     const { module } = await loadGate();
     expect(
@@ -554,7 +655,42 @@ describe("tracker measurement gate: entrypoint", () => {
       files: { [declarationsPath]: JSON.stringify({ ...document, declarations: [{ ...DECLARATION, ceiling: 2 }] }) },
     });
     module.main(["--declarations", declarationsPath]);
-    expect(stdoutText(stdout)).toContain("Tracker measurement ratchet passed (1 enforced, 0 retired, 3 items)");
+    expect(stdoutText(stdout)).toContain(
+      "Tracker measurement ratchet passed (1 enforced, 0 retired, 3 items, commit view of 2 committable files)",
+    );
+  });
+
+  it("measures the working copy when asked, and whenever an explicit tracker path is given", async () => {
+    const bypassed = await loadGate({
+      spawn: trackerSpawn(),
+      files: { [declarationsPath]: JSON.stringify({ ...document, declarations: [{ ...DECLARATION, ceiling: 2 }] }) },
+    });
+    bypassed.module.main(["--declarations", declarationsPath, "--working-copy"]);
+    expect(stdoutText(bypassed.stdout)).toContain("working copy");
+    expect(bypassed.spawnSync).not.toHaveBeenCalledWith("git", expect.anything(), expect.anything());
+
+    const sandboxed = await loadGate({
+      spawn: trackerSpawn(),
+      files: { [declarationsPath]: JSON.stringify({ ...document, declarations: [{ ...DECLARATION, ceiling: 2 }] }) },
+    });
+    sandboxed.module.main(["--declarations", declarationsPath, "--pm-path", "/sandbox/.agents/pm"]);
+    expect(stdoutText(sandboxed.stdout)).toContain("working copy");
+  });
+
+  it("removes the commit view even when the measurement pass fails", async () => {
+    const { module, rmSync, exit } = await loadGate({
+      spawn: (command, args) =>
+        command === "git"
+          ? { status: 0, stdout: COMMITTABLE, stderr: "" }
+          : { status: 1, stdout: "", stderr: "tracker unavailable" },
+      files: { [declarationsPath]: JSON.stringify(document) },
+    });
+    expect(() => module.main(["--declarations", declarationsPath])).toThrow("EXIT:1");
+    expect(rmSync).toHaveBeenCalledWith(expect.stringContaining("pm-tracker-commit-view-"), {
+      recursive: true,
+      force: true,
+    });
+    expect(exit).toHaveBeenCalledWith(1);
   });
 
   it("fails the build when an observed population exceeds its declared ceiling", async () => {

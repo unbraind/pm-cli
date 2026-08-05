@@ -64,9 +64,9 @@
         "source": "validate_warning",
         "code": "validate_files_missing_linked_paths"
       },
-      "ceiling": 195,
-      "measured_on": "2026-08-04",
-      "note": "Linked file paths that no longer exist, dominated by generated artifacts. The owning fix refuses such links at write time; until it lands the population may not grow."
+      "ceiling": 204,
+      "measured_on": "2026-08-05",
+      "note": "Linked file paths that no longer exist, dominated by generated artifacts. The owning fix refuses such links at write time; until it lands the population may not grow. Re-baselined 195 -> 204 on 2026-08-05: 195 was measured against a maintainer working copy, where 9 links into the gitignored .agents/pm/extensions/pm-changelog install resolve. They resolve in no clone, so the population was always 204 and the gate now measures a commit view (pm-fr4dg8). The 9 excess links sit on legacy closed items whose closed_at is null, so removing them reorders the changelog until pm-wrbe lands; pm-j8z6 owns the burn-down back below 195."
     },
     {
       "id": "validate-files-orphaned-paths",

@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Release ratchet verdicts are a property of the working copy, not the commit: gitignored installs and clone-local git config decide three populations, so an identical commit passes locally and fails in CI ([pm-fr4dg8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fr4dg8.toon))
 - Exact-tag Release recovery must bootstrap tracker gates and publish an unpublished immutable tag from its tagged source ([pm-lwnifd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lwnifd.toon))
 
 ## 2026.8.5 - 2026-08-05

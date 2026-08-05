@@ -1,0 +1,44 @@
+id: pm-fr4dg8
+title: "Release ratchet verdicts are a property of the working copy, not the commit: gitignored installs and clone-local git config decide three populations, so an identical commit passes locally and fails in CI"
+description: ""
+type: Issue
+status: closed
+priority: 1
+tags[5]: ci,determinism,gate,parity,release
+created_at: "2026-08-05T17:56:58.978Z"
+updated_at: "2026-08-05T18:11:17.505Z"
+closed_at: "2026-08-05T18:11:14.193Z"
+completed_at: "2026-08-05T18:11:14.193Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "The gate materializes a commit view containing exactly the files the next commit would carry (git ls-files --cached --others --exclude-standard) and measures there; a --working-copy escape hatch and an explicit --pm-path both bypass it; A fresh clone of the same commit and a maintainer working copy produce byte-identical observed populations for every declared selector; The receipt names the measurement scope so a reader can tell which tree produced the verdict; Unit coverage exercises commit-view materialization, the hardlink-to-copy fallback, the pending-deletion path, and the working-copy bypass"
+parent: pm-u9d0
+risk: high
+confidence: high
+resolution: "Added materializeCommitView and contextForCommitView to the gate, routed the default measurement pass through the view, kept --working-copy and an explicit --pm-path as bypasses, and re-baselined the one honestly mis-measured declaration from 195 to 204 with the reason recorded in the declaration note."
+expected_result: The same commit yields the same ratchet verdict on every machine.
+actual_result: "It now does: the gate first reproduced the hosted failure locally for the first time, then passed identically in commit-view and working-copy modes."
+dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0pzgit,related,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+  pm-44u3wt,related,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+  pm-db8onn,related,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+  pm-e70zh5,discovered_from,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+  pm-ei6x66,verifies,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+  pm-ips23h,related,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+  pm-j8z6,related,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+  pm-kpftft,related,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+  pm-q91qyd,related,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+  pm-rtn5h6,related,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+  pm-wrbe,related,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+  pm-xp1xsw,implements,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-05T18:00:24.230Z","harness:claude-code","Reproduction (2026-08-05, HEAD 8845ec884): cloned this checkout with 'git clone --depth 1 file://<repo>' and ran the same three measurement commands against both trees. Working copy: validate_files_missing_linked_paths=195, no validate_merge_driver_configuration warning, health integrity=ok. Fresh clone of the identical commit: 204, validate_merge_driver_configuration=5, health integrity=warn. Byte-for-byte the same commit, opposite verdicts.\n\nCauses, both proven:\n1. The 9-path delta is exactly .agents/pm/extensions/pm-changelog and 8 files beneath it. .gitignore line 27 ignores .agents/pm/extensions/*, so an installed package resolves only for the maintainer who ran pm install. A full untruncated diff (validate --check-files --verbose-file-lists) showed the working-copy set is a strict subset of the clone set with no path in the other direction.\n2. The merge driver lives in clone-local git config written by 'pm merge install' and carried by no commit. pm health folds that audit into its integrity status, so one uninstallable git-config fact drove two of the three divergences.\n\nFix: the gate now measures a commit view built from 'git ls-files --cached --others --exclude-standard', which is exactly what the next commit would carry, derived from committed ignore rules, and has no .git so every clone-local audit is skipped rather than answered per machine. Uncommitted work stays visible so --update and pre-push checks still measure what the author is about to publish."
+  "2026-08-05T18:00:24.864Z","harness:claude-code","Verification: the gate now fails locally with the exact CI message (validate-files-missing-linked-paths declared 195, observed 204), which is the first time the hosted verdict was reproducible on a maintainer machine. After re-baselining that one declaration to the environment-invariant 204 the gate exits 0 in both modes: 'passed (19 enforced, 0 retired, 2320 items, commit view of 5905 committable files)' and 'passed (... working copy)'. Materialization costs ~4s for 5905 files via hardlinks.\n\nThe 195 baseline was not a regression that got absorbed: it was measured through a working copy that hid 9 members, so the true population was always 204. Shrinking it below 195 means removing dangling links from ten legacy closed items whose closed_at is null, which reorders the changelog until pm-wrbe lands; pm-j8z6 owns that burn-down and the ratchet holds the line at 204 meanwhile."
+files[3]{path,scope,note}:
+  scripts/release/tracker-measurement-gate.mjs,project,Materializes the commit view and routes the measurement pass at it
+  scripts/release/tracker-measurements.json,project,Linked-path ceiling re-baselined to the environment-invariant count
+  tests/unit/scripts/release/tracker-measurement-gate.spec.ts,project,"Commit-view materialization,hardlink fallback,pending deletions,and working-copy bypass coverage"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/tracker-measurement-gate.spec.ts,project,300
+close_reason: "The tracker measurement ratchet now measures a commit view — the exact file set the next commit would carry, built from git ls-files --cached --others --exclude-standard, with no .git — so its verdict is a property of the commit rather than of whoever's machine ran it. The two environment facts that split the verdict are neutralized at the source: gitignored installed packages under .agents/pm/extensions are absent from the view in every environment, and clone-local merge-driver git config is unreadable there, so pm health integrity stops flipping on it. A maintainer checkout and a fresh clone of the same commit now report identical populations for all 19 declared selectors."
+body: ""

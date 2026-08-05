@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: "area:ci",flake,gate-reliability,performance
 created_at: "2026-07-26T10:28:46.495Z"
-updated_at: "2026-08-04T09:18:04.437Z"
+updated_at: "2026-08-05T18:27:08.659Z"
 author: "harness:opencode"
 estimated_minutes: 120
 acceptance_criteria: "The import-cost gate cannot fail solely because the first sampled process hit a cold cache: measurement uses either a discarded warm-up sample or min-of-N per entrypoint; a simulated cold-cache run is green when costs are within budget; the gate still fails on a genuinely over-budget entrypoint (negative control per pm-k6t4yb); budgets in scripts/bench/sdk-entrypoint-budgets.json are not raised to absorb noise"
@@ -16,16 +16,49 @@ confidence: high
 severity: low
 expected_result: pnpm lint is deterministic green on main regardless of filesystem cache warmth when entrypoint costs are within budget
 actual_result: First cold run failed at 545ms > 510ms on ./sdk/runtime; immediate warm re-runs pass unchanged
-dependencies[7]{id,kind,created_at}:
-  pm-ag9nka,related,"2026-07-26T10:29:40.699Z"
-  pm-k6t4yb,related,"2026-07-26T10:29:40.699Z"
-  pm-ei6x66,related,"2026-07-26T10:51:33.734Z"
-  pm-o87av6,verifies,"2026-07-26T10:51:33.734Z"
-  pm-u9d0,implements,"2026-07-26T10:51:33.734Z"
-  pm-yse5dt,related,"2026-07-26T10:51:33.734Z"
-  pm-zlv8jl,related,"2026-07-26T10:51:33.734Z"
-comments[1]{created_at,author,text}:
+dependencies[10]:
+  - id: pm-ag9nka
+    kind: related
+    created_at: "2026-07-26T10:29:40.699Z"
+  - id: pm-k6t4yb
+    kind: related
+    created_at: "2026-07-26T10:29:40.699Z"
+  - id: pm-ei6x66
+    kind: related
+    created_at: "2026-07-26T10:51:33.734Z"
+  - id: pm-o87av6
+    kind: verifies
+    created_at: "2026-07-26T10:51:33.734Z"
+  - id: pm-u9d0
+    kind: implements
+    created_at: "2026-07-26T10:51:33.734Z"
+  - id: pm-yse5dt
+    kind: related
+    created_at: "2026-07-26T10:51:33.734Z"
+  - id: pm-zlv8jl
+    kind: related
+    created_at: "2026-07-26T10:51:33.734Z"
+  - id: pm-ei6x66
+    kind: related
+    created_at: "2026-08-05T18:27:08.528Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-fr4dg8
+    kind: related
+    created_at: "2026-08-05T18:27:08.528Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-zlv8jl
+    kind: related
+    created_at: "2026-08-05T18:27:08.528Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[2]{created_at,author,text}:
   "2026-08-04T09:18:04.437Z","harness:codex","Fresh audit evidence 2026-08-04: pnpm lint reached the SDK import-cost gate after ESLint, jscpd, static quality, package boundary, package-SDK parity, token budgets, context calibration, gate registry, and SDK surface checks passed. The first fresh-process sample failed governance 536ms>248ms, merge 258ms>195ms, and query 214ms>172ms. An immediate isolated rerun failed on bare node 117ms>95ms instead, demonstrating sample-to-sample and target-to-target instability rather than a stable entrypoint regression. The gate remains a real quality failure until its measurement contract is made robust."
+  "2026-08-05T18:27:07.798Z","harness:claude-code","Fresh non-determinism sample, 2026-08-05, on an unchanged src tree (this session's diff touches only scripts/, tests/ and tracker data — zero files under src/). Three consecutive --check runs, back to back, warm cache:\n\n  run 1: Verified SDK entrypoint import costs (10 entrypoints)\n  run 2: FAILED — ./sdk/authoring 140ms > 133ms, ./sdk/query 203ms > 172ms\n  run 3: Verified SDK entrypoint import costs (10 entrypoints)\n\nA prior run in the same session had failed on a different entrypoint again (./sdk 375ms > 367ms). So the gate does not merely false-fail on a cold filesystem cache as the title states — it false-fails on a warm one too, and the entrypoint that trips is not stable between runs. Two of five failures observed today were within 6 percent of the budget.\n\nThat widens the fix: a single-shot fresh-process sample cannot separate an 8ms regression from 8ms of scheduler noise at any cache temperature, so the remedy has to be a sampling and admission policy (best-of-N, or a distribution with a declared confidence), not a warm-up."
 files[2]{path,scope,note}:
   scripts/bench/sdk-entrypoint-budgets.json,project,budget table measured against
   scripts/bench/sdk-entrypoint-costs.mjs,project,"gate implementation: single-shot fresh-process sampling,30ms noise margin"

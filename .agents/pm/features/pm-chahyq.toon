@@ -1,0 +1,24 @@
+id: pm-chahyq
+title: "Improvement ledger: measured properties of pm carry a recorded time series, because a ceiling proves a number did not grow and can never prove a change made it smaller"
+description: ""
+type: Feature
+status: open
+priority: 1
+tags[3]: measurement,ratchet,self-improvement
+created_at: "2026-08-05T18:09:39.606Z"
+updated_at: "2026-08-05T18:10:22.207Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "Every declared measurement retains an append-only series of observations with the commit and the timestamp that produced each, not just the current ceiling and a measured_on date; A read surface answers 'how has this population moved since it was filed' without replaying git history by hand; The series is derived from recorded observations, never hand-edited, and survives compaction; The existing ratchet keeps failing on growth; the ledger adds the falling half of the signal"
+parent: pm-o0sqz5
+risk: low
+confidence: high
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3yzyfe,related,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
+  pm-5gf0xf,related,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
+  pm-9yfo,related,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
+  pm-fr4dg8,discovered_from,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
+  pm-ips23h,supersedes,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
+  pm-o0sqz5,implements,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
+  pm-w7ccmv,related,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
+body: ""

@@ -1,0 +1,27 @@
+id: pm-3i9q8g
+title: "normalize, reindex and events are maintenance and read surfaces with no declared noun, so three agent-facing commands sit outside the grammar the freeze will lock"
+description: ""
+type: Task
+status: open
+priority: 2
+tags[3]: cli-grammar,consolidation,ops
+created_at: "2026-08-05T18:07:55.312Z"
+updated_at: "2026-08-05T18:08:45.416Z"
+author: "harness:claude-code"
+estimated_minutes: 200
+acceptance_criteria: "normalize and reindex are placed under the diagnostics/maintenance noun alongside stats, health, validate, gc, telemetry and eval; events resolves against the history and activity read surfaces so one concept has one home; Every current spelling survives as a hidden alias; no maintenance capability is removed"
+parent: pm-n7rr
+risk: low
+confidence: high
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0z7n,blocked_by,"2026-08-05T18:08:42.524Z","harness:claude-code","cli:update:dep",detected
+  pm-j82fd3,implements,"2026-08-05T18:08:42.524Z","harness:claude-code","cli:update:dep",detected
+  pm-pbyu,related,"2026-08-05T18:08:42.524Z","harness:claude-code","cli:update:dep",detected
+  pm-wt43zj,verifies,"2026-08-05T18:08:42.524Z","harness:claude-code","cli:update:dep",detected
+  pm-yy8rmx,blocked_by,"2026-08-05T18:08:42.524Z","harness:claude-code","cli:update:dep",detected
+  pm-yy8rmx,discovered_from,"2026-08-05T18:08:42.524Z","harness:claude-code","cli:update:dep",detected
+  pm-6apl,related,"2026-08-05T18:08:45.316Z","harness:claude-code","cli:update:dep",detected
+  pm-ez1dfg,related,"2026-08-05T18:08:45.316Z","harness:claude-code","cli:update:dep",detected
+  pm-qljv,related,"2026-08-05T18:08:45.316Z","harness:claude-code","cli:update:dep",detected
+  pm-tqel,related,"2026-08-05T18:08:45.316Z","harness:claude-code","cli:update:dep",detected
+body: ""
