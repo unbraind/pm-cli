@@ -282,17 +282,17 @@ describe("structured mutation command registration", () => {
       ["item", "mutate", "--transaction-id", "referenced-batch"],
       { from: "user" },
     );
-    expect(mocks.commitItemMutations).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        mutations: [
-          expect.objectContaining({ op: "create", id: expect.any(String) }),
-          expect.objectContaining({
-            op: "create",
-            options: expect.objectContaining({ parent: expect.any(String) }),
-          }),
-        ],
-      }),
-    );
+    const referencedCall = mocks.commitItemMutations.mock.lastCall?.[0] as {
+      mutations: Array<{
+        op: string;
+        id: string;
+        options?: { parent?: string };
+      }>;
+    };
+    const [parentMutation, childMutation] = referencedCall.mutations;
+    expect(parentMutation?.op).toBe("create");
+    expect(parentMutation?.id).not.toMatch(/^@/u);
+    expect(childMutation?.options?.parent).toBe(parentMutation?.id);
 
     const invalidProgram = programWithGlobals();
     registerStructuredMutationCommands(invalidProgram);

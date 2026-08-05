@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[8]: agent-ux,"area:cli","area:sdk",atomic,context-management,github-report,structured-input,token-efficiency
 created_at: "2026-08-05T06:02:29.591Z"
-updated_at: "2026-08-05T07:05:20.954Z"
-closed_at: "2026-08-05T06:43:02.920Z"
-completed_at: "2026-08-05T06:43:02.920Z"
+updated_at: "2026-08-05T07:17:48.819Z"
+closed_at: "2026-08-05T07:17:48.257Z"
+completed_at: "2026-08-05T07:17:48.257Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: "Public SDK exposes a typed resolver for heterogeneous atomic mutation documents with unique batch-local aliases, stable explicit-or-derived ids, and forward references in parent/dependency fields; pm item mutate accepts the versioned document through its existing stdin path, validates and previews the fully resolved batch before writes, and returns alias-to-id outcomes without adding a competing top-level batch command; CLI, MCP, contracts, completion, SDK docs, errors, token budgets, and 100 percent coverage stay aligned; malformed aliases, cycles, duplicates, unknown references, and replay mismatches fail before tracker mutation; An isolated npm and Bun consumer authors and reads back a mixed Epic/Feature/Decision graph atomically, and a forced mid-batch failure proves compensation leaves no partial active specification"
@@ -24,9 +24,9 @@ confidence: high
 severity: high
 environment: "pm CLI 2026.8.4, Node 22/24/26, Linux/macOS/Windows; CLI, public SDK, MCP, completions, contracts, packed npm and Bun consumers"
 repro_steps: Create one Plan with multiple steps; pm plan materialize accepts only one materialize type/tags/field set. pm item mutate accepts heterogeneous rows but requires every stable id up front and documents no batch-local forward-reference vocabulary.
-resolution: SDK-first batch-local reference resolver shipped with deterministic ids and alias receipts.
+resolution: SDK alias resolution is prototype-safe and its CLI contract has exact behavioral coverage.
 expected_result: One atomic document creates and links heterogeneous project context without preallocated ids.
-actual_result: "Focused 63-test run, full coverage, and npm/Bun packed acceptance created and read the mixed graph."
+actual_result: Focused tests 18/18; ESLint and typecheck passed; changed-module V8 coverage 100/100/100/100.
 customer_impact: "Agents spend one tool call per item, manually correlate ids, and can leave partially authored specifications when a later create fails."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-4e12,discovered_from,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
@@ -36,11 +36,12 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-xm7c,discovered_from,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
   pm-y9hq,discovered_from,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
   pm-42p9nk,discovered_from,"2026-08-05T06:39:37.256Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-05T06:02:29.591Z","harness:codex","text=Duplicate check 2026-08-05: searched all statuses for the exact GH-896 title and for batch item creation, plan materialize, heterogeneous create, commitWorkspaceTransaction, commitItemMutations, structured mutation, atomic create, and forward references. Closed pm-y9hq owns the SDK transaction primitive and closed pm-xm7c owns the existing CLI/MCP JSON batch; neither provides batch-local references or fixes discovery from create/plan. GitHub source: https://github.com/unbraind/pm-cli/issues/896"
   "2026-08-05T06:39:37.946Z","harness:codex","Packed npm and Bun acceptance exposed a structured-mutation attribution bypass: pm item mutate resolved an omitted author against literal unknown instead of tracker author_default. Reused closed canonical pm-42p9nk, linked it as discovered_from, and migrated the adapter to the canonical resolveAuthor precedence using live settings; no duplicate item created."
   "2026-08-05T06:42:41.304Z","harness:codex","Implementation evidence 2026-08-05: public resolveItemMutationDocument accepts version 1 heterogeneous create/update/close/release documents, derives deterministic prefix-aware ids, resolves forward aliases in targets/hierarchy/dependencies, rejects malformed/duplicate/unknown/cyclic aliases before writes, and returns alias receipts through CLI and MCP. Durable bulk step ids now fingerprint canonical payloads so transaction-id replay mismatch fails. Focused linked run passed 63/63; full repository coverage and lint passed; isolated packed npm/npx and Bun/bunx consumers created mixed Epic/Feature/Decision graphs, read typed edges, and completed a claimed item atomically. Latest npm pm-changelog 2026.8.4 verified and installed."
   "2026-08-05T07:05:20.954Z","harness:codex","CI follow-up 2026-08-05 on PR 901 exact head e98cbdcb3: coverage aggregation exposed new branch gaps and the smokes gate showed commands.item grew from 336 to 516 bytes because item complete became discoverable. Added real malformed-envelope, unknown dependency, graph convergence, release recovery, minimal/default completion, author precedence, and option-variant tests; focused V8 coverage is now 100/100/100/100 for all three changed runtime modules. Refreshed the measured token baseline for the intentional bounded command addition."
+  "2026-08-05T07:17:31.695Z","harness:codex","Review follow-up: CodeRabbit identified a valid prototype-chain collision for the allowed alias constructor and a weak CLI parent-resolution assertion. Replaced the alias map with a null-prototype record, added a constructor regression case, and made the CLI test compare the resolved child parent to the actual derived parent id. Focused tests pass 18/18, eslint and typecheck pass, and focused V8 coverage remains 100/100/100/100."
 files[9]{path,scope,note}:
   scripts/agent-token-surface-baseline.json,project,item-command-discovery-budget
   sdk/public-surface.json,project,public-SDK-contract
@@ -58,5 +59,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI-workflow
   docs/SDK.md,project,SDK-batch-reference-contract
-close_reason: "Delivered versioned heterogeneous specification batches with stable aliases, graph references, replay safety, SDK/CLI/MCP contracts, and packed consumer proof."
+close_reason: Exact-head review findings resolved with prototype-safe reference storage and precise resolution tests.
 body: ""

@@ -526,7 +526,7 @@ function collectMutationReferences(
   rows: ReadonlyArray<Record<string, unknown>>,
   options: ResolveItemMutationDocumentOptions,
 ): Record<string, string> {
-  const references: Record<string, string> = {};
+  const references = Object.create(null) as Record<string, string>;
   for (const [index, row] of rows.entries()) {
     if (row.ref === undefined) continue;
     if (row.op !== "create") {

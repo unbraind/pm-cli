@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Completion is decomposed while creation is composed: create takes nine inline evidence flags, close takes none, so the prescribed finish protocol is seven invocations and seven unrelated history entries ([pm-cyn0y6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cyn0y6.toon))
 - GH-896: heterogeneous atomic specification batches need batch-local references and one discoverable SDK-first CLI path ([pm-o8z748](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o8z748.toon))
+- Completion is decomposed while creation is composed: create takes nine inline evidence flags, close takes none, so the prescribed finish protocol is seven invocations and seven unrelated history entries ([pm-cyn0y6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cyn0y6.toon))
 - Reindex coverage test leaks semantic refresh HTTP beyond its mock lifetime ([pm-cflhoj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cflhoj.toon))
 - Sentry PM-CLI-2V: pm init surfaces raw EACCES when the managed workspace .gitignore cannot be written ([pm-3gh457](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3gh457.toon))
 - Filed defect populations grow after they are measured and nothing turns a tracker measurement into a ceiling: the maintenance passes that record the count are the writer that widens it ([pm-ips23h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ips23h.toon))

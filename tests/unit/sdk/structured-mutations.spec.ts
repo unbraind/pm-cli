@@ -282,6 +282,32 @@ describe("structured mutation input", () => {
     expect(resolved.mutations[0]?.id).toBe("work-root");
   });
 
+  it("resolves aliases that match Object prototype property names", () => {
+    const resolved = resolveItemMutationDocument(
+      JSON.stringify({
+        mutations: [
+          {
+            op: "create",
+            ref: "constructor",
+            options: { title: "Prototype-safe parent" },
+          },
+          {
+            op: "create",
+            ref: "child",
+            options: { title: "Prototype-safe child", parent: "@constructor" },
+          },
+        ],
+      }),
+      { transactionId: "prototype-safe", idPrefix: "pm-" },
+    );
+
+    expect(resolved.references.constructor).toMatch(/^pm-[a-z0-9]{12}$/u);
+    expect(resolved.references.child).toMatch(/^pm-[a-z0-9]{12}$/u);
+    expect(resolved.mutations[1]?.options).toMatchObject({
+      parent: resolved.references.constructor,
+    });
+  });
+
   it("rejects malformed JSON, rows, keys, operations, ids, reasons, and options", () => {
     expect(() => parseItemMutationBatch("{")).toThrow("must be valid JSON");
     vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
