@@ -475,9 +475,7 @@ describe("release automation contract", () => {
     expect(workflow).toContain(
       "attempting access recovery before immutable publication",
     );
-    expect(workflow).toContain(
-      "refusing immutable publication",
-    );
+    expect(workflow).toContain("refusing immutable publication");
     expect(workflow).toContain(
       "grep -Eq 'E404|404 Not Found|Package not found'",
     );
@@ -494,14 +492,28 @@ describe("release automation contract", () => {
       ),
     );
     expect(workflow).not.toContain("@unbrained/pm-cli");
-    expect(workflow).toContain('env -u NODE_AUTH_TOKEN -u NPM_TOKEN');
-    expect(workflow).toContain(
-      'npm_config_userconfig="${PUBLIC_NPMRC}"',
-    );
+    expect(workflow).toContain("env -u NODE_AUTH_TOKEN -u NPM_TOKEN");
+    expect(workflow).toContain('npm_config_userconfig="${PUBLIC_NPMRC}"');
     expect(workflow).toContain('npm_config_cache="${PUBLIC_NPM_CACHE}"');
     expect(workflow).toContain("--max-critical 0 --max-high 0");
-    expect(workflow).toContain("DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}");
+    expect(workflow).toContain(
+      "DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}",
+    );
     expect(workflow).toContain("github.sha || github.ref");
+    expect(workflow).toContain("name: Select exact-tag recovery source");
+    expect(workflow).toContain(
+      'npm view "${NPM_PACKAGE}@${VERSION}" version --json',
+    );
+    expect(workflow).toContain(
+      'git rev-parse --verify "refs/tags/${RELEASE_TAG}^{commit}"',
+    );
+    expect(workflow).toContain('git checkout --detach "${tag_commit}"');
+    expect(workflow).toContain(
+      'echo "RECOVERY_SOURCE_MODE=tag" >> "${GITHUB_ENV}"',
+    );
+    expect(workflow).toContain(
+      "run: node dist/cli.js merge install --no-extensions",
+    );
     expect(workflow).toContain(
       'if [ "${GITHUB_REF_NAME}" != "${DEFAULT_BRANCH}" ]; then',
     );
@@ -509,8 +521,122 @@ describe("release automation contract", () => {
       'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
     );
     expect(workflow).toMatch(
-      /if \[ "\$\{GITHUB_EVENT_NAME\}" = "workflow_dispatch" \]; then[\s\S]*?else\s+node scripts\/release-version\.mjs check --tag "\$\{RELEASE_TAG\}"\s+fi/u,
+      /if \[ "\$\{GITHUB_EVENT_NAME\}" = "workflow_dispatch" \] && \[ "\$\{RECOVERY_SOURCE_MODE\}" = "main" \]; then[\s\S]*?else\s+node scripts\/release-version\.mjs check --tag "\$\{RELEASE_TAG\}"\s+fi/u,
     );
+  });
+
+  it("executes exact-tag recovery source selection fail closed", async () => {
+    const workflow = await readFile(
+      path.join(repoRoot, ".github/workflows/release.yml"),
+      "utf8",
+    );
+    const sourceSelectionStep = workflow.match(
+      / {6}- name: Select exact-tag recovery source[\s\S]*? {8}run: \|\n([\s\S]*?)(?=\n {6}- name:)/u,
+    )?.[1];
+    expect(sourceSelectionStep).toBeDefined();
+    const sourceSelectionScript = sourceSelectionStep
+      ?.split("\n")
+      .map((line) => line.slice(10))
+      .join("\n");
+    expect(sourceSelectionScript).toBeDefined();
+
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-release-source-selection-"),
+    );
+    try {
+      const npmLog = path.join(tempRoot, "npm.log");
+      const gitLog = path.join(tempRoot, "git.log");
+      const githubEnv = path.join(tempRoot, "github.env");
+      await writeFile(
+        path.join(tempRoot, "npm"),
+        `#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "\${NPM_FAKE_LOG}"
+printf '%s\\n' "\${PROBE_OUTPUT}"
+exit "\${PROBE_STATUS}"
+`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "git"),
+        `#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "\${GIT_FAKE_LOG}"
+case "$1" in
+  rev-parse) printf '%s\\n' "0449d15f0d34d15f0d34d15f0d34d15f0d34d15" ;;
+  checkout) ;;
+  *) exit 97 ;;
+esac
+`,
+        "utf8",
+      );
+      await chmod(path.join(tempRoot, "npm"), 0o755);
+      await chmod(path.join(tempRoot, "git"), 0o755);
+
+      const runScenario = (overrides: NodeJS.ProcessEnv) =>
+        spawnSync("bash", ["-c", sourceSelectionScript ?? ""], {
+          cwd: repoRoot,
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            PATH: `${tempRoot}:${process.env.PATH ?? ""}`,
+            RELEASE_TAG: "v2026.8.5",
+            DEFAULT_BRANCH: "main",
+            GITHUB_ENV: githubEnv,
+            NPM_FAKE_LOG: npmLog,
+            GIT_FAKE_LOG: gitLog,
+            PROBE_STATUS: "0",
+            PROBE_OUTPUT: '"2026.8.5"',
+            ...overrides,
+          },
+        });
+
+      await writeFile(npmLog, "", "utf8");
+      await writeFile(gitLog, "", "utf8");
+      await writeFile(githubEnv, "", "utf8");
+      const existingVersion = runScenario({});
+      expect(existingVersion.status).toBe(0);
+      expect(await readFile(githubEnv, "utf8")).toBe(
+        "RECOVERY_SOURCE_MODE=main\n",
+      );
+      expect(await readFile(gitLog, "utf8")).toBe("");
+
+      await writeFile(gitLog, "", "utf8");
+      await writeFile(githubEnv, "", "utf8");
+      const missingVersion = runScenario({
+        PROBE_STATUS: "1",
+        PROBE_OUTPUT: "npm error code ETARGET",
+      });
+      expect(missingVersion.status).toBe(0);
+      expect(await readFile(githubEnv, "utf8")).toBe(
+        "RECOVERY_SOURCE_MODE=tag\n",
+      );
+      expect(await readFile(gitLog, "utf8")).toContain(
+        "checkout --detach 0449d15f0d34d15f0d34d15f0d34d15f0d34d15",
+      );
+
+      await writeFile(npmLog, "", "utf8");
+      await writeFile(gitLog, "", "utf8");
+      await writeFile(githubEnv, "", "utf8");
+      const invalidTag = runScenario({ RELEASE_TAG: "main" });
+      expect(invalidTag.status).toBe(1);
+      expect(await readFile(npmLog, "utf8")).toBe("");
+      expect(await readFile(gitLog, "utf8")).toBe("");
+
+      await writeFile(gitLog, "", "utf8");
+      await writeFile(githubEnv, "", "utf8");
+      const registryFailure = runScenario({
+        PROBE_STATUS: "37",
+        PROBE_OUTPUT: "npm error code E403 secret-diagnostic",
+      });
+      expect(registryFailure.status).toBe(37);
+      expect(registryFailure.stderr).toContain(
+        "failed without a definitive missing-version response (status 37)",
+      );
+      expect(registryFailure.stderr).not.toContain("secret-diagnostic");
+      expect(await readFile(gitLog, "utf8")).toBe("");
+      expect(await readFile(githubEnv, "utf8")).toBe("");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it("executes the npm publication guard and stabilizes exact-tag recovery", async () => {
@@ -582,6 +708,7 @@ esac
             RELEASE_VERSION: "2026.7.27",
             RUNNER_TEMP: tempRoot,
             GITHUB_EVENT_NAME: "push",
+            RECOVERY_SOURCE_MODE: "tag",
             NPM_PACKAGE: "@unbrained/pm-cli",
             NPM_FAKE_LOG: npmLog,
             ACCESS_MARKER: accessMarker,
@@ -646,6 +773,7 @@ esac
       await rm(accessMarker, { force: true });
       const missingExactTagRecovery = runScenario({
         GITHUB_EVENT_NAME: "workflow_dispatch",
+        RECOVERY_SOURCE_MODE: "main",
         ACCESS_STATUS: "0",
         ACCESS_OUTPUT: "access restored",
         POST_RECOVERY_PACKAGE_STATUS: "0",
@@ -656,6 +784,24 @@ esac
       );
       invocations = await readFile(npmLog, "utf8");
       expect(invocations).not.toContain("publish --access public");
+
+      await writeFile(npmLog, "", "utf8");
+      await rm(accessMarker, { force: true });
+      const unpublishedTaggedSourceRecovery = runScenario({
+        GITHUB_EVENT_NAME: "workflow_dispatch",
+        RECOVERY_SOURCE_MODE: "tag",
+        ACCESS_STATUS: "0",
+        ACCESS_OUTPUT: "access restored",
+        POST_RECOVERY_PACKAGE_STATUS: "0",
+      });
+      expect(unpublishedTaggedSourceRecovery.status).toBe(0);
+      expect(unpublishedTaggedSourceRecovery.stdout).toContain(
+        "@unbrained/pm-cli is publicly available but 2026.7.27 is not; publishing.",
+      );
+      invocations = await readFile(npmLog, "utf8");
+      expect(invocations).toContain(
+        "publish --access public --provenance --tag latest",
+      );
 
       await writeFile(npmLog, "", "utf8");
       await rm(accessMarker, { force: true });

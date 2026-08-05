@@ -1,0 +1,55 @@
+id: pm-lwnifd
+title: Exact-tag Release recovery must bootstrap tracker gates and publish an unpublished immutable tag from its tagged source
+description: "Auto Release run 30993783230 successfully created the sole v2026.8.5 tag, but downstream Release run 30994468126 checked out that tag without installing clone-local merge drivers. quality:static then observed five undeclared merge-driver warnings plus derived integrity and missing-link populations and stopped before npm publication. The current workflow_dispatch recovery intentionally checks current main and refuses a missing npm version, so it cannot recover a tag that exists immutably but never reached the registry."
+type: Issue
+status: in_progress
+priority: 1
+tags[6]: "area:release",ci-parity,exact-tag-recovery,immutable-release,merge-safety,npm
+created_at: "2026-08-05T09:54:50.481Z"
+updated_at: "2026-08-05T10:16:39.845Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#96b2f4f37551cb3935f93353"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Every Release checkout builds and installs clone-local merge drivers before tracker-bearing static quality; workflow_dispatch distinguishes an already-published access recovery from an unpublished exact-tag recovery using an authenticated exact-version probe; an unpublished recovery checks out the existing immutable tag and may publish only that exact tagged source, while a published recovery keeps the reviewed main-source access repair behavior; version/tag guards fail closed for tagged-source publication; executable workflow contracts cover source selection, bootstrap ordering, and publication refusal; v2026.8.5 is recovered without creating or moving a second same-day tag and verifies through npm, npx, bunx, and GitHub Release"
+goal: project management = context management
+objective: Make downstream Release clean-checkout prerequisites and immutable-tag recovery honest and recoverable
+value: A daily tag cannot become permanently unpublished because its tag-push runner lacked clone-local configuration
+impact: Closes the final gap between Auto Release preflight and the downstream publish workflow without weakening tracker ratchets or moving immutable tags
+outcome: The sole daily tag is either published successfully or recoverable from its exact tagged source with the same mandatory gates
+why_now: "v2026.8.5 exists, its release job failed before npm publication, and the one-release-per-day invariant forbids a replacement tag"
+parent: pm-e70zh5
+risk: high
+confidence: high
+severity: critical
+environment: "GitHub Actions Auto Release run 30993783230, Release run 30994468126, tag v2026.8.5, npm registry"
+repro_steps: "Run the tag-push Release workflow for v2026.8.5. quality:static reaches tracker measurement without clone-local merge drivers and fails validate_merge_driver_configuration; dispatch recovery from main then refuses because npm 2026.8.5 is absent."
+resolution: Pending hosted merge and exact-tag production recovery; local implementation and gates are complete.
+expected_result: "The existing v2026.8.5 tag passes the reviewed current Release workflow, publishes exactly @unbrained/pm-cli@2026.8.5, verifies npm/npx/bunx consumers, and creates one GitHub Release without moving or replacing the tag."
+actual_result: Local workflow implementation and all required gates pass; production exact-tag recovery remains pending until the reviewed workflow change merges.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ei6x66,discovered_from,"2026-08-05T09:54:50.481Z","harness:codex","cli:create:dep",detected
+  pm-t310hx,discovered_from,"2026-08-05T09:54:50.481Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-05T09:54:50.481Z","harness:codex","cli:create:dep",detected
+  pm-xvccnm,discovered_from,"2026-08-05T09:54:50.481Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-05T09:54:50.481Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for Release tag checkout merge-driver bootstrap, exact-tag immutable publish recovery, and workflow_dispatch source selection. Closed pm-xvccnm owns the upstream Auto Release bootstrap; closed pm-t310hx owns already-published access recovery; open pm-ei6x66 owns the broader gate registry. None owns recovery of an existing but unpublished immutable tag plus downstream Release bootstrap. Source evidence: Auto Release run 30993783230 and Release run 30994468126."
+  "2026-08-05T10:02:36.513Z","harness:codex","TDD evidence: the first direct focused run exposed two stale assertion strings after the recovery policy changed (61 passed, 2 failed). Corrected only those expectations, then added executable shell coverage for existing, missing, invalid-tag, and unexpected-registry source-selection outcomes. Focused rerun passes 64/64 across release workflow, automation, and runtime readiness contracts."
+  "2026-08-05T10:14:16.783Z","harness:codex","Verification evidence: linked PM test passes 64/64; typecheck and docs/skills pass; quality:static passes every SDK parity, token/context, tracker, registry, surface, and performance ratchet; full sandboxed coverage passes 433 files and 6,866 tests at exact 100% statements/branches/functions/lines; pnpm audit reports no known vulnerabilities; tracked secret scan is clean; packed npx smoke passes version 2026.8.5 with 15 packages; independent temporary-root package-first dogfood passes all 88 commands."
+  "2026-08-05T10:14:48.114Z","harness:codex","Lifecycle correction: local implementation was closed too early even though acceptance explicitly requires hosted merge and production recovery. Reopened and reclaimed; this remains the sole active item until immutable tag, npm consumers, GitHub Release, and observability are proven."
+notes[1]{created_at,author,text}:
+  "2026-08-05T10:14:17.275Z","harness:codex","Release recovery design: workflow_dispatch begins on reviewed main. An authenticated exact-version probe selects main only for an existing immutable npm version; a definitive missing-version result resolves and detaches the requested tag; every other registry failure stops. Only tagged source may publish a missing version. The built tagged CLI installs clone-local merge-driver configuration before tracker-bearing static gates."
+learnings[1]{created_at,author,text}:
+  "2026-08-05T10:14:17.718Z","harness:codex",A downstream tag workflow has independent clone-local state even when its upstream auto-release job installed merge drivers. Recovery of an unpublished immutable version must execute the current reviewed workflow definition while pinning build and publication inputs to the existing tag commit; re-running the historical workflow alone cannot acquire the workflow fix.
+files[4]{path,scope,note}:
+  .github/workflows/release.yml,project,exact-tag-source-selection-and-merge-bootstrap
+  CHANGELOG.md,project,pm-changelog-generated unreleased boundary after post-tag recovery work
+  tests/integration/ci-workflow-contract.spec.ts,project,Static workflow ordering and immutable recovery contract
+  tests/integration/release-automation-contract.spec.ts,project,Executable source-selection and publication fail-closed contracts
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msfx6bgi-ekn694,test,passed,"2026-08-05T10:03:22.543Z","2026-08-05T10:03:50.274Z","2026-08-05T10:03:50.274Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,recovery-operator-contract
+body: ""
