@@ -47,6 +47,7 @@ import type {
   OnWriteHook,
   ParserOverride,
   PreflightOverride,
+  ScopedPreflightOverrideDefinition,
   RendererOverride,
   ScopedRendererOverrideDefinition,
   SchemaFieldDefinition,
@@ -274,7 +275,15 @@ export function defineParserOverride(override: ParserOverride): ParserOverride {
  */
 export function definePreflightOverride(
   override: PreflightOverride,
-): PreflightOverride {
+): PreflightOverride;
+/** Type a scoped preflight definition while preserving literal command ownership. */
+export function definePreflightOverride<
+  TDefinition extends ScopedPreflightOverrideDefinition,
+>(override: ExactDefinition<TDefinition, ScopedPreflightOverrideDefinition>): TDefinition;
+/** Implement the preflight authoring identity for callbacks and scoped definitions. */
+export function definePreflightOverride(
+  override: PreflightOverride | ScopedPreflightOverrideDefinition,
+): PreflightOverride | ScopedPreflightOverrideDefinition {
   return override;
 }
 

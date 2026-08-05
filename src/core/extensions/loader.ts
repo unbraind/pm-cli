@@ -26,6 +26,10 @@ import {
 } from "./item-field-types.js";
 import { snapshotExtensionModuleGraph } from "./module-graph-snapshot.js";
 import { captureExtensionActivationRollback } from "./activation-transaction.js";
+import {
+  collectPreflightCollisionWarnings,
+  normalizePreflightOverride,
+} from "./preflight-ownership.js";
 import { assertCommandDefinitionMetadataStrings } from "./command-visibility-tier.js";
 import {
   asRegistrationRecord,
@@ -158,6 +162,7 @@ import {
   type CommandHandler,
   type ParserOverride,
   type PreflightOverride,
+  type ScopedPreflightOverrideDefinition,
   type ServiceOverride,
   type ExtensionHookRegistry,
   type ExtensionServiceName,
@@ -2608,7 +2613,9 @@ class ExtensionApiRegistrar implements ExtensionApi {
     });
   }
 
-  public registerPreflight(override: PreflightOverride): void {
+  public registerPreflight(
+    override: PreflightOverride | ScopedPreflightOverrideDefinition,
+  ): void {
     assertExtensionCapability(
       this.#loadedExtension,
       "preflight",
@@ -2623,11 +2630,11 @@ class ExtensionApiRegistrar implements ExtensionApi {
     ) {
       return;
     }
-    assertFunctionHandler("registerPreflight override", override);
+    const normalized = normalizePreflightOverride(override);
     this.#preflightRegistry.overrides.push({
       layer: this.#loadedExtension.layer,
       name: this.#loadedExtension.name,
-      run: override,
+      ...normalized,
     });
   }
 
@@ -3454,21 +3461,6 @@ function collectParserCollisionWarnings(
     }
   }
   return warnings;
-}
-
-function collectPreflightCollisionWarnings(
-  preflight: ExtensionPreflightRegistry,
-): string[] {
-  if (preflight.overrides.length <= 1) {
-    return [];
-  }
-  const winner = preflight.overrides[preflight.overrides.length - 1];
-  return preflight.overrides
-    .slice(0, -1)
-    .map(
-      (displaced) =>
-        `extension_preflight_override_collision:${winner.layer}:${winner.name}:${displaced.layer}:${displaced.name}`,
-    );
 }
 
 // Services whose runtime semantics are chain/fall-through (each override gets a chance);

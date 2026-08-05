@@ -712,6 +712,7 @@ describe("core/extensions runtime wrappers", () => {
         {
           layer: "project",
           name: "preflight-ext",
+          commands: ["update"],
           run: () => ({
             run_extension_migrations: false,
           }),
@@ -738,6 +739,21 @@ describe("core/extensions runtime wrappers", () => {
     });
     expect(preflightResult.overridden).toBe(true);
     expect(preflightResult.decision.run_extension_migrations).toBe(false);
+    expect(
+      await runActivePreflightOverride({
+        command: "create",
+        args: [],
+        options: {},
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project",
+        decision: preflightResult.decision,
+      }),
+    ).toMatchObject({ overridden: false });
 
     setActiveCommandContext({
       command: "list-open",

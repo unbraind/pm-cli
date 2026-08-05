@@ -117,6 +117,13 @@ describe("sdk define builders", () => {
     expect(defineParserOverride(parserOverride)).toBe(parserOverride);
     const preflightOverride = () => ({});
     expect(definePreflightOverride(preflightOverride)).toBe(preflightOverride);
+    const scopedPreflightOverride = {
+      commands: ["create"],
+      run: preflightOverride,
+    };
+    expect(definePreflightOverride(scopedPreflightOverride)).toBe(
+      scopedPreflightOverride,
+    );
     const serviceOverride = () => undefined;
     expect(defineServiceOverride(serviceOverride)).toBe(serviceOverride);
     const rendererOverride = () => null;

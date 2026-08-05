@@ -30,6 +30,11 @@ content-addressed snapshots are tracked by
 [pm-dkrmzv](../.agents/pm/features/pm-dkrmzv.toon); see
 [Reproducible Workspaces and Snapshots](REPRODUCIBLE_WORKSPACES.md).
 
+Extension migration receipts, install-source identity, and scoped preflight
+ownership are tracked by [pm-ig5cfe](../.agents/pm/issues/pm-ig5cfe.toon),
+[pm-495lkc](../.agents/pm/issues/pm-495lkc.toon), and
+[pm-miy5k6](../.agents/pm/issues/pm-miy5k6.toon).
+
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
 ## Install
@@ -306,7 +311,7 @@ Command/action contract exports:
 - Linked-test authoring primitives: `parseLinkedTestJsonEntries`, the `parseLinkedTest*` field parsers, `LINKED_TEST_PM_CONTEXT_MODE_VALUES`, `LINKED_TEST_PROTECTED_ENV_KEYS`, `classifyLinkedTestFailure`, `countFailureCategories`, and `summarizeContextPreflight` let custom hosts validate, execute, classify, and report linked tests without duplicating CLI policy.
 - Typed plan workflow primitives on `PmClient`: `plan`, `planCreate`, `planShow`, `planAddStep`, `planUpdateStep`, `planCompleteStep`, `planBlockStep`, `planReorderStep`, `planRemoveStep`, `planLink`, `planUnlink`, `planDecision`, `planDiscovery`, `planValidation`, `planResume`, `planApprove`, and `planMaterialize`
 - Plan contracts: `PlanSubcommand`, `PlanCommandOptions`, `PlanCommandResult`, `PlanResultPlan`, `PlanStepSummary`, `PlanShowDepth`, and `PlanTemplateName`
-- Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, and `upgrade`
+- Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, `packageMigrate`, and `upgrade`; one-shot `extensionMigrate` and `packageMigrate` helpers mirror those lifecycle actions.
 - Lifecycle primitive option/result contracts: `ExtensionCommandOptions` / `ExtensionCommandResult`, `PackageCommandOptions` / `PackageCommandResult`, `UpgradeCommandOptions` / `UpgradeResult`
 - `PM_CORE_COMMAND_NAMES`
 - `PM_TOOL_ACTIONS`
@@ -833,7 +838,8 @@ lifecycle order to mirror `hook_counts`) of every registered surface's
 identifiers — command paths, hook kinds, item-type /
 field names, migration ids, importer / exporter / provider / adapter names,
 overridden service names and renderer formats, flag target-commands, and the
-preflight-override count — plus scoped `renderer_ownership` rows (format,
+preflight-override count — plus scoped `preflight_ownership` command rows and
+`renderer_ownership` rows (format,
 normalized commands, and whether a result discriminator exists) and the
 `capabilities` those surfaces exercise. Two
 uses:
@@ -1859,7 +1865,29 @@ For provider-safe schemas, use `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`. It is flat 
 | `registerSearchProvider`     | `search`            |
 | `registerVectorStoreAdapter` | `search`            |
 
-Some override surfaces are single-winner: command overrides, parser overrides, preflight overrides, and output renderers. Keep those handlers narrowly scoped and verify package combinations with:
+Some override surfaces are single-winner: command overrides, parser overrides,
+preflight overrides, and output renderers. Preflight overrides can declare
+static command ownership, allowing disjoint packages to compose without false
+collisions or unrelated callback invocations:
+
+```ts
+const preflight = definePreflightOverride({
+  commands: ["incident triage", "incident close"],
+  run: (context) => ({
+    enforce_mandatory_migration_gate:
+      context.decision.enforce_mandatory_migration_gate,
+  }),
+});
+
+api.registerPreflight(preflight);
+```
+
+Command paths are normalized. Two scoped overrides collide only when their
+ownership overlaps; an empty or omitted `commands` list retains legacy global
+behavior and collides with every other override. Activation summaries and
+persisted contribution inventories expose `preflight_ownership`, so doctor and
+static tooling can explain the decision. Keep handlers narrowly scoped and
+verify package combinations with:
 
 ```bash
 pm package doctor --project --detail deep --trace

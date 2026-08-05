@@ -6,6 +6,7 @@ import {
   extensionActivate,
   extensionDeactivate,
   extensionList,
+  extensionMigrate,
   packageActivate,
   packageCatalog,
   packageDeactivate,
@@ -15,6 +16,7 @@ import {
   packageLifecycle,
   packageList,
   packageManage,
+  packageMigrate,
   packageReload,
   packageUninstall,
   upgrade,
@@ -92,6 +94,12 @@ describe("SDK package and extension lifecycle primitives", () => {
         action: "explore",
         scope: "project",
       });
+      await expect(
+        extensionMigrate(
+          { project: true, dryRun: true },
+          { pmRoot: pmPath, noExtensions: true },
+        ),
+      ).resolves.toMatchObject({ action: "migrate" });
 
       const topLevelPackages = await packageList({ project: true }, { pmRoot: pmPath, noExtensions: true });
       expect(topLevelPackages).toMatchObject({
@@ -111,6 +119,25 @@ describe("SDK package and extension lifecycle primitives", () => {
         ok: true,
         action: "manage",
         scope: "project",
+      });
+      await expect(
+        packageMigrate(
+          { project: true, dryRun: true },
+          { pmRoot: pmPath, noExtensions: true },
+        ),
+      ).resolves.toMatchObject({
+        action: "migrate",
+        details: { migration: { dry_run: true, total: 0 } },
+      });
+      await expect(
+        packageMigrate(
+          { global: true, dryRun: true },
+          { pmRoot: pmPath, noExtensions: true, author: " lifecycle-author " },
+        ),
+      ).resolves.toMatchObject({
+        action: "migrate",
+        scope: "global",
+        details: { migration: { dry_run: true, total: 0 } },
       });
 
       const described = await packageDescribe(undefined, { project: true }, { pmRoot: pmPath, noExtensions: true });

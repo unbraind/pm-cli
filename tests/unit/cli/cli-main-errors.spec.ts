@@ -1994,6 +1994,9 @@ describe("CLI main bootstrap helper coverage", () => {
   });
 
   it("executes registered runtime migrations and records failed definitions", async () => {
+    const pmRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-runtime-extension-migrations-"),
+    );
     const migrations = [
       {
         layer: "project",
@@ -2033,7 +2036,10 @@ describe("CLI main bootstrap helper coverage", () => {
       },
     ];
 
-    const warnings = await _testOnly.executeRegisteredRuntimeMigrations(migrations as never, "/tmp/pm-root");
+    const warnings = await _testOnly.executeRegisteredRuntimeMigrations(
+      migrations as never,
+      pmRoot,
+    );
 
     expect(warnings).toEqual(["extension_migration_failed:global:failure:bad"]);
     expect(migrations[2].runtime_definition.run).toHaveBeenCalledWith(
@@ -2042,7 +2048,7 @@ describe("CLI main bootstrap helper coverage", () => {
         command: "migration",
         layer: "project",
         extension: "success",
-        pm_root: "/tmp/pm-root",
+        pm_root: pmRoot,
       }),
     );
     expect(migrations[2].definition).toEqual({ id: "ok", status: "applied" });
@@ -2052,6 +2058,7 @@ describe("CLI main bootstrap helper coverage", () => {
       reason: "cannot migrate",
     });
     expect(migrations[4].runtime_definition.run).toHaveBeenCalledWith(expect.objectContaining({ id: "migration-005" }));
+    await rm(pmRoot, { recursive: true, force: true });
   });
 
   it("loads extension discovery and activation snapshots with command descriptors", async () => {

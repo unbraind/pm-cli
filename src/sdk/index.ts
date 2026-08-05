@@ -136,7 +136,40 @@ export {
   type ValidateFixesSummary,
   type ValidateMutationServices,
 } from "./governance/validate.js";
-export { runExtension } from "./extension.js";
+export {
+  runExtension,
+  type ExtensionCommandAction,
+} from "./extension.js";
+export {
+  resolveExtensionInstallSourceIdentity,
+  type ExtensionInstallSourceCandidate,
+  type ExtensionInstallSourceResolution,
+  type ExtensionInstallSourceSelection,
+  type ResolvedExtensionInstallSource,
+} from "./extension/source-resolution.js";
+export {
+  applyStoredExtensionMigrationState,
+  readExtensionMigrationState,
+  resolveExtensionMigrationStatePath,
+  runExtensionMigrateAction,
+  runExtensionMigrations,
+  type ExtensionMigrationActionContext,
+  type ExtensionMigrationOutcomeStatus,
+  type ExtensionMigrationReceipt,
+  type ExtensionMigrationRunResult,
+  type ExtensionMigrationState,
+  type ExtensionMigrationStateEntry,
+  type RunExtensionMigrationsOptions,
+} from "./extension/migrations.js";
+export {
+  findInstalledNpmPackageCandidate,
+  type GithubInstallSource,
+  type InstalledNpmPackageCandidate,
+  type InstallSource,
+  type LocalInstallSource,
+  type NpmInstallSource,
+  type ResolvedInstallSource,
+} from "./extension/install-sources.js";
 export {
   buildExtensionDescribeResult,
   renderExtensionDescribeMarkdown,
@@ -334,6 +367,7 @@ export {
   EXTENSION_INIT_FLAG_CONTRACTS,
   EXTENSION_INSTALL_FLAG_CONTRACTS,
   EXTENSION_MANAGE_FLAG_CONTRACTS,
+  EXTENSION_MIGRATE_FLAG_CONTRACTS,
   EXTENSION_RELOAD_FLAG_CONTRACTS,
   EXTENSION_SCOPE_FLAG_CONTRACTS,
   EXTENSION_UNINSTALL_FLAG_CONTRACTS,
@@ -964,6 +998,7 @@ export {
   type WorkspaceExtensionCommandContract,
   type WorkspaceFieldContract,
 } from "./runtime.js";
+export { extensionMigrate, packageMigrate } from "./package-migrations.js";
 export {
   CONTEXT_OUTPUT_VALUES,
   NEXT_OUTPUT_VALUES,

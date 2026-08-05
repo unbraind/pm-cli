@@ -58,7 +58,6 @@ import {
 } from "./extension/install-sources.js";
 import {
   resolveBundledExtensionAliasSource,
-  resolveBundledPackageNpmName,
   isBundledPackageInstallAllTarget,
   listBundledPackageAliases,
   resolveBundledAliasManifestName,
@@ -93,6 +92,11 @@ import { summarizeRuntimeCommandPathsForExtension } from "./extension/runtime-su
 import { collectGlobalOutputOverrideDoctorWarnings } from "./extension/output-ownership.js";
 import { collectMcpCustomFieldCollisionDoctorWarnings } from "./extension/custom-field-collisions.js";
 import { checkGithubUpdate } from "./extension/update-check.js";
+import { runExtensionMigrateAction } from "./extension/migrations.js";
+import {
+  resolveExtensionInstallSourceIdentity,
+  type ExtensionInstallSourceResolution,
+} from "./extension/source-resolution.js";
 import {
   captureExtensionInstallSnapshot,
   readOptionalMetadataFile,
@@ -133,6 +137,7 @@ export type ExtensionCommandAction =
   | "adopt-all"
   | "activate"
   | "deactivate"
+  | "migrate"
   | "init";
 
 const LIFECYCLE_ACTION_TARGETS = [
@@ -151,6 +156,7 @@ const LIFECYCLE_ACTION_TARGETS = [
   ["adopt-all", "adopt-all", "--adopt-all"],
   ["activate", "activate", "--activate"],
   ["deactivate", "deactivate", "--deactivate"],
+  ["migrate", "migrate", "--migrate"],
 ] as const satisfies readonly (readonly [
   string,
   ExtensionCommandAction,
@@ -175,6 +181,7 @@ const LIFECYCLE_ACTION_FLAGS: Record<ExtensionCommandAction, `--${string}`> = {
   "adopt-all": "--adopt-all",
   activate: "--activate",
   deactivate: "--deactivate",
+  migrate: "--migrate",
   init: "--init",
 };
 /** Restricts extension scope values accepted by command, SDK, and storage contracts. */
@@ -224,6 +231,8 @@ export interface ExtensionCommandOptions {
   activate?: boolean;
   /** Value that configures or reports deactivate for this contract. */
   deactivate?: boolean;
+  /** Plan or apply active extension migrations. */
+  migrate?: boolean;
   /** Value that configures or reports project for this contract. */
   project?: boolean;
   /** Value that configures or reports local for this contract. */
@@ -258,6 +267,8 @@ export interface ExtensionCommandOptions {
   declarative?: boolean;
   /** Value that configures or reports vocabulary for this contract. */
   vocabulary?: "extension" | "package";
+  /** Plan migration work without invoking extension code. */
+  dryRun?: boolean;
 }
 
 /** Documents the managed extension summary payload exchanged by command, SDK, and package integrations. */
@@ -861,6 +872,7 @@ const EXTENSION_ACTION_FLAG_SELECTORS = [
   ["adoptAll", "adopt-all"],
   ["activate", "activate"],
   ["deactivate", "deactivate"],
+  ["migrate", "migrate"],
 ] as const satisfies readonly (readonly [
   keyof ExtensionCommandOptions,
   ExtensionCommandAction,
@@ -877,6 +889,7 @@ const IMPLICIT_EXTENSION_ACTIONS: Readonly<
   scaffold: "init",
   explore: "explore",
   manage: "manage",
+  migrate: "migrate",
   list: "explore",
   "": "explore",
 };
@@ -1715,6 +1728,11 @@ const assertExtensionActionOptionScope = (
       allowed: action === "init",
       message: "--declarative is only valid with --init/--scaffold.",
     },
+    {
+      triggered: options.dryRun === true,
+      allowed: action === "migrate",
+      message: "--dry-run is only valid with --migrate.",
+    },
   ];
   const invalidGuard = guards.find(
     (guard) => guard.triggered && !guard.allowed,
@@ -2092,6 +2110,7 @@ interface ExtensionInstallUnderLockInput {
   destinationDirectoryName: string;
   bundledAliasName: string | null;
   bundledPackageName: string | null;
+  sourceResolution: ExtensionInstallSourceResolution;
   installSource: ReturnType<typeof parseExtensionInstallSource>;
   resolvedSource: Awaited<ReturnType<typeof resolveInstallSource>>;
 }
@@ -2390,6 +2409,7 @@ const performExtensionInstallUnderLock = async (
         directory: destinationDirectoryName,
       },
       source: persisted.sourceRecord,
+      source_resolution: input.sourceResolution,
       destination_path: persisted.destinationDirectory,
       overwritten: [
         persisted.destinationExists,
@@ -2459,6 +2479,7 @@ const runBundledExtensionInstallAll = async (
           ok: entry.result.ok,
           extension: details.extension,
           source: details.source,
+          source_resolution: details.source_resolution,
           destination_path: details.destination_path,
           activated: details.activated,
           settings_changed: details.settings_changed,
@@ -2476,40 +2497,6 @@ const runBundledExtensionInstallAll = async (
   );
 };
 
-/** Resolve bundled-alias provenance before installing one extension source. */
-const resolveSingleExtensionInstallSource = async (
-  explicitSourceInput: string,
-  githubOption: string | undefined,
-  ref: string | undefined,
-): Promise<{
-  bundledAliasName: string | null;
-  bundledPackageName: string | null;
-  installSource: ReturnType<typeof parseExtensionInstallSource>;
-}> => {
-  /* c8 ignore start -- github/local alias-source split is exercised in install-action integration tests */
-  const bundledAliasSource =
-    typeof githubOption === "string"
-      ? null
-      : await resolveBundledExtensionAliasSource(explicitSourceInput);
-  /* c8 ignore stop */
-  const bundledAliasName =
-    bundledAliasSource === null
-      ? null
-      : explicitSourceInput.trim().toLowerCase();
-  const bundledPackageName =
-    bundledAliasName === null
-      ? null
-      : await resolveBundledPackageNpmName(bundledAliasName);
-  const sourceInput = bundledAliasSource ?? explicitSourceInput;
-  /* c8 ignore start -- install-source branch combinations are covered in install-sources focused tests */
-  const installSource = parseExtensionInstallSource(sourceInput, {
-    forceGithub: typeof githubOption === "string",
-    ref,
-  });
-  /* c8 ignore stop */
-  return { bundledAliasName, bundledPackageName, installSource };
-};
-
 /** Install one resolved source and clean transient source material afterward. */
 const runSingleExtensionInstall = async (
   ctx: ExtensionActionContext,
@@ -2517,12 +2504,25 @@ const runSingleExtensionInstall = async (
   githubOption: string | undefined,
 ): Promise<ExtensionCommandResult> => {
   const { resolvedRoots } = ctx;
-  const { bundledAliasName, bundledPackageName, installSource } =
-    await resolveSingleExtensionInstallSource(
+  const {
+    bundledAliasName,
+    bundledPackageName,
+    installSource,
+    sourceResolution,
+  } =
+    await resolveExtensionInstallSourceIdentity(
       explicitSourceInput,
       githubOption,
       ctx.options.ref,
     );
+  if (sourceResolution.ambiguous) {
+    const npmCandidate = sourceResolution.candidates.find(
+      (candidate) => candidate.kind === "npm",
+    )!;
+    ctx.warnings.push(
+      `extension_install_source_ambiguous:${explicitSourceInput}:builtin:${bundledAliasName}:npm:${npmCandidate.package}`,
+    );
+  }
   const resolvedSource = await resolveInstallSource(installSource);
   try {
     const validated = await validateExtensionDirectory(
@@ -2545,6 +2545,7 @@ const runSingleExtensionInstall = async (
           destinationDirectoryName,
           bundledAliasName,
           bundledPackageName,
+          sourceResolution,
           installSource,
           resolvedSource,
         }),
@@ -3740,6 +3741,7 @@ const EXTENSION_ACTION_HANDLERS: Record<
   "adopt-all": runExtensionAdoptAllAction,
   activate: runExtensionActivateDeactivateAction,
   deactivate: runExtensionActivateDeactivateAction,
+  migrate: runExtensionMigrateAction,
 };
 
 /** Identify lifecycle actions that mutate shared settings or managed-extension state. */
@@ -3751,6 +3753,7 @@ const requiresExtensionStateLock = (ctx: ExtensionActionContext): boolean =>
     ctx.action === "adopt-all",
     ctx.action === "activate",
     ctx.action === "deactivate",
+    ctx.action === "migrate",
     [ctx.action === "doctor", ctx.options.fixManagedState === true].every(
       Boolean,
     ),

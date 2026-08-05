@@ -1,0 +1,48 @@
+id: pm-495lkc
+title: "GH-908: explicit package-source identity and bare-name ambiguity diagnostics"
+description: Make package install source resolution agent-verifiable and refuse silent identity substitution when a bare name matches both a bundled package and an installed npm package.
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:extensions","area:packages","area:sdk",install,provenance
+created_at: "2026-08-05T19:11:50.501Z"
+updated_at: "2026-08-05T21:46:46.723Z"
+closed_at: "2026-08-05T21:46:15.435Z"
+completed_at: "2026-08-05T21:46:15.435Z"
+author: "harness:codex"
+estimated_minutes: 150
+acceptance_criteria: A bare-name bundled versus node_modules ambiguity is surfaced with both candidates the winner and exact disambiguation commands; Install action and CLI results expose stable requested and resolved source identity fields; Unambiguous bundled npm GitHub and local installs preserve existing behavior; Help contracts SDK docs and packed temporary-project tests prove the precedence and machine-readable result
+parent: pm-ugqx
+risk: medium
+confidence: high
+resolution: fixed
+expected_result: Install results identify the requested and selected source and expose deterministic ambiguity candidates and disambiguation commands.
+actual_result: Bare bundled/npm ambiguity now yields a stable source_resolution receipt while preserving bundled-first compatibility and all other source paths.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-usfg,implements,"2026-08-05T19:11:50.501Z","harness:codex","cli:create:dep",detected
+  pm-x6jf,discovered_from,"2026-08-05T19:11:50.501Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-05T19:11:50.501Z","harness:codex","Duplicate check evidence 2026-08-05: searched all statuses with exact GitHub issue identifiers,report language,and the relevant ownership,install-resolution,or migration concepts. No existing item covers this defect; closed items linked by discovered_from are implemented historical substrate,not duplicates."
+  "2026-08-05T20:02:28.735Z","harness:codex","Implementation note: install results now expose deterministic source_resolution receipts. Bare bundled aliases are checked against installed npm candidates without executing package code; ambiguity reports both explicit selection commands while preserving bundled-first compatibility."
+  "2026-08-05T20:25:10.112Z","harness:codex","Manual acceptance evidence: from isolated cwd containing node_modules/beads@9.9.9, pm install beads selected builtin @unbrained/pm-beads, returned ambiguous=true, precedence=bundled_alias_before_installed_npm, included both candidates, and exposed pm install npm:beads as the explicit npm command."
+  "2026-08-05T21:46:03.184Z","harness:codex","Final verification 2026-08-05: full sandbox-safe coverage passed 435 files / 6,880 tests with statements 49124/49124, branches 35616/35616, functions 10045/10045, lines 47604/47604 (100/100/100/100). Strict ESLint, typecheck, static quality/docstrings, CLI transport floor, production audit, tracked-secret scan, Sentry 14-day threshold (0 critical/0 high relevant), and telemetry quality (0.6% finish error rate; 0 failures missing error codes) passed. Linked focused tests passed. SDK cold-import timing remains a known shared-host false-fail: bare Node measured 151ms against 95ms and multiple unrelated entrypoints rose together; threshold was not weakened and canonical pm-cg1sjb tracks isolation."
+files[6]{path,scope,note}:
+  src/sdk/extension.ts,project,Lifecycle result integration
+  src/sdk/extension/install-sources.ts,project,Safe installed npm candidate discovery
+  src/sdk/extension/source-resolution.ts,project,Deterministic source identity and ambiguity contract
+  src/sdk/index.ts,project,Public SDK exports
+  tests/unit/extensions/extension-command.spec.ts,project,Install ambiguity acceptance coverage
+  tests/unit/extensions/extension-source-resolution.spec.ts,project,Focused install-source identity and ambiguity coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/sdk-package-lifecycle.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-source-resolution.spec.ts,project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msgm4ay1-dv8fim,test,passed,"2026-08-05T21:41:30.556Z","2026-08-05T21:42:06.697Z","2026-08-05T21:42:06.697Z",1,0,0
+  test-local-msgm6uw2-new2ye,test,passed,"2026-08-05T21:43:56.763Z","2026-08-05T21:44:05.858Z","2026-08-05T21:44:05.858Z",1,0,0
+docs[4]{path,scope,note}:
+  docs/COMMANDS.md,project,CLI source resolution contract
+  docs/EXTENSION_LIFECYCLE.md,project,Explicit source identity contract
+  docs/EXTENSIONS.md,project,Explicit install selection guidance
+  docs/SDK.md,project,SDK source resolution API
+close_reason: "Delivered deterministic install source-resolution receipts, safe installed-package discovery, bundled-versus-npm ambiguity diagnostics with exact commands, public SDK exports, documentation, isolated acceptance, and complete tests."
+body: "Source: https://github.com/unbraind/pm-cli/issues/908\\n\\nDeliver one source-resolution contract shared by the SDK and CLI. Results must identify requested input, selected source kind and package identity, expose ambiguity candidates and deterministic precedence, and provide exact disambiguation commands without guessing from a renamed extension directory."

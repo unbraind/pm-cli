@@ -21,6 +21,7 @@ import { SCAFFOLD_PM_MIN_VERSION } from "../../../src/cli/commands/extension/sca
 import {
   buildNpmNotFoundRecovery,
   _testOnlyInstallSources,
+  findInstalledNpmPackageCandidate,
   isNpmNotFoundError,
   isNpmPackNotFoundError,
   normalizeNpmLocalFileAliasSpec,
@@ -1037,6 +1038,38 @@ describe("extension command runtime", () => {
         ),
         "utf8",
       );
+      const installedPackage = path.join(
+        tempRoot,
+        "node_modules",
+        "pm-installed-candidate",
+      );
+      await mkdir(installedPackage, { recursive: true });
+      await writeFile(
+        path.join(installedPackage, "package.json"),
+        JSON.stringify({ name: "pm-installed-candidate", version: "4.5.6" }),
+        "utf8",
+      );
+      await expect(
+        findInstalledNpmPackageCandidate(
+          "pm-installed-candidate",
+          path.join(tempRoot, "nested", "workspace"),
+        ),
+      ).resolves.toEqual({
+        package: "pm-installed-candidate",
+        version: "4.5.6",
+        directory: installedPackage,
+      });
+      await expect(
+        findInstalledNpmPackageCandidate("npm:pm-installed-candidate", tempRoot),
+      ).resolves.toBeNull();
+      await writeFile(
+        path.join(installedPackage, "package.json"),
+        "{ malformed",
+        "utf8",
+      );
+      await expect(
+        findInstalledNpmPackageCandidate("pm-installed-candidate", tempRoot),
+      ).resolves.toBeNull();
       await writeTestExtension({
         root: path.join(packageRoot, "extensions", "beads-custom"),
         name: "beads-custom-ext",
@@ -1059,6 +1092,60 @@ describe("extension command runtime", () => {
         expect(await resolveBundledExtensionAliasSource(spelling), spelling).toBe(packageRoot);
       }
       expect(await resolveBundledExtensionAliasSource("pm-widget-unknown")).toBeNull();
+    });
+  });
+
+  it("reports bare bundled and installed npm source ambiguity with explicit commands", async () => {
+    await withWidgetPackageRoot("pm-source-ambiguity-", async ({ tempRoot }) => {
+      await withTempPmPath(async (context) => {
+        const npmCandidate = path.join(tempRoot, "node_modules", "widget");
+        await mkdir(npmCandidate, { recursive: true });
+        await writeFile(
+          path.join(npmCandidate, "package.json"),
+          JSON.stringify({ name: "widget", version: "9.8.7" }),
+          "utf8",
+        );
+        const previousCwd = process.cwd();
+        process.chdir(tempRoot);
+        try {
+          const installed = await runExtension(
+            "widget",
+            { install: true, project: true },
+            { path: context.pmPath },
+          );
+          expect(installed.warnings).toContain(
+            "extension_install_source_ambiguous:widget:builtin:widget:npm:widget",
+          );
+          expect(installed.details.source_resolution).toEqual({
+            requested: "widget",
+            selected: {
+              kind: "builtin",
+              input: "widget",
+              package: "@unbrained/pm-widget",
+            },
+            ambiguous: true,
+            precedence: "bundled_alias_before_installed_npm",
+            candidates: [
+              {
+                kind: "builtin",
+                input: "widget",
+                package: "@unbrained/pm-widget",
+                command: "pm install widget",
+              },
+              {
+                kind: "npm",
+                input: "npm:widget",
+                package: "widget",
+                version: "9.8.7",
+                directory: npmCandidate,
+                command: "pm install npm:widget",
+              },
+            ],
+          });
+        } finally {
+          process.chdir(previousCwd);
+        }
+      });
     });
   });
 

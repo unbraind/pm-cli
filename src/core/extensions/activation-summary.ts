@@ -115,6 +115,8 @@ export interface ExtensionActivationSummary {
   }>;
   /** Count of registered preflight overrides. The surface carries no per-entry identifier, so this is a `number` rather than `string[]` — the only numeric field in the summary. */
   preflight_overrides: number;
+  /** Command ownership for each registered preflight override. */
+  preflight_ownership: Array<{ commands: string[] }>;
 }
 
 /**
@@ -240,6 +242,9 @@ export function describeExtensionActivation(
     preflight_overrides: preflight.overrides.filter((entry) =>
       matches(entry.name),
     ).length,
+    preflight_ownership: preflight.overrides
+      .filter((entry) => matches(entry.name))
+      .map((entry) => ({ commands: [...(entry.commands ?? [])] })),
   };
 }
 

@@ -4,8 +4,15 @@
 
 ### Fixed
 
+- GH-909: executable extension migration application and remediation contract ([pm-ig5cfe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ig5cfe.toon))
+- GH-908: explicit package-source identity and bare-name ambiguity diagnostics ([pm-495lkc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-495lkc.toon))
+- GH-907: preflight override ownership and statically disjoint command scopes ([pm-miy5k6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-miy5k6.toon))
 - Release ratchet verdicts are a property of the working copy, not the commit: gitignored installs and clone-local git config decide three populations, so an identical commit passes locally and fails in CI ([pm-fr4dg8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fr4dg8.toon))
 - Exact-tag Release recovery must bootstrap tracker gates and publish an unpublished immutable tag from its tagged source ([pm-lwnifd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lwnifd.toon))
+
+### Other
+
+- Refresh compatible 2026-08-05 TypeScript-ESLint and Unicorn quality tooling ([pm-7gxbl8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7gxbl8.toon))
 
 ## 2026.8.5 - 2026-08-05
 

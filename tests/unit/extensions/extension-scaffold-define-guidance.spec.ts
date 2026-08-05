@@ -255,7 +255,8 @@ describe("extension scaffold define builder guidance", () => {
     expect(manifest.activation?.commands).toEqual(["gate kit ping"]);
     // The starter returns context.decision unchanged (a safe no-op delta); the
     // comment documents the keys the author can change.
-    expect(entry).toContain("api.registerPreflight((context) => context.decision);");
+    expect(entry).toContain("api.registerPreflight({");
+    expect(entry).toContain('commands: ["gate kit ping"]');
     expect(entry).toContain("run_extension_migrations, enforce_mandatory_migration_gate);");
     expect(sampleTest).toContain("  createExtensionTestHarness,");
     expect(sampleTest).toContain('ext.assertPreflightOverride({ extensionName: "gate-kit" });');
@@ -272,7 +273,8 @@ describe("extension scaffold define builder guidance", () => {
     expect(readme).toContain(
       'import { defineCommand, definePreflightOverride } from "@unbrained/pm-cli/sdk";',
     );
-    expect(readme).toContain("export const preflightOverride = definePreflightOverride((context) => context.decision);");
+    expect(readme).toContain("export const preflightOverride = definePreflightOverride({");
+    expect(readme).toContain('commands: ["gate kit ping"]');
     expect(readme).toContain("api.registerPreflight(preflightOverride);");
     expect(readme).toContain("## Preflight Override");
   });
@@ -601,7 +603,7 @@ describe("declarative composeExtension package scaffold", () => {
       capability: "preflight",
       builderImports: ["definePreflightOverride"],
       blueprintFields: ["  preflights: [preflightOverride],"],
-      entrypointMarkers: ["export const preflightOverride = definePreflightOverride((context) => context.decision);"],
+      entrypointMarkers: ["export const preflightOverride = definePreflightOverride({", 'commands: ["kit ping"]'],
       testMarkers: ["const result = await ext.runPreflightOverride({", "assert.deepEqual(result.decision, decision);"],
       derivedCapabilities: '["commands","preflight"]',
       surfacePhrase: "starter command and preflight override",

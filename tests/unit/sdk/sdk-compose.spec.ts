@@ -453,6 +453,7 @@ describe("sdk describeExtensionBlueprint", () => {
     ]);
     expect(summary.hooks).toEqual(["before_command", "before_mutation", "after_command", "on_write", "on_read", "on_index"]);
     expect(summary.preflight_overrides).toBe(1);
+    expect(summary.preflight_ownership).toEqual([{ commands: [] }]);
   });
 
   it("returns a fully empty summary for an empty blueprint", () => {
@@ -475,6 +476,7 @@ describe("sdk describeExtensionBlueprint", () => {
       service_overrides: [],
       renderer_overrides: [],
       preflight_overrides: 0,
+      preflight_ownership: [],
     });
   });
 

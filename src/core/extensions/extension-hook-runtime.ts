@@ -473,7 +473,6 @@ export async function runPreflightOverride(
   preflight: ExtensionPreflightRegistry,
   context: PreflightOverrideContext,
 ): Promise<PreflightOverrideResult> {
-  const matched = [...preflight.overrides].reverse()[0];
   const baseContext: CommandHandlerContext = {
     command: normalizeCommandName(context.command),
     args: cloneContextSnapshot(context.args),
@@ -487,6 +486,12 @@ export async function runPreflightOverride(
   const baseDecision: PreflightRuntimeDecision = cloneContextSnapshot(
     context.decision,
   );
+  const matched = [...preflight.overrides]
+    .reverse()
+    .find(
+      (entry) =>
+        !entry.commands?.length || entry.commands.includes(baseContext.command),
+    );
   if (!matched) {
     return {
       overridden: false,

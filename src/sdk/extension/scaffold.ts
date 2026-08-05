@@ -345,8 +345,9 @@ const PACKAGE_CAPABILITY_README_SECTIONS: Record<
     "",
     "## Preflight Override",
     "`index.ts` registers a preflight override through `api.registerPreflight`. pm",
-    "calls it before every command to compute the migration/format gate decision —",
-    "the last registered override wins. Return only the decision keys you want to",
+    "calls it only for its declared command ownership to compute the migration/format",
+    "gate decision. Overlapping or legacy global ownership is diagnosed. Return only",
+    "the decision keys you want to",
     "change; this starter echoes the current decision unchanged (a safe no-op) so",
     "installing the package does not alter gate behavior. The `preflight`",
     "capability in `manifest.json` grants the registration.",
@@ -892,15 +893,19 @@ function buildActivateBodyLines(
       ...commandLines,
       "",
       "  // Preflight overrides adjust pm's pre-run gate decision (extension",
-      "  // migrations + item-format checks) before EVERY command — the last",
-      "  // registered override wins. Return a delta of the keys you want to change",
+      "  // migrations + item-format checks) for the commands it owns. Disjoint",
+      "  // packages compose; overlapping or legacy global ownership is diagnosed.",
+      "  // Return a delta of the keys you want to change",
       "  // (enforce_item_format_gate, run_preflight_item_format_sync,",
       "  // run_extension_migrations, enforce_mandatory_migration_gate); returning",
       "  // context.decision unchanged is a safe no-op so installing the package does",
       "  // not alter gate behavior — replace it with your policy, e.g.",
       "  // `{ run_extension_migrations: false }`. The `preflight` capability in",
       "  // manifest.json grants the registration.",
-      "  api.registerPreflight((context) => context.decision);",
+      "  api.registerPreflight({",
+      `    commands: [${JSON.stringify(commandName)}],`,
+      "    run: (context) => context.decision,",
+      "  });",
     ];
   }
   if (capability === "services") {
@@ -1713,12 +1718,16 @@ function buildDeclarativeBlueprintSurface(
       definitions.push(
         "",
         "// Preflight overrides adjust pm's pre-run gate decision (extension migrations +",
-        "// item-format checks) before EVERY command - the last registered override wins.",
+        "// item-format checks) for the commands it owns. Scoped ownership composes with",
+        "// other packages; overlapping or legacy global ownership is diagnosed.",
         "// Return a delta of the keys you want to change (enforce_item_format_gate,",
         "// run_preflight_item_format_sync, run_extension_migrations,",
         "// enforce_mandatory_migration_gate); returning context.decision unchanged is a",
         "// safe no-op - replace it with your policy, e.g. { run_extension_migrations: false }.",
-        "export const preflightOverride = definePreflightOverride((context) => context.decision);",
+        "export const preflightOverride = definePreflightOverride({",
+        `  commands: [${JSON.stringify(commandName)}],`,
+        "  run: (context) => context.decision,",
+        "});",
       );
       blueprintFields.push("  preflights: [preflightOverride],");
       break;
@@ -2502,7 +2511,10 @@ function buildDefineBuilderExports(
       "",
       "// Return a delta of the gate-decision keys you want to change; returning",
       "// context.decision unchanged is a safe no-op (e.g. { run_extension_migrations: false }).",
-      "export const preflightOverride = definePreflightOverride((context) => context.decision);",
+      "export const preflightOverride = definePreflightOverride({",
+      `  commands: [${JSON.stringify(commandName)}],`,
+      "  run: (context) => context.decision,",
+      "});",
     );
   }
   if (capability === "services") {

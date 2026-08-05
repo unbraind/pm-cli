@@ -1,0 +1,59 @@
+id: pm-ig5cfe
+title: "GH-909: executable extension migration application and remediation contract"
+description: "Provide an SDK-first user-invocable extension migration path with dry-run planning, applied/skipped/failed receipts, idempotency, and health remediation guidance."
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:extensions","area:packages","area:sdk",migrations,self-repair
+created_at: "2026-08-05T19:12:11.225Z"
+updated_at: "2026-08-05T22:05:31.353Z"
+closed_at: "2026-08-05T22:05:27.125Z"
+completed_at: "2026-08-05T22:05:27.125Z"
+author: "harness:codex"
+estimated_minutes: 210
+acceptance_criteria: The public SDK exposes plan and apply primitives for active extension migrations with structured pending applied skipped and failed outcomes; A documented CLI action can dry-run and apply pending project or global migrations and is visible in command contracts; Successful application clears extension_migration_pending and reruns remain idempotent while failures remain diagnosable; Health remediation maps pending migration warnings to the exact command and temporary installed-package acceptance proves the full loop
+parent: pm-ugqx
+risk: medium
+confidence: high
+resolution: fixed
+expected_result: "Extensions expose a public dry-run/apply migration workflow with durable idempotency, retries, receipts, and exact remediation."
+actual_result: "SDK, CLI, startup, state persistence, health, tests, docs, and isolated acceptance now complete the migration lifecycle."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-42oa,discovered_from,"2026-08-05T19:12:11.225Z","harness:codex","cli:create:dep",detected
+  pm-twpm,discovered_from,"2026-08-05T19:12:11.225Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-05T19:12:11.225Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-08-05T19:12:11.225Z","harness:codex","Duplicate check evidence 2026-08-05: searched all statuses with exact GitHub issue identifiers,report language,and the relevant ownership,install-resolution,or migration concepts. No existing item covers this defect; closed items linked by discovered_from are implemented historical substrate,not duplicates."
+  "2026-08-05T20:02:31.067Z","harness:codex","Implementation note: runtime and explicit package/extension migrate actions now share a public SDK executor that plans dry runs, records applied/failed receipts through workspace history, retries failures, skips durable successes, and feeds stored outcomes into health remediation."
+  "2026-08-05T20:25:12.426Z","harness:codex","Manual acceptance evidence: isolated project migration acceptance-v1 wrote its marker, persisted project:acceptance-migrate:acceptance-v1 as applied in .agents/pm/extension-migrations.json, and subsequent dry-run and apply commands both returned skipped_count=1 with no duplicate execution."
+  "2026-08-05T21:46:03.168Z","harness:codex","Final verification 2026-08-05: full sandbox-safe coverage passed 435 files / 6,880 tests with statements 49124/49124, branches 35616/35616, functions 10045/10045, lines 47604/47604 (100/100/100/100). Strict ESLint, typecheck, static quality/docstrings, CLI transport floor, production audit, tracked-secret scan, Sentry 14-day threshold (0 critical/0 high relevant), and telemetry quality (0.6% finish error rate; 0 failures missing error codes) passed. Linked focused tests passed. SDK cold-import timing remains a known shared-host false-fail: bare Node measured 151ms against 95ms and multiple unrelated entrypoints rose together; threshold was not weakened and canonical pm-cg1sjb tracks isolation."
+  "2026-08-05T22:05:14.799Z","harness:codex","PR #913 CI remediation: clean GitHub runner proved the committed contracts fixture had three extension-installed parent-flag rows not present in the canonical clean runtime. Regenerated with pnpm contracts:update after removing the bootstrap-only guide-shell installation; pnpm contracts:check now passes and the diff only removes the six stale --migrate/--dry-run parent-option rows. The executable migrate subcommands and runtime contracts remain covered by focused tests and source contracts."
+files[17]{path,scope,note}:
+  scripts/agent-token-surface-baseline.json,project,Agent token-efficiency measurement baseline
+  sdk/public-surface.json,project,Generated public migration SDK surface
+  src/cli/main.ts,project,Runtime migration persistence
+  src/cli/register-setup.ts,project,Package and extension migrate subcommands
+  src/sdk/cli-contracts.ts,project,Migration contract barrel
+  src/sdk/cli-contracts/flag-contracts.ts,project,Migration CLI flag contracts
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Migration runtime command contract
+  src/sdk/extension.ts,project,Migration lifecycle dispatch
+  src/sdk/extension/migrations.ts,project,Durable migration execution and receipts
+  src/sdk/governance/health.ts,project,Durable migration status and remediation
+  src/sdk/index.ts,project,Migration public SDK exports
+  src/sdk/package-migrations.ts,project,One-shot public SDK lifecycle helpers
+  src/sdk/runtime.ts,project,PmClient package migration primitive
+  tests/fixtures/contracts/full.json,project,Generated CLI migration contract snapshot
+  tests/unit/cli/cli-main-errors.spec.ts,project,Runtime migration integration coverage
+  tests/unit/sdk/extension-migrations.spec.ts,project,Durable migration lifecycle coverage
+  tests/unit/sdk/sdk-package-lifecycle.spec.ts,project,Public package migration SDK coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/sdk-package-lifecycle.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msgm50ql-1mz6uu,test,passed,"2026-08-05T21:42:18.461Z","2026-08-05T21:42:40.125Z","2026-08-05T21:42:40.125Z",1,0,0
+docs[4]{path,scope,note}:
+  docs/COMMANDS.md,project,Migration CLI workflow
+  docs/EXTENSION_LIFECYCLE.md,project,Durable migration operator and SDK workflow
+  docs/EXTENSIONS.md,project,Operator migration workflow
+  docs/SDK.md,project,Migration SDK primitives
+close_reason: "Reclosed after regenerating the canonical clean-runtime contract snapshot required by PR #913; migration implementation, acceptance evidence, and complete test coverage remain green."
+body: "Source: https://github.com/unbraind/pm-cli/issues/909\\n\\nTurn extension_migration_pending from a permanent diagnostic into actionable state. The public primitive and thin CLI adapter must discover pending migrations, apply them under the existing lifecycle gate, persist idempotency state, report structured outcomes, and feed the exact remediation command into health and package diagnostics."

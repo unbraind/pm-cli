@@ -275,6 +275,11 @@ export interface ExtensionContributionInventory {
   }>;
   /** Number of preflight overrides in the package. */
   preflight_overrides?: number;
+  /** Optional command ownership for each preflight override. Empty commands mean global ownership. */
+  preflight_ownership?: Array<{
+    /** Command paths on which the override may run. */
+    commands: string[];
+  }>;
 }
 
 /** Documents the extension manifest payload exchanged by command, SDK, and package integrations. */
@@ -597,6 +602,19 @@ export type ParserOverride = (
 export type PreflightOverride = (
   context: PreflightOverrideContext,
 ) => PreflightOverrideDelta | Promise<PreflightOverrideDelta>;
+
+/** Static ownership declaration used to select and diagnose preflight overrides. */
+export interface PreflightOverrideOwnership {
+  /** Normalized command paths on which this preflight override may run. */
+  commands?: string[];
+}
+
+/** Declarative preflight override paired with statically inspectable ownership. */
+export interface ScopedPreflightOverrideDefinition
+  extends PreflightOverrideOwnership {
+  /** Preflight handler invoked only for a declared command, or globally when unscoped. */
+  run: PreflightOverride;
+}
 /** Explicitly claims or declines one service payload without relying on object identity. */
 export type ServiceOverrideDecision =
   | { handled: true; result: unknown }
@@ -1285,6 +1303,8 @@ export interface RegisteredExtensionPreflightOverride {
   name: string;
   /** Value that configures or reports run for this contract. */
   run: PreflightOverride;
+  /** Normalized command paths owned by this preflight override. */
+  commands?: string[];
 }
 
 /** Documents the registered extension service override payload exchanged by command, SDK, and package integrations. */
@@ -1572,7 +1592,9 @@ export interface ExtensionApi {
   /** Value that configures or reports register parser for this contract. */
   registerParser(command: string, override: ParserOverride): void;
   /** Value that configures or reports register preflight for this contract. */
-  registerPreflight(override: PreflightOverride): void;
+  registerPreflight(
+    override: PreflightOverride | ScopedPreflightOverrideDefinition,
+  ): void;
   /** Value that configures or reports register service for this contract. */
   registerService(
     service: ExtensionServiceName,

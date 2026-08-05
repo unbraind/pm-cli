@@ -1,0 +1,18 @@
+id: pm-hxuqsa
+title: "GH-912 regression: restore atomic cross-owner seeded Plan creation"
+description: "GitHub #912 reports a 2026.8.5 regression of GH-688: plan create persists the Plan before seeded steps hit ownership enforcement, leaving partial state. Restore one-transaction cross-owner seeded creation and retry safety."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-05T21:28:26.924Z"
+updated_at: "2026-08-05T21:28:26.924Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Cross-owner plan create with multiple seeded steps commits the complete Plan or nothing; a failed enrichment leaves no item/history residue; safe retry and same-owner behavior are covered.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-96tter,discovered_from,"2026-08-05T21:28:26.924Z","harness:codex","cli:create:dep",detected
+  pm-v7dj,related,"2026-08-05T21:28:26.924Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-05T21:28:26.924Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for GH-912, GH-688, atomic cross-owner seeded Plan creation, ownership conflict, and partial Plan persistence. pm-96tter is the completed original fix; this item records the newly reproduced regression. Source: https://github.com/unbraind/pm-cli/issues/912"
+body: ""
