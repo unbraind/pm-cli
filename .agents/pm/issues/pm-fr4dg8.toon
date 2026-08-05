@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: ci,determinism,gate,parity,release
 created_at: "2026-08-05T17:56:58.978Z"
-updated_at: "2026-08-05T18:11:17.505Z"
+updated_at: "2026-08-05T18:58:03.988Z"
 closed_at: "2026-08-05T18:11:14.193Z"
 completed_at: "2026-08-05T18:11:14.193Z"
 author: "harness:claude-code"
@@ -31,9 +31,10 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-rtn5h6,related,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
   pm-wrbe,related,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-05T18:01:36.705Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-05T18:00:24.230Z","harness:claude-code","Reproduction (2026-08-05, HEAD 8845ec884): cloned this checkout with 'git clone --depth 1 file://<repo>' and ran the same three measurement commands against both trees. Working copy: validate_files_missing_linked_paths=195, no validate_merge_driver_configuration warning, health integrity=ok. Fresh clone of the identical commit: 204, validate_merge_driver_configuration=5, health integrity=warn. Byte-for-byte the same commit, opposite verdicts.\n\nCauses, both proven:\n1. The 9-path delta is exactly .agents/pm/extensions/pm-changelog and 8 files beneath it. .gitignore line 27 ignores .agents/pm/extensions/*, so an installed package resolves only for the maintainer who ran pm install. A full untruncated diff (validate --check-files --verbose-file-lists) showed the working-copy set is a strict subset of the clone set with no path in the other direction.\n2. The merge driver lives in clone-local git config written by 'pm merge install' and carried by no commit. pm health folds that audit into its integrity status, so one uninstallable git-config fact drove two of the three divergences.\n\nFix: the gate now measures a commit view built from 'git ls-files --cached --others --exclude-standard', which is exactly what the next commit would carry, derived from committed ignore rules, and has no .git so every clone-local audit is skipped rather than answered per machine. Uncommitted work stays visible so --update and pre-push checks still measure what the author is about to publish."
   "2026-08-05T18:00:24.864Z","harness:claude-code","Verification: the gate now fails locally with the exact CI message (validate-files-missing-linked-paths declared 195, observed 204), which is the first time the hosted verdict was reproducible on a maintainer machine. After re-baselining that one declaration to the environment-invariant 204 the gate exits 0 in both modes: 'passed (19 enforced, 0 retired, 2320 items, commit view of 5905 committable files)' and 'passed (... working copy)'. Materialization costs ~4s for 5905 files via hardlinks.\n\nThe 195 baseline was not a regression that got absorbed: it was measured through a working copy that hid 9 members, so the true population was always 204. Shrinking it below 195 means removing dangling links from ten legacy closed items whose closed_at is null, which reorders the changelog until pm-wrbe lands; pm-j8z6 owns that burn-down and the ratchet holds the line at 204 meanwhile."
+  "2026-08-05T18:58:03.988Z","harness:claude-code","Closed-loop verification: CI run 31036617924 on main is green end to end, including the Gates (static) job whose tracker-measurement step was the release blocker. The same job failed on the two commits before it for two further reasons this fix surfaced rather than caused — an eslint rule the local static gate never runs, and a coverage threshold the local coverage command prints but does not enforce (now filed as pm-2qqcgl). Both are recorded on pm-ei6x66 as the other direction of the same parity gap."
 files[3]{path,scope,note}:
   scripts/release/tracker-measurement-gate.mjs,project,Materializes the commit view and routes the measurement pass at it
   scripts/release/tracker-measurements.json,project,Linked-path ceiling re-baselined to the environment-invariant count
