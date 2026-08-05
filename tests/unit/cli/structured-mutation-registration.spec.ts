@@ -282,14 +282,18 @@ describe("structured mutation command registration", () => {
       ["item", "mutate", "--transaction-id", "referenced-batch"],
       { from: "user" },
     );
-    const referencedCall = mocks.commitItemMutations.mock.lastCall?.[0] as {
+    const referencedCall = mocks.commitItemMutations.mock.lastCall;
+    if (referencedCall === undefined) {
+      throw new Error("Expected the referenced mutation batch to be committed.");
+    }
+    const committedBatch = referencedCall[0] as {
       mutations: Array<{
         op: string;
         id: string;
         options?: { parent?: string };
       }>;
     };
-    const [parentMutation, childMutation] = referencedCall.mutations;
+    const [parentMutation, childMutation] = committedBatch.mutations;
     expect(parentMutation?.op).toBe("create");
     expect(parentMutation?.id).not.toMatch(/^@/u);
     expect(childMutation?.options?.parent).toBe(parentMutation?.id);
