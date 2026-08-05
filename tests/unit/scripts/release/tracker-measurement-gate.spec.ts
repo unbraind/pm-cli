@@ -679,7 +679,7 @@ describe("tracker measurement gate: entrypoint", () => {
 
   it("removes the commit view even when the measurement pass fails", async () => {
     const { module, rmSync, exit } = await loadGate({
-      spawn: (command, args) =>
+      spawn: (command) =>
         command === "git"
           ? { status: 0, stdout: COMMITTABLE, stderr: "" }
           : { status: 1, stdout: "", stderr: "tracker unavailable" },
