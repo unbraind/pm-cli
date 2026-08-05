@@ -156,14 +156,14 @@ jobs:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test:coverage
 
+      - name: Verify generated pm changelog
+        run: pnpm changelog:pm:check
+
       - name: Static quality gate
         run: pnpm quality:static
 
       - name: Context quality and token-entitlement gate
         run: pnpm quality:context-eval
-
-      - name: Verify generated pm changelog
-        run: pnpm changelog:pm:check
 
       - name: Compatibility migration gate
         timeout-minutes: 6

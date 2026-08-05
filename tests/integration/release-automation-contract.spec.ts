@@ -511,6 +511,9 @@ describe("release automation contract", () => {
     expect(workflow).toContain(
       'echo "RECOVERY_SOURCE_MODE=tag" >> "${GITHUB_ENV}"',
     );
+    expect(workflow.indexOf("pnpm changelog:pm:check")).toBeLessThan(
+      workflow.indexOf("pnpm quality:static"),
+    );
     expect(workflow).toContain(
       "run: node dist/cli.js merge install --no-extensions",
     );
@@ -612,7 +615,6 @@ esac
       expect(await readFile(gitLog, "utf8")).toContain(
         "checkout --detach 0449d15f0d34d15f0d34d15f0d34d15f0d34d15",
       );
-
       await writeFile(npmLog, "", "utf8");
       await writeFile(gitLog, "", "utf8");
       await writeFile(githubEnv, "", "utf8");

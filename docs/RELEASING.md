@@ -238,6 +238,9 @@ git push origin v<version>
 - version policy and tag guard
 - secret scan
 - build, clone-local merge-driver installation, typecheck, test, and coverage
+- generated changelog verification and `pm-changelog` installation before the
+  tracker-bearing static gate, so a clean checkout does not misclassify the
+  managed extension's linked files as missing
 - static quality gate (shared complexity, duplication, dead/orphan module, file/folder hygiene, source/exported docstring coverage profile)
 - temporary-project compatibility gate against latest published tracker data
 - reliability threshold gate (Sentry severity threshold, bounded to a recent-activity window via `--sentry-window-days` (default `14`, `0` = unbounded) so a stale benign unresolved issue cannot block every scheduled release; `--telemetry-mode` gate policy: `off` | `best-effort` | `required`). Scheduled `auto-release.yml` failures open/update an `Auto Release blocked` GitHub issue so blocked daily releases are never silently skipped.
@@ -276,7 +279,7 @@ git push origin v<version>
   `scripts/release/verify-installed-agent-session.mjs`. Separate npm and Bun
   install roots must contain the resolved executable, then each drives the
   cold-start `init -> context -> create -> claim -> annotate -> files -> close
-  -> validate -> get -> context` loop. The structured report identifies the
+-> validate -> get -> context` loop. The structured report identifies the
   failing step and records per-step output ceilings and estimated token cost.
 - GitHub Release creation
 - GitHub Release metadata verification through the same local verification script
@@ -321,9 +324,10 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   running gates, dispatch performs an authenticated exact-version probe. An
   existing version keeps the reviewed dispatch-time `main` source and cannot
   be republished. A definitive missing-version response pins the checkout to
-  the existing immutable tag, reapplies the version guard, and permits first
-  publication only from that exact tagged source. Other registry failures stop
-  before source selection or publication.
+  the existing immutable tag, reapplies the version guard, installs the managed
+  changelog extension before tracker measurement, and permits first publication
+  only from that exact tagged source. Other registry failures stop before
+  source selection or publication.
 - If an immutable published package contains a defect that cannot be repaired
   by rerunning the same tag workflow, document the incident and ship the code
   fix in the next UTC day's release.
@@ -335,7 +339,8 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   default branch (`main`). It remains on that reviewed source when the exact
   npm version exists. When the version is definitively absent, it switches to
   the resolved commit behind `RELEASE_TAG`, requires `package.json` to match the
-  tag, installs the clone-local merge driver, and may publish that exact source.
+  tag, installs the clone-local merge driver and managed changelog extension,
+  and may publish that exact source after every gate passes.
 - Record failure evidence and remediation in the release `pm` item.
 
 ### Silent skip debugging
