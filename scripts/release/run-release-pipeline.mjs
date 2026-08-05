@@ -180,6 +180,10 @@ export function ensureGeneratedReleaseSectionHasContent(version, changelogPath =
 }
 
 export function runReleaseGates(options) {
+  // The release script is also a supported standalone entrypoint. Build the
+  // checked-out source before invoking the checkout-owned CLI so a fresh clone
+  // never depends on missing or stale dist artifacts.
+  runCommand(commandFor("pnpm"), ["build"]);
   // Fresh clones do not inherit Git's repository-local merge driver config.
   // Tracker validation measures that config, so release and CI gates must run
   // the same required bootstrap before comparing repository health.

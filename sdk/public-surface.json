@@ -789,7 +789,7 @@
         "signature ./sdk:BulkItemMutation"
       ],
       "package_version": "2026.8.4",
-      "reason": "2026.8.5 adds the release mutation variant required for atomic evidence-close-release completion; exhaustive BulkItemMutation consumers must handle release"
+      "reason": "Add the release mutation variant required for atomic evidence-close-release completion; exhaustive BulkItemMutation consumers must handle release"
     }
   ],
   "entrypoints": {

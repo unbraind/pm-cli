@@ -29,7 +29,15 @@ const REFERENCED_MUTATION_ROW_KEYS = [
   "ref",
 ] as const;
 const MUTATION_DOCUMENT_KEYS = ["schema_version", "mutations"] as const;
-const MUTATION_REFERENCE_PATTERN = /^[a-z][a-z0-9._-]{0,63}$/u;
+const MUTATION_REFERENCE_SOURCE = "[a-z][a-z0-9._-]{0,63}";
+const MUTATION_REFERENCE_PATTERN = new RegExp(
+  `^${MUTATION_REFERENCE_SOURCE}$`,
+  "u",
+);
+const MUTATION_DEPENDENCY_REFERENCE_PATTERN = new RegExp(
+  `(^|,)id=@(${MUTATION_REFERENCE_SOURCE})(?=,|$)`,
+  "gu",
+);
 const flagToOptionKey = (flag: string): string =>
   flag
     .slice(2)
@@ -400,8 +408,8 @@ function replaceDependencyReference(
   references: Readonly<Record<string, string>>,
 ): unknown {
   if (typeof value !== "string") return value;
-  return value.replace(
-    /(^|,)id=@([a-z][a-z0-9._-]{0,63})(?=,|$)/gu,
+  const resolvedValue = value.replace(
+    MUTATION_DEPENDENCY_REFERENCE_PATTERN,
     (_match, prefix: string, reference: string) => {
       const resolved = references[reference];
       if (resolved === undefined) {
@@ -413,12 +421,19 @@ function replaceDependencyReference(
       return `${prefix}id=${resolved}`;
     },
   );
+  if (/(^|,)id=@/u.test(resolvedValue)) {
+    throw new PmCliError(
+      `Malformed mutation reference in dependency "${value}".`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return resolvedValue;
 }
 
 function referencedAliases(value: unknown): string[] {
   if (typeof value !== "string") return [];
   if (value.startsWith("@")) return [value.slice(1)];
-  return [...value.matchAll(/(?:^|,)id=@([a-z][a-z0-9._-]{0,63})(?=,|$)/gu)]
+  return [...value.matchAll(MUTATION_DEPENDENCY_REFERENCE_PATTERN)]
     .map((match) => match[1])
     .filter((reference): reference is string => reference !== undefined);
 }

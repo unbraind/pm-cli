@@ -170,6 +170,12 @@ describe("structured mutation input", () => {
     ).toThrow('Unknown mutation reference "@missing"');
     expect(() =>
       resolveItemMutationDocument(
+        '[{"op":"create","ref":"child","options":{"dep":"id=@Bad,kind=implements"}}]',
+        options,
+      ),
+    ).toThrow("Malformed mutation reference");
+    expect(() =>
+      resolveItemMutationDocument(
         '[{"op":"create","ref":"a","id":"pm-same","options":{}},{"op":"create","ref":"b","id":"pm-same","options":{}}]',
         options,
       ),

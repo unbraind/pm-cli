@@ -252,7 +252,8 @@ describe("run-release-pipeline", () => {
       const result = mod.runReleaseGates({ telemetryMode: "off", skipCompatibility: true, skipTelemetrySentry: true });
       expect(result.ok).toBe(true);
       expect(result.telemetry_mode).toBe("off");
-      expect(calls[0]).toEqual([
+      expect(calls[0]).toEqual(["build"]);
+      expect(calls[1]).toEqual([
         "dist/cli.js",
         "merge",
         "install",
