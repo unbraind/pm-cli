@@ -3174,6 +3174,14 @@
           "value_name": "mode"
         },
         {
+          "flag": "--lock-ttl-seconds",
+          "value_name": "n"
+        },
+        {
+          "flag": "--lock-wait-ms",
+          "value_name": "n"
+        },
+        {
           "flag": "--dry-run"
         },
         {

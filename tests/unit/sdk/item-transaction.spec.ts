@@ -11,7 +11,10 @@ import {
 } from "../../../src/sdk/index.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
 function createSeedItem(context: TempPmContext, title: string): string {
   const created = context.runCli(
@@ -85,15 +88,19 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
       const committed = await commitItemMutations(options);
       expect(committed.status).toBe("committed");
       expect(committed.recovered).toBe(false);
-      expect(committed.results["2-update-" + updateTarget.replaceAll(/[^a-zA-Z0-9._-]/gu, "_")]).toMatchObject({
+      expect(
+        committed.results[
+          "2-update-" + updateTarget.replaceAll(/[^a-zA-Z0-9._-]/gu, "_")
+        ],
+      ).toMatchObject({
         op: "update",
         id: updateTarget,
       });
-      expect(Object.values(committed.results).map((row) => row.op).sort()).toEqual([
-        "close",
-        "create",
-        "update",
-      ]);
+      expect(
+        Object.values(committed.results)
+          .map((row) => row.op)
+          .sort(),
+      ).toEqual(["close", "create", "update"]);
 
       const created = await readItem(context.pmPath, "bulkitem1");
       expect(created.title).toBe("Bulk created item");
@@ -216,9 +223,11 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
         }),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
 
-      await expect(readItem(context.pmPath, "bulkitem3")).rejects.toMatchObject({
-        exitCode: EXIT_CODE.NOT_FOUND,
-      });
+      await expect(readItem(context.pmPath, "bulkitem3")).rejects.toMatchObject(
+        {
+          exitCode: EXIT_CODE.NOT_FOUND,
+        },
+      );
     });
   });
 
@@ -278,7 +287,14 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
     await withTempPmPath(async (context) => {
       const closedTarget = createSeedItem(context, "bulk-preclosed");
       const preClose = context.runCli(
-        ["close", closedTarget, "Closed before the batch", "--author", "bulk-seed", "--json"],
+        [
+          "close",
+          closedTarget,
+          "Closed before the batch",
+          "--author",
+          "bulk-seed",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(preClose.code).toBe(0);
@@ -396,6 +412,47 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
           mutations: [{ op: "release", id: "pm-missing-release" }],
         }),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+    });
+  });
+
+  it("does not release a later claim when recovering an already-applied release", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "release-recovery-marker");
+      expect(
+        context.runCli(["claim", target, "--author", "bulk-agent", "--json"])
+          .code,
+      ).toBe(0);
+      const options = {
+        pmRoot: context.pmPath,
+        transactionId: "release-recovery-marker",
+        author: "bulk-agent",
+        mutations: [{ op: "release" as const, id: target }],
+      };
+
+      await expect(
+        commitItemMutations({
+          ...options,
+          onTransition(transition: WorkspaceTransactionTransitionContext) {
+            if (transition.transition === "step_applied") {
+              throw new WorkspaceTransactionInterruptedError(
+                "crash after release before journal recording",
+              );
+            }
+          },
+        }),
+      ).rejects.toBeInstanceOf(WorkspaceTransactionInterruptedError);
+
+      expect(
+        context.runCli(["claim", target, "--author", "later-agent", "--json"])
+          .code,
+      ).toBe(0);
+      await expect(commitItemMutations(options)).resolves.toMatchObject({
+        recovered: true,
+        status: "committed",
+      });
+      expect((await readItem(context.pmPath, target)).assignee).toBe(
+        "later-agent",
+      );
     });
   });
 

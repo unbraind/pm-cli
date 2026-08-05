@@ -156,10 +156,7 @@ async function readItemSnapshot(
       claimPrincipal: item.claim_principal,
     };
   } catch (error) {
-    if (
-      error instanceof PmCliError &&
-      error.exitCode === EXIT_CODE.NOT_FOUND
-    ) {
+    if (error instanceof PmCliError && error.exitCode === EXIT_CODE.NOT_FOUND) {
       return undefined;
     }
     throw error;
@@ -193,10 +190,10 @@ function bulkHistoryMarker(
 }
 
 /**
- * Report whether an update step's forward mutation is durably applied. Updates
- * cannot be inferred from field values (a moving target), so the applied apply
- * marker in the item's immutable history is the source of truth; a later
- * compensate marker means the mutation was rolled back and must re-apply.
+ * Report whether a step's forward mutation is durably applied. Mutable item
+ * fields cannot prove transaction ownership, so the apply marker in immutable
+ * history is the source of truth; a later compensation marker means the
+ * mutation was rolled back and must re-apply.
  */
 async function isUpdateMarkerApplied(
   pmRoot: string,
@@ -209,7 +206,11 @@ async function isUpdateMarkerApplied(
     canonicalId,
   );
   const applyMarker = bulkHistoryMarker(transactionId, stepId, "apply");
-  const compensateMarker = bulkHistoryMarker(transactionId, stepId, "compensate");
+  const compensateMarker = bulkHistoryMarker(
+    transactionId,
+    stepId,
+    "compensate",
+  );
   for (let index = entries.length - 1; index >= 0; index -= 1) {
     const message = entries[index].message;
     if (message === applyMarker) {
@@ -364,9 +365,7 @@ function buildUpdateStep(
       const updatedItem = updated.item as Record<string, unknown>;
       return { id: String(updatedItem.id), op: "update" };
     },
-    async compensate(
-      data?: WorkspaceTransactionJsonValue,
-    ): Promise<void> {
+    async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
       await compensateByRestore(config, mutation.id, stepId, data);
     },
   };
@@ -406,9 +405,7 @@ function buildCloseStep(
       const closedItem = closed.item as Record<string, unknown>;
       return { id: String(closedItem.id), op: "close" };
     },
-    async compensate(
-      data?: WorkspaceTransactionJsonValue,
-    ): Promise<void> {
+    async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
       await compensateByRestore(config, mutation.id, stepId, data);
     },
   };
@@ -427,7 +424,20 @@ function buildReleaseStep(
       if (snapshot === undefined) {
         return { state: "pending" };
       }
-      if (snapshot.assignee !== undefined || snapshot.claimPrincipal !== undefined) {
+      if (
+        await isUpdateMarkerApplied(
+          config.pmRoot,
+          snapshot.id,
+          config.transactionId,
+          stepId,
+        )
+      ) {
+        return { state: "applied", result: { id: snapshot.id, op: "release" } };
+      }
+      if (
+        snapshot.assignee !== undefined ||
+        snapshot.claimPrincipal !== undefined
+      ) {
         return { state: "pending" };
       }
       return { state: "applied", result: { id: snapshot.id, op: "release" } };
@@ -466,16 +476,16 @@ function buildStepForMutation(
   index: number,
 ): WorkspaceTransactionStep {
   const stepId = deriveStepId(mutation, index);
-  if (mutation.op === "create") {
-    return buildCreateStep(config, mutation, stepId);
+  switch (mutation.op) {
+    case "create":
+      return buildCreateStep(config, mutation, stepId);
+    case "update":
+      return buildUpdateStep(config, mutation, stepId);
+    case "close":
+      return buildCloseStep(config, mutation, stepId);
+    case "release":
+      return buildReleaseStep(config, mutation, stepId);
   }
-  if (mutation.op === "update") {
-    return buildUpdateStep(config, mutation, stepId);
-  }
-  if (mutation.op === "close") {
-    return buildCloseStep(config, mutation, stepId);
-  }
-  return buildReleaseStep(config, mutation, stepId);
 }
 
 /** Reject malformed bulk mutation rows before any journal or lock work. */
@@ -609,7 +619,10 @@ export function buildItemCompletionMutations(
   >,
 ): BulkItemMutation[] {
   const mutations: BulkItemMutation[] = [];
-  if (options.evidence !== undefined && Object.keys(options.evidence).length > 0) {
+  if (
+    options.evidence !== undefined &&
+    Object.keys(options.evidence).length > 0
+  ) {
     mutations.push({ op: "update", id: options.id, options: options.evidence });
   }
   mutations.push(

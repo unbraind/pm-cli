@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[8]: agent-ux,"area:cli","area:sdk",atomic,context-management,github-report,structured-input,token-efficiency
 created_at: "2026-08-05T06:02:29.591Z"
-updated_at: "2026-08-05T07:40:52.612Z"
-closed_at: "2026-08-05T07:40:52.366Z"
-completed_at: "2026-08-05T07:40:52.366Z"
+updated_at: "2026-08-05T08:46:38.043Z"
+closed_at: "2026-08-05T08:39:54.023Z"
+completed_at: "2026-08-05T08:39:54.023Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: "Public SDK exposes a typed resolver for heterogeneous atomic mutation documents with unique batch-local aliases, stable explicit-or-derived ids, and forward references in parent/dependency fields; pm item mutate accepts the versioned document through its existing stdin path, validates and previews the fully resolved batch before writes, and returns alias-to-id outcomes without adding a competing top-level batch command; CLI, MCP, contracts, completion, SDK docs, errors, token budgets, and 100 percent coverage stay aligned; malformed aliases, cycles, duplicates, unknown references, and replay mismatches fail before tracker mutation; An isolated npm and Bun consumer authors and reads back a mixed Epic/Feature/Decision graph atomically, and a forced mid-batch failure proves compensation leaves no partial active specification"
@@ -24,9 +24,9 @@ confidence: high
 severity: high
 environment: "pm CLI 2026.8.4, Node 22/24/26, Linux/macOS/Windows; CLI, public SDK, MCP, completions, contracts, packed npm and Bun consumers"
 repro_steps: Create one Plan with multiple steps; pm plan materialize accepts only one materialize type/tags/field set. pm item mutate accepts heterogeneous rows but requires every stable id up front and documents no batch-local forward-reference vocabulary.
-resolution: Mutation-resolution tests explicitly guard absent commit calls before reading committed payloads.
-expected_result: One atomic document creates and links heterogeneous project context without preallocated ids.
-actual_result: "DeepScan finding 231630911 addressed; focused test 7/7, ESLint, and typecheck passed."
+resolution: "Delivered versioned heterogeneous mutation documents with deterministic batch-local references across SDK, CLI, and MCP; payload-bound replay, author precedence, prototype-safe aliases, malformed-reference rejection, executable documentation, exhaustive release dispatch, and all actionable exact-head analyzer corrections."
+expected_result: "One atomic document creates and links heterogeneous project context without preallocated ids, with stable replay and agent-efficient receipts."
+actual_result: "SDK, CLI, and MCP resolve versioned mixed create/update/close/release specifications and return deterministic alias receipts; isolated npm/npx and Bun/bunx consumers created typed project graphs; durable recovery and compensation regressions pass; 6,864 tests across 433 files pass at 100/100/100/100 coverage."
 customer_impact: "Agents spend one tool call per item, manually correlate ids, and can leave partially authored specifications when a later create fails."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-4e12,discovered_from,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
@@ -36,7 +36,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-xm7c,discovered_from,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
   pm-y9hq,discovered_from,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
   pm-42p9nk,discovered_from,"2026-08-05T06:39:37.256Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-05T06:02:29.591Z","harness:codex","text=Duplicate check 2026-08-05: searched all statuses for the exact GH-896 title and for batch item creation, plan materialize, heterogeneous create, commitWorkspaceTransaction, commitItemMutations, structured mutation, atomic create, and forward references. Closed pm-y9hq owns the SDK transaction primitive and closed pm-xm7c owns the existing CLI/MCP JSON batch; neither provides batch-local references or fixes discovery from create/plan. GitHub source: https://github.com/unbraind/pm-cli/issues/896"
   "2026-08-05T06:39:37.946Z","harness:codex","Packed npm and Bun acceptance exposed a structured-mutation attribution bypass: pm item mutate resolved an omitted author against literal unknown instead of tracker author_default. Reused closed canonical pm-42p9nk, linked it as discovered_from, and migrated the adapter to the canonical resolveAuthor precedence using live settings; no duplicate item created."
   "2026-08-05T06:42:41.304Z","harness:codex","Implementation evidence 2026-08-05: public resolveItemMutationDocument accepts version 1 heterogeneous create/update/close/release documents, derives deterministic prefix-aware ids, resolves forward aliases in targets/hierarchy/dependencies, rejects malformed/duplicate/unknown/cyclic aliases before writes, and returns alias receipts through CLI and MCP. Durable bulk step ids now fingerprint canonical payloads so transaction-id replay mismatch fails. Focused linked run passed 63/63; full repository coverage and lint passed; isolated packed npm/npx and Bun/bunx consumers created mixed Epic/Feature/Decision graphs, read typed edges, and completed a claimed item atomically. Latest npm pm-changelog 2026.8.4 verified and installed."
@@ -44,6 +44,8 @@ comments[7]{created_at,author,text}:
   "2026-08-05T07:17:31.695Z","harness:codex","Review follow-up: CodeRabbit identified a valid prototype-chain collision for the allowed alias constructor and a weak CLI parent-resolution assertion. Replaced the alias map with a null-prototype record, added a constructor regression case, and made the CLI test compare the resolved child parent to the actual derived parent id. Focused tests pass 18/18, eslint and typecheck pass, and focused V8 coverage remains 100/100/100/100."
   "2026-08-05T07:29:35.465Z","harness:codex","Exact-head review follow-up: one shared alias grammar now drives declaration validation, dependency substitution, and cycle discovery. Dependency strings containing malformed id=@ references fail with a usage error before tracker mutation instead of persisting a literal target. The public-surface acknowledgement rationale now matches its package_version semantics. Focused SDK/release suites pass 45/45; typecheck, ESLint, and SDK surface verification pass."
   "2026-08-05T07:40:45.027Z","harness:codex","DeepScan exact-head finding 231630911: the test cast optional mock.lastCall access directly to a committed payload. Added an explicit undefined guard before reading the call argument, so a missing commit fails with a precise test error and static nullability is preserved. Focused test passed 7/7; ESLint and full typecheck passed."
+  "2026-08-05T08:39:24.320Z","harness:codex","Evidence: delayed exact-head review corrections are implemented: durable history-first release recovery, exhaustive typed dispatch, executable SDK example, and synchronized contracts. Focused recovery/CLI/release tests passed 60/60; full repository coverage passed 6,864 tests across 433 files at 100% statements, branches, functions, and lines; ESLint, duplicate detection, typecheck, docs links/skills, SDK surface, and contracts checks passed."
+  "2026-08-05T08:46:38.043Z","harness:codex","Final local acceptance 2026-08-05: built CLI in unrelated temp Git workspace atomically created Epic/Feature items with deterministic aliases, resolved parent and implements references, claimed the child, and completed it with lock TTL 45s / wait 900ms. Readback proved closed lifecycle, full resolution evidence, dependency/parent graph, and released claim."
 files[9]{path,scope,note}:
   scripts/agent-token-surface-baseline.json,project,item-command-discovery-budget
   sdk/public-surface.json,project,public-SDK-contract
@@ -62,5 +64,5 @@ test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI-workflow
   docs/SDK.md,project,SDK-batch-reference-contract
-close_reason: DeepScan nullability finding resolved with a fail-closed mock-call guard.
+close_reason: "Delivered the complete heterogeneous specification and atomic graph-materialization tranche across SDK, CLI, MCP, documentation, contracts, acceptance, and exact-head review corrections."
 body: ""

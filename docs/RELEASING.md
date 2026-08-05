@@ -103,7 +103,7 @@ The pipeline performs:
 2. a single `YYYY.M.D` version bump; ordinal targets and the removed
    `--allow-same-day-release` override fail closed
 3. latest `pm-changelog` install and main changelog refresh through package-owned full-history generation; the release pipeline passes `--release-version` with `--all-release-tags` so the pending release section matches post-tag CI checks
-4. clone-local merge-driver installation followed by strict gates (build, typecheck, docs/skills freshness, coverage, static quality, compatibility, security, smoke checks, reliability gate); this ordering matches CI and prevents fresh-clone tracker measurements from observing undeclared merge-driver repairs
+4. build, clone-local merge-driver installation, then the remaining strict gates (typecheck, docs/skills freshness, coverage, static quality, compatibility, security, smoke checks, reliability gate); this ordering makes the checkout-owned CLI available before bootstrap, matches CI, and prevents fresh-clone tracker measurements from observing undeclared merge-driver repairs
 5. release note generation from changelog + pm evidence
 6. commit and tag creation (plus optional push)
 

@@ -95,7 +95,10 @@ function resolveCompletionReason(
   positionalReason: string | undefined,
   optionReason: unknown,
 ): string {
-  if (typeof positionalReason === "string" && positionalReason.trim().length > 0) {
+  if (
+    typeof positionalReason === "string" &&
+    positionalReason.trim().length > 0
+  ) {
     return positionalReason.trim();
   }
   return typeof optionReason === "string" ? optionReason.trim() : "";
@@ -139,6 +142,7 @@ async function runItemCompleteAction(
       .map((key) => [key, options[key]]),
   );
   const force = options.force === true;
+  const { lockTtlSeconds, lockWaitMs } = parseAtomicMutationControls(options);
   const closeOptions = {
     ...(typeof options.resolution === "string"
       ? { resolution: options.resolution }
@@ -188,6 +192,8 @@ async function runItemCompleteAction(
       (await readSettings(pmRoot)).author_default,
     ),
     ...completion,
+    lockTtlSeconds,
+    lockWaitMs,
   });
   printResult(
     { ...result, mutation_count: Object.keys(result.results).length },
@@ -246,6 +252,14 @@ export function registerStructuredMutationCommands(program: Command): void {
     .option("--actual-result <value>", "Actual result evidence")
     .option("--completed-at <value>", "Actual completion time")
     .option("--validate-close <mode>", "Close validation: off, warn, or strict")
+    .option(
+      "--lock-ttl-seconds <n>",
+      "Workspace transaction lock lifetime in seconds",
+    )
+    .option(
+      "--lock-wait-ms <n>",
+      "Maximum time to wait for the workspace transaction lock",
+    )
     .option("--dry-run", "Validate and preview completion without writing")
     .option("--force", "Override lifecycle and ownership conflicts")
     .option("--author <value>", "Completion author")

@@ -145,10 +145,9 @@ describe("structured mutation command registration", () => {
 
     const updateProgram = programWithGlobals();
     registerMutationCommands(updateProgram);
-    await updateProgram.parseAsync(
-      ["update", "pm-a", "--description", "-"],
-      { from: "user" },
-    );
+    await updateProgram.parseAsync(["update", "pm-a", "--description", "-"], {
+      from: "user",
+    });
     expect(mocks.runUpdate).toHaveBeenCalledWith(
       "pm-a",
       expect.objectContaining({ description: "Multiline\nproject context" }),
@@ -166,10 +165,9 @@ describe("structured mutation command registration", () => {
       expect.objectContaining({ description: "" }),
       expect.any(Object),
     );
-    await emptyProgram.parseAsync(
-      ["update", "pm-a", "--description", "-"],
-      { from: "user" },
-    );
+    await emptyProgram.parseAsync(["update", "pm-a", "--description", "-"], {
+      from: "user",
+    });
     expect(mocks.runUpdate).toHaveBeenLastCalledWith(
       "pm-a",
       expect.objectContaining({ description: "" }),
@@ -284,7 +282,9 @@ describe("structured mutation command registration", () => {
     );
     const referencedCall = mocks.commitItemMutations.mock.lastCall;
     if (referencedCall === undefined) {
-      throw new Error("Expected the referenced mutation batch to be committed.");
+      throw new Error(
+        "Expected the referenced mutation batch to be committed.",
+      );
     }
     const committedBatch = referencedCall[0] as {
       mutations: Array<{
@@ -377,6 +377,10 @@ describe("structured mutation command registration", () => {
         "2026-08-05T00:00:00.000Z",
         "--validate-close",
         "warn",
+        "--lock-ttl-seconds",
+        "45",
+        "--lock-wait-ms",
+        "900",
         "--force",
         "--author",
         "completion-agent",
@@ -406,6 +410,8 @@ describe("structured mutation command registration", () => {
           force: true,
         }),
         releaseOptions: { force: true },
+        lockTtlSeconds: 45,
+        lockWaitMs: 900,
       }),
     );
   });

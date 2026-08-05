@@ -1308,6 +1308,27 @@ import {
   commitItemMutations,
   resolveItemMutationDocument,
 } from "@unbrained/pm-cli/sdk";
+import path from "node:path";
+
+const pmRoot = path.join(process.cwd(), ".agents", "pm");
+const specificationJson = JSON.stringify({
+  schema_version: 1,
+  mutations: [
+    {
+      op: "create",
+      ref: "initiative",
+      options: { title: "Initiative", type: "Epic" },
+    },
+    {
+      op: "create",
+      options: {
+        title: "Delivery",
+        type: "Feature",
+        parent: "@initiative",
+      },
+    },
+  ],
+});
 
 const resolved = resolveItemMutationDocument(specificationJson, {
   transactionId: "specification-2026-08-05-001",

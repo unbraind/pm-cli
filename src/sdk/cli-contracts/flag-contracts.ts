@@ -1242,6 +1242,8 @@ export const ITEM_COMPLETE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--actual-result", value_name: "value" },
   { flag: "--completed-at", value_name: "value" },
   { flag: "--validate-close", value_name: "mode" },
+  { flag: "--lock-ttl-seconds", value_name: "n" },
+  { flag: "--lock-wait-ms", value_name: "n" },
   { flag: "--dry-run" },
   { flag: "--force" },
   { flag: "--author", value_name: "value" },
