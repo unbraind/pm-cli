@@ -1,0 +1,41 @@
+id: pm-xvccnm
+title: Auto Release fresh clones build the CLI and install merge drivers before tracker gates
+description: "Scheduled Auto Release run 30978379616 reached tracker measurement in a clean clone before dist was built and before clone-local merge-driver definitions existed, so the release-only path diverged from CI and failed on undeclared driver populations."
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:release",auto-release,ci-parity,merge-safety,tracker-measurement
+created_at: "2026-08-05T08:57:55.010Z"
+updated_at: "2026-08-05T08:58:43.685Z"
+closed_at: "2026-08-05T08:58:43.051Z"
+completed_at: "2026-08-05T08:58:43.051Z"
+author: "harness:codex"
+acceptance_criteria: runReleaseGates builds before invoking dist/cli.js; the freshly built CLI installs clone-local merge drivers before tracker measurement and remaining gates; unit tests assert build then bootstrap then gate order; release documentation states the executable order; a clean tracker measurement reports zero undeclared populations
+goal: project management = context management
+objective: Make the automatic release path execute clean-clone prerequisites before measuring or publishing
+value: Scheduled releases fail for real regressions instead of checkout bootstrap drift
+impact: Restores Auto Release clean-runner parity without weakening tracker ratchets
+outcome: A fresh release clone reaches mandatory gates with current dist artifacts and declared merge drivers
+why_now: Auto Release run 30978379616 failed on the missing bootstrap and blocked the daily publish path
+parent: pm-e70zh5
+risk: high
+confidence: high
+resolution: Auto Release now builds current CLI artifacts and installs clone-local merge drivers before tracker measurement and all remaining release gates.
+expected_result: A fresh scheduled release clone reaches tracker and quality gates with current dist artifacts and declared merge-driver configuration.
+actual_result: "Ordering is asserted by 34/34 focused tests; tracker measurement passed over 2,317 items with zero violations; exact-head hosted static, coverage, smokes, and Windows checks are green."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ei6x66,discovered_from,"2026-08-05T08:57:55.010Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-05T08:57:55.010Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-05T08:57:55.010Z","harness:codex","Duplicate check 2026-08-05: searched every status for Auto Release run 30978379616,fresh-clone merge-driver parity,build bootstrap,and tracker measurement. pm-ei6x66 is the broader unfulfilled local/hosted registry contract; pm-e70zh5 owns chronic release reliability. No item separately owned this concrete build-plus-merge-driver prerequisite."
+  "2026-08-05T08:58:42.318Z","harness:codex","Delivery evidence 2026-08-05: runReleaseGates builds the checkout, invokes the freshly built dist/cli.js merge install --no-extensions, then executes the remaining gates. The focused linked release suite passed 34/34; exact-head hosted static and Windows gates passed; local tracker measurement covered 2,317 items with zero violations; docs match the executable order."
+files[1]{path,scope,note}:
+  scripts/release/run-release-pipeline.mjs,project,build-and-merge-bootstrap
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msfuucl5-ubulfq,test,passed,"2026-08-05T08:58:13.266Z","2026-08-05T08:58:32.633Z","2026-08-05T08:58:32.633Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,executable-release-order
+close_reason: Delivered and verified the exact clean-clone Auto Release bootstrap without claiming completion of the broader local/hosted registry contract.
+body: ""

@@ -22,7 +22,7 @@
 
 ### Other
 
-- Local and hosted verification are two independently maintained gate sets with no parity contract, so passing everything locally still says nothing about what CI will run ([pm-ei6x66](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ei6x66.toon))
+- Auto Release fresh clones build the CLI and install merge drivers before tracker gates ([pm-xvccnm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xvccnm.toon))
 - Tracker data-quality ratchet in CI: pm validate and pm health run against this repository's own workspace with a shrinking-only per-warning baseline ([pm-kpftft](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kpftft.toon))
 - Eliminate July static-analysis nullability, dead-code, and redundant-allocation findings ([pm-cp5pbo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cp5pbo.toon))
 
