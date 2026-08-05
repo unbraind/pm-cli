@@ -576,6 +576,25 @@ describe("tracker measurement gate: tracker access", () => {
     expect(exit).toHaveBeenCalledWith(1);
   });
 
+  it("treats an enumeration that reported no status, no stdout and no stderr as a failure", async () => {
+    const { module, exit, stderr } = await loadGate({
+      spawn: () => ({}) as unknown as SpawnResult,
+    });
+    expect(() => module.materializeCommitView("/repo")).toThrow("EXIT:1");
+    expect(errorText(stderr)).toContain("could not enumerate committable files in /repo");
+    expect(exit).toHaveBeenCalledWith(1);
+  });
+
+  it("materializes nothing when the enumeration succeeds with no stdout", async () => {
+    const { module, mkdirSync } = await loadGate({
+      spawn: () => ({ status: 0 }) as unknown as SpawnResult,
+    });
+    const view = module.materializeCommitView("/repo");
+    expect(view.materialized_file_count).toBe(0);
+    expect(view.pending_deletion_count).toBe(0);
+    expect(mkdirSync).not.toHaveBeenCalled();
+  });
+
   it("redirects a measurement context at the commit view without losing its bin resolution", async () => {
     const { module } = await loadGate();
     const redirected = module.contextForCommitView(module.cliContext(new Map()), { root: "/view" });
