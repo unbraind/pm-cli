@@ -555,6 +555,9 @@ describe("GitHub workflow contract", () => {
       ),
     ).toBeLessThan(releaseWorkflow.indexOf("run: pnpm quality:static"));
     expect(
+      releaseWorkflow.indexOf("run: pnpm changelog:pm:check"),
+    ).toBeLessThan(releaseWorkflow.indexOf("run: pnpm quality:static"));
+    expect(
       releaseWorkflow.match(
         /node dist\/cli\.js merge install --no-extensions/g,
       ),
