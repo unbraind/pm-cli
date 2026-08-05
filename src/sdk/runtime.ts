@@ -1601,6 +1601,13 @@ export class PmClient {
     return this.runTyped("package-deactivate", { target, options });
   }
 
+  /** Plan or apply active package migrations with durable workspace receipts. */
+  packageMigrate(
+    options: PackageCommandOptions = {},
+  ): Promise<PackageCommandResult> {
+    return this.package(undefined, { ...options, migrate: true });
+  }
+
   /** Upgrade the pm CLI and/or managed packages through the public SDK dispatcher. */
   upgrade(
     target?: string,
@@ -2325,6 +2332,7 @@ export function packageDeactivate(
 ): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageDeactivate(target, options);
 }
+
 
 /** Upgrade the pm CLI and/or managed packages without constructing a reusable client. */
 export function upgrade(

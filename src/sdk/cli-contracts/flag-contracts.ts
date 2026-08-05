@@ -712,6 +712,11 @@ export const EXTENSION_ACTIVATE_FLAG_CONTRACTS: CliFlagContract[] =
 /** Public contract for extension deactivate flag contracts, shared by SDK and presentation-layer consumers. */
 export const EXTENSION_DEACTIVATE_FLAG_CONTRACTS: CliFlagContract[] =
   EXTENSION_SCOPE_FLAG_CONTRACTS;
+/** Public contract for extension migration flag contracts. */
+export const EXTENSION_MIGRATE_FLAG_CONTRACTS: CliFlagContract[] = [
+  ...EXTENSION_SCOPE_FLAG_CONTRACTS,
+  { flag: "--dry-run" },
+];
 
 /** Public contract for extension manage flag contracts, shared by SDK and presentation-layer consumers. */
 export const EXTENSION_MANAGE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1843,6 +1848,7 @@ const EXTENSION_LIFECYCLE_FLAG_CONTRACTS_BY_SUBCOMMAND = new Map<
   ["adopt-all", EXTENSION_ADOPT_ALL_FLAG_CONTRACTS],
   ["activate", EXTENSION_ACTIVATE_FLAG_CONTRACTS],
   ["deactivate", EXTENSION_DEACTIVATE_FLAG_CONTRACTS],
+  ["migrate", EXTENSION_MIGRATE_FLAG_CONTRACTS],
 ]);
 
 function normalizeCommandNameForContracts(

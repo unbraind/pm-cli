@@ -1,0 +1,35 @@
+id: pm-7gxbl8
+title: Refresh compatible 2026-08-05 TypeScript-ESLint and Unicorn quality tooling
+description: "Adopt the compatible typescript-eslint 8.66.0 and eslint-plugin-unicorn 73.0.0 releases in the broad SDK lifecycle tranche, verify strict lint/type/coverage gates, and record why TypeScript 7 and npm-package-arg 14 remain separately compatibility-gated."
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-08-05T21:29:54.335Z"
+updated_at: "2026-08-05T21:46:49.576Z"
+closed_at: "2026-08-05T21:46:25.825Z"
+completed_at: "2026-08-05T21:46:25.825Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: "Lockfile resolves typescript-eslint 8.66.0 and eslint-plugin-unicorn 73.0.0; typecheck, ESLint, static quality, and 100% coverage stay green; incompatible majors remain linked to live canonical PM items with current upstream constraints."
+resolution: completed
+expected_result: Compatible quality tooling is current without violating Node or TypeScript support contracts.
+actual_result: typescript-eslint 8.66.0 and eslint-plugin-unicorn 73.0.0 are locked and all strict gates pass; incompatible majors remain canonically tracked.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-92if,implements,"2026-08-05T21:29:54.335Z","harness:codex","cli:create:dep",detected
+  pm-do5b,related,"2026-08-05T21:29:54.335Z","harness:codex","cli:create:dep",detected
+  pm-ksr40d,related,"2026-08-05T21:29:54.335Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-05T21:29:54.335Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for the exact versions and same-day compatible dependency refresh. Prior dated refreshes are closed historical runs; no active item owns this new compatible pair."
+  "2026-08-05T21:32:05.160Z","harness:codex","Verification: pnpm updated typescript-eslint 8.65.0 -> 8.66.0 and eslint-plugin-unicorn 72.0.0 -> 73.0.0. pnpm typecheck and strict ESLint pass; pnpm outdated now contains only the two canonically compatibility-gated majors (TypeScript 7 and npm-package-arg 14)."
+  "2026-08-05T21:46:03.134Z","harness:codex","Final verification 2026-08-05: full sandbox-safe coverage passed 435 files / 6,880 tests with statements 49124/49124, branches 35616/35616, functions 10045/10045, lines 47604/47604 (100/100/100/100). Strict ESLint, typecheck, static quality/docstrings, CLI transport floor, production audit, tracked-secret scan, Sentry 14-day threshold (0 critical/0 high relevant), and telemetry quality (0.6% finish error rate; 0 failures missing error codes) passed. Linked focused tests passed. SDK cold-import timing remains a known shared-host false-fail: bare Node measured 151ms against 95ms and multiple unrelated entrypoints rose together; threshold was not weakened and canonical pm-cg1sjb tracks isolation."
+files[2]{path,scope,note}:
+  package.json,project,Compatible quality-tool ranges
+  pnpm-lock.yaml,project,Resolved compatible quality-tool releases
+tests[2]{command,scope,timeout_seconds}:
+  "pnpm lint:eslint",project,240
+  pnpm typecheck,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msgm6fj2-0rerbh,test,passed,"2026-08-05T21:42:43.898Z","2026-08-05T21:43:45.950Z","2026-08-05T21:43:45.950Z",2,0,0
+close_reason: "Updated compatible TypeScript-ESLint and Unicorn tooling, preserved separately tracked incompatible majors, and verified strict ESLint, typecheck, static quality, security, and 100% coverage."
+body: ""

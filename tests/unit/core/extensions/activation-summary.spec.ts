@@ -40,6 +40,7 @@ describe("describeExtensionActivation", () => {
       service_overrides: ["output_format"],
       renderer_overrides: ["toon"],
       preflight_overrides: 1,
+      preflight_ownership: [{ commands: [] }],
     });
   });
 
@@ -179,6 +180,7 @@ describe("describeExtensionActivation", () => {
       service_overrides: [],
       renderer_overrides: [],
       preflight_overrides: 0,
+      preflight_ownership: [],
     });
   });
 

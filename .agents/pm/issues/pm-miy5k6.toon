@@ -1,0 +1,55 @@
+id: pm-miy5k6
+title: "GH-907: preflight override ownership and statically disjoint command scopes"
+description: Add public SDK ownership contracts for preflight overrides so multiple extensions can declare non-overlapping command scopes and package health only warns for genuinely ambiguous registrations.
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:extensions","area:sdk",collision,ownership,preflight
+created_at: "2026-08-05T19:11:44.350Z"
+updated_at: "2026-08-05T21:46:46.016Z"
+closed_at: "2026-08-05T21:46:10.608Z"
+completed_at: "2026-08-05T21:46:10.608Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Extension authors can declare normalized command ownership for imperative and declarative preflight overrides; Runtime dispatch never invokes a scoped preflight override outside its declared commands; Doctor and health suppress collision warnings only for provably disjoint non-empty scopes and keep overlapping or unscoped warnings; The public surface snapshot docs examples and isolated multi-extension acceptance tests cover compatibility and negative controls
+parent: pm-ugqx
+risk: medium
+confidence: high
+resolution: fixed
+expected_result: Disjoint scoped preflight overrides coexist without false collision warnings while overlapping or unscoped overrides remain conservative.
+actual_result: "Scoped ownership now propagates through SDK definitions, inventories, diagnostics, runtime dispatch, scaffolds, tests, docs, and isolated acceptance."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6mjxgq,discovered_from,"2026-08-05T19:11:44.350Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-05T19:11:44.350Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-05T19:11:44.350Z","harness:codex","Duplicate check evidence 2026-08-05: searched all statuses with exact GitHub issue identifiers,report language,and the relevant ownership,install-resolution,or migration concepts. No existing item covers this defect; closed items linked by discovered_from are implemented historical substrate,not duplicates."
+  "2026-08-05T20:02:27.878Z","harness:codex","Implementation note: scoped preflight definitions now carry normalized command ownership through define/compose, activation summaries, persisted contribution inventory, collision diagnostics, runtime dispatch, and generated starters. Unscoped callbacks remain compatible but intentionally collide globally."
+  "2026-08-05T20:25:07.908Z","harness:codex","Manual acceptance evidence: in isolated tracker /tmp/pm-cli-extension-acceptance-ojzMIQ/workspace/.agents/pm, installed two extensions with disjoint preflight ownership (list vs create); package doctor returned zero extension_preflight_override_collision warnings."
+  "2026-08-05T21:46:03.197Z","harness:codex","Final verification 2026-08-05: full sandbox-safe coverage passed 435 files / 6,880 tests with statements 49124/49124, branches 35616/35616, functions 10045/10045, lines 47604/47604 (100/100/100/100). Strict ESLint, typecheck, static quality/docstrings, CLI transport floor, production audit, tracked-secret scan, Sentry 14-day threshold (0 critical/0 high relevant), and telemetry quality (0.6% finish error rate; 0 failures missing error codes) passed. Linked focused tests passed. SDK cold-import timing remains a known shared-host false-fail: bare Node measured 151ms against 95ms and multiple unrelated entrypoints rose together; threshold was not weakened and canonical pm-cg1sjb tracks isolation."
+files[15]{path,scope,note}:
+  src/core/extensions/activation-summary.ts,project,Inspectable ownership summary
+  src/core/extensions/contribution-inventory.ts,project,Persisted ownership inventory
+  src/core/extensions/extension-hook-runtime.ts,project,Command-aware preflight dispatch
+  src/core/extensions/extension-types.ts,project,Public preflight ownership contracts
+  src/core/extensions/preflight-ownership.ts,project,Scoped ownership normalization and collision analysis
+  src/sdk/compose.ts,project,Declarative ownership projection
+  src/sdk/define.ts,project,Typed scoped preflight builder
+  src/sdk/extension/scaffold.ts,project,Scoped starter generation
+  tests/unit/core/extensions/activation-summary.spec.ts,project,Activation ownership summary coverage
+  tests/unit/extensions/contribution-inventory.spec.ts,project,Ownership inventory coverage
+  tests/unit/extensions/extension-loader.spec.ts,project,Preflight ownership collision coverage
+  tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,Scoped starter coverage
+  tests/unit/extensions/extensions-runtime.spec.ts,project,Scoped runtime dispatch coverage
+  tests/unit/sdk/sdk-compose.spec.ts,project,Blueprint ownership coverage
+  tests/unit/sdk/sdk-define.spec.ts,project,Scoped builder coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-loader.spec.ts tests/unit/extensions/extensions-runtime.spec.ts tests/unit/extensions/contribution-inventory.spec.ts tests/unit/extensions/extension-scaffold-define-guidance.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/sdk/sdk-define.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msgm3f1m-3tvzl5,test,passed,"2026-08-05T21:41:05.939Z","2026-08-05T21:41:25.354Z","2026-08-05T21:41:25.354Z",1,0,0
+docs[4]{path,scope,note}:
+  docs/EXTENSION_LIFECYCLE.md,project,Scoped preflight lifecycle contract
+  docs/EXTENSIONS.md,project,Extension composition guidance
+  docs/README.md,project,Lifecycle documentation index
+  docs/SDK.md,project,Scoped preflight authoring contract
+close_reason: "Delivered scoped preflight ownership end to end across public SDK authoring, activation inventory, collision analysis, runtime dispatch, generated starters, docs, manual multi-extension acceptance, and 100% coverage."
+body: "Source: https://github.com/unbraind/pm-cli/issues/907\\n\\nDeliver an additive public SDK contract spanning imperative registration, declarative authoring, activation inventories, collision diagnostics, package doctor/health, runtime dispatch, testing helpers, examples, and docs. Preserve legacy unscoped callbacks as compatibility inputs while treating them as conservatively overlapping."

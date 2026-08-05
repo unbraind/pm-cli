@@ -45,6 +45,7 @@ import type {
   OutputRendererFormat,
   ParserOverride,
   PreflightOverride,
+  ScopedPreflightOverrideDefinition,
   RendererOverride,
   ScopedRendererOverrideDefinition,
   SchemaFieldDefinition,
@@ -195,7 +196,7 @@ export interface ExtensionBlueprint {
   /** Service overrides keyed by service name, registered via `api.registerService(service, override)`. */
   services?: Partial<Record<ExtensionServiceName, ServiceOverride>>;
   /** Preflight overrides registered via `api.registerPreflight(override)`. */
-  preflights?: PreflightOverride[];
+  preflights?: Array<PreflightOverride | ScopedPreflightOverrideDefinition>;
   /** Custom item types registered in a single `api.registerItemTypes(types)` call. */
   itemTypes?: SchemaItemTypeDefinition[];
   /** Custom item-metadata fields registered in a single `api.registerItemFields(fields)` call. */
@@ -958,6 +959,7 @@ function collectBlueprintSurfaceSummary(
   | "renderer_overrides"
   | "renderer_ownership"
   | "preflight_overrides"
+  | "preflight_ownership"
 > {
   return {
     item_types: sortUnique(
@@ -1013,6 +1015,11 @@ function collectBlueprintSurfaceSummary(
     ),
     ...collectBlueprintRendererOwnership(blueprint.renderers),
     preflight_overrides: (blueprint.preflights ?? []).length,
+    preflight_ownership: (blueprint.preflights ?? []).map((preflight) => ({
+      commands: [
+        ...((preflight as ScopedPreflightOverrideDefinition).commands ?? []),
+      ],
+    })),
   };
 }
 

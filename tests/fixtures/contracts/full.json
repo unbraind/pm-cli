@@ -2351,6 +2351,12 @@
           "flag": "--deactivate"
         },
         {
+          "flag": "--migrate"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
           "flag": "--project"
         },
         {
@@ -2614,6 +2620,24 @@
         },
         {
           "flag": "--fix-managed-state"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "extension migrate",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--dry-run"
         }
       ],
       "provider": "core"
@@ -5345,6 +5369,12 @@
           "flag": "--deactivate"
         },
         {
+          "flag": "--migrate"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
           "flag": "--project"
         },
         {
@@ -5619,6 +5649,24 @@
       "provider": "core"
     },
     {
+      "command": "package migrate",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--dry-run"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "package reload",
       "flags": [
         {
@@ -5710,6 +5758,12 @@
         },
         {
           "flag": "--deactivate"
+        },
+        {
+          "flag": "--migrate"
+        },
+        {
+          "flag": "--dry-run"
         },
         {
           "flag": "--project"
@@ -5981,6 +6035,24 @@
         },
         {
           "flag": "--fix-managed-state"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "packages migrate",
+      "flags": [
+        {
+          "flag": "--project"
+        },
+        {
+          "flag": "--local"
+        },
+        {
+          "flag": "--global"
+        },
+        {
+          "flag": "--dry-run"
         }
       ],
       "provider": "core"
@@ -8879,6 +8951,33 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
+        "command": "extension migrate",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "extension migrate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
         "command": "extension reload",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
@@ -10067,6 +10166,33 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
+        "command": "package migrate",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "package migrate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
         "command": "package reload",
         "default_max_estimated_tokens": 3000,
         "default_max_estimated_tokens_by_format": {
@@ -10436,6 +10562,33 @@
       "envelope": {
         "cardinality": "none",
         "command": "packages manage",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "packages migrate",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "packages migrate",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -12543,6 +12696,7 @@
     "extension init",
     "extension install",
     "extension manage",
+    "extension migrate",
     "extension reload",
     "extension uninstall",
     "files",
@@ -12587,6 +12741,7 @@
     "package init",
     "package install",
     "package manage",
+    "package migrate",
     "package reload",
     "package uninstall",
     "packages",
@@ -12601,6 +12756,7 @@
     "packages init",
     "packages install",
     "packages manage",
+    "packages migrate",
     "packages reload",
     "packages uninstall",
     "pause-task",

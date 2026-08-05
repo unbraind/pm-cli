@@ -82,6 +82,8 @@ pm install npm:@scope/pm-package --project
 pm package describe --project   # by-name surface map of every loaded package
 pm package describe my-package --markdown --output docs/my-package-reference.md
 pm package doctor --project --detail summary
+pm package migrate --project --dry-run --json
+pm package migrate --project --json
 pm upgrade --dry-run
 pm upgrade --packages-only
 pm upgrade --cli-only --repair
@@ -89,6 +91,13 @@ pm upgrade --cli-only --repair
 
 `pm install` and `pm package` are the preferred package-first workflow. `pm package` and `pm extension` bare invocations default to `--explore` so agents can list installed packages without remembering an action flag. `pm install '*'`, shell-expanded `pm install *`, and `pm install all` install bundled first-party packages. `pm extension` remains as a compatibility command for direct extension lifecycle operations.
 Install output includes a light `verification` summary with target tracker root, activation state, registered commands/actions/item types, and an `ok|degraded` health verdict. Runtime activation failure sets the command result and process exit status to failure; inspect `activation_diagnostics` and `command_discovery.next_steps` for the exact recovery path.
+Bare install names use bundled aliases before installed npm packages. Every
+install result reports `source_resolution`; when both candidates exist it marks
+the choice ambiguous and provides explicit bare and `npm:` retry commands.
+`package migrate` plans or applies active migration registrations and writes
+durable workspace-history receipts; a successful migration is skipped on later
+processes, while a failed migration remains retryable. `extension migrate` is
+the compatibility spelling.
 When package-owned commands are unavailable, usage guidance includes an install-ready retry (for example `pm install calendar`, `pm install search-advanced`, `pm install governance-audit`, or `pm install guide-shell`).
 
 ## Triage

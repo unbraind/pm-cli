@@ -95,6 +95,36 @@ function normalizeRendererOwnership(
   );
 }
 
+/** Validate preflight command ownership without importing extension code. */
+function normalizePreflightOwnership(
+  value: unknown,
+): ExtensionContributionInventory["preflight_ownership"] | null {
+  if (!Array.isArray(value)) return null;
+  const ownership: NonNullable<
+    ExtensionContributionInventory["preflight_ownership"]
+  > = [];
+  for (const rawEntry of value) {
+    if (typeof rawEntry !== "object" || rawEntry === null) return null;
+    const commands = (rawEntry as Record<string, unknown>).commands;
+    if (
+      !Array.isArray(commands) ||
+      commands.some((command) => typeof command !== "string")
+    ) {
+      return null;
+    }
+    ownership.push({
+      commands: [
+        ...new Set(
+          commands.map((command) => normalizeCommandName(command as string)),
+        ),
+      ]
+        .filter((command) => command.length > 0)
+        .sort((left, right) => left.localeCompare(right)),
+    });
+  }
+  return ownership;
+}
+
 /** Normalize an optional contribution inventory, returning null for malformed data. */
 export function normalizeExtensionContributionInventory(
   value: unknown,
@@ -121,6 +151,12 @@ export function normalizeExtensionContributionInventory(
     if (ownership === null) return null;
     inventory.renderer_ownership = ownership;
   }
+  const rawPreflightOwnership = record.preflight_ownership;
+  if (rawPreflightOwnership !== undefined) {
+    const ownership = normalizePreflightOwnership(rawPreflightOwnership);
+    if (ownership === null) return null;
+    inventory.preflight_ownership = ownership;
+  }
   return inventory;
 }
 
@@ -145,6 +181,7 @@ export function createExtensionContributionInventory(summary: {
   renderer_overrides: string[];
   renderer_ownership?: ExtensionContributionInventory["renderer_ownership"];
   preflight_overrides: number;
+  preflight_ownership?: ExtensionContributionInventory["preflight_ownership"];
 }): ExtensionContributionInventory {
   return {
     schema_version: 1,
@@ -171,5 +208,8 @@ export function createExtensionContributionInventory(summary: {
       ? { renderer_ownership: summary.renderer_ownership }
       : {}),
     preflight_overrides: summary.preflight_overrides,
+    ...(summary.preflight_ownership
+      ? { preflight_ownership: summary.preflight_ownership }
+      : {}),
   };
 }

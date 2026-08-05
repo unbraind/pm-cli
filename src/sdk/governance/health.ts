@@ -81,6 +81,7 @@ import type {
   PmSettings,
 } from "../../types/index.js";
 import { readManagedExtensionState } from "../extension.js";
+import { applyStoredExtensionMigrationState } from "../extension/migrations.js";
 import {
   buildCapabilityContractMetadata,
   buildRegistrationCollisionRemediation,
@@ -1020,6 +1021,10 @@ async function buildExtensionCheck(
     readManagedExtensionState(loadResult.roots.project),
     readManagedExtensionState(loadResult.roots.global),
   ]);
+  await applyStoredExtensionMigrationState(
+    pmRoot,
+    activationResult.registrations.migrations,
+  );
   const migrationStatus = summarizeMigrationStatuses(
     activationResult.registrations.migrations,
   );
@@ -1140,6 +1145,14 @@ async function buildExtensionCheck(
         warnings: extensionWarnings,
         activation: activationDetails,
         triage: extensionTriage,
+        ...(migrationStatus.summary.pending_count > 0
+          ? {
+              remediation_map: {
+                extension_migration_pending:
+                  "pm extension migrate --project",
+              },
+            }
+          : {}),
         capability_contract: capabilityContract,
         capability_guidance: capabilityGuidance,
       } as Record<string, unknown>,

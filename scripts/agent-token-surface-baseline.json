@@ -4,13 +4,13 @@
   "headroom": 1.1,
   "surfaces": {
     "root_help": 15817,
-    "per_command_total": 228222,
-    "full_help_surface": 244039,
+    "per_command_total": 228521,
+    "full_help_surface": 244338,
     "contracts": {
       "summary_toon": 11975,
       "summary_json": 15212,
       "json": 15212,
-      "full": 1275835
+      "full": 1278337
     },
     "mcp_tools_list": 43246,
     "required_commands": [
@@ -96,9 +96,9 @@
       "list-closed": 7290,
       "list-open": 7285,
       "list-canceled": 7278,
+      "package": 6973,
       "search": 6948,
-      "package": 6825,
-      "extension": 6685,
+      "extension": 6836,
       "validate": 4870,
       "config": 4787,
       "search-advanced": 4594,

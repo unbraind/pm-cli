@@ -76,6 +76,15 @@ function createItemFormatFixtureItem(
 describe("CLI integration (sandboxed PM_PATH)", () => {
   it("accepts --list as an alias for --explore on package and extension (pm-fu5d U3)", async () => {
     await withTempPmPath(async (context) => {
+      const migration = context.runCli(
+        ["package", "migrate", "--project", "--dry-run", "--json"],
+        { expectJson: true },
+      );
+      expect(migration.code).toBe(0);
+      expect(migration.json).toMatchObject({
+        action: "migrate",
+        details: { migration: { dry_run: true, total: 0 } },
+      });
       const packageList = context.runCli(["package", "--list", "--json"], { expectJson: true });
       expect(packageList.code).toBe(0);
       expect((packageList.json as { action: string }).action).toBe("explore");

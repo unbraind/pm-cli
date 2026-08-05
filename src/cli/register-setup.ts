@@ -44,9 +44,30 @@ type ExtensionSubcommandAction =
   | "adopt"
   | "adopt-all"
   | "activate"
-  | "deactivate";
+  | "deactivate"
+  | "migrate";
 
 type LifecycleCommandVocabulary = "extension" | "package";
+
+const EXTENSION_ACTION_OPTION_KEYS: Record<
+  ExtensionSubcommandAction,
+  string
+> = {
+  init: "init",
+  install: "install",
+  uninstall: "uninstall",
+  explore: "explore",
+  manage: "manage",
+  describe: "describe",
+  reload: "reload",
+  doctor: "doctor",
+  catalog: "catalog",
+  adopt: "adopt",
+  "adopt-all": "adoptAll",
+  activate: "activate",
+  deactivate: "deactivate",
+  migrate: "migrate",
+};
 
 /** Normalize the repeatable scaffold capability selector without losing conflicting intent. */
 function resolveScaffoldCapability(
@@ -82,36 +103,37 @@ function normalizeExtensionOptions(
   forcedAction?: ExtensionSubcommandAction,
   vocabulary: LifecycleCommandVocabulary = "extension",
 ): Record<string, unknown> {
-  const isForcedAction = (action: ExtensionSubcommandAction): boolean =>
-    forcedAction === action;
+  const normalizedOptions = { ...options };
+  if (forcedAction !== undefined) {
+    normalizedOptions[EXTENSION_ACTION_OPTION_KEYS[forcedAction]] = true;
+  }
   const readBoolean = (...keys: string[]): boolean =>
-    keys.some((key) => options[key] === true);
+    keys.some((key) => normalizedOptions[key] === true);
   const readString = (...keys: string[]): string | undefined => {
     for (const key of keys) {
-      if (typeof options[key] === "string") {
-        return options[key] as string;
+      if (typeof normalizedOptions[key] === "string") {
+        return normalizedOptions[key] as string;
       }
     }
     return undefined;
   };
   return {
-    init: isForcedAction("init") || readBoolean("init"),
+    init: readBoolean("init"),
     scaffold: readBoolean("scaffold"),
-    install: isForcedAction("install") || readBoolean("install"),
-    uninstall: isForcedAction("uninstall") || readBoolean("uninstall"),
-    explore: isForcedAction("explore") || readBoolean("explore", "list"),
-    manage: isForcedAction("manage") || readBoolean("manage"),
-    describe: isForcedAction("describe") || readBoolean("describe"),
+    install: readBoolean("install"),
+    uninstall: readBoolean("uninstall"),
+    explore: readBoolean("explore", "list"),
+    manage: readBoolean("manage"),
+    describe: readBoolean("describe"),
     markdown: readBoolean("markdown"),
-    reload: isForcedAction("reload") || readBoolean("reload"),
-    doctor: isForcedAction("doctor") || readBoolean("doctor"),
-    catalog: isForcedAction("catalog") || readBoolean("catalog"),
-    adopt: isForcedAction("adopt") || readBoolean("adopt"),
-    adoptAll:
-      isForcedAction("adopt-all") ||
-      readBoolean("adoptAll", "adopt_all", "adopt-all"),
-    activate: isForcedAction("activate") || readBoolean("activate"),
-    deactivate: isForcedAction("deactivate") || readBoolean("deactivate"),
+    reload: readBoolean("reload"),
+    doctor: readBoolean("doctor"),
+    catalog: readBoolean("catalog"),
+    adopt: readBoolean("adopt"),
+    adoptAll: readBoolean("adoptAll", "adopt_all", "adopt-all"),
+    activate: readBoolean("activate"),
+    deactivate: readBoolean("deactivate"),
+    migrate: readBoolean("migrate"),
     project: readBoolean("project"),
     local: readBoolean("local"),
     global: readBoolean("global"),
@@ -135,6 +157,7 @@ function normalizeExtensionOptions(
     ignoreGlobal: readBoolean("ignoreGlobal", "ignore_global", "ignore-global"),
     strictExit: readBoolean("strictExit", "strict_exit", "strict-exit"),
     failOnWarn: readBoolean("failOnWarn", "fail_on_warn", "fail-on-warn"),
+    dryRun: readBoolean("dryRun", "dry_run", "dry-run"),
     vocabulary,
   };
 }
@@ -876,6 +899,22 @@ function registerLifecycleCommand(
       command.optsWithGlobals() as Record<string, unknown>,
       command,
       "adopt-all",
+      vocabulary,
+    );
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
+      .command("migrate")
+      .option("--dry-run", "Plan active migrations without invoking extension code")
+      .description(`Plan or apply active ${noun} migrations with durable receipts.`),
+    vocabulary,
+  ).action(async (_options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(
+      undefined,
+      command.optsWithGlobals() as Record<string, unknown>,
+      command,
+      "migrate",
       vocabulary,
     );
   });

@@ -59,6 +59,7 @@ pm guide release --json
 - [Portable Corpus Shapes](CORPUS_SHAPES.md) - versioned SDK populations for realistic benchmarks, evaluations, and package tests.
 - [Agent UX Contracts](AGENT_UX_CONTRACTS.md) - ordering-cycle advisories, graph count units, collision safety, compact context, ownership wording, and recovery behavior.
 - [Packages and Extensions](EXTENSIONS.md) - package install workflows, runtime extension lifecycle, and API reference.
+- [Extension Lifecycle Contracts](EXTENSION_LIFECYCLE.md) - source identity, durable migrations, and scoped preflight ownership.
 - [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md) - the stability guarantees and contract surface package authors build against.
 - [SDK](SDK.md) - public import surfaces and typed authoring examples.
 - [Multi-Branch Merge Safety](MERGE_SAFETY.md) - semantic tracker merge drivers, post-merge integrity gates, delete/modify policy, and recovery-receipt retention.

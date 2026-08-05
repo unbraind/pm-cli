@@ -4114,6 +4114,18 @@ describe("setup command actions", () => {
     expect(normalized.strictExit).toBe(true);
     expect(normalized.detail).toBe("deep");
 
+    await runCli("package", "migrate", "--project", "--dry-run");
+    normalized = lastCallArg<Record<string, unknown>>(
+      vi.mocked(runExtension) as never,
+      1,
+    );
+    expect(normalized).toMatchObject({
+      migrate: true,
+      project: true,
+      dryRun: true,
+      vocabulary: "package",
+    });
+
     await runCli("package", "install", "npm:pm-brief");
     expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe(
       "npm:pm-brief",

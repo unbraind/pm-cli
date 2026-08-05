@@ -31,6 +31,7 @@ import {
   type ExtensionGovernancePolicy,
   type ExtensionSelfIdentity,
 } from "../../../src/core/extensions/extension-types.js";
+import { normalizePreflightOverride } from "../../../src/core/extensions/preflight-ownership.js";
 import {
   KNOWN_ITEM_FIELD_TYPES,
   normalizeItemFieldType,
@@ -4935,6 +4936,77 @@ describe("extension loader", () => {
     expect(activation.warnings).toEqual([
       "extension_preflight_override_collision:project:preflight-two:global:preflight-one",
     ]);
+  });
+
+  it("permits disjoint scoped preflight ownership and reports overlap", async () => {
+    const loaded = [
+      {
+        layer: "global" as const,
+        directory: "preflight-create",
+        manifest_path: "/tmp/global/preflight-create/manifest.json",
+        name: "preflight-create",
+        version: "1.0.0",
+        entry: "./index.mjs",
+        priority: 10,
+        entry_path: "/tmp/global/preflight-create/index.mjs",
+        capabilities: ["preflight"],
+        module: {
+          activate(api: ExtensionApi) {
+            api.registerPreflight({ commands: [" Create "], run: (context) => context });
+          },
+        },
+      },
+      {
+        layer: "project" as const,
+        directory: "preflight-update",
+        manifest_path: "/tmp/project/preflight-update/manifest.json",
+        name: "preflight-update",
+        version: "1.0.0",
+        entry: "./index.mjs",
+        priority: 20,
+        entry_path: "/tmp/project/preflight-update/index.mjs",
+        capabilities: ["preflight"],
+        module: {
+          activate(api: ExtensionApi) {
+            api.registerPreflight({ commands: ["update"], run: (context) => context });
+          },
+        },
+      },
+    ];
+    const base = {
+      disabled_by_flag: false,
+      roots: { global: "/tmp/global", project: "/tmp/project" },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded,
+      failed: [],
+    };
+    const disjoint = await activateExtensions(base);
+    expect(disjoint.warnings).toEqual([]);
+    expect(disjoint.preflight.overrides.map((entry) => entry.commands)).toEqual([
+      ["create"],
+      ["update"],
+    ]);
+
+    loaded[1]!.module.activate = (api: ExtensionApi) => {
+      api.registerPreflight({ commands: ["create", "update"], run: (context) => context });
+    };
+    const overlapping = await activateExtensions(base);
+    expect(overlapping.warnings).toEqual([
+      "extension_preflight_override_collision:project:preflight-update:global:preflight-create",
+    ]);
+    expect(() =>
+      normalizePreflightOverride({ commands: ["create"], run: null as never }),
+    ).toThrow("requires a function handler");
+    expect(() =>
+      normalizePreflightOverride({ commands: ["create", "   "], run: (context) => context }),
+    ).toThrow("must contain non-empty command paths");
+    expect(
+      normalizePreflightOverride({ run: (context) => context }),
+    ).toEqual({ run: expect.any(Function) });
   });
 
   it("reports parser and renderer collisions while ignoring singleton service registrations", async () => {

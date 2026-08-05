@@ -39,42 +39,120 @@ interface LocalPackageArchiveLimits {
   maxEntryBytes: number;
 }
 
-interface LocalInstallSource {
+/** Parsed filesystem install source. */
+export interface LocalInstallSource {
+  /** Discriminator for a filesystem source. */
   kind: "local";
+  /** Exact caller-provided source text. */
   input: string;
+  /** Absolute normalized source path. */
   absolute_path: string;
 }
 
-interface GithubInstallSource {
+/** Parsed GitHub repository install source. */
+export interface GithubInstallSource {
+  /** Discriminator for a GitHub repository source. */
   kind: "github";
+  /** Exact caller-provided source text. */
   input: string;
+  /** Repository owner. */
   owner: string;
+  /** Repository name without a `.git` suffix. */
   repo: string;
+  /** Cloneable HTTPS repository URL. */
   repository: string;
+  /** Optional Git ref selected by the caller or URL. */
   ref?: string;
+  /** Optional repository-relative package directory. */
   subpath?: string;
 }
 
-interface NpmInstallSource {
+/** Parsed npm registry or package-spec install source. */
+export interface NpmInstallSource {
+  /** Discriminator for an npm package source. */
   kind: "npm";
+  /** Exact caller-provided source text. */
   input: string;
+  /** Validated npm package specification. */
   spec: string;
 }
 
-type InstallSource =
+/** Parsed extension install source accepted by the resolver. */
+export type InstallSource =
   | LocalInstallSource
   | GithubInstallSource
   | NpmInstallSource;
 
-interface ResolvedInstallSource {
+/** Materialized install source ready for extension validation. */
+export interface ResolvedInstallSource {
+  /** Parsed source that produced this directory. */
   source: InstallSource;
+  /** Absolute extension or package directory ready for validation. */
   directory: string;
+  /** Root unpacked or cloned source directory when different from `directory`. */
   source_root?: string;
+  /** Repository subpath selected after clone. */
   resolved_subpath?: string;
+  /** Resolved Git commit when the source is a repository. */
   commit?: string;
+  /** Canonical npm package name when the source is a registry package. */
   npm_package?: string;
+  /** Resolved npm package version. */
   npm_version?: string;
+  /** Releases temporary source material created during resolution. */
   cleanup?: () => Promise<void>;
+}
+
+/** Installed npm package that competes with a bare bundled install target. */
+export interface InstalledNpmPackageCandidate {
+  /** Package identity read from its package.json. */
+  package: string;
+  /** Installed package version when declared. */
+  version?: string;
+  /** Absolute package root selected by Node-style ancestor lookup. */
+  directory: string;
+}
+
+/** Resolve an already-installed npm package without executing package code. */
+export async function findInstalledNpmPackageCandidate(
+  packageName: string,
+  cwd: string = process.cwd(),
+): Promise<InstalledNpmPackageCandidate | null> {
+  const normalized = packageName.trim();
+  if (!/^(@[^/\\\s]+\/[^/\\\s]+|[^@/\\\s][^/\\\s]*)$/u.test(normalized)) {
+    return null;
+  }
+  let current = path.resolve(cwd);
+  while (true) {
+    const directory = path.join(
+      current,
+      "node_modules",
+      ...normalized.split("/"),
+    );
+    const manifestPath = path.join(directory, "package.json");
+    if (await pathExists(manifestPath)) {
+      try {
+        const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8")) as {
+          name?: unknown;
+          version?: unknown;
+        };
+        if (manifest.name === normalized) {
+          return {
+            package: normalized,
+            ...(typeof manifest.version === "string"
+              ? { version: manifest.version }
+              : {}),
+            directory,
+          };
+        }
+      } catch {
+        return null;
+      }
+    }
+    const parent = path.dirname(current);
+    if (parent === current) return null;
+    current = parent;
+  }
 }
 
 function parseGithubPathSpec(
@@ -1281,6 +1359,7 @@ export const _testOnlyInstallSources = {
   resolveNpmSourceDirectoryWithRunner,
   resolveNpmSourceDirectory,
   resolveNpmPackSpec,
+  findInstalledNpmPackageCandidate,
   resolvePackageExtensionDirectory,
   runtimeDependencyInstallSpecs,
   hasHostedPmCliDependency,

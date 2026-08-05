@@ -155,9 +155,8 @@ import {
   enforceMandatoryMigrationWriteGate,
   enforceItemFormatWriteGateAndPreflightMigration,
   enforceMutationGuardPreflight,
-  resolveMigrationId,
-  resolveNormalizedMigrationStatus,
 } from "./migration-gates.js";
+import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import {
   appendCommanderExtensionFailures,
   isKnownHelpCommandPath,
@@ -1648,43 +1647,17 @@ async function loadRuntimeExtensionCommandDescriptorsForRecovery(pmRoot: string)
 }
 
 async function executeRegisteredRuntimeMigrations(migrations: RegisteredExtensionSchemaMigrationDefinition[], pmRoot: string): Promise<string[]> {
-  const warnings: string[] = [];
-  for (let index = 0; index < migrations.length; index += 1) {
-    const migration = migrations[index];
-    const status = resolveNormalizedMigrationStatus(migration.definition);
-    if (status === "applied") {
-      continue;
-    }
-
-    const runtimeDefinition = migration.runtime_definition ?? migration.definition;
-    const run = (runtimeDefinition as { run?: unknown }).run;
-    if (typeof run !== "function") {
-      continue;
-    }
-
-    const migrationId = resolveMigrationId(migration.definition, index);
-    try {
-      await Promise.resolve(
-        run({
-          id: migrationId,
-          command: "migration",
-          layer: migration.layer,
-          extension: migration.name,
-          pm_root: pmRoot,
-          status,
-        }),
-      );
-      migration.definition.status = "applied";
-      delete migration.definition.reason;
-      delete migration.definition.error;
-      delete migration.definition.message;
-    } catch (error: unknown) {
-      migration.definition.status = "failed";
-      migration.definition.reason = describeUnknownError(error);
-      warnings.push(`extension_migration_failed:${migration.layer}:${migration.name}:${migrationId}`);
-    }
-  }
-  return warnings;
+  const result = await runExtensionMigrations({
+    pmRoot,
+    migrations,
+    author: "pm-extension-migration",
+  });
+  return result.migrations
+    .filter((migration) => migration.outcome === "failed")
+    .map(
+      (migration) =>
+        `extension_migration_failed:${migration.layer}:${migration.extension}:${migration.id}`,
+    );
 }
 
 /* c8 ignore start */

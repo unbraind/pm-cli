@@ -25,6 +25,10 @@ describe("static extension contribution inventory", () => {
           },
         ],
         preflight_overrides: 1,
+        preflight_ownership: [
+          { commands: ["Zulu", "Create", " create ", " "] },
+          { commands: [] },
+        ],
       }),
     ).toEqual({
       schema_version: 1,
@@ -38,6 +42,10 @@ describe("static extension contribution inventory", () => {
         },
       ],
       preflight_overrides: 1,
+      preflight_ownership: [
+        { commands: ["create", "zulu"] },
+        { commands: [] },
+      ],
     });
     expect(
       normalizeExtensionContributionInventory({
@@ -59,6 +67,9 @@ describe("static extension contribution inventory", () => {
       { schema_version: 1, hooks: [1] },
       { schema_version: 1, renderer_ownership: "not-an-array" },
       { schema_version: 1, renderer_ownership: [null] },
+      { schema_version: 1, preflight_ownership: "not-an-array" },
+      { schema_version: 1, preflight_ownership: [null] },
+      { schema_version: 1, preflight_ownership: [{ commands: [1] }] },
       {
         schema_version: 1,
         renderer_ownership: [
@@ -156,6 +167,7 @@ describe("static extension contribution inventory", () => {
         },
       ],
       preflight_overrides: 0,
+      preflight_ownership: [{ commands: ["package ping"] }],
     });
     expect(
       _testOnlyLoader.parseManifest({
@@ -191,6 +203,27 @@ describe("static extension contribution inventory", () => {
         ],
       })?.entries[0]?.contributions,
     ).toEqual(contributions);
+    expect(
+      createExtensionContributionInventory({
+        commands: [],
+        command_overrides: [],
+        command_handlers: [],
+        hooks: [],
+        flag_commands: [],
+        item_types: [],
+        item_fields: [],
+        migrations: [],
+        profiles: [],
+        importers: [],
+        exporters: [],
+        search_providers: [],
+        vector_store_adapters: [],
+        parser_overrides: [],
+        service_overrides: [],
+        renderer_overrides: [],
+        preflight_overrides: 0,
+      }),
+    ).not.toHaveProperty("preflight_ownership");
   });
 
   it("leaves managed state unchanged when an install-time inventory has no matching record", async () => {
