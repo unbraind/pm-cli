@@ -383,7 +383,20 @@ function buildCloseStep(
     // fight legitimate prior closure, and recovery must adopt completed work.
     async inspect(): Promise<WorkspaceTransactionStepInspection> {
       const snapshot = await readItemSnapshot(config.pmRoot, mutation.id);
-      if (snapshot?.closedAt === undefined) {
+      if (snapshot === undefined) {
+        return { state: "pending" };
+      }
+      if (
+        await isUpdateMarkerApplied(
+          config.pmRoot,
+          snapshot.id,
+          config.transactionId,
+          stepId,
+        )
+      ) {
+        return { state: "applied", result: { id: snapshot.id, op: "close" } };
+      }
+      if (snapshot.closedAt === undefined) {
         return { state: "pending" };
       }
       return { state: "applied", result: { id: snapshot.id, op: "close" } };

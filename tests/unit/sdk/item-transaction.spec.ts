@@ -415,6 +415,54 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
     });
   });
 
+  it("does not reclose a later reopen when recovering an already-applied close", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "close-recovery-marker");
+      const options = {
+        pmRoot: context.pmPath,
+        transactionId: "close-recovery-marker",
+        author: "bulk-agent",
+        mutations: [
+          {
+            op: "close" as const,
+            id: target,
+            reason: "Close before interrupted journal write",
+          },
+        ],
+      };
+
+      await expect(
+        commitItemMutations({
+          ...options,
+          onTransition(transition: WorkspaceTransactionTransitionContext) {
+            if (transition.transition === "step_applied") {
+              throw new WorkspaceTransactionInterruptedError(
+                "crash after close before journal recording",
+              );
+            }
+          },
+        }),
+      ).rejects.toBeInstanceOf(WorkspaceTransactionInterruptedError);
+
+      expect(
+        context.runCli([
+          "update",
+          target,
+          "--status",
+          "open",
+          "--author",
+          "later-agent",
+          "--json",
+        ]).code,
+      ).toBe(0);
+      await expect(commitItemMutations(options)).resolves.toMatchObject({
+        recovered: true,
+        status: "committed",
+      });
+      expect((await readItem(context.pmPath, target)).status).toBe("open");
+    });
+  });
+
   it("does not release a later claim when recovering an already-applied release", async () => {
     await withTempPmPath(async (context) => {
       const target = createSeedItem(context, "release-recovery-marker");

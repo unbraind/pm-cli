@@ -1321,6 +1321,7 @@ const specificationJson = JSON.stringify({
     },
     {
       op: "create",
+      ref: "delivery",
       options: {
         title: "Delivery",
         type: "Feature",

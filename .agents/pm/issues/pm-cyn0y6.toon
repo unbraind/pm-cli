@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags[3]: cli,ergonomics,tokens
 created_at: "2026-08-03T20:35:05.618Z"
-updated_at: "2026-08-05T08:46:38.478Z"
-closed_at: "2026-08-05T08:39:57.144Z"
-completed_at: "2026-08-05T08:39:57.144Z"
+updated_at: "2026-08-05T09:19:22.809Z"
+closed_at: "2026-08-05T09:19:22.255Z"
+completed_at: "2026-08-05T09:19:22.255Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "Finishing an item with links, evidence, resolution and release is expressible as one governed act that costs one bootstrap and returns one receipt; The act is atomic: an interruption leaves either the whole completion recorded or none of it, and no state where an item is closed but still claimed is reachable through the prescribed path; The record identifies the constituent mutations as one act, so a later reader reconstructs the single intent rather than seven timestamp-adjacent entries; The evidence flags accepted at completion are the same names and the same value grammar as the evidence flags accepted at creation, with no second spelling for the same concept; The composed form is never the only form: each constituent verb remains individually callable and unchanged for callers that link evidence incrementally"
 parent: pm-mpbb
 risk: medium
 confidence: 92
-resolution: "Atomic completion primitive and pm item complete command ship evidence update, governed close, and claim release in one durable transaction with exposed lock TTL/wait controls and history-first recovery that never releases a later claimant."
-expected_result: "Packages and agents can complete tracked work in one governed, replay-safe operation without partial lifecycle state or lost claim ownership."
-actual_result: "Forward, forced-failure, crash-before-journal, later-reclaim, and resume tests prove committed state, exact compensation restoration, and preservation of later ownership; focused tests pass 60/60 and the full 6,864-test repository suite holds 100/100/100/100 coverage."
+resolution: "Atomic SDK and CLI completion now compose evidence, governed close, and claim release in one durable replay-safe transaction; close and release recovery consult immutable apply markers before mutable lifecycle or claim state, preserving later reopen and reassignment."
+expected_result: "Packages and agents complete tracked work in one governed, replay-safe operation without partial lifecycle state, lost claim ownership, or recovery overwriting later actors."
+actual_result: "Forward, forced-failure, crash-before-journal, later-reopen, later-reclaim, and resume tests prove committed state, exact compensation restoration, and preservation of later ownership; 6,865 tests pass at exact 100/100/100/100 coverage."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-4e12,discovered_from,"2026-08-03T20:35:50.963Z","harness:claude-code","cli:update:dep",detected
   pm-5t33or,related,"2026-08-03T20:35:50.963Z","harness:claude-code","cli:update:dep",detected
@@ -26,10 +26,11 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-03T20:35:50.963Z","harness:claude-code","cli:update:dep",detected
   pm-pbyu,blocked_by,"2026-08-03T20:35:50.963Z","harness:claude-code","cli:update:dep",detected
   pm-xm7c,related,"2026-08-03T20:35:50.963Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-05T06:42:41.991Z","harness:codex","Implementation evidence 2026-08-05: commitItemCompletion and pm item complete compose evidence update, governed close, and claim release through one durable compensating transaction. Release is a typed bulk mutation; close/release carry durable markers; forced post-release failure tests prove evidence, lifecycle, and claim ownership restore. CLI contracts, completion discovery, public SDK snapshot, SDK/command docs, integration and packed npm/Bun acceptance are aligned. The intentional BulkItemMutation exhaustive-union change is acknowledged in the calendar-release SDK surface snapshot."
   "2026-08-05T08:39:25.015Z","harness:codex","Evidence: atomic completion now exposes CLI lock TTL/wait controls and recovery checks the durable release mutation marker before claim state, preventing resume from releasing a later claimant after crash-before-journal. The real crash/reclaim/resume regression passes within the focused 60/60 suite; full repository coverage is 100/100/100/100 across 6,864 tests."
   "2026-08-05T08:46:38.478Z","harness:codex","Final local acceptance: unrelated temp project exercised pm item complete with explicit transaction id, evidence comment, resolution/expected/actual fields, validation, lock TTL, and lock wait. Readback proved the child closed and its claim released while graph fields remained intact."
+  "2026-08-05T09:19:06.200Z","harness:codex","Exact-head review evidence: close recovery now checks the durable transaction apply marker before mutable lifecycle state, so a crash after close but before journaling cannot reclose an item that another actor later reopened. The focused regression passes, and the complete sandboxed suite passes 6,865/6,865 tests across 433 files with 100% statements (48,958/48,958), branches (35,501/35,501), functions (10,006/10,006), and lines (47,449/47,449)."
 files[5]{path,scope,note}:
   sdk/public-surface.json,project,SDK-surface
   src/cli/register-structured-mutation.ts,project,item-complete-command
@@ -43,5 +44,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,item-complete-workflow
   docs/SDK.md,project,atomic-completion-SDK-guide
-close_reason: "Delivered governed evidence-close-release completion as an atomic SDK and CLI primitive, including lock controls, durable crash recovery, and exact compensation semantics."
+close_reason: Delivered atomic evidence-close-release completion with history-first recovery that preserves later lifecycle and claim ownership; focused and full verification are green.
 body: ""
