@@ -485,24 +485,20 @@ describe("release automation contract", () => {
     expect(workflow).not.toContain(
       "Exact-tag recovery is restoring public package access before anonymous probes.",
     );
-    expect(
-      workflow.indexOf(
-        'if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then',
-      ),
-    ).toBeLessThan(
-      workflow.indexOf(
-        'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
-      ),
+    const exactVersionProbeIndex = workflow.indexOf(
+      'if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then',
     );
-    expect(
-      workflow.indexOf(
-        'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
-      ),
-    ).toBeLessThan(
-      workflow.indexOf(
-        "${NPM_PACKAGE} is not public; attempting access recovery before immutable publication.",
-      ),
+    const packageProbeIndex = workflow.indexOf(
+      'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
     );
+    const accessRecoveryIndex = workflow.indexOf(
+      "${NPM_PACKAGE} is not public; attempting access recovery before immutable publication.",
+    );
+    expect(exactVersionProbeIndex).toBeGreaterThanOrEqual(0);
+    expect(packageProbeIndex).toBeGreaterThanOrEqual(0);
+    expect(accessRecoveryIndex).toBeGreaterThanOrEqual(0);
+    expect(exactVersionProbeIndex).toBeLessThan(packageProbeIndex);
+    expect(packageProbeIndex).toBeLessThan(accessRecoveryIndex);
     expect(workflow).not.toContain("@unbrained/pm-cli");
     expect(workflow).toContain("env -u NODE_AUTH_TOKEN -u NPM_TOKEN");
     expect(workflow).toContain('npm_config_userconfig="${PUBLIC_NPMRC}"');
