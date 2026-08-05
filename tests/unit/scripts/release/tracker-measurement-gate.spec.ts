@@ -93,7 +93,9 @@ async function loadGate(options: {
   const mkdtempSync = vi.fn((prefix: string) => `${String(prefix)}fixed`);
   const rmSync = vi.fn();
   const missing = new Set(options.missingSources ?? []);
-  const existsSync = vi.fn((file: string) => !missing.has(String(file)));
+  // The materializer joins paths with the host separator, so a fixture written
+  // with forward slashes only matches on POSIX unless the probe is normalized.
+  const existsSync = vi.fn((file: string) => !missing.has(String(file).replaceAll("\\", "/")));
   const mkdirSync = vi.fn();
   const linkSync = vi.fn(() => {
     if (options.refuseLinks === true) {
