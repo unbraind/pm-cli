@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Exact-tag Release recovery must bootstrap tracker gates and publish an unpublished immutable tag from its tagged source ([pm-lwnifd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lwnifd.toon))
+
 ## 2026.8.5 - 2026-08-05
 
 ### Fixed
