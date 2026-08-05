@@ -1,0 +1,60 @@
+id: pm-o8z748
+title: "GH-896: heterogeneous atomic specification batches need batch-local references and one discoverable SDK-first CLI path"
+description: "GitHub issue #896 shows that plan materialize applies one shared type and field set to every child. The existing pm item mutate surface already provides heterogeneous atomic create/update/close rows, dry-run, compensation, and resume, but the reported workflow cannot discover it and explicit stable ids prevent an epic plus forward-referencing children from being authored as one coherent specification document."
+type: Issue
+status: closed
+priority: 1
+tags[8]: agent-ux,"area:cli","area:sdk",atomic,context-management,github-report,structured-input,token-efficiency
+created_at: "2026-08-05T06:02:29.591Z"
+updated_at: "2026-08-05T06:43:03.442Z"
+closed_at: "2026-08-05T06:43:02.920Z"
+completed_at: "2026-08-05T06:43:02.920Z"
+author: "harness:codex"
+estimated_minutes: 480
+acceptance_criteria: "Public SDK exposes a typed resolver for heterogeneous atomic mutation documents with unique batch-local aliases, stable explicit-or-derived ids, and forward references in parent/dependency fields; pm item mutate accepts the versioned document through its existing stdin path, validates and previews the fully resolved batch before writes, and returns alias-to-id outcomes without adding a competing top-level batch command; CLI, MCP, contracts, completion, SDK docs, errors, token budgets, and 100 percent coverage stay aligned; malformed aliases, cycles, duplicates, unknown references, and replay mismatches fail before tracker mutation; An isolated npm and Bun consumer authors and reads back a mixed Epic/Feature/Decision graph atomically, and a forced mid-batch failure proves compensation leaves no partial active specification"
+goal: project management = context management
+objective: Make one coherent heterogeneous specification authorable as one atomic SDK-owned mutation document
+value: "Agents preserve peak authoring context, avoid orphaned children, and pay one bootstrap instead of one process per item"
+impact: Turns the existing atomic mutation substrate into a discoverable universal project-creation primitive without adding a competing command grammar
+outcome: "One dry-runnable batch can create mixed item types with per-row metadata and forward references, returning a stable alias-to-id receipt"
+why_now: The shipped primitive exists but real users still conclude batching is impossible; the remaining composition and discovery gap is now evidenced by GH-896
+parent: pm-mpbb
+risk: high
+confidence: high
+severity: high
+environment: "pm CLI 2026.8.4, Node 22/24/26, Linux/macOS/Windows; CLI, public SDK, MCP, completions, contracts, packed npm and Bun consumers"
+repro_steps: Create one Plan with multiple steps; pm plan materialize accepts only one materialize type/tags/field set. pm item mutate accepts heterogeneous rows but requires every stable id up front and documents no batch-local forward-reference vocabulary.
+resolution: SDK-first batch-local reference resolver shipped with deterministic ids and alias receipts.
+expected_result: One atomic document creates and links heterogeneous project context without preallocated ids.
+actual_result: "Focused 63-test run, full coverage, and npm/Bun packed acceptance created and read the mixed graph."
+customer_impact: "Agents spend one tool call per item, manually correlate ids, and can leave partially authored specifications when a later create fails."
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4e12,discovered_from,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
+  pm-cyn0y6,related,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
+  pm-xm7c,discovered_from,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
+  pm-y9hq,discovered_from,"2026-08-05T06:02:29.591Z","harness:codex","cli:create:dep",detected
+  pm-42p9nk,discovered_from,"2026-08-05T06:39:37.256Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-05T06:02:29.591Z","harness:codex","text=Duplicate check 2026-08-05: searched all statuses for the exact GH-896 title and for batch item creation, plan materialize, heterogeneous create, commitWorkspaceTransaction, commitItemMutations, structured mutation, atomic create, and forward references. Closed pm-y9hq owns the SDK transaction primitive and closed pm-xm7c owns the existing CLI/MCP JSON batch; neither provides batch-local references or fixes discovery from create/plan. GitHub source: https://github.com/unbraind/pm-cli/issues/896"
+  "2026-08-05T06:39:37.946Z","harness:codex","Packed npm and Bun acceptance exposed a structured-mutation attribution bypass: pm item mutate resolved an omitted author against literal unknown instead of tracker author_default. Reused closed canonical pm-42p9nk, linked it as discovered_from, and migrated the adapter to the canonical resolveAuthor precedence using live settings; no duplicate item created."
+  "2026-08-05T06:42:41.304Z","harness:codex","Implementation evidence 2026-08-05: public resolveItemMutationDocument accepts version 1 heterogeneous create/update/close/release documents, derives deterministic prefix-aware ids, resolves forward aliases in targets/hierarchy/dependencies, rejects malformed/duplicate/unknown/cyclic aliases before writes, and returns alias receipts through CLI and MCP. Durable bulk step ids now fingerprint canonical payloads so transaction-id replay mismatch fails. Focused linked run passed 63/63; full repository coverage and lint passed; isolated packed npm/npx and Bun/bunx consumers created mixed Epic/Feature/Decision graphs, read typed edges, and completed a claimed item atomically. Latest npm pm-changelog 2026.8.4 verified and installed."
+files[8]{path,scope,note}:
+  sdk/public-surface.json,project,public-SDK-contract
+  src/cli/register-structured-mutation.ts,project,CLI-adapter
+  src/mcp/server.ts,project,MCP-adapter
+  src/mcp/tool-definitions.ts,project,MCP-contract
+  src/sdk/cli-contracts/flag-contracts.ts,project,command-contract
+  src/sdk/cli-contracts/runtime-contracts.ts,project,runtime-contract
+  src/sdk/item-transaction.ts,project,replay-fingerprint
+  src/sdk/structured-mutations.ts,project,batch-local-reference-resolver
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/structured-mutation-io.integration.spec.ts tests/integration/mcp-handshake.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msfpz287-pz1gst,test,passed,"2026-08-05T06:41:54.002Z","2026-08-05T06:42:14.407Z","2026-08-05T06:42:14.407Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,CLI-workflow
+  docs/SDK.md,project,SDK-batch-reference-contract
+close_reason: "Delivered versioned heterogeneous specification batches with stable aliases, graph references, replay safety, SDK/CLI/MCP contracts, and packed consumer proof."
+body: ""

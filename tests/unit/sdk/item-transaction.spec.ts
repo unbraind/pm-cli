@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   _testOnlyItemTransaction,
   WorkspaceTransactionInterruptedError,
+  commitItemCompletion,
   commitItemMutations,
   get,
   type BulkItemMutation,
@@ -105,6 +106,19 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
       const replay = await commitItemMutations(options);
       expect(replay.recovered).toBe(true);
       expect(replay.status).toBe("committed");
+      await expect(
+        commitItemMutations({
+          ...options,
+          mutations: options.mutations.map((mutation, index) =>
+            index === 1 && mutation.op === "update"
+              ? {
+                  ...mutation,
+                  options: { description: "replay payload mismatch" },
+                }
+              : mutation,
+          ),
+        }),
+      ).rejects.toThrow("journal does not match the supplied plan");
     });
   });
 
@@ -276,6 +290,93 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
     });
   });
 
+  it("records evidence, closes, and releases one claimed item atomically", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "atomic-completion");
+      expect(
+        context.runCli(["claim", target, "--author", "bulk-agent", "--json"])
+          .code,
+      ).toBe(0);
+
+      const committed = await commitItemCompletion({
+        pmRoot: context.pmPath,
+        transactionId: "complete-item-42",
+        author: "bulk-agent",
+        id: target,
+        reason: "Acceptance evidence passed",
+        evidence: {
+          comment: ["text=Verified in an isolated consumer"],
+          learning: ["text=Completion is one governed transaction"],
+        },
+        closeOptions: {
+          resolution: "Delivered atomically",
+          expectedResult: "All evidence and closure land together",
+          actualResult: "All evidence and closure landed together",
+        },
+      });
+
+      expect(Object.values(committed.results).map((row) => row.op)).toEqual([
+        "update",
+        "close",
+        "release",
+      ]);
+      const completed = await readItem(context.pmPath, target);
+      expect(completed.status).toBe("closed");
+      expect(completed.close_reason).toBe("Acceptance evidence passed");
+      expect(completed.resolution).toBe("Delivered atomically");
+      expect(completed).not.toHaveProperty("assignee");
+      expect(completed).not.toHaveProperty("claim_principal");
+      const fullCompleted = context.runCli(
+        ["get", target, "--json", "--full"],
+        { expectJson: true },
+      ).json as { item: Record<string, unknown> };
+      expect(fullCompleted.item.comments).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ text: "Verified in an isolated consumer" }),
+        ]),
+      );
+    });
+  });
+
+  it("restores evidence, lifecycle, and claim when a post-release step fails", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "compensated-completion");
+      expect(
+        context.runCli(["claim", target, "--author", "bulk-agent", "--json"])
+          .code,
+      ).toBe(0);
+      const before = await readItem(context.pmPath, target);
+
+      await expect(
+        commitItemMutations({
+          pmRoot: context.pmPath,
+          transactionId: "complete-item-compensate",
+          author: "bulk-agent",
+          mutations: [
+            {
+              op: "update",
+              id: target,
+              options: { comment: ["text=Must roll back"] },
+            },
+            { op: "close", id: target, reason: "Must roll back" },
+            { op: "release", id: target },
+            {
+              op: "update",
+              id: "pm-missing-after-release",
+              options: { title: "failure" },
+            },
+          ],
+        }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+
+      const restored = await readItem(context.pmPath, target);
+      expect(restored.status).toBe("open");
+      expect(restored.assignee).toBe(before.assignee);
+      expect(restored.claim_principal).toBe(before.claim_principal);
+      expect(restored.comments).toEqual(before.comments);
+    });
+  });
+
   it("keeps the transaction author authoritative over untyped mutation option bags", async () => {
     await withTempPmPath(async (context) => {
       const updateTarget = createSeedItem(context, "bulk-author-target");
@@ -327,7 +428,12 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
             history: Array<{ message?: string }>;
           }
         ).history.at(-1)?.message,
-      ).toBe("bulk-item-transaction bulk-batch-author 1-update-" + updateTarget + " apply");
+      ).toMatch(
+        new RegExp(
+          `^bulk-item-transaction bulk-batch-author 1-update-${updateTarget}-[a-f0-9]{12} apply$`,
+          "u",
+        ),
+      );
     });
   });
 
@@ -430,7 +536,7 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
             { op: "destroy", id: "pm-x" } as unknown as BulkItemMutation,
           ],
         }),
-      ).rejects.toThrow("op must be create, update, or close");
+      ).rejects.toThrow("op must be create, update, close, or release");
       await expect(
         commitItemMutations({
           ...base,

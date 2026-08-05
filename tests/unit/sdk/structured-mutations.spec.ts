@@ -3,6 +3,7 @@ import {
   itemDocumentToMutationOptions,
   parseAtomicMutationControls,
   parseItemMutationBatch,
+  resolveItemMutationDocument,
   validateItemMutationRows,
 } from "../../../src/sdk/structured-mutations.js";
 
@@ -68,6 +69,128 @@ describe("structured mutation input", () => {
     ]);
   });
 
+  it("resolves stable batch-local aliases and forward references", () => {
+    const first = resolveItemMutationDocument(
+      JSON.stringify({
+        schema_version: 1,
+        mutations: [
+          {
+            op: "create",
+            ref: "roadmap",
+            options: { title: "Roadmap", type: "Epic" },
+          },
+          {
+            op: "create",
+            ref: "delivery",
+            options: {
+              title: "Delivery",
+              type: "Feature",
+              parent: "@roadmap",
+              dep: ["id=@roadmap,kind=implements"],
+            },
+          },
+          {
+            op: "update",
+            id: "@roadmap",
+            options: { blockedBy: "@delivery" },
+          },
+        ],
+      }),
+      { transactionId: "specification-42", idPrefix: "work-" },
+    );
+    const second = resolveItemMutationDocument(
+      JSON.stringify({
+        mutations: [
+          {
+            op: "create",
+            ref: "roadmap",
+            options: { title: "Roadmap", type: "Epic" },
+          },
+        ],
+      }),
+      { transactionId: "specification-42", idPrefix: "work-" },
+    );
+
+    expect(first.references).toEqual({
+      roadmap: expect.stringMatching(/^work-[a-z0-9]{12}$/u),
+      delivery: expect.stringMatching(/^work-[a-z0-9]{12}$/u),
+    });
+    expect(second.references.roadmap).toBe(first.references.roadmap);
+    expect(first.mutations).toEqual([
+      expect.objectContaining({ op: "create", id: first.references.roadmap }),
+      expect.objectContaining({
+        op: "create",
+        id: first.references.delivery,
+        options: expect.objectContaining({
+          parent: first.references.roadmap,
+          dep: [`id=${first.references.roadmap},kind=implements`],
+        }),
+      }),
+      expect.objectContaining({
+        op: "update",
+        id: first.references.roadmap,
+        options: expect.objectContaining({
+          blockedBy: first.references.delivery,
+        }),
+      }),
+    ]);
+  });
+
+  it("rejects malformed, duplicate, unknown, and misplaced batch references", () => {
+    const options = { transactionId: "specification-42", idPrefix: "pm-" };
+    expect(() =>
+      resolveItemMutationDocument(
+        '[{"op":"create","ref":"Bad Alias","options":{}}]',
+        options,
+      ),
+    ).toThrow("must match");
+    expect(() =>
+      resolveItemMutationDocument(
+        '[{"op":"create","ref":"same","options":{}},{"op":"create","ref":"same","options":{}}]',
+        options,
+      ),
+    ).toThrow("Duplicate mutation ref");
+    expect(() =>
+      resolveItemMutationDocument(
+        '[{"op":"update","ref":"wrong","id":"pm-a","options":{}}]',
+        options,
+      ),
+    ).toThrow("only valid for create");
+    expect(() =>
+      resolveItemMutationDocument(
+        '[{"op":"create","ref":"child","options":{"parent":"@missing"}}]',
+        options,
+      ),
+    ).toThrow('Unknown mutation reference "@missing"');
+    expect(() =>
+      resolveItemMutationDocument(
+        '[{"op":"create","ref":"a","id":"pm-same","options":{}},{"op":"create","ref":"b","id":"pm-same","options":{}}]',
+        options,
+      ),
+    ).toThrow("Duplicate resolved create id");
+    expect(() =>
+      resolveItemMutationDocument(
+        '[{"op":"create","ref":"a","options":{"parent":"@b"}},{"op":"create","ref":"b","options":{"blockedBy":"@a"}}]',
+        options,
+      ),
+    ).toThrow("Mutation reference cycle");
+    expect(() =>
+      resolveItemMutationDocument(
+        '{"schema_version":2,"mutations":[{"op":"create","id":"pm-a","options":{}}]}',
+        options,
+      ),
+    ).toThrow("schema_version must be 1");
+  });
+
+  it("normalizes explicit referenced ids through the workspace prefix", () => {
+    const resolved = resolveItemMutationDocument(
+      '[{"op":"create","ref":"root","id":"ROOT","options":{"title":"Root"}}]',
+      { transactionId: "explicit-id", idPrefix: "work-" },
+    );
+    expect(resolved.references).toEqual({ root: "work-root" });
+    expect(resolved.mutations[0]?.id).toBe("work-root");
+  });
+
   it("rejects malformed JSON, rows, keys, operations, ids, reasons, and options", () => {
     expect(() => parseItemMutationBatch("{")).toThrow("must be valid JSON");
     vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
@@ -84,7 +207,7 @@ describe("structured mutation input", () => {
     ).toThrow('Did you mean "op"');
     expect(() =>
       parseItemMutationBatch('[{"op":"remove","id":"pm-a","options":{}}]'),
-    ).toThrow("must be create, update, or close");
+    ).toThrow("must be create, update, close, or release");
     expect(() =>
       parseItemMutationBatch('[{"op":"create","id":"","options":{}}]'),
     ).toThrow("requires a non-empty id");
@@ -102,6 +225,9 @@ describe("structured mutation input", () => {
     expect(() =>
       parseItemMutationBatch('[{"op":"close","id":"pm-a"}]'),
     ).toThrow("requires a non-empty reason");
+    expect(parseItemMutationBatch('[{"op":"release","id":"pm-a"}]')).toEqual([
+      { op: "release", id: "pm-a" },
+    ]);
     expect(() =>
       parseItemMutationBatch(
         '[{"op":"close","id":"pm-a","reason":"done","options":{"forse":true}}]',

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",author,context,defect,relevance
 created_at: "2026-07-25T06:16:22.783Z"
-updated_at: "2026-07-26T17:03:35.191Z"
+updated_at: "2026-08-05T06:39:38.466Z"
 closed_at: "2026-07-25T11:58:44.562Z"
 author: unknown
 estimated_minutes: 240
@@ -24,31 +24,32 @@ release: v2026.7.26
 resolution: "Centralized author precedence and migrated create, copy, context, next, claim, and usage feedback to automatic harness detection with typed usage failures."
 expected_result: Agents need no PM_AUTHOR override; every mutation and context-usage path records detected identity and no duplicated precedence path can silently emit unknown.
 actual_result: "Packed acceptance recorded harness:codex with PM_AUTHOR unset and no hook warning; source contract limits PM_AUTHOR access to the canonical resolver and health has zero actionable unknown events."
-dependencies[19]{id,kind,created_at,author,source_kind}:
-  pm-4k6b,related,"2026-07-25T06:16:36.929Z",null,null
-  pm-psy1,related,"2026-07-25T06:16:36.929Z",null,null
-  pm-srns,related,"2026-07-25T06:16:36.929Z",null,null
-  pm-u14c,related,"2026-07-25T06:16:36.929Z",null,null
-  pm-z9x1r2,discovered_from,"2026-07-25T06:16:36.929Z",null,null
-  pm-33cw,related,"2026-07-25T06:25:02.245Z",null,null
-  pm-e6tm5c,related,"2026-07-25T06:25:02.245Z",null,null
-  pm-zqpnte,related,"2026-07-25T06:25:02.245Z",null,null
-  pm-3oqjnc,related,"2026-07-26T17:03:34.893Z",null,null
-  pm-e02lgu,related,"2026-07-26T17:03:34.893Z",null,null
-  pm-f86lth,related,"2026-07-26T17:03:34.893Z",null,null
-  pm-mn4zas,related,"2026-07-26T17:03:34.893Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:03:34.893Z",null,null
-  pm-p1g43q,related,"2026-07-26T17:03:34.893Z",null,null
-  pm-tuadp2,related,"2026-07-26T17:03:34.893Z",null,null
-  pm-wt43zj,related,"2026-07-26T17:03:34.893Z",null,null
-  pm-xgcp18,related,"2026-07-26T17:03:34.893Z",null,null
-  pm-yf07b7,related,"2026-07-26T17:03:34.893Z",null,null
-  pm-zlv8jl,related,"2026-07-26T17:03:34.893Z",null,null
-comments[4]{created_at,author,text}:
+dependencies[19]{id,kind,created_at}:
+  pm-4k6b,related,"2026-07-25T06:16:36.929Z"
+  pm-psy1,related,"2026-07-25T06:16:36.929Z"
+  pm-srns,related,"2026-07-25T06:16:36.929Z"
+  pm-u14c,related,"2026-07-25T06:16:36.929Z"
+  pm-z9x1r2,discovered_from,"2026-07-25T06:16:36.929Z"
+  pm-33cw,related,"2026-07-25T06:25:02.245Z"
+  pm-e6tm5c,related,"2026-07-25T06:25:02.245Z"
+  pm-zqpnte,related,"2026-07-25T06:25:02.245Z"
+  pm-3oqjnc,related,"2026-07-26T17:03:34.893Z"
+  pm-e02lgu,related,"2026-07-26T17:03:34.893Z"
+  pm-f86lth,related,"2026-07-26T17:03:34.893Z"
+  pm-mn4zas,related,"2026-07-26T17:03:34.893Z"
+  pm-mpbb,implements,"2026-07-26T17:03:34.893Z"
+  pm-p1g43q,related,"2026-07-26T17:03:34.893Z"
+  pm-tuadp2,related,"2026-07-26T17:03:34.893Z"
+  pm-wt43zj,related,"2026-07-26T17:03:34.893Z"
+  pm-xgcp18,related,"2026-07-26T17:03:34.893Z"
+  pm-yf07b7,related,"2026-07-26T17:03:34.893Z"
+  pm-zlv8jl,related,"2026-07-26T17:03:34.893Z"
+comments[5]{created_at,author,text}:
   "2026-07-25T06:25:01.526Z","harness:claude-code","Evidence 2026-07-25: created pm-42p9nk, pm-wt43zj, pm-tuadp2, pm-3oqjnc, pm-zlv8jl, pm-e6tm5c, pm-xgcp18, pm-f86lth, pm-yf07b7, pm-p1g43q, pm-mn4zas in this session with no PM_AUTHOR set. Every one carries 'author: unknown' in its .toon and an unknown-author create entry in its history stream, while subsequent pm update calls on the same items in the same shell recorded author 'harness:claude-code' with author_source 'detected'. The divergence isolates the defect to the create/copy selectAuthor duplicates rather than to detection itself."
   "2026-07-25T06:35:00.766Z","harness:claude-code","Disposition recorded 2026-07-25: the 11 create entries stamped 'unknown' by this defect were acknowledged through pm history-author-acknowledge (attributed harness:claude-code, evidence = each item's next entry recording author_source 'detected' from the same process). pm health returns ok:true again with actionable_unknown_event_count 0 and 48 acknowledged. This is a disposition, not a fix — until the create/copy selectAuthor duplicates are removed, every harness-identified create will keep producing a new actionable unknown-author event and re-redden health."
   "2026-07-25T11:31:42.429Z","harness:codex","Evidence: canonical author resolution now owns all PM_AUTHOR access; create/copy/context/next/claim/usage paths use detected harness identity and context usage raises a typed validation error. Linked tests passed 322/322. Packed consumer created and updated an item as harness:codex with PM_AUTHOR unset and no hook warning. Five pre-rebuild creation events were dispositioned append-only via history-author-acknowledge; no history was rewritten."
   "2026-07-25T11:57:47.276Z","harness:codex","Exact-head delivery evidence: PR #707 head 7c1921db passed every required GitHub check, including static quality, Windows Node 24, Ubuntu Node 22/24 and macOS smokes, typecheck, compatibility, all four coverage shards plus the 100% coverage gate, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, docs/skills, package smokes, and benchmarks. Manual packed Node/Bun consumer acceptance and telemetry/Sentry gates also passed. Automated review returned no inline findings; CodeRabbit/Sourcery/Gemini/Greptile limitations are documented on the PR and Greptile quota is linked to canonical pm-e02lgu."
+  "2026-08-05T06:39:38.466Z","harness:codex","Regression follow-up 2026-08-05: packed pm item mutate acceptance found the new structured adapter bypassed tracker author_default with a literal unknown fallback. Active pm-o8z748 now consumes live settings through canonical resolveAuthor; focused and packed regression evidence is attached there."
 files[9]{path,scope,note}:
   src/cli/after-command-context-usage.ts,project,Typed after-command usage attribution and telemetry boundary
   src/cli/commands/context.ts,project,Context usage attribution

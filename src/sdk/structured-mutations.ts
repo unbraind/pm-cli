@@ -4,13 +4,18 @@
  * Parses agent-authored JSON mutation payloads into the public atomic item
  * transaction contract and normalizes full item documents for CLI round trips.
  */
+import crypto from "node:crypto";
+import { normalizeItemId, normalizePrefix } from "../core/item/id.js";
 import {
   EXIT_CODE,
   ITEM_PROJECT_CONTEXT_KEYS,
 } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
-import { CLOSE_FLAG_CONTRACTS } from "./cli-contracts/flag-contracts.js";
+import {
+  CLOSE_FLAG_CONTRACTS,
+  RELEASE_FLAG_CONTRACTS,
+} from "./cli-contracts/flag-contracts.js";
 import {
   CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
   UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
@@ -19,6 +24,12 @@ import type { PmClientFullMutationOptions } from "./runtime.js";
 import type { BulkItemMutation } from "./item-transaction.js";
 
 const MUTATION_ROW_KEYS = ["op", "id", "reason", "options"] as const;
+const REFERENCED_MUTATION_ROW_KEYS = [
+  ...MUTATION_ROW_KEYS,
+  "ref",
+] as const;
+const MUTATION_DOCUMENT_KEYS = ["schema_version", "mutations"] as const;
+const MUTATION_REFERENCE_PATTERN = /^[a-z][a-z0-9._-]{0,63}$/u;
 const ITEM_ENVELOPE_KEYS = [
   "item",
   "linked",
@@ -94,7 +105,32 @@ const MUTATION_OPTION_KEYS: Readonly<
         letter.toUpperCase(),
       ),
   ).filter((key) => key !== "reason"),
+  release: RELEASE_FLAG_CONTRACTS.map((contract) =>
+    contract.flag
+      .slice(2)
+      .replaceAll(/-([a-z])/gu, (_match, letter: string) =>
+        letter.toUpperCase(),
+      ),
+  ),
 };
+
+/** Controls for resolving one versioned mutation document. */
+export interface ResolveItemMutationDocumentOptions {
+  /** Stable transaction identity used to derive replay-safe create ids. */
+  transactionId: string;
+  /** Workspace item-id prefix. */
+  idPrefix: string;
+}
+
+/** Fully validated mutation document ready for preview or commit. */
+export interface ResolvedItemMutationDocument {
+  /** Versioned structured-input contract. */
+  schema_version: 1;
+  /** Atomic mutations with every local reference replaced by a concrete id. */
+  mutations: BulkItemMutation[];
+  /** Batch-local alias to concrete-id receipt. */
+  references: Record<string, string>;
+}
 
 /** Validated transaction controls shared by atomic CLI and MCP adapters. */
 export interface AtomicMutationControls {
@@ -251,9 +287,14 @@ function validateMutationOptions(
 function validateMutationRow(value: unknown, index: number): BulkItemMutation {
   const mutation = validateMutationObject(value, index);
   const { op, id, reason } = mutation;
-  if (op !== "create" && op !== "update" && op !== "close") {
+  if (
+    op !== "create" &&
+    op !== "update" &&
+    op !== "close" &&
+    op !== "release"
+  ) {
     throw new PmCliError(
-      `Mutation ${index + 1} op must be create, update, or close.`,
+      `Mutation ${index + 1} op must be create, update, close, or release.`,
       EXIT_CODE.USAGE,
     );
   }
@@ -276,6 +317,15 @@ function validateMutationRow(value: unknown, index: number): BulkItemMutation {
       op,
       id: normalizedId,
       reason: reason.trim(),
+      ...(options === undefined
+        ? {}
+        : { options: options as PmClientFullMutationOptions }),
+    };
+  }
+  if (op === "release") {
+    return {
+      op,
+      id: normalizedId,
       ...(options === undefined
         ? {}
         : { options: options as PmClientFullMutationOptions }),
@@ -309,6 +359,269 @@ export function parseItemMutationBatch(input: string): BulkItemMutation[] {
     );
   }
   return rows.map((row, index) => validateMutationRow(row, index));
+}
+
+function deriveReferencedItemId(
+  transactionId: string,
+  reference: string,
+  idPrefix: string,
+): string {
+  const digest = crypto
+    .createHash("sha256")
+    .update(transactionId)
+    .update("\0")
+    .update(reference)
+    .digest("hex");
+  const token = BigInt(`0x${digest.slice(0, 16)}`)
+    .toString(36)
+    .padStart(13, "0")
+    .slice(-12);
+  return `${normalizePrefix(idPrefix)}${token}`;
+}
+
+function replaceExactMutationReference(
+  value: unknown,
+  references: Readonly<Record<string, string>>,
+): unknown {
+  if (typeof value !== "string" || !value.startsWith("@")) {
+    return value;
+  }
+  const reference = value.slice(1);
+  const resolved = references[reference];
+  if (resolved === undefined) {
+    throw new PmCliError(
+      `Unknown mutation reference "${value}".`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return resolved;
+}
+
+function replaceDependencyReference(
+  value: unknown,
+  references: Readonly<Record<string, string>>,
+): unknown {
+  if (typeof value !== "string") return value;
+  return value.replace(
+    /(^|,)id=@([a-z][a-z0-9._-]{0,63})(?=,|$)/gu,
+    (_match, prefix: string, reference: string) => {
+      const resolved = references[reference];
+      if (resolved === undefined) {
+        throw new PmCliError(
+          `Unknown mutation reference "@${reference}".`,
+          EXIT_CODE.USAGE,
+        );
+      }
+      return `${prefix}id=${resolved}`;
+    },
+  );
+}
+
+function referencedAliases(value: unknown): string[] {
+  if (typeof value !== "string") return [];
+  if (value.startsWith("@")) return [value.slice(1)];
+  return [...value.matchAll(/(?:^|,)id=@([a-z][a-z0-9._-]{0,63})(?=,|$)/gu)]
+    .map((match) => match[1])
+    .filter((reference): reference is string => reference !== undefined);
+}
+
+function assertAcyclicCreateReferences(
+  rows: ReadonlyArray<Record<string, unknown>>,
+): void {
+  const graph = new Map<string, string[]>();
+  for (const row of rows) {
+    if (row.op !== "create" || typeof row.ref !== "string") continue;
+    const mutationOptions = isPlainObject(row.options) ? row.options : {};
+    const dependencies = Array.isArray(mutationOptions.dep)
+      ? mutationOptions.dep
+      : mutationOptions.dep === undefined
+        ? []
+        : [mutationOptions.dep];
+    graph.set(
+      row.ref,
+      [mutationOptions.parent, mutationOptions.blockedBy, ...dependencies]
+        .flatMap(referencedAliases),
+    );
+  }
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (reference: string): void => {
+    if (visiting.has(reference)) {
+      throw new PmCliError(
+        `Mutation reference cycle includes "@${reference}".`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (visited.has(reference)) return;
+    visiting.add(reference);
+    for (const dependency of graph.get(reference) ?? []) {
+      if (graph.has(dependency)) visit(dependency);
+    }
+    visiting.delete(reference);
+    visited.add(reference);
+  };
+  for (const reference of graph.keys()) visit(reference);
+}
+
+function parseMutationDocumentRows(
+  input: string,
+): Array<Record<string, unknown>> {
+  const parsed = parseJsonValue(input, "Mutation document");
+  const envelope = Array.isArray(parsed)
+    ? { schema_version: 1, mutations: parsed }
+    : parsed;
+  if (!isPlainObject(envelope)) {
+    throw new PmCliError(
+      "Mutation document must be a JSON array or object.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  for (const key of Object.keys(envelope)) {
+    if (
+      !MUTATION_DOCUMENT_KEYS.includes(
+        key as (typeof MUTATION_DOCUMENT_KEYS)[number],
+      )
+    ) {
+      throw unknownKeyError("mutation document", key, MUTATION_DOCUMENT_KEYS);
+    }
+  }
+  if (
+    envelope.schema_version !== undefined &&
+    envelope.schema_version !== 1
+  ) {
+    throw new PmCliError(
+      "Mutation document schema_version must be 1.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (!Array.isArray(envelope.mutations) || envelope.mutations.length === 0) {
+    throw new PmCliError(
+      "Mutation document requires a non-empty mutations array.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return envelope.mutations.map((row, index) => {
+    if (!isPlainObject(row)) {
+      throw new PmCliError(
+        `Mutation ${index + 1} must be an object.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    for (const key of Object.keys(row)) {
+      if (
+        !REFERENCED_MUTATION_ROW_KEYS.includes(
+          key as (typeof REFERENCED_MUTATION_ROW_KEYS)[number],
+        )
+      ) {
+        throw unknownKeyError(
+          `mutation ${index + 1}`,
+          key,
+          REFERENCED_MUTATION_ROW_KEYS,
+        );
+      }
+    }
+    return { ...row };
+  });
+}
+
+function collectMutationReferences(
+  rows: ReadonlyArray<Record<string, unknown>>,
+  options: ResolveItemMutationDocumentOptions,
+): Record<string, string> {
+  const references: Record<string, string> = {};
+  for (const [index, row] of rows.entries()) {
+    if (row.ref === undefined) continue;
+    if (row.op !== "create") {
+      throw new PmCliError(
+        `Mutation ${index + 1} ref is only valid for create operations.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (
+      typeof row.ref !== "string" ||
+      !MUTATION_REFERENCE_PATTERN.test(row.ref)
+    ) {
+      throw new PmCliError(
+        `Mutation ${index + 1} ref must match ${MUTATION_REFERENCE_PATTERN.source}.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (references[row.ref] !== undefined) {
+      throw new PmCliError(
+        `Duplicate mutation ref "${row.ref}".`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    references[row.ref] =
+      typeof row.id === "string" && row.id.trim().length > 0
+        ? normalizeItemId(row.id, options.idPrefix)
+        : deriveReferencedItemId(
+            options.transactionId,
+            row.ref,
+            options.idPrefix,
+          );
+  }
+  return references;
+}
+
+/**
+ * Resolve a versioned heterogeneous mutation document. Create rows may declare
+ * a unique `ref`; omitted ids are derived deterministically from the stable
+ * transaction id, and `@ref` forward references are supported in target ids,
+ * parent/blocked-by options, and dependency entries.
+ */
+export function resolveItemMutationDocument(
+  input: string,
+  options: ResolveItemMutationDocumentOptions,
+): ResolvedItemMutationDocument {
+  const rows = parseMutationDocumentRows(input);
+  const references = collectMutationReferences(rows, options);
+  assertAcyclicCreateReferences(rows);
+
+  const resolvedRows = rows.map((row) => {
+    const resolved = { ...row };
+    const reference = typeof resolved.ref === "string" ? resolved.ref : undefined;
+    delete resolved.ref;
+    if (reference !== undefined) {
+      resolved.id = references[reference];
+    } else {
+      resolved.id = replaceExactMutationReference(resolved.id, references);
+    }
+    if (isPlainObject(resolved.options)) {
+      const mutationOptions = { ...resolved.options };
+      for (const key of ["parent", "blockedBy"] as const) {
+        if (mutationOptions[key] !== undefined) {
+          mutationOptions[key] = replaceExactMutationReference(
+            mutationOptions[key],
+            references,
+          );
+        }
+      }
+      if (Array.isArray(mutationOptions.dep)) {
+        mutationOptions.dep = mutationOptions.dep.map((entry) =>
+          replaceDependencyReference(entry, references),
+        );
+      } else if (mutationOptions.dep !== undefined) {
+        mutationOptions.dep = replaceDependencyReference(
+          mutationOptions.dep,
+          references,
+        );
+      }
+      resolved.options = mutationOptions;
+    }
+    return resolved;
+  });
+  const mutations = parseItemMutationBatch(JSON.stringify(resolvedRows));
+  const createIds = mutations
+    .filter((mutation) => mutation.op === "create")
+    .map((mutation) => mutation.id);
+  if (new Set(createIds).size !== createIds.length) {
+    throw new PmCliError(
+      "Duplicate resolved create id in mutation document.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return { schema_version: 1, mutations, references };
 }
 
 function serializePairs(

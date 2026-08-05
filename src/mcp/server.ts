@@ -48,7 +48,7 @@ import { isRuntimeRecord } from "../sdk/runtime-input.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
   parseAtomicMutationControls,
-  validateItemMutationRows,
+  resolveItemMutationDocument,
 } from "../sdk/structured-mutations.js";
 import { resolveAuthor, resolvePmRoot } from "../sdk/runtime-primitives.js";
 
@@ -167,21 +167,29 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_run: (args) => runAction(args as PmActionInput),
   pm_mutate: async (args) => {
     const transactionId = readRequiredString(args, "transactionId");
-    const mutations = validateItemMutationRows(args.mutations);
     const controls = parseAtomicMutationControls(args);
+    const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
+    const pmRoot = resolvePmRoot(
+      cwd,
+      typeof args.path === "string" ? args.path : undefined,
+    );
+    const resolved = resolveItemMutationDocument(
+      JSON.stringify({ schema_version: 1, mutations: args.mutations }),
+      {
+        transactionId,
+        idPrefix: (await readSettings(pmRoot)).id_prefix,
+      },
+    );
+    const { mutations, references } = resolved;
     if (args.dryRun === true) {
       return {
         transaction_id: transactionId,
         dry_run: true,
         mutation_count: mutations.length,
         mutations,
+        references,
       };
     }
-    const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
-    const pmRoot = resolvePmRoot(
-      cwd,
-      typeof args.path === "string" ? args.path : undefined,
-    );
     const result = await runWithActiveExtensions(
       {
         cwd: typeof args.cwd === "string" ? args.cwd : undefined,
@@ -205,6 +213,7 @@ const HANDLERS: Record<string, ToolHandler> = {
       ...commitResult,
       transaction_id: committedTransactionId,
       mutation_count: mutations.length,
+      references,
     };
   },
   ...Object.fromEntries(

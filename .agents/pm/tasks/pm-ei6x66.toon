@@ -2,11 +2,13 @@ id: pm-ei6x66
 title: "Local and hosted verification are two independently maintained gate sets with no parity contract, so passing everything locally still says nothing about what CI will run"
 description: "The local composite runs thirteen checks: build, typecheck, docs-skills, static-quality, coverage, version-policy, secret-scan, npx-smoke, package-first dogfood, pack dry run, compatibility, telemetry, hosted-analysis, and a review gate. The hosted gates job runs a different set, including checks the local composite never runs — tracker merge-safety, the required context-relevance evaluation, the search-eval harness, plugin smokes — alongside separate jobs for coverage sharding, Windows regression, code scanning, benchmarks, security, and docs. The two sets also diverge in the other direction, because the local composite runs review and telemetry gates that the pull-request pipeline does not. Neither set is derived from the other and nothing compares them, so the honest answer to what do I have to run before pushing is unknown to a contributor and to an agent. The consequence is not a missing gate but an unmeasured one: divergence grows silently, and every gate added to one side is a coin flip on whether it reaches the other."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[6]: ci,developer-experience,gates,governance,quality,verification
 created_at: "2026-07-26T10:47:54.428Z"
-updated_at: "2026-08-01T20:25:37.776Z"
+updated_at: "2026-08-05T06:43:07.472Z"
+closed_at: "2026-08-05T06:43:06.374Z"
+completed_at: "2026-08-05T06:43:06.374Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One declared registry lists every enforced gate with where it runs — local, pull request, nightly, release — and that registry is the source both sides read rather than two hand-maintained lists; A check fails when a gate exists on one side and is neither present nor explicitly waived on the other, so divergence is a build failure rather than a discovery; A single documented command gives a contributor or agent the strongest verification available locally, and its relationship to the hosted set is stated precisely rather than implied; Gates that legitimately cannot run locally — hosted analysis, matrix platforms, published-artifact checks — are recorded as such with the reason, not omitted; The agent-facing guidance names the preflight command, so the local loop is discoverable without reading workflow files"
@@ -19,6 +21,9 @@ why_now: "The gate registry work is about to define per-gate ownership, and defi
 parent: pm-u9d0
 risk: medium
 confidence: 80
+resolution: Release gates now install clone-local merge drivers before tracker measurement.
+expected_result: Local and hosted release verification observe the same initialized tracker configuration.
+actual_result: Local pipeline-order reproduction reports tracker measurement ok true with zero violations.
 dependencies[10]:
   - id: pm-k6t4yb
     kind: blocked_by
@@ -53,9 +58,21 @@ dependencies[10]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-31T06:27:57.149Z","harness:claude-code","Concrete instance measured 2026-07-31, filed as pm-631t9p. The parity gap here runs in the direction the item does not yet name: four harness-detection specs fail locally under Claude Code and pass on GitHub Actions, on the same commit, because runners carry no harness environment variables and the local machine does. So the hosted gate is not merely a different rule set — for this class it is a strictly weaker environment, and the green signal it publishes is produced by conditions no contributor works under. Any parity contract this item defines should include the environment the gates run in, not only the set of checks they run."
+  "2026-08-05T06:17:58.283Z","harness:codex","Live failure evidence 2026-08-05: scheduled Auto Release run 30978379616 failed in tracker-measurement-gate because run-release-pipeline did not perform the clone-local pm merge install bootstrap that the CI gates job performs before the same measurement. The clean runner therefore emitted five validate_merge_driver_configuration warnings as an undeclared population. The same run also observed integrity severity 1 from extension-health state; current main's renderer-scope regression test is green, so the release retry must verify the exact post-fix tracker state rather than raising the ceiling."
+  "2026-08-05T06:42:43.628Z","harness:codex","Implementation evidence 2026-08-05: Auto Release run 30978379616 failed because fresh release clones ran tracker measurements before clone-local merge drivers were installed, unlike CI. runReleaseGates now executes dist/cli.js merge install --no-extensions first; unit coverage asserts order. A local clean-order reproduction reports tracker measurement ok true with zero violations and health integrity observed zero. Releasing docs now state the parity bootstrap."
 notes[2]{created_at,author,text}:
   "2026-07-27T12:55:17.456Z","harness:claude-code","Evidence 2026-07-27: the local half of the parity question has a prior gap, which is that nothing invokes it.\n\nChecked on this repository at HEAD: .git/hooks contains no non-sample hook, there is no .husky directory, package.json declares no prepare, pre-commit or lint-staged wiring, and none of the 54 scripts is bound to a git event. Every local defence in the project (release:gates and the eleven other check scripts) runs only when a human or an agent types it.\n\nThis matters for the parity contract this item defines. A registry that says a gate runs locally is describing a capability, not a control, unless something guarantees invocation. Two workspaces can be in perfect registry parity and produce entirely different pre-push confidence depending on whether the operator remembered. The fifth acceptance criterion, that agent-facing guidance names the preflight command, is the right shape but stops at discoverability; the question of whether the local set is advisory or enforced should be answered explicitly in the registry, per gate, so that \"runs locally\" is never mistaken for \"ran\"."
   "2026-07-28T02:56:22.759Z","harness:claude-code","Live instance of the local-versus-hosted gate divergence this item owns, observed 2026-07-28.\n\nAuto Release run 30318124311 (workflow_dispatch, 8m43s) FAILED with:\n\n  Gate failed: sentry-telemetry-gate\n  telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter\n  Command failed: node scripts/release/run-gates.mjs --telemetry-mode required\n\nThe structural point: the workflow exposes telemetry_mode as a dispatch choice with options off, best-effort and required, defaulting to off. Selecting required makes the run fail before it can do anything useful, because the gate resolves its adapter from PM_TELEMETRY_QUERY_COMMAND or an explicit --telemetry-command, and by design that adapter is private and local. Hosted CI has no way to supply it. sentry-telemetry-gate.mjs:488 fails hard when telemetryMode is required and no command path is configured.\n\nSo the workflow offers an input value that is unsatisfiable in the only environment the workflow runs in. That is exactly this item's class - a gate whose behaviour is not the same locally and hosted - in its sharpest form: not a divergence in what the two sets check, but a mode that can only ever pass in one of them. A maintainer choosing required from the dispatch menu gets a red release with no indication that the choice was structurally impossible rather than that telemetry was unhealthy.\n\nThe recovery path worked: run 30318608865 succeeded 10 minutes later and cut 2026.7.28. So this cost a failed run and a manual retry, not a missed release. It is also a contributor to the dispatch-path failure rate - across the last 100 auto-release runs, workflow_dispatch is 12 runs with 7 failures while schedule is 3 successes and 1 failure, which is a materially worse record for the manual path and is worth separating from the scheduled-run failure rate that its own item tracks.\n\nDispositions worth considering at fix time: hide or reject required unless an adapter is configured, or have the gate report a distinct unsatisfiable-in-this-environment condition instead of a generic missing-command failure, or move the required mode behind the local gate set only. The parity contract this item asks for should state which modes are reachable in which environment."
+files[1]{path,scope,note}:
+  scripts/release/run-release-pipeline.mjs,project,fresh-clone-merge-driver-parity
+tests[2]{command,scope,timeout_seconds}:
+  node dist/cli.js merge install --no-extensions && node scripts/release/tracker-measurement-gate.mjs --json,project,240
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msfpzqko-6rnadl,test,failed,"2026-08-05T06:42:33.420Z","2026-08-05T06:42:45.960Z","2026-08-05T06:42:45.960Z",1,1,0
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,release-gate-order
+close_reason: Aligned release-pipeline tracker gates with CI fresh-clone merge-driver bootstrap and proved zero measurement violations.
 body: ""

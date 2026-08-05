@@ -180,6 +180,10 @@ export function ensureGeneratedReleaseSectionHasContent(version, changelogPath =
 }
 
 export function runReleaseGates(options) {
+  // Fresh clones do not inherit Git's repository-local merge driver config.
+  // Tracker validation measures that config, so release and CI gates must run
+  // the same required bootstrap before comparing repository health.
+  runCommand(process.execPath, ["dist/cli.js", "merge", "install", "--no-extensions"]);
   const args = ["scripts/release/run-gates.mjs", "--telemetry-mode", options.telemetryMode];
   if (options.skipCompatibility) {
     args.push("--skip-compatibility");

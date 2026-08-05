@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: agent-ux,"area:extensions","area:health","area:sdk",collision,determinism,github-report,packages
 created_at: "2026-08-04T08:44:04.821Z"
-updated_at: "2026-08-04T12:23:25.395Z"
+updated_at: "2026-08-05T06:02:56.856Z"
 closed_at: "2026-08-04T12:23:24.640Z"
 completed_at: "2026-08-04T12:23:24.640Z"
 author: "harness:codex"
@@ -27,12 +27,13 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-nf7q,discovered_from,"2026-08-04T08:44:04.821Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-08-04T08:44:04.821Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-04T08:44:04.821Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-04T08:44:04.821Z","harness:codex","Duplicate check 2026-08-04: all-status searches covered extension collisions, scoped renderer ownership, winner selection, default priority, package doctor, and health. Closed pm-nf7q handled scoped renderer ownership in isolation, but no active item owns deterministic winner reporting plus equal-priority policy across the full external package fleet. GitHub source: https://github.com/unbraind/pm-cli/issues/890"
   "2026-08-04T09:19:18.204Z","harness:codex","External-fleet evidence 2026-08-04: the isolated npm registry smoke discovered and tested 18 published external packages, all at 2026.8.4, with init, install, deep package doctor, and runtime contracts passing for every package; activation failures=0 and blocking failures=0. The run still surfaces intentional/global override warnings, and pm-graph installation took about 22.8s of a 24.1s smoke while pm-ops completed in 3.9s. This fleet pass does not remove the collision/winner ambiguity reported by GitHub #890; it proves the current packages succeed in isolation, not when composed together."
   "2026-08-04T11:47:38.020Z","harness:codex","Evidence: renderer collision governance now permits statically disjoint command ownership while retaining warnings for overlapping or unscoped ownership; documentation records deterministic priority, winner/displaced ordering, and the static-disjointness boundary. Linked extension tests passed; full coverage and lint gates passed."
   "2026-08-04T11:52:03.736Z","harness:codex","Review handoff: PR #893 https://github.com/unbraind/pm-cli/pull/893 at initial head 6c31a5f18 packages this item with the related SDK/CLI governance tranche."
   "2026-08-04T12:23:23.228Z","harness:codex","Final review evidence: PR #893 exact head a8ea2b426 passed every hosted check, including static, 4 coverage shards plus coverage gate, typecheck, compatibility, smokes, Windows, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, DeepScan, CodeFactor, Codecov, and CodSpeed. Sourcery's actionable flag-normalization thread was implemented/replied/resolved; all bot comments/reviews were reacted to and acknowledged. CodeRabbit was quota-limited and Greptile supplied no response within the review window."
+  "2026-08-05T06:02:56.856Z","harness:codex","GitHub intake 2026-08-05: GH-897 is a duplicate report against pm CLI 2026.8.3. Current main already contains this item's exact disjoint-command renderer rule from PR #893; focused extension-loader verification passes 112/112. Linked the canonical item on GH-897 and closed the duplicate report."
 learnings[1]{created_at,author,text}:
   "2026-08-04T11:47:53.471Z","harness:codex",Renderer ownership is safely composable only when declared command scopes are statically nonempty and disjoint; runtime discriminators cannot prove collision freedom during activation.
 files[1]{path,scope,note}:

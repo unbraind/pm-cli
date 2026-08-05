@@ -320,8 +320,8 @@ const RAW_TOOLS: ToolDefinition[] = [
   {
     name: "pm_mutate",
     description:
-      "Apply an ordered create/update/close batch atomically through the public pm SDK. " +
-      "Use a stable transactionId to resume interrupted work; set dryRun=true to validate and preview without writes.",
+      "Apply an ordered create/update/close/release batch atomically through the public pm SDK. " +
+      "Create rows may declare ref and omit id; @ref forward references resolve deterministically from the stable transactionId. Set dryRun=true to validate and preview without writes.",
     inputSchema: objectSchema(
       {
         transactionId: {
@@ -332,16 +332,24 @@ const RAW_TOOLS: ToolDefinition[] = [
           type: "array",
           minItems: 1,
           description:
-            "Ordered rows shaped as {op:create|update|close,id,options?,reason?}.",
+            "Ordered rows shaped as {op:create|update|close|release,id?,ref?,options?,reason?}.",
           items: {
             type: "object",
             properties: {
-              op: { type: "string", enum: ["create", "update", "close"] },
+              op: {
+                type: "string",
+                enum: ["create", "update", "close", "release"],
+              },
               id: idSchema,
+              ref: {
+                type: "string",
+                description:
+                  "Batch-local create alias; its deterministic id can be referenced as @alias by any row.",
+              },
               reason: { type: "string" },
               options: { type: "object" },
             },
-            required: ["op", "id"],
+            required: ["op"],
             additionalProperties: false,
           },
         },

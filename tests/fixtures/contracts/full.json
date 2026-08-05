@@ -3112,6 +3112,81 @@
       "provider": "extension"
     },
     {
+      "command": "item complete",
+      "flags": [
+        {
+          "flag": "--transaction-id",
+          "required": true,
+          "value_name": "value"
+        },
+        {
+          "flag": "--reason",
+          "value_name": "value"
+        },
+        {
+          "flag": "--file",
+          "repeatable": true,
+          "value_name": "value"
+        },
+        {
+          "flag": "--doc",
+          "repeatable": true,
+          "value_name": "value"
+        },
+        {
+          "flag": "--test",
+          "repeatable": true,
+          "value_name": "value"
+        },
+        {
+          "flag": "--comment",
+          "repeatable": true,
+          "value_name": "value"
+        },
+        {
+          "flag": "--note",
+          "repeatable": true,
+          "value_name": "value"
+        },
+        {
+          "flag": "--learning",
+          "repeatable": true,
+          "value_name": "value"
+        },
+        {
+          "flag": "--resolution",
+          "value_name": "value"
+        },
+        {
+          "flag": "--expected-result",
+          "value_name": "value"
+        },
+        {
+          "flag": "--actual-result",
+          "value_name": "value"
+        },
+        {
+          "flag": "--completed-at",
+          "value_name": "value"
+        },
+        {
+          "flag": "--validate-close",
+          "value_name": "mode"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--author",
+          "value_name": "value"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "item mutate",
       "flags": [
         {
@@ -9255,6 +9330,33 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
+        "command": "item complete",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "item complete",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
         "command": "item mutate",
         "default_max_estimated_tokens": 2000,
         "default_max_estimated_tokens_by_format": {
@@ -12450,6 +12552,7 @@
     "init",
     "install",
     "item",
+    "item complete",
     "item mutate",
     "learnings",
     "list",
@@ -20503,7 +20606,7 @@
       "required": []
     },
     {
-      "description": "Apply an ordered create/update/close batch atomically through the public pm SDK. Use a stable transactionId to resume interrupted work; set dryRun=true to validate and preview without writes.",
+      "description": "Apply an ordered create/update/close/release batch atomically through the public pm SDK. Create rows may declare ref and omit id; @ref forward references resolve deterministically from the stable transactionId. Set dryRun=true to validate and preview without writes.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -20534,7 +20637,7 @@
             "type": "number"
           },
           "mutations": {
-            "description": "Ordered rows shaped as {op:create|update|close,id,options?,reason?}.",
+            "description": "Ordered rows shaped as {op:create|update|close|release,id?,ref?,options?,reason?}.",
             "items": {
               "additionalProperties": false,
               "properties": {
@@ -20546,7 +20649,8 @@
                   "enum": [
                     "create",
                     "update",
-                    "close"
+                    "close",
+                    "release"
                   ],
                   "type": "string"
                 },
@@ -20555,11 +20659,14 @@
                 },
                 "reason": {
                   "type": "string"
+                },
+                "ref": {
+                  "description": "Batch-local create alias; its deterministic id can be referenced as @alias by any row.",
+                  "type": "string"
                 }
               },
               "required": [
-                "op",
-                "id"
+                "op"
               ],
               "type": "object"
             },

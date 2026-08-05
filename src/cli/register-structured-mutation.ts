@@ -8,15 +8,24 @@ import {
   createStdinTokenResolver,
   EXIT_CODE,
   PmCliError,
+  readSettings,
   resolveAuthor,
   resolvePmRoot,
 } from "../sdk/runtime-primitives.js";
-import { commitItemMutations } from "../sdk/item-transaction.js";
+import {
+  buildItemCompletionMutations,
+  commitItemCompletion,
+  commitItemMutations,
+} from "../sdk/item-transaction.js";
 import {
   parseAtomicMutationControls,
-  parseItemMutationBatch,
+  resolveItemMutationDocument,
 } from "../sdk/structured-mutations.js";
-import { getGlobalOptions, printResult } from "./registration-helpers.js";
+import {
+  collect,
+  getGlobalOptions,
+  printResult,
+} from "./registration-helpers.js";
 
 async function runItemMutateAction(
   options: Record<string, unknown>,
@@ -33,7 +42,6 @@ async function runItemMutateAction(
       EXIT_CODE.USAGE,
     );
   }
-  const mutations = parseItemMutationBatch(input);
   const transactionId =
     typeof options.transactionId === "string"
       ? options.transactionId.trim()
@@ -44,8 +52,120 @@ async function runItemMutateAction(
       EXIT_CODE.USAGE,
     );
   }
+  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  const settings = await readSettings(pmRoot);
+  const resolved = resolveItemMutationDocument(input, {
+    transactionId,
+    idPrefix: settings.id_prefix,
+  });
+  const { mutations, references } = resolved;
   const controls = parseAtomicMutationControls(options);
   if (options.dryRun === true) {
+    printResult(
+      {
+        transaction_id: transactionId,
+        dry_run: true,
+        mutation_count: mutations.length,
+        mutations,
+        references,
+      },
+      globalOptions,
+    );
+    return;
+  }
+  const result = await commitItemMutations({
+    pmRoot,
+    transactionId,
+    author: resolveAuthor(
+      typeof options.author === "string"
+        ? options.author
+        : globalOptions.author,
+      settings.author_default,
+    ),
+    mutations,
+    ...controls,
+  });
+  printResult(
+    { ...result, mutation_count: mutations.length, references },
+    globalOptions,
+  );
+}
+
+function resolveCompletionReason(
+  positionalReason: string | undefined,
+  optionReason: unknown,
+): string {
+  if (typeof positionalReason === "string" && positionalReason.trim().length > 0) {
+    return positionalReason.trim();
+  }
+  return typeof optionReason === "string" ? optionReason.trim() : "";
+}
+
+async function runItemCompleteAction(
+  id: string,
+  positionalReason: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const transactionId =
+    typeof options.transactionId === "string"
+      ? options.transactionId.trim()
+      : "";
+  if (transactionId.length === 0) {
+    throw new PmCliError(
+      "pm item complete requires --transaction-id <value>.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const reason = resolveCompletionReason(positionalReason, options.reason);
+  if (reason.length === 0) {
+    throw new PmCliError(
+      "pm item complete requires a close reason.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const evidenceKeys = [
+    "file",
+    "doc",
+    "test",
+    "comment",
+    "note",
+    "learning",
+  ] as const;
+  const evidence = Object.fromEntries(
+    evidenceKeys
+      .filter((key) => options[key] !== undefined)
+      .map((key) => [key, options[key]]),
+  );
+  const force = options.force === true;
+  const closeOptions = {
+    ...(typeof options.resolution === "string"
+      ? { resolution: options.resolution }
+      : {}),
+    ...(typeof options.expectedResult === "string"
+      ? { expectedResult: options.expectedResult }
+      : {}),
+    ...(typeof options.actualResult === "string"
+      ? { actualResult: options.actualResult }
+      : {}),
+    ...(typeof options.completedAt === "string"
+      ? { completedAt: options.completedAt }
+      : {}),
+    ...(typeof options.validateClose === "string"
+      ? { validateClose: options.validateClose }
+      : {}),
+    ...(force ? { force: true } : {}),
+  };
+  const completion = {
+    id,
+    reason,
+    ...(Object.keys(evidence).length === 0 ? {} : { evidence }),
+    ...(Object.keys(closeOptions).length === 0 ? {} : { closeOptions }),
+    ...(force ? { releaseOptions: { force: true } } : {}),
+  };
+  if (options.dryRun === true) {
+    const mutations = buildItemCompletionMutations(completion);
     printResult(
       {
         transaction_id: transactionId,
@@ -57,19 +177,22 @@ async function runItemMutateAction(
     );
     return;
   }
-  const result = await commitItemMutations({
-    pmRoot: resolvePmRoot(process.cwd(), globalOptions.path),
+  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  const result = await commitItemCompletion({
+    pmRoot,
     transactionId,
     author: resolveAuthor(
       typeof options.author === "string"
         ? options.author
         : globalOptions.author,
-      "unknown",
+      (await readSettings(pmRoot)).author_default,
     ),
-    mutations,
-    ...controls,
+    ...completion,
   });
-  printResult({ ...result, mutation_count: mutations.length }, globalOptions);
+  printResult(
+    { ...result, mutation_count: Object.keys(result.results).length },
+    globalOptions,
+  );
 }
 
 /** Register `pm item mutate`, the stable noun-first atomic batch surface. */
@@ -102,10 +225,38 @@ export function registerStructuredMutationCommands(program: Command): void {
     )
     .option("--author <value>", "Mutation author")
     .description(
-      "Apply create/update/close mutations atomically through the public pm SDK.",
+      "Apply create/update/close/release mutations atomically through the public pm SDK.",
     )
     .action(runItemMutateAction);
+  itemCommand
+    .command("complete <id> [reason]")
+    .requiredOption(
+      "--transaction-id <value>",
+      "Stable idempotency key for the composed completion",
+    )
+    .option("--reason <value>", "Close reason when omitted positionally")
+    .option("--file <value>", "Linked file evidence", collect)
+    .option("--doc <value>", "Linked documentation evidence", collect)
+    .option("--test <value>", "Linked test evidence", collect)
+    .option("--comment <value>", "Evidence comment", collect)
+    .option("--note <value>", "Completion note", collect)
+    .option("--learning <value>", "Durable completion learning", collect)
+    .option("--resolution <value>", "Structured resolution evidence")
+    .option("--expected-result <value>", "Expected result evidence")
+    .option("--actual-result <value>", "Actual result evidence")
+    .option("--completed-at <value>", "Actual completion time")
+    .option("--validate-close <mode>", "Close validation: off, warn, or strict")
+    .option("--dry-run", "Validate and preview completion without writing")
+    .option("--force", "Override lifecycle and ownership conflicts")
+    .option("--author <value>", "Completion author")
+    .description(
+      "Record evidence, close the item, and release its claim atomically.",
+    )
+    .action(runItemCompleteAction);
 }
 
 /** Internal action hooks used by exhaustive source-level registration tests. */
-export const structuredMutationTestOnly = { runItemMutateAction };
+export const structuredMutationTestOnly = {
+  runItemCompleteAction,
+  runItemMutateAction,
+};

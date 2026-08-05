@@ -10,6 +10,7 @@ import { formatOutput } from "../../../src/core/output/output.js";
 
 const mocks = vi.hoisted(() => ({
   stdin: "" as string | undefined,
+  commitItemCompletion: vi.fn(),
   commitItemMutations: vi.fn(),
   runCreate: vi.fn(),
   runUpdate: vi.fn(),
@@ -27,7 +28,11 @@ vi.mock("../../../src/core/item/parse.js", async (importOriginal) => {
 
 vi.mock("../../../src/sdk/item-transaction.js", async (importOriginal) => {
   const actual = await importOriginal<typeof itemTransactionModule>();
-  return { ...actual, commitItemMutations: mocks.commitItemMutations };
+  return {
+    ...actual,
+    commitItemCompletion: mocks.commitItemCompletion,
+    commitItemMutations: mocks.commitItemMutations,
+  };
 });
 
 vi.mock("../../../src/cli/commands/create.js", () => ({
@@ -64,6 +69,16 @@ describe("structured mutation command registration", () => {
       status: "committed",
       recovered: false,
       results: {},
+    });
+    mocks.commitItemCompletion.mockResolvedValue({
+      transactionId: "complete",
+      status: "committed",
+      recovered: false,
+      results: {
+        "1-update-pm-a": { id: "pm-a", op: "update" },
+        "2-close-pm-a": { id: "pm-a", op: "close" },
+        "3-release-pm-a": { id: "pm-a", op: "release" },
+      },
     });
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
   });
@@ -223,8 +238,6 @@ describe("structured mutation command registration", () => {
     registerStructuredMutationCommands(commitProgram);
     await commitProgram.parseAsync(
       [
-        "--pm-path",
-        "/tmp/pm-structured-unit",
         "item",
         "mutate",
         "--transaction-id",
@@ -247,6 +260,37 @@ describe("structured mutation command registration", () => {
         createCompensation: "delete",
         lockTtlSeconds: 45,
         lockWaitMs: 900,
+      }),
+    );
+
+    mocks.stdin = JSON.stringify({
+      schema_version: 1,
+      mutations: [
+        {
+          op: "create",
+          ref: "parent",
+          options: { title: "Parent", type: "Epic" },
+        },
+        {
+          op: "create",
+          ref: "child",
+          options: { title: "Child", type: "Feature", parent: "@parent" },
+        },
+      ],
+    });
+    await commitProgram.parseAsync(
+      ["item", "mutate", "--transaction-id", "referenced-batch"],
+      { from: "user" },
+    );
+    expect(mocks.commitItemMutations).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        mutations: [
+          expect.objectContaining({ op: "create", id: expect.any(String) }),
+          expect.objectContaining({
+            op: "create",
+            options: expect.objectContaining({ parent: expect.any(String) }),
+          }),
+        ],
       }),
     );
 
@@ -275,6 +319,91 @@ describe("structured mutation command registration", () => {
         invalidProgram,
       ),
     ).rejects.toThrow("createCompensation must be close or delete");
+  });
+
+  it("previews and commits evidence, closure, and release as one completion", async () => {
+    const dryRunProgram = programWithGlobals();
+    registerStructuredMutationCommands(dryRunProgram);
+    await dryRunProgram.parseAsync(
+      [
+        "item",
+        "complete",
+        "pm-a",
+        "All gates passed",
+        "--transaction-id",
+        "complete-dry",
+        "--comment",
+        "text=Verified",
+        "--dry-run",
+      ],
+      { from: "user" },
+    );
+    expect(mocks.commitItemCompletion).not.toHaveBeenCalled();
+
+    const commitProgram = programWithGlobals();
+    registerStructuredMutationCommands(commitProgram);
+    await commitProgram.parseAsync(
+      [
+        "item",
+        "complete",
+        "pm-a",
+        "--transaction-id",
+        "complete-42",
+        "--reason",
+        "All gates passed",
+        "--file",
+        "path=src/a.ts",
+        "--doc",
+        "path=docs/SDK.md",
+        "--test",
+        "command=pnpm test",
+        "--comment",
+        "text=Verified",
+        "--note",
+        "text=Decision",
+        "--learning",
+        "text=Reusable",
+        "--resolution",
+        "Delivered",
+        "--expected-result",
+        "Green",
+        "--actual-result",
+        "Green",
+        "--completed-at",
+        "2026-08-05T00:00:00.000Z",
+        "--validate-close",
+        "warn",
+        "--force",
+        "--author",
+        "completion-agent",
+      ],
+      { from: "user" },
+    );
+    expect(mocks.commitItemCompletion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "pm-a",
+        reason: "All gates passed",
+        transactionId: "complete-42",
+        author: "completion-agent",
+        evidence: {
+          file: ["path=src/a.ts"],
+          doc: ["path=docs/SDK.md"],
+          test: ["command=pnpm test"],
+          comment: ["text=Verified"],
+          note: ["text=Decision"],
+          learning: ["text=Reusable"],
+        },
+        closeOptions: expect.objectContaining({
+          resolution: "Delivered",
+          expectedResult: "Green",
+          actualResult: "Green",
+          completedAt: "2026-08-05T00:00:00.000Z",
+          validateClose: "warn",
+          force: true,
+        }),
+        releaseOptions: { force: true },
+      }),
+    );
   });
 
   it("covers missing input, invalid transaction ids, defaults, and existing groups", async () => {
@@ -327,6 +456,23 @@ describe("structured mutation command registration", () => {
     existingGroupProgram.command("item");
     registerStructuredMutationCommands(existingGroupProgram);
     expect(existingGroupProgram.commands).toHaveLength(1);
+
+    await expect(
+      structuredMutationTestOnly.runItemCompleteAction(
+        "pm-a",
+        undefined,
+        { transactionId: "" },
+        command,
+      ),
+    ).rejects.toThrow("requires --transaction-id");
+    await expect(
+      structuredMutationTestOnly.runItemCompleteAction(
+        "pm-a",
+        undefined,
+        { transactionId: "complete" },
+        command,
+      ),
+    ).rejects.toThrow("requires a close reason");
   });
 
   it("covers lean bootstrap, command, JSON, and actionable error projections", async () => {

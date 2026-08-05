@@ -1227,6 +1227,26 @@ export const ITEM_MUTATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author", value_name: "value" },
 ];
 
+/** Atomic item-completion flags shared by contracts, help, and completions. */
+export const ITEM_COMPLETE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--transaction-id", value_name: "value", required: true },
+  { flag: "--reason", value_name: "value" },
+  { flag: "--file", value_name: "value", repeatable: true },
+  { flag: "--doc", value_name: "value", repeatable: true },
+  { flag: "--test", value_name: "value", repeatable: true },
+  { flag: "--comment", value_name: "value", repeatable: true },
+  { flag: "--note", value_name: "value", repeatable: true },
+  { flag: "--learning", value_name: "value", repeatable: true },
+  { flag: "--resolution", value_name: "value" },
+  { flag: "--expected-result", value_name: "value" },
+  { flag: "--actual-result", value_name: "value" },
+  { flag: "--completed-at", value_name: "value" },
+  { flag: "--validate-close", value_name: "mode" },
+  { flag: "--dry-run" },
+  { flag: "--force" },
+  { flag: "--author", value_name: "value" },
+];
+
 /** Public contract for copy flag contracts, shared by SDK and presentation-layer consumers. */
 export const COPY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--title" },
@@ -1737,6 +1757,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["upgrade", UPGRADE_FLAG_CONTRACTS],
     ["create", CREATE_FLAG_CONTRACTS],
     ["item mutate", ITEM_MUTATE_FLAG_CONTRACTS],
+    ["item complete", ITEM_COMPLETE_FLAG_CONTRACTS],
     ["copy", COPY_FLAG_CONTRACTS],
     ["focus", FOCUS_FLAG_CONTRACTS],
     ["aggregate", AGGREGATE_FLAG_CONTRACTS],
