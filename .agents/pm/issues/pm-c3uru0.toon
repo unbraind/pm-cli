@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:cli","area:observability",author,sentry,ux
 created_at: "2026-08-06T21:16:53.374Z"
-updated_at: "2026-08-06T21:16:53.374Z"
+updated_at: "2026-08-06T21:20:15.868Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: The observability boundary classifies this exact validation family as expected without masking unexpected errors; focused tests prove positive and negative classification; the Sentry release gate recognizes the outcome; PM-CLI-2W is dispositioned with live evidence.
@@ -31,8 +31,9 @@ customer_impact: Release operators see a high unresolved production error for a 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,blocks,"2026-08-06T21:16:53.374Z","harness:codex","cli:create:dep",detected
   pm-zqpnte,discovered_from,"2026-08-06T21:16:53.374Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-06T21:16:53.374Z","harness:codex","Duplicate check: searched all statuses for the exact Sentry ID, author acknowledgment target text, handled Sentry validation errors, and expected command-error observability noise. No item tracks PM-CLI-2W; pm-zqpnte tracks the delivered command surface, while prior classifier items cover different error families."
+  "2026-08-06T21:20:15.868Z","harness:codex","Closeout evidence: the 14-day release gate queried live systems and failed only on Sentry PM-CLI-2W (critical=0, high=1, total=1, threshold_ok=false). The separate server-side telemetry query succeeded with finish_error_rate_pct=0.61 and failures_without_error_code_rows=0. Local telemetry flush drained 1/1 queued event with a successful receipt. This item remains open and unclaimed for a later implementation tranche; no Sentry issue was resolved or hidden."
 notes[1]{created_at,author,text}:
   "2026-08-06T21:16:53.374Z","harness:codex","Live Sentry evidence: PM-CLI-2W is unresolved/high, count=2, first_seen=2026-08-06T20:37:01Z, last_seen=2026-08-06T20:45:45Z, handled=yes, release=pm-cli@2026.8.5. Keep private event payload and host metadata out of Git."
 learnings[1]{created_at,author,text}:
