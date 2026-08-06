@@ -1,6 +1,6 @@
 {
   "name": "pm-codex",
-  "version": "2026.8.5",
+  "version": "2026.8.6",
   "description": "Native Codex integration for pm-cli with bundled MCP tools, skills, commands, and agent workflows.",
   "author": {
     "name": "unbrained",
