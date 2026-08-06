@@ -2,25 +2,29 @@ id: pm-l9fv1e
 title: "Refresh compatible tooling dependencies: tsx 4.23.8 and pm-changelog 2026.8.6"
 description: "Update the compatible tsx patch release discovered during the 2026-08-06 broad SDK/CLI trust-contract tranche; preserve zero-vulnerability state and prove build, tests, coverage, and published-tooling behavior."
 type: Chore
-status: in_progress
+status: closed
 priority: 3
 tags: []
 created_at: "2026-08-06T06:13:46.798Z"
-updated_at: "2026-08-06T06:55:40.795Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#fd4660418d2b99c9f530a6e2"
+updated_at: "2026-08-06T07:26:25.022Z"
+closed_at: "2026-08-06T07:26:10.110Z"
+completed_at: "2026-08-06T07:26:10.110Z"
 author: "harness:codex"
 estimated_minutes: 20
 acceptance_criteria: "tsx resolves at live latest compatible 4.23.8; pm-changelog resolves and activates at live latest 2026.8.6; lockfile supply-chain policy, production audit, build, exact 100/100/100/100 coverage, changelog freshness, isolated package consumers, and hosted checks all pass without adopting the separately tracked incompatible majors."
 parent: pm-92if
+resolution: completed
+expected_result: "All acceptance criteria are satisfied with local, manual, and hosted evidence."
+actual_result: "Live compatible versions are locked and activated; audit, secrets, supply-chain policy, changelog, package dogfood, exact coverage, and hosted checks pass."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2qqcgl,related,"2026-08-06T06:13:46.798Z","harness:codex","cli:create:dep",detected
   pm-a2g6,supersedes,"2026-08-06T06:13:46.798Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-06T06:13:46.798Z","harness:codex","Duplicate check: exact all-status search for 'tsx 4.23.7' returned zero results. Historical dependency lineage pm-a2g6 was read live including status, resolution, close reason, comments, notes, learnings, and relationships; this item continues that lineage for the newly available patch."
   "2026-08-06T06:43:36.248Z","harness:codex","pm-changelog evidence: exact all-status search for 'pm-changelog 2026.8.6' returned zero duplicates. pnpm changelog:pm:check installed and activated npm pm-changelog 2026.8.6, generated an unchanged 1,937-item CHANGELOG.md, and verified the fresh-in-topology activation probe."
   "2026-08-06T06:54:01.122Z","harness:codex","Verification evidence: tsx updated from 4.23.5 to live latest 4.23.8 (Node >=18 compatible); pm-changelog updated from 2026.8.4 to live latest 2026.8.6 and changelog check remained unchanged across 1,937 closed items. Production audit is 0 across all severities; secret scan clean; lockfile policy, build, static/docstring/SDK/token/context/tracker gates, 88-command package dogfood, and exact 100/100/100/100 coverage pass. npm-package-arg 14 and TypeScript 7 remain separately tracked, live-verified incompatible majors and were intentionally not claimed."
   "2026-08-06T06:55:40.795Z","harness:codex","Delivery: PR https://github.com/unbraind/pm-cli/pull/916 at exact head 0a06ef07f37d6b0b5f07d0e108d9e73b8da24910."
+  "2026-08-06T07:25:42.202Z","harness:codex","Exact-head delivery evidence: PR #916 head fea4ba930cd0d1e42766510a3c4088942c2716f3 passed every hosted runner/check, including merged exact coverage, static/docstrings, Windows, compatibility, smokes, CodeQL, Trivy, TruffleHog, Semgrep, Codecov, benchmarks, and platform runtimes. Sourcery's architecture guide and Codecov/CodSpeed reports had no actionable findings and were acknowledged with contextual replies. CodeRabbit and the formal Sourcery review were rate/quota limited; each artifact was down-voted and replied to, and is recorded as a limitation rather than approval. Greptile produced no review artifact after repeated exact-head triggers."
 files[4]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog 2026.8.6 managed package metadata
   package.json,project,Latest compatible tsx patch declaration
@@ -30,4 +34,5 @@ tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs coverage,project,1200
   pnpm audit --prod --json,project,240
   pnpm build,project,240
+close_reason: Updated compatible tooling to tsx 4.23.8 and pm-changelog 2026.8.6 without adopting separately tracked incompatible majors.
 body: ""

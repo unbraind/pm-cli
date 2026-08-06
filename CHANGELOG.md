@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The coverage gate every contributor is told to run is not a gate: run-tests.mjs coverage prints the shortfall and exits 0, so only CI can fail on coverage ([pm-2qqcgl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qqcgl.toon))
+- The one projection that promises completeness is the one that loses data: pm contracts --full drops all 76 structured command summaries, returns 160 bare name strings, and reports has_omissions false ([pm-x0iv17](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x0iv17.toon))
+- GH-910: keep extension assets outside item merge-driver patterns ([pm-t9qbmp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t9qbmp.toon))
+- GH-911: preserve runtime dependency resolution in post-install activation probes ([pm-pg9599](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pg9599.toon))
+- GH-912 regression: restore atomic cross-owner seeded Plan creation ([pm-hxuqsa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hxuqsa.toon))
+
+### Other
+
+- Refresh compatible tooling dependencies: tsx 4.23.8 and pm-changelog 2026.8.6 ([pm-l9fv1e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-l9fv1e.toon))
+
 ## 2026.8.6 - 2026-08-06
 
 ### Fixed
