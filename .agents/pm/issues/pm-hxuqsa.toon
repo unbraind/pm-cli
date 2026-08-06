@@ -2,17 +2,25 @@ id: pm-hxuqsa
 title: "GH-912 regression: restore atomic cross-owner seeded Plan creation"
 description: "GitHub #912 reports a 2026.8.5 regression of GH-688: plan create persists the Plan before seeded steps hit ownership enforcement, leaving partial state. Restore one-transaction cross-owner seeded creation and retry safety."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-05T21:28:26.924Z"
-updated_at: "2026-08-05T21:28:26.924Z"
+updated_at: "2026-08-06T06:53:55.343Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#fd4660418d2b99c9f530a6e2"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Cross-owner plan create with multiple seeded steps commits the complete Plan or nothing; a failed enrichment leaves no item/history residue; safe retry and same-owner behavior are covered.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-96tter,discovered_from,"2026-08-05T21:28:26.924Z","harness:codex","cli:create:dep",detected
   pm-v7dj,related,"2026-08-05T21:28:26.924Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-05T21:28:26.924Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for GH-912, GH-688, atomic cross-owner seeded Plan creation, ownership conflict, and partial Plan persistence. pm-96tter is the completed original fix; this item records the newly reproduced regression. Source: https://github.com/unbraind/pm-cli/issues/912"
+  "2026-08-06T06:53:55.342Z","harness:codex","Implementation evidence: Plan creation now performs base create under the resolved author, then seeds Plan metadata and transfers the requested assignee in the same governed mutation. Strict cross-owner regression, strict full-metadata CLI/SDK regression, rollback regression, manual fresh-workspace proof, build, static gates, and 6,887-test exact 100/100/100/100 coverage all pass."
+files[2]{path,scope,note}:
+  src/sdk/lifecycle/plan.ts,project,Atomic Plan lifecycle ownership sequencing
+  tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,Strict cross-owner and rollback regressions
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,240
 body: ""

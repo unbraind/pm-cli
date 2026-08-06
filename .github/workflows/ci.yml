@@ -345,7 +345,9 @@ jobs:
           path: .vitest-reports
 
       - name: Merge coverage and enforce global thresholds
-        run: pnpm exec vitest --merge-reports=.vitest-reports --coverage
+        run: |
+          pnpm exec vitest --merge-reports=.vitest-reports --coverage
+          node scripts/release/coverage-threshold-gate.mjs
 
       - name: Upload coverage artifact
         if: always()

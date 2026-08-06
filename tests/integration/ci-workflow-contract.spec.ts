@@ -226,6 +226,7 @@ describe("GitHub workflow contract", () => {
       "merge-multiple: true",
       "path: .vitest-reports",
       "pnpm exec vitest --merge-reports=.vitest-reports --coverage",
+      "node scripts/release/coverage-threshold-gate.mjs",
       "name: coverage-node24-ubuntu-latest",
       "files: ./coverage/lcov.info",
       "files: ./coverage/junit.xml",

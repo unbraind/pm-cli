@@ -2,11 +2,13 @@ id: pm-2qqcgl
 title: "The coverage gate every contributor is told to run is not a gate: run-tests.mjs coverage prints the shortfall and exits 0, so only CI can fail on coverage"
 description: ""
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[4]: agent-ux,ci,coverage,gate-parity
 created_at: "2026-08-05T18:43:54.168Z"
-updated_at: "2026-08-05T18:44:02.221Z"
+updated_at: "2026-08-06T06:54:00.472Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#fd4660418d2b99c9f530a6e2"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The documented local coverage command exits non-zero on the same condition the hosted threshold step rejects; The failure message names the files below threshold and their uncovered lines, so a contributor can act without opening a CI log; The threshold values have a single declared source shared by the local command and the hosted step, rather than being restated in each; A negative control proves the local command can fail on a deliberately uncovered branch"
@@ -24,4 +26,17 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
   pm-zclzll,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
   pm-zlv8jl,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-06T06:54:00.472Z","harness:codex","Implementation evidence: local and hosted coverage now share an exact integer covered-versus-total gate after Vitest report generation; malformed/missing reports fail closed and rounded 100% negative controls enumerate deficient file metrics. CI wiring/gate registry are enforced. Final run: 438 files, 6,887 tests, statements 49,165/49,165, branches 35,658/35,658, functions 10,051/10,051, lines 47,645/47,645; exact gate passed."
+files[7]{path,scope,note}:
+  .github/workflows/ci.yml,project,Hosted exact-count gate integration
+  scripts/release/coverage-threshold-gate.mjs,project,Exact integer-count coverage decision
+  scripts/release/gate-registry.json,project,Coverage failure taxonomy and negative control
+  scripts/run-tests.mjs,project,Local fail-closed coverage integration
+  tests/integration/ci-workflow-contract.spec.ts,project,Hosted gate wiring contract
+  tests/unit/scripts/release/coverage-threshold-gate.spec.ts,project,Malformed and rounded-report negative controls
+  vitest.config.ts,project,Remove rounded duplicate threshold authority
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/coverage-threshold-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240
 body: ""

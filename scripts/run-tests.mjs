@@ -31,7 +31,12 @@ async function run() {
   const pmPath = path.join(tempRoot, "project", ".agents", "pm");
   const pmGlobalPath = path.join(tempRoot, "global");
   const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-  const vitestEntry = path.join(process.cwd(), "node_modules", "vitest", "vitest.mjs");
+  const vitestEntry = path.join(
+    process.cwd(),
+    "node_modules",
+    "vitest",
+    "vitest.mjs",
+  );
   const passthroughArgs = process.argv.slice(3);
   const normalizedVitestArgs =
     passthroughArgs[0] === "--" ? passthroughArgs.slice(1) : passthroughArgs;
@@ -72,7 +77,12 @@ async function run() {
     const vitestExitCode = await new Promise((resolve, reject) => {
       const child = spawn(
         process.execPath,
-        [vitestEntry, "run", ...MODE_TO_VITEST_ARGS[resolved.mode], ...normalizedVitestArgs],
+        [
+          vitestEntry,
+          "run",
+          ...MODE_TO_VITEST_ARGS[resolved.mode],
+          ...normalizedVitestArgs,
+        ],
         {
           cwd: process.cwd(),
           env: baseEnv,
@@ -90,7 +100,34 @@ async function run() {
       });
     });
 
-    process.exitCode = vitestExitCode;
+    if (vitestExitCode !== 0 || resolved.mode !== "coverage") {
+      process.exitCode = vitestExitCode;
+      return;
+    }
+
+    const coverageGateExitCode = await new Promise((resolve, reject) => {
+      const child = spawn(
+        process.execPath,
+        [
+          path.join(
+            process.cwd(),
+            "scripts",
+            "release",
+            "coverage-threshold-gate.mjs",
+          ),
+        ],
+        {
+          cwd: process.cwd(),
+          env: baseEnv,
+          stdio: "inherit",
+        },
+      );
+      child.on("error", reject);
+      child.on("close", (code) => {
+        resolve(code ?? 1);
+      });
+    });
+    process.exitCode = coverageGateExitCode;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`Failed to run sandboxed tests: ${message}`);

@@ -4,7 +4,6 @@
  * Implements the pm extension command surface and its agent-facing runtime behavior.
  */
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import {
   activateExtensions,
@@ -1344,6 +1343,7 @@ const resolveInstallRuntimeActivationStatus = (
 /** Probe a temporary installed extension for runtime command registrations. */
 const probeRuntimeCommandPathsForInstall = (
   pmRoot: string,
+  parent: string,
   settings: PmSettings,
   refreshedInstalled: ManagedExtensionSummary[],
   global: GlobalOptions,
@@ -1362,8 +1362,8 @@ const probeRuntimeCommandPathsForInstall = (
 }> => {
   return extensionRuntimeProbeQueue.enqueue(async () => {
     const originalPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
-    const moduleGraphSnapshotRoot = await fs.mkdtemp(
-      path.join(os.tmpdir(), "pm-extension-module-graph-"),
+    const snapshotRoot = await fs.mkdtemp(
+      path.join(parent, ".pm-module-graph-"),
     );
     process.env.PM_CLI_PACKAGE_ROOT = resolvePmPackageRootFromModule(
       import.meta.url,
@@ -1377,11 +1377,10 @@ const probeRuntimeCommandPathsForInstall = (
         noExtensions: global.noExtensions === true,
         reload_token: nextExtensionReloadToken(),
         cache_bust: true,
-        module_graph_snapshot_root: moduleGraphSnapshotRoot,
+        module_graph_snapshot_root: snapshotRoot,
       });
       const activationResult = await activateExtensions({
         ...loadResult,
-        loaded: loadResult.loaded,
       });
       const runtimeFailures = [
         ...loadResult.failed.map((failure) => ({
@@ -1415,7 +1414,7 @@ const probeRuntimeCommandPathsForInstall = (
         contribution_inventories: contributionInventories,
       };
     } finally {
-      await fs.rm(moduleGraphSnapshotRoot, { recursive: true, force: true });
+      await fs.rm(snapshotRoot, { recursive: true, force: true });
       if (originalPackageRoot === undefined) {
         delete process.env.PM_CLI_PACKAGE_ROOT;
       } else {
@@ -2333,7 +2332,7 @@ const buildInstalledExtensionActivation = (
       registered_commands: commandSummary.command_paths,
       registered_actions: commandSummary.action_paths,
       registered_item_types: installedItemTypes,
-      module_graph_verification: "fresh_snapshot",
+      module_graph_verification: "fresh_in_topology_snapshot",
       health: healthByActivation[String(activated) as "true" | "false"],
     },
   };
@@ -2356,6 +2355,7 @@ const performExtensionInstallUnderLock = async (
   warnings.push(...refreshedInstalled.warnings);
   const runtimeProbe = await probeRuntimeCommandPathsForInstall(
     resolvedRoots.pm_root,
+    path.dirname(resolvedRoots.selected_root),
     persisted.settings,
     refreshedInstalled.extensions,
     global,
@@ -2509,12 +2509,11 @@ const runSingleExtensionInstall = async (
     bundledPackageName,
     installSource,
     sourceResolution,
-  } =
-    await resolveExtensionInstallSourceIdentity(
-      explicitSourceInput,
-      githubOption,
-      ctx.options.ref,
-    );
+  } = await resolveExtensionInstallSourceIdentity(
+    explicitSourceInput,
+    githubOption,
+    ctx.options.ref,
+  );
   if (sourceResolution.ambiguous) {
     const npmCandidate = sourceResolution.candidates.find(
       (candidate) => candidate.kind === "npm",
@@ -2937,6 +2936,7 @@ const runExtensionActivateDeactivateAction = async (
     action === "activate"
       ? await probeRuntimeCommandPathsForInstall(
           resolvedRoots.pm_root,
+          path.dirname(resolvedRoots.selected_root),
           settings,
           [candidate],
           global,

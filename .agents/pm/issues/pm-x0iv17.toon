@@ -2,11 +2,13 @@ id: pm-x0iv17
 title: "The one projection that promises completeness is the one that loses data: pm contracts --full drops all 76 structured command summaries, returns 160 bare name strings, and reports has_omissions false"
 description: ""
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[5]: agent-ux,contracts,omission-receipt,projection,token-efficiency
 created_at: "2026-08-05T18:17:35.056Z"
-updated_at: "2026-08-05T18:18:10.921Z"
+updated_at: "2026-08-06T06:53:58.797Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#fd4660418d2b99c9f530a6e2"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Either --full is a strict superset of the default projection, or its omission receipt names every field group it drops with an accurate restore hint; One key name carries one row shape across every projection of a command; a key does not mean structured records in one projection and bare strings in another; A gate proves, for every command that declares projections, that a projection reporting has_omissions false is field-wise complete against every narrower projection of the same command; The agent-facing cold start keeps working from the declared row_contract without the agent having to discover which projection happens to carry the intent metadata"
@@ -28,6 +30,12 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-srns,related,"2026-08-05T18:18:09.900Z","harness:claude-code","cli:update:dep",detected
   pm-wv47pf,related,"2026-08-05T18:18:09.900Z","harness:claude-code","cli:update:dep",detected
   pm-yy8rmx,discovered_from,"2026-08-05T18:18:09.900Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-05T18:18:10.921Z","harness:claude-code","Reproduced 2026-08-05 on this checkout:\n\n  pm contracts --json        -> commands: [] (length 0), command_summaries: 76 records,\n                                omission_receipt.has_omissions = true,\n                                omitted_field_groups = [{name: full_contract_catalog, restore_with: --full}]\n  pm contracts --full --json -> commands: 160 bare strings, command_summaries: 0,\n                                omission_receipt.has_omissions = false\n\nThe declared row_contract does keep an agent honest if it uses the published jq_selector: row_keys is [command_summaries, commands] by default and [commands] under --full, so the selector returns the right rows in both. The defect is not that rows are unreachable — it is that the receipt asserts completeness on the projection that discarded the structured records, and that one key name carries two incompatible row shapes.\n\nThe practical cost for an agent: the default projection is where per-command intent and default_max_estimated_tokens live, and those are exactly the fields an agent needs to budget a call. Reaching for --full to get more loses them, and nothing in the response says so."
+  "2026-08-06T06:53:58.797Z","harness:codex","Implementation evidence: contracts --full now includes the same command_summaries and output_policy as summary mode while retaining schema, flags, runtime, MCP, context, read, error, and output contracts. Focused monotonicity regression, manual fresh-workspace proof (55 active no-extension summaries plus full surfaces), static/token/context gates, and exact full coverage pass."
+files[2]{path,scope,note}:
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Monotonic full contracts projection
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Summary-to-full semantic parity regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/contracts-full-projection.spec.ts,project,240
 body: ""

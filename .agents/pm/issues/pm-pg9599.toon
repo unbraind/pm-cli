@@ -2,17 +2,24 @@ id: pm-pg9599
 title: "GH-911: preserve runtime dependency resolution in post-install activation probes"
 description: "GitHub #911 reports that the isolated temporary module-graph copy severs npm-hoisted runtime dependencies, falsely returning ok:false for working extensions and leaking temporary copies. Probe the installed runtime topology or reproduce its dependency closure, and clean every temporary graph."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-05T21:27:22.114Z"
-updated_at: "2026-08-05T21:27:22.114Z"
+updated_at: "2026-08-06T06:53:56.414Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#fd4660418d2b99c9f530a6e2"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: A local npm package with a hoisted declared runtime dependency installs with truthful activation status; real load failures still fail; temporary graph directories are always removed; packed npm/local/cross-platform tests pass.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4v4c,related,"2026-08-05T21:27:22.114Z","harness:codex","cli:create:dep",detected
   pm-x6jf,discovered_from,"2026-08-05T21:27:22.114Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-05T21:27:22.114Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for GH-911, isolated activation probes, hoisted runtime dependencies, extension install false failures, and temporary module graphs. Closed lifecycle and stale-probe items are lineage, not this dependency-topology defect. Source: https://github.com/unbraind/pm-cli/issues/911"
+  "2026-08-06T06:53:56.414Z","harness:codex","Implementation evidence: post-install and activation runtime probes now create fresh module-graph snapshots beside the active project/global topology, preserving ancestor node_modules resolution while retaining cache isolation and finally cleanup. Packed npm runtime-dependency integration, package dogfood (88 commands), manual package activation with zero snapshot residue, build, static gates, and exact full coverage pass."
+files[1]{path,scope,note}:
+  src/sdk/extension.ts,project,Topology-preserving fresh runtime snapshots
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'installs runtime dependencies for packed npm package extensions',project,240
 body: ""

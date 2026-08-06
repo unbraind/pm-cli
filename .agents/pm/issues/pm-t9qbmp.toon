@@ -2,18 +2,27 @@ id: pm-t9qbmp
 title: "GH-910: keep extension assets outside item merge-driver patterns"
 description: "GitHub #910 reports that pm merge install applies item-aware Markdown and TOON merge drivers to .agents/pm/extensions package assets. Generate item-only patterns or explicit exclusions and verify custom roots, attributes, idempotency, audit, and refresh behavior."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-05T21:27:16.118Z"
-updated_at: "2026-08-05T21:51:26.899Z"
+updated_at: "2026-08-06T06:53:57.439Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#fd4660418d2b99c9f530a6e2"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: Extension documentation and metadata never resolve to item merge drivers; registered item files retain field-aware drivers; default and custom tracker roots pass git check-attr and fence audit tests.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-g5sx,discovered_from,"2026-08-05T21:27:16.118Z","harness:codex","cli:create:dep",detected
   pm-mkzw1x,related,"2026-08-05T21:51:26.679Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-05T21:27:16.118Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for GH-910, gitattributes extension assets, item merge-driver overreach, merge install, and prior merge-fence work. Closed pm-g5sx is historical substrate, not this inverse overmatching defect. Source: https://github.com/unbraind/pm-cli/issues/910"
   "2026-08-05T21:51:26.679Z","harness:codex","Graph lineage 2026-08-05: link GH-910 to closed pm-mkzw1x as the inverse merge-fence scope defect—pm-mkzw1x covered omitted extension-contributed item folders, while GH-910 covers overmatched extension package assets. This is an evidence-backed semantic partner, not a fabricated density edge."
+  "2026-08-06T06:53:57.439Z","harness:codex","Implementation evidence: merge fences retain broad unknown item-folder protection, explicitly unset merge drivers for extension package assets, then restore pm-json for extensions/.managed-extensions.json. Real git check-attr regression covers TOON, Markdown, JSON assets, and managed state; branch-merge composition remains green; pm merge install regenerated .gitattributes and storage-integrity validation reports merge fence/config status ok."
+files[3]{path,scope,note}:
+  .gitattributes,project,Regenerated clone merge fence with extension asset exclusions
+  src/sdk/merge/install.ts,project,Extension package asset merge escape hatch
+  tests/unit/sdk/merge-extension-asset-scope.spec.ts,project,Real git attribute resolution regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-extension-asset-scope.spec.ts,project,240
 body: ""

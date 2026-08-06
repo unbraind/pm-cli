@@ -4,7 +4,7 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - '@toon-format/toon@4.1.0'
-  - tsx@4.23.5
+  - tsx@4.23.8
 
 overrides:
   '@opentelemetry/core': '>=2.8.0 <3.0.0'

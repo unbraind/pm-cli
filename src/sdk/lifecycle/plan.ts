@@ -1204,7 +1204,10 @@ async function planCreate(
     test: toSpecArray(options.test),
     doc: toSpecArray(options.doc),
     field: toSpecArray(options.field),
-    assignee: requestedAssignee,
+    // Ownership is assigned by the atomic Plan metadata mutation below. The
+    // base create must remain author-owned so strict ownership governance does
+    // not reject the metadata seed as a cross-owner follow-up mutation.
+    assignee: resolveAuthor(options.author, ctx.settings.author_default),
     blockedBy: undefined,
     dep: buildPlanCreateDependencies(options),
     message:
