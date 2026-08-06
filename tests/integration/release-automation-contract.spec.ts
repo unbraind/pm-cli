@@ -19,6 +19,15 @@ function runNodeScript(args: string[], env: NodeJS.ProcessEnv = process.env) {
   });
 }
 
+/** Prepend a native temporary binary directory to the PATH seen inside Bash. */
+function prependFakeBinForBash(script: string): string {
+  return [
+    'if command -v cygpath >/dev/null 2>&1; then fake_bin="$(cygpath -u "$FAKE_BIN")"; else fake_bin="$FAKE_BIN"; fi',
+    'export PATH="${fake_bin}:${PATH}"',
+    script,
+  ].join("\n");
+}
+
 describe("release automation contract", () => {
   it("keeps package scripts aligned with local release parity workflow", async () => {
     const packageJsonRaw = await readFile(
@@ -580,22 +589,26 @@ esac
       await chmod(path.join(tempRoot, "git"), 0o755);
 
       const runScenario = (overrides: NodeJS.ProcessEnv) =>
-        spawnSync("bash", ["-c", sourceSelectionScript ?? ""], {
-          cwd: repoRoot,
-          encoding: "utf8",
-          env: {
-            ...process.env,
-            PATH: `${tempRoot}:${process.env.PATH ?? ""}`,
-            RELEASE_TAG: "v2026.8.5",
-            DEFAULT_BRANCH: "main",
-            GITHUB_ENV: githubEnv,
-            NPM_FAKE_LOG: npmLog,
-            GIT_FAKE_LOG: gitLog,
-            PROBE_STATUS: "0",
-            PROBE_OUTPUT: '"2026.8.5"',
-            ...overrides,
+        spawnSync(
+          "bash",
+          ["-c", prependFakeBinForBash(sourceSelectionScript ?? "")],
+          {
+            cwd: repoRoot,
+            encoding: "utf8",
+            env: {
+              ...process.env,
+              FAKE_BIN: tempRoot,
+              RELEASE_TAG: "v2026.8.5",
+              DEFAULT_BRANCH: "main",
+              GITHUB_ENV: githubEnv,
+              NPM_FAKE_LOG: npmLog,
+              GIT_FAKE_LOG: gitLog,
+              PROBE_STATUS: "0",
+              PROBE_OUTPUT: '"2026.8.5"',
+              ...overrides,
+            },
           },
-        });
+        );
 
       await writeFile(npmLog, "", "utf8");
       await writeFile(gitLog, "", "utf8");
@@ -705,12 +718,12 @@ esac
       await chmod(fakeNpm, 0o755);
 
       const runScenario = (overrides: NodeJS.ProcessEnv) =>
-        spawnSync("bash", ["-c", publishScript ?? ""], {
+        spawnSync("bash", ["-c", prependFakeBinForBash(publishScript ?? "")], {
           cwd: repoRoot,
           encoding: "utf8",
           env: {
             ...process.env,
-            PATH: `${tempRoot}:${process.env.PATH ?? ""}`,
+            FAKE_BIN: tempRoot,
             RELEASE_TAG: "v2026.7.27",
             RELEASE_VERSION: "2026.7.27",
             RUNNER_TEMP: tempRoot,
