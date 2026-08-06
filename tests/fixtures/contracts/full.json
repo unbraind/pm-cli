@@ -44643,9 +44643,10 @@
             "type": "boolean"
           },
           "since": {
-            "description": "Inclusive ISO 8601 creation timestamp lower bound for duplicate discovery.",
+            "description": "Inclusive ISO 8601 timestamp or negative duration lower bound for provenance and fleet analytics.",
             "examples": [
-              "2026-01-01T00:00:00.000Z"
+              "2026-08-01T00:00:00.000Z",
+              "-30d"
             ],
             "format": "date-time",
             "type": "string"

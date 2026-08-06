@@ -5627,6 +5627,18 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "HistoryAnalyticsEvent",
+          "signature": "export interface HistoryAnalyticsEvent { item_id: string; entry: HistoryEntry; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "HistoryAnalyticsWindow",
+          "signature": "export interface HistoryAnalyticsWindow { events: HistoryAnalyticsEvent[]; receipt: HistoryAnalyticsWindowReceipt; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "HistoryAnalyticsWindowOptions",
           "signature": "export interface HistoryAnalyticsWindowOptions { since?: string; eventLimit?: number; minimumSample?: number; }"
         },
@@ -6979,6 +6991,12 @@
           "kind": "function",
           "name": "mutateItem",
           "signature": "(params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[]; } | Promise<{ changedFields: string[]; warnings?: string[]; }>; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }> | calls: (params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[]; } | Promise<{ changedFields: string[]; warnings?: string[]; }>; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "mutateWorkspaceJsonWithHistory",
+          "signature": "<Result>(params: WorkspaceJsonMutationOptions<Result>) => Promise<{ changed: boolean; result: Result; }> | calls: <Result>(params: WorkspaceJsonMutationOptions<Result>) => Promise<{ changed: boolean; result: Result; }>"
         },
         {
           "classification": "supported",
@@ -9029,6 +9047,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "projectFleetAttributionAnalytics",
+          "signature": "(window: HistoryAnalyticsWindow, items: readonly Pick<ItemMetadata, \"dependencies\" | \"id\" | \"type\">[], terminalStatuses: ReadonlySet<string>, options?: Pick<HistoryAnalyticsWindowOptions, \"minimumSample\">) => FleetAttributionAnalytics | calls: (window: HistoryAnalyticsWindow, items: readonly Pick<ItemMetadata, \"id\" | \"type\" | \"dependencies\">[], terminalStatuses: ReadonlySet<string>, options?: Pick<HistoryAnalyticsWindowOptions, \"minimumSample\">) => FleetAttributionAnalytics"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "projectHistoryProvenance",
           "signature": "(entry: HistoryEntry, vocabulary?: AuthorIdentityVocabulary, coordinates?: { itemId?: string; version?: number; }) => HistoryProvenanceRow | calls: (entry: HistoryEntry, vocabulary?: AuthorIdentityVocabulary, coordinates?: { itemId?: string; version?: number; }) => HistoryProvenanceRow"
         },
@@ -9073,6 +9097,12 @@
           "kind": "type",
           "name": "ProjectProfileRegistrationInput",
           "signature": "export type ProjectProfileRegistrationInput = Pick<ProjectProfileDefinition, \"name\" | \"title\"> & Partial<Omit<ProjectProfileDefinition, \"name\" | \"title\">>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "projectProvenanceCoverageAnalytics",
+          "signature": "(window: HistoryAnalyticsWindow, descriptors?: readonly HarnessSignalDescriptor[], options?: Pick<HistoryAnalyticsWindowOptions, \"minimumSample\">) => ProvenanceCoverageAnalytics | calls: (window: HistoryAnalyticsWindow, descriptors?: readonly HarnessSignalDescriptor[], options?: Pick<HistoryAnalyticsWindowOptions, \"minimumSample\">) => ProvenanceCoverageAnalytics"
         },
         {
           "classification": "supported",
@@ -9205,6 +9235,12 @@
           "kind": "function",
           "name": "readFirstValueFromCommanderOptions",
           "signature": "(options: Record<string, unknown>, contract: CommanderOptionAliasContract) => unknown | calls: (options: Record<string, unknown>, contract: CommanderOptionAliasContract) => unknown"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "readHistoryAnalyticsWindow",
+          "signature": "(pmRoot: string, options: HistoryAnalyticsWindowOptions) => Promise<HistoryAnalyticsWindow> | calls: (pmRoot: string, options: HistoryAnalyticsWindowOptions) => Promise<HistoryAnalyticsWindow>"
         },
         {
           "classification": "supported",
@@ -13597,6 +13633,18 @@
           "kind": "interface",
           "name": "WorkspaceHistoryChange",
           "signature": "export interface WorkspaceHistoryChange { pmRoot: string; documentPath: string; before: unknown; after: unknown; op: string; idempotencyKey?: string; author: string; message?: string; lockTtlSeconds: number; lockWaitMs: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceJsonMutation",
+          "signature": "export interface WorkspaceJsonMutation<Result> { raw: string; result: Result; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceJsonMutationOptions",
+          "signature": "export interface WorkspaceJsonMutationOptions<Result> extends Omit<WorkspaceJsonWriteOptions, \"raw\"> { mutate: (beforeRaw: string | null) => WorkspaceJsonMutation<Result> | Promise<WorkspaceJsonMutation<Result>>; }"
         },
         {
           "classification": "advanced_export",

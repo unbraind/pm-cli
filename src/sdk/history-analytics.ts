@@ -126,9 +126,20 @@ export interface FleetAttributionAnalytics {
   window: HistoryAnalyticsWindowReceipt;
 }
 
-interface IndexedAnalyticsEvent {
+/** One immutable history entry paired with its owning tracked item. */
+export interface HistoryAnalyticsEvent {
+  /** Tracked item owning the immutable event. */
   item_id: string;
+  /** Immutable history entry consumed by analytics. */
   entry: HistoryEntry;
+}
+
+/** Reusable bounded history read shared across multiple analytics projections. */
+export interface HistoryAnalyticsWindow {
+  /** Immutable events retained by the configured bound. */
+  events: HistoryAnalyticsEvent[];
+  /** Receipt describing the bounded source read. */
+  receipt: HistoryAnalyticsWindowReceipt;
 }
 
 interface MutableFleetBucket {
@@ -201,16 +212,14 @@ function resolveHistoryAnalyticsSince(value: string | undefined): string {
   return new Date(milliseconds).toISOString();
 }
 
-async function readBoundedHistoryWindow(
+/** Read one reusable bounded immutable-history window. */
+export async function readHistoryAnalyticsWindow(
   pmRoot: string,
   options: HistoryAnalyticsWindowOptions,
-): Promise<{
-  events: IndexedAnalyticsEvent[];
-  receipt: HistoryAnalyticsWindowReceipt;
-}> {
+): Promise<HistoryAnalyticsWindow> {
   const eventLimit = parseHistoryAnalyticsLimit(options.eventLimit);
   const since = resolveHistoryAnalyticsSince(options.since);
-  const events: IndexedAnalyticsEvent[] = [];
+  const events: HistoryAnalyticsEvent[] = [];
   let cursor: string | undefined = since;
   let hasMore = false;
   while (events.length < eventLimit) {
@@ -288,7 +297,7 @@ function bucketFor(
 
 function accumulateFleetEvents(
   dimension: FleetAttributionDimension["dimension"],
-  events: readonly IndexedAnalyticsEvent[],
+  events: readonly HistoryAnalyticsEvent[],
   terminalStatuses: ReadonlySet<string>,
 ): {
   buckets: Map<string, MutableFleetBucket>;
@@ -368,7 +377,7 @@ function fleetRow(
 
 function buildFleetDimension(
   dimension: FleetAttributionDimension["dimension"],
-  events: readonly IndexedAnalyticsEvent[],
+  events: readonly HistoryAnalyticsEvent[],
   items: readonly Pick<ItemMetadata, "id" | "type" | "dependencies">[],
   terminalStatuses: ReadonlySet<string>,
   minimumSample: number,
@@ -392,6 +401,23 @@ function buildFleetDimension(
           right.events - left.events || left.value.localeCompare(right.value),
       ),
   };
+}
+
+function resolveHistoryWindowDays(
+  events: readonly HistoryAnalyticsEvent[],
+  since: string,
+): number {
+  const firstTimestamp = events[0]?.entry.ts ?? since;
+  const lastTimestamp = events[events.length - 1]?.entry.ts ?? firstTimestamp;
+  const firstMilliseconds = Date.parse(firstTimestamp);
+  const lastMilliseconds = Date.parse(lastTimestamp);
+  if (
+    !Number.isFinite(firstMilliseconds) ||
+    !Number.isFinite(lastMilliseconds)
+  ) {
+    return 1;
+  }
+  return Math.max(1, (lastMilliseconds - firstMilliseconds) / 86_400_000);
 }
 
 /** Evaluate a negative-control-friendly declared-versus-observed coverage gate. */
@@ -440,8 +466,20 @@ export async function runProvenanceCoverageAnalytics(
   descriptors: readonly HarnessSignalDescriptor[] = BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
   options: HistoryAnalyticsWindowOptions = {},
 ): Promise<ProvenanceCoverageAnalytics> {
+  return projectProvenanceCoverageAnalytics(
+    await readHistoryAnalyticsWindow(pmRoot, options),
+    descriptors,
+    options,
+  );
+}
+
+/** Project provenance coverage from an already-read immutable-history window. */
+export function projectProvenanceCoverageAnalytics(
+  window: HistoryAnalyticsWindow,
+  descriptors: readonly HarnessSignalDescriptor[] = BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
+  options: Pick<HistoryAnalyticsWindowOptions, "minimumSample"> = {},
+): ProvenanceCoverageAnalytics {
   const minimumSample = parseMinimumSample(options.minimumSample);
-  const window = await readBoundedHistoryWindow(pmRoot, options);
   return {
     ...evaluateProvenanceCoverage(
       window.events.map((event) => event.entry),
@@ -459,14 +497,25 @@ export async function runFleetAttributionAnalytics(
   terminalStatuses: ReadonlySet<string>,
   options: HistoryAnalyticsWindowOptions = {},
 ): Promise<FleetAttributionAnalytics> {
+  return projectFleetAttributionAnalytics(
+    await readHistoryAnalyticsWindow(pmRoot, options),
+    items,
+    terminalStatuses,
+    options,
+  );
+}
+
+/** Project fleet attribution from an already-read immutable-history window. */
+export function projectFleetAttributionAnalytics(
+  window: HistoryAnalyticsWindow,
+  items: readonly Pick<ItemMetadata, "id" | "type" | "dependencies">[],
+  terminalStatuses: ReadonlySet<string>,
+  options: Pick<HistoryAnalyticsWindowOptions, "minimumSample"> = {},
+): FleetAttributionAnalytics {
   const minimumSample = parseMinimumSample(options.minimumSample);
-  const window = await readBoundedHistoryWindow(pmRoot, options);
-  const firstTimestamp = window.events[0]?.entry.ts ?? window.receipt.since;
-  const lastTimestamp =
-    window.events[window.events.length - 1]?.entry.ts ?? firstTimestamp;
-  const windowDays = Math.max(
-    1,
-    (Date.parse(lastTimestamp) - Date.parse(firstTimestamp)) / 86_400_000,
+  const windowDays = resolveHistoryWindowDays(
+    window.events,
+    window.receipt.since,
   );
   return {
     dimensions: (["harness", "model", "author_source"] as const).map(
@@ -494,5 +543,6 @@ export const _testOnlyHistoryAnalytics = {
   parseMinimumSample,
   provenanceValue,
   resolveHistoryAnalyticsSince,
+  resolveHistoryWindowDays,
   statusFromEntry,
 };

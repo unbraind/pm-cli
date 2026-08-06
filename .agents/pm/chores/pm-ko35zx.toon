@@ -6,23 +6,26 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-08-06T18:02:03.618Z"
-updated_at: "2026-08-06T20:12:59.141Z"
-closed_at: "2026-08-06T20:12:55.912Z"
-completed_at: "2026-08-06T20:12:55.912Z"
+updated_at: "2026-08-06T21:01:32.117Z"
+closed_at: "2026-08-06T21:01:27.394Z"
+completed_at: "2026-08-06T21:01:27.394Z"
 author: "harness:codex"
 estimated_minutes: 30
 acceptance_criteria: "Dependency resolves to 4.1.1; focused TOON codec and CLI integration tests pass; packed npm, npx, Bun, and bunx acceptance remains compatible."
 resolution: completed
 expected_result: "The repository uses @toon-format/toon 4.1.1, all codec and contract tests pass, and packed npm/npx/bunx acceptance remains compatible."
-actual_result: "Updated @toon-format/toon to 4.1.1; focused codec/CLI tests, exact full coverage, zero-vulnerability audit, and packed npm/npx/direct-SDK/bunx acceptance all pass."
+actual_result: "Updated @toon-format/toon to 4.1.1; focused codec/CLI tests, exact full coverage, zero-vulnerability audit, packed transport acceptance, generated changelog linkage, and review remediation all pass."
 component: dependencies
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-5cgm2z,related,"2026-08-06T18:02:03.618Z","harness:codex","cli:create:dep",detected
   pm-tll8,related,"2026-08-06T18:02:03.618Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-06T18:02:03.618Z","harness:codex","Duplicate check: searched all statuses for the exact package/version and inspected the dependency lineage; no canonical item for the 4.1.1 patch existed. This chore reuses the established TOON codec and dependency-governance graph."
   "2026-08-06T18:02:58.516Z","harness:codex","Implementation: advanced @toon-format/toon from 4.1.0 to the latest compatible 4.1.1 patch. The package remains within the existing semver and supported-runtime policy; package and lockfile are linked for traceability."
   "2026-08-06T20:12:28.329Z","harness:codex","Final verification: exact coverage passed across 441 files and 6,902 tests at 100% statements (49461/49461), branches (35933/35933), functions (10115/10115), and lines (47921/47921). TypeScript, ESLint, duplicate detection, 100% docstrings, contracts, SDK surface, package boundaries, SDK parity, token/context/tracker gates, zero-vulnerability audits, and temporary packed npx/direct-SDK/bunx acceptance passed. Timing budgets passed in a clean isolated sample; later host-load samples were invalidated by unrelated system contention without changing budgets."
+  "2026-08-06T20:35:41.355Z","harness:codex","Review round 1: CodeRabbit produced 11 actionable exact-head findings spanning concurrency-safe audited writes, storage validation, finite numeric contracts, bounded history efficiency, invalid timestamp handling, CLI/schema recovery text, public changelog content, PM changelog linkage, and portable tests. Reopened and claimed only these four canonical items while addressing their own PR feedback."
+  "2026-08-06T20:58:33.022Z","harness:codex","Review remediation verified: CHANGELOG.md is now linked as generated release documentation on every active item; the provenance entry title describes delivered public behavior. pm-changelog 2026.8.6 regenerated and checked the file without repo-local generator patches."
+  "2026-08-06T20:58:38.019Z","harness:codex","Post-review exact verification: 441 files and 6,903 tests passed at 100% statements (49476/49476), branches (35951/35951), functions (10122/10122), and lines (47936/47936). TypeScript, ESLint, zero-clone JSCPD, 100% docstrings, package boundaries, SDK parity, contracts, token/context/tracker/gate registries, docs, secrets, and zero-vulnerability production audit pass. Import timing is separately limited by current host load and no budget was changed."
 learnings[1]{created_at,author,text}:
   "2026-08-06T20:12:07.308Z","harness:codex","A compatible codec patch still warrants transport acceptance across packed npm, npx, direct SDK import, Bun, and bunx because serialization sits beneath every tracker contract."
 files[2]{path,scope,note}:
@@ -30,8 +33,11 @@ files[2]{path,scope,note}:
   pnpm-lock.yaml,project,Pin the audited TOON 4.1.1 artifact and integrity
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/core/item/toon-decode.spec.ts tests/unit/core/output/output.spec.ts tests/unit/core/item/item-format-validation.spec.ts tests/integration/cli.integration.spec.ts,project,240
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mshtsbqk-0xmsg1,test,passed,"2026-08-06T18:03:04.244Z","2026-08-06T18:04:30.955Z","2026-08-06T18:04:30.955Z",1,0,0
   test-local-mshwae6f-kwhp7n,test,passed,"2026-08-06T19:13:59.269Z","2026-08-06T19:14:33.159Z","2026-08-06T19:14:33.159Z",1,0,0
-close_reason: "Updated TOON to 4.1.1 and verified codec, full suite, security audit, packed npm/npx/direct-SDK/Bun/bunx compatibility."
+  test-local-msi039xm-4yp87v,test,passed,"2026-08-06T21:00:27.453Z","2026-08-06T21:00:59.530Z","2026-08-06T21:00:59.530Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated public release entry for this delivered change
+close_reason: Delivered TOON 4.1.1 compatibility plus generated public changelog linkage and exact verification.
 body: ""

@@ -9,7 +9,7 @@ import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
 import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
-import { writeWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
+import { mutateWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -241,7 +241,10 @@ async function buildImprovementObservation(
   }
   const metric = normalizeMetricName(options.metric);
   const direction = normalizeDirection(options.direction);
-  if (direction === "target" && !Number.isFinite(options.threshold)) {
+  if (
+    (options.threshold !== undefined && !Number.isFinite(options.threshold)) ||
+    (direction === "target" && options.threshold === undefined)
+  ) {
     throw new PmCliError(
       "Target-directed observations require a finite threshold.",
       EXIT_CODE.USAGE,
@@ -404,26 +407,9 @@ export async function recordImprovementObservation(
     options,
   );
   const filePath = path.join(pmRoot, "improvement-ledger.json");
-  const ledger = parseLedger(await readFileIfExists(filePath));
-  const existing = ensureObservationCanAppend(ledger, observation);
-  if (existing) {
-    return {
-      changed: false,
-      observation: existing,
-      ledger_path: "improvement-ledger.json",
-    };
-  }
-  ledger.observations.push(observation);
-  ledger.observations.sort(
-    (left, right) =>
-      left.observed_at.localeCompare(right.observed_at) ||
-      left.metric.localeCompare(right.metric) ||
-      left.id.localeCompare(right.id),
-  );
-  await writeWorkspaceJsonWithHistory({
+  const mutation = await mutateWorkspaceJsonWithHistory({
     pmRoot,
     filePath,
-    raw: `${stableStringify(ledger)}\n`,
     op: "improvement_observe",
     author: observation.author,
     lockTtlSeconds: settings.locks.ttl_seconds,
@@ -431,8 +417,30 @@ export async function recordImprovementObservation(
     message:
       options.message ??
       `Record ${observation.metric}=${String(options.value)} improvement observation`,
+    mutate: (beforeRaw) => {
+      const ledger = parseLedger(beforeRaw);
+      const existing = ensureObservationCanAppend(ledger, observation);
+      if (existing) {
+        return { raw: beforeRaw!, result: existing };
+      }
+      ledger.observations.push(observation);
+      ledger.observations.sort(
+        (left, right) =>
+          left.observed_at.localeCompare(right.observed_at) ||
+          left.metric.localeCompare(right.metric) ||
+          left.id.localeCompare(right.id),
+      );
+      return {
+        raw: `${stableStringify(ledger)}\n`,
+        result: observation,
+      };
+    },
   });
-  return { changed: true, observation, ledger_path: "improvement-ledger.json" };
+  return {
+    changed: mutation.changed,
+    observation: mutation.result,
+    ledger_path: "improvement-ledger.json",
+  };
 }
 
 /** Read a bounded newest-first observation page and derive complete trends. */

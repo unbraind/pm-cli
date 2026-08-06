@@ -1836,7 +1836,10 @@ describe("operation command actions", () => {
       ["null", "must be a JSON object"],
       ['"value"', "must be a JSON object"],
       ["[]", "must be a JSON object"],
-      ['{"unknown":true}', 'Unknown --analytics field "unknown"'],
+      [
+        '{"unknown":true}',
+        'Unknown --analytics field "unknown". Accepted fields: author, direction',
+      ],
       ['{"measurements":"yes"}', 'field "measurements" must be boolean'],
       ['{"metric":1}', 'field "metric" must be string'],
       ['{"measurementLimit":"10"}', 'field "measurementLimit" must be number'],

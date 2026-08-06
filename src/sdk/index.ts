@@ -537,10 +537,13 @@ export {
   appendWorkspaceAuditEvent,
   appendWorkspaceHistoryChange,
   getWorkspaceHistoryPath,
+  mutateWorkspaceJsonWithHistory,
   WORKSPACE_HISTORY_ID,
   writeWorkspaceJsonWithHistory,
   type WorkspaceAuditEventOptions,
   type WorkspaceHistoryChange,
+  type WorkspaceJsonMutation,
+  type WorkspaceJsonMutationOptions,
   type WorkspaceJsonWriteOptions,
 } from "../core/history/workspace-history.js";
 export * from "./history-redact.js";
@@ -1048,6 +1051,9 @@ export {
 } from "./improvement-ledger.js";
 export {
   evaluateProvenanceCoverage,
+  projectFleetAttributionAnalytics,
+  projectProvenanceCoverageAnalytics,
+  readHistoryAnalyticsWindow,
   runFleetAttributionAnalytics,
   runProvenanceCoverageAnalytics,
   type FleetAttributionAnalytics,
@@ -1055,6 +1061,8 @@ export {
   type FleetAttributionRow,
   type HistoryAnalyticsWindowOptions,
   type HistoryAnalyticsWindowReceipt,
+  type HistoryAnalyticsEvent,
+  type HistoryAnalyticsWindow,
   type ProvenanceCoverageAnalytics,
 } from "./history-analytics.js";
 export {

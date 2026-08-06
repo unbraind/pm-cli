@@ -24,6 +24,9 @@ function isValidLedgerObservation(observation: unknown): boolean {
     ["higher", "lower", "target"].includes(String(candidate.direction)) &&
     typeof candidate.observed_at === "string" &&
     typeof candidate.revision === "string" &&
+    ["caller", "git", "unversioned"].includes(
+      String(candidate.revision_source),
+    ) &&
     typeof candidate.author === "string";
   if (!hasRequiredFields) return false;
   return (

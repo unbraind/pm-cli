@@ -8,6 +8,9 @@ import type { HistoryEntry } from "../../../src/types/index.js";
 import {
   _testOnlyHistoryAnalytics,
   evaluateProvenanceCoverage,
+  projectFleetAttributionAnalytics,
+  projectProvenanceCoverageAnalytics,
+  readHistoryAnalyticsWindow,
   runFleetAttributionAnalytics,
   runProvenanceCoverageAnalytics,
 } from "../../../src/sdk/history-analytics.js";
@@ -229,15 +232,37 @@ describe("bounded immutable-history analytics", () => {
         { dimension: "model", status: "unavailable", rows: [] },
         { dimension: "author_source", status: "unavailable", rows: [] },
       ]);
+
+      const sharedWindow = await readHistoryAnalyticsWindow(context.pmPath, {
+        since: "2026-08-05T00:00:00.000Z",
+      });
+      await expect(
+        Promise.resolve(
+          projectProvenanceCoverageAnalytics(sharedWindow, undefined, {
+            minimumSample: 1,
+          }),
+        ),
+      ).resolves.toHaveProperty("window", sharedWindow.receipt);
+      await expect(
+        Promise.resolve(
+          projectFleetAttributionAnalytics(
+            sharedWindow,
+            [],
+            new Set(["closed"]),
+            { minimumSample: 1 },
+          ),
+        ),
+      ).resolves.toHaveProperty("window", sharedWindow.receipt);
     });
   });
 
   it("sorts equal event buckets and reads provenance fallbacks", () => {
     const codex = historyEntry("2026-08-05T10:00:00.000Z", "update");
+    const aiderBase = historyEntry("2026-08-05T11:00:00.000Z", "update");
+    delete aiderBase.agent_model;
     const aider = {
-      ...historyEntry("2026-08-05T11:00:00.000Z", "update"),
+      ...aiderBase,
       agent_harness: "aider",
-      agent_model: undefined,
       agent_provenance: {
         model: { value: "model-b", source: "environment" as const },
       },
@@ -261,5 +286,11 @@ describe("bounded immutable-history analytics", () => {
       _testOnlyHistoryAnalytics.provenanceValue(aider, "author_source"),
     ).toBe("detected");
     expect(_testOnlyHistoryAnalytics.statusFromEntry(codex)).toBeUndefined();
+    expect(
+      _testOnlyHistoryAnalytics.resolveHistoryWindowDays(
+        [{ item_id: "pm-a", entry: historyEntry("invalid", "update") }],
+        "2026-08-05T00:00:00.000Z",
+      ),
+    ).toBe(1);
   });
 });

@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[6]: analytics,"area:sdk",identity,observability,provenance,scale
 created_at: "2026-07-25T12:26:56.829Z"
-updated_at: "2026-08-06T20:12:54.787Z"
-closed_at: "2026-08-06T20:12:53.467Z"
-completed_at: "2026-08-06T20:12:53.467Z"
+updated_at: "2026-08-06T21:01:26.581Z"
+closed_at: "2026-08-06T21:01:25.863Z"
+completed_at: "2026-08-06T21:01:25.863Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "Analytics are pure derivations over immutable history with no new stored state and no telemetry dependency; Grouping is available by harness, by model, and by author_source, and every reported figure carries its sample count and window; A metric with an insufficient sample is reported as insufficient rather than as a number, so small workspaces get honest output; Output is bounded by the same token-budget contract as other read surfaces and degrades deterministically instead of dumping entries; The documentation states that these figures are observational, that detected identity is unverified, and that the figures must not be used as an authorization or allocation input; A workspace with no model provenance (pre-capture history) produces correct harness-level output and reports the model dimension as unavailable rather than empty"
@@ -22,7 +22,7 @@ risk: medium
 confidence: 65
 resolution: completed
 expected_result: "Operators receive bounded observational fleet analytics by harness, model, and author source with honest sample states and no routing authority."
-actual_result: "Implemented immutable-history attribution for events, closes, reopens, throughput, rework, and discovered-from defect escape with unavailable/insufficient states, sample counts, continuation receipts, and an explicit non-authorization policy."
+actual_result: "Fleet attribution shares one bounded history scan with provenance coverage, derives sample-honest observational rates across harness/model/author source, prevents malformed timestamps from producing NaN, and preserves its non-routing policy."
 dependencies[16]:
   - id: pm-03pq3o
     kind: blocked_by
@@ -84,13 +84,16 @@ dependencies[16]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[6]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-03T11:15:47.038Z","harness:codex","Attribution sequencing 2026-08-03: fleet analytics cannot be trusted until live-corpus coverage is enforced, resolver failure is distinguishable from unavailable, invalid boolean role values are rejected, non-Claude model and effort adapters work, and topic or role attribution is populated automatically. These are now explicit blockers rather than generic relationships."
   "2026-08-03T11:19:53.252Z","harness:codex","Graph correction 2026-08-03: removed reciprocal blocked_by spellings for pm-lu6sca and pm-eq9dlw because those items already hold the canonical blocks edges to this item. The semantic prerequisite remains; storing both directions added no information and triggered duplicate-edge governance."
   "2026-08-03T11:20:44.252Z","harness:codex","Cycle correction 2026-08-03: removed analytics-side blocked_by mirrors for pm-1wiugq, pm-c0lrdm, and pm-3zgh2c. Canonical direction remains pm-1wiugq blocks the delivery features, which implement this analytics outcome; pm-lu6sca and pm-eq9dlw retain their existing blocks edges. This preserves the prerequisite chain without a reciprocal active cycle."
   "2026-08-06T17:02:10.923Z","harness:codex","Implementation start 2026-08-06: all-status duplicate search for fleet attribution, harness/model throughput, rework, and defect escape found pm-gw6uyq as the canonical feature; all recorded blockers are live-terminal and pm next reports this item ready. Active scope is bounded read-only SDK/CLI analytics over immutable history, grouped by harness/model/author source with sample counts and honest unavailable/insufficient states."
   "2026-08-06T17:23:03.108Z","harness:codex","Implementation evidence: fleet analytics now derive observational harness/model/author-source event, close, reopen, throughput, rework, and discovered-from defect-escape projections from immutable history, with unavailable/insufficient states and an explicit non-routing policy."
   "2026-08-06T20:12:21.793Z","harness:codex","Final verification: exact coverage passed across 441 files and 6,902 tests at 100% statements (49461/49461), branches (35933/35933), functions (10115/10115), and lines (47921/47921). TypeScript, ESLint, duplicate detection, 100% docstrings, contracts, SDK surface, package boundaries, SDK parity, token/context/tracker gates, zero-vulnerability audits, and temporary packed npx/direct-SDK/bunx acceptance passed. Timing budgets passed in a clean isolated sample; later host-load samples were invalidated by unrelated system contention without changing budgets."
+  "2026-08-06T20:35:39.662Z","harness:codex","Review round 1: CodeRabbit produced 11 actionable exact-head findings spanning concurrency-safe audited writes, storage validation, finite numeric contracts, bounded history efficiency, invalid timestamp handling, CLI/schema recovery text, public changelog content, PM changelog linkage, and portable tests. Reopened and claimed only these four canonical items while addressing their own PR feedback."
+  "2026-08-06T20:58:32.449Z","harness:codex","Review remediation verified: fleet and provenance projections reuse one bounded window; malformed event timestamps deterministically fall back to a one-day rate window instead of serializing NaN as null; optional model fixture omits the field; generated contracts are current."
+  "2026-08-06T20:58:37.527Z","harness:codex","Post-review exact verification: 441 files and 6,903 tests passed at 100% statements (49476/49476), branches (35951/35951), functions (10122/10122), and lines (47936/47936). TypeScript, ESLint, zero-clone JSCPD, 100% docstrings, package boundaries, SDK parity, contracts, token/context/tracker/gate registries, docs, secrets, and zero-vulnerability production audit pass. Import timing is separately limited by current host load and no budget was changed."
 learnings[1]{created_at,author,text}:
   "2026-08-06T20:12:06.376Z","harness:codex","Fleet evidence must remain observational: sample denominators, insufficient states, explicit window receipts, and a non-routing policy prevent sparse or unverified identity data from becoming an authorization signal."
 files[7]{path,scope,note}:
@@ -103,9 +106,11 @@ files[7]{path,scope,note}:
   tests/unit/sdk/history-analytics.spec.ts,project,Exercise bounded history indexing attribution rates and honest sample states
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/history-analytics.spec.ts tests/integration/improvement-analytics.integration.spec.ts,project,600
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mshw9ngg-am26k6,test,passed,"2026-08-06T19:13:44.070Z","2026-08-06T19:13:58.528Z","2026-08-06T19:13:58.528Z",1,0,0
-docs[1]{path,scope,note}:
+  test-local-msi02kjb-5if1tr,test,passed,"2026-08-06T21:00:10.791Z","2026-08-06T21:00:26.615Z","2026-08-06T21:00:26.615Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated public release entry for this delivered change
   docs/IMPROVEMENT_ANALYTICS.md,project,fleet analytics safety and interpretation
-close_reason: "Delivered bounded observational fleet attribution with sample honesty, non-routing policy, SDK/CLI/MCP parity, and exact coverage."
+close_reason: "Delivered and review-hardened bounded fleet attribution with one history scan, honest rates, and exact coverage."
 body: ""

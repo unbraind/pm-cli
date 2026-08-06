@@ -47,8 +47,9 @@ import {
   type RecordImprovementObservationResult,
 } from "./improvement-ledger.js";
 import {
-  runFleetAttributionAnalytics,
-  runProvenanceCoverageAnalytics,
+  projectFleetAttributionAnalytics,
+  projectProvenanceCoverageAnalytics,
+  readHistoryAnalyticsWindow,
   type FleetAttributionAnalytics,
   type ProvenanceCoverageAnalytics,
 } from "./history-analytics.js";
@@ -273,22 +274,28 @@ async function requestedHistoryAnalytics(
     eventLimit: options.eventLimit,
     minimumSample: options.minimumSample,
   };
+  const sharedWindow =
+    options.provenanceCoverage || options.fleetAttribution
+      ? await readHistoryAnalyticsWindow(pmRoot, historyOptions)
+      : undefined;
   return {
-    provenanceCoverage: options.provenanceCoverage
-      ? await runProvenanceCoverageAnalytics(
-          pmRoot,
-          settings.agent_identity?.harness_signals,
-          historyOptions,
-        )
-      : undefined,
-    fleetAttribution: options.fleetAttribution
-      ? await runFleetAttributionAnalytics(
-          pmRoot,
-          items,
-          terminalStatuses,
-          historyOptions,
-        )
-      : undefined,
+    provenanceCoverage:
+      options.provenanceCoverage && sharedWindow
+        ? projectProvenanceCoverageAnalytics(
+            sharedWindow,
+            settings.agent_identity?.harness_signals,
+            historyOptions,
+          )
+        : undefined,
+    fleetAttribution:
+      options.fleetAttribution && sharedWindow
+        ? projectFleetAttributionAnalytics(
+            sharedWindow,
+            items,
+            terminalStatuses,
+            historyOptions,
+          )
+        : undefined,
   };
 }
 

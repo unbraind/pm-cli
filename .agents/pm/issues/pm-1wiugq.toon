@@ -1,14 +1,14 @@
 id: pm-1wiugq
-title: The provenance coverage instrument is reachable only from its own unit test while corpus model coverage sits at zero percent
+title: Expose live bounded provenance coverage over immutable history
 description: "src/sdk/provenance.ts exports two analyzers built specifically to detect a declared identity signal that never fires: analyzeAgentProvenanceDescriptorCoverage reports which harnesses can supply each dimension, and summarizeAgentModelProvenance reports per-harness model coverage and sets an inert flag when a sampled declared signal produced only unavailable values. Both are re-exported publicly through src/sdk/core-governance.ts and from there through src/sdk/index.ts and src/sdk/core.ts.\n\nNothing consumes them. A repository-wide search for either symbol outside src/sdk/provenance.ts returns exactly two files: src/sdk/core-governance.ts, which re-exports them, and tests/unit/sdk/provenance.spec.ts, which calls them on hand-built fixtures. No CLI command, no pm health check, no pm validate check, no CI gate and no release gate points either analyzer at the actual history corpus.\n\nWhat the instrument would report if it were run, measured over all 44,408 entries on 2026-07-31: 8,150 entries carry a detected harness (claude-code 4,772, codex 3,223, opencode 155). 2,814 carry a model key and every single one is an explicit null, so observed is 0 and coverage is 0.00 for every harness present. summarizeAgentModelProvenance's own inert predicate - explicit >= minimumExplicitSample and observed === 0 - is therefore true for all three harnesses simultaneously, which is the maximal signal the analyzer is capable of emitting. It has never emitted it, because nothing calls it on real data.\n\nThe declared-but-never-populated set is wider than model. codex declares effort via CODEX_REASONING_EFFORT and CODEX_EFFORT and role via CODEX_SESSION_ROLE; across 3,223 codex-attributed entries neither dimension appears once. Only claude-code has ever produced an effort observation, 471 of them, all after 2026-07-27T12:46. role has zero observations corpus-wide from any harness.\n\nThis is the instrument-integrity pattern that pm-9sui7t and pm-b2hc4x established for token and eval gates, applied to identity: the measurement exists, is correct, is unit-tested, and is pointed at fixtures instead of at the corpus it was written to judge."
 type: Issue
 status: closed
 priority: 2
 tags[5]: gates,identity,instrument-integrity,observability,provenance
 created_at: "2026-07-31T14:11:14.755Z"
-updated_at: "2026-08-06T20:12:50.328Z"
-closed_at: "2026-08-06T20:12:48.473Z"
-completed_at: "2026-08-06T20:12:48.473Z"
+updated_at: "2026-08-06T21:01:24.831Z"
+closed_at: "2026-08-06T21:01:22.507Z"
+completed_at: "2026-08-06T21:01:22.507Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "A pm surface reports provenance coverage over the real history corpus - a pm health check, a pm validate check, or an ops verb - so the inert condition becomes observable without writing code; The report distinguishes a dimension no harness declares from a dimension declared by some harness and never observed, using the descriptor coverage analyzer rather than only the model summarizer; A gate fails, or at minimum warns with a recorded threshold, when a declared dimension is inert across a bounded recent window, so a signal that stops working is caught rather than silently degrading; The gate is proved capable of failing by a negative control, following the pattern pm-b2hc4x established, so it cannot join the set of gates that are structurally unable to fail; The measurement is bounded and resumable over the history streams so it stays inside token and latency budgets at million-item scale"
@@ -17,7 +17,7 @@ risk: medium
 confidence: 96
 resolution: fixed
 expected_result: "Live bounded repository history is evaluated by the provenance coverage instrument with inert, missing, and undeclared signal diagnostics."
-actual_result: "Provenance coverage now consumes the bounded immutable event index, compares configured descriptors with observed/unavailable/legacy values, emits stable inert and undeclared warnings, and reports source, truncation, and cursor receipts."
+actual_result: "Live provenance coverage consumes one reusable bounded immutable-history window, exposes backward-compatible runners plus pure SDK projections, emits inert and undeclared diagnostics, and carries accurate action-scoped transport contracts."
 dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-0zcwz6,discovered_from,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
   pm-33cw,related,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
@@ -28,11 +28,14 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,verifies,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
   pm-3zgh2c,blocks,"2026-08-03T11:15:46.153Z","harness:codex","cli:update:dep",detected
   pm-c0lrdm,blocks,"2026-08-03T11:15:46.153Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-03T11:15:46.153Z","harness:codex","Live all-history census 2026-08-03 after tracker organization: 43,787 events; 9,577 carry a detected harness; non-null model 0, effort 702, role 37, topic 0. Fresh Codex claim and update events record harness and unique instance correctly but model, effort, role, and topic as explicit null. The coverage instrument therefore remains a real-corpus gate prerequisite for the cross-harness adapter pm-c0lrdm and semantic attribution pm-3zgh2c, not a fixture-only utility."
   "2026-08-06T17:02:05.449Z","harness:codex","Implementation start 2026-08-06: all-status duplicate search for provenance coverage, instrument integrity, corpus model coverage, and live history found this issue as canonical; closed pm-0zcwz6 and pm-9gvazz are predecessor/resolver lineage, not duplicates. Active scope is SDK/CLI/health-visible bounded corpus coverage with inert-signal diagnostics and a real negative control."
   "2026-08-06T17:23:01.968Z","harness:codex","Implementation evidence: provenance coverage now consumes the live bounded history-event index, compares configured signal descriptors with observed/unavailable/legacy values, emits inert and undeclared negative-control warnings, and carries an explicit source/truncation receipt."
   "2026-08-06T20:12:17.433Z","harness:codex","Final verification: exact coverage passed across 441 files and 6,902 tests at 100% statements (49461/49461), branches (35933/35933), functions (10115/10115), and lines (47921/47921). TypeScript, ESLint, duplicate detection, 100% docstrings, contracts, SDK surface, package boundaries, SDK parity, token/context/tracker gates, zero-vulnerability audits, and temporary packed npx/direct-SDK/bunx acceptance passed. Timing budgets passed in a clean isolated sample; later host-load samples were invalidated by unrelated system contention without changing budgets."
+  "2026-08-06T20:35:37.842Z","harness:codex","Review round 1: CodeRabbit produced 11 actionable exact-head findings spanning concurrency-safe audited writes, storage validation, finite numeric contracts, bounded history efficiency, invalid timestamp handling, CLI/schema recovery text, public changelog content, PM changelog linkage, and portable tests. Reopened and claimed only these four canonical items while addressing their own PR feedback."
+  "2026-08-06T20:58:31.907Z","harness:codex","Review remediation verified: existing public runner signatures remain backward compatible; reusable readHistoryAnalyticsWindow plus pure projection functions let combined stats requests scan immutable history once; action-scoped since schema text now describes provenance/fleet analytics."
+  "2026-08-06T20:58:36.261Z","harness:codex","Post-review exact verification: 441 files and 6,903 tests passed at 100% statements (49476/49476), branches (35951/35951), functions (10122/10122), and lines (47936/47936). TypeScript, ESLint, zero-clone JSCPD, 100% docstrings, package boundaries, SDK parity, contracts, token/context/tracker/gate registries, docs, secrets, and zero-vulnerability production audit pass. Import timing is separately limited by current host load and no budget was changed."
 learnings[2]{created_at,author,text}:
   "2026-07-31T14:28:51.005Z","harness:claude-code",An analyzer whose only caller is its own unit test is indistinguishable from an unimplemented feature at the level that matters. Grepping for a symbol outside its defining module and its spec is a two-second check that should accompany any claim that a governance capability exists.
   "2026-08-06T20:12:05.230Z","harness:codex","A provenance analyzer becomes operational only when it consumes bounded live immutable history and reports unavailable, inert, and undeclared dimensions with a continuation receipt."
@@ -48,9 +51,11 @@ files[8]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- provenance,project,300
   node scripts/run-tests.mjs test -- tests/unit/sdk/history-analytics.spec.ts tests/integration/improvement-analytics.integration.spec.ts,project,600
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mshw9bt9-n8yzuz,test,passed,"2026-08-06T19:13:20.662Z","2026-08-06T19:13:43.437Z","2026-08-06T19:13:43.437Z",2,0,0
-docs[1]{path,scope,note}:
+  test-local-msi027um-5tye0k,test,passed,"2026-08-06T20:59:46.507Z","2026-08-06T21:00:10.174Z","2026-08-06T21:00:10.174Z",2,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated public release entry for this delivered change
   docs/IMPROVEMENT_ANALYTICS.md,project,provenance coverage semantics and negative controls
-close_reason: "Connected provenance coverage to bounded live immutable history with inert, missing, and undeclared diagnostics plus continuation receipts; exact coverage passes."
+close_reason: Delivered and review-hardened live bounded provenance coverage with shared-window SDK projections and exact coverage.
 body: ""

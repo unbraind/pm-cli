@@ -8,10 +8,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import { acquireLock } from "../lock/lock.js";
-import {
-  EMPTY_CANONICAL_DOCUMENT,
-  EXIT_CODE,
-} from "../shared/constants.js";
+import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { stableStringify } from "../shared/serialization.js";
 import type { HistoryEntry, ItemDocument, ItemMetadata } from "../../types.js";
@@ -77,6 +74,25 @@ export interface WorkspaceJsonWriteOptions {
   message?: string;
   /** Whether creating a previously absent singleton produces a history entry. */
   recordCreation?: boolean;
+}
+
+/** Result of deriving one audited singleton snapshot while its lock is held. */
+export interface WorkspaceJsonMutation<Result> {
+  /** Fully serialized JSON value to persist. */
+  raw: string;
+  /** Caller-defined result derived from the same locked before-state. */
+  result: Result;
+}
+
+/** Options for deriving and writing one audited singleton under one lock. */
+export interface WorkspaceJsonMutationOptions<Result> extends Omit<
+  WorkspaceJsonWriteOptions,
+  "raw"
+> {
+  /** Derive the next snapshot and receipt from the locked serialized state. */
+  mutate: (
+    beforeRaw: string | null,
+  ) => WorkspaceJsonMutation<Result> | Promise<WorkspaceJsonMutation<Result>>;
 }
 
 /** Options for one append-only workspace audit event that leaves state unchanged. */
@@ -183,8 +199,7 @@ async function appendWorkspaceHistoryChangeLocked(
         reason: "out_of_band_workspace_state",
         required:
           "Reconcile the singleton document with its matching _workspace history state before retrying the mutation.",
-        why:
-          "Accepting the write would make the append-only audit stream describe a state that was not actually observed.",
+        why: "Accepting the write would make the append-only audit stream describe a state that was not actually observed.",
         examples: [
           "pm history _workspace --verify",
           "pm validate --check-history-drift --fix-hints",
@@ -289,6 +304,76 @@ export async function appendWorkspaceAuditEvent(
  * Atomically serialize a JSON singleton snapshot, write, history append, and
  * compensation under the workspace-history lock.
  */
+async function writeWorkspaceJsonWithHistoryLocked(
+  params: WorkspaceJsonWriteOptions,
+  beforeRaw: string | null,
+): Promise<boolean> {
+  if (beforeRaw === params.raw) return false;
+  const before = beforeRaw === null ? null : JSON.parse(beforeRaw);
+  const after = JSON.parse(params.raw);
+  await writeFileAtomic(params.filePath, params.raw);
+  try {
+    if (beforeRaw !== null || params.recordCreation !== false) {
+      await appendWorkspaceHistoryChangeLocked({
+        pmRoot: params.pmRoot,
+        documentPath: path
+          .relative(params.pmRoot, params.filePath)
+          .replaceAll("\\", "/"),
+        before,
+        after,
+        op: params.op,
+        author: params.author,
+        lockTtlSeconds: params.lockTtlSeconds,
+        lockWaitMs: params.lockWaitMs,
+        message: params.message,
+      });
+    }
+  } catch (error: unknown) {
+    if (beforeRaw === null) {
+      await fs.rm(params.filePath, { force: true });
+    } else {
+      await writeFileAtomic(params.filePath, beforeRaw);
+    }
+    throw error;
+  }
+  return true;
+}
+
+/**
+ * Derive and persist an audited singleton mutation from one lock-protected
+ * before-state, preventing read-modify-write callers from losing updates.
+ */
+export async function mutateWorkspaceJsonWithHistory<Result>(
+  params: WorkspaceJsonMutationOptions<Result>,
+): Promise<{ changed: boolean; result: Result }> {
+  const release = await acquireLock(
+    params.pmRoot,
+    "workspace-history",
+    params.lockTtlSeconds,
+    params.author,
+    false,
+    false,
+    params.lockWaitMs,
+  );
+  try {
+    const beforeRaw = await readFileIfExists(params.filePath);
+    const mutation = await params.mutate(beforeRaw);
+    return {
+      changed: await writeWorkspaceJsonWithHistoryLocked(
+        { ...params, raw: mutation.raw },
+        beforeRaw,
+      ),
+      result: mutation.result,
+    };
+  } finally {
+    await release();
+  }
+}
+
+/**
+ * Atomically persist one caller-serialized JSON singleton and its audit entry
+ * under the workspace-history lock, with compensation if history append fails.
+ */
 export async function writeWorkspaceJsonWithHistory(
   params: WorkspaceJsonWriteOptions,
 ): Promise<boolean> {
@@ -302,36 +387,10 @@ export async function writeWorkspaceJsonWithHistory(
     params.lockWaitMs,
   );
   try {
-    const beforeRaw = await readFileIfExists(params.filePath);
-    if (beforeRaw === params.raw) return false;
-    const before = beforeRaw === null ? null : JSON.parse(beforeRaw);
-    const after = JSON.parse(params.raw);
-    await writeFileAtomic(params.filePath, params.raw);
-    try {
-      if (beforeRaw !== null || params.recordCreation !== false) {
-        await appendWorkspaceHistoryChangeLocked({
-          pmRoot: params.pmRoot,
-          documentPath: path
-            .relative(params.pmRoot, params.filePath)
-            .replaceAll("\\", "/"),
-          before,
-          after,
-          op: params.op,
-          author: params.author,
-          lockTtlSeconds: params.lockTtlSeconds,
-          lockWaitMs: params.lockWaitMs,
-          message: params.message,
-        });
-      }
-    } catch (error: unknown) {
-      if (beforeRaw === null) {
-        await fs.rm(params.filePath, { force: true });
-      } else {
-        await writeFileAtomic(params.filePath, beforeRaw);
-      }
-      throw error;
-    }
-    return true;
+    return await writeWorkspaceJsonWithHistoryLocked(
+      params,
+      await readFileIfExists(params.filePath),
+    );
   } finally {
     await release();
   }

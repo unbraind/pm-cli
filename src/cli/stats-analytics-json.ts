@@ -32,6 +32,11 @@ const IMPROVEMENT_DIRECTIONS: ReadonlySet<unknown> = new Set([
   "lower",
   "target",
 ]);
+const ACCEPTED_STATS_ANALYTICS_JSON_FIELDS = [
+  ...STATS_ANALYTICS_JSON_FIELDS.keys(),
+]
+  .sort((left, right) => left.localeCompare(right))
+  .join(", ");
 
 /** Validate one field against the compact analytics JSON type contract. */
 function isStatsAnalyticsValue(
@@ -75,7 +80,7 @@ export function parseStatsAnalyticsJson(
     if (!isStatsAnalyticsValue(expected, value)) {
       throw new PmCliError(
         expected === undefined
-          ? `Unknown --analytics field "${key}".`
+          ? `Unknown --analytics field "${key}". Accepted fields: ${ACCEPTED_STATS_ANALYTICS_JSON_FIELDS}.`
           : `--analytics field "${key}" must be ${expected.replace("_", " ")}.`,
         EXIT_CODE.USAGE,
       );

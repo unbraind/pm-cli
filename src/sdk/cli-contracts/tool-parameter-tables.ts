@@ -1931,6 +1931,13 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     Record<string, { description: string; examples?: unknown[] }>
   >
 > = {
+  stats: {
+    since: {
+      description:
+        "Inclusive ISO 8601 timestamp or negative duration lower bound for provenance and fleet analytics.",
+      examples: ["2026-08-01T00:00:00.000Z", "-30d"],
+    },
+  },
   events: {
     since: {
       description:

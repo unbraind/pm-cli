@@ -99,10 +99,13 @@ export {
   appendWorkspaceAuditEvent,
   appendWorkspaceHistoryChange,
   getWorkspaceHistoryPath,
+  mutateWorkspaceJsonWithHistory,
   WORKSPACE_HISTORY_ID,
   writeWorkspaceJsonWithHistory,
   type WorkspaceAuditEventOptions,
   type WorkspaceHistoryChange,
+  type WorkspaceJsonMutation,
+  type WorkspaceJsonMutationOptions,
   type WorkspaceJsonWriteOptions,
 } from "../core/history/workspace-history.js";
 export {

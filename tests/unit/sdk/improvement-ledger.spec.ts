@@ -115,6 +115,18 @@ describe("audited improvement ledger", () => {
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       await expect(
         recordImprovementObservation(
+          {
+            metric: "valid",
+            value: 1,
+            direction: "higher",
+            threshold: Number.POSITIVE_INFINITY,
+            revision: "a",
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        recordImprovementObservation(
           { metric: "valid", value: 1, direction: "target", revision: "a" },
           global,
         ),
@@ -225,14 +237,23 @@ describe("audited improvement ledger", () => {
         recordImprovementObservation(options, { path: context.pmPath }),
       ).resolves.toMatchObject({ changed: false });
 
-      await execFileAsync("git", ["init"], { cwd: context.tempRoot });
+      const gitEnv = {
+        ...process.env,
+        GIT_CONFIG_GLOBAL: "/dev/null",
+        GIT_CONFIG_SYSTEM: "/dev/null",
+      };
+      await execFileAsync("git", ["-c", "init.defaultBranch=main", "init"], {
+        cwd: context.tempRoot,
+        env: gitEnv,
+      });
       await execFileAsync(
         "git",
         ["config", "user.email", "tests@example.invalid"],
-        { cwd: context.tempRoot },
+        { cwd: context.tempRoot, env: gitEnv },
       );
       await execFileAsync("git", ["config", "user.name", "pm tests"], {
         cwd: context.tempRoot,
+        env: gitEnv,
       });
       await writeFile(
         path.join(context.tempRoot, "seed.txt"),
@@ -241,9 +262,11 @@ describe("audited improvement ledger", () => {
       );
       await execFileAsync("git", ["add", "seed.txt"], {
         cwd: context.tempRoot,
+        env: gitEnv,
       });
-      await execFileAsync("git", ["commit", "-m", "seed"], {
+      await execFileAsync("git", ["commit", "--no-gpg-sign", "-m", "seed"], {
         cwd: context.tempRoot,
+        env: gitEnv,
       });
       const gitBacked = await recordImprovementObservation(
         { metric: "git.metric", value: 1 },
@@ -251,8 +274,32 @@ describe("audited improvement ledger", () => {
       );
       expect(gitBacked.observation).toMatchObject({
         revision_source: "git",
-        revision: expect.stringMatching(/^[0-9a-f]{40}$/u),
+        revision: expect.stringMatching(/^[0-9a-f]{40}(?:[0-9a-f]{24})?$/u),
       });
+    });
+  });
+
+  it("serializes concurrent observations without losing either append", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { path: context.pmPath };
+      await expect(
+        Promise.all([
+          recordImprovementObservation(
+            { metric: "concurrent.alpha", value: 1, revision: "alpha" },
+            global,
+          ),
+          recordImprovementObservation(
+            { metric: "concurrent.beta", value: 2, revision: "beta" },
+            global,
+          ),
+        ]),
+      ).resolves.toEqual([
+        expect.objectContaining({ changed: true }),
+        expect.objectContaining({ changed: true }),
+      ]);
+      await expect(
+        readImprovementLedger({ pmRoot: context.pmPath }),
+      ).resolves.toMatchObject({ total: 2 });
     });
   });
 
@@ -344,6 +391,8 @@ describe("audited improvement ledger", () => {
       { ...valid, direction: "sideways" },
       { ...valid, observed_at: 1 },
       { ...valid, revision: 1 },
+      { ...valid, revision_source: undefined },
+      { ...valid, revision_source: "unknown" },
       { ...valid, author: 1 },
       { ...valid, direction: "target" },
       { ...valid, direction: "target", threshold: Number.NaN },

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[3]: measurement,ratchet,self-improvement
 created_at: "2026-08-05T18:09:39.606Z"
-updated_at: "2026-08-06T20:12:45.976Z"
-closed_at: "2026-08-06T20:12:44.863Z"
-completed_at: "2026-08-06T20:12:44.863Z"
+updated_at: "2026-08-06T21:01:21.544Z"
+closed_at: "2026-08-06T21:01:20.864Z"
+completed_at: "2026-08-06T21:01:20.864Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Every declared measurement retains an append-only series of observations with the commit and the timestamp that produced each, not just the current ceiling and a measured_on date; A read surface answers 'how has this population moved since it was filed' without replaying git history by hand; The series is derived from recorded observations, never hand-edited, and survives compaction; The existing ratchet keeps failing on growth; the ledger adds the falling half of the signal"
@@ -17,7 +17,7 @@ risk: low
 confidence: high
 resolution: completed
 expected_result: "Audited improvement observations retain append-only revision/time provenance and expose bounded trends through SDK, CLI, and MCP without weakening ratchets."
-actual_result: "Implemented an audited workspace improvement ledger with immutable metric contracts, retry idempotency, content identities, revision provenance, bounded reads, direction-aware trends, typed SDK/MCP fields, and a token-bounded validated CLI JSON adapter."
+actual_result: "Implemented an audited improvement ledger with immutable metric contracts, finite numeric validation, storage-boundary provenance validation, lock-scoped concurrent-safe mutation, retry idempotency, content identities, bounded trends, typed SDK/MCP integration, token-bounded CLI recovery, and reusable workspace mutation primitives."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-3yzyfe,related,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
   pm-5gf0xf,related,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
@@ -26,17 +26,22 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-ips23h,supersedes,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
   pm-o0sqz5,implements,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,related,"2026-08-05T18:10:22.088Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-06T17:01:56.721Z","harness:codex","Implementation start 2026-08-06: all-status duplicate search for improvement ledger, measurement series, observations, and ratchets found pm-chahyq as the canonical feature. Active scope is a reusable SDK/CLI measurement primitive with append-only observations, bounded deterministic reads, commit/timestamp provenance, and tracker-backed acceptance. The blocked candidate-synthesis and cycle-contract children remain open and unclaimed."
   "2026-08-06T17:22:59.898Z","harness:codex","Implementation evidence: added an audited workspace improvement ledger with content identities, retry idempotency, immutable metric contracts, Git/caller/unversioned revision provenance, bounded reads, and direction-aware trends; exposed it through SDK, CLI stats, MCP, contracts, completions, and documentation."
   "2026-08-06T19:59:37.662Z","harness:codex","Quality correction: the release token-surface gate rejected 15 new flat stats flags (3355 bytes versus 1437). Replaced them with one strictly validated --analytics JSON adapter while retaining all typed SDK/MCP fields; the 91-surface agent token gate now passes without raising budgets or adding completeness waivers."
   "2026-08-06T20:12:14.557Z","harness:codex","Final verification: exact coverage passed across 441 files and 6,902 tests at 100% statements (49461/49461), branches (35933/35933), functions (10115/10115), and lines (47921/47921). TypeScript, ESLint, duplicate detection, 100% docstrings, contracts, SDK surface, package boundaries, SDK parity, token/context/tracker gates, zero-vulnerability audits, and temporary packed npx/direct-SDK/bunx acceptance passed. Timing budgets passed in a clean isolated sample; later host-load samples were invalidated by unrelated system contention without changing budgets."
-learnings[1]{created_at,author,text}:
+  "2026-08-06T20:35:36.186Z","harness:codex","Review round 1: CodeRabbit produced 11 actionable exact-head findings spanning concurrency-safe audited writes, storage validation, finite numeric contracts, bounded history efficiency, invalid timestamp handling, CLI/schema recovery text, public changelog content, PM changelog linkage, and portable tests. Reopened and claimed only these four canonical items while addressing their own PR feedback."
+  "2026-08-06T20:58:30.703Z","harness:codex","Review remediation verified: added lock-scoped mutateWorkspaceJsonWithHistory so ledger read/validate/append/write/history execute under one workspace lock; concurrent alpha/beta append test retains both observations; all thresholds are finite; revision_source is storage-validated; CLI unknown-field recovery lists accepted keys; public API docstrings restored."
+  "2026-08-06T20:58:34.669Z","harness:codex","Post-review exact verification: 441 files and 6,903 tests passed at 100% statements (49476/49476), branches (35951/35951), functions (10122/10122), and lines (47936/47936). TypeScript, ESLint, zero-clone JSCPD, 100% docstrings, package boundaries, SDK parity, contracts, token/context/tracker/gate registries, docs, secrets, and zero-vulnerability production audit pass. Import timing is separately limited by current host load and no budget was changed."
+learnings[2]{created_at,author,text}:
   "2026-08-06T20:12:03.614Z","harness:codex","A broad typed analytics surface must not become a broad agent-facing help surface: the 91-surface token gate caught 15 flat flags, and one strictly validated JSON adapter preserved capability while restoring the command budget without waivers."
-files[20]{path,scope,note}:
+  "2026-08-06T20:58:31.338Z","harness:codex","Audited singleton writers need a lock-scoped transform API, not a locked final write: acquiring only after a read leaves an invisible lost-update race even when every individual write and history append is atomic."
+files[21]{path,scope,note}:
   sdk/public-surface.json,project,reviewed semantic SDK surface expansion
   src/cli/register-operations.ts,project,agent-facing observation flags and validation
   src/cli/stats-analytics-json.ts,project,Token-bounded validated CLI adapter for typed improvement analytics
+  src/core/history/workspace-history.ts,project,Reusable lock-scoped audited JSON mutation prevents lost read-modify-write updates
   src/sdk/cli-contracts/completeness.ts,project,action-specific CLI-to-SDK parameter parity for improvement direction
   src/sdk/cli-contracts/flag-contracts.ts,project,exact CLI flag contracts
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,typed MCP parameter contracts
@@ -54,13 +59,16 @@ files[20]{path,scope,note}:
   tests/integration/improvement-analytics.integration.spec.ts,project,Prove CLI SDK and transport integration for recursive improvement analytics
   tests/unit/commands/register-commands.spec.ts,project,Prove stats observations invalidate search state only when a changed record owns an item
   tests/unit/sdk/improvement-ledger.spec.ts,project,Exercise ledger validation idempotency conflicts trends and provenance
-tests[2]{command,scope,timeout_seconds}:
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/core/history/workspace-history.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/sdk/improvement-ledger.spec.ts tests/integration/improvement-analytics.integration.spec.ts,project,600
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mshw8t0f-1qpu6v,test,passed,"2026-08-06T19:12:24.875Z","2026-08-06T19:13:19.071Z","2026-08-06T19:13:19.071Z",2,0,0
-docs[2]{path,scope,note}:
+  test-local-msi01on3-lwd7zx,test,passed,"2026-08-06T20:58:40.392Z","2026-08-06T20:59:45.279Z","2026-08-06T20:59:45.279Z",3,0,0
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated public release entry for this delivered change
   docs/IMPROVEMENT_ANALYTICS.md,project,ledger contract and SDK examples
   docs/README.md,project,progressive disclosure documentation route
-close_reason: "Delivered audited improvement time series, bounded trends, typed SDK/MCP integration, and token-budgeted CLI analytics; exact coverage and packed transport acceptance pass."
+close_reason: Delivered and review-hardened audited concurrent-safe improvement analytics with exact coverage and linked PM evidence.
 body: ""
