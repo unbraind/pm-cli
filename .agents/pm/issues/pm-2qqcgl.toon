@@ -2,19 +2,22 @@ id: pm-2qqcgl
 title: "The coverage gate every contributor is told to run is not a gate: run-tests.mjs coverage prints the shortfall and exits 0, so only CI can fail on coverage"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,ci,coverage,gate-parity
 created_at: "2026-08-05T18:43:54.168Z"
-updated_at: "2026-08-05T18:44:02.221Z"
+updated_at: "2026-08-06T07:26:23.190Z"
+closed_at: "2026-08-06T07:26:07.808Z"
+completed_at: "2026-08-06T07:26:07.808Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The documented local coverage command exits non-zero on the same condition the hosted threshold step rejects; The failure message names the files below threshold and their uncovered lines, so a contributor can act without opening a CI log; The threshold values have a single declared source shared by the local command and the hosted step, rather than being restated in each; A negative control proves the local command can fail on a deliberately uncovered branch"
 parent: pm-u9d0
 risk: high
 confidence: high
-expected_result: The command AGENTS.md and CLAUDE.md name as the coverage gate fails locally on exactly the condition the hosted global-threshold step fails on.
-actual_result: "node scripts/run-tests.mjs coverage passes --coverage to vitest and nothing else. On 2026-08-05 it printed 'All files | 100 | 99.99 | 100 | 100' and exited 0. The hosted Gates (coverage) job then failed its separate 'Merge coverage and enforce global thresholds' step on the identical number: 'ERROR: Coverage for branches (99.99%) does not meet global threshold (100%)'. The shortfall was three unreachable nullish fallbacks in one file at 98.5 percent branches."
+resolution: fixed
+expected_result: "All acceptance criteria are satisfied with local, manual, and hosted evidence."
+actual_result: "Local and hosted merged coverage fail on any uncovered integer count or malformed report; all four partial shards feed the exact merged gate; 438 files and 6,888 tests pass at exact 100/100/100/100."
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-cg1sjb,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
   pm-ei6x66,implements,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
@@ -24,4 +27,22 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
   pm-zclzll,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
   pm-zlv8jl,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-06T06:54:00.472Z","harness:codex","Implementation evidence: local and hosted coverage now share an exact integer covered-versus-total gate after Vitest report generation; malformed/missing reports fail closed and rounded 100% negative controls enumerate deficient file metrics. CI wiring/gate registry are enforced. Final run: 438 files, 6,887 tests, statements 49,165/49,165, branches 35,658/35,658, functions 10,051/10,051, lines 47,645/47,645; exact gate passed."
+  "2026-08-06T06:55:37.571Z","harness:codex","Delivery: PR https://github.com/unbraind/pm-cli/pull/916 at exact head 0a06ef07f37d6b0b5f07d0e108d9e73b8da24910."
+  "2026-08-06T07:09:56.088Z","harness:codex","Hosted negative-control evidence: PR #916 head fa0a63fc proved the first gate wiring was too early. All four intentionally partial coverage shards failed before their blobs could be merged, while the static gate rejected findCoverageDeficits at complexity 19. The correction adds an explicit coverage-shard runner mode that preserves sandbox isolation and blob generation without judging incomplete counts; the existing merged coverage job remains the sole hosted exact-count authority and still runs the non-bypassable exact gate. Validation helpers reduce complexity without weakening malformed-summary rejection."
+  "2026-08-06T07:25:41.637Z","harness:codex","Exact-head delivery evidence: PR #916 head fea4ba930cd0d1e42766510a3c4088942c2716f3 passed every hosted runner/check, including merged exact coverage, static/docstrings, Windows, compatibility, smokes, CodeQL, Trivy, TruffleHog, Semgrep, Codecov, benchmarks, and platform runtimes. Sourcery's architecture guide and Codecov/CodSpeed reports had no actionable findings and were acknowledged with contextual replies. CodeRabbit and the formal Sourcery review were rate/quota limited; each artifact was down-voted and replied to, and is recorded as a limitation rather than approval. Greptile produced no review artifact after repeated exact-head triggers."
+files[8]{path,scope,note}:
+  .github/workflows/ci.yml,project,Hosted exact-count gate integration
+  scripts/release/coverage-threshold-gate.mjs,project,Exact integer-count coverage decision
+  scripts/release/gate-registry.json,project,Coverage failure taxonomy and negative control
+  scripts/run-tests.mjs,project,Local fail-closed coverage integration
+  tests/integration/ci-workflow-contract.spec.ts,project,Hosted gate wiring contract
+  tests/unit/scripts/release/coverage-threshold-gate.spec.ts,project,Malformed and rounded-report negative controls
+  tests/unit/scripts/run-tests.spec.ts,project,Sharded coverage execution regression
+  vitest.config.ts,project,Remove rounded duplicate threshold authority
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/coverage-threshold-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240
+close_reason: "Added an exact integer-count coverage authority shared by local full runs and hosted merged reports, with safe shard production."
 body: ""

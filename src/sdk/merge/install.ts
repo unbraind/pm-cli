@@ -283,6 +283,16 @@ export function buildMergeAttributePatterns(
   patterns.push(
     `${quoteGitAttributePattern(`${prefix}**/*.json`)} merge=pm-json`,
   );
+  // Extensions are package assets, not tracker item streams. The broad
+  // fallback patterns above intentionally protect unknown contributed item
+  // folders, so this last-match escape hatch must explicitly unset merge for
+  // every file beneath the reserved extension package root.
+  patterns.push(`${quoteGitAttributePattern(`${prefix}extensions/**`)} -merge`);
+  // The managed extension inventory is tracker state rather than package
+  // content, so restore its structured JSON driver after the asset exclusion.
+  patterns.push(
+    `${quoteGitAttributePattern(`${prefix}extensions/.managed-extensions.json`)} merge=pm-json`,
+  );
   return patterns;
 }
 

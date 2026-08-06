@@ -42,6 +42,7 @@
       "failure_taxonomy": [
         "test_failed",
         "coverage_threshold_failed",
+        "coverage_summary_invalid",
         "coverage_artifact_missing",
         "platform_regression"
       ],
@@ -50,8 +51,8 @@
         "audit": "Tests and 100 percent coverage are required delivery evidence."
       },
       "negative_control": {
-        "test": "tests/integration/ci-workflow-contract.spec.ts",
-        "assertion": "proves the full CI merge-integrity command rejects a non-representative drifted stream"
+        "test": "tests/unit/scripts/release/coverage-threshold-gate.spec.ts",
+        "assertion": "rejects a rounded 100% report using integer uncovered counts"
       }
     },
     {
@@ -106,9 +107,7 @@
     {
       "id": "tracker-integrity",
       "owner": "pm-k6t4yb",
-      "pipelines": [
-        "ci.yml#Run tracker merge-safety gates"
-      ],
+      "pipelines": ["ci.yml#Run tracker merge-safety gates"],
       "failure_taxonomy": [
         "tracker_validation_failed",
         "history_drift",
@@ -148,9 +147,7 @@
     {
       "id": "tracker-context-quality",
       "owner": "pm-kpftft",
-      "pipelines": [
-        "ci.yml#Run tracker context-quality ratchets"
-      ],
+      "pipelines": ["ci.yml#Run tracker context-quality ratchets"],
       "failure_taxonomy": [
         "tracker_population_regressed",
         "tracker_population_undeclared",

@@ -295,7 +295,7 @@ jobs:
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: >-
-          pnpm test:coverage --
+          node scripts/run-tests.mjs coverage-shard --
           --shard=${{ matrix.shard }}/4
           --reporter=blob
           --outputFile.blob=.vitest-reports/blob-${{ matrix.shard }}.json
@@ -345,7 +345,9 @@ jobs:
           path: .vitest-reports
 
       - name: Merge coverage and enforce global thresholds
-        run: pnpm exec vitest --merge-reports=.vitest-reports --coverage
+        run: |
+          pnpm exec vitest --merge-reports=.vitest-reports --coverage
+          node scripts/release/coverage-threshold-gate.mjs
 
       - name: Upload coverage artifact
         if: always()

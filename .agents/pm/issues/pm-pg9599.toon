@@ -2,17 +2,30 @@ id: pm-pg9599
 title: "GH-911: preserve runtime dependency resolution in post-install activation probes"
 description: "GitHub #911 reports that the isolated temporary module-graph copy severs npm-hoisted runtime dependencies, falsely returning ok:false for working extensions and leaking temporary copies. Probe the installed runtime topology or reproduce its dependency closure, and clean every temporary graph."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-05T21:27:22.114Z"
-updated_at: "2026-08-05T21:27:22.114Z"
+updated_at: "2026-08-06T07:26:17.190Z"
+closed_at: "2026-08-06T07:26:03.830Z"
+completed_at: "2026-08-06T07:26:03.830Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: A local npm package with a hoisted declared runtime dependency installs with truthful activation status; real load failures still fail; temporary graph directories are always removed; packed npm/local/cross-platform tests pass.
+resolution: fixed
+expected_result: "All acceptance criteria are satisfied with local, manual, and hosted evidence."
+actual_result: "Packed and manual extension installs resolve hoisted runtime dependencies truthfully, retain real failure reporting, and leave zero snapshot residue."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4v4c,related,"2026-08-05T21:27:22.114Z","harness:codex","cli:create:dep",detected
   pm-x6jf,discovered_from,"2026-08-05T21:27:22.114Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-05T21:27:22.114Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for GH-911, isolated activation probes, hoisted runtime dependencies, extension install false failures, and temporary module graphs. Closed lifecycle and stale-probe items are lineage, not this dependency-topology defect. Source: https://github.com/unbraind/pm-cli/issues/911"
+  "2026-08-06T06:53:56.414Z","harness:codex","Implementation evidence: post-install and activation runtime probes now create fresh module-graph snapshots beside the active project/global topology, preserving ancestor node_modules resolution while retaining cache isolation and finally cleanup. Packed npm runtime-dependency integration, package dogfood (88 commands), manual package activation with zero snapshot residue, build, static gates, and exact full coverage pass."
+  "2026-08-06T06:55:34.687Z","harness:codex","Delivery: PR https://github.com/unbraind/pm-cli/pull/916 at exact head 0a06ef07f37d6b0b5f07d0e108d9e73b8da24910."
+  "2026-08-06T07:25:40.078Z","harness:codex","Exact-head delivery evidence: PR #916 head fea4ba930cd0d1e42766510a3c4088942c2716f3 passed every hosted runner/check, including merged exact coverage, static/docstrings, Windows, compatibility, smokes, CodeQL, Trivy, TruffleHog, Semgrep, Codecov, benchmarks, and platform runtimes. Sourcery's architecture guide and Codecov/CodSpeed reports had no actionable findings and were acknowledged with contextual replies. CodeRabbit and the formal Sourcery review were rate/quota limited; each artifact was down-voted and replied to, and is recorded as a limitation rather than approval. Greptile produced no review artifact after repeated exact-head triggers."
+files[1]{path,scope,note}:
+  src/sdk/extension.ts,project,Topology-preserving fresh runtime snapshots
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'installs runtime dependencies for packed npm package extensions',project,240
+close_reason: Preserved ancestor dependency topology for fresh post-install activation snapshots and guaranteed cleanup.
 body: ""

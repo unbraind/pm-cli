@@ -54,6 +54,16 @@ describe("Plan lifecycle integrity regressions", () => {
 
   it("creates seeded cross-owner Plans as one complete state", async () => {
     await withTempPmPath(async (context) => {
+      context.runCli(
+        [
+          "config",
+          "set",
+          "governance_ownership_enforcement",
+          "strict",
+          "--json",
+        ],
+        { expectJson: true },
+      );
       const created = await plan(context.pmPath, "create", {
         title: "Atomic seeded Plan",
         author: "author-a",

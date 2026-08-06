@@ -2,17 +2,31 @@ id: pm-hxuqsa
 title: "GH-912 regression: restore atomic cross-owner seeded Plan creation"
 description: "GitHub #912 reports a 2026.8.5 regression of GH-688: plan create persists the Plan before seeded steps hit ownership enforcement, leaving partial state. Restore one-transaction cross-owner seeded creation and retry safety."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-05T21:28:26.924Z"
-updated_at: "2026-08-05T21:28:26.924Z"
+updated_at: "2026-08-06T07:26:16.581Z"
+closed_at: "2026-08-06T07:26:02.866Z"
+completed_at: "2026-08-06T07:26:02.866Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Cross-owner plan create with multiple seeded steps commits the complete Plan or nothing; a failed enrichment leaves no item/history residue; safe retry and same-owner behavior are covered.
+resolution: fixed
+expected_result: "All acceptance criteria are satisfied with local, manual, and hosted evidence."
+actual_result: "Cross-owner Plans now create under the author, enrich and transfer ownership within one transaction; regressions, manual proof, exact coverage, and hosted checks pass."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-96tter,discovered_from,"2026-08-05T21:28:26.924Z","harness:codex","cli:create:dep",detected
   pm-v7dj,related,"2026-08-05T21:28:26.924Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-05T21:28:26.924Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for GH-912, GH-688, atomic cross-owner seeded Plan creation, ownership conflict, and partial Plan persistence. pm-96tter is the completed original fix; this item records the newly reproduced regression. Source: https://github.com/unbraind/pm-cli/issues/912"
+  "2026-08-06T06:53:55.342Z","harness:codex","Implementation evidence: Plan creation now performs base create under the resolved author, then seeds Plan metadata and transfers the requested assignee in the same governed mutation. Strict cross-owner regression, strict full-metadata CLI/SDK regression, rollback regression, manual fresh-workspace proof, build, static gates, and 6,887-test exact 100/100/100/100 coverage all pass."
+  "2026-08-06T06:55:34.147Z","harness:codex","Delivery: PR https://github.com/unbraind/pm-cli/pull/916 at exact head 0a06ef07f37d6b0b5f07d0e108d9e73b8da24910."
+  "2026-08-06T07:25:39.605Z","harness:codex","Exact-head delivery evidence: PR #916 head fea4ba930cd0d1e42766510a3c4088942c2716f3 passed every hosted runner/check, including merged exact coverage, static/docstrings, Windows, compatibility, smokes, CodeQL, Trivy, TruffleHog, Semgrep, Codecov, benchmarks, and platform runtimes. Sourcery's architecture guide and Codecov/CodSpeed reports had no actionable findings and were acknowledged with contextual replies. CodeRabbit and the formal Sourcery review were rate/quota limited; each artifact was down-voted and replied to, and is recorded as a limitation rather than approval. Greptile produced no review artifact after repeated exact-head triggers."
+files[2]{path,scope,note}:
+  src/sdk/lifecycle/plan.ts,project,Atomic Plan lifecycle ownership sequencing
+  tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,Strict cross-owner and rollback regressions
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,240
+close_reason: "Restored atomic strict-governance cross-owner seeded Plan creation and proved complete commit, rollback, retry, and same-owner behavior."
 body: ""

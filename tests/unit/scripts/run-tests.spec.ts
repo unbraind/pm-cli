@@ -10,7 +10,10 @@ const harness = createScriptHarness();
 const mkdtempMock = vi.fn(async () => "/tmp/pm-run-tests-spec");
 const rmMock = vi.fn(async () => undefined);
 
-function closeChild(code: number | null, signal: NodeJS.Signals | null = null): never {
+function closeChild(
+  code: number | null,
+  signal: NodeJS.Signals | null = null,
+): never {
   const child = new EventEmitter();
   queueMicrotask(() => child.emit("close", code, signal));
   return child as never;
@@ -36,7 +39,9 @@ describe("run-tests", () => {
     await harness.importModule("scripts/run-tests.mjs");
     expect(process.exitCode).toBe(2);
     expect(spawn).not.toHaveBeenCalled();
-    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('Invalid mode "invalid-mode"');
+    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain(
+      'Invalid mode "invalid-mode"',
+    );
   });
 
   it("skips the build and forwards passthrough args after -- to vitest with coverage", async () => {
@@ -44,16 +49,58 @@ describe("run-tests", () => {
     vi.doMock("node:child_process", () => ({ spawn }));
     mockFsPromises();
     process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
-    process.argv = ["node", "scripts/run-tests.mjs", "coverage", "--", "tests/unit/check-secrets.spec.ts"];
+    process.argv = [
+      "node",
+      "scripts/run-tests.mjs",
+      "coverage",
+      "--",
+      "tests/unit/check-secrets.spec.ts",
+    ];
     await harness.importModule("scripts/run-tests.mjs");
-    expect(spawn).toHaveBeenCalledTimes(1);
+    expect(spawn).toHaveBeenCalledTimes(2);
     expect(spawn.mock.calls.at(0)?.[0]).toBe(process.execPath);
     expect(spawn.mock.calls.at(0)?.[1]).toEqual(
       expect.arrayContaining([
-        expect.stringContaining(path.join("node_modules", "vitest", "vitest.mjs")),
+        expect.stringContaining(
+          path.join("node_modules", "vitest", "vitest.mjs"),
+        ),
         "run",
         "--coverage",
         "tests/unit/check-secrets.spec.ts",
+      ]),
+    );
+    expect(spawn.mock.calls.at(1)?.[1]).toEqual([
+      path.join(
+        process.cwd(),
+        "scripts",
+        "release",
+        "coverage-threshold-gate.mjs",
+      ),
+    ]);
+    expect(process.exitCode).toBe(0);
+  });
+
+  it("emits shard coverage without enforcing an incomplete report", async () => {
+    const spawn = vi.fn(() => closeChild(0));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    mockFsPromises();
+    process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    process.argv = [
+      "node",
+      "scripts/run-tests.mjs",
+      "coverage-shard",
+      "--",
+      "--shard=1/4",
+      "--reporter=blob",
+    ];
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(spawn).toHaveBeenCalledTimes(1);
+    expect(spawn.mock.calls[0]?.[1]).toEqual(
+      expect.arrayContaining([
+        "run",
+        "--coverage",
+        "--shard=1/4",
+        "--reporter=blob",
       ]),
     );
     expect(process.exitCode).toBe(0);
@@ -64,7 +111,12 @@ describe("run-tests", () => {
     vi.doMock("node:child_process", () => ({ spawn }));
     mockFsPromises();
     process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
-    process.argv = ["node", "scripts/run-tests.mjs", "test", "tests/unit/example.spec.ts"];
+    process.argv = [
+      "node",
+      "scripts/run-tests.mjs",
+      "test",
+      "tests/unit/example.spec.ts",
+    ];
     await harness.importModule("scripts/run-tests.mjs");
     const vitestArgs = spawn.mock.calls.at(0)?.[1] as string[];
     expect(vitestArgs).toContain("tests/unit/example.spec.ts");
@@ -80,8 +132,13 @@ describe("run-tests", () => {
     process.argv = ["node", "scripts/run-tests.mjs", "test"];
     await harness.importModule("scripts/run-tests.mjs");
     expect(process.exitCode).toBe(1);
-    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain("Failed to run sandboxed tests");
-    expect(rmMock).toHaveBeenCalledWith("/tmp/pm-run-tests-spec", { recursive: true, force: true });
+    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain(
+      "Failed to run sandboxed tests",
+    );
+    expect(rmMock).toHaveBeenCalledWith("/tmp/pm-run-tests-spec", {
+      recursive: true,
+      force: true,
+    });
   });
 
   it("runs build then vitest when skip-build is unset (build success path)", async () => {
@@ -112,7 +169,9 @@ describe("run-tests", () => {
 
   it("treats a build terminated by signal as exit code 1", async () => {
     delete process.env.PM_RUN_TESTS_SKIP_BUILD;
-    const spawn = vi.fn().mockImplementationOnce(() => closeChild(null, "SIGTERM"));
+    const spawn = vi
+      .fn()
+      .mockImplementationOnce(() => closeChild(null, "SIGTERM"));
     vi.doMock("node:child_process", () => ({ spawn }));
     mockFsPromises();
     process.argv = ["node", "scripts/run-tests.mjs", "test"];
@@ -133,7 +192,22 @@ describe("run-tests", () => {
 
   it("treats a vitest run terminated by signal as exit code 1", async () => {
     process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
-    const spawn = vi.fn().mockImplementationOnce(() => closeChild(null, "SIGINT"));
+    const spawn = vi
+      .fn()
+      .mockImplementationOnce(() => closeChild(null, "SIGINT"));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    mockFsPromises();
+    process.argv = ["node", "scripts/run-tests.mjs", "coverage"];
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("fails when the exact coverage gate is terminated", async () => {
+    process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    const spawn = vi
+      .fn()
+      .mockImplementationOnce(() => closeChild(0))
+      .mockImplementationOnce(() => closeChild(null, "SIGTERM"));
     vi.doMock("node:child_process", () => ({ spawn }));
     mockFsPromises();
     process.argv = ["node", "scripts/run-tests.mjs", "coverage"];
@@ -170,14 +244,22 @@ describe("run-tests", () => {
     mockFsPromises();
     process.argv = ["node", "scripts/run-tests.mjs", "test"];
     await harness.importModule("scripts/run-tests.mjs");
-    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain("raw spawn failure");
+    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain(
+      "raw spawn failure",
+    );
     expect(process.exitCode).toBe(1);
   });
 
   it("uses pnpm.cmd on win32 (platform branch)", async () => {
     delete process.env.PM_RUN_TESTS_SKIP_BUILD;
-    const originalPlatform = Object.getOwnPropertyDescriptor(process, "platform");
-    Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+    const originalPlatform = Object.getOwnPropertyDescriptor(
+      process,
+      "platform",
+    );
+    Object.defineProperty(process, "platform", {
+      value: "win32",
+      configurable: true,
+    });
     try {
       const spawn = vi
         .fn()

@@ -2706,6 +2706,19 @@ function attachCommanderAliasContractsResult(
   result.commander_aliases_omitted_reason = "unfiltered_default_brief";
 }
 
+/** Attach the compact agent-facing command semantics shared by summary and full projections. */
+function attachAgentCommandContractsResult(
+  result: ContractsResult,
+  outputCommands: string[],
+): void {
+  result.command_summaries = buildCommandSummarySurface(outputCommands);
+  result.output_policy = {
+    token_estimate: "ceil(utf8_bytes / 4)",
+    degradation_ladder: [...PM_OUTPUT_DEGRADATION_STEPS],
+    allows_unbounded_opt_out: true,
+  };
+}
+
 /** Implements run contracts for the public runtime surface of this module. */
 export async function runContracts(
   options: ContractsCommandOptions,
@@ -2730,13 +2743,10 @@ export async function runContracts(
     outputCommands,
   );
 
+  if (selection.summary || selection.fullOutput) {
+    attachAgentCommandContractsResult(result, outputCommands);
+  }
   if (selection.summary) {
-    result.command_summaries = buildCommandSummarySurface(outputCommands);
-    result.output_policy = {
-      token_estimate: "ceil(utf8_bytes / 4)",
-      degradation_ladder: [...PM_OUTPUT_DEGRADATION_STEPS],
-      allows_unbounded_opt_out: true,
-    };
     return result;
   }
   const commandAliases = buildCommandAliasSurface(commands);

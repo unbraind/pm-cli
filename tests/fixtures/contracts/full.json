@@ -11279,6 +11279,467 @@
       }
     }
   ],
+  "command_summaries": [
+    {
+      "command": "activity",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--limit",
+        "--compact",
+        "--full"
+      ],
+      "intent": "Read activity."
+    },
+    {
+      "command": "aggregate",
+      "default_max_estimated_tokens": 4000,
+      "intent": "Group counts."
+    },
+    {
+      "command": "append",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Append body."
+    },
+    {
+      "command": "claim",
+      "default_max_estimated_tokens": 2000,
+      "flags": [
+        "--if-available",
+        "--next",
+        "--type",
+        "--priority",
+        "--token-budget",
+        "--explain-ranking"
+      ],
+      "intent": "Claim work."
+    },
+    {
+      "command": "close",
+      "default_max_estimated_tokens": 2000,
+      "flags": [
+        "--reason",
+        "--validate-close",
+        "--resolution",
+        "--expected-result",
+        "--actual-result",
+        "--message"
+      ],
+      "intent": "Close work."
+    },
+    {
+      "command": "close-many",
+      "default_max_estimated_tokens": 2000,
+      "flags": [
+        "--limit",
+        "--offset"
+      ],
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "close-task",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "comments",
+      "default_max_estimated_tokens": 2000,
+      "flags": [
+        "--limit"
+      ],
+      "intent": "Manage comments."
+    },
+    {
+      "command": "config",
+      "default_max_estimated_tokens": 2000,
+      "flags": [
+        "--format"
+      ],
+      "intent": "Manage settings."
+    },
+    {
+      "aliases": [
+        "ctx"
+      ],
+      "command": "context",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--limit",
+        "--after",
+        "--depth",
+        "--section",
+        "--token-budget",
+        "--explain-ranking"
+      ],
+      "intent": "Build context."
+    },
+    {
+      "command": "contracts",
+      "default_max_estimated_tokens": 3000,
+      "flags": [
+        "--command",
+        "--flags-only",
+        "--summary",
+        "--runtime-only",
+        "--availability-only",
+        "--full"
+      ],
+      "intent": "Inspect contracts."
+    },
+    {
+      "command": "copy",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Copy work."
+    },
+    {
+      "command": "create",
+      "default_max_estimated_tokens": 2000,
+      "flags": [
+        "--title",
+        "--type",
+        "--status",
+        "--priority",
+        "--dep",
+        "--comment"
+      ],
+      "intent": "Create work."
+    },
+    {
+      "command": "delete",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Delete work."
+    },
+    {
+      "command": "deps",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--token-budget",
+        "--summary",
+        "--full",
+        "--format"
+      ],
+      "intent": "Manage deps."
+    },
+    {
+      "command": "docs",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Link docs."
+    },
+    {
+      "command": "duplicates",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--limit",
+        "--since"
+      ],
+      "intent": "Find duplicate clusters."
+    },
+    {
+      "command": "eval",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--format"
+      ],
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "event",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "events",
+      "default_max_estimated_tokens": 4000,
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "files",
+      "default_max_estimated_tokens": 2000,
+      "flags": [
+        "--limit",
+        "--offset"
+      ],
+      "intent": "Link files."
+    },
+    {
+      "command": "focus",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Manage focus."
+    },
+    {
+      "command": "gc",
+      "default_max_estimated_tokens": 6000,
+      "intent": "Clean caches."
+    },
+    {
+      "command": "get",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--full",
+        "--depth",
+        "--fields",
+        "--tree",
+        "--tree-depth",
+        "--format"
+      ],
+      "intent": "Read item."
+    },
+    {
+      "command": "graph",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--limit",
+        "--after",
+        "--summary",
+        "--full"
+      ],
+      "intent": "Query graph."
+    },
+    {
+      "command": "health",
+      "default_max_estimated_tokens": 6000,
+      "flags": [
+        "--check-only",
+        "--summary",
+        "--brief",
+        "--check-telemetry",
+        "--strict-exit",
+        "--full"
+      ],
+      "intent": "Check health."
+    },
+    {
+      "command": "help",
+      "default_max_estimated_tokens": 3000,
+      "intent": "Show help."
+    },
+    {
+      "aliases": [
+        "history-author-acknowledge",
+        "history-compact",
+        "history-redact",
+        "history-repair"
+      ],
+      "command": "history",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--limit",
+        "--compact",
+        "--full",
+        "--format"
+      ],
+      "intent": "Inspect history."
+    },
+    {
+      "command": "init",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Initialize workspace."
+    },
+    {
+      "command": "item",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "learnings",
+      "default_max_estimated_tokens": 2000,
+      "flags": [
+        "--limit"
+      ],
+      "intent": "Manage learnings."
+    },
+    {
+      "aliases": [
+        "list-all",
+        "list-blocked",
+        "list-canceled",
+        "list-closed",
+        "list-draft",
+        "list-in-progress",
+        "list-open"
+      ],
+      "command": "list",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--status",
+        "--type",
+        "--limit",
+        "--after",
+        "--brief",
+        "--fields"
+      ],
+      "intent": "List work."
+    },
+    {
+      "command": "meet",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "merge",
+      "default_max_estimated_tokens": 6000,
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "next",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--limit",
+        "--blocked-limit",
+        "--ready-only",
+        "--token-budget",
+        "--explain-ranking",
+        "--format"
+      ],
+      "intent": "Pick next work."
+    },
+    {
+      "command": "notes",
+      "default_max_estimated_tokens": 2000,
+      "flags": [
+        "--limit",
+        "--since"
+      ],
+      "intent": "Manage notes."
+    },
+    {
+      "aliases": [
+        "extension",
+        "install",
+        "packages"
+      ],
+      "command": "package",
+      "default_max_estimated_tokens": 3000,
+      "intent": "Manage packages."
+    },
+    {
+      "command": "pause-task",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "plan",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--fields"
+      ],
+      "intent": "Manage plans."
+    },
+    {
+      "command": "profile",
+      "default_max_estimated_tokens": 3000,
+      "intent": "Manage profiles."
+    },
+    {
+      "command": "release",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Release claim."
+    },
+    {
+      "command": "remind",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "restore",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Restore history."
+    },
+    {
+      "command": "schema",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Customize schema."
+    },
+    {
+      "command": "search",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--mode",
+        "--status",
+        "--type",
+        "--limit",
+        "--after",
+        "--fields"
+      ],
+      "intent": "Search work."
+    },
+    {
+      "command": "start-task",
+      "default_max_estimated_tokens": 2000,
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "stats",
+      "default_max_estimated_tokens": 6000,
+      "intent": "Show stats."
+    },
+    {
+      "command": "telemetry",
+      "default_max_estimated_tokens": 6000,
+      "flags": [
+        "--limit"
+      ],
+      "intent": "Manage telemetry."
+    },
+    {
+      "command": "test",
+      "default_max_estimated_tokens": 6000,
+      "intent": "Run linked tests."
+    },
+    {
+      "command": "test-all",
+      "default_max_estimated_tokens": 6000,
+      "flags": [
+        "--limit",
+        "--offset"
+      ],
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "update",
+      "default_max_estimated_tokens": 2000,
+      "flags": [
+        "--status",
+        "--message",
+        "--dep",
+        "--comment",
+        "--file",
+        "--test"
+      ],
+      "intent": "Update work."
+    },
+    {
+      "command": "update-many",
+      "default_max_estimated_tokens": 2000,
+      "flags": [
+        "--limit",
+        "--offset"
+      ],
+      "intent": "Inspect flags."
+    },
+    {
+      "command": "upgrade",
+      "default_max_estimated_tokens": 3000,
+      "intent": "Upgrade packages."
+    },
+    {
+      "command": "validate",
+      "default_max_estimated_tokens": 6000,
+      "flags": [
+        "--check-resolution",
+        "--check-history-drift",
+        "--check-storage-integrity",
+        "--counts",
+        "--strict-exit",
+        "--fix-hints"
+      ],
+      "intent": "Validate data."
+    },
+    {
+      "command": "workspace",
+      "default_max_estimated_tokens": 4000,
+      "intent": "Manage portable workspace primitives."
+    }
+  ],
   "commander_aliases": {
     "activity_string_options": [
       {
@@ -24487,6 +24948,17 @@
     "omitted_field_group_count": 0,
     "omitted_field_groups": []
   },
+  "output_policy": {
+    "allows_unbounded_opt_out": true,
+    "degradation_ladder": [
+      "full",
+      "compact",
+      "brief",
+      "summary",
+      "counts"
+    ],
+    "token_estimate": "ceil(utf8_bytes / 4)"
+  },
   "read_output_dimensions": [
     {
       "command": "list",
@@ -25645,6 +26117,7 @@
     "fields": "unsupported",
     "jq_selector": ".row_contract.row_keys[] as $key | getpath($key | split(\".\")) | if type == \"array\" then .[] else if type == \"object\" then to_entries[] else empty end end",
     "row_keys": [
+      "command_summaries",
       "commands"
     ],
     "row_kind": "collection"

@@ -42,4 +42,6 @@
 ".agents/pm/history/*.jsonl" merge=pm-history
 ".agents/pm/settings.json" merge=pm-json
 ".agents/pm/**/*.json" merge=pm-json
+".agents/pm/extensions/**" -merge
+".agents/pm/extensions/.managed-extensions.json" merge=pm-json
 # pm-cli:merge-drivers:end

@@ -52,6 +52,9 @@ const testReporters: Array<"default" | "junit"> = process.env.CI
   ? ["default", "junit"]
   : ["default"];
 
+// Vitest provides the first-line threshold failure and report generation. The
+// exact-count gate in scripts/release/coverage-threshold-gate.mjs then verifies
+// covered === total without trusting rounded percentage formatting.
 const allSourceCoverageThresholds = {
   lines: 100,
   branches: 100,
@@ -72,11 +75,15 @@ export default defineConfig({
       // dist artifact. The published SDK shape itself is covered by sdk-index.
       {
         find: /^@unbrained\/pm-cli\/sdk$/,
-        replacement: fileURLToPath(new URL("./src/sdk/index.ts", import.meta.url)),
+        replacement: fileURLToPath(
+          new URL("./src/sdk/index.ts", import.meta.url),
+        ),
       },
       {
         find: /^@unbrained\/pm-cli\/sdk\/runtime$/,
-        replacement: fileURLToPath(new URL("./src/sdk/runtime.ts", import.meta.url)),
+        replacement: fileURLToPath(
+          new URL("./src/sdk/runtime.ts", import.meta.url),
+        ),
       },
     ],
   },
