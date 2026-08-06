@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- GH-915: Windows nightly Vite import portability and shared contract-fixture isolation regressions ([pm-ssd7vv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ssd7vv.toon))
+- GH-914: macOS extension source identity compares non-canonical /var and /private/var paths ([pm-eu46an](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eu46an.toon))
 - The coverage gate every contributor is told to run is not a gate: run-tests.mjs coverage prints the shortfall and exits 0, so only CI can fail on coverage ([pm-2qqcgl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qqcgl.toon))
 - The one projection that promises completeness is the one that loses data: pm contracts --full drops all 76 structured command summaries, returns 160 bare name strings, and reports has_omissions false ([pm-x0iv17](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x0iv17.toon))
 - GH-910: keep extension assets outside item merge-driver patterns ([pm-t9qbmp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t9qbmp.toon))

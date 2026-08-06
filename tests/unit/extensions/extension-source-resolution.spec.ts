@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -18,7 +18,9 @@ afterEach(async () => {
 
 describe("extension install source identity", () => {
   it("reports nameless bundled packages and versionless npm competitors", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-source-identity-"));
+    const tempRoot = await realpath(
+      await mkdtemp(path.join(os.tmpdir(), "pm-source-identity-")),
+    );
     tempRoots.push(tempRoot);
     const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
     const previousCwd = process.cwd();

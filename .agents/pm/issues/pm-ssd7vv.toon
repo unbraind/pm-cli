@@ -1,0 +1,43 @@
+id: pm-ssd7vv
+title: "GH-915: Windows nightly Vite import portability and shared contract-fixture isolation regressions"
+description: "Current-head Nightly Validation run 31081630028 fails five new test suites because Vite receives /@id/D:/ absolute imports, plus release automation log cross-talk, a platform-variant SDK surface snapshot, and stale activation-summary expectations. Repair the Windows harness and deterministic contract fixtures without relaxing product assertions."
+type: Issue
+status: closed
+priority: 1
+tags[7]: "area:ci","area:sdk",cross-platform,nightly,reliability,testing,windows
+created_at: "2026-08-06T07:49:28.213Z"
+updated_at: "2026-08-06T08:45:31.449Z"
+closed_at: "2026-08-06T08:44:52.704Z"
+completed_at: "2026-08-06T08:44:52.704Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Current-head Windows Node 24 nightly imports every suite and passes all release automation, SDK surface snapshot, and extension activation summary assertions; Linux exact coverage remains 100/100/100/100"
+parent: pm-j668gl
+resolution: Fixed
+expected_result: "Nightly validation imports and executes all SDK, release, activation, and workflow suites deterministically on Windows and Unix hosts."
+actual_result: "Exact-head nightly run 31085480391 passed all five jobs after exact-key caches, complete transformed-script fingerprints, expanded Windows contracts, and Git Bash path normalization."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ihmfs6,discovered_from,"2026-08-06T07:57:55.302Z","harness:codex","cli:update:dep",detected
+  pm-j668gl,implements,"2026-08-06T07:57:55.302Z","harness:codex","cli:update:dep",detected
+  pm-wo8,verifies,"2026-08-06T07:57:55.302Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-08-06T07:49:28.213Z","harness:codex","text=Duplicate check: searched all statuses for GH-915, Windows Node 24, /@id/D:/, preflight_ownership, release-automation npm log isolation, and SDK surface snapshot drift. Open pm-j668gl is the canonical broad Windows portability census and parent; no existing item owns this exact current-head multi-surface regression. Evidence: scheduled run 31077715874 and current-head dispatch 31081630028 reproduce the failure family."
+  "2026-08-06T08:07:14.587Z","harness:codex","Evidence: current-head run 31081630028 proved stale restored Vitest transforms caused five missing suites plus stale assertion bytecode on Windows. Nightly and every CI test-bearing job now restore validation caches by exact content key only; the required Windows job includes every newly exposed SDK/release/activation suite. Focused contracts pass and full 6,888-test exact coverage plus static quality pass."
+  "2026-08-06T08:16:29.627Z","harness:codex","CI follow-up evidence: PR #917 Windows job failed exact-tag recovery with status 128 because a native D:\\\\ temporary path was prepended to Bash PATH using a colon, bypassing the fake git and invoking real git.exe. The shared two-call shell fixture now converts FAKE_BIN with cygpath when available and preserves the shell inherited PATH. Both release and CI workflow contract suites pass (31 tests)."
+  "2026-08-06T08:20:03.442Z","harness:codex","Verification note: the first post-fix static-quality pass reached all deterministic gates but one SDK runtime import-cost sample measured 449ms over its 421ms ceiling; an immediate isolated rerun verified all 10 SDK entrypoints and all 6 CLI transport operations. No production source or entrypoint dependency changed in this follow-up."
+  "2026-08-06T08:27:59.758Z","harness:codex","Review follow-up: accepted both CodeRabbit findings. All CI/nightly validation cache fingerprints now include Vitest-transformed scripts/*.mjs, scripts/**/*.mjs, scripts/*.mts, and scripts/**/*.mts inputs. The workflow contract parses YAML and structurally verifies all three CI validation-cache steps plus the nightly matrix step have no restore-keys fallback. Focused 12 tests and typecheck pass."
+  "2026-08-06T08:44:50.345Z","harness:codex","Hosted acceptance: exact-head Nightly Validation run 31085480391 passed Windows Node 24 plus macOS 24 and Ubuntu 22/24/25. Exact-key-only transform caches, expanded Windows contracts, and Git Bash fake-bin normalization passed. PR #917 exact-head CI, exact coverage, static quality, CodeQL, Trivy, TruffleHog, Semgrep, and workflow gates are green; both actionable CodeRabbit findings were fixed, acknowledged, and resolved."
+files[4]{path,scope,note}:
+  .github/workflows/ci.yml,project,Per-PR exact-cache Windows regression coverage
+  .github/workflows/nightly.yml,project,Exact-key-only transform cache restore
+  tests/integration/ci-workflow-contract.spec.ts,project,Nightly cache policy contract
+  tests/integration/release-automation-contract.spec.ts,project,Git Bash native fake-bin PATH normalization
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/unit/scripts/release/coverage-threshold-gate.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/scripts/sdk-surface-snapshot.spec.ts tests/unit/core/extensions/activation-summary.spec.ts,project,300
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msh8jj72-g2pwll,test,passed,"2026-08-06T08:09:22.764Z","2026-08-06T08:09:48.782Z","2026-08-06T08:09:48.782Z",1,0,0
+  test-local-msh8jph1-dp5l0f,test,passed,"2026-08-06T08:09:30.648Z","2026-08-06T08:09:56.917Z","2026-08-06T08:09:56.917Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated closeout entry
+close_reason: "Resolved Windows stale transform-cache and Bash fixture portability regressions; focused contracts, exact coverage/static gates, PR Windows regression, and five-platform nightly run 31085480391 pass."
+body: ""

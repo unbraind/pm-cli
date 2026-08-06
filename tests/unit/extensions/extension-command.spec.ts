@@ -117,7 +117,7 @@ function expectBestEffortCleanup(sampleTest: string): void {
 }
 
 async function withWidgetPackageRoot(tempPrefix: string, callback: (paths: { packageRoot: string; tempRoot: string }) => Promise<void>): Promise<void> {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), tempPrefix));
+  const tempRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), tempPrefix)));
   const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
   process.env[PM_PACKAGE_ROOT_ENV] = tempRoot;
   try {
