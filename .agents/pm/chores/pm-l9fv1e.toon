@@ -6,7 +6,7 @@ status: in_progress
 priority: 3
 tags: []
 created_at: "2026-08-06T06:13:46.798Z"
-updated_at: "2026-08-06T06:54:01.122Z"
+updated_at: "2026-08-06T06:55:40.795Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#fd4660418d2b99c9f530a6e2"
 author: "harness:codex"
@@ -16,10 +16,11 @@ parent: pm-92if
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2qqcgl,related,"2026-08-06T06:13:46.798Z","harness:codex","cli:create:dep",detected
   pm-a2g6,supersedes,"2026-08-06T06:13:46.798Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-06T06:13:46.798Z","harness:codex","Duplicate check: exact all-status search for 'tsx 4.23.7' returned zero results. Historical dependency lineage pm-a2g6 was read live including status, resolution, close reason, comments, notes, learnings, and relationships; this item continues that lineage for the newly available patch."
   "2026-08-06T06:43:36.248Z","harness:codex","pm-changelog evidence: exact all-status search for 'pm-changelog 2026.8.6' returned zero duplicates. pnpm changelog:pm:check installed and activated npm pm-changelog 2026.8.6, generated an unchanged 1,937-item CHANGELOG.md, and verified the fresh-in-topology activation probe."
   "2026-08-06T06:54:01.122Z","harness:codex","Verification evidence: tsx updated from 4.23.5 to live latest 4.23.8 (Node >=18 compatible); pm-changelog updated from 2026.8.4 to live latest 2026.8.6 and changelog check remained unchanged across 1,937 closed items. Production audit is 0 across all severities; secret scan clean; lockfile policy, build, static/docstring/SDK/token/context/tracker gates, 88-command package dogfood, and exact 100/100/100/100 coverage pass. npm-package-arg 14 and TypeScript 7 remain separately tracked, live-verified incompatible majors and were intentionally not claimed."
+  "2026-08-06T06:55:40.795Z","harness:codex","Delivery: PR https://github.com/unbraind/pm-cli/pull/916 at exact head 0a06ef07f37d6b0b5f07d0e108d9e73b8da24910."
 files[4]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog 2026.8.6 managed package metadata
   package.json,project,Latest compatible tsx patch declaration

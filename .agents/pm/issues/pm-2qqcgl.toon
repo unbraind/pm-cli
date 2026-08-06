@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: agent-ux,ci,coverage,gate-parity
 created_at: "2026-08-05T18:43:54.168Z"
-updated_at: "2026-08-06T06:54:00.472Z"
+updated_at: "2026-08-06T06:55:37.571Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#fd4660418d2b99c9f530a6e2"
 author: "harness:claude-code"
@@ -26,8 +26,9 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
   pm-zclzll,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
   pm-zlv8jl,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-06T06:54:00.472Z","harness:codex","Implementation evidence: local and hosted coverage now share an exact integer covered-versus-total gate after Vitest report generation; malformed/missing reports fail closed and rounded 100% negative controls enumerate deficient file metrics. CI wiring/gate registry are enforced. Final run: 438 files, 6,887 tests, statements 49,165/49,165, branches 35,658/35,658, functions 10,051/10,051, lines 47,645/47,645; exact gate passed."
+  "2026-08-06T06:55:37.571Z","harness:codex","Delivery: PR https://github.com/unbraind/pm-cli/pull/916 at exact head 0a06ef07f37d6b0b5f07d0e108d9e73b8da24910."
 files[7]{path,scope,note}:
   .github/workflows/ci.yml,project,Hosted exact-count gate integration
   scripts/release/coverage-threshold-gate.mjs,project,Exact integer-count coverage decision

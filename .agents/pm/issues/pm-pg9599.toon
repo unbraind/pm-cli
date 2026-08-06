@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-05T21:27:22.114Z"
-updated_at: "2026-08-06T06:53:56.414Z"
+updated_at: "2026-08-06T06:55:34.687Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#fd4660418d2b99c9f530a6e2"
 author: "harness:codex"
@@ -15,9 +15,10 @@ acceptance_criteria: A local npm package with a hoisted declared runtime depende
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4v4c,related,"2026-08-05T21:27:22.114Z","harness:codex","cli:create:dep",detected
   pm-x6jf,discovered_from,"2026-08-05T21:27:22.114Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-05T21:27:22.114Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for GH-911, isolated activation probes, hoisted runtime dependencies, extension install false failures, and temporary module graphs. Closed lifecycle and stale-probe items are lineage, not this dependency-topology defect. Source: https://github.com/unbraind/pm-cli/issues/911"
   "2026-08-06T06:53:56.414Z","harness:codex","Implementation evidence: post-install and activation runtime probes now create fresh module-graph snapshots beside the active project/global topology, preserving ancestor node_modules resolution while retaining cache isolation and finally cleanup. Packed npm runtime-dependency integration, package dogfood (88 commands), manual package activation with zero snapshot residue, build, static gates, and exact full coverage pass."
+  "2026-08-06T06:55:34.687Z","harness:codex","Delivery: PR https://github.com/unbraind/pm-cli/pull/916 at exact head 0a06ef07f37d6b0b5f07d0e108d9e73b8da24910."
 files[1]{path,scope,note}:
   src/sdk/extension.ts,project,Topology-preserving fresh runtime snapshots
 tests[1]{command,scope,timeout_seconds}:
