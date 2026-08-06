@@ -734,6 +734,28 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     emitting_commands: ["*"],
   },
   {
+    code: "improvement_metric_contract_conflict",
+    meaning: "Improvement metric contract conflict condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/improvement-ledger.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "improvement_observation_conflict",
+    meaning: "Improvement observation conflict condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/improvement-ledger.ts"],
+    emitting_commands: ["*"],
+  },
+  {
     code: "init_existing_settings_requires_force",
     meaning: "Init existing settings requires force condition.",
     stability: "stable",
@@ -934,6 +956,94 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "invalid_history_analytics_limit",
+    meaning: "Invalid history analytics limit condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/history-analytics.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "invalid_history_analytics_minimum_sample",
+    meaning: "Invalid history analytics minimum sample condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/history-analytics.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "invalid_history_analytics_since",
+    meaning: "Invalid history analytics since condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/history-analytics.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "invalid_improvement_ledger",
+    meaning: "Invalid improvement ledger condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/improvement-ledger-validation.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "invalid_improvement_metric",
+    meaning: "Invalid improvement metric condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/improvement-ledger.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "invalid_improvement_observation",
+    meaning: "Invalid improvement observation condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/improvement-ledger.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "invalid_improvement_observation_limit",
+    meaning: "Invalid improvement observation limit condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/improvement-ledger.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "invalid_improvement_observation_timestamp",
+    meaning: "Invalid improvement observation timestamp condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/improvement-ledger.ts"],
     emitting_commands: ["*"],
   },
   {

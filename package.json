@@ -196,7 +196,7 @@
   },
   "dependencies": {
     "@sentry/node": "10.69.0",
-    "@toon-format/toon": "^4.1.0",
+    "@toon-format/toon": "^4.1.1",
     "@types/node": ">=22",
     "commander": "^15.0.0",
     "fast-glob": "^3.3.3",

@@ -91,6 +91,22 @@ export function parseRuntimeInteger(
   return undefined;
 }
 
+/** Resolve a numeric-or-string limit from top-level and nested action inputs. */
+export function resolveRuntimeLimit(
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+): number | string | undefined {
+  if (typeof args.limit === "number" && Number.isFinite(args.limit)) {
+    return args.limit;
+  }
+  if (typeof options.limit === "number" && Number.isFinite(options.limit)) {
+    return options.limit;
+  }
+  return (
+    readRuntimeString(args, "limit") ?? readRuntimeString(options, "limit")
+  );
+}
+
 /** Fixed SDK-runtime global options derived from one untyped action payload. */
 export function actionGlobalOptions(
   args: Record<string, unknown>,
@@ -165,33 +181,32 @@ const LIFECYCLE_AUTHOR_ALIAS_ACTIONS = new Set([
   "close-task",
 ]);
 
-const HOISTED_ACTION_OPTION_KEYS: Readonly<
-  Record<string, readonly string[]>
-> = {
-  list: ["status", "type", "tag", "priority", "limit", "offset"],
-  search: ["mode", "status", "type", "tag", "priority", "limit"],
-  create: [
-    "title",
-    "type",
-    "status",
-    "description",
-    "body",
-    "priority",
-    "tags",
-    "parent",
-    "createMode",
-    "create_mode",
-    "allowMissingParent",
-    "allowDuplicate",
-  ],
-  update: ["parent", "allowMissingParent", "completedAt"],
-  copy: ["allowDuplicate"],
-  close: ["duplicateOf", "completedAt"],
-  // pm-7u9j: the narrow pm_append tool declares `body` top-level; runAppend
-  // reads it from options, while schema/config consume their top-level values
-  // directly in runAction and therefore need no hoisting.
-  append: ["body"],
-};
+const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string[]>> =
+  {
+    list: ["status", "type", "tag", "priority", "limit", "offset"],
+    search: ["mode", "status", "type", "tag", "priority", "limit"],
+    create: [
+      "title",
+      "type",
+      "status",
+      "description",
+      "body",
+      "priority",
+      "tags",
+      "parent",
+      "createMode",
+      "create_mode",
+      "allowMissingParent",
+      "allowDuplicate",
+    ],
+    update: ["parent", "allowMissingParent", "completedAt"],
+    copy: ["allowDuplicate"],
+    close: ["duplicateOf", "completedAt"],
+    // pm-7u9j: the narrow pm_append tool declares `body` top-level; runAppend
+    // reads it from options, while schema/config consume their top-level values
+    // directly in runAction and therefore need no hoisting.
+    append: ["body"],
+  };
 
 const UNIVERSAL_READ_OUTPUT_OPTION_KEYS = [
   "outputInclude",

@@ -2724,6 +2724,7 @@ complete -c pm -n '__fish_seen_subcommand_from stats' -l by-assignee -d 'Lifecyc
 complete -c pm -n '__fish_seen_subcommand_from stats' -l by-tag -d 'Lifecycle-bucketed breakdown grouped by tag'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l by-priority -d 'Lifecycle-bucketed breakdown grouped by priority'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l tag-prefix -d 'With --by-tag: only count tags with this prefix' -r
+complete -c pm -n '__fish_seen_subcommand_from stats' -l analytics -d 'Improvement ledger/history analytics JSON' -r
 
 # append flags
 complete -c pm -n '__fish_seen_subcommand_from append' -s b -l body -d 'Item body' -r

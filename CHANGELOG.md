@@ -2,8 +2,18 @@
 
 ## Unreleased
 
+### Added
+
+- Fleet attribution analytics: per-harness and per-model throughput, rework, and defect-escape rates derived from immutable history alone ([pm-gw6uyq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gw6uyq.toon))
+- Improvement ledger: measured properties of pm carry a recorded time series, because a ceiling proves a number did not grow and can never prove a change made it smaller ([pm-chahyq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-chahyq.toon))
+
+### Changed
+
+- Update @toon-format/toon to 4.1.1 and verify codec compatibility ([pm-ko35zx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ko35zx.toon))
+
 ### Fixed
 
+- The provenance coverage instrument is reachable only from its own unit test while corpus model coverage sits at zero percent ([pm-1wiugq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1wiugq.toon))
 - GH-915: Windows nightly Vite import portability and shared contract-fixture isolation regressions ([pm-ssd7vv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ssd7vv.toon))
 - GH-914: macOS extension source identity compares non-canonical /var and /private/var paths ([pm-eu46an](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eu46an.toon))
 - The coverage gate every contributor is told to run is not a gate: run-tests.mjs coverage prints the shortfall and exits 0, so only CI can fail on coverage ([pm-2qqcgl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qqcgl.toon))

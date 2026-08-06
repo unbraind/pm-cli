@@ -14,6 +14,7 @@ import {
   readSettings,
 } from "../sdk/runtime-primitives.js";
 import { resolveStartTaskInProgressStatus } from "../sdk/start-task-status.js";
+import { parseStatsAnalyticsJson } from "./stats-analytics-json.js";
 import {
   createWorkspaceSnapshot,
   deleteWorkspaceSnapshot,
@@ -373,6 +374,9 @@ async function runStatsAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  const analytics = parseStatsAnalyticsJson(
+    readOptionString(options, "analytics"),
+  );
   const result = await runStats(globalOptions, {
     storage: options.storage === true,
     metadataCoverage: options.metadataCoverage === true,
@@ -381,7 +385,15 @@ async function runStatsAction(
     byPriority: options.byPriority === true,
     tagPrefix: readOptionString(options, "tagPrefix"),
     fieldUtilization: options.fieldUtilization === true,
+    ...analytics,
   });
+  if (result.recorded_observations?.some((entry) => entry.changed) === true) {
+    await invalidateSearchCachesForMutation(globalOptions, {
+      ids: result.recorded_observations?.flatMap((entry) =>
+        entry.observation.item_id ? [entry.observation.item_id] : [],
+      ),
+    });
+  }
   printResult(result, globalOptions);
   if (globalOptions.profile) {
     printError(`profile:command=stats took_ms=${Date.now() - startedAt}`);
@@ -1013,6 +1025,7 @@ export function registerOperationCommands(program: Command): void {
       "--field-utilization",
       "Report content-field utilization rates (notes/learnings/files/docs/tests/comments/deps/body) for governance analysis",
     )
+    .option("--analytics <json>", "Improvement ledger/history analytics JSON")
     .action(runStatsAction);
 
   program
@@ -1197,10 +1210,7 @@ export function registerOperationCommands(program: Command): void {
       "--dry-run",
       "Preview restore file, item, stream, and history-entry impact without mutating state",
     )
-    .option(
-      "--force",
-      "Explicitly confirm a whole-workspace snapshot restore",
-    )
+    .option("--force", "Explicitly confirm a whole-workspace snapshot restore")
     .option("--author <value>", "Actor recorded on the restore audit event")
     .option("--message <value>", "Human-readable restore rationale")
     .action(runWorkspaceSnapshotAction);

@@ -1028,6 +1028,7 @@ export const STATS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--by-tag" },
   { flag: "--by-priority" },
   { flag: "--tag-prefix" },
+  { flag: "--analytics" },
 ];
 
 /** Public contract for duplicate-cluster discovery flags. */

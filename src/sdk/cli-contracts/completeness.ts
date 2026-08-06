@@ -207,6 +207,30 @@ const ACTION_FLAG_PARAMETER_OVERRIDES: Readonly<
   install: { "--gh": "github" },
 };
 
+const ACTION_STRUCTURED_FLAG_PARAMETERS: Readonly<
+  Partial<Record<PmToolAction, Readonly<Record<string, readonly string[]>>>>
+> = {
+  stats: {
+    "--analytics": [
+      "measurements",
+      "metric",
+      "measurementLimit",
+      "observe",
+      "improvementDirection",
+      "measurementSource",
+      "measurementItem",
+      "measurementRevision",
+      "author",
+      "message",
+      "provenanceCoverage",
+      "fleetAttribution",
+      "since",
+      "eventLimit",
+      "minimumSample",
+    ],
+  },
+};
+
 function actionCommand(action: PmToolAction): string {
   if (action.startsWith("extension-")) {
     return `extension ${action.slice("extension-".length)}`;
@@ -248,6 +272,21 @@ function classifyCliInput(
   contracts: CliFlagContract[],
   sdkParameters: ReadonlySet<string>,
 ): SdkCliParameterCoverageEntry {
+  const structuredParameters =
+    ACTION_STRUCTURED_FLAG_PARAMETERS[action]?.[contract.flag];
+  if (
+    structuredParameters !== undefined &&
+    structuredParameters.every((parameter) => sdkParameters.has(parameter))
+  ) {
+    return {
+      surface: "cli",
+      input: contract.flag,
+      counterpart: structuredParameters[0],
+      disposition: "shared",
+      reason:
+        "The validated CLI JSON object fans out across strict SDK parameters.",
+    };
+  }
   const parameter = parameterForFlag(action, contract.flag);
   if (sdkParameters.has(parameter)) {
     return {
@@ -331,6 +370,25 @@ function classifySdkInput(
   parameter: string,
   cliEntries: SdkCliParameterCoverageEntry[],
 ): SdkCliParameterCoverageEntry {
+  const structuredCounterpart = Object.entries(
+    ACTION_STRUCTURED_FLAG_PARAMETERS[action] ?? {},
+  ).find(
+    ([flag, parameters]) =>
+      parameters.includes(parameter) &&
+      cliEntries.some(
+        ({ input, disposition }) => input === flag && disposition === "shared",
+      ),
+  );
+  if (structuredCounterpart !== undefined) {
+    return {
+      surface: "sdk",
+      input: parameter,
+      counterpart: structuredCounterpart[0],
+      disposition: "shared",
+      reason:
+        "The strict SDK parameter is reachable through the validated CLI JSON object.",
+    };
+  }
   const cliCounterpart = cliEntries.find(
     ({ counterpart, disposition }) =>
       counterpart === parameter &&

@@ -1,0 +1,37 @@
+id: pm-ko35zx
+title: Update @toon-format/toon to 4.1.1 and verify codec compatibility
+description: Apply the latest compatible TOON patch release so pm-cli ships current codec fixes without widening the supported Node.js baseline or destabilizing serialized tracker contracts.
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-08-06T18:02:03.618Z"
+updated_at: "2026-08-06T20:12:59.141Z"
+closed_at: "2026-08-06T20:12:55.912Z"
+completed_at: "2026-08-06T20:12:55.912Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: "Dependency resolves to 4.1.1; focused TOON codec and CLI integration tests pass; packed npm, npx, Bun, and bunx acceptance remains compatible."
+resolution: completed
+expected_result: "The repository uses @toon-format/toon 4.1.1, all codec and contract tests pass, and packed npm/npx/bunx acceptance remains compatible."
+actual_result: "Updated @toon-format/toon to 4.1.1; focused codec/CLI tests, exact full coverage, zero-vulnerability audit, and packed npm/npx/direct-SDK/bunx acceptance all pass."
+component: dependencies
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5cgm2z,related,"2026-08-06T18:02:03.618Z","harness:codex","cli:create:dep",detected
+  pm-tll8,related,"2026-08-06T18:02:03.618Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-06T18:02:03.618Z","harness:codex","Duplicate check: searched all statuses for the exact package/version and inspected the dependency lineage; no canonical item for the 4.1.1 patch existed. This chore reuses the established TOON codec and dependency-governance graph."
+  "2026-08-06T18:02:58.516Z","harness:codex","Implementation: advanced @toon-format/toon from 4.1.0 to the latest compatible 4.1.1 patch. The package remains within the existing semver and supported-runtime policy; package and lockfile are linked for traceability."
+  "2026-08-06T20:12:28.329Z","harness:codex","Final verification: exact coverage passed across 441 files and 6,902 tests at 100% statements (49461/49461), branches (35933/35933), functions (10115/10115), and lines (47921/47921). TypeScript, ESLint, duplicate detection, 100% docstrings, contracts, SDK surface, package boundaries, SDK parity, token/context/tracker gates, zero-vulnerability audits, and temporary packed npx/direct-SDK/bunx acceptance passed. Timing budgets passed in a clean isolated sample; later host-load samples were invalidated by unrelated system contention without changing budgets."
+learnings[1]{created_at,author,text}:
+  "2026-08-06T20:12:07.308Z","harness:codex","A compatible codec patch still warrants transport acceptance across packed npm, npx, direct SDK import, Bun, and bunx because serialization sits beneath every tracker contract."
+files[2]{path,scope,note}:
+  package.json,project,Declare the compatible TOON 4.1.1 runtime dependency
+  pnpm-lock.yaml,project,Pin the audited TOON 4.1.1 artifact and integrity
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/toon-decode.spec.ts tests/unit/core/output/output.spec.ts tests/unit/core/item/item-format-validation.spec.ts tests/integration/cli.integration.spec.ts,project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mshtsbqk-0xmsg1,test,passed,"2026-08-06T18:03:04.244Z","2026-08-06T18:04:30.955Z","2026-08-06T18:04:30.955Z",1,0,0
+  test-local-mshwae6f-kwhp7n,test,passed,"2026-08-06T19:13:59.269Z","2026-08-06T19:14:33.159Z","2026-08-06T19:14:33.159Z",1,0,0
+close_reason: "Updated TOON to 4.1.1 and verified codec, full suite, security audit, packed npm/npx/direct-SDK/Bun/bunx compatibility."
+body: ""

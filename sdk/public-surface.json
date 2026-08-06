@@ -814,6 +814,16 @@
       ],
       "package_version": "2026.8.5",
       "reason": "intentional extension lifecycle SDK contract expansion with source-compatible callback overloads"
+    },
+    {
+      "changes": [
+        "signature ./sdk:StatsCommandOptions",
+        "signature ./sdk:StatsResult",
+        "signature ./sdk/runtime:StatsCommandOptions",
+        "signature ./sdk/runtime:StatsResult"
+      ],
+      "package_version": "2026.8.6",
+      "reason": "Expand stats with optional audited improvement and bounded history analytics fields; existing calls and result fields remain compatible"
     }
   ],
   "entrypoints": {
@@ -4013,6 +4023,12 @@
           "signature": "export interface EvaluateMutationGuardOptions { author: string; payload: unknown; settings: MutationGuardSettings; force?: boolean; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "evaluateProvenanceCoverage",
+          "signature": "(entries: readonly HistoryEntry[], descriptors: readonly HarnessSignalDescriptor[], minimumSample: number) => Omit<ProvenanceCoverageAnalytics, \"window\"> | calls: (entries: readonly HistoryEntry[], descriptors: readonly HarnessSignalDescriptor[], minimumSample: number) => Omit<ProvenanceCoverageAnalytics, \"window\">"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "evaluateSimilarityGovernance",
@@ -4908,6 +4924,24 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "FleetAttributionAnalytics",
+          "signature": "export interface FleetAttributionAnalytics { dimensions: FleetAttributionDimension[]; minimum_sample: number; policy: \"observational_only_not_for_authorization_or_routing\"; window: HistoryAnalyticsWindowReceipt; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "FleetAttributionDimension",
+          "signature": "export interface FleetAttributionDimension { dimension: \"harness\" | \"model\" | \"author_source\"; status: \"available\" | \"unavailable\"; rows: FleetAttributionRow[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "FleetAttributionRow",
+          "signature": "export interface FleetAttributionRow { value: string; events: number; state_events: number; annotation_events: number; closes: number; reopens: number; defect_escapes: number; throughput_per_day: number | null; rework_rate: number | null; defect_escape_rate: number | null; sample_status: \"available\" | \"insufficient\"; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "flushTelemetryQueue",
           "signature": "() => Promise<void> | calls: () => Promise<void>"
@@ -5591,6 +5625,18 @@
           "signature": "CliFlagContract[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "HistoryAnalyticsWindowOptions",
+          "signature": "export interface HistoryAnalyticsWindowOptions { since?: string; eventLimit?: number; minimumSample?: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "HistoryAnalyticsWindowReceipt",
+          "signature": "export interface HistoryAnalyticsWindowReceipt { since: string; events: number; truncated: boolean; next_cursor?: string; source: \"history_event_index\"; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryAuthorAttributionScan",
@@ -5817,6 +5863,36 @@
           "kind": "type",
           "name": "ImportPriorityValue",
           "signature": "export type ImportPriorityValue = 0 | 1 | 2 | 3 | 4;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "ImprovementDirection",
+          "signature": "export type ImprovementDirection = \"higher\" | \"lower\" | \"target\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ImprovementLedgerDocument",
+          "signature": "export interface ImprovementLedgerDocument { format_version: 1; observations: ImprovementObservation[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ImprovementLedgerResult",
+          "signature": "export interface ImprovementLedgerResult { observations: ImprovementObservation[]; total: number; truncated: boolean; trends: ImprovementTrend[]; source: \"audited_workspace_singleton\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ImprovementObservation",
+          "signature": "export interface ImprovementObservation { id: string; metric: string; value: number; direction: ImprovementDirection; unit?: string; threshold?: number; observed_at: string; revision: string; revision_source: \"caller\" | \"git\" | \"unversioned\"; author: string; item_id?: string; source?: string; idempotency_key?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ImprovementTrend",
+          "signature": "export interface ImprovementTrend { metric: string; direction: ImprovementDirection; baseline: ImprovementObservation; latest: ImprovementObservation; delta: number; improved: boolean; sample_count: number; }"
         },
         {
           "classification": "supported",
@@ -9006,6 +9082,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ProvenanceCoverageAnalytics",
+          "signature": "export interface ProvenanceCoverageAnalytics { descriptors: AgentProvenanceDescriptorCoverage[]; observations: AgentProvenanceDimensionCoverage[]; inert: Array<{ harness: string; dimension: string; explicit_samples: number; }>; undeclared: string[]; warnings: string[]; window: HistoryAnalyticsWindowReceipt; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "pruneCompileCacheGenerations",
           "signature": "(cacheRoot: string, currentGeneration: string) => CompileCachePruneResult | calls: (cacheRoot: string, currentGeneration: string) => CompileCachePruneResult"
@@ -9129,6 +9211,18 @@
           "kind": "function",
           "name": "readHistoryEntries",
           "signature": "(historyPath: string, itemId: string) => Promise<HistoryEntry[]> | calls: (historyPath: string, itemId: string) => Promise<HistoryEntry[]>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "readImprovementLedger",
+          "signature": "(options?: ReadImprovementLedgerOptions) => Promise<ImprovementLedgerResult> | calls: (options?: ReadImprovementLedgerOptions) => Promise<ImprovementLedgerResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ReadImprovementLedgerOptions",
+          "signature": "export interface ReadImprovementLedgerOptions { pmRoot?: string; cwd?: string; metric?: string; itemId?: string; since?: string; limit?: number; }"
         },
         {
           "classification": "supported",
@@ -9255,6 +9349,24 @@
           "kind": "function",
           "name": "recordContextUsageTouches",
           "signature": "(options: ContextUsageLedgerOptions & { author: string; itemIds: readonly string[]; intent: string; }) => Promise<void> | calls: (options: ContextUsageLedgerOptions & { author: string; itemIds: readonly string[]; intent: string; }) => Promise<void>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "recordImprovementObservation",
+          "signature": "(options: RecordImprovementObservationOptions, global?: { path?: string; }) => Promise<RecordImprovementObservationResult> | calls: (options: RecordImprovementObservationOptions, global?: { path?: string; }) => Promise<RecordImprovementObservationResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "RecordImprovementObservationOptions",
+          "signature": "export interface RecordImprovementObservationOptions { metric: string; value: number; direction?: ImprovementDirection; unit?: string; threshold?: number; source?: string; itemId?: string; revision?: string; observedAt?: string; idempotencyKey?: string; author?: string; message?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "RecordImprovementObservationResult",
+          "signature": "export interface RecordImprovementObservationResult { changed: boolean; observation: ImprovementObservation; ledger_path: \"improvement-ledger.json\"; }"
         },
         {
           "classification": "supported",
@@ -10993,6 +11105,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "runFleetAttributionAnalytics",
+          "signature": "(pmRoot: string, items: readonly Pick<ItemMetadata, \"dependencies\" | \"id\" | \"type\">[], terminalStatuses: ReadonlySet<string>, options?: HistoryAnalyticsWindowOptions) => Promise<FleetAttributionAnalytics> | calls: (pmRoot: string, items: readonly Pick<ItemMetadata, \"id\" | \"type\" | \"dependencies\">[], terminalStatuses: ReadonlySet<string>, options?: HistoryAnalyticsWindowOptions) => Promise<FleetAttributionAnalytics>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "runFocus",
           "signature": "(id: string | undefined, options: FocusOptions, global: GlobalOptions) => Promise<FocusResult> | calls: (id: string | undefined, options: FocusOptions, global: GlobalOptions) => Promise<FocusResult>"
         },
@@ -11187,6 +11305,12 @@
           "kind": "function",
           "name": "runProfileShow",
           "signature": "(name: string | undefined) => ProfileShowResult | calls: (name: string | undefined) => ProfileShowResult"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runProvenanceCoverageAnalytics",
+          "signature": "(pmRoot: string, descriptors?: readonly HarnessSignalDescriptor[], options?: HistoryAnalyticsWindowOptions) => Promise<ProvenanceCoverageAnalytics> | calls: (pmRoot: string, descriptors?: readonly HarnessSignalDescriptor[], options?: HistoryAnalyticsWindowOptions) => Promise<ProvenanceCoverageAnalytics>"
         },
         {
           "classification": "supported",
@@ -12464,13 +12588,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StatsCommandOptions",
-          "signature": "export interface StatsCommandOptions { storage?: boolean; metadataCoverage?: boolean; byAssignee?: boolean; byTag?: boolean; byPriority?: boolean; tagPrefix?: string; fieldUtilization?: boolean; }"
+          "signature": "export interface StatsCommandOptions { storage?: boolean; metadataCoverage?: boolean; byAssignee?: boolean; byTag?: boolean; byPriority?: boolean; tagPrefix?: string; fieldUtilization?: boolean; measurements?: boolean; metric?: string; measurementLimit?: number; observe?: string[]; direction?: ImprovementDirection; measurementSource?: string; measurementItem?: string; measurementRevision?: string; author?: string; message?: string; provenanceCoverage?: boolean; fleetAttribution?: boolean; since?: string; eventLimit?: number; minimumSample?: number; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StatsResult",
-          "signature": "export interface StatsResult { totals: { items: number; history_streams: number; history_entries: number; }; by_type: Record<ItemType, number>; by_status: Record<ItemStatus, number>; metadata_coverage?: MetadataCoverageReport; breakdowns?: { assignee?: GroupedBreakdown; tag?: GroupedBreakdown; priority?: GroupedBreakdown; }; storage?: HistoryStorageStats; field_utilization?: ContentFieldUtilizationReport; generated_at: string; }"
+          "signature": "export interface StatsResult { totals: { items: number; history_streams: number; history_entries: number; }; by_type: Record<ItemType, number>; by_status: Record<ItemStatus, number>; metadata_coverage?: MetadataCoverageReport; breakdowns?: { assignee?: GroupedBreakdown; tag?: GroupedBreakdown; priority?: GroupedBreakdown; }; storage?: HistoryStorageStats; field_utilization?: ContentFieldUtilizationReport; improvement_ledger?: ImprovementLedgerResult; recorded_observations?: RecordImprovementObservationResult[]; provenance_coverage?: ProvenanceCoverageAnalytics; fleet_attribution?: FleetAttributionAnalytics; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -23324,13 +23448,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StatsCommandOptions",
-          "signature": "export interface StatsCommandOptions { storage?: boolean; metadataCoverage?: boolean; byAssignee?: boolean; byTag?: boolean; byPriority?: boolean; tagPrefix?: string; fieldUtilization?: boolean; }"
+          "signature": "export interface StatsCommandOptions { storage?: boolean; metadataCoverage?: boolean; byAssignee?: boolean; byTag?: boolean; byPriority?: boolean; tagPrefix?: string; fieldUtilization?: boolean; measurements?: boolean; metric?: string; measurementLimit?: number; observe?: string[]; direction?: ImprovementDirection; measurementSource?: string; measurementItem?: string; measurementRevision?: string; author?: string; message?: string; provenanceCoverage?: boolean; fleetAttribution?: boolean; since?: string; eventLimit?: number; minimumSample?: number; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StatsResult",
-          "signature": "export interface StatsResult { totals: { items: number; history_streams: number; history_entries: number; }; by_type: Record<ItemType, number>; by_status: Record<ItemStatus, number>; metadata_coverage?: MetadataCoverageReport; breakdowns?: { assignee?: GroupedBreakdown; tag?: GroupedBreakdown; priority?: GroupedBreakdown; }; storage?: HistoryStorageStats; field_utilization?: ContentFieldUtilizationReport; generated_at: string; }"
+          "signature": "export interface StatsResult { totals: { items: number; history_streams: number; history_entries: number; }; by_type: Record<ItemType, number>; by_status: Record<ItemStatus, number>; metadata_coverage?: MetadataCoverageReport; breakdowns?: { assignee?: GroupedBreakdown; tag?: GroupedBreakdown; priority?: GroupedBreakdown; }; storage?: HistoryStorageStats; field_utilization?: ContentFieldUtilizationReport; improvement_ledger?: ImprovementLedgerResult; recorded_observations?: RecordImprovementObservationResult[]; provenance_coverage?: ProvenanceCoverageAnalytics; fleet_attribution?: FleetAttributionAnalytics; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -24291,6 +24415,8 @@
     "history_stream_over_compact_threshold",
     "history_target_out_of_range",
     "history_unknown_author_events",
+    "improvement_metric_contract_conflict",
+    "improvement_observation_conflict",
     "init_existing_settings_requires_force",
     "init_gitignore_unwritable",
     "init_id_prefix_conflict",
@@ -24309,6 +24435,14 @@
     "invalid_event_follow_interval",
     "invalid_event_limit",
     "invalid_event_since",
+    "invalid_history_analytics_limit",
+    "invalid_history_analytics_minimum_sample",
+    "invalid_history_analytics_since",
+    "invalid_improvement_ledger",
+    "invalid_improvement_metric",
+    "invalid_improvement_observation",
+    "invalid_improvement_observation_limit",
+    "invalid_improvement_observation_timestamp",
     "invalid_provenance_predicate",
     "invalid_query_cursor",
     "invalid_workspace_snapshot_target",

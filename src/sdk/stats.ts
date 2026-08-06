@@ -39,6 +39,20 @@ import {
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { ItemStatus, ItemType } from "../types/index.js";
+import {
+  recordImprovementObservation,
+  readImprovementLedger,
+  type ImprovementDirection,
+  type ImprovementLedgerResult,
+  type RecordImprovementObservationResult,
+} from "./improvement-ledger.js";
+import {
+  runFleetAttributionAnalytics,
+  runProvenanceCoverageAnalytics,
+  type FleetAttributionAnalytics,
+  type ProvenanceCoverageAnalytics,
+} from "./history-analytics.js";
+import { parseTestRunMeasurements } from "./test/measurements.js";
 
 /** Documents the stats command options payload exchanged by command, SDK, and package integrations. */
 export interface StatsCommandOptions {
@@ -56,6 +70,36 @@ export interface StatsCommandOptions {
   tagPrefix?: string;
   /** Include a content-field utilization breakdown (notes/learnings/files/docs/tests/comments/deps/body usage rates). */
   fieldUtilization?: boolean;
+  /** Include the audited improvement observation ledger and derived trends. */
+  measurements?: boolean;
+  /** Exact improvement metric filter used with --measurements. */
+  metric?: string;
+  /** Maximum newest improvement observations returned. */
+  measurementLimit?: number;
+  /** Repeatable name=value[,unit=...][,threshold=...] observations to append. */
+  observe?: string[];
+  /** Improvement direction applied to newly recorded observations. */
+  direction?: ImprovementDirection;
+  /** Producing gate or instrument associated with new observations. */
+  measurementSource?: string;
+  /** Tracked owner associated with new observations. */
+  measurementItem?: string;
+  /** Explicit source revision for new observations. */
+  measurementRevision?: string;
+  /** Intentional mutation author override. */
+  author?: string;
+  /** Human-readable observation audit rationale. */
+  message?: string;
+  /** Include live declared-versus-observed provenance coverage. */
+  provenanceCoverage?: boolean;
+  /** Include immutable-history fleet outcome attribution. */
+  fleetAttribution?: boolean;
+  /** Inclusive history analytics lower bound or negative duration. */
+  since?: string;
+  /** Maximum immutable events consumed by each analytics projection. */
+  eventLimit?: number;
+  /** Minimum close or explicit-value denominator required for rates. */
+  minimumSample?: number;
 }
 
 /** Documents the stats result payload exchanged by command, SDK, and package integrations. */
@@ -82,6 +126,14 @@ export interface StatsResult {
   storage?: HistoryStorageStats;
   /** Present only with --field-utilization: content-field utilization rates across all items. */
   field_utilization?: ContentFieldUtilizationReport;
+  /** Audited improvement observations and baseline-to-latest trends. */
+  improvement_ledger?: ImprovementLedgerResult;
+  /** Receipts for observations appended by this invocation. */
+  recorded_observations?: RecordImprovementObservationResult[];
+  /** Live provenance coverage over a bounded immutable-history window. */
+  provenance_coverage?: ProvenanceCoverageAnalytics;
+  /** Bounded fleet attribution derived from immutable history. */
+  fleet_attribution?: FleetAttributionAnalytics;
   /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
 }
@@ -154,6 +206,136 @@ export const _testOnly = {
   readHistoryStreamContents,
 };
 
+async function recordStatsObservations(
+  global: GlobalOptions,
+  options: StatsCommandOptions,
+): Promise<RecordImprovementObservationResult[]> {
+  const recorded: RecordImprovementObservationResult[] = [];
+  const observedAt = nowIso();
+  for (const measurement of parseTestRunMeasurements(
+    options.observe,
+    observedAt,
+  )) {
+    recorded.push(
+      await recordImprovementObservation(
+        {
+          metric: measurement.name,
+          value: measurement.value,
+          direction: options.direction,
+          unit: measurement.unit,
+          threshold: measurement.threshold,
+          source: options.measurementSource,
+          itemId: options.measurementItem,
+          revision: options.measurementRevision,
+          observedAt,
+          author: options.author,
+          message: options.message,
+        },
+        global,
+      ),
+    );
+  }
+  return recorded;
+}
+
+function requestedBreakdowns(
+  items: Awaited<ReturnType<typeof listAllItemMetadataLight>>,
+  options: StatsCommandOptions,
+  classifier: ReturnType<typeof lifecycleClassifierFromStatusRegistry>,
+): NonNullable<StatsResult["breakdowns"]> {
+  const breakdowns: NonNullable<StatsResult["breakdowns"]> = {};
+  if (options.byAssignee) {
+    breakdowns.assignee = groupItemsByDimension(items, "assignee", classifier);
+  }
+  if (options.byTag) {
+    breakdowns.tag = groupItemsByDimension(items, "tag", classifier, {
+      tagPrefix: options.tagPrefix,
+    });
+  }
+  if (options.byPriority) {
+    breakdowns.priority = groupItemsByDimension(items, "priority", classifier);
+  }
+  return breakdowns;
+}
+
+async function requestedHistoryAnalytics(
+  pmRoot: string,
+  items: Awaited<ReturnType<typeof listAllItemMetadataLight>>,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  terminalStatuses: ReadonlySet<string>,
+  options: StatsCommandOptions,
+): Promise<{
+  provenanceCoverage: ProvenanceCoverageAnalytics | undefined;
+  fleetAttribution: FleetAttributionAnalytics | undefined;
+}> {
+  const historyOptions = {
+    since: options.since,
+    eventLimit: options.eventLimit,
+    minimumSample: options.minimumSample,
+  };
+  return {
+    provenanceCoverage: options.provenanceCoverage
+      ? await runProvenanceCoverageAnalytics(
+          pmRoot,
+          settings.agent_identity?.harness_signals,
+          historyOptions,
+        )
+      : undefined,
+    fleetAttribution: options.fleetAttribution
+      ? await runFleetAttributionAnalytics(
+          pmRoot,
+          items,
+          terminalStatuses,
+          historyOptions,
+        )
+      : undefined,
+  };
+}
+
+function assembleStatsResult(
+  totals: StatsResult["totals"],
+  byType: StatsResult["by_type"],
+  byStatus: StatsResult["by_status"],
+  optional: {
+    metadataCoverage: MetadataCoverageReport | undefined;
+    breakdowns: NonNullable<StatsResult["breakdowns"]>;
+    storage: HistoryStorageStats | undefined;
+    fieldUtilization: ContentFieldUtilizationReport | undefined;
+    improvementLedger: ImprovementLedgerResult | undefined;
+    recordedObservations: RecordImprovementObservationResult[];
+    provenanceCoverage: ProvenanceCoverageAnalytics | undefined;
+    fleetAttribution: FleetAttributionAnalytics | undefined;
+  },
+): StatsResult {
+  const hasBreakdowns = Object.keys(optional.breakdowns).length > 0;
+  return {
+    totals,
+    by_type: byType,
+    by_status: byStatus,
+    ...(optional.metadataCoverage
+      ? { metadata_coverage: optional.metadataCoverage }
+      : {}),
+    ...(hasBreakdowns ? { breakdowns: optional.breakdowns } : {}),
+    ...(optional.storage ? { storage: optional.storage } : {}),
+    ...(optional.fieldUtilization
+      ? { field_utilization: optional.fieldUtilization }
+      : {}),
+    ...(optional.improvementLedger
+      ? { improvement_ledger: optional.improvementLedger }
+      : {}),
+    ...(optional.recordedObservations.length > 0
+      ? { recorded_observations: optional.recordedObservations }
+      : {}),
+    ...(optional.provenanceCoverage
+      ? { provenance_coverage: optional.provenanceCoverage }
+      : {}),
+    ...(optional.fleetAttribution
+      ? { fleet_attribution: optional.fleetAttribution }
+      : {}),
+    generated_at: nowIso(),
+  };
+}
+
 /** Implements run stats for the public runtime surface of this module. */
 export async function runStats(
   global: GlobalOptions,
@@ -168,6 +350,7 @@ export async function runStats(
   }
 
   const settings = await readSettings(pmRoot);
+  const recordedObservations = await recordStatsObservations(global, options);
   const typeRegistry = resolveItemTypeRegistry(
     settings,
     getActiveExtensionRegistrations(),
@@ -224,35 +407,45 @@ export async function runStats(
   const metadataCoverage = options.metadataCoverage
     ? computeMetadataCoverage(items, classifier)
     : undefined;
-  const breakdowns: NonNullable<StatsResult["breakdowns"]> = {};
-  if (options.byAssignee) {
-    breakdowns.assignee = groupItemsByDimension(items, "assignee", classifier);
-  }
-  if (options.byTag) {
-    breakdowns.tag = groupItemsByDimension(items, "tag", classifier, {
-      tagPrefix: options.tagPrefix,
-    });
-  }
-  if (options.byPriority) {
-    breakdowns.priority = groupItemsByDimension(items, "priority", classifier);
-  }
-  const hasBreakdowns = Object.keys(breakdowns).length > 0;
+  const breakdowns = requestedBreakdowns(items, options, classifier);
   const fieldUtilization = options.fieldUtilization
     ? computeContentFieldUtilization(items)
     : undefined;
+  const improvementLedger =
+    options.measurements === true || recordedObservations.length > 0
+      ? await readImprovementLedger({
+          pmRoot,
+          metric: options.metric,
+          itemId: options.measurementItem,
+          limit: options.measurementLimit,
+        })
+      : undefined;
+  const { provenanceCoverage, fleetAttribution } =
+    await requestedHistoryAnalytics(
+      pmRoot,
+      items,
+      settings,
+      statusRegistry.terminal_statuses,
+      options,
+    );
 
-  return {
-    totals: {
+  return assembleStatsResult(
+    {
       items: items.length,
       history_streams: streams.length,
       history_entries: historyEntries,
     },
-    by_type: byType,
-    by_status: byStatus,
-    ...(metadataCoverage ? { metadata_coverage: metadataCoverage } : {}),
-    ...(hasBreakdowns ? { breakdowns } : {}),
-    ...(storage ? { storage } : {}),
-    ...(fieldUtilization ? { field_utilization: fieldUtilization } : {}),
-    generated_at: nowIso(),
-  };
+    byType,
+    byStatus,
+    {
+      metadataCoverage,
+      breakdowns,
+      storage,
+      fieldUtilization,
+      improvementLedger,
+      recordedObservations,
+      provenanceCoverage,
+      fleetAttribution,
+    },
+  );
 }

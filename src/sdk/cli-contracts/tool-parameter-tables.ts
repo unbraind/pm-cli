@@ -370,6 +370,21 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   byTag: { type: "boolean" },
   byPriority: { type: "boolean" },
   tagPrefix: { type: "string" },
+  measurements: { type: "boolean" },
+  metric: { type: "string" },
+  measurementLimit: { type: "integer", minimum: 0, maximum: 1000 },
+  observe: { type: "array", items: { type: "string" } },
+  improvementDirection: {
+    type: "string",
+    enum: ["higher", "lower", "target"],
+  },
+  measurementSource: { type: "string" },
+  measurementItem: { type: "string" },
+  measurementRevision: { type: "string" },
+  provenanceCoverage: { type: "boolean" },
+  fleetAttribution: { type: "boolean" },
+  eventLimit: { type: "integer", minimum: 1, maximum: 100000 },
+  minimumSample: { type: "integer", minimum: 1, maximum: 10000 },
   verify: { type: "boolean" },
   literal: { type: "array", items: { type: "string" } },
   regex: { type: "array", items: { type: "string" } },
@@ -570,10 +585,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
 > = {
   activity: {
     harness: {
-      anyOf: [
-        { type: "string" },
-        { type: "array", items: { type: "string" } },
-      ],
+      anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
     },
   },
   events: {
@@ -594,10 +606,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
   },
   history: {
     harness: {
-      anyOf: [
-        { type: "string" },
-        { type: "array", items: { type: "string" } },
-      ],
+      anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
     },
   },
   remind: {
@@ -1371,6 +1380,56 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   fieldUtilization: {
     description:
       "For stats action: include a field_utilization block reporting present/total/percent for content fields (notes, learnings, files, docs, tests, comments, deps, body, linked_command) across all items so under-documented dimensions are visible at a glance.",
+  },
+  measurements: {
+    description:
+      "For stats action: include the audited append-only improvement ledger and baseline-to-latest trends.",
+  },
+  metric: {
+    description: "Exact improvement metric name used to filter ledger reads.",
+    examples: ["quality.coverage.lines"],
+  },
+  measurementLimit: {
+    description: "Maximum newest improvement observations returned by stats.",
+    examples: [50],
+  },
+  observe: {
+    description:
+      "Repeatable audited observation in name=value[,unit=...][,threshold=...] form.",
+    examples: [["quality.coverage.lines=100,unit=percent,threshold=100"]],
+  },
+  improvementDirection: {
+    description: "Improvement direction for newly recorded observations.",
+    examples: ["higher", "lower", "target"],
+  },
+  measurementSource: {
+    description: "Producing gate or instrument for a new observation.",
+    examples: ["pnpm coverage"],
+  },
+  measurementItem: {
+    description: "Tracked item that owns an improvement observation.",
+    examples: ["pm-123abc"],
+  },
+  measurementRevision: {
+    description: "Explicit source revision for a new observation.",
+    examples: ["0123456789abcdef"],
+  },
+  provenanceCoverage: {
+    description:
+      "For stats action: compare configured provenance descriptors with bounded immutable-history observations.",
+  },
+  fleetAttribution: {
+    description:
+      "For stats action: derive observational throughput, rework, and defect-escape rates by harness, model, and author source.",
+  },
+  eventLimit: {
+    description:
+      "Maximum immutable history events consumed by an analytics projection.",
+    examples: [10000],
+  },
+  minimumSample: {
+    description: "Minimum denominator before analytics rates are reported.",
+    examples: [5],
   },
   offset: {
     description: "Number of matching rows to skip before limit is applied.",

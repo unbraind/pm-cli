@@ -136,10 +136,7 @@ export {
   type ValidateFixesSummary,
   type ValidateMutationServices,
 } from "./governance/validate.js";
-export {
-  runExtension,
-  type ExtensionCommandAction,
-} from "./extension.js";
+export { runExtension, type ExtensionCommandAction } from "./extension.js";
 export {
   resolveExtensionInstallSourceIdentity,
   type ExtensionInstallSourceCandidate,
@@ -1037,6 +1034,29 @@ export {
   type WorkloadEntry,
 } from "./runtime.js";
 export { runStats } from "./stats.js";
+export {
+  readImprovementLedger,
+  recordImprovementObservation,
+  type ImprovementDirection,
+  type ImprovementLedgerDocument,
+  type ImprovementLedgerResult,
+  type ImprovementObservation,
+  type ImprovementTrend,
+  type ReadImprovementLedgerOptions,
+  type RecordImprovementObservationOptions,
+  type RecordImprovementObservationResult,
+} from "./improvement-ledger.js";
+export {
+  evaluateProvenanceCoverage,
+  runFleetAttributionAnalytics,
+  runProvenanceCoverageAnalytics,
+  type FleetAttributionAnalytics,
+  type FleetAttributionDimension,
+  type FleetAttributionRow,
+  type HistoryAnalyticsWindowOptions,
+  type HistoryAnalyticsWindowReceipt,
+  type ProvenanceCoverageAnalytics,
+} from "./history-analytics.js";
 export {
   DEFAULT_EVAL_QUERIES_RELATIVE_PATH,
   EVAL_QUERY_SET_CONTRACT,

@@ -206,6 +206,7 @@ import {
   readRuntimeScalarStringAllowBlank as readScalarStringAllowBlank,
   readRuntimeString as readString,
   readRuntimeStringArray as readStringArray,
+  resolveRuntimeLimit,
   updateManyOptionsFromFlat,
   withAddNoteOption,
   withFilesDiscoveryOptions,
@@ -247,6 +248,7 @@ import {
   type StatsCommandOptions,
   type StatsResult,
 } from "./stats.js";
+import { statsCommandOptionsFromRuntime } from "./runtime-stats-options.js";
 import {
   runDuplicates,
   type DuplicatesCommandOptions,
@@ -788,7 +790,8 @@ export class PmClient {
 
   /** List, add, edit, or delete item comments. */
   comments<
-    Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions,
+    Options extends ReadOptions<CommentsCommandOptions> =
+      CommentsCommandOptions,
   >(
     id: string,
     options: Options = {} as Options,
@@ -1097,9 +1100,9 @@ export class PmClient {
   }
 
   /** Run project validation checks with counts-only diagnostics. */
-  validate<Options extends ReadOptions<ValidateCommandOptions> & { counts: true }>(
-    options: Options,
-  ): ReadPromise<ValidateCountsResult, Options>;
+  validate<
+    Options extends ReadOptions<ValidateCommandOptions> & { counts: true },
+  >(options: Options): ReadPromise<ValidateCountsResult, Options>;
   /** Run project validation checks with complete diagnostic arrays. */
   validate<
     Options extends ReadOptions<ValidateCommandOptions> & { counts?: false } =
@@ -1111,7 +1114,8 @@ export class PmClient {
   ): ReadPromise<ValidateResult | ValidateCountsResult, Options>;
   /** Run project validation checks. */
   validate<
-    Options extends ReadOptions<ValidateCommandOptions> = ValidateCommandOptions,
+    Options extends ReadOptions<ValidateCommandOptions> =
+      ValidateCommandOptions,
   >(
     options: Options = {} as Options,
   ): ReadPromise<ValidateResult | ValidateCountsResult, Options> {
@@ -1621,7 +1625,9 @@ export class PmClient {
 }
 
 /** Return the same context snapshot produced by `pm context` without constructing a reusable client. */
-export function context<Options extends ReadOptions<ContextOptions> = ContextOptions>(
+export function context<
+  Options extends ReadOptions<ContextOptions> = ContextOptions,
+>(
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
 ): ReadPromise<ContextResult, Options> {
@@ -1637,7 +1643,9 @@ export function list<Options extends ReadOptions<ListOptions> = ListOptions>(
 }
 
 /** Search items with the MCP/agent compact defaults without constructing a reusable client. */
-export function search<Options extends ReadOptions<SearchOptions> = SearchOptions>(
+export function search<
+  Options extends ReadOptions<SearchOptions> = SearchOptions,
+>(
   query: string,
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
@@ -1663,7 +1671,9 @@ export function next<Options extends ReadOptions<NextOptions> = NextOptions>(
 }
 
 /** Group matching items with the same semantics as `pm aggregate` without constructing a reusable client. */
-export function aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(
+export function aggregate<
+  Options extends ReadOptions<AggregateOptions> = AggregateOptions,
+>(
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
 ): ReadPromise<AggregateResult, Options> {
@@ -1671,7 +1681,9 @@ export function aggregate<Options extends ReadOptions<AggregateOptions> = Aggreg
 }
 
 /** Return project tracker statistics with the same sections as `pm stats` without constructing a reusable client. */
-export function stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(
+export function stats<
+  Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions,
+>(
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
 ): ReadPromise<StatsResult, Options> {
@@ -1698,7 +1710,9 @@ export function comments<
 }
 
 /** List or append private item notes without constructing a reusable client. */
-export function notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(
+export function notes<
+  Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions,
+>(
   id: string,
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
@@ -1716,7 +1730,9 @@ export function learnings(
 }
 
 /** Manage linked item files without constructing a reusable client. */
-export function files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(
+export function files<
+  Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions,
+>(
   id: string,
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
@@ -1742,7 +1758,9 @@ export function filesLookup(
 }
 
 /** Manage linked item docs without constructing a reusable client. */
-export function docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(
+export function docs<
+  Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions,
+>(
   id: string,
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
@@ -1751,7 +1769,9 @@ export function docs<Options extends ReadOptions<DocsCommandOptions> = DocsComma
 }
 
 /** Inspect item dependency relationships without constructing a reusable client. */
-export function deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(
+export function deps<
+  Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions,
+>(
   id: string,
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
@@ -1760,7 +1780,9 @@ export function deps<Options extends ReadOptions<DepsCommandOptions> = DepsComma
 }
 
 /** Run bounded workspace graph queries without constructing a reusable client. */
-export function graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(
+export function graph<
+  Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions,
+>(
   subcommand: GraphSubcommand,
   ids: { id?: string; target?: string } = {},
   options: Options = {} as Options,
@@ -2027,7 +2049,9 @@ export function validate<
 }
 
 /** Run health checks without constructing a reusable client. */
-export function health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(
+export function health<
+  Options extends ReadOptions<RunHealthOptions> = RunHealthOptions,
+>(
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
 ): ReadPromise<HealthResult, Options> {
@@ -2332,7 +2356,6 @@ export function packageDeactivate(
 ): Promise<PackageCommandResult> {
   return new PmClient(clientOptions).packageDeactivate(target, options);
 }
-
 
 /** Upgrade the pm CLI and/or managed packages without constructing a reusable client. */
 export function upgrade(
@@ -3045,23 +3068,10 @@ function runMcpTelemetryAction(
       subcommand:
         readString(ctx.args, "subcommand") ??
         readString(ctx.options, "subcommand"),
-      limit: resolveMcpTelemetryLimit(ctx.args, ctx.options),
+      limit: resolveRuntimeLimit(ctx.args, ctx.options),
     },
     ctx.global,
   );
-}
-
-function resolveMcpTelemetryLimit(
-  args: Record<string, unknown>,
-  options: Record<string, unknown>,
-): number | string | undefined {
-  if (typeof args.limit === "number" && Number.isFinite(args.limit)) {
-    return args.limit;
-  }
-  if (typeof options.limit === "number" && Number.isFinite(options.limit)) {
-    return options.limit;
-  }
-  return readString(args, "limit") ?? readString(options, "limit");
 }
 
 function runMcpHealthAction(ctx: McpActionDispatchContext): Promise<unknown> {
@@ -3423,21 +3433,6 @@ function runMcpProfileAction(
   return handler();
 }
 
-function runMcpStatsAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  return runStats(ctx.global, {
-    storage: ctx.options.storage === true,
-    metadataCoverage: ctx.options.metadataCoverage === true,
-    fieldUtilization: ctx.options.fieldUtilization === true,
-    byAssignee: ctx.options.byAssignee === true,
-    byTag: ctx.options.byTag === true,
-    byPriority: ctx.options.byPriority === true,
-    tagPrefix:
-      typeof ctx.options.tagPrefix === "string"
-        ? ctx.options.tagPrefix
-        : undefined,
-  });
-}
-
 async function runMcpAppendAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -3774,7 +3769,8 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   plan: runMcpPlanAction,
   schema: runMcpSchemaAction,
   profile: runMcpProfileAction,
-  stats: runMcpStatsAction,
+  stats: (ctx) =>
+    runStats(ctx.global, statsCommandOptionsFromRuntime(ctx.options)),
   append: runMcpAppendAction,
   "update-many": runMcpUpdateManyAction,
   "close-many": runMcpCloseManyAction,

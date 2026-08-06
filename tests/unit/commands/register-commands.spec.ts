@@ -1530,6 +1530,48 @@ describe("operation command actions", () => {
     expect(contractsOptions.runtimeOnly).toBe(true);
   });
 
+  it("invalidates search state only for changed stats observations with item owners", async () => {
+    vi.mocked(runStats).mockResolvedValueOnce({
+      totals: {},
+      recorded_observations: [
+        {
+          changed: true,
+          observation: { item_id: "pm-quality" },
+        },
+        {
+          changed: false,
+          observation: {},
+        },
+      ],
+    } as never);
+    await runCli(
+      "stats",
+      "--analytics",
+      '{"observe":["quality.coverage=100"]}',
+    );
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledWith(
+      expect.anything(),
+      { ids: ["pm-quality"] },
+    );
+
+    vi.clearAllMocks();
+    vi.mocked(runStats).mockResolvedValueOnce({
+      totals: {},
+      recorded_observations: [
+        {
+          changed: false,
+          observation: { item_id: "pm-quality" },
+        },
+      ],
+    } as never);
+    await runCli(
+      "stats",
+      "--analytics",
+      '{"observe":["quality.coverage=100"]}',
+    );
+    expect(invalidateSearchCachesForMutation).not.toHaveBeenCalled();
+  });
+
   it("maps bounded duplicate discovery options and profile output", async () => {
     await runCliRaw("--quiet", "duplicates");
     expect(vi.mocked(runDuplicates)).toHaveBeenLastCalledWith(
@@ -1743,6 +1785,24 @@ describe("operation command actions", () => {
       "--by-priority",
       "--tag-prefix",
       "area:",
+      "--analytics",
+      JSON.stringify({
+        measurements: true,
+        metric: "quality.coverage",
+        measurementLimit: 10,
+        observe: ["quality.coverage=100,unit=percent"],
+        direction: "higher",
+        measurementSource: "coverage-gate",
+        measurementItem: "pm-quality",
+        measurementRevision: "revision-1",
+        author: "agent",
+        message: "record gate",
+        provenanceCoverage: true,
+        fleetAttribution: true,
+        since: "-30d",
+        eventLimit: 100,
+        minimumSample: 2,
+      }),
     );
     const statsOptions = lastCallArg<Record<string, unknown>>(
       vi.mocked(runStats) as never,
@@ -1753,6 +1813,44 @@ describe("operation command actions", () => {
     expect(statsOptions.byTag).toBe(true);
     expect(statsOptions.byPriority).toBe(true);
     expect(statsOptions.tagPrefix).toBe("area:");
+    expect(statsOptions).toMatchObject({
+      measurements: true,
+      metric: "quality.coverage",
+      measurementLimit: 10,
+      observe: ["quality.coverage=100,unit=percent"],
+      direction: "higher",
+      measurementSource: "coverage-gate",
+      measurementItem: "pm-quality",
+      measurementRevision: "revision-1",
+      author: "agent",
+      message: "record gate",
+      provenanceCoverage: true,
+      fleetAttribution: true,
+      since: "-30d",
+      eventLimit: 100,
+      minimumSample: 2,
+    });
+
+    for (const [payload, message] of [
+      ["{", "must be valid JSON"],
+      ["null", "must be a JSON object"],
+      ['"value"', "must be a JSON object"],
+      ["[]", "must be a JSON object"],
+      ['{"unknown":true}', 'Unknown --analytics field "unknown"'],
+      ['{"measurements":"yes"}', 'field "measurements" must be boolean'],
+      ['{"metric":1}', 'field "metric" must be string'],
+      ['{"measurementLimit":"10"}', 'field "measurementLimit" must be number'],
+      [
+        '{"observe":"quality.coverage=100"}',
+        'field "observe" must be string array',
+      ],
+      ['{"observe":[1]}', 'field "observe" must be string array'],
+      ['{"direction":"sideways"}', 'field "direction" must be direction'],
+    ] as const) {
+      await expect(runCli("stats", "--analytics", payload)).rejects.toThrow(
+        message,
+      );
+    }
 
     await runCli(
       "health",
