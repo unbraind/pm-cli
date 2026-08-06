@@ -52,7 +52,7 @@ jobs:
           path: |
             .cache/tsbuildinfo
             .cache/vitest
-          key: pm-cli-validation-cache-${{ runner.os }}-node${{ matrix.node }}-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
+          key: pm-cli-validation-cache-${{ runner.os }}-node${{ matrix.node }}-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts', 'scripts/*.mjs', 'scripts/**/*.mjs', 'scripts/*.mts', 'scripts/**/*.mts') }}
 
       - name: Restore LanceDB cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
