@@ -1,0 +1,40 @@
+id: pm-c3uru0
+title: "Sentry PM-CLI-2W: rejected unknown-author acknowledgments are emitted as high production errors"
+description: "The public unknown-author acknowledgment command correctly rejects a stale or non-actionable target, but the handled TypeError crosses the observability boundary as a high unresolved Sentry issue. This makes expected operator validation noise indistinguishable from a product failure and can block release health."
+type: Issue
+status: open
+priority: 2
+tags[5]: "area:cli","area:observability",author,sentry,ux
+created_at: "2026-08-06T21:16:53.374Z"
+updated_at: "2026-08-06T21:16:53.374Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: The observability boundary classifies this exact validation family as expected without masking unexpected errors; focused tests prove positive and negative classification; the Sentry release gate recognizes the outcome; PM-CLI-2W is dispositioned with live evidence.
+goal: trustworthy-observability
+objective: Keep release health sensitive to genuine failures without penalizing expected validation paths.
+value: Preserves a trustworthy Sentry signal and avoids false release blockers.
+impact: Reduces high-severity alert noise while retaining structured operator feedback.
+outcome: The same invalid request remains rejected but no longer appears as an unresolved high production failure.
+why_now: Live closeout found PM-CLI-2W as the only unresolved issue seen in the last 24 hours.
+parent: pm-doxj
+risk: low
+confidence: high
+severity: medium
+environment: production
+repro_steps: "Run the unknown-author acknowledgment command against a stale or non-actionable event target such as pm-iimv:1; observe a handled CLI rejection and Sentry PM-CLI-2W."
+expected_result: Expected validation refusals remain structured CLI diagnostics and do not create high unresolved production issues; unexpected failures remain observable.
+actual_result: Sentry PM-CLI-2W recorded two handled TypeError events on 2026-08-06 from release pm-cli@2026.8.5.
+affected_version: 2026.8.5
+component: CLI observability boundary
+regression: false
+customer_impact: Release operators see a high unresolved production error for a correctly rejected request; no data corruption occurred.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7zs0,blocks,"2026-08-06T21:16:53.374Z","harness:codex","cli:create:dep",detected
+  pm-zqpnte,discovered_from,"2026-08-06T21:16:53.374Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-06T21:16:53.374Z","harness:codex","Duplicate check: searched all statuses for the exact Sentry ID, author acknowledgment target text, handled Sentry validation errors, and expected command-error observability noise. No item tracks PM-CLI-2W; pm-zqpnte tracks the delivered command surface, while prior classifier items cover different error families."
+notes[1]{created_at,author,text}:
+  "2026-08-06T21:16:53.374Z","harness:codex","Live Sentry evidence: PM-CLI-2W is unresolved/high, count=2, first_seen=2026-08-06T20:37:01Z, last_seen=2026-08-06T20:45:45Z, handled=yes, release=pm-cli@2026.8.5. Keep private event payload and host metadata out of Git."
+learnings[1]{created_at,author,text}:
+  "2026-08-06T21:16:53.374Z","harness:codex",Expected CLI refusals require family-level observability classification tests; a handled flag alone does not prevent a high unresolved Sentry issue.
+body: ""
