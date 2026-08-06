@@ -2,23 +2,27 @@ id: pm-eu46an
 title: "GH-914: macOS extension source identity compares non-canonical /var and /private/var paths"
 description: Current-head Nightly Validation run 31081630028 reproduces two extension source identity assertion failures on macOS Node 24 because temporary package paths retain /var spelling while resolved candidates use canonical /private/var spelling. Normalize the comparison boundary without weakening ambiguity diagnostics.
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[7]: "area:extensions","area:sdk",ci,cross-platform,macos,nightly,reliability
 created_at: "2026-08-06T07:49:22.110Z"
-updated_at: "2026-08-06T08:09:22.304Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#fd4660418d2b99c9f530a6e2"
+updated_at: "2026-08-06T08:45:30.936Z"
+closed_at: "2026-08-06T08:44:50.965Z"
+completed_at: "2026-08-06T08:44:50.965Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Current-head macOS Node 24 nightly passes both extension-command ambiguity and extension-source-resolution competitor tests; source identity remains deterministic on Linux and Windows
 parent: pm-u9d0
+resolution: Fixed
+expected_result: "Extension source identity tests resolve canonical package paths consistently across macOS, Linux, and Windows."
+actual_result: "Exact-head nightly run 31085480391 passed macOS, Windows, and all Ubuntu jobs after canonicalizing macOS temporary roots."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-dprb,discovered_from,"2026-08-06T07:57:54.532Z","harness:codex","cli:update:dep",detected
   pm-ihmfs6,blocked_by,"2026-08-06T07:57:54.532Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-06T07:49:22.110Z","harness:codex","text=Duplicate check: searched all statuses for GH-914, macOS Node 24, /var versus /private/var, extension-command ambiguity, and extension-source-resolution. Closed pm-dprb, pm-gf6f, pm-0fhw, and pm-ihmfs6 document completed earlier canonicalization defects; none owns this live source-identity comparison regression. Evidence: scheduled run 31077715874 and current-head dispatch 31081630028 both fail the same two tests."
   "2026-08-06T08:07:14.085Z","harness:codex","Evidence: canonicalized macOS temp-root fixtures at creation boundaries; 138 extension command/source tests pass, and full 438-file 6,888-test coverage remains exact 100/100/100/100."
+  "2026-08-06T08:44:49.835Z","harness:codex","Hosted acceptance: exact-head Nightly Validation run 31085480391 passed macOS Node 24 plus Ubuntu 22/24/25 and Windows 24. The two previously failing extension source identity suites now pass under the canonical /private/var filesystem spelling. PR #917 exact-head CI and all security/quality checks are green; CodeRabbit re-review was quota-limited with no new artifact and is recorded as a limitation, not approval."
 files[2]{path,scope,note}:
   tests/unit/extensions/extension-command.spec.ts,project,Canonical macOS temp-root fixture
   tests/unit/extensions/extension-source-resolution.spec.ts,project,Canonical source identity regression fixture
@@ -26,4 +30,7 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msh8iyre-xuzvw7,test,passed,"2026-08-06T08:08:49.139Z","2026-08-06T08:09:22.298Z","2026-08-06T08:09:22.298Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated closeout entry
+close_reason: "Resolved macOS canonical temporary-path identity regression; 138 focused tests, full 6,888-test exact coverage, PR CI, and five-platform nightly run 31085480391 pass."
 body: ""
