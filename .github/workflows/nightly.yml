@@ -46,16 +46,13 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: pnpm
 
-      - name: Restore TypeScript and Vitest caches
+      - name: Restore exact TypeScript and Vitest caches
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             .cache/tsbuildinfo
             .cache/vitest
           key: pm-cli-validation-cache-${{ runner.os }}-node${{ matrix.node }}-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
-          restore-keys: |
-            pm-cli-validation-cache-${{ runner.os }}-node${{ matrix.node }}-
-            pm-cli-validation-cache-${{ runner.os }}-
 
       - name: Restore LanceDB cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

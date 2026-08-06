@@ -144,7 +144,7 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.pnpmSetup,
       PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
-      "name: Restore TypeScript and Vitest caches",
+      "name: Restore exact TypeScript and Vitest caches",
       PINNED_ACTIONS.actionsCache,
       ".cache/tsbuildinfo",
       ".cache/vitest",
@@ -256,6 +256,7 @@ describe("GitHub workflow contract", () => {
     ]);
     expectContainsAll(windowsRegressionJob, [
       "name: Windows regression (Node 24)",
+      "name: Restore exact TypeScript and Vitest caches",
       "needs: build-foundation",
       "runs-on: windows-latest",
       "node-version: 24",
@@ -267,9 +268,12 @@ describe("GitHub workflow contract", () => {
       "run: pnpm install --frozen-lockfile",
       "run: pnpm build",
       'PM_RUN_TESTS_SKIP_BUILD: "1"',
-      "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts",
+      "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts",
       'run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t "installs runtime dependencies for packed npm package extensions"',
     ]);
+    expect(windowsRegressionJob).not.toMatch(
+      /restore-keys:\s*\n\s+pm-cli-validation-cache-/u,
+    );
     expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(5);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
@@ -411,7 +415,7 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.pnpmSetup,
       PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
-      "name: Restore TypeScript and Vitest caches",
+      "name: Restore exact TypeScript and Vitest caches",
       PINNED_ACTIONS.actionsCache,
       ".cache/tsbuildinfo",
       ".cache/vitest",
@@ -439,6 +443,9 @@ describe("GitHub workflow contract", () => {
     ]);
     expect(nightlyWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(
       2,
+    );
+    expect(nightlyWorkflow).not.toMatch(
+      /restore-keys:\s*\n\s+pm-cli-validation-cache-/u,
     );
     expect(nightlyWorkflow).not.toContain("Sandboxed PM regression");
 
