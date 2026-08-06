@@ -8,6 +8,7 @@ import path from "node:path";
 const MODE_TO_VITEST_ARGS = {
   test: [],
   coverage: ["--coverage"],
+  "coverage-shard": ["--coverage"],
 };
 
 function resolveMode(argv) {
@@ -22,7 +23,9 @@ function resolveMode(argv) {
 async function run() {
   const resolved = resolveMode(process.argv);
   if (!resolved.ok) {
-    console.error(`Invalid mode "${resolved.mode}". Use "test" or "coverage".`);
+    console.error(
+      `Invalid mode "${resolved.mode}". Use "test", "coverage", or "coverage-shard".`,
+    );
     process.exitCode = 2;
     return;
   }

@@ -13,6 +13,29 @@ import { fileURLToPath } from "node:url";
 
 const COVERAGE_METRICS = ["lines", "branches", "functions", "statements"];
 
+/** Require a coverage report entry to expose an object-shaped metric map. */
+function assertCoverageEntry(file, entry) {
+  if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+    throw new TypeError(`Coverage entry for ${file} must be an object.`);
+  }
+}
+
+/** Require exact non-negative integer coverage counts for one metric. */
+function assertCoverageCounts(file, metric, counts) {
+  if (
+    typeof counts !== "object" ||
+    counts === null ||
+    typeof counts.covered !== "number" ||
+    typeof counts.total !== "number" ||
+    !Number.isInteger(counts.covered) ||
+    !Number.isInteger(counts.total) ||
+    counts.covered < 0 ||
+    counts.total < counts.covered
+  ) {
+    throw new TypeError(`Coverage entry ${file} has invalid ${metric} counts.`);
+  }
+}
+
 /** Return exact uncovered counts for every file and required metric. */
 export function findCoverageDeficits(summary) {
   if (
@@ -27,25 +50,10 @@ export function findCoverageDeficits(summary) {
   }
   const deficits = [];
   for (const [file, entry] of Object.entries(summary)) {
-    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-      throw new TypeError(`Coverage entry for ${file} must be an object.`);
-    }
+    assertCoverageEntry(file, entry);
     for (const metric of COVERAGE_METRICS) {
       const counts = entry[metric];
-      if (
-        typeof counts !== "object" ||
-        counts === null ||
-        typeof counts.covered !== "number" ||
-        typeof counts.total !== "number" ||
-        !Number.isInteger(counts.covered) ||
-        !Number.isInteger(counts.total) ||
-        counts.covered < 0 ||
-        counts.total < counts.covered
-      ) {
-        throw new TypeError(
-          `Coverage entry ${file} has invalid ${metric} counts.`,
-        );
-      }
+      assertCoverageCounts(file, metric, counts);
       const uncovered = counts.total - counts.covered;
       if (uncovered > 0) {
         deficits.push({

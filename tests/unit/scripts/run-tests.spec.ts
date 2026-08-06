@@ -80,6 +80,32 @@ describe("run-tests", () => {
     expect(process.exitCode).toBe(0);
   });
 
+  it("emits shard coverage without enforcing an incomplete report", async () => {
+    const spawn = vi.fn(() => closeChild(0));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    mockFsPromises();
+    process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    process.argv = [
+      "node",
+      "scripts/run-tests.mjs",
+      "coverage-shard",
+      "--",
+      "--shard=1/4",
+      "--reporter=blob",
+    ];
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(spawn).toHaveBeenCalledTimes(1);
+    expect(spawn.mock.calls[0]?.[1]).toEqual(
+      expect.arrayContaining([
+        "run",
+        "--coverage",
+        "--shard=1/4",
+        "--reporter=blob",
+      ]),
+    );
+    expect(process.exitCode).toBe(0);
+  });
+
   it("forwards passthrough args without a leading -- separator", async () => {
     const spawn = vi.fn(() => closeChild(0));
     vi.doMock("node:child_process", () => ({ spawn }));

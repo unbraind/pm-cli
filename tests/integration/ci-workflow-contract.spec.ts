@@ -173,7 +173,7 @@ describe("GitHub workflow contract", () => {
       "node dist/cli.js validate --check-storage-integrity --check-history-drift --strict-exit --json --no-extensions",
       'node dist/cli.js history "${representative_id}" --verify --strict-exit --json --no-extensions > /dev/null',
       "run: pnpm typecheck",
-      "pnpm test:coverage --",
+      "node scripts/run-tests.mjs coverage-shard --",
       "run: node scripts/release/compatibility-check.mjs --json",
       "node scripts/release/package-artifact-gate.mjs",
       "pnpm smoke:npx",
@@ -215,6 +215,7 @@ describe("GitHub workflow contract", () => {
       "--coverage.thresholds.branches=0",
       "--coverage.thresholds.functions=0",
       "--coverage.thresholds.statements=0",
+      "node scripts/run-tests.mjs coverage-shard --",
       "name: coverage-blob-${{ matrix.shard }}",
       "if-no-files-found: error",
     ]);

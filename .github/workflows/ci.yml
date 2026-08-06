@@ -295,7 +295,7 @@ jobs:
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: >-
-          pnpm test:coverage --
+          node scripts/run-tests.mjs coverage-shard --
           --shard=${{ matrix.shard }}/4
           --reporter=blob
           --outputFile.blob=.vitest-reports/blob-${{ matrix.shard }}.json
