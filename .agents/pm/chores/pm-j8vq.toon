@@ -6,17 +6,14 @@ status: open
 priority: 3
 tags[2]: code-quality,codefactor
 created_at: "2026-07-12T07:36:30.261Z"
-updated_at: "2026-08-04T09:18:08.088Z"
+updated_at: "2026-08-07T11:27:08.601Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "eslint-suppressions.json total reduced from 180 back toward 104 as functions are decomposed; MAX_ESLINT_SUPPRESSIONS lowered in lockstep (never raised); worst offenders first (extension-command-options.ts cog 34, lock-gc.ts 29, checkpoint-gc.ts 28, lock.ts 27, fs-utils.ts 27); each refactor keeps the 100% coverage gate green"
 parent: pm-92if
 risk: low
 confidence: high
-dependencies[3]:
-  - id: pm-yh8r
-    kind: related
-    created_at: "2026-07-14T17:05:09.432Z"
+dependencies[8]:
   - id: pm-vlnc
     kind: related
     created_at: "2026-07-15T09:27:06.534Z"
@@ -24,6 +21,42 @@ dependencies[3]:
   - id: pm-92if
     kind: implements
     created_at: "2026-07-26T05:56:12.515Z"
+  - id: pm-dvwm
+    kind: related
+    created_at: "2026-08-07T11:20:21.725Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-jt3b
+    kind: related
+    created_at: "2026-08-07T11:20:21.725Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ld0z
+    kind: related
+    created_at: "2026-08-07T11:20:21.725Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-onpb
+    kind: related
+    created_at: "2026-08-07T11:20:21.725Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-07T11:20:21.725Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-yh8r
+    kind: related
+    created_at: "2026-08-07T11:27:08.463Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[17]{created_at,author,text}:
   "2026-07-15T09:27:04.865Z",codex-root,"GitHub report coverage 2026-07-15: GH-569 reports a Complex Method in src/cli/bootstrap-args.ts. All-status exact search found no dedicated duplicate; this canonical complexity-baseline chore owns the report alongside the existing <=16 ratchet. The report is documented but remains open/unclaimed because PR #568 is actively limited to governance SDK review convergence."
   "2026-07-15T18:51:51.689Z",maintainer-agent,"GH-569 (CodeFactor Complex Method, src/cli/bootstrap-args.ts:94-169 parseBootstrapGlobalOptions) mapped here 2026-07-15 — file holds 2 grandfathered sonarjs/cognitive-complexity suppressions in eslint-suppressions.json. Close GH-569 when the bootstrap-args entries are burned down. No standalone item per baseline policy (GH-518/pm-2gvp precedent)."

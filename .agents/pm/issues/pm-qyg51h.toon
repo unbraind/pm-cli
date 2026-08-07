@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: error-classification,sentry,snapshots,telemetry
 created_at: "2026-08-01T12:13:39.832Z"
-updated_at: "2026-08-01T12:13:39.832Z"
+updated_at: "2026-08-07T11:20:21.136Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Invalid snapshot names keep the current actionable CLI validation and nonzero usage outcome; expected handled validation is excluded from high Sentry issue capture; negative controls still capture unexpected snapshot runtime faults; classification and telemetry gates pass
@@ -17,9 +17,13 @@ why_now: The live seven-day Sentry query returns this as one of only two unresol
 parent: pm-5oj5
 risk: low
 confidence: 95
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-lg9i,related,"2026-08-01T12:13:39.832Z","harness:codex","cli:create:dep",detected
   pm-rxqcp9,related,"2026-08-01T12:13:39.832Z","harness:codex","cli:create:dep",detected
+  pm-23lmm5,related,"2026-08-07T11:20:21.017Z","harness:claude-code","cli:update:dep",detected
+  pm-dqtzva,related,"2026-08-07T11:20:21.017Z","harness:claude-code","cli:update:dep",detected
+  pm-x4nn3z,related,"2026-08-07T11:20:21.017Z","harness:claude-code","cli:update:dep",detected
+  pm-xp1xsw,implements,"2026-08-07T11:20:21.017Z","harness:claude-code","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-08-01T12:13:39.832Z","harness:codex","Duplicate-check evidence: exact all-status searches found general handled-error classifier fixes and snapshot primitives but no PM-CLI-2Q owner. Evidence stores only the public error class and release; raw events and private environment data remain outside PM."
 body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: agent-ux,"area:cli","area:graph","area:sdk",context-management,ontology,relationships
 created_at: "2026-07-26T06:07:21.386Z"
-updated_at: "2026-07-26T17:19:14.852Z"
+updated_at: "2026-08-07T11:23:40.792Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The permitted kind set per traversal subcommand is derived from each kind's declared closure metadata rather than a hardcoded ordering-versus-hierarchy split, so a package registering a custom semantic kind gains traversal with no core change; default kind sets are unchanged so every existing invocation returns exactly what it returns today; a kind that genuinely cannot be traversed by a verb produces a redirect naming the subcommand that can traverse it instead of a bare 'is not a ordering kind'; pm graph paths accepts --kind or documents why it cannot; slack and redundancy carry a recorded disposition as supported or documented ordering-only rather than failing indistinguishably from an unsupported combination; docs and pm guide state which subcommand answers which question so impact --direction incoming being the provenance query is discoverable without reading source; a regression test asserts pm graph predecessors over implements returns the same node set as pm graph impact --direction incoming over implements"
@@ -17,15 +17,16 @@ why_now: "The 2026-07-26 ladder pass raised implements to 286 and verifies to 91
 parent: pm-96h7
 risk: low
 confidence: high
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-4020c5,blocked_by,"2026-07-26T06:07:21.386Z",null,null
-  pm-7ob5,related,"2026-07-26T06:07:21.386Z",null,null
-  pm-96h7,implements,"2026-07-26T06:07:21.386Z",null,null
-  pm-bzmeaa,related,"2026-07-26T06:07:21.386Z",null,null
-  pm-ju83,discovered_from,"2026-07-26T06:07:21.386Z",null,null
-  pm-w7mqzt,related,"2026-07-26T06:07:21.386Z",null,null
-comments[1]{created_at,author,text}:
+dependencies[6]{id,kind,created_at}:
+  pm-4020c5,blocked_by,"2026-07-26T06:07:21.386Z"
+  pm-7ob5,related,"2026-07-26T06:07:21.386Z"
+  pm-96h7,implements,"2026-07-26T06:07:21.386Z"
+  pm-bzmeaa,related,"2026-07-26T06:07:21.386Z"
+  pm-ju83,discovered_from,"2026-07-26T06:07:21.386Z"
+  pm-w7mqzt,related,"2026-07-26T06:07:21.386Z"
+comments[2]{created_at,author,text}:
   "2026-07-26T17:19:14.852Z","harness:claude-code","Blast radius measured 2026-07-26, and it just grew by three orders of magnitude.\n\nThe terminal relationship backfill added a typed implements edge from every closed or canceled item that has a parent to that parent — roughly 1,600 items — precisely because the scalar parent field is not a traversable semantic kind. The typed lineage now exists in the data. The traversal verbs still cannot see it.\n\nMeasured on pm-00yy, a closed item enriched by that pass: graph ancestors returns count 0 while reporting inspected_edges 10, so it walked the edges and accepted none of them. The same node under graph impact --direction outgoing --summary returns count 1444 with 9,568 edges inspected. One node, two traversal surfaces, and the difference between an empty answer and 1,444 reachable nodes is entirely which kinds the verb admits.\n\nBefore today this defect affected a few hundred active items whose typed edges were recently added. It now affects the whole terminal corpus, which is 86 percent of the workspace. Any agent that asks ancestors or predecessors what preceded a closed item gets zero and has no signal that the answer is a vocabulary artefact rather than a fact. That asymmetry — a confident empty result from one verb and a rich result from another over the same edges — is the part worth fixing first, ahead of any vocabulary expansion.\n\nOrdering note stands: pm-4020c5 must canonicalize the kind lexicon before these verbs widen, or the widening bakes in the alias spellings.\n"
+  "2026-08-07T11:23:40.792Z","harness:claude-code","Confirmed still live at 2026.8.7, 2026-08-07. `pm graph predecessors pm-j82fd3 --kind implements` is refused with \"Relationship kind implements is not a ordering kind\" (exit 2). The consequence was measured this session: because no traversal verb accepts the semantic kinds, typed reachability to the outcome ladder had to be computed outside the product, by parsing the store directly. A governance invariant the project intends to enforce is therefore not expressible in the product that hosts it. Filed pm-h6b73t from that measurement. Minor secondary defect in the same message: the article reads \"a ordering kind\"."
 files[1]{path,scope,note}:
   src/cli/commands/graph.ts,project,"traversal subcommands hard-scope permitted kinds to ordering vs hierarchy,rejecting implements/verifies"
 tests[1]{command,scope,timeout_seconds}:

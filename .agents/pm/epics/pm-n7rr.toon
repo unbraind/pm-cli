@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",refactor,simplification
 created_at: "2026-07-05T04:51:21.783Z"
-updated_at: "2026-08-07T05:24:02.225Z"
+updated_at: "2026-08-07T11:26:01.208Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: Top-level command list fits one help screen (~15 nouns); every pre-existing command spelling still works (hidden alias shims + deprecation notice); contracts/MCP/completions/docs regenerated with zero feature regression; agent token cost of 'pm --help' + contracts measurably reduced; all existing tests pass unchanged (aliases keep old spellings valid)
@@ -17,7 +17,7 @@ why_now: "The command surface has grown command-by-command to ~60 top-level entr
 parent: pm-mpbb
 risk: medium
 confidence: high
-dependencies[19]:
+dependencies[21]:
   - id: pm-usfg
     kind: related
     created_at: "2026-07-14T17:05:19.953Z"
@@ -88,6 +88,18 @@ dependencies[19]:
     kind: blocked_by
     created_at: "2026-08-03T11:15:43.185Z"
     author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-0k19l7
+    kind: blocked_by
+    created_at: "2026-08-07T11:26:01.071Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-jjqyzd
+    kind: related
+    created_at: "2026-08-07T11:26:01.071Z"
+    author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
 comments[23]{created_at,author,text}:

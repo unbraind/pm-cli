@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: "area:sdk",context-management,depth,governance,graph,relationships,traceability
 created_at: "2026-07-24T23:47:30.529Z"
-updated_at: "2026-07-30T17:21:08.378Z"
+updated_at: "2026-08-07T11:19:57.277Z"
 author: maintainer-agent
 estimated_minutes: 1500
 acceptance_criteria: "The audit profile reports depth distribution, eccentricity, and shortest-path-to-milestone for every active item, not just isolate and degree counts; A declared policy states the maximum acceptable hop distance to an outcome milestone and the minimum distinct edge-kind count on the path; Violations surface as audit findings with a remediation hint naming candidate anchors, never as an instruction to fabricate an edge; Deliberately shallow items are representable as reviewed waivers with recorded rationale rather than silently failing; The profile is computed within the graph analytics token and latency budgets and stays bounded at million-item scale; The reachability invariant is stated and enforced for terminal items as well as active ones: every item in the workspace resolves to the index root through typed edges, the check runs in CI, and a regression that disconnects any item fails it"
@@ -19,19 +19,49 @@ why_now: "Outcome milestones now exist as graph roots, so reachability finally h
 parent: pm-96h7
 risk: medium
 confidence: medium
-dependencies[12]{id,kind,created_at}:
-  pm-33cw,related,"2026-07-24T23:47:30.529Z"
-  pm-4k6b,related,"2026-07-24T23:47:30.529Z"
-  pm-6x7o,related,"2026-07-24T23:47:30.529Z"
-  pm-7ob5,related,"2026-07-24T23:47:30.529Z"
-  pm-a8zm,related,"2026-07-24T23:47:30.529Z"
-  pm-doxj,related,"2026-07-24T23:47:30.529Z"
-  pm-m2il,related,"2026-07-24T23:47:30.529Z"
-  pm-p9a4,related,"2026-07-24T23:47:30.529Z"
-  pm-qnl2,related,"2026-07-24T23:47:30.529Z"
-  pm-96h7,verifies,"2026-07-26T05:50:18.399Z"
-  pm-96h7,implements,"2026-07-26T05:55:50.946Z"
-  pm-6x7o,verifies,"2026-07-26T05:59:41.587Z"
+dependencies[13]:
+  - id: pm-33cw
+    kind: related
+    created_at: "2026-07-24T23:47:30.529Z"
+  - id: pm-4k6b
+    kind: related
+    created_at: "2026-07-24T23:47:30.529Z"
+  - id: pm-6x7o
+    kind: related
+    created_at: "2026-07-24T23:47:30.529Z"
+  - id: pm-7ob5
+    kind: related
+    created_at: "2026-07-24T23:47:30.529Z"
+  - id: pm-a8zm
+    kind: related
+    created_at: "2026-07-24T23:47:30.529Z"
+  - id: pm-doxj
+    kind: related
+    created_at: "2026-07-24T23:47:30.529Z"
+  - id: pm-m2il
+    kind: related
+    created_at: "2026-07-24T23:47:30.529Z"
+  - id: pm-p9a4
+    kind: related
+    created_at: "2026-07-24T23:47:30.529Z"
+  - id: pm-qnl2
+    kind: related
+    created_at: "2026-07-24T23:47:30.529Z"
+  - id: pm-96h7
+    kind: verifies
+    created_at: "2026-07-26T05:50:18.399Z"
+  - id: pm-96h7
+    kind: implements
+    created_at: "2026-07-26T05:55:50.946Z"
+  - id: pm-6x7o
+    kind: verifies
+    created_at: "2026-07-26T05:59:41.587Z"
+  - id: pm-h6b73t
+    kind: blocked_by
+    created_at: "2026-08-07T11:19:57.121Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[4]{created_at,author,text}:
   "2026-07-26T06:06:02.683Z","harness:claude-code","Baseline and first movement measured 2026-07-26, so this invariant now has a number to enforce rather than an aspiration. Before: the six outcome milestones carried almost no inbound typed edges — pm graph impact <milestone> --kind implements,verifies --direction incoming returned 1, 0, 0, 1, 5 and 2 nodes for j82fd3, 9rgaal, w7ccmv, o87av6, xp1xsw and t4d7nz respectively. The strategic layer was wired with the untyped related kind (2,089 edges) which no traversal treats as semantic, so 'every active item resolves to an outcome milestone' was unmeasurable, not merely unmet. After a three-wave typed-edge pass over open items only (implements 49 to 286, verifies 41 to 91, total edges 4,558 to 4,877, zero new cycles, zero new audit findings): reach per milestone is 61, 36, 22, 49, 123 and 16 at shortest-path distances up to 5, and 268 of 271 active items reach at least one outcome. The three that do not are the outcome milestones themselves, which are roots. Two structural notes for this item's gate design. First, the parent hierarchy alone cannot satisfy this invariant: parent chains terminate at pm-doxj, the roadmap root, which is not an outcome, so the typed layer is load-bearing rather than redundant with hierarchy. Second, the four items that needed hand-wiring were exactly those whose parent is closed (pm-5ecnar under pm-pim7, pm-5sm91o under pm-j36ypd) or whose parent is the roadmap root (pm-95d7), which identifies the two structural cases a gate must handle rather than treat as one-offs."
   "2026-07-26T17:19:34.434Z","harness:claude-code","Depth baseline for the terminal corpus, measured 2026-07-26 during the relationship backfill, so this item has real numbers to build its metrics on rather than active-only ones.\n\nBefore the pass, over 1,795 terminal items: 1,024 had no outbound edge at all, 822 had none in either direction, 1,682 had no edge of any kind that semantic traversal accepts, and 184 had no parent. The active graph reported 0 isolates and 0 degree-at-most-one nodes at the same moment, which is the exact illusion this item exists to correct — active-scoped depth metrics certified a healthy graph while 86 percent of the workspace was unreachable.\n\nEvidence classes and their yield, for whoever builds the coverage profile: typed hierarchy mirror 1,607 edges, explicit identifier references in durable text 2,244 edges, shared linked artifact 45 edges, shared issue reference 2 edges. The steep fall-off after the first two classes is itself a finding — artefact and issue co-reference add almost nothing once hierarchy and explicit references are exhausted, so a future completeness metric should weight those two classes heavily and treat the others as tie-breakers rather than as independent coverage dimensions.\n\nReachability after the pass, single-node probe: graph impact from closed item pm-00yy in the outgoing direction reaches 1,444 nodes across 9,568 inspected edges, from a node that previously had no traversable outbound edge at all. That is the depth this item wants to measure, and it is now measurable.\n"

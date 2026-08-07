@@ -6,14 +6,14 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli","area:contracts",simplification,token-efficiency
 created_at: "2026-07-11T10:47:29.123Z"
-updated_at: "2026-08-04T20:56:48.126Z"
+updated_at: "2026-08-07T11:19:58.290Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "Every command accepts one identical output-format flag contract; a single written envelope spec covers all read/mutation/diagnostic shapes; the per-command trap class is gone (search --format-only vs notes/validate --json-only vs activity .activity decoy); zero feature loss: all current spellings kept as deprecation-tracked aliases; contract tests assert flag+envelope parity across the full surface"
 parent: pm-mpbb
 risk: medium
 confidence: medium
-dependencies[6]:
+dependencies[7]:
   - id: pm-cfed
     kind: related
     created_at: "2026-07-11T10:47:29.123Z"
@@ -33,6 +33,12 @@ dependencies[6]:
     kind: blocked_by
     created_at: "2026-08-04T18:46:51.162Z"
     author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-0k19l7
+    kind: blocked_by
+    created_at: "2026-08-07T11:19:58.054Z"
+    author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
 comments[5]{created_at,author,text}:

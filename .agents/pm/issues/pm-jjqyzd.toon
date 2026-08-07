@@ -1,0 +1,38 @@
+id: pm-jjqyzd
+title: "The two-call agent cold start proposed as canonical costs more tokens than the four-call protocol it replaces, and no gate measures either"
+description: "Measured on the live workspace, contracts --summary plus next costs 5,028 tokens while the operating rules' context, search, list-open and list-in-progress sequence costs 4,647 and returns strictly more workspace state. The orientation path is the most repeated read sequence in the product and no measurement governs which protocol is documented as canonical."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:cli","area:docs",measurement,token-efficiency
+created_at: "2026-08-07T11:17:30.747Z"
+updated_at: "2026-08-07T11:19:56.275Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "A fixed orientation corpus exists and reports token cost per documented protocol, including the composed alternatives, on a stable workspace snapshot; The canonical orientation protocol is selected from that measurement and the number is recorded on the item that documents it; Orientation cost is a case in the tokens-per-completed-task replay gate rather than a separate mechanism, and a regression fails CI; Docs, agent guidance blocks, and generated plugin templates all name the measured winner, and a conformance check fails when they disagree"
+goal: project management = context management
+objective: "Documented orientation is the cheapest protocol that answers the orientation question, chosen by measurement and defended by a gate"
+value: The most frequently executed read sequence in the product stops being selected on call count and starts being selected on the resource agents actually spend
+why_now: "An open chore is about to document the more expensive protocol as canonical in docs and plugin templates, which would propagate the regression to every generated agent surface"
+parent: pm-mpbb
+risk: low
+confidence: high
+severity: medium
+expected_result: "The orientation protocol named canonical is the one with the lowest measured token cost for the state it returns, the measurement is recorded, and a regression fails a gate"
+actual_result: "The proposed canonical two-call protocol costs 5,028 tokens against 4,647 for the four-call protocol, returns less state, and neither number is recorded or gated anywhere"
+dependencies[14]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0k19l7,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-1kxs,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-4k6b,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-5t33or,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-7i97c3,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-8pnj,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-atfm,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-cha95z,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-du93sr,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-e2bq,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-j82fd3,implements,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-ka6d,discovered_from,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-kvxqp1,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+  pm-n7rr,related,"2026-08-07T11:19:56.112Z","harness:claude-code","cli:update:dep",detected
+body: "## Measurement\n\nEstimated tokens as bytes divided by four, taken against the live workspace on 2026-08-07 with the default TOON encoding.\n\nTwo-call cold start, the protocol an open chore proposes to enshrine as canonical:\n\n| call | tokens |\n|---|---|\n| `pm contracts --summary` | 2,588 |\n| `pm next` | 2,439 |\n| **total** | **5,028** |\n\nFour-call orientation, the protocol the operating rules already prescribe:\n\n| call | tokens |\n|---|---|\n| `pm context --limit 10` | 2,193 |\n| `pm search <keywords> --limit 10` | 1,057 |\n| `pm list-open --limit 20` | 1,194 |\n| `pm list-in-progress --limit 20` | 203 |\n| **total** | **4,647** |\n\nThe two-call protocol costs 381 tokens more than the four-call protocol it is meant to replace, and returns strictly less workspace state: no open-item roster, no in-progress roster, and no keyword-scoped slice of the corpus. Its entire advantage is round trips, which is the one resource an agent loop does not pay for in context.\n\n## Why the number went unnoticed\n\nBoth protocols are documented in prose and neither is measured. \"Two calls\" reads as cheaper than \"four calls\" because call count is the visible quantity and token cost is not. Nothing in the repository compares them, no gate would notice if either doubled, and the chore that proposes the two-call form as canonical carries no measured baseline.\n\nRelated and already tracked: the diagnostic the operating rules route agents to for health costs 33k tokens where its summary states the same verdict in 142. The same failure — a documented default chosen by shape rather than by cost — has now appeared twice on the orientation path specifically.\n\n## What this asks for\n\nNot a winner. A rule: an orientation protocol is documented as canonical only after its token cost is measured against the alternatives on a fixed corpus, the measurement is recorded on the item that documents it, and a regression in that number fails a gate. The golden-transcript replay work already proposes tokens-per-completed-task as a CI-visible measure; orientation is the smallest and most-repeated transcript there is, and it is the natural first case for that harness rather than a separate mechanism.\n\n## Note on composition\n\nThe two protocols are not exclusive and the cheapest orientation measured here is neither of them: `pm stats` at 186 tokens plus `pm list-in-progress --limit 20` at 203 answers \"how big is this workspace and is anything mid-flight\" for 389 tokens, which is 8 percent of the two-call protocol. Whether that is *sufficient* orientation is exactly the judgment a measured corpus should settle rather than prose."

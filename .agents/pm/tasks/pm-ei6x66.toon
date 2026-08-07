@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: ci,developer-experience,gates,governance,quality,verification
 created_at: "2026-07-26T10:47:54.428Z"
-updated_at: "2026-08-07T05:25:16.991Z"
+updated_at: "2026-08-07T11:30:59.612Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One declared registry lists every enforced gate with where it runs — local, pull request, nightly, release — and that registry is the source both sides read rather than two hand-maintained lists; A check fails when a gate exists on one side and is neither present nor explicitly waived on the other, so divergence is a build failure rather than a discovery; A single documented command gives a contributor or agent the strongest verification available locally, and its relationship to the hosted set is stated precisely rather than implied; Gates that legitimately cannot run locally — hosted analysis, matrix platforms, published-artifact checks — are recorded as such with the reason, not omitted; The agent-facing guidance names the preflight command, so the local loop is discoverable without reading workflow files"
@@ -20,7 +20,7 @@ parent: pm-u9d0
 risk: medium
 confidence: 80
 expected_result: "One governed registry declares local, pull-request, nightly, and release gate coverage, fails on undeclared divergence, records reasoned hosted-only waivers, and exposes one documented agent preflight command."
-dependencies[13]:
+dependencies[14]:
   - id: pm-k6t4yb
     kind: blocked_by
     created_at: "2026-07-26T10:47:54.428Z"
@@ -72,6 +72,12 @@ dependencies[13]:
   - id: pm-rtn5h6
     kind: related
     created_at: "2026-08-07T05:25:16.541Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-7rrqsk
+    kind: related
+    created_at: "2026-08-07T11:30:59.485Z"
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected

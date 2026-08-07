@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: sentry,storage,telemetry,ux
 created_at: "2026-08-01T12:13:22.473Z"
-updated_at: "2026-08-01T12:13:22.473Z"
+updated_at: "2026-08-07T11:20:20.476Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Copy operations classify ENOSPC with a bounded operation label and safe recovery guidance; expected resource exhaustion remains handled; tests prove paths and private topology stay scrubbed; Sentry telemetry classification no longer creates an unactionable high issue for the same handled outcome
@@ -17,8 +17,13 @@ why_now: The unresolved issue has three events and is the newest high Sentry gro
 parent: pm-5oj5
 risk: low
 confidence: 90
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-nb08,related,"2026-08-01T12:13:22.473Z","harness:codex","cli:create:dep",detected
+  pm-23lmm5,related,"2026-08-07T11:20:20.364Z","harness:claude-code","cli:update:dep",detected
+  pm-dqtzva,related,"2026-08-07T11:20:20.364Z","harness:claude-code","cli:update:dep",detected
+  pm-qyg51h,related,"2026-08-07T11:20:20.364Z","harness:claude-code","cli:update:dep",detected
+  pm-x4nn3z,related,"2026-08-07T11:20:20.364Z","harness:claude-code","cli:update:dep",detected
+  pm-xp1xsw,implements,"2026-08-07T11:20:20.364Z","harness:claude-code","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-08-01T12:13:22.473Z","harness:codex","Duplicate-check evidence: exact all-status searches found storage and Sentry precedents but no item owning PM-CLI-2S or this copy-resource classification. Live evidence is summarized without raw paths, entity identifiers, hostnames, or event payloads."
 body: ""

@@ -6,19 +6,39 @@ status: open
 priority: 2
 tags[3]: agent-ux,"area:docs",simplification
 created_at: "2026-07-11T16:23:07.560Z"
-updated_at: "2026-07-25T20:44:21.062Z"
+updated_at: "2026-08-07T11:19:59.291Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Agent-facing docs describe the two-call cold-start as the canonical orientation path; plugin instruction templates teach the same sequence; no new top-level commands introduced; before/after token numbers cited from the a22j baseline script
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-8pnj,related,"2026-07-14T17:05:08.739Z",null,null
-  pm-1kxs,related,"2026-07-24T23:53:58.735Z",null,null
-  pm-5t33or,related,"2026-07-24T23:53:58.735Z",null,null
-  pm-e2bq,related,"2026-07-24T23:53:58.735Z",null,null
-  pm-j82fd3,related,"2026-07-24T23:53:58.735Z",null,null
-  pm-z3ez,related,"2026-07-24T23:53:58.735Z",null,null
-  pm-1kxs,implements,"2026-07-25T20:44:20.754Z",null,null
+dependencies[8]:
+  - id: pm-8pnj
+    kind: related
+    created_at: "2026-07-14T17:05:08.739Z"
+  - id: pm-1kxs
+    kind: related
+    created_at: "2026-07-24T23:53:58.735Z"
+  - id: pm-5t33or
+    kind: related
+    created_at: "2026-07-24T23:53:58.735Z"
+  - id: pm-e2bq
+    kind: related
+    created_at: "2026-07-24T23:53:58.735Z"
+  - id: pm-j82fd3
+    kind: related
+    created_at: "2026-07-24T23:53:58.735Z"
+  - id: pm-z3ez
+    kind: related
+    created_at: "2026-07-24T23:53:58.735Z"
+  - id: pm-1kxs
+    kind: implements
+    created_at: "2026-07-25T20:44:20.754Z"
+  - id: pm-jjqyzd
+    kind: blocked_by
+    created_at: "2026-08-07T11:19:59.144Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: "Promoted from the pm-mpbb DX ledger (candidate lever d) on 2026-07-11, when the pm-a22j baseline gate opened.\n\nThe numbers make the case: pm contracts --summary = 2,867 B TOON (~0.7k tok) vs contracts --full = 506,091 B (176x) vs the MCP tools/list payload = 32,979 B (~8.2k tok, paid on every MCP session bootstrap). The cheap two-call cold-start already exists — `pm contracts --summary` (what exists) then `pm next` (what to do) — but no doc or plugin template teaches it as THE orientation path, so agents default to expensive discovery (--help walks, contracts --full, or full MCP attachment).\n\nScope: docs (agents guide + README agent section) describe the two-call cold-start as the canonical orientation; plugin instruction templates (Claude/Codex/ChatGPT alignment, see plan commit ba09b155) teach the same sequence; cite the baseline script scripts/measure-agent-token-surface.mjs for before/after numbers.\n\nConstraint (ledger fence): no new top-level commands — this is documentation and template work only."

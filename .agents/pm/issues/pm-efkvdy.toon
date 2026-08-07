@@ -6,12 +6,12 @@ status: open
 priority: 2
 tags[4]: agent-ux,context-parity,linked-tests,test-safety
 created_at: "2026-07-27T19:42:44.895Z"
-updated_at: "2026-07-28T15:15:32.835Z"
+updated_at: "2026-08-07T11:20:19.890Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: A documented linked-test context mode or scoped safe control can omit source-workspace injection without allowing PM_PATH or PM_GLOBAL_PATH escape; repo-wide run-tests coverage passes both directly and as a linked test; execution_context reports the opt-out explicitly
 definition_of_ready: Preserve protected tracker-root isolation and add adversarial tests proving linked metadata cannot override protected paths.
-parent: pm-doxj
+parent: pm-92if
 risk: medium
 confidence: 85
 severity: medium
@@ -22,11 +22,17 @@ actual_result: All supported modes inject PM_SOURCE_WORKSPACE_ROOT; auto resolve
 component: linked-test-runtime
 regression: false
 customer_impact: Agents cannot record certain authoritative whole-repository gates as passing linked evidence without changing their semantics.
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-mu8m,related,"2026-07-27T19:42:44.895Z","harness:codex","cli:create:dep",detected
   pm-vrsn,related,"2026-07-27T19:42:44.895Z","harness:codex","cli:create:dep",detected
   pm-w13j,related,"2026-07-27T19:43:01.267Z","harness:codex","cli:update:dep",detected
   pm-wo8,related,"2026-07-27T19:43:01.267Z","harness:codex","cli:update:dep",detected
+  pm-e5yupa,related,"2026-08-07T11:20:19.761Z","harness:claude-code","cli:update:dep",detected
+  pm-e97jyf,related,"2026-08-07T11:20:19.761Z","harness:claude-code","cli:update:dep",detected
+  pm-ed28wi,related,"2026-08-07T11:20:19.761Z","harness:claude-code","cli:update:dep",detected
+  pm-ei6x66,related,"2026-08-07T11:20:19.761Z","harness:claude-code","cli:update:dep",detected
+  pm-x2vx,related,"2026-08-07T11:20:19.761Z","harness:claude-code","cli:update:dep",detected
+  pm-xp1xsw,implements,"2026-08-07T11:20:19.761Z","harness:claude-code","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-07-27T19:42:44.895Z","harness:codex","Duplicate check: searched all 2,136 items for linked-test context none, source-workspace opt-out, file governance, coverage, and validation. Reused pm-vrsn as canonical implemented lineage; no existing item covers an explicit no-source-workspace mode. Discovered while closing PR #777 review evidence; direct coverage passed all 6,428 tests at 100/100/100/100, while two linked attempts deterministically failed validate file-scan and merge-receipt fixtures because execution_context retained the source workspace."
 body: ""
