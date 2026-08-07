@@ -853,10 +853,21 @@ export function applyReadOutputDimensions<
     result_omitted: false,
   };
   projected.read_output = receipt;
+  projected =
+    session === undefined
+      ? projected
+      : attachReadOutputSessionContracts(projected, session, receipt);
   updateReadOutputReceiptEstimate(projected, receipt);
   const budget = resolveBindingReadOutputBudget(resolved, session);
   if (budget !== undefined && receipt.estimated_tokens > budget) {
     projected = compactReadOutputToBudget(projected, receipt, budget);
+    if (session !== undefined) {
+      projected = attachReadOutputSessionContracts(
+        projected,
+        session,
+        receipt,
+      );
+    }
   }
   if (budget !== undefined && receipt.estimated_tokens > budget) {
     const minimalReceipt: PmReadOutputReceipt = {
@@ -880,23 +891,26 @@ export function applyReadOutputDimensions<
       },
       read_output: minimalReceipt,
     };
-    updateReadOutputReceiptEstimate(
-      omitted as unknown as Record<string, unknown>,
-      minimalReceipt,
-    );
-    return session === undefined
-      ? omitted
-      : (attachReadOutputSessionContracts(
-          omitted as unknown as Record<string, unknown>,
-          session,
-          minimalReceipt,
-        ) as PmReadOutputResult<Result>);
+    const boundedOmission =
+      session === undefined
+        ? (omitted as unknown as Record<string, unknown>)
+        : attachReadOutputSessionContracts(
+            omitted as unknown as Record<string, unknown>,
+            session,
+            minimalReceipt,
+          );
+    if (session === undefined) {
+      updateReadOutputReceiptEstimate(boundedOmission, minimalReceipt);
+    }
+    if (minimalReceipt.estimated_tokens > budget) {
+      throw new PmCliError(
+        "The remaining output-session budget cannot fit its mandatory receipts; start a new session with a larger token_budget.",
+        EXIT_CODE.USAGE,
+      );
+    }
+    return boundedOmission as PmReadOutputResult<Result>;
   }
-  return (
-    session === undefined
-      ? projected
-      : attachReadOutputSessionContracts(projected, session, receipt)
-  ) as Result & {
+  return projected as Result & {
     read_output: PmReadOutputReceipt;
   };
 }

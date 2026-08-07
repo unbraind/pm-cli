@@ -185,29 +185,80 @@ describe("read output contracts", () => {
     expect(isReadOutputBudgetExceeded(projected)).toBe(true);
     expect(projected.read_output.estimated_tokens).toBeLessThanOrEqual(256);
 
-    const exhaustedSession = applyReadOutputDimensions(
-      "list",
-      {
-        outputSession: {
-          version: 1,
-          id: "exhausted",
-          token_budget: 256,
-          spent_tokens: 256,
-          seen_item_ids: [],
+    expect(() =>
+      applyReadOutputDimensions(
+        "list",
+        {
+          outputSession: {
+            version: 1,
+            id: "exhausted",
+            token_budget: 256,
+            spent_tokens: 256,
+            seen_item_ids: [],
+          },
         },
+        { items: [{ id: "pm-1", title: "Cannot fit" }] },
+      ),
+    ).toThrow("remaining output-session budget cannot fit");
+  });
+
+  it("includes mandatory session receipts in the binding remaining budget", () => {
+    for (const state of [
+      {
+        version: 1 as const,
+        id: "tiny",
+        token_budget: 256,
+        spent_tokens: 0,
+        seen_item_ids: [],
       },
-      { items: [{ id: "pm-1", title: "Cannot fit" }] },
-    );
-    expect(exhaustedSession).toMatchObject({
-      output_budget_exceeded: { omitted_result: true },
-      read_output: { within_budget: false, result_omitted: true },
-      read_session: {
-        spent_before_tokens: 256,
-        spent_total_tokens: 256,
-        remaining_tokens: 0,
-        exhausted: true,
+      {
+        version: 1 as const,
+        id: "tiny",
+        token_budget: 512,
+        spent_tokens: 256,
+        seen_item_ids: [],
       },
-    });
+    ]) {
+      const remaining = state.token_budget - state.spent_tokens;
+      const bounded = applyReadOutputDimensions(
+        "list",
+        { outputSession: state },
+        { items: [{ id: "pm-1", title: "x".repeat(2_000) }] },
+      ) as Record<string, unknown>;
+      const estimatedTokens = Math.ceil(
+        Buffer.byteLength(JSON.stringify(bounded), "utf8") / 4,
+      );
+      expect(bounded).toMatchObject({
+        output_budget_exceeded: { omitted_result: true },
+        read_output: {
+          estimated_tokens: estimatedTokens,
+          within_budget: false,
+          result_omitted: true,
+        },
+        read_session: {
+          spent_before_tokens: state.spent_tokens,
+          spent_this_call_tokens: estimatedTokens,
+          charged_this_call_tokens: estimatedTokens,
+        },
+      });
+      expect(estimatedTokens).toBeLessThanOrEqual(remaining);
+    }
+
+    expect(() =>
+      applyReadOutputDimensions(
+        "list",
+        {
+          outputSession: {
+            version: 1,
+            id: "session-id-too-large-for-the-terminal-receipt-at-this-budget",
+            token_budget: 256,
+            spent_tokens: 0,
+            seen_item_ids: [],
+          },
+        },
+        { items: [{ id: "pm-1", title: "x".repeat(2_000) }] },
+      ),
+    ).toThrow("remaining output-session budget cannot fit");
   });
 
   it("leaves mutations and unbounded reads byte-for-byte unchanged", () => {
