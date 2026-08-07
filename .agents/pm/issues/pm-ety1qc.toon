@@ -1,0 +1,26 @@
+id: pm-ety1qc
+title: "GH-919: _workspace author-attribution coordinates cannot be acknowledged"
+description: "health emits actionable _workspace:<line> author-attribution coordinates that history-author-acknowledge rejects as malformed, leaving a strict-health failure with no supported CLI resolution."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-07T08:33:40.505Z"
+updated_at: "2026-08-07T08:34:29.647Z"
+author: "harness:codex"
+parent: pm-doxj
+risk: high
+confidence: high
+severity: high
+expected_result: "Every coordinate emitted by author-attribution health samples round-trips through history-author-acknowledge, including the internal _workspace stream."
+actual_result: "_workspace:<line> is reported as actionable but rejected by the acknowledgment coordinate parser; only a direct SDK history append can resolve it."
+affected_version: 2026.8.5
+component: history author attribution
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-demq,related,"2026-08-07T08:33:40.505Z","harness:codex","cli:create:dep",detected
+  pm-h90s,related,"2026-08-07T08:33:40.505Z","harness:codex","cli:create:dep",detected
+  pm-demq,supersedes,"2026-08-07T08:34:29.539Z","harness:codex","cli:update:dep",detected
+  pm-h90s,discovered_from,"2026-08-07T08:34:29.539Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-07T08:33:40.505Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/919. Duplicate check searched all 2,351 items and every status for _workspace,history-author-acknowledge,malformed coordinates,author attribution,and GH-919; no canonical issue existed."
+body: ""

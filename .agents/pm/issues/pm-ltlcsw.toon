@@ -1,0 +1,24 @@
+id: pm-ltlcsw
+title: "GH-924: closed completed plans still recommend pm close"
+description: "plan show emits a stale pm close next action after a plan is already closed with all steps complete, making machine-readable guidance recommend a redundant mutation."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-08-07T08:33:38.061Z"
+updated_at: "2026-08-07T08:34:27.271Z"
+author: "harness:codex"
+parent: pm-doxj
+risk: medium
+confidence: high
+severity: medium
+expected_result: Closed plans omit terminal close guidance and expose only valid state-aware next actions.
+actual_result: "A closed, 100-percent-complete plan still returns pm close in next_actions."
+affected_version: 2026.8.6
+component: plan projection and next actions
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-je50,related,"2026-08-07T08:33:38.061Z","harness:codex","cli:create:dep",detected
+  pm-je50,discovered_from,"2026-08-07T08:34:27.173Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-07T08:33:38.061Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/924. Duplicate check searched all 2,351 items and every status for closed plan next_actions,completed plan pm close,plan show,and GH-924; no canonical issue existed."
+body: ""
