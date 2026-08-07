@@ -6,8 +6,10 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-08-07T08:33:38.061Z"
-updated_at: "2026-08-07T08:34:27.271Z"
+updated_at: "2026-08-07T08:47:21.216Z"
 author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: "A closed item whose recorded plan is complete never recommends pm close; the recommendation distinguishes active, blocked, canceled, and completed terminal states; regression tests cover closed plans with and without legacy close metadata and preserve compact omission receipts"
 parent: pm-doxj
 risk: medium
 confidence: high

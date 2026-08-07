@@ -6,8 +6,10 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:39.644Z"
-updated_at: "2026-08-07T08:34:28.881Z"
+updated_at: "2026-08-07T08:47:22.284Z"
 author: "harness:codex"
+estimated_minutes: 150
+acceptance_criteria: Health reports lossless reconciliation receipts separately from decisions that discard a competing value; severity and recovery guidance are derived from the receipt semantics rather than filename or authoring path; paired merge fixtures and fresh-clone validation prove both classes without weakening history checks
 parent: pm-doxj
 risk: high
 confidence: high
@@ -19,8 +21,9 @@ component: merge health and receipt classification
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-g5sx,related,"2026-08-07T08:33:39.644Z","harness:codex","cli:create:dep",detected
   pm-ysqb6n,related,"2026-08-07T08:33:39.644Z","harness:codex","cli:create:dep",detected
-  pm-1j5j21,blocks,"2026-08-07T08:34:28.760Z","harness:codex","cli:update:dep",detected
   pm-g5sx,discovered_from,"2026-08-07T08:34:28.760Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-1j5j21,related,"2026-08-07T08:47:19.689Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
   "2026-08-07T08:33:39.644Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/920. Duplicate check searched all 2,351 items and every status for lossless merge receipts,pending decisions,strict health,discarded fields,and GH-920; no canonical issue existed."
+  "2026-08-07T08:47:19.689Z","harness:codex","Governance repair: retained the companion lineage to pm-1j5j21 as related, without asserting the blocks spelling that pm-jkbqt8 proves is currently invisible to readiness and governed by a non-growth ratchet."
 body: ""
