@@ -42,11 +42,15 @@ describe("universal read-output transport contracts", () => {
       expect.arrayContaining(CANONICAL_KEYS),
     );
     expect(properties?.outputInclude).toMatchObject({ minLength: 1 });
-    expect(properties?.outputSession).toMatchObject({
+    const outputSession = properties?.outputSession;
+    if (!outputSession) {
+      throw new Error("pm_run must expose the canonical outputSession schema");
+    }
+    expect(outputSession).toMatchObject({
       anyOf: expect.any(Array),
     });
     const sessionAlternatives = (
-      properties?.outputSession as { anyOf: Record<string, unknown>[] }
+      outputSession as { anyOf: Record<string, unknown>[] }
     ).anyOf;
     expect(runProperties?.outputSession).toMatchObject({
       anyOf: sessionAlternatives,
