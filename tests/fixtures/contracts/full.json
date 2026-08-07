@@ -23831,7 +23831,7 @@
                 "type": "object"
               }
             ],
-            "description": "Caller-carried session state that composes a token ceiling across reads and replaces repeated item facts with resolvable references.",
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
             "examples": [
               {
                 "id": "orientation",
