@@ -151,6 +151,18 @@ describe("context intent calibration gate", () => {
     expect(() =>
       assertCalibrationWithinApprovedCeilings(null, null),
     ).not.toThrow();
+    for (const [measuredSession, approvedSession] of [
+      [undefined, approved.tiers[0].session_orientation],
+      [approved.tiers[0].session_orientation, undefined],
+    ]) {
+      const measured = structuredClone(approved);
+      const approvedCopy = structuredClone(approved);
+      measured.tiers[0].session_orientation = measuredSession;
+      approvedCopy.tiers[0].session_orientation = approvedSession;
+      expect(() =>
+        assertCalibrationWithinApprovedCeilings(measured, approvedCopy),
+      ).toThrow("session orientation regressed");
+    }
     for (const measured of [
       { ...structuredClone(approved), version: 2 },
       { ...structuredClone(approved), tiers: [] },

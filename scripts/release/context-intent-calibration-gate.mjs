@@ -432,10 +432,9 @@ function calibrationObjectKeys(value) {
 /** Enforce the approved cross-call orientation shape and performance ceiling. */
 function assertSessionOrientation(measuredSession, approvedSession) {
   if (approvedSession === undefined && measuredSession === undefined) return;
-  assertCalibrationCondition(
-    approvedSession !== undefined && measuredSession !== undefined,
-    "calibration session orientation regressed",
-  );
+  if (approvedSession === undefined || measuredSession === undefined) {
+    throw new Error("calibration session orientation regressed");
+  }
   const conditions = [
     measuredSession.command_count === approvedSession.command_count,
     measuredSession.token_budget === approvedSession.token_budget,
