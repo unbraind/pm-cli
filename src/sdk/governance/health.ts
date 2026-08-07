@@ -153,13 +153,13 @@ export interface RunHealthOptions {
   strictDirectories?: boolean;
   /** Treat absent clone-local merge drivers as a required health failure instead of an advisory. */
   requireMergeDrivers?: boolean;
-  /** Value that configures or reports check only for this contract. */
+  /** Preserve the legacy compact check projection while keeping diagnostics read-only. */
   checkOnly?: boolean;
   /** Value that configures or reports check telemetry for this contract. */
   checkTelemetry?: boolean;
-  /** Value that configures or reports no refresh for this contract. */
+  /** Explicitly document that vector refresh is disabled. */
   noRefresh?: boolean;
-  /** Value that configures or reports refresh vectors for this contract. */
+  /** Opt in to the only mutating health operation: refreshing stale vectors. */
   refreshVectors?: boolean;
   /** Value that configures or reports verbose stale items for this contract. */
   verboseStaleItems?: boolean;
@@ -2343,7 +2343,6 @@ function resolveVectorRefreshPolicy(
   options: RunHealthOptions,
 ): VectorRefreshPolicy {
   const checkOnly = options.checkOnly === true;
-  const noRefresh = options.noRefresh === true || checkOnly;
   const refreshVectors = options.refreshVectors === true;
   if (refreshVectors && checkOnly) {
     throw new PmCliError(
@@ -2358,9 +2357,9 @@ function resolveVectorRefreshPolicy(
     );
   }
   return {
-    enabled: refreshVectors || !noRefresh,
+    enabled: refreshVectors,
     checkOnly,
-    noRefresh,
+    noRefresh: !refreshVectors,
     refreshVectors,
   };
 }
@@ -2978,6 +2977,7 @@ export const _testOnlyHealthCommand = {
   resolveActionableUnknownAuthorEventCount,
   resolveHealthSkipPolicy,
   resolveUnknownAuthorEventCount,
+  resolveVectorRefreshPolicy,
   selectStaleItemDetail,
   summarizeHealthCheckDetails,
   summarizeExtensionList,

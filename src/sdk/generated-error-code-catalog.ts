@@ -635,6 +635,28 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     emitting_commands: ["*"],
   },
   {
+    code: "history_author_acknowledge_required_values_missing",
+    meaning: "History author acknowledge required values missing condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/author-attribution.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "history_author_acknowledge_selector_conflict",
+    meaning: "History author acknowledge selector conflict condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/author-attribution.ts"],
+    emitting_commands: ["*"],
+  },
+  {
     code: "history_author_acknowledge_selector_required",
     meaning: "History author acknowledge selector required condition.",
     stability: "stable",
@@ -642,7 +664,29 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/register-history-author.ts"],
+    sources: ["sdk/author-attribution.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "history_author_acknowledge_target_not_actionable",
+    meaning: "History author acknowledge target not actionable condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/author-attribution.ts"],
+    emitting_commands: ["*"],
+  },
+  {
+    code: "history_author_acknowledge_target_unreadable",
+    meaning: "History author acknowledge target unreadable condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/author-attribution.ts"],
     emitting_commands: ["*"],
   },
   {

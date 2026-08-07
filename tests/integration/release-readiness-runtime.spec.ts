@@ -295,6 +295,7 @@ const REQUIRED_COMMENTS_FLAGS = [
   "--stdin",
   "--file",
   "--limit",
+  "--full-history",
   "--author",
   "--message",
   "--force",
@@ -312,6 +313,7 @@ const REQUIRED_COMMENTS_AUDIT_FLAGS = [
 const REQUIRED_NOTES_FLAGS = [
   "--add",
   "--limit",
+  "--full-history",
   "--author",
   "--message",
   "--force",
@@ -319,6 +321,7 @@ const REQUIRED_NOTES_FLAGS = [
 const REQUIRED_LEARNINGS_FLAGS = [
   "--add",
   "--limit",
+  "--full-history",
   "--author",
   "--message",
   "--force",
@@ -1649,6 +1652,11 @@ describe("release readiness runtime coverage", () => {
         "id",
         "comments",
         "count",
+        "total_count",
+        "returned_count",
+        "has_more",
+        "mutation_receipt",
+        "omission_receipt",
         "row_contract",
       ]);
 
@@ -1663,6 +1671,11 @@ describe("release readiness runtime coverage", () => {
         "id",
         "notes",
         "count",
+        "total_count",
+        "returned_count",
+        "has_more",
+        "mutation_receipt",
+        "omission_receipt",
         "row_contract",
       ]);
 
@@ -1677,6 +1690,11 @@ describe("release readiness runtime coverage", () => {
         "id",
         "learnings",
         "count",
+        "total_count",
+        "returned_count",
+        "has_more",
+        "mutation_receipt",
+        "omission_receipt",
         "row_contract",
       ]);
 
@@ -1698,6 +1716,11 @@ describe("release readiness runtime coverage", () => {
         "id",
         "comments",
         "count",
+        "total_count",
+        "returned_count",
+        "has_more",
+        "mutation_receipt",
+        "omission_receipt",
         "row_contract",
       ]);
 
@@ -2647,7 +2670,7 @@ describe("release readiness runtime coverage", () => {
       "node scripts/release-version.mjs next",
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
-      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 114 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/token-budget-gate.mjs && node scripts/release/context-intent-calibration-gate.mjs && node scripts/release/tracker-measurement-gate.mjs && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check",
+      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 114 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/surface-replication-gate.mjs && node scripts/release/token-budget-gate.mjs && node scripts/release/context-intent-calibration-gate.mjs && node scripts/release/tracker-measurement-gate.mjs && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check",
     );
     expect(packageJson.scripts?.["quality:token-budget"]).toBe(
       "node scripts/release/token-budget-gate.mjs",

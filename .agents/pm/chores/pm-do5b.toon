@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[2]: "area:toolchain",upstream-gated
 created_at: "2026-07-17T04:42:09.880Z"
-updated_at: "2026-08-06T06:15:07.719Z"
+updated_at: "2026-08-07T15:11:53.656Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "typescript 7.x is the sole compiler in devDependencies; strict ESLint gate runs (typescript-eslint TS7-compatible or successor adopted); static-quality-gate.mts produces identical violation baselines under the new parser (docstrings, complexity, boundary ratchet all byte-identical or intentionally re-baselined with evidence); dependabot major-version ignore for typescript lifted; CI fully green on all legs"
@@ -19,7 +19,7 @@ dependencies[5]{id,kind,created_at}:
   pm-onpb,related,"2026-07-17T04:42:09.880Z"
   pm-tll8,related,"2026-07-17T04:42:09.880Z"
   pm-92if,implements,"2026-07-26T05:56:03.771Z"
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-07-29T22:24:52.434Z","harness:codex","Live dependency refresh 2026-07-30: pnpm outdated still reports TypeScript 7.0.2 while the repository remains on 6.0.3. The canonical typescript-eslint/compiler-API compatibility blockers recorded here remain the current disposition; pnpm audit reports no known vulnerabilities."
   "2026-07-29T22:44:15.387Z","harness:codex","Date convention clarification: the preceding dependency refresh was executed on 2026-07-30 in the configured Europe/Vienna project timezone; its append-only history event is correctly timestamped 2026-07-29T22:24:52Z in UTC."
   "2026-08-01T05:38:48.697Z","harness:codex","Live dependency disposition 2026-08-01: TypeScript 7.0.2 remains incompatible with the latest typescript-eslint 8.65.0 peer contract (TypeScript >=4.8.4 <6.1.0), and the recorded compiler-API migration remains open and unclaimed. The repository stays on TypeScript 6.0.3; pnpm audit and all GitHub security alert inventories are clean."
@@ -28,4 +28,6 @@ comments[8]{created_at,author,text}:
   "2026-08-04T09:18:10.831Z","harness:codex","Fresh dependency disposition 2026-08-04: pnpm outdated still reports TypeScript 7.0.2 while the repository remains on 6.0.3 and the existing compiler/tooling migration is the canonical adoption path. Typecheck passes and vulnerability inventories are clean; no duplicate dependency item was created."
   "2026-08-05T21:32:02.344Z","harness:codex","Live dependency disposition 2026-08-05: typescript-eslint 8.66.0 was adopted and still declares TypeScript >=4.8.4 <6.1.0. TypeScript 7.0.2 remains incompatible with the parser peer range and still lacks the classic compiler API required by the static-quality gate; this canonical migration stays open and unclaimed."
   "2026-08-06T06:15:07.719Z","harness:codex","Live dependency disposition 2026-08-06: TypeScript 7.0.2 remains outside current typescript-eslint 8.66.0 peer support (>=4.8.4 <6.1.0), in addition to the recorded compiler API migration. Adoption remains intentionally deferred and unclaimed; production audit is zero."
+  "2026-08-07T14:48:41.077Z","harness:codex","2026-08-07 live dependency review: TypeScript latest is 7.0.2, while the installed typescript-eslint/parser 8.66.0 support range is >=4.8.4 <6.1.0 and the existing item records compiler-API migration work. The canonical major-migration item remains open and intentionally unclaimed; this is not a safe patch bump. Dependabot, code-scanning, secret-scanning, and pnpm-audit inventories are clean."
+  "2026-08-07T15:11:53.656Z","harness:codex","Correction to the preceding 2026-08-07 dependency-review comment: the parser package identifier is @typescript-eslint/parser, supplied through the installed typescript-eslint 8.66.0 toolchain. Its declared TypeScript support remains >=4.8.4 <6.1.0, so the TypeScript 7 migration stays intentionally deferred and unclaimed."
 body: ""

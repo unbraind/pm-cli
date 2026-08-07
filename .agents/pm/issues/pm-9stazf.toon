@@ -2,11 +2,13 @@ id: pm-9stazf
 title: "pm comments write response replays the entire accumulated history, so one append can emit hundreds of comments"
 description: "Appending a comment with pm comments <id> <text> returns the full comments collection instead of a bounded mutation receipt or only the appended entry. On the long-lived release-health item pm-7zs0, a single 2026-08-04 evidence append replayed hundreds of historical comments and dominated a 100k-token command batch. The read-side --limit contract does not protect the write response. This is a distinct CLI/SDK output-contract gap from the closed MCP read issue pm-6vfg."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-04T09:19:57.972Z"
-updated_at: "2026-08-07T11:23:42.607Z"
+updated_at: "2026-08-07T15:48:52.264Z"
+closed_at: "2026-08-07T15:48:51.551Z"
+completed_at: "2026-08-07T15:48:51.551Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "comments, notes, and learnings writes return a bounded shared SDK mutation receipt by default.; Explicit full-history opt-in preserves current inspection capability and emits omission receipts otherwise.; A long-lived fixture proves output size is independent of prior annotation count within the declared token budget.; CLI, SDK, MCP, schemas, docs, and completion contracts remain aligned."
@@ -16,15 +18,50 @@ confidence: high
 severity: high
 environment: "pm CLI 2026.8.4 on the 2,310-item dogfood repository"
 repro_steps: Run pm comments pm-7zs0 with one new evidence string and inspect stdout; the response enumerates the complete historical comments array.
-expected_result: A bounded mutation receipt returns only the appended comment and omission metadata; full history requires explicit opt-in.
-actual_result: "The successful append returns every accumulated comment, making output grow without bound over project lifetime."
+resolution: "Annotation writes now return the changed entry plus bounded mutation and omission receipts by default, with explicit --full-history/fullHistory/full opt-in across CLI, SDK, and MCP."
+expected_result: "Appending or deleting comments, notes, and learnings has output cost independent of accumulated history unless full history is explicitly requested."
+actual_result: "Shared annotation primitives, CLI extraction, completion, MCP normalization, schemas, and parity tests pass all exact-head gates."
 customer_impact: "Agents spend context tokens re-reading immutable history on every evidence append, directly opposing token-efficient project context management."
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-08-04T09:19:57.972Z","harness:codex","cli:create:dep",detected
   pm-6vfg,discovered_from,"2026-08-04T09:19:57.972Z","harness:codex","cli:create:dep",detected
   pm-gzyt2j,discovered_from,"2026-08-04T09:19:57.972Z","harness:codex","cli:create:dep",detected
   pm-n7rr,implements,"2026-08-04T09:19:57.972Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-0k19l7,related,"2026-08-07T13:58:33.854Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
   "2026-08-04T09:20:13.455Z","harness:codex","Duplicate check 2026-08-04: searched every status for comments mutation output, full accumulated comment history, append response token bloat, bounded latest-comment receipt, and annotation output budgets. Closed pm-6vfg fixed the MCP read path; open pm-5t33or owns universal output ceilings; closed annotation-stack items cover input and deduplication. No active or terminal item owns the CLI and shared-SDK write-response projection that reproduced on pm-7zs0."
   "2026-08-07T11:23:42.607Z","harness:claude-code","Same defect confirmed on the notes surface, not only comments, at 2026.8.7 on 2026-08-07: `pm notes <id> --add` replayed the entire accumulated note stream in its write response — 43KB for a single append on an item carrying 15 notes. Scope note for the fix: the replay is a property of the annotation write envelope, so comments, notes and learnings should be corrected together rather than one at a time. Workaround that works today is --quiet."
+  "2026-08-07T14:58:04.280Z","harness:codex","Final evidence: comments/notes/learnings share one bounded SDK primitive; default mutations return one changed entry with total_count, returned_count, has_more, mutation_receipt, and omission_receipt. --full-history, SDK fullHistory, and MCP full restore the complete history. Contract snapshots, completion, package surface, and focused/integration tests all pass within the exact 100/100/100/100 suite."
+  "2026-08-07T15:11:51.270Z","harness:codex",PR #929 review found that the shared SDK omission receipt exposed CLI-only --full-history guidance to MCP consumers. Reopened to publish a transport-neutral restoration selector and adapt transport presentation if needed.
+  "2026-08-07T15:24:31.397Z","harness:codex","Review implementation evidence: omission receipts now carry one semantic full_history selector plus CLI, SDK, and MCP spellings. Mutation completeness is computed from returned versus stored entries, so first-add, sole-edit, and delete-last responses correctly report full_history_included=true with no omission."
+  "2026-08-07T15:48:46.278Z","harness:codex","Final verification: all linked annotation, CLI, SDK, integration, and release tests passed through pm test; packed 2026.8.7 artifact returned full_history restoration guidance for CLI/SDK/MCP and direct SDK receipt 1/3 after npx/npm exec/bunx version checks."
+learnings[2]{created_at,author,text}:
+  "2026-08-07T14:58:04.706Z","harness:codex","Mutation output must describe both what changed and what was deliberately withheld. A bounded receipt is safer for agents than replaying an unbounded collection, while an explicit full-history opt-in preserves lossless workflows."
+  "2026-08-07T15:48:46.854Z","harness:codex","Mutation completeness must be derived from returned versus persisted cardinality, not from whether an opt-in flag was supplied; restoration guidance must name one semantic selector and map every transport explicitly."
+files[16]{path,scope,note}:
+  sdk/public-surface.json,project,Records the reviewed SDK restoration receipt surface
+  src/cli/register-annotations.ts,project,shared annotation CLI registration
+  src/cli/register-mutation.ts,project,annotation registration extraction
+  src/sdk/annotations.ts,project,bounded mutation receipt primitive
+  src/sdk/cli-contracts/completeness.ts,project,Maps annotation full-history CLI and MCP flag parity.
+  src/sdk/cli-contracts/flag-contracts.ts,project,full-history CLI contract
+  src/sdk/cli-contracts/tool-schema.ts,project,full annotation transport contract
+  src/sdk/comments.ts,project,typed comment receipt surface
+  src/sdk/completion.ts,project,annotation completion parity
+  src/sdk/index.ts,project,Exports the transport-neutral annotation history restoration contract
+  src/sdk/learnings.ts,project,typed learning receipt surface
+  src/sdk/notes.ts,project,typed note receipt surface
+  src/sdk/runtime.ts,project,MCP annotation option normalization
+  tests/unit/commands/comments-command.spec.ts,project,comment full-history CLI coverage
+  tests/unit/commands/notes-learnings-command.spec.ts,project,note and learning full-history CLI coverage
+  tests/unit/sdk/read-contract-integrity.spec.ts,project,bounded mutation receipt stress coverage
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msj4cerh-cqrmdq,test,passed,"2026-08-07T15:47:09.263Z","2026-08-07T15:47:50.333Z","2026-08-07T15:47:50.333Z",3,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY.md,project,bounded annotation mutation contract and compatibility opt-in
+close_reason: "Implemented bounded annotation mutation receipts with accurate completeness and transport-neutral restoration across CLI, SDK, and MCP; linked, packed-artifact, and 100% coverage verification pass."
 body: "Desired contract: mutation commands emit an idempotent bounded receipt with item id, appended annotation identity or index, author, timestamp, changed count, omission metadata, and an explicit opt-in to restore history. Apply the same response shape to comments, notes, and learnings through shared SDK primitives. Preserve stored history exactly; change only the default mutation projection. Add a realistic long-lived fixture so token-budget gates measure the write path."

@@ -2,18 +2,47 @@ id: pm-tu71
 title: "GH-457: pm health hangs during vectorization check with no output (never-block violation)"
 description: "Dogfood GH-457: pm health can hang silently in the vectorization check until externally killed (reproduces with extensions disabled); gating commands must never hang. Likely same provider-probe family as GH-455 but distinct symptom (hang vs noisy failure). Duplicate check: searched health hang — no existing item."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: bug,gh-issue,health,never-block
 created_at: "2026-07-06T08:03:12.192Z"
-updated_at: "2026-07-26T05:56:21.581Z"
+updated_at: "2026-08-07T14:58:54.270Z"
+closed_at: "2026-08-07T14:58:53.785Z"
+completed_at: "2026-08-07T14:58:53.785Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "pm health always returns within a bounded time, reporting a timed-out vectorization check with --skip-vectors hint instead of hanging; spec with hanging fake provider; root blocking call identified"
 parent: pm-5oj5
 risk: medium
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-aems,related,"2026-07-06T08:03:44.599Z",null,null
-  pm-5oj5,implements,"2026-07-26T05:56:21.340Z",null,null
+resolution: Health vector refresh is now opt-in through refreshVectors; the default health path never contacts the embedding provider and reports refresh_disabled deterministically.
+expected_result: "pm health remains non-blocking by default even with a configured hanging embedding provider, while explicit refresh remains bounded and observable."
+actual_result: "Provider call-count and hanging-provider abort tests pass; default, unavailable-runtime, and no-stale-item branches are covered in the full exact-head suite."
+dependencies[3]:
+  - id: pm-aems
+    kind: related
+    created_at: "2026-07-06T08:03:44.599Z"
+  - id: pm-5oj5
+    kind: implements
+    created_at: "2026-07-26T05:56:21.340Z"
+  - id: pm-7rrqsk
+    kind: related
+    created_at: "2026-08-07T13:58:34.591Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-08-07T14:58:05.671Z","harness:codex","Final evidence: health defaults to noRefresh and refresh_disabled without touching the provider. Explicit refresh retains the bounded abort path. Tests prove zero provider calls by default and completion against a non-settling provider; all quality, contract, package, and 100% coverage gates pass."
+learnings[1]{created_at,author,text}:
+  "2026-08-07T14:58:06.099Z","harness:codex",A diagnostic command cannot safely make remote remediation implicit. Read-only health must report stale state immediately; provider-backed repair belongs behind an explicit bounded opt-in.
+files[4]{path,scope,note}:
+  src/sdk/governance/health.ts,project,explicit vector refresh provider boundary
+  src/sdk/runtime.ts,project,health transport option parity
+  tests/unit/sdk/health-vector-boundary.spec.ts,project,hanging provider boundary regression
+  tests/unit/commands/health-command.spec.ts,project,explicit refresh behavior coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-vector-boundary.spec.ts tests/unit/commands/health-command.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY.md,project,provider-safe health semantics
+close_reason: "Made vector refresh explicit and kept default health provider-free and non-blocking, with hanging-provider proof; exact-head 100% coverage and all release gates pass."
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/457\n\n## Problem (never-block violation)\n`pm health` can hang during the vectorization check with NO output until killed by an external timeout; same tracker returns immediately when vectorization is skipped. Reproduces with extensions disabled. Health is an agent-loop gating command — it must never hang silently.\n\n## Proposed fix\nHard timeout + progress/heartbeat around the vectorization probe (bounded like the lock-wait work in 010bb349); on timeout, report vectorization check as timed-out with skip hint (--skip-vectors) instead of hanging; investigate the underlying blocking call (likely embedding provider probe without socket timeout — same family as the GH-455 item).\n\n## Definition of done\npm health always returns within a bounded time with partial results on vectorization stall; timeout covered by spec with a hanging fake provider; docs note --skip-vectors."

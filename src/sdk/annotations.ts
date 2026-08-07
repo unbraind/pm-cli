@@ -46,6 +46,57 @@ export interface AnnotationCommandOptions {
   force?: boolean;
   /** Whether list results include paging metadata. */
   includeMeta?: boolean;
+  /** Return the complete collection after a mutation instead of the bounded mutation receipt. */
+  fullHistory?: boolean;
+}
+
+/** Identifies the single annotation mutation represented by a bounded response. */
+export interface AnnotationMutationReceipt {
+  /** Mutation applied to the annotation collection. */
+  action: "add" | "edit" | "delete";
+  /** Stable one-based collection position targeted by the mutation. */
+  entry_index: number;
+  /** Number of stored entries changed by the mutation. */
+  changed_count: 1;
+  /** Whether the response includes the complete post-mutation collection. */
+  full_history_included: boolean;
+}
+
+/** Transport-neutral selectors that restore a complete annotation collection. */
+export interface AnnotationHistoryRestoration {
+  /** Stable semantic selector shared by every transport. */
+  selector: "full_history";
+  /** Equivalent CLI flag. */
+  cli_flag: "--full-history";
+  /** Equivalent direct SDK option. */
+  sdk_option: "fullHistory";
+  /** Equivalent MCP tool option. */
+  mcp_option: "full";
+}
+
+/** Describes annotation history withheld from a bounded mutation response. */
+export interface AnnotationOmissionReceipt {
+  /** Whether any historical collection entries were withheld. */
+  has_omissions: boolean;
+  /** Number of independently restorable field groups withheld. */
+  omitted_field_group_count: number;
+  /** Omitted groups and the transport-neutral selectors that restore them. */
+  omitted_field_groups: Array<{
+    name: string;
+    restore_with: AnnotationHistoryRestoration;
+  }>;
+}
+
+/** Map transport-level `full` onto the SDK annotation history option. */
+export function normalizeAnnotationTransportOptions(
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  const normalized: Record<string, unknown> = {
+    ...options,
+    ...(options.full === true ? { fullHistory: true } : {}),
+  };
+  delete normalized.full;
+  return normalized;
 }
 
 /** Presentation-layer inputs accepted by the shared annotation source resolver. */
@@ -146,6 +197,8 @@ export type AnnotationCommandResult<
     returned_count?: number;
     has_more?: boolean;
     limit?: number;
+    mutation_receipt?: AnnotationMutationReceipt;
+    omission_receipt?: AnnotationOmissionReceipt;
   };
 
 /** Implements limit annotation entries for the public runtime surface of this module. */
@@ -488,6 +541,11 @@ export async function runAnnotationCommand<
       allEntries,
       limit,
       options.includeMeta === true,
+      {
+        action: "delete",
+        entryIndex: config.input.index as number,
+      },
+      options.fullHistory === true,
     );
   }
 
@@ -548,6 +606,12 @@ export async function runAnnotationCommand<
       allEntries,
       limit,
       options.includeMeta === true,
+      {
+        action: "edit",
+        entryIndex: config.input.index as number,
+        entry: allEntries[(config.input.index as number) - 1],
+      },
+      options.fullHistory === true,
     );
   }
 
@@ -587,6 +651,12 @@ export async function runAnnotationCommand<
     allEntries,
     limit,
     options.includeMeta === true,
+    {
+      action: "add",
+      entryIndex: allEntries.length,
+      entry: allEntries.at(-1),
+    },
+    options.fullHistory === true,
   );
 }
 
@@ -622,19 +692,62 @@ function renderAnnotationResult<
   allEntries: TEntry[],
   limit: number | undefined,
   includeMeta: boolean,
+  mutation?: {
+    action: "add" | "edit" | "delete";
+    entryIndex: number;
+    entry?: TEntry;
+  },
+  fullHistory = false,
 ): AnnotationCommandResult<TKey, TEntry> {
-  const entries = limitAnnotationEntries(allEntries, limit);
+  const entries =
+    mutation === undefined || fullHistory
+      ? limitAnnotationEntries(
+          allEntries,
+          mutation !== undefined && fullHistory ? undefined : limit,
+        )
+      : mutation.entry === undefined
+        ? []
+        : [mutation.entry];
+  const historyOmitted =
+    mutation !== undefined && entries.length < allEntries.length;
   return {
     id,
     [collectionKey]: entries,
     count: entries.length,
-    ...(includeMeta
+    ...([includeMeta, mutation !== undefined].includes(true)
       ? {
           total_count: allEntries.length,
           returned_count: entries.length,
-          has_more: entries.length < allEntries.length,
+          has_more: historyOmitted || entries.length < allEntries.length,
           ...(limit !== undefined ? { limit } : {}),
         }
       : {}),
+    ...(mutation === undefined
+      ? {}
+      : {
+          mutation_receipt: {
+            action: mutation.action,
+            entry_index: mutation.entryIndex,
+            changed_count: 1,
+            full_history_included: !historyOmitted,
+          },
+          omission_receipt: {
+            has_omissions: historyOmitted,
+            omitted_field_group_count: historyOmitted ? 1 : 0,
+            omitted_field_groups: historyOmitted
+              ? [
+                  {
+                    name: `${collectionKey}_history`,
+                    restore_with: {
+                      selector: "full_history",
+                      cli_flag: "--full-history",
+                      sdk_option: "fullHistory",
+                      mcp_option: "full",
+                    },
+                  },
+                ]
+              : [],
+          },
+        }),
   } as AnnotationCommandResult<TKey, TEntry>;
 }

@@ -12,6 +12,8 @@ import {
 } from "./runtime-primitives.js";
 import type { Comment } from "../types/index.js";
 import {
+  type AnnotationMutationReceipt,
+  type AnnotationOmissionReceipt,
   isErrnoError,
   parseAnnotationTextInput,
   runAnnotationCommand,
@@ -33,6 +35,8 @@ export interface CommentsCommandOptions {
   limit?: string;
   /** Value that configures or reports include meta for this contract. */
   includeMeta?: boolean;
+  /** Return complete comment history after a mutation instead of a bounded receipt. */
+  fullHistory?: boolean;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -57,6 +61,10 @@ export interface CommentsResult {
   has_more?: boolean;
   /** Value that configures or reports limit for this contract. */
   limit?: number;
+  /** Mutation identity when this result changed the collection. */
+  mutation_receipt?: AnnotationMutationReceipt;
+  /** Declares whether older comments were withheld from a mutation response. */
+  omission_receipt?: AnnotationOmissionReceipt;
 }
 
 interface ResolvedCommentInput {

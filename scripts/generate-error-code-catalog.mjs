@@ -31,7 +31,12 @@ const EXIT_CODE_CLASSES = new Map([
   [5, "dependency_failed"],
 ]);
 
-const FALLBACK_EXIT_CODES_BY_CODE = new Map([["unknown_error", 1]]);
+const FALLBACK_EXIT_CODES_BY_CODE = new Map([
+  ["unknown_error", 1],
+  ["history_author_acknowledge_selector_conflict", 2],
+  ["history_author_acknowledge_target_not_actionable", 2],
+  ["history_author_acknowledge_target_unreadable", 2],
+]);
 
 function resolveExplicitExitCode(property) {
   const declaration = ts.findAncestor(

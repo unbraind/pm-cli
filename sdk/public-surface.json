@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1441,
+    "covered_symbols": 1444,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1442
+    "required_symbols": 1445
   },
   "breaking_acknowledgements": [
     {
@@ -20,6 +20,43 @@
       ],
       "package_version": "2026.8.6",
       "reason": "Type the existing runtime read_session receipt and re-export its state from contracts/runtime; no runtime behavior or existing member is removed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:_testOnlyHealthCommand",
+        "signature ./sdk:AnnotationCommandOptions",
+        "signature ./sdk:AnnotationCommandResult",
+        "signature ./sdk:CommentsCommandOptions",
+        "signature ./sdk:CommentsResult",
+        "signature ./sdk:LearningsCommandOptions",
+        "signature ./sdk:LearningsResult",
+        "signature ./sdk:NotesCommandOptions",
+        "signature ./sdk:NotesResult",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/core:CommentsCommandOptions",
+        "signature ./sdk/core:CommentsResult",
+        "signature ./sdk/core:LearningsCommandOptions",
+        "signature ./sdk/core:LearningsResult",
+        "signature ./sdk/core:NotesCommandOptions",
+        "signature ./sdk/core:NotesResult",
+        "signature ./sdk/governance:_testOnlyHealthCommand",
+        "signature ./sdk/runtime:CommentsCommandOptions",
+        "signature ./sdk/runtime:CommentsResult",
+        "signature ./sdk/runtime:LearningsCommandOptions",
+        "signature ./sdk/runtime:LearningsResult",
+        "signature ./sdk/runtime:NotesCommandOptions",
+        "signature ./sdk/runtime:NotesResult"
+      ],
+      "package_version": "2026.8.7",
+      "reason": "pm-9stazf adds bounded annotation mutation receipts with explicit fullHistory opt-in; pm-tu71 makes vector refresh explicit"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AnnotationOmissionReceipt"
+      ],
+      "package_version": "2026.8.7",
+      "reason": "pm-9stazf replaces CLI-only annotation restoration guidance with transport-neutral selectors"
     }
   ],
   "entrypoints": {
@@ -54,7 +91,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "_testOnlyHealthCommand",
-          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
+          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
         },
         {
           "classification": "advanced_export",
@@ -121,6 +158,12 @@
           "kind": "function",
           "name": "acknowledgeUnknownAuthorHistoryEvents",
           "signature": "(pmRoot: string, options: AcknowledgeUnknownAuthorEventsOptions) => Promise<{ acknowledged: number; history_path: string; }> | calls: (pmRoot: string, options: AcknowledgeUnknownAuthorEventsOptions) => Promise<{ acknowledged: number; history_path: string; }>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "acknowledgeUnknownAuthorHistoryEventsFromTransport",
+          "signature": "(pmRoot: string, input: Record<string, unknown>) => Promise<{ acknowledged: number; history_path: string; }> | calls: (pmRoot: string, input: Record<string, unknown>) => Promise<{ acknowledged: number; history_path: string; }>"
         },
         {
           "classification": "supported",
@@ -408,13 +451,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "AnnotationCommandOptions",
-          "signature": "export interface AnnotationCommandOptions { limit?: string; author?: string; message?: string; force?: boolean; includeMeta?: boolean; }"
+          "signature": "export interface AnnotationCommandOptions { limit?: string; author?: string; message?: string; force?: boolean; includeMeta?: boolean; fullHistory?: boolean; }"
         },
         {
           "classification": "advanced_export",
           "kind": "type",
           "name": "AnnotationCommandResult",
-          "signature": "export type AnnotationCommandResult<TKey extends string, TEntry extends AnnotationEntry> = { id: string; count: number; } & Record<TKey, TEntry[]> & { total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; };"
+          "signature": "export type AnnotationCommandResult<TKey extends string, TEntry extends AnnotationEntry> = { id: string; count: number; } & Record<TKey, TEntry[]> & { total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; };"
         },
         {
           "classification": "advanced_export",
@@ -425,8 +468,26 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "AnnotationHistoryRestoration",
+          "signature": "export interface AnnotationHistoryRestoration { selector: \"full_history\"; cli_flag: \"--full-history\"; sdk_option: \"fullHistory\"; mcp_option: \"full\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "AnnotationInput",
           "signature": "export interface AnnotationInput { mode: \"list\" | \"add\" | \"stdin\" | \"file\" | \"edit\" | \"delete\"; value?: string; rawValue?: string; emptyFlag?: string; index?: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "AnnotationMutationReceipt",
+          "signature": "export interface AnnotationMutationReceipt { action: \"add\" | \"edit\" | \"delete\"; entry_index: number; changed_count: 1; full_history_included: boolean; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "AnnotationOmissionReceipt",
+          "signature": "export interface AnnotationOmissionReceipt { has_omissions: boolean; omitted_field_group_count: number; omitted_field_groups: Array<{ name: string; restore_with: AnnotationHistoryRestoration; }>; }"
         },
         {
           "classification": "advanced_export",
@@ -1596,13 +1657,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsCommandOptions",
-          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsResult",
-          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; }"
+          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "advanced_export",
@@ -5592,13 +5653,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsCommandOptions",
-          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsResult",
-          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; }"
+          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "advanced_export",
@@ -6335,6 +6396,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "normalizeAnnotationTransportOptions",
+          "signature": "(options: Record<string, unknown>) => Record<string, unknown> | calls: (options: Record<string, unknown>) => Record<string, unknown>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "normalizeBootstrapInvocation",
           "signature": "(argv: string[]) => BootstrapInvocationNormalizationResult | calls: (argv: string[]) => BootstrapInvocationNormalizationResult"
         },
@@ -6468,13 +6535,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NotesCommandOptions",
-          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "NotesResult",
-          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; }"
+          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "supported",
@@ -7025,6 +7092,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "parseUnknownAuthorHistoryEventCoordinates",
+          "signature": "(values: readonly string[]) => UnknownAuthorHistoryEvent[] | calls: (values: readonly string[]) => UnknownAuthorHistoryEvent[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "partitionDecisionEntries",
           "signature": "(ready: ActionableEntry[], includeDecisions: boolean) => { agent: ActionableEntry[]; decisions: ActionableEntry[]; } | calls: (ready: ActionableEntry[], includeDecisions: boolean) => { agent: ActionableEntry[]; decisions: ActionableEntry[]; }"
         },
@@ -7488,7 +7561,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.4.0\""
+          "signature": "\"4.4.1\""
         },
         {
           "classification": "contract_data",
@@ -10105,6 +10178,12 @@
           "kind": "function",
           "name": "resolveTypeWorkflows",
           "signature": "(schema: Pick<RuntimeSchemaSettings, \"type_workflows\"> | undefined) => NormalizedTypeWorkflow[] | calls: (schema: Pick<RuntimeSchemaSettings, \"type_workflows\"> | undefined) => NormalizedTypeWorkflow[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveUnknownAuthorAcknowledgmentSelector",
+          "signature": "(rawEvents: readonly string[], allActionable: boolean) => { events: UnknownAuthorHistoryEvent[]; all_actionable: boolean; } | calls: (rawEvents: readonly string[], allActionable: boolean) => { events: UnknownAuthorHistoryEvent[]; all_actionable: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -15378,7 +15457,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.4.0\""
+          "signature": "\"4.4.1\""
         },
         {
           "classification": "contract_data",
@@ -16308,13 +16387,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsCommandOptions",
-          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsResult",
-          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; }"
+          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "supported",
@@ -16638,13 +16717,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsCommandOptions",
-          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsResult",
-          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; }"
+          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "supported",
@@ -16710,13 +16789,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NotesCommandOptions",
-          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "NotesResult",
-          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; }"
+          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "supported",
@@ -17088,7 +17167,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "_testOnlyHealthCommand",
-          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
+          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
         },
         {
           "classification": "supported",
@@ -17113,6 +17192,12 @@
           "kind": "function",
           "name": "acknowledgeUnknownAuthorHistoryEvents",
           "signature": "(pmRoot: string, options: AcknowledgeUnknownAuthorEventsOptions) => Promise<{ acknowledged: number; history_path: string; }> | calls: (pmRoot: string, options: AcknowledgeUnknownAuthorEventsOptions) => Promise<{ acknowledged: number; history_path: string; }>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "acknowledgeUnknownAuthorHistoryEventsFromTransport",
+          "signature": "(pmRoot: string, input: Record<string, unknown>) => Promise<{ acknowledged: number; history_path: string; }> | calls: (pmRoot: string, input: Record<string, unknown>) => Promise<{ acknowledged: number; history_path: string; }>"
         },
         {
           "classification": "supported",
@@ -17326,6 +17411,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "parseUnknownAuthorHistoryEventCoordinates",
+          "signature": "(values: readonly string[]) => UnknownAuthorHistoryEvent[] | calls: (values: readonly string[]) => UnknownAuthorHistoryEvent[]"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "PM_MUTATION_ACTION_CONTRACTS",
           "signature": "readonly [{ readonly action: \"append\"; readonly history_scope: \"item\"; }, { readonly action: \"claim\"; readonly history_scope: \"item\"; }, { readonly action: \"close\"; readonly history_scope: \"item\"; }, { readonly action: \"close-many\"; readonly history_scope: \"item\"; }, { readonly action: \"close-task\"; readonly history_scope: \"item\"; }, { readonly action: \"comments\"; readonly history_scope: \"conditional\"; }, { readonly action: \"config\"; readonly history_scope: \"conditional\"; }, { readonly action: \"copy\"; readonly history_scope: \"item\"; }, { readonly action: \"create\"; readonly history_scope: \"item\"; }, { readonly action: \"delete\"; readonly history_scope: \"item\"; }, { readonly action: \"deps\"; readonly history_scope: \"conditional\"; }, { readonly action: \"discover\"; readonly history_scope: \"item\"; }, { readonly action: \"docs\"; readonly history_scope: \"conditional\"; }, { readonly action: \"files\"; readonly history_scope: \"conditional\"; }, { readonly action: \"focus\"; readonly history_scope: \"conditional\"; }, { readonly action: \"gc\"; readonly history_scope: \"conditional\"; }, { readonly action: \"history-compact\"; readonly history_scope: \"history\"; }, { readonly action: \"history-author-acknowledge\"; readonly history_scope: \"workspace\"; }, { readonly action: \"history-redact\"; readonly history_scope: \"history\"; }, { readonly action: \"history-repair\"; readonly history_scope: \"history\"; }, { readonly action: \"init\"; readonly history_scope: \"workspace\"; }, { readonly action: \"install\"; readonly history_scope: \"conditional\"; }, { readonly action: \"learnings\"; readonly history_scope: \"conditional\"; }, { readonly action: \"notes\"; readonly history_scope: \"conditional\"; }, { readonly action: \"package\"; readonly history_scope: \"conditional\"; }, { readonly action: \"pause-task\"; readonly history_scope: \"item\"; }, { readonly action: \"plan\"; readonly history_scope: \"conditional\"; }, { readonly action: \"profile\"; readonly history_scope: \"conditional\"; }, { readonly action: \"release\"; readonly history_scope: \"item\"; }, { readonly action: \"restore\"; readonly history_scope: \"item\"; }, { readonly action: \"schema\"; readonly history_scope: \"conditional\"; }, { readonly action: \"start-task\"; readonly history_scope: \"item\"; }, { readonly action: \"templates\"; readonly history_scope: \"conditional\"; }, { readonly action: \"test\"; readonly history_scope: \"conditional\"; }, { readonly action: \"test-all\"; readonly history_scope: \"conditional\"; }, { readonly action: \"update\"; readonly history_scope: \"item\"; }, { readonly action: \"update-many\"; readonly history_scope: \"item\"; }, { readonly action: \"upgrade\"; readonly history_scope: \"conditional\"; }]"
@@ -17359,6 +17450,12 @@
           "kind": "interface",
           "name": "ReindexResult",
           "signature": "export interface ReindexResult { ok: boolean; mode: ReindexMode; total_items: number; semantic: { enabled: boolean; stale_items: number; unchanged_items: number; embedded_items: number; vector_upserted: number; batches_completed: number; }; artifacts: { manifest: string; embeddings: string; }; warnings: string[]; generated_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveUnknownAuthorAcknowledgmentSelector",
+          "signature": "(rawEvents: readonly string[], allActionable: boolean) => { events: UnknownAuthorHistoryEvent[]; all_actionable: boolean; } | calls: (rawEvents: readonly string[], allActionable: boolean) => { events: UnknownAuthorHistoryEvent[]; all_actionable: boolean; }"
         },
         {
           "classification": "supported",
@@ -20832,13 +20929,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsCommandOptions",
-          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface CommentsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "CommentsResult",
-          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; }"
+          "signature": "export interface CommentsResult { id: string; comments: Comment[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "advanced_export",
@@ -21552,13 +21649,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsCommandOptions",
-          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface LearningsCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "LearningsResult",
-          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; }"
+          "signature": "export interface LearningsResult { id: string; learnings: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "advanced_export",
@@ -21780,13 +21877,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NotesCommandOptions",
-          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "NotesResult",
-          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; }"
+          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; mutation_receipt?: AnnotationMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "supported",
@@ -23824,7 +23921,11 @@
     "field_invalid",
     "field_mcp_input_collision",
     "github_source_entry_unbuilt",
+    "history_author_acknowledge_required_values_missing",
+    "history_author_acknowledge_selector_conflict",
     "history_author_acknowledge_selector_required",
+    "history_author_acknowledge_target_not_actionable",
+    "history_author_acknowledge_target_unreadable",
     "history_drift_chain_mismatch",
     "history_drift_hash_mismatch",
     "history_drift_missing_stream",

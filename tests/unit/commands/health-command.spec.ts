@@ -1412,7 +1412,7 @@ describe("runHealth", () => {
     });
   });
 
-  it("auto-refreshes stale vectorization entries through targeted semantic refresh", async () => {
+  it("refreshes stale vectorization entries only through explicit targeted semantic refresh", async () => {
     await withTempPmPath(async (context) => {
       const itemId = createSeedItem(context);
       const settings = await readSettings(context.pmPath);
@@ -1424,7 +1424,10 @@ describe("runHealth", () => {
       const semanticMock = installSemanticFetchMock();
 
       try {
-        const health = await runHealth({ path: context.pmPath });
+        const health = await runHealth(
+          { path: context.pmPath },
+          { refreshVectors: true },
+        );
         expect(health.ok).toBe(true);
         expect(health.warnings).toEqual([]);
 
@@ -1453,7 +1456,7 @@ describe("runHealth", () => {
           stale_items_before: [],
           stale_items_after: [],
           refresh_attempted: false,
-          refresh_skipped_reason: "no_stale_items",
+          refresh_skipped_reason: "refresh_disabled",
         });
         expect(semanticMock.calls).toEqual([
           "https://api.example.test/v1/embeddings",
@@ -1734,7 +1737,10 @@ describe("runHealth", () => {
       });
 
       try {
-        const health = await runHealth({ path: context.pmPath });
+        const health = await runHealth(
+          { path: context.pmPath },
+          { refreshVectors: true },
+        );
         expect(health.ok).toBe(false);
         expect(health.warnings).toEqual(
           expect.arrayContaining([`vectorization_stale_items_remaining:1`]),
