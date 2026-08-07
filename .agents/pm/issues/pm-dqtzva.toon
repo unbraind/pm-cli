@@ -1,0 +1,21 @@
+id: pm-dqtzva
+title: "The release gate classifies production errors by message prose and reads none of the 236 error codes the product declares, so every waiver is a latent re-block and a broad substring is a silent waiver"
+description: "The gate that decides whether production errors block a release partitions Sentry issues by lowercased message substring. It carries 34 hand-written patterns across four lists (8 console, 23 CLI, 1 validation, 2 environment) and references none of the 236 stable error codes the product declares, even though the handled-error channel already ships pm.error_code to Sentry as a tag and every refusal envelope carries a code and a urn:pm-cli:error type. Two failure modes follow and both are already realized in this repository. Latent re-block: message text is under no contract, so any wording change silently unmatches its pattern and re-blocks a cut; the file's own comments record that a per-count list re-blocked a release once a new count appeared, and the repair was to loosen the prose rather than to bind to a code. Silent over-waiver: broad substrings such as structural error(s) and item(s) failed to apply waive any future unrelated exception whose message happens to contain them, and no check asserts that a pattern still matches something or that it matches only what it intends. The asymmetry is inverted today: the release contract spec pins the allowlist pattern strings, so the waiver list is frozen while the messages it must match are free."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:ci","area:observability",gate,release
+created_at: "2026-08-07T05:19:52.392Z"
+updated_at: "2026-08-07T05:19:52.392Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "The release error classifier decides from the declared error code and exit code, not from message text, for every family it waives; A check fails when a waiver entry matches nothing in the window, so a dead waiver cannot silently persist; A check fails when a waiver entry matches an error family it was not declared for, proving the waiver is not broader than its intent; Error messages become free to reword without touching the release gate, and a negative control proves a rewording no longer re-blocks a cut"
+parent: pm-u9d0
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-c3uru0,discovered_from,"2026-08-07T05:19:52.392Z","harness:claude-code","cli:create:dep",detected
+  pm-ei6x66,related,"2026-08-07T05:19:52.392Z","harness:claude-code","cli:create:dep",detected
+  pm-x4nn3z,blocked_by,"2026-08-07T05:19:52.392Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-08-07T05:19:52.392Z","harness:claude-code","cli:create:dep",detected
+body: ""

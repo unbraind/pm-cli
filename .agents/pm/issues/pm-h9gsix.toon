@@ -1,0 +1,21 @@
+id: pm-h9gsix
+title: "The real all-package install is budgeted in one of its two instances, so the coverage gate flakes and then reports no coverage verdict at all"
+description: "Two tests perform the same expensive real install of all fifteen bundled packages, and the budget that exists to keep that work from timing out was applied to one of them. The unit instance in the extension-command spec carries an explicit forty-five second budget, added when the flake class was closed on 2026-07-24. The integration instance that installs with a wildcard through the root command carries no budget at all and runs against the suite-wide thirty-second default. Both instances already existed when the fix landed, so this is not a regression: the repair was scoped to one test identity rather than to the property that a real all-package install must declare its own budget.\n\nReproduced 2026-08-07 on a clean tree. The fast suite passes with 6904 tests green. The coverage run of the same suite fails with exactly one failure, the unbudgeted integration instance, timing out at thirty seconds after running for 31.2 seconds, because instrumentation inflates wall time against a budget that was measured without it.\n\nThe second half of the defect is what the failure does to the verdict. The contributor entrypoint runs the coverage threshold gate only after the test process exits zero, so any test failure returns the vitest exit code and the threshold gate never executes. A timing flake therefore produces a red coverage command that carries no coverage information at all, and it is indistinguishable at the exit code from a genuine shortfall. The gate contributors are told to trust before pushing is the gate most exposed to a false red, and its failure mode is silence about the thing it exists to measure."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:ci","area:tests",coverage,flake
+created_at: "2026-08-07T05:37:11.230Z"
+updated_at: "2026-08-07T05:37:11.230Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "Every test that performs a real all-package install declares an explicit budget, and a check fails when such a test relies on the suite-wide default; The coverage threshold gate reports a verdict whenever coverage data was produced, so a test failure and a coverage shortfall are distinguishable from the exit code and the output; The coverage run reproduces green on this tree after the budget is applied, proving the flake was the budget and not the assertions; A negative control proves a genuine coverage shortfall still fails, so restoring the verdict cannot mask an uncovered line"
+parent: pm-u9d0
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2qqcgl,discovered_from,"2026-08-07T05:37:11.230Z","harness:claude-code","cli:create:dep",detected
+  pm-7x0wqg,discovered_from,"2026-08-07T05:37:11.230Z","harness:claude-code","cli:create:dep",detected
+  pm-ei6x66,related,"2026-08-07T05:37:11.230Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-08-07T05:37:11.230Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli",diagnostics,error-contract,token-efficiency
 created_at: "2026-07-25T12:28:06.310Z"
-updated_at: "2026-07-25T20:44:27.389Z"
+updated_at: "2026-08-07T05:38:50.502Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Errors, warnings, validation summaries, and recovery bundles each declare a default token ceiling in contract data alongside command output budgets; Degradation order is declared and deterministic, and a test asserts the corrective action survives truncation at the smallest permitted budget; Diagnostics lead with the corrective action before explanation, asserted structurally rather than by review; The measured token cost of the ten most frequent failure paths is recorded before and after as evidence on this item; A diagnostic that exceeds its declared ceiling fails the token-cost regression gate the same way command output does"
@@ -18,19 +18,21 @@ outcome: "A failing command costs an agent a predictable, small number of tokens
 parent: pm-mpbb
 risk: low
 confidence: 75
-dependencies[12]{id,kind,created_at,author,source_kind}:
-  pm-185870,related,"2026-07-25T12:28:06.310Z",null,null
-  pm-5t33or,blocked_by,"2026-07-25T12:28:06.310Z",null,null
-  pm-e2bq,related,"2026-07-25T12:28:06.310Z",null,null
-  pm-ikv6m0,related,"2026-07-25T12:28:06.310Z",null,null
-  pm-psy1,related,"2026-07-25T12:28:06.310Z",null,null
-  pm-fs8q9x,related,"2026-07-25T12:35:08.895Z",null,null
-  pm-g543,related,"2026-07-25T12:35:08.895Z",null,null
-  pm-j82fd3,related,"2026-07-25T12:35:08.895Z",null,null
-  pm-kvxqp1,related,"2026-07-25T12:35:08.895Z",null,null
-  pm-t5dt4z,related,"2026-07-25T12:35:08.895Z",null,null
-  pm-g3n00m,related,"2026-07-25T12:40:16.506Z",null,null
-  pm-g3n00m,implements,"2026-07-25T20:44:27.098Z",null,null
+dependencies[12]{id,kind,created_at}:
+  pm-185870,related,"2026-07-25T12:28:06.310Z"
+  pm-5t33or,blocked_by,"2026-07-25T12:28:06.310Z"
+  pm-e2bq,related,"2026-07-25T12:28:06.310Z"
+  pm-ikv6m0,related,"2026-07-25T12:28:06.310Z"
+  pm-psy1,related,"2026-07-25T12:28:06.310Z"
+  pm-fs8q9x,related,"2026-07-25T12:35:08.895Z"
+  pm-g543,related,"2026-07-25T12:35:08.895Z"
+  pm-j82fd3,related,"2026-07-25T12:35:08.895Z"
+  pm-kvxqp1,related,"2026-07-25T12:35:08.895Z"
+  pm-t5dt4z,related,"2026-07-25T12:35:08.895Z"
+  pm-g3n00m,related,"2026-07-25T12:40:16.506Z"
+  pm-g3n00m,implements,"2026-07-25T20:44:27.098Z"
+comments[1]{created_at,author,text}:
+  "2026-08-07T05:38:50.502Z","harness:claude-code","Measured 2026-08-07: a one-line refusal costs 1100 bytes of envelope.\n\nThe exact invocation that produced the release-blocking production error was replayed after its refusal was reclassified as a usage error. The refusal now exits 2 with a stable code, and the JSON envelope is 1100 bytes for a single sentence of diagnosis. The message itself appears twice, as title and as detail. The recovery bundle re-serializes the invocation three ways: the attempted command as one string, the normalized argument vector as ten separate array entries, and the provided flag names as a fourth list. The examples offered are the two most generic strings the product can emit, naming the root help and a placeholder command, neither of which addresses the refusal. Against a 9-byte version read, the cheapest thing this CLI can print, the refusal is 122 times larger, and against the 524-byte agent-token baseline recorded for this command it is more than double.\n\nThe observation for this item is that the three re-serializations are the bulk of the payload and none of them tells the caller anything the caller did not just type. The teachable content, the code and the one sentence that names what was wrong, is under 150 bytes.\n"
 notes[1]{created_at,author,text}:
   "2026-07-25T20:42:10.437Z","harness:claude-code","Measured diagnostic cost and its redundancy on the shipped 2026.7.25 build, so this item's ceilings can be set against real output. Isolated sandbox, one item present.\n\nPer-diagnostic sizes: get on an unknown id 447 B (~111 tokens); unknown mutating flag 725 B (~181); unknown command 668 B (~167); invalid multi-value filter 684 B (~171); close without a required argument 940 B (~235); unknown graph subcommand 711 B (~177); out-of-domain --confidence value 613 B (~153).\n\nThe range is modest, but roughly 40 percent of each envelope is literal repetition, which is the cheapest thing to reclaim before any ceiling is enforced. On the unknown-flag case (22 lines):\n- the message text appears twice verbatim, once after \"Error:\" and again under \"What happened:\";\n- the corrective command appears three times, as the Examples entry, as attempted_command, and as suggested_retry, with normalized_args carrying a fourth near-copy;\n- \"What is required\" and \"Why\" render generic contract prose that is identical across unrelated failures and carries no case-specific information.\n\nThat suggests the degradation order this item declares should drop the duplicated renderings before it ever truncates the corrective action, and that the smallest permitted budget can be well under the current sizes without losing a single fact. The related structural assertion — corrective action first — is already testable against this shape: the recovery bundle is last today, so an agent reads the full explanation before reaching the command it needs."
 body: ""

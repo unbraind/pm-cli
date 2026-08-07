@@ -13,6 +13,7 @@
 
 ### Fixed
 
+- Sentry PM-CLI-2W: rejected unknown-author acknowledgments are emitted as high production errors ([pm-c3uru0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c3uru0.toon))
 - Expose live bounded provenance coverage over immutable history ([pm-1wiugq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1wiugq.toon))
 - GH-915: Windows nightly Vite import portability and shared contract-fixture isolation regressions ([pm-ssd7vv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ssd7vv.toon))
 - GH-914: macOS extension source identity compares non-canonical /var and /private/var paths ([pm-eu46an](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eu46an.toon))

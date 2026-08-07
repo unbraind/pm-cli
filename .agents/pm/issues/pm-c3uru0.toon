@@ -2,11 +2,13 @@ id: pm-c3uru0
 title: "Sentry PM-CLI-2W: rejected unknown-author acknowledgments are emitted as high production errors"
 description: "The public unknown-author acknowledgment command correctly rejects a stale or non-actionable target, but the handled TypeError crosses the observability boundary as a high unresolved Sentry issue. This makes expected operator validation noise indistinguishable from a product failure and can block release health."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: "area:cli","area:observability",author,sentry,ux
 created_at: "2026-08-06T21:16:53.374Z"
-updated_at: "2026-08-06T21:20:15.868Z"
+updated_at: "2026-08-07T05:39:52.585Z"
+closed_at: "2026-08-07T05:39:52.480Z"
+completed_at: "2026-08-07T05:39:52.480Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: The observability boundary classifies this exact validation family as expected without masking unexpected errors; focused tests prove positive and negative classification; the Sentry release gate recognizes the outcome; PM-CLI-2W is dispositioned with live evidence.
@@ -22,20 +24,28 @@ confidence: high
 severity: medium
 environment: production
 repro_steps: "Run the unknown-author acknowledgment command against a stale or non-actionable event target such as pm-iimv:1; observe a handled CLI rejection and Sentry PM-CLI-2W."
-expected_result: Expected validation refusals remain structured CLI diagnostics and do not create high unresolved production issues; unexpected failures remain observable.
-actual_result: Sentry PM-CLI-2W recorded two handled TypeError events on 2026-08-06 from release pm-cli@2026.8.5.
+resolution: "Replaced five bare TypeErrors in the acknowledgment primitive with one refusal helper raising PmCliError at the usage exit code with the codes selector_conflict, required_values_missing, target_unreadable and target_not_actionable; the CLI boundary already treats usage as expected, so the family is excluded at the source. Declared the four refusal families in the release gate expected-handled patterns and asserted the declaration in the release contract spec. Focused positive and negative classification tests added."
+expected_result: "The exact invocation that produced the blocking production issue refuses without reaching the error channel, and unexpected failures inside the same primitive stay reportable"
+actual_result: The same event coordinate exits 2 with a structured envelope carrying history_author_acknowledge_target_unreadable; the negative control proves a non-validation failure is still a non-PmCliError Error; full suite green at 6904 tests
 affected_version: 2026.8.5
 component: CLI observability boundary
 regression: false
 customer_impact: Release operators see a high unresolved production error for a correctly rejected request; no data corruption occurred.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
-  pm-7zs0,blocks,"2026-08-06T21:16:53.374Z","harness:codex","cli:create:dep",detected
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-zqpnte,discovered_from,"2026-08-06T21:16:53.374Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-06T21:16:53.374Z","harness:codex","Duplicate check: searched all statuses for the exact Sentry ID, author acknowledgment target text, handled Sentry validation errors, and expected command-error observability noise. No item tracks PM-CLI-2W; pm-zqpnte tracks the delivered command surface, while prior classifier items cover different error families."
   "2026-08-06T21:20:15.868Z","harness:codex","Closeout evidence: the 14-day release gate queried live systems and failed only on Sentry PM-CLI-2W (critical=0, high=1, total=1, threshold_ok=false). The separate server-side telemetry query succeeded with finish_error_rate_pct=0.61 and failures_without_error_code_rows=0. Local telemetry flush drained 1/1 queued event with a successful receipt. This item remains open and unclaimed for a later implementation tranche; no Sentry issue was resolved or hidden."
+  "2026-08-07T05:39:34.793Z","harness:claude-code","Fixed 2026-08-07 at the observability boundary rather than in the waiver list, with the release gate covered as well.\n\nRoot cause. The five argument validations in the public acknowledgment primitive raised bare TypeErrors. A TypeError carries no exit code, so the CLI mapped it to the generic failure code, and the boundary reports any handled error whose exit code is not usage, not-found or conflict. A correct refusal of a stale target therefore crossed into the error channel as a high unresolved production issue and gated the 2026-08-07 scheduled cut.\n\nProduct fix. The five validations now refuse through one helper that raises a PmCliError at the usage exit code with a stable machine code: selector_conflict, required_values_missing, target_unreadable and target_not_actionable. The boundary already classifies usage as expected, so the family is excluded at the source rather than allowlisted after the fact, and every other failure inside the same primitive keeps its own exit code and remains reportable. Messages are unchanged.\n\nVerified live on the exact invocation that produced the blocking issue. The same event coordinate that generated the Sentry error now exits 2 with a structured problem envelope carrying code history_author_acknowledge_target_unreadable, so the occurrence cannot recur through the supported surface.\n\nGate fix. The four acknowledgment refusal families are declared in the expected-handled patterns of the release gate, so they stay classified if expected-error capture is ever enabled for a release smoke, and the release contract spec asserts the declaration.\n\nTests. A focused spec asserts the positive classification, that each of the four families raises a PmCliError at the usage exit code carrying its declared code, and the negative control asserts that an unexpected failure inside the same primitive is still an Error that is not a PmCliError, so the reclassification cannot mask a genuine fault. Full suite green at 6904 tests.\n\nEscape recorded. The gate that blocked the release matches production errors by message prose and reads none of the 236 codes the product declares; that consumer defect and the missing join between a closed item and the external issue whose window gates the cut are filed separately, because neither is repaired by this fix.\n"
 notes[1]{created_at,author,text}:
   "2026-08-06T21:16:53.374Z","harness:codex","Live Sentry evidence: PM-CLI-2W is unresolved/high, count=2, first_seen=2026-08-06T20:37:01Z, last_seen=2026-08-06T20:45:45Z, handled=yes, release=pm-cli@2026.8.5. Keep private event payload and host metadata out of Git."
 learnings[1]{created_at,author,text}:
   "2026-08-06T21:16:53.374Z","harness:codex",Expected CLI refusals require family-level observability classification tests; a handled flag alone does not prevent a high unresolved Sentry issue.
+files[2]{path,scope,note}:
+  scripts/release/sentry-telemetry-gate.mjs,project,Acknowledgment refusal families declared expected-handled
+  src/sdk/author-attribution.ts,project,Argument validations refuse as classified usage errors
+tests[2]{command,scope}:
+  tests/integration/release-automation-contract.spec.ts,project
+  tests/unit/sdk/author-attribution.spec.ts,project
+close_reason: "Argument validations in the public acknowledgment primitive now refuse as classified usage errors carrying stable codes, so a correct refusal of a stale target no longer crosses the observability boundary as a high production error"
 body: ""

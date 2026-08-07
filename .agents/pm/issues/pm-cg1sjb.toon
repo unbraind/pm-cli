@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: "area:ci",flake,gate-reliability,performance
 created_at: "2026-07-26T10:28:46.495Z"
-updated_at: "2026-08-05T18:27:08.659Z"
+updated_at: "2026-08-07T05:25:12.248Z"
 author: "harness:opencode"
 estimated_minutes: 120
 acceptance_criteria: "The import-cost gate cannot fail solely because the first sampled process hit a cold cache: measurement uses either a discarded warm-up sample or min-of-N per entrypoint; a simulated cold-cache run is green when costs are within budget; the gate still fails on a genuinely over-budget entrypoint (negative control per pm-k6t4yb); budgets in scripts/bench/sdk-entrypoint-budgets.json are not raised to absorb noise"
@@ -16,16 +16,13 @@ confidence: high
 severity: low
 expected_result: pnpm lint is deterministic green on main regardless of filesystem cache warmth when entrypoint costs are within budget
 actual_result: First cold run failed at 545ms > 510ms on ./sdk/runtime; immediate warm re-runs pass unchanged
-dependencies[10]:
+dependencies[8]:
   - id: pm-ag9nka
     kind: related
     created_at: "2026-07-26T10:29:40.699Z"
   - id: pm-k6t4yb
     kind: related
     created_at: "2026-07-26T10:29:40.699Z"
-  - id: pm-ei6x66
-    kind: related
-    created_at: "2026-07-26T10:51:33.734Z"
   - id: pm-o87av6
     kind: verifies
     created_at: "2026-07-26T10:51:33.734Z"
@@ -35,24 +32,21 @@ dependencies[10]:
   - id: pm-yse5dt
     kind: related
     created_at: "2026-07-26T10:51:33.734Z"
-  - id: pm-zlv8jl
-    kind: related
-    created_at: "2026-07-26T10:51:33.734Z"
-  - id: pm-ei6x66
-    kind: related
-    created_at: "2026-08-05T18:27:08.528Z"
-    author: "harness:claude-code"
-    source_kind: "cli:update:dep"
-    author_source: detected
   - id: pm-fr4dg8
     kind: related
     created_at: "2026-08-05T18:27:08.528Z"
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-ei6x66
+    kind: related
+    created_at: "2026-08-07T05:25:07.826Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
   - id: pm-zlv8jl
     kind: related
-    created_at: "2026-08-05T18:27:08.528Z"
+    created_at: "2026-08-07T05:25:11.906Z"
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected

@@ -1,0 +1,21 @@
+id: pm-0xmajx
+title: "The CLI owns 87 usage refusals the SDK does not, and where one rule exists on both sides they refuse the same input with different codes"
+description: "The SDK-first epic asserts the CLI becomes a thin layer over a complete public SDK, and the import-boundary half of that claim is now proven: the CLI imports no private core module. The behaviour half is not. The CLI still raises 87 usage refusals of its own across 14 registration files, so for those rules the CLI is authoritative rather than thin, and an SDK-only consumer is governed by a different rule set than a CLI caller. Where a rule exists on both sides the two implementations disagree. Reference instance measured 2026-08-07 on the unknown-author acknowledgment surface: the selector rule is written twice, and the CLI refuses the neither-selector case with history_author_acknowledge_selector_required while the SDK refuses the identical input with history_author_acknowledge_required_values_missing, so one user mistake has two codes depending on which surface received it. The event-coordinate grammar is likewise implemented in both places, once as a CLI regex over the colon-joined spelling and once as an SDK regex over the parsed pair. Neither divergence is reachable by any gate, because the boundary ratchet measures imports and the contract snapshot measures declared flags, and nothing compares the refusal a rule produces at one surface against the refusal the same rule produces at the other."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:cli","area:sdk",boundary,ux
+created_at: "2026-08-07T05:20:16.979Z"
+updated_at: "2026-08-07T05:20:16.979Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "Every rule a CLI registration enforces is either delegated to an SDK primitive or recorded as a decision explaining why the CLI is authoritative for it; A gate compares the refusal an SDK primitive produces against the refusal its CLI wrapper produces for the same input and fails on divergent codes or exit codes; The acknowledgment selector rule and the event-coordinate grammar each have exactly one implementation, and the CLI-side count of independent refusals is reported so the ratchet direction is observable; An SDK-only consumer receives the same refusal code as a CLI caller for every rule the SDK owns, proved by a negative control that fails when one side is changed alone"
+parent: pm-usfg
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9rgaal,implements,"2026-08-07T05:20:16.979Z","harness:claude-code","cli:create:dep",detected
+  pm-c3uru0,discovered_from,"2026-08-07T05:20:16.979Z","harness:claude-code","cli:create:dep",detected
+  pm-hqa8g1,related,"2026-08-07T05:20:16.979Z","harness:claude-code","cli:create:dep",detected
+  pm-x4nn3z,related,"2026-08-07T05:20:16.979Z","harness:claude-code","cli:create:dep",detected
+body: ""

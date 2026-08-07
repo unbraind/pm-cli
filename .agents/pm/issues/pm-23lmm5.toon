@@ -1,0 +1,21 @@
+id: pm-23lmm5
+title: "A defect the tracker considers closed keeps blocking releases: nothing joins a closed item to the observability issue whose rolling window gates the cut"
+description: "The release gate reads a rolling 14-day activity window over unresolved observability issues, so an error stops blocking a cut only when someone dispositions it in the external system. Nothing joins the two records. Closing the pm item that owns a defect has no effect on the issue that gates the release, and resolving the issue leaves no trace in the immutable record, so the tracker can report a defect fixed while the release stays red for that same defect, and it can report a defect open while the release is green because the window rolled past it. Measured 2026-08-07: the scheduled cut failed on exactly one blocking issue whose product behaviour was correct, and after the product fix landed the cut still required a manual disposition in a system this repository never writes to. The pieces to close the loop already exist and are unused. The release workflow creates a release object and associates commits with it, so resolve-in-next-release is semantically available; the handled-error channel already tags every event with the error code; and items already carry the observability short identifier in their titles. What is missing is the relation and the automation over it: no dependency kind, no field, and no gate connects a tracked defect to the observability record whose lifetime gates the release. This is a broken turn of the self-improvement loop, because the loop cannot re-measure an improvement whose gate lives outside the record."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:ci","area:observability",release,sentry
+created_at: "2026-08-07T05:20:56.864Z"
+updated_at: "2026-08-07T05:20:56.864Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "A tracked defect and the observability issue that gates the release are joined by a recorded relation, so the join is readable from the immutable record rather than from a title substring; Closing the owning item dispositions the joined observability issue, and the disposition is recorded as a mutation rather than performed silently out of band; The release gate reports, for every blocking issue, whether a tracked item claims to have fixed it, so a red cut names the item that disagrees with it; A negative control proves an unjoined blocking issue still fails the gate, so the join can never be used to waive an untracked error"
+parent: pm-5oj5
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7zs0,related,"2026-08-07T05:20:56.864Z","harness:claude-code","cli:create:dep",detected
+  pm-c3uru0,discovered_from,"2026-08-07T05:20:56.864Z","harness:claude-code","cli:create:dep",detected
+  pm-dqtzva,related,"2026-08-07T05:20:56.864Z","harness:claude-code","cli:create:dep",detected
+  pm-o0sqz5,implements,"2026-08-07T05:20:56.864Z","harness:claude-code","cli:create:dep",detected
+body: ""
