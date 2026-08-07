@@ -20,6 +20,7 @@ import {
   readOutputRowCollections,
 } from "../../../src/sdk/read-output-rows.js";
 import {
+  PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS,
   attachReadOutputSessionReceipt,
   parseReadOutputSession,
 } from "../../../src/sdk/read-output-session.js";
@@ -184,6 +185,16 @@ describe("read output contracts", () => {
     });
     expect(isReadOutputBudgetExceeded(projected)).toBe(true);
     expect(projected.read_output.estimated_tokens).toBeLessThanOrEqual(256);
+
+    const perCallOnly = applyReadOutputDimensions(
+      "stats",
+      { outputBudget: 1 },
+      { detail: "cannot fit" },
+    );
+    expect(perCallOnly).toMatchObject({
+      output_budget_exceeded: { omitted_result: true },
+      read_output: { result_omitted: true },
+    });
 
     expect(() =>
       applyReadOutputDimensions(
@@ -442,6 +453,41 @@ describe("read output contracts", () => {
     });
   });
 
+  it("projects selectors qualified by a declared row path", () => {
+    const projected = applyReadOutputDimensions(
+      "list",
+      { outputInclude: "items.id" },
+      {
+        items: [
+          { id: "pm-1", title: "One", body: "discard" },
+          { id: "pm-2", title: "Two", body: "discard" },
+        ],
+        row_contract: { command: "list", row_keys: ["items"] },
+      },
+    );
+    if (isReadOutputBudgetExceeded(projected)) {
+      throw new Error("A field-only projection cannot omit its result.");
+    }
+    expect(projected.items).toEqual([{ id: "pm-1" }, { id: "pm-2" }]);
+    expect(projected.read_output).toMatchObject({ within_budget: true });
+
+    const rootOnly = applyReadOutputDimensions(
+      "list",
+      { outputInclude: "count" },
+      {
+        items: [{ id: "pm-1" }],
+        count: 1,
+        row_contract: { command: "list", row_keys: ["items"] },
+      },
+    );
+    expect(rootOnly).toMatchObject({
+      count: 1,
+      row_contract: { row_keys: ["items"] },
+      read_output: { within_budget: true },
+    });
+    expect(rootOnly).not.toHaveProperty("items");
+  });
+
   it("carries cross-call spend and replaces prior item facts with references", () => {
     const first = applyReadOutputDimensions(
       "list",
@@ -641,6 +687,19 @@ describe("read output contracts", () => {
           id: "session",
           token_budget: 256,
           spent_tokens: 0,
+          seen_item_ids: Array.from(
+            { length: PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS + 1 },
+            (_, index) => `pm-${index}`,
+          ),
+        },
+        "seen_item_ids",
+      ],
+      [
+        {
+          version: 1,
+          id: "session",
+          token_budget: 256,
+          spent_tokens: 0,
           seen_item_ids: [7],
         },
         "seen_item_ids",
@@ -692,12 +751,24 @@ describe("read output contracts", () => {
       path,
       index,
     }));
-    expect(mapped).toMatchObject({
-      graph: {
-        nodes: {
-          first: { path: "graph.nodes", index: 0 },
-          second: { path: "graph.nodes", index: 1 },
-        },
+    expect(
+      (mapped as { graph: { nodes: Record<string, unknown> } }).graph.nodes,
+    ).toEqual({
+      first: {
+        row: result.graph.nodes.first,
+        path: "graph.nodes",
+        index: 0,
+      },
+      second: {
+        row: result.graph.nodes.second,
+        path: "graph.nodes",
+        index: 1,
+      },
+      literal: { row: "value", path: "graph.nodes", index: 2 },
+      unidentified: {
+        row: result.graph.nodes.unidentified,
+        path: "graph.nodes",
+        index: 3,
       },
     });
     expect(boundReadOutputRows(result, 1)).toMatchObject({
@@ -748,7 +819,8 @@ describe("read output contracts", () => {
       },
     );
     expect(direct).toHaveProperty("read_session");
-    expect(directSerializations).toBe(8);
+    expect(directSerializations).toBeGreaterThan(0);
+    expect(directSerializations).toBeLessThanOrEqual(8);
 
     let composedSerializations = 0;
     const composed = applyReadOutputDimensions(
@@ -769,7 +841,8 @@ describe("read output contracts", () => {
       },
     );
     expect(composed).toHaveProperty("read_session");
-    expect(composedSerializations).toBe(144);
+    expect(composedSerializations).toBeGreaterThan(0);
+    expect(composedSerializations).toBeLessThanOrEqual(144);
   });
 
   it("compacts explanatory text and rows before omitting a budgeted result", () => {

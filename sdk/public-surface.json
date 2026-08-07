@@ -10,7 +10,18 @@
     "missing": [],
     "required_symbols": 1442
   },
-  "breaking_acknowledgements": [],
+  "breaking_acknowledgements": [
+    {
+      "changes": [
+        "signature ./sdk:PmReadOutputResult",
+        "signature ./sdk/contracts:PmReadOutputResult",
+        "signature ./sdk/core:PmReadOutputResult",
+        "signature ./sdk/runtime:PmReadOutputResult"
+      ],
+      "package_version": "2026.8.6",
+      "reason": "Type the existing runtime read_session receipt and re-export its state from contracts/runtime; no runtime behavior or existing member is removed."
+    }
+  ],
   "entrypoints": {
     "./sdk": {
       "classification": "advanced_export",
@@ -7414,6 +7425,18 @@
           "signature": "readonly string[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS",
+          "signature": "10000"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_READ_OUTPUT_SESSION_MIN_TOKENS",
+          "signature": "256"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "PM_READ_OUTPUT_SURFACE_CONTRACTS",
@@ -7885,7 +7908,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; }) | PmReadOutputBudgetExceeded;"
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
         },
         {
           "classification": "supported",
@@ -15607,13 +15630,19 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; }) | PmReadOutputBudgetExceeded;"
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
         },
         {
           "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputResultFor",
           "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputSessionState",
+          "signature": "export interface PmReadOutputSessionState { version: 1; id: string; token_budget: number; spent_tokens: number; seen_item_ids: string[]; }"
         },
         {
           "classification": "contract_data",
@@ -16795,7 +16824,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; }) | PmReadOutputBudgetExceeded;"
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
         },
         {
           "classification": "supported",
@@ -21973,13 +22002,19 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; }) | PmReadOutputBudgetExceeded;"
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResultFor",
           "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputSessionState",
+          "signature": "export interface PmReadOutputSessionState { version: 1; id: string; token_budget: number; spent_tokens: number; seen_item_ids: string[]; }"
         },
         {
           "classification": "supported",

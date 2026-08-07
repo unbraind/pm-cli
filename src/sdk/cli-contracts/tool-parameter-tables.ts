@@ -9,6 +9,7 @@ import {
   PLAN_STEP_LINK_KIND_VALUES,
   PLAN_STEP_STATUS_VALUES,
 } from "../../types/index.js";
+import { PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS } from "../read-output-session.js";
 import type { PmToolAction } from "./enum-contracts.js";
 
 /** Public contract for pm tool parameter properties, shared by SDK and presentation-layer consumers. */
@@ -48,7 +49,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
           spent_tokens: { type: "integer", minimum: 0 },
           seen_item_ids: {
             type: "array",
-            uniqueItems: true,
+            maxItems: PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS,
             items: {
               type: "string",
               pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",

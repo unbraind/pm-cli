@@ -2,11 +2,13 @@ id: pm-ay3l0p
 title: Nested pm test coverage changes repository-root fixtures because outer PM_PATH sandboxing leaks into package-owned run-tests
 description: "Running node scripts/run-tests.mjs coverage directly from the checkout passes all 381 files and 6,451 tests at 100/100/100/100. Linking the identical command through pm test fails 11 validate ownership/path-classification cases under schema context and the same cases plus merge-receipt context under tracker context. The outer linked-test runner replaces PM_PATH with a temporary schema or tracker copy; repository-root validation fixtures then derive ownership and path candidates from the copied tracker rather than the checkout, despite run-tests.mjs providing its own inner test sandboxes. This makes the documented package-owned sandbox runner unsafe to compose as a broad linked test and produces false product failures."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: "area:cli","area:testing",context-integrity,developer-experience,sandbox
 created_at: "2026-07-28T14:04:06.683Z"
-updated_at: "2026-08-04T19:54:05.741Z"
+updated_at: "2026-08-07T09:25:17.031Z"
+closed_at: "2026-08-07T09:24:56.962Z"
+completed_at: "2026-08-07T09:24:56.962Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Direct and pm-linked executions of node scripts/run-tests.mjs coverage produce the same test and coverage result; No unit or integration test reads or writes the real repository .agents/pm tracker; Schema and tracker linked-test modes retain their documented semantics for genuine pm commands
@@ -20,16 +22,31 @@ parent: pm-92if
 risk: high
 confidence: 85
 severity: medium
+resolution: Cleared inherited PM_SOURCE_PM_PATH and PM_SOURCE_WORKSPACE_ROOT at the inner run-tests sandbox boundary while preserving isolated PM_PATH and PM_GLOBAL_PATH roots.
 expected_result: Package-owned coverage remains 100/100/100/100 under a linked PM run without repository-root fixture drift
-actual_result: Direct coverage is green; schema and tracker linked contexts alter PM_PATH-derived ownership and path scans and fail otherwise-green tests
+actual_result: "Direct and pm-linked full coverage now both pass 441 files and 6,919 tests at exact 100/100/100/100; the source checkout tracker remains outside the test PM roots."
 component: linked test sandbox composition
 regression: false
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-7rlp,related,"2026-07-28T14:04:06.683Z","harness:codex","cli:create:dep",detected
   pm-jd3m6p,discovered_from,"2026-07-28T14:04:06.683Z","harness:codex","cli:create:dep",detected
   pm-w13j,verifies,"2026-07-28T14:04:06.683Z","harness:codex","cli:create:dep",detected
   pm-wo8,implements,"2026-07-28T14:04:06.683Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-hid9g1,discovered_from,"2026-08-07T09:24:55.052Z","harness:codex","cli:update:dep",detected
+  pm-efkvdy,related,"2026-08-07T09:24:55.539Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
   "2026-07-28T14:04:06.683Z","harness:codex","Duplicate check: searched all statuses for linked-test coverage outer PM_PATH repository ownership fixtures and run-tests coverage tracker isolation. Results covered general coverage and CI lineage but no item owned this reproducible nested-sandbox parity gap."
   "2026-08-04T19:54:05.741Z","harness:codex","Reproduction 2026-08-04: pm test pm-5t33or --run nested the linked node scripts/run-tests.mjs coverage command under the default schema PM_PATH. Direct coverage on the identical checkout passed 433 files and 6,850 tests at 100/100/100/100; nested execution failed 12 validate-command repository ownership/path-classification assertions because it inspected the empty outer schema context. This exactly reproduces the canonical direct-green/linked-red acceptance gap; no duplicate item created."
+  "2026-08-07T09:24:56.072Z","harness:codex","Evidence: fixed nested package-owned test isolation by clearing PM_SOURCE_PM_PATH and PM_SOURCE_WORKSPACE_ROOT only after run-tests.mjs establishes fresh PM_PATH and PM_GLOBAL_PATH roots. Regression: focused runner passed 15/15. Canonical pm-linked coverage passed 441 files and 6,919 tests at exact 100/100/100/100 (49,663 statements, 36,088 branches, 10,157 functions, 48,108 lines), followed by the focused linked test passing. This closes the repeated direct-green/linked-red gap without exposing or mutating the real tracker."
+learnings[1]{created_at,author,text}:
+  "2026-08-07T09:24:56.470Z","harness:codex","A self-sandboxing child runner must treat outer PM_SOURCE_* variables as authority-bearing context, not harmless metadata. Reset inherited source-location hints at the same boundary that replaces PM_PATH and PM_GLOBAL_PATH, while leaving genuine linked commands' execution context unchanged."
+files[2]{path,scope,note}:
+  scripts/run-tests.mjs,project,Clears inherited source-workspace hints when creating the authoritative inner test sandbox
+  tests/unit/scripts/run-tests.spec.ts,project,Regression proves child test processes cannot inherit outer linked-test source hints
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,900
+  node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msiqn0m8-77s4d8,test,passed,"2026-08-07T09:20:09.593Z","2026-08-07T09:24:10.592Z","2026-08-07T09:24:10.592Z",2,0,0
+close_reason: "Package-owned run-tests now resets outer source-location authority while preserving fresh inner tracker roots; nested PM coverage is green at exact 100/100/100/100 across 6,919 tests."
 body: ""

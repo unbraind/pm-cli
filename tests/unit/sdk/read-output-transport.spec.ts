@@ -31,7 +31,11 @@ describe("universal read-output transport contracts", () => {
 
   it("publishes canonical controls on narrow MCP tools", () => {
     const listTool = TOOLS.find(({ name }) => name === "pm_list");
+    const runTool = TOOLS.find(({ name }) => name === "pm_run");
     const properties = listTool?.inputSchema.properties as
+      | Record<string, unknown>
+      | undefined;
+    const runProperties = runTool?.inputSchema.properties as
       | Record<string, unknown>
       | undefined;
     expect(Object.keys(properties ?? {})).toEqual(
@@ -41,6 +45,25 @@ describe("universal read-output transport contracts", () => {
     expect(properties?.outputSession).toMatchObject({
       anyOf: expect.any(Array),
     });
+    const sessionAlternatives = (
+      properties?.outputSession as { anyOf: Record<string, unknown>[] }
+    ).anyOf;
+    expect(runProperties?.outputSession).toMatchObject({
+      anyOf: sessionAlternatives,
+    });
+    expect(sessionAlternatives[1]).toMatchObject({
+      properties: {
+        seen_item_ids: { maxItems: 10_000 },
+      },
+    });
+    expect(
+      (
+        sessionAlternatives[1]?.properties as Record<
+          string,
+          Record<string, unknown>
+        >
+      ).seen_item_ids,
+    ).not.toHaveProperty("uniqueItems");
   });
 
   it("rejects an unsupported canonical output format at invocation time", () => {

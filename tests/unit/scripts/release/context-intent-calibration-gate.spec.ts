@@ -396,6 +396,47 @@ describe("context intent calibration gate", () => {
       _testOnly.runSessionOrientation({}, {}, async () => ({})),
     ).rejects.toThrow("session orientation receipt drifted");
 
+    for (const nextStateMutation of [
+      { id: "changed-session" },
+      { version: 2 },
+      { token_budget: 19_999 },
+    ]) {
+      await expect(
+        _testOnly.runSessionOrientation(
+          {},
+          {},
+          async (
+            _command: string,
+            _manifest: unknown,
+            _global: unknown,
+            options: {
+              outputSession: {
+                id: string;
+                version: number;
+                token_budget: number;
+                spent_tokens: number;
+              };
+            },
+          ) => ({
+            read_session: {
+              id: options.outputSession.id,
+              measurement_scope: "complete_read_envelope",
+              spent_this_call_tokens: 1,
+              charged_this_call_tokens: 1,
+              spent_before_tokens: options.outputSession.spent_tokens,
+              spent_total_tokens: options.outputSession.spent_tokens + 1,
+              suppressed_repeat_count: 1,
+              next_state: {
+                ...options.outputSession,
+                spent_tokens: options.outputSession.spent_tokens + 1,
+                ...nextStateMutation,
+              },
+            },
+          }),
+        ),
+      ).rejects.toThrow("session orientation receipt drifted");
+    }
+
     await expect(
       _testOnly.runSessionOrientation(
         {},
