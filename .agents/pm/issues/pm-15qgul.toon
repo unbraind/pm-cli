@@ -1,0 +1,21 @@
+id: pm-15qgul
+title: "The writer-lease renewal test decides from wall-clock progress instead of the lease record, so correct behaviour is reported as a failure whenever the restore finishes first"
+description: "The test that proves the workspace writer lease is renewed beyond its TTL decides its verdict from wall-clock progress rather than from the lease it is testing. It writes a thousand files, starts a restore holding a thirty millisecond lease, polls until the writer lock file appears, sleeps eighty milliseconds, and then requires a competing acquisition to be refused. That is only true while the restore is still running and still renewing, so the assertion is really an assumption that a thousand-file copy on a shared runner has not finished after roughly eighty milliseconds. When the restore finishes first the lease is correctly released, the competing acquire correctly succeeds, and the test reports the correct behaviour as a failure.\n\nObserved 2026-08-07 on main at c91991001: Coverage shard 2 of 4 failed with promise resolved instead of rejecting at the competing-acquire assertion. A rerun of the same failed job on the same commit passed, so this is a timing flake and not a regression. The full local suite and the same shard run with the exact CI argument vector both pass, which is why the class survives.\n\nThe property the test claims to prove is observable without a race. Lease renewal means the recorded expiry of the held lock advances past its original value while the holder is still working; that is a monotonic fact about the lock record, not a fact about elapsed milliseconds. An assertion written against the recorded expiry cannot pass or fail depending on how fast the runner is, and it is strictly stronger than the current one because the current one can be satisfied by a lease that was never renewed at all, merely acquired shortly before the check.\n\nThe file carries a cluster of timing-sensitive tests in the same style, and a different test in it has previously turned a nightly leg red, so the remedy should be the pattern rather than this one assertion."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:ci","area:tests",concurrency,flake
+created_at: "2026-08-07T06:07:37.682Z"
+updated_at: "2026-08-07T06:07:37.682Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "The lease-renewal assertion is derived from the recorded lock expiry advancing past its original value, not from elapsed wall-clock time or a fixed sleep; The test cannot pass while the lease was never renewed, so the stronger property is actually enforced rather than incidentally satisfied; Every timing-sensitive assertion in the workspace snapshot spec is reviewed against the same rule, and the ones that assume in-flight work are converted or documented as deliberate; The converted test passes under coverage instrumentation on a loaded machine and a negative control proves it fails when renewal is disabled"
+parent: pm-u9d0
+risk: low
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dj98,related,"2026-08-07T06:07:37.682Z","harness:claude-code","cli:create:dep",detected
+  pm-h9gsix,related,"2026-08-07T06:07:37.682Z","harness:claude-code","cli:create:dep",detected
+  pm-j668gl,related,"2026-08-07T06:07:37.682Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-08-07T06:07:37.682Z","harness:claude-code","cli:create:dep",detected
+body: ""
