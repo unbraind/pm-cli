@@ -1,0 +1,21 @@
+id: pm-u1baah
+title: "A commit pushed directly to the default branch can never be released: both analyzer-evidence fallbacks presuppose a pull request, and nothing declares that precondition"
+description: "The hosted analysis gate requires a DeepScan commit status and a CodeFactor check run on the exact release candidate, and both analyzers are configured to run on pull-request branches only. On this repository a pull-request head carries DeepScan success as a commit status and CodeFactor success as a check run, while the squash commit that lands on the default branch carries neither. The gate bridges that with two fallbacks: an identical-tree merge parent, and the head of the single pull request whose tree matches the candidate. Both fallbacks presuppose that the candidate arrived through a pull request.\n\nA commit pushed directly to the default branch satisfies neither. It has no second parent, so the merge-parent path exits immediately, and it has no associated pull request, so the squash-head lookup returns nothing. The gate then reports that the DeepScan status is missing for the exact commit, which names the absent external artifact rather than the absent workflow that would have produced it, and gives no indication that arriving through a pull request is a precondition of releasing at all.\n\nThe consequence is that a direct push to the default branch does not merely fail one cut; it blocks every subsequent scheduled cut until a pull-request-merged commit lands, because the candidate is always the current head. Observed 2026-08-07: every repository-owned check passed on the candidate, twenty-four in total including all four coverage shards and the exact-coverage gate at 100 percent, the artifact for the next version was built, and the pipeline stopped on the absent external status.\n\nNothing declares this precondition. The contributing guidance describes branching for pull requests as a convention, the gate help says only that the exact head must already be pushed so that analyzer results exist, and no gate, validation check or health check reports that the current head can never be released. The precondition is real, load-bearing, and discoverable only by attempting a release."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:ci",gate,release,ux
+created_at: "2026-08-07T06:28:26.696Z"
+updated_at: "2026-08-07T06:28:26.696Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "The release pipeline reports, before it builds anything, whether the current head can satisfy the analyzer evidence requirement, and names the workflow rather than the missing external artifact when it cannot; A commit that reached the default branch without a pull request either has a declared path to analyzer evidence or is refused with that reason stated, and the choice is recorded as a decision; The precondition that a releasable commit arrives through a pull request is declared wherever the release contract is declared, not left to be discovered by a failed cut; A negative control proves an unanalyzed commit still cannot release, so declaring the precondition never becomes a way to skip the analyzers"
+parent: pm-u9d0
+risk: high
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-23lmm5,related,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
+  pm-39cqqx,discovered_from,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
+  pm-e02lgu,related,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
+body: ""
