@@ -16,6 +16,8 @@ import type {
   StructuredLogEvent,
 } from "../types/index.js";
 import {
+  type AnnotationMutationReceipt,
+  type AnnotationOmissionReceipt,
   limitAnnotationEntries,
   parseAnnotationTextInput,
   resolveAnnotationInput,
@@ -44,6 +46,8 @@ export interface NotesCommandOptions {
   eventType?: string;
   /** Include total, returned, and truncation metadata. */
   includeMeta?: boolean;
+  /** Return complete note history after a mutation instead of a bounded receipt. */
+  fullHistory?: boolean;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -70,6 +74,10 @@ export interface NotesResult {
   limit?: number;
   /** Number of structured context events in the returned projection. */
   structured_event_count?: number;
+  /** Mutation identity when this result changed the collection. */
+  mutation_receipt?: AnnotationMutationReceipt;
+  /** Declares whether older notes were withheld from a mutation response. */
+  omission_receipt?: AnnotationOmissionReceipt;
 }
 
 function parseStructuredEventPayload(

@@ -2,11 +2,13 @@ id: pm-0k19l7
 title: "pm get silently discards --output-include field names because entity reads bind the flag to sections while collection reads bind it to fields, and the omission receipt reports no omissions either way"
 description: "One documented flag addresses two disjoint namespaces depending on the shape of the read. On pm get a field name matches nothing and is dropped with no diagnostic, so the highest-frequency read in the agent loop has no working field projection; mixing a section name with field names drops the item entity entirely. Both paths report omission_receipt.has_omissions false."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",output-contract,token-efficiency
 created_at: "2026-08-07T11:16:55.129Z"
-updated_at: "2026-08-07T11:19:55.402Z"
+updated_at: "2026-08-07T14:58:52.243Z"
+closed_at: "2026-08-07T14:58:51.742Z"
+completed_at: "2026-08-07T14:58:51.742Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The namespace of --output-include is declared once in the output contract and is identical across entity and collection reads; Field projection works on pm get: requesting id and title returns an item carrying id and title, and the token receipt reflects the reduction; An --output-include token that matches neither a declared field nor a declared section is refused with a recovery hint naming the valid vocabulary for that command, rather than discarded; Mixing section and field names is either supported with defined precedence or refused; it can never silently drop the entity the read exists to return; The omission receipt reports every field and section withheld by an --output-include selection, and a conformance test asserts receipt-versus-payload agreement on both read shapes"
@@ -18,8 +20,9 @@ parent: pm-mpbb
 risk: medium
 confidence: high
 severity: high
-expected_result: "A field name passed to --output-include either projects that field on every read shape, or is refused with a message naming the correct flag; anything withheld appears in the omission receipt"
-actual_result: On entity reads field names are silently discarded and the full entity is billed; adding a section name to the list drops the item entity; omission_receipt.has_omissions is false in both cases
+resolution: "Unified get entity projection now validates and applies item fields, item.<field> selectors, full item selection, and present top-level sections through the shared SDK read-output contract."
+expected_result: "pm get and SDK get honor explicit entity field/section selectors, reject invalid combinations deterministically, and emit truthful omission receipts."
+actual_result: CLI and SDK parity integration covers bare/prefixed/full/section selectors and omission receipts; exact-head coverage and all release gates pass.
 dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-cha95z,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
@@ -37,4 +40,19 @@ dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
   pm-tuadp2,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-x4nn3z,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-ydshl9,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-07T14:58:02.927Z","harness:codex","Final evidence: get projection now accepts bare item fields and item.<field>, supports full item and present sections, rejects unknown or conflicting selectors with stable usage guidance, and emits exact omission receipts. CLI/SDK integration passed inside the 445-file, 6,938-test suite; coverage is 49,824/49,824 statements, 36,260/36,260 branches, 10,203/10,203 functions, and 48,261/48,261 lines."
+learnings[1]{created_at,author,text}:
+  "2026-08-07T14:58:03.382Z","harness:codex",Entity read projection must derive its selectable top-level vocabulary from the actual result envelope while keeping item-field vocabulary stable; otherwise a selector either lies about absent data or silently disappears.
+files[5]{path,scope,note}:
+  src/sdk/read-output-contracts.ts,project,get projection vocabulary and omission receipts
+  src/sdk/runtime.ts,project,SDK transport projection parity
+  src/sdk/cli-contracts/tool-schema.ts,project,machine-readable get selector contract
+  tests/unit/sdk/read-contract-integrity.spec.ts,project,selector unit and refusal coverage
+  tests/integration/sdk-context-integrity.integration.spec.ts,project,CLI SDK selector parity acceptance
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY.md,project,get projection vocabulary and omission recovery
+close_reason: "Implemented and proved unified get field/section projection, deterministic refusals, and truthful omission receipts across CLI and SDK; exact-head 100% coverage and all release gates pass."
 body: "## Reproduction\n\nMeasured 2026-08-07 on the live workspace.\n\n```\npm list --status open --limit 3 --output-include id,title --json\n  -> rows carry exactly {id, title}                       # field projection, correct\n\npm get pm-n7rr --output-include title --json\n  -> item carries all 23 fields, 2,219 estimated tokens   # silently ignored\n  -> omission_receipt.has_omissions = false\n\npm get pm-n7rr --output-include item --json\n  -> children, claim_state and linked dropped; 1,846 tokens  # section filter, works\n\npm get pm-x --output-include body,acceptance_criteria,children --json\n  -> the entire `item` entity is dropped from the response\n  -> omission_receipt.has_omissions = false\n```\n\n## The defect\n\n`--output-include` is documented once, as \"Retain comma-separated fields or sections in read output\", and implemented as two different things.\n\nOn a collection read the argument names **row fields** and projection works. On an entity read the argument names **top-level sections**, so a field name matches nothing, is discarded without a diagnostic, and the caller pays the full entity cost believing it asked for less. Worse, the two namespaces are not disjoint: pass one recognised section name alongside field names and the section filter engages, dropping every unlisted section — including `item` itself, the only section the caller wanted.\n\nBoth failures are silent in the same way and in the same place. The omission receipt exists precisely to name what a bounded read withheld and which flag restores it. It reports `has_omissions: false` for a request that was ignored in full, and for a request that discarded the entity.\n\n## Why this matters more than its size suggests\n\n`pm get` is the highest-frequency read in the documented agent loop — the verification recipe in the operating rules names it first, and every claim about tracked state is supposed to be backed by it. It is also the one read with no working field projection, so the cheapest possible question, \"what is this item's title and status\", costs the same as the most expensive one. At a thousand concurrent agents that difference is the difference between a bounded and an unbounded fleet budget.\n\nThe rule this violates is already written down: a value that a surface accepts and a consumer ignores is a removal that reports success. Here the accepting surface and the blind consumer are the same command.\n\n## Boundary\n\nThe fix is not to make field names work on entity reads by accident. It is to decide, once, whether `--output-include` addresses fields or sections, to give the other concept its own declared spelling, and to make an unmatched token a refusal that teaches rather than a silent discard. Whatever is decided, the omission receipt must report it."

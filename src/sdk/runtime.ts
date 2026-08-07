@@ -88,7 +88,10 @@ export type {
   PmReadOutputResultFor,
   PmReadOutputSurfaceContract,
 } from "./read-output-contracts.js";
-export type { PmReadOutputSessionReceipt, PmReadOutputSessionState } from "./read-output-session.js";
+export type {
+  PmReadOutputSessionReceipt,
+  PmReadOutputSessionState,
+} from "./read-output-session.js";
 export type { PmContextIntentContract } from "./context-intent-contracts.js";
 export type { PmErrorCodeContract } from "./error-code-catalog.js";
 export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
@@ -101,6 +104,7 @@ import {
 import { runAppend } from "./lifecycle/append.js";
 import { runClaim, runClaimNext, runRelease } from "./lifecycle/claim.js";
 import { runCloseMany } from "./lifecycle/close-many.js";
+import { normalizeAnnotationTransportOptions } from "./annotations.js";
 import { runComments } from "./comments.js";
 import { runHistory } from "./query/history.js";
 import { runLearnings } from "./learnings.js";
@@ -162,7 +166,7 @@ import {
   runRuntimeWorkspaceAction,
 } from "./runtime-extended-actions.js";
 import {
-  acknowledgeUnknownAuthorHistoryEvents,
+  acknowledgeUnknownAuthorHistoryEventsFromTransport,
   type AcknowledgeUnknownAuthorEventsOptions,
 } from "./author-attribution.js";
 import {
@@ -3016,7 +3020,7 @@ async function runMcpCloseAction(
 }
 
 function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const commentOptions: Record<string, unknown> = { ...ctx.options };
+  const commentOptions = normalizeAnnotationTransportOptions(ctx.options);
   const isListing =
     commentOptions.add === undefined &&
     commentOptions.stdin === undefined &&
@@ -3025,11 +3029,10 @@ function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
     commentOptions.delete === undefined;
   if (isListing) {
     commentOptions.includeMeta = true;
-    if (commentOptions.limit === undefined && commentOptions.full !== true) {
+    if (commentOptions.limit === undefined && commentOptions.fullHistory !== true) {
       commentOptions.limit = "20";
     }
   }
-  delete commentOptions.full;
   return runComments(requireMcpItemId(ctx), commentOptions, ctx.global);
 }
 
@@ -3621,27 +3624,9 @@ function runMcpGraphAction(ctx: McpActionDispatchContext): Promise<unknown> {
 function runMcpHistoryAuthorAcknowledgeAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
-  const merged = { ...ctx.args, ...ctx.options };
-  const events = readStringArray(merged.historyEvent).map((value) => {
-    const separator = value.lastIndexOf(":");
-    return {
-      item_id: value.slice(0, separator).trim(),
-      line: Number(value.slice(separator + 1)),
-    };
-  });
-  return acknowledgeUnknownAuthorHistoryEvents(
+  return acknowledgeUnknownAuthorHistoryEventsFromTransport(
     resolvePmRoot(process.cwd(), ctx.global.path),
-    {
-      events,
-      all_actionable:
-        merged.allActionable === true || merged.all_actionable === true,
-      attributed_author:
-        readString(merged, "attributedAuthor") ??
-        readString(merged, "attributed_author") ??
-        "",
-      reviewer: readString(merged, "reviewer") ?? "",
-      reason: readString(merged, "reason") ?? "",
-    },
+    { ...ctx.args, ...ctx.options },
   );
 }
 
@@ -3714,9 +3699,18 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   "close-task": runMcpCloseTaskAction,
   close: runMcpCloseAction,
   comments: runMcpCommentsAction,
-  notes: (ctx) => runNotes(requireMcpItemId(ctx), ctx.options, ctx.global),
+  notes: (ctx) =>
+    runNotes(
+      requireMcpItemId(ctx),
+      normalizeAnnotationTransportOptions(ctx.options),
+      ctx.global,
+    ),
   learnings: (ctx) =>
-    runLearnings(requireMcpItemId(ctx), ctx.options, ctx.global),
+    runLearnings(
+      requireMcpItemId(ctx),
+      normalizeAnnotationTransportOptions(ctx.options),
+      ctx.global,
+    ),
   files: runMcpFilesAction,
   docs: (ctx) =>
     runDocs(requireMcpItemId(ctx), withAddNoteOption(ctx.options), ctx.global),

@@ -713,10 +713,114 @@ function projectRecordFields(
   );
 }
 
-function applyIncludeProjection(
+function getProjectionVocabulary(result: Record<string, unknown>): {
+  item: Record<string, unknown>;
+  itemFields: string[];
+  sections: string[];
+  valid: string[];
+} {
+  const item = isRecord(result.item) ? result.item : {};
+  const itemFields = Object.keys(item).sort((left, right) =>
+    left.localeCompare(right),
+  );
+  const sections = Object.keys(result)
+    .filter(
+      (key) =>
+        key !== "item" &&
+        key !== "read_output" &&
+        !ENVELOPE_KEYS.has(key),
+    )
+    .sort((left, right) => left.localeCompare(right));
+  return {
+    item,
+    itemFields,
+    sections,
+    valid: [
+      ...itemFields,
+      "item",
+      ...itemFields.map((field) => `item.${field}`),
+      ...sections,
+    ],
+  };
+}
+
+function applyGetIncludeProjection(
   result: Record<string, unknown>,
   selectors: readonly string[],
 ): Record<string, unknown> {
+  const vocabulary = getProjectionVocabulary(result);
+  const unknown = selectors.filter(
+    (selector) => !vocabulary.valid.includes(selector),
+  );
+  if (unknown.length > 0) {
+    throw new PmCliError(
+      `Unknown --output-include selector(s) for get: ${unknown.join(", ")}. Valid selectors: ${vocabulary.valid.join(", ")}.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const fullItem = selectors.includes("item");
+  const itemSelectors = selectors
+    .flatMap((selector) =>
+      selector.startsWith("item.")
+        ? [selector.slice("item.".length)]
+        : vocabulary.itemFields.includes(selector)
+          ? [selector]
+          : [],
+    )
+    .filter((selector, index, values) => values.indexOf(selector) === index);
+  if (fullItem && itemSelectors.length > 0) {
+    throw new PmCliError(
+      "--output-include cannot mix full sections with projected fields; use item or item.<field>, not both.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const selectedSections = new Set(
+    selectors.filter((selector) => vocabulary.sections.includes(selector)),
+  );
+  const projected = Object.fromEntries(
+    Object.entries(result).filter(
+      ([key]) => ENVELOPE_KEYS.has(key) || selectedSections.has(key),
+    ),
+  );
+  if (fullItem) {
+    projected.item = vocabulary.item;
+  } else if (itemSelectors.length > 0) {
+    projected.item = projectRecordFields(vocabulary.item, itemSelectors);
+  }
+  const omittedFieldGroups = [
+    ...(fullItem
+      ? []
+      : itemSelectors.length > 0
+        ? vocabulary.itemFields
+          .filter((field) => !itemSelectors.includes(field))
+          .map((field) => ({
+            name: `item.${field}`,
+            restore_with: `--output-include item.${field}`,
+          }))
+        : [{ name: "item", restore_with: "--output-include item" }]),
+    ...vocabulary.sections
+      .filter((section) => !selectedSections.has(section))
+      .map((section) => ({
+        name: section,
+        restore_with: `--output-include ${section}`,
+      })),
+  ];
+  projected.omission_receipt = {
+    has_omissions: omittedFieldGroups.length > 0,
+    omitted_field_group_count: omittedFieldGroups.length,
+    omitted_field_groups: omittedFieldGroups,
+  };
+  return projected;
+}
+
+function applyIncludeProjection(
+  command: PmReadOutputSurface,
+  result: Record<string, unknown>,
+  selectors: readonly string[],
+): Record<string, unknown> {
+  if (command === "get") {
+    return applyGetIncludeProjection(result, selectors);
+  }
   const rows = readOutputRowPaths(result);
   const qualifiedRowSelectors = selectors.flatMap((selector) =>
     rows.flatMap((rowPath) =>
@@ -814,7 +918,11 @@ function projectReadOutputRows(
 ): Record<string, unknown> {
   let projected = { ...result };
   if (resolved.include?.source === "canonical") {
-    projected = applyIncludeProjection(projected, resolved.include.value);
+    projected = applyIncludeProjection(
+      resolved.command,
+      projected,
+      resolved.include.value,
+    );
   }
   if (resolved.amount?.source === "canonical") {
     projected = applyAmountBound(projected, resolved.amount.value);

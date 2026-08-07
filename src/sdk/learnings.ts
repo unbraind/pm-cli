@@ -8,6 +8,8 @@ import {
 } from "./runtime-primitives.js";
 import type { LogNote } from "../types/index.js";
 import {
+  type AnnotationMutationReceipt,
+  type AnnotationOmissionReceipt,
   parseAnnotationTextInput,
   resolveAnnotationInput,
   runAnnotationCommand,
@@ -27,6 +29,8 @@ export interface LearningsCommandOptions {
   delete?: number;
   /** Value that configures or reports limit for this contract. */
   limit?: string;
+  /** Return complete learning history after a mutation instead of a bounded receipt. */
+  fullHistory?: boolean;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -43,6 +47,18 @@ export interface LearningsResult {
   learnings: LogNote[];
   /** Value that configures or reports count for this contract. */
   count: number;
+  /** Total learning count after the mutation. */
+  total_count?: number;
+  /** Number of learning entries returned in this projection. */
+  returned_count?: number;
+  /** Whether additional stored learning entries were withheld. */
+  has_more?: boolean;
+  /** Applied read limit when one was requested. */
+  limit?: number;
+  /** Mutation identity when this result changed the collection. */
+  mutation_receipt?: AnnotationMutationReceipt;
+  /** Declares whether older learnings were withheld from a mutation response. */
+  omission_receipt?: AnnotationOmissionReceipt;
 }
 
 /** Implements run learnings for the public runtime surface of this module. */

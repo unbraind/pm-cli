@@ -56,6 +56,7 @@ pm guide release --json
 - [Improvement Ledger and History Analytics](IMPROVEMENT_ANALYTICS.md) - audited quantitative observations, live provenance coverage, and bounded observational fleet outcomes.
 - [SDK Evidence Traceability and Integrity](SDK_EVIDENCE_TRACEABILITY.md) - reverse source-to-item lookup, atomic evidence replacement, no-op history, linked-test collision classification, and telemetry drain receipts.
 - [SDK Context Integrity Primitives](SDK_CONTEXT_INTEGRITY_PRIMITIVES.md) - batch duplicate discovery, structured errors, Plan evidence/lifecycle, sparse settings, tombstones, linked-test output, relocation diagnostics, and scoped output services.
+- [SDK Context Integrity](SDK_CONTEXT_INTEGRITY.md) - truthful `get` projections, bounded annotation mutations, shared author coordinates, health provider boundaries, and changeset-aware replication gates.
 - [Reproducible Workspaces and Snapshots](REPRODUCIBLE_WORKSPACES.md) - deterministic SDK recipes and content-addressed authoritative tracker restore points.
 - [Portable Corpus Shapes](CORPUS_SHAPES.md) - versioned SDK populations for realistic benchmarks, evaluations, and package tests.
 - [Agent UX Contracts](AGENT_UX_CONTRACTS.md) - ordering-cycle advisories, graph count units, collision safety, compact context, ownership wording, and recovery behavior.

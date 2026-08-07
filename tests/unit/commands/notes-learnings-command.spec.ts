@@ -517,7 +517,7 @@ describe.each(TARGETS)("run%s", (target) => {
 
       const deleted = await target.run(
         id,
-        { delete: 2 },
+        { delete: 2, fullHistory: true },
         { path: context.pmPath },
       );
       expect(

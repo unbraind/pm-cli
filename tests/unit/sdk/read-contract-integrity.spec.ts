@@ -1,0 +1,219 @@
+import { describe, expect, it } from "vitest";
+import { createTestItemId } from "../../helpers/itemFactory.js";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { runComments } from "../../../src/sdk/comments.js";
+import { runLearnings } from "../../../src/sdk/learnings.js";
+import { runNotes } from "../../../src/sdk/notes.js";
+import {
+  parseUnknownAuthorHistoryEventCoordinates,
+  resolveUnknownAuthorAcknowledgmentSelector,
+} from "../../../src/sdk/author-attribution.js";
+import { _testOnlyHealthCommand } from "../../../src/sdk/governance/health.js";
+import { applyReadOutputDimensions } from "../../../src/sdk/read-output-contracts.js";
+
+describe("SDK read contract integrity", () => {
+  it("projects the primary get entity with the same bare-field grammar as collections", () => {
+    const projected = applyReadOutputDimensions(
+      "get",
+      { outputInclude: "id,title" },
+      {
+        item: { id: "pm-1", title: "One", body: "withheld" },
+        children: [{ id: "pm-child", title: "Child", body: "retained" }],
+        claim_state: { claimed: false },
+      },
+    );
+
+    expect(projected).toMatchObject({
+      item: { id: "pm-1", title: "One" },
+      omission_receipt: {
+        has_omissions: true,
+        omitted_field_groups: expect.arrayContaining([
+          {
+            name: "item.body",
+            restore_with: "--output-include item.body",
+          },
+          { name: "children", restore_with: "--output-include children" },
+        ]),
+      },
+    });
+    expect(projected).not.toHaveProperty("children");
+    expect(projected).not.toHaveProperty("claim_state");
+
+    const fullItem = applyReadOutputDimensions(
+      "get",
+      { outputInclude: "item,claim_state" },
+      {
+        item: { id: "pm-1", title: "One", body: "retained" },
+        children: [],
+        claim_state: { claimed: false },
+      },
+    );
+    expect(fullItem).toMatchObject({
+      item: { id: "pm-1", title: "One", body: "retained" },
+      claim_state: { claimed: false },
+    });
+    expect(fullItem).not.toHaveProperty(
+      "omission_receipt.omitted_field_groups",
+      expect.arrayContaining([{ name: "item" }]),
+    );
+
+    expect(
+      applyReadOutputDimensions(
+        "get",
+        { outputInclude: "item.title" },
+        {
+          item: { id: "pm-1", title: "One", body: "retained" },
+          children: [],
+          claim_state: { claimed: false },
+        },
+      ),
+    ).toMatchObject({
+      item: { title: "One" },
+    });
+
+    expect(
+      applyReadOutputDimensions(
+        "get",
+        { outputInclude: "children" },
+        { item: null, children: [] },
+      ),
+    ).toMatchObject({
+      children: [],
+      omission_receipt: {
+        omitted_field_groups: [
+          { name: "item", restore_with: "--output-include item" },
+        ],
+      },
+    });
+  });
+
+  it("refuses unknown and ambiguous get selectors with the valid vocabulary", () => {
+    const result = {
+      item: { id: "pm-1", title: "One" },
+      children: [],
+      claim_state: { claimed: false },
+    };
+    expect(() =>
+      applyReadOutputDimensions("get", { outputInclude: "missing" }, result),
+    ).toThrow(/Valid selectors:.*id.*title.*item/u);
+    expect(() =>
+      applyReadOutputDimensions(
+        "get",
+        { outputInclude: "item,id" },
+        result,
+      ),
+    ).toThrow(/cannot mix full sections with projected fields/u);
+  });
+
+  it("returns bounded mutation receipts independently of annotation history size", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, {
+        title: "bounded annotation receipts",
+        tags: "sdk,receipts",
+        estimate: "10",
+      });
+      const runners = [
+        ["comments", runComments],
+        ["notes", runNotes],
+        ["learnings", runLearnings],
+      ] as const;
+
+      for (const [collection, run] of runners) {
+        for (let index = 0; index < 20; index += 1) {
+          await run(
+            id,
+            { add: `${collection}-${String(index)}` },
+            { path: context.pmPath },
+          );
+        }
+        const receipt = await run(
+          id,
+          { add: `${collection}-latest` },
+          { path: context.pmPath },
+        );
+        expect(receipt).toMatchObject({
+          id,
+          count: 1,
+          total_count: 21,
+          mutation_receipt: {
+            action: "add",
+            entry_index: 21,
+            changed_count: 1,
+            full_history_included: false,
+          },
+          omission_receipt: {
+            has_omissions: true,
+            omitted_field_groups: [
+              {
+                name: `${collection}_history`,
+                restore_with: "--full-history",
+              },
+            ],
+          },
+        });
+        expect(
+          (receipt as unknown as Record<string, unknown[]>)[collection],
+        ).toHaveLength(1);
+        expect(JSON.stringify(receipt).length).toBeLessThan(1_000);
+
+        const full = await run(
+          id,
+          { add: `${collection}-full`, fullHistory: true },
+          { path: context.pmPath },
+        );
+        expect(
+          (full as unknown as Record<string, unknown[]>)[collection],
+        ).toHaveLength(22);
+        expect(full).toMatchObject({
+          total_count: 22,
+          omission_receipt: { has_omissions: false },
+        });
+      }
+    });
+  });
+
+  it("keeps health read-only unless vector refresh is explicitly requested", () => {
+    expect(_testOnlyHealthCommand.resolveVectorRefreshPolicy({})).toEqual({
+      enabled: false,
+      checkOnly: false,
+      noRefresh: true,
+      refreshVectors: false,
+    });
+    expect(
+      _testOnlyHealthCommand.resolveVectorRefreshPolicy({
+        refreshVectors: true,
+      }),
+    ).toEqual({
+      enabled: true,
+      checkOnly: false,
+      noRefresh: false,
+      refreshVectors: true,
+    });
+  });
+
+  it("uses one SDK-owned selector and coordinate grammar for CLI and SDK callers", () => {
+    expect(parseUnknownAuthorHistoryEventCoordinates(["_workspace:4"])).toEqual(
+      [{ item_id: "_workspace", line: 4 }],
+    );
+    expect(
+      resolveUnknownAuthorAcknowledgmentSelector(["_workspace:4"], false),
+    ).toEqual({
+      events: [{ item_id: "_workspace", line: 4 }],
+      all_actionable: false,
+    });
+    expect(() =>
+      resolveUnknownAuthorAcknowledgmentSelector([], false),
+    ).toThrowError(
+      expect.objectContaining({
+        code: "history_author_acknowledge_selector_required",
+      }),
+    );
+    expect(() =>
+      resolveUnknownAuthorAcknowledgmentSelector(["pm-one:1"], true),
+    ).toThrowError(
+      expect.objectContaining({
+        code: "history_author_acknowledge_selector_conflict",
+      }),
+    );
+  });
+});

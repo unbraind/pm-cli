@@ -883,7 +883,7 @@ describe("runComments edit/delete (GH-243)", () => {
       const original = await runComments(id, {}, { path: context.pmPath });
       const secondCreatedAt = original.comments[1].created_at;
 
-      const edited = await runComments(id, { edit: 2, add: "second fixed", author: "carol" }, { path: context.pmPath });
+      const edited = await runComments(id, { edit: 2, add: "second fixed", author: "carol", fullHistory: true }, { path: context.pmPath });
       expect(edited.comments).toHaveLength(2);
       expect(edited.comments[1].text).toBe("second fixed");
       // created_at + original author are preserved; edited_at is stamped.
@@ -902,7 +902,7 @@ describe("runComments edit/delete (GH-243)", () => {
       await runComments(id, { add: "remove-me" }, { path: context.pmPath });
       await runComments(id, { add: "keep-me-too" }, { path: context.pmPath });
 
-      const afterDelete = await runComments(id, { delete: 2 }, { path: context.pmPath });
+      const afterDelete = await runComments(id, { delete: 2, fullHistory: true }, { path: context.pmPath });
       expect(afterDelete.comments.map((entry) => entry.text)).toEqual(["keep-me", "keep-me-too"]);
     });
   });
@@ -1136,11 +1136,11 @@ describe("runComments edit/delete (GH-243)", () => {
       context.runCli(["comments", id, "first", "--json"], { expectJson: true });
       context.runCli(["comments", id, "second", "--json"], { expectJson: true });
 
-      const edited = context.runCli(["comments", id, "--edit", "2", "second-fixed", "--json"], { expectJson: true });
+      const edited = context.runCli(["comments", id, "--edit", "2", "second-fixed", "--full-history", "--json"], { expectJson: true });
       expect(edited.code).toBe(0);
       expect((edited.json as { comments: Array<{ text: string }> }).comments[1].text).toBe("second-fixed");
 
-      const deleted = context.runCli(["comments", id, "--delete", "1", "--json"], { expectJson: true });
+      const deleted = context.runCli(["comments", id, "--delete", "1", "--full-history", "--json"], { expectJson: true });
       expect(deleted.code).toBe(0);
       expect((deleted.json as { comments: Array<{ text: string }> }).comments.map((entry) => entry.text)).toEqual(["second-fixed"]);
 

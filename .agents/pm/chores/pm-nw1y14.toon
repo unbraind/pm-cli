@@ -1,0 +1,44 @@
+id: pm-nw1y14
+title: Refresh tsx to 4.23.11 with full release-gate proof
+description: "Adopt the current compatible tsx patch in the development toolchain, regenerate the lockfile through pnpm, and prove the full SDK/CLI release gate on the resulting exact head."
+type: Chore
+status: closed
+priority: 2
+tags[3]: dependencies,release-gate,toolchain
+created_at: "2026-08-07T14:47:47.731Z"
+updated_at: "2026-08-07T14:59:35.219Z"
+closed_at: "2026-08-07T14:58:57.012Z"
+completed_at: "2026-08-07T14:58:57.012Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: package.json and pnpm-lock.yaml resolve tsx 4.23.11; pnpm audit remains clean and only deliberately deferred incompatible majors remain outdated; the exact dependency head passes coverage 100/100/100/100 and the complete quality/security/package gate
+value: Keep the executable TypeScript toolchain current without widening supported-runtime constraints.
+outcome: "A reproducible, fully verified patch-only dependency refresh."
+why_now: The live dependency inventory found one compatible patch update while the requested broad SDK/CLI tranche is active.
+parent: pm-u9d0
+resolution: Updated the compatible TypeScript executor from tsx 4.23.8 to registry-current 4.23.11 with reproducible lock and supply-chain policy state.
+expected_result: The repository uses the latest compatible tsx patch without widening the Node support floor or introducing audit findings.
+actual_result: "tsx 4.23.11 is locked, the only remaining outdated packages are the two intentionally deferred incompatible majors, audit is clean, and the exact dependency head passes all gates."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-a2g6,related,"2026-08-07T14:48:36.238Z","harness:codex","cli:update:dep",detected
+  pm-do5b,related,"2026-08-07T14:48:36.238Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,related,"2026-08-07T14:48:36.238Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-08-07T14:47:47.731Z","harness:codex","Duplicate check (all statuses): searched tsx,4.23.9,dependency update,and toolchain lineage. pm-a2g6 is the closed historical compatible-bump tranche; pm-ksr40d and pm-do5b are distinct open major migrations with explicit compatibility blockers. No current item owns this patch refresh,so this dated child under pm-u9d0 is canonical."
+  "2026-08-07T14:48:40.003Z","harness:codex","Relationship rationale: pm-a2g6 is the completed compatible-bump precedent; pm-ksr40d and pm-do5b are the two intentionally deferred incompatible major tracks. Keeping all three edges makes the patch-versus-major decision legible in the project graph."
+  "2026-08-07T14:49:08.522Z","harness:codex","Registry correction: the initial live lookup observed 4.23.9, but the install transaction reported 4.23.11 and a fresh npm registry query confirmed 4.23.11 with Node >=18. The canonical item and acceptance criteria now target 4.23.11 before final verification."
+  "2026-08-07T14:58:11.065Z","harness:codex","Final evidence: package.json and pnpm-lock.yaml resolve registry-current tsx 4.23.11 (Node >=18); pnpm's fresh-release exception is explicit in pnpm-workspace.yaml. pnpm outdated now reports only the two canonical incompatible majors pm-ksr40d and pm-do5b. pnpm audit reports 0 vulnerabilities across 357 dependencies, and the exact dependency head passes all 6,938 tests at 100/100/100/100 plus the full quality/security/package gate."
+  "2026-08-07T14:59:35.218Z","harness:codex","Changelog evidence: latest registry pm-changelog 2026.8.7 installed and generated CHANGELOG.md from 1,959 closed items; the immediate --check rerun reported unchanged."
+learnings[1]{created_at,author,text}:
+  "2026-08-07T14:58:11.609Z","harness:codex","Re-query the registry after an install reports a newer version than the initial inventory; dependency state can advance within one delivery run, and exact-head evidence must name the version actually locked."
+files[3]{path,scope,note}:
+  package.json,project,Pins the current compatible tsx patch and exposes the replication gate script.
+  pnpm-lock.yaml,project,Records the reproducible tsx 4.23.11 dependency graph.
+  pnpm-workspace.yaml,project,Records pnpm's explicit fresh-release exception for the registry-current tsx patch.
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,900
+  "pnpm typecheck && pnpm lint && pnpm contracts:check && pnpm quality:docs-links && pnpm quality:docs-skills && pnpm quality:package-artifact && pnpm security:scan",project,1200
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog 2026.8.7 generated dependency refresh record
+close_reason: "Updated tsx to registry-current 4.23.11 with reproducible lock/policy state, clean audit, intentional major deferrals, exact 100/100/100/100 coverage, and all release gates green."
+body: ""

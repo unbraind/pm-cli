@@ -6,16 +6,35 @@ status: open
 priority: 1
 tags[4]: "area:cli","area:sdk",boundary,ux
 created_at: "2026-08-07T05:20:16.979Z"
-updated_at: "2026-08-07T05:20:16.979Z"
+updated_at: "2026-08-07T14:58:59.026Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Every rule a CLI registration enforces is either delegated to an SDK primitive or recorded as a decision explaining why the CLI is authoritative for it; A gate compares the refusal an SDK primitive produces against the refusal its CLI wrapper produces for the same input and fails on divergent codes or exit codes; The acknowledgment selector rule and the event-coordinate grammar each have exactly one implementation, and the CLI-side count of independent refusals is reported so the ratchet direction is observable; An SDK-only consumer receives the same refusal code as a CLI caller for every rule the SDK owns, proved by a negative control that fails when one side is changed alone"
 parent: pm-usfg
 risk: medium
 confidence: high
+expected_result: "CLI-only refusals are measurable, shared rules use stable SDK codes, and future partial migrations fail a mandatory release gate."
+actual_result: "This tranche reduced the observed census from the reported 87 to 76 CLI-owned refusals, migrated get-selector and author-coordinate rules to shared SDK ownership, and installed a fail-closed drift/parity gate. The remaining census still requires rule-by-rule ownership decisions or SDK delegation."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rgaal,implements,"2026-08-07T05:20:16.979Z","harness:claude-code","cli:create:dep",detected
   pm-c3uru0,discovered_from,"2026-08-07T05:20:16.979Z","harness:claude-code","cli:create:dep",detected
   pm-hqa8g1,related,"2026-08-07T05:20:16.979Z","harness:claude-code","cli:create:dep",detected
   pm-x4nn3z,related,"2026-08-07T05:20:16.979Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-07T14:58:07.343Z","harness:codex","Final evidence: the replication manifest contains an exact CLI-owned refusal census (76 across 12 files), zero-waiver policy, stable shared refusal codes, and fail-closed drift tests. This tranche moves get selector and author-coordinate policy into SDK-owned primitives and makes future partial migration visible in quality:static."
+  "2026-08-07T14:58:58.550Z","harness:codex","Closeout boundary: this broad PR materially advances the item but does not satisfy its every-rule acceptance criterion. The live census remains 76 CLI-owned refusals, so the item is returned to open and released rather than falsely closed. Future work can now use the exact gate as its ratchet."
+learnings[1]{created_at,author,text}:
+  "2026-08-07T14:58:07.798Z","harness:codex","A refusal-migration roadmap needs an executable residual census, not only a desired end state. Exact file/count drift makes remaining CLI ownership explicit without pretending the entire historical backlog vanished in one change."
+files[7]{path,scope,note}:
+  src/sdk/author-attribution.ts,project,shared classified SDK refusals
+  src/cli/register-history-author.ts,project,thin CLI delegation to SDK
+  src/sdk/runtime.ts,project,MCP delegation to SDK author acknowledgment
+  scripts/release/surface-replication-gate.mjs,project,CLI refusal census enforcement
+  scripts/release/surface-replication-sets.json,project,refusal dispositions and parity declarations
+  tests/unit/scripts/release/surface-replication-gate.spec.ts,project,refusal drift negative control
+  tests/integration/sdk-context-integrity.integration.spec.ts,project,CLI SDK refusal parity acceptance
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/surface-replication-gate.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY.md,project,shared refusal architecture and census policy
 body: ""

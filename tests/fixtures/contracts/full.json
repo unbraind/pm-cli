@@ -1522,6 +1522,9 @@
           "flag": "--limit"
         },
         {
+          "flag": "--full-history"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -3255,6 +3258,9 @@
         },
         {
           "flag": "--limit"
+        },
+        {
+          "flag": "--full-history"
         },
         {
           "flag": "--author"
@@ -5289,6 +5295,9 @@
         },
         {
           "flag": "--include-meta"
+        },
+        {
+          "flag": "--full-history"
         },
         {
           "flag": "--author"
@@ -14112,6 +14121,34 @@
     },
     {
       "class": "usage",
+      "code": "history_author_acknowledge_required_values_missing",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "History author acknowledge required values missing condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/author-attribution.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "class": "conflict",
+      "code": "history_author_acknowledge_selector_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "History author acknowledge selector conflict condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/author-attribution.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "class": "usage",
       "code": "history_author_acknowledge_selector_required",
       "emitting_commands": [
         "*"
@@ -14120,9 +14157,37 @@
       "meaning": "History author acknowledge selector required condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/register-history-author.ts"
+        "sdk/author-attribution.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "class": "generic_failure",
+      "code": "history_author_acknowledge_target_not_actionable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History author acknowledge target not actionable condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/author-attribution.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "class": "generic_failure",
+      "code": "history_author_acknowledge_target_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History author acknowledge target unreadable condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/author-attribution.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "class": "generic_failure",
@@ -17409,6 +17474,10 @@
           },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
+            "type": "boolean"
+          },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
           "id": {
@@ -21283,6 +21352,10 @@
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
           "id": {
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
@@ -22456,6 +22529,10 @@
           },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
+            "type": "boolean"
+          },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
           "id": {
@@ -43782,6 +43859,10 @@
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
@@ -44068,6 +44149,10 @@
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
@@ -44299,6 +44384,10 @@
           },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
+            "type": "boolean"
+          },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
           "id": {
@@ -49009,10 +49098,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.4.0"
+    "x-schema-version": "4.4.1"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.4.0",
+  "schema_version": "4.4.1",
   "selected": {
     "action": null,
     "availability_only": false,

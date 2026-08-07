@@ -93,7 +93,9 @@
         "intent_budget_unreachable",
         "cursor_chain_token_regression",
         "continuation_metadata_regression",
-        "sdk_contract_drift"
+        "sdk_contract_drift",
+        "replication_contract_drift",
+        "cli_refusal_inventory_drift"
       ],
       "bypass": {
         "allowed": false,
@@ -306,6 +308,12 @@
       "source": "docs/COMMANDS.md",
       "evidence": "`--fail-under <0..1>` turns `pm eval` into a CI gate",
       "gate": "context-retrieval",
+      "disposition": "enforced"
+    },
+    {
+      "source": "docs/SDK_CONTEXT_INTEGRITY.md",
+      "evidence": "`pnpm quality:surface-replication` activates sets from the Git changeset",
+      "gate": "static-quality",
       "disposition": "enforced"
     }
   ]

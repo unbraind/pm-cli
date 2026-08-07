@@ -576,7 +576,11 @@ describe("SDK author attribution primitives", () => {
         code: "history_author_acknowledge_selector_conflict",
       },
       {
-        options: { ...baseOptions, reviewer: " ", events: [] },
+        options: {
+          ...baseOptions,
+          reviewer: " ",
+          events: [{ item_id: "pm-classified", line: 1 }],
+        },
         code: "history_author_acknowledge_required_values_missing",
       },
       {
@@ -707,9 +711,7 @@ describe("SDK author attribution primitives", () => {
         reviewer: "maintainer",
         reason: "Missing selector.",
       }),
-    ).rejects.toThrow(
-      "requires events, reviewer, attributed_author, and reason",
-    );
+    ).rejects.toThrow("Specify exactly one selector");
 
     const program = createPmCliProgram("1.0.0");
     registerMutationCommands(program);

@@ -1,0 +1,297 @@
+{
+  "version": 1,
+  "source_file_line_cap": 3400,
+  "sets": [
+    {
+      "id": "get-output-selector-contract",
+      "owner": "pm-0k19l7",
+      "description": "Keep get field and section projection aligned across the SDK implementation, public documentation, and acceptance evidence.",
+      "triggers": [
+        "src/sdk/read-output-contracts.ts",
+        "tests/unit/sdk/read-contract-integrity.spec.ts",
+        "docs/SDK_CONTEXT_INTEGRITY.md"
+      ],
+      "members": [
+        {
+          "path": "src/sdk/read-output-contracts.ts",
+          "contains_all": [
+            "applyGetIncludeProjection",
+            "Unknown --output-include selector(s) for get",
+            "omission_receipt"
+          ]
+        },
+        {
+          "path": "tests/unit/sdk/read-contract-integrity.spec.ts",
+          "contains_all": [
+            "projects the primary get entity",
+            "refuses unknown and ambiguous get selectors"
+          ]
+        },
+        {
+          "path": "docs/SDK_CONTEXT_INTEGRITY.md",
+          "contains_all": ["`get` output selectors", "item.<field>"]
+        }
+      ]
+    },
+    {
+      "id": "annotation-mutation-receipts",
+      "owner": "pm-9stazf",
+      "description": "Replicate bounded mutation receipts and the explicit full-history escape hatch across every annotation transport.",
+      "triggers": [
+        "src/sdk/annotations.ts",
+        "src/sdk/comments.ts",
+        "src/sdk/notes.ts",
+        "src/sdk/learnings.ts",
+        "src/cli/register-annotations.ts",
+        "src/sdk/cli-contracts/flag-contracts.ts",
+        "src/sdk/cli-contracts/tool-schema.ts",
+        "src/sdk/cli-contracts/tool-parameter-tables.ts",
+        "src/sdk/completion.ts",
+        "src/sdk/runtime.ts"
+      ],
+      "members": [
+        {
+          "path": "src/sdk/annotations.ts",
+          "contains_all": [
+            "AnnotationMutationReceipt",
+            "normalizeAnnotationTransportOptions",
+            "fullHistory",
+            "omission_receipt"
+          ]
+        },
+        {
+          "path": "src/sdk/comments.ts",
+          "contains_all": ["fullHistory", "AnnotationMutationReceipt"]
+        },
+        {
+          "path": "src/sdk/notes.ts",
+          "contains_all": ["fullHistory", "AnnotationMutationReceipt"]
+        },
+        {
+          "path": "src/sdk/learnings.ts",
+          "contains_all": ["fullHistory", "AnnotationMutationReceipt"]
+        },
+        {
+          "path": "src/cli/register-annotations.ts",
+          "contains_all": ["--full-history", "fullHistory: options.fullHistory"]
+        },
+        {
+          "path": "src/sdk/cli-contracts/flag-contracts.ts",
+          "contains_all": ["--full-history"]
+        },
+        {
+          "path": "src/sdk/cli-contracts/tool-schema.ts",
+          "contains_all": ["\"full\"", "4.4.1"]
+        },
+        {
+          "path": "src/sdk/cli-contracts/tool-parameter-tables.ts",
+          "contains_all": ["full: { type: \"boolean\" }"]
+        },
+        {
+          "path": "src/sdk/completion.ts",
+          "contains_all": [
+            "--full-history[Return complete post-mutation history]"
+          ]
+        },
+        {
+          "path": "src/sdk/runtime.ts",
+          "contains_all": ["normalizeAnnotationTransportOptions"]
+        },
+        {
+          "path": "tests/unit/sdk/read-contract-integrity.spec.ts",
+          "contains_all": [
+            "returns bounded mutation receipts",
+            "fullHistory: true"
+          ]
+        },
+        {
+          "path": "docs/SDK_CONTEXT_INTEGRITY.md",
+          "contains_all": ["Bounded annotation mutations", "--full-history"]
+        }
+      ]
+    },
+    {
+      "id": "unknown-author-coordinate-contract",
+      "owner": "pm-ety1qc",
+      "description": "Use one SDK-owned selector and coordinate grammar for item and workspace history across CLI and MCP.",
+      "triggers": [
+        "src/sdk/author-attribution.ts",
+        "src/cli/register-history-author.ts",
+        "src/sdk/runtime.ts"
+      ],
+      "members": [
+        {
+          "path": "src/sdk/author-attribution.ts",
+          "contains_all": [
+            "resolveUnknownAuthorAcknowledgmentSelector",
+            "parseUnknownAuthorHistoryEventCoordinates",
+            "WORKSPACE_HISTORY_ID"
+          ]
+        },
+        {
+          "path": "src/cli/register-history-author.ts",
+          "contains_all": ["resolveUnknownAuthorAcknowledgmentSelector"]
+        },
+        {
+          "path": "src/sdk/runtime.ts",
+          "contains_all": [
+            "acknowledgeUnknownAuthorHistoryEventsFromTransport",
+            "runMcpHistoryAuthorAcknowledgeAction"
+          ]
+        },
+        {
+          "path": "tests/unit/sdk/read-contract-integrity.spec.ts",
+          "contains_all": [
+            "uses one SDK-owned selector and coordinate grammar",
+            "_workspace:4"
+          ]
+        },
+        {
+          "path": "docs/SDK_CONTEXT_INTEGRITY.md",
+          "contains_all": ["_workspace:<line>", "history-author-acknowledge"]
+        }
+      ]
+    },
+    {
+      "id": "health-vector-refresh-boundary",
+      "owner": "pm-tu71",
+      "description": "Keep health read-only by default and prove provider I/O is explicit, bounded, and skippable.",
+      "triggers": [
+        "src/sdk/governance/health.ts",
+        "tests/unit/sdk/health-vector-boundary.spec.ts",
+        "docs/SDK_CONTEXT_INTEGRITY.md"
+      ],
+      "members": [
+        {
+          "path": "src/sdk/governance/health.ts",
+          "contains_all": [
+            "resolveVectorRefreshPolicy",
+            "enabled: refreshVectors",
+            "noRefresh: !refreshVectors"
+          ]
+        },
+        {
+          "path": "tests/unit/sdk/health-vector-boundary.spec.ts",
+          "contains_all": [
+            "never contacts a configured embedding provider by default",
+            "bounds an explicitly requested vector refresh"
+          ]
+        },
+        {
+          "path": "docs/SDK_CONTEXT_INTEGRITY.md",
+          "contains_all": [
+            "Health provider boundary",
+            "--refresh-vectors",
+            "--skip-vectors"
+          ]
+        }
+      ]
+    }
+  ],
+  "waivers": [],
+  "cli_refusal_dispositions": [
+    {
+      "path": "src/cli/register-mutation.ts",
+      "expected_count": 21,
+      "disposition": "transport_validation",
+      "reason": "Commander mutation syntax and local filesystem argument checks remain CLI transport policy while business mutations execute through SDK actions."
+    },
+    {
+      "path": "src/cli/register-annotations.ts",
+      "expected_count": 3,
+      "disposition": "transport_validation",
+      "reason": "Annotation text-source and positive-index conflicts are Commander transport checks before the shared SDK mutation executes."
+    },
+    {
+      "path": "src/cli/register-list-query.ts",
+      "expected_count": 14,
+      "disposition": "transport_validation",
+      "reason": "Human query syntax, output destinations, and stream conflicts are CLI transport contracts."
+    },
+    {
+      "path": "src/cli/register-operations.ts",
+      "expected_count": 8,
+      "disposition": "transport_validation",
+      "reason": "Interactive operation flags and shell-facing setup errors are owned by the CLI adapter."
+    },
+    {
+      "path": "src/cli/main.ts",
+      "expected_count": 7,
+      "disposition": "transport_validation",
+      "reason": "Root command dispatch, plugin resolution, and process-level usage failures are CLI host responsibilities."
+    },
+    {
+      "path": "src/cli/register-setup.ts",
+      "expected_count": 6,
+      "disposition": "transport_validation",
+      "reason": "Installation and shell setup arguments are not SDK domain mutations."
+    },
+    {
+      "path": "src/cli/register-structured-mutation.ts",
+      "expected_count": 4,
+      "disposition": "transport_validation",
+      "reason": "Structured stdin framing failures belong to the CLI transport before SDK dispatch."
+    },
+    {
+      "path": "src/cli/stats-analytics-json.ts",
+      "expected_count": 3,
+      "disposition": "presentation_validation",
+      "reason": "CLI-only analytics JSON projection errors are presentation-layer contracts."
+    },
+    {
+      "path": "src/cli/schema-registration-helpers.ts",
+      "expected_count": 3,
+      "disposition": "transport_validation",
+      "reason": "Commander schema flag normalization remains an adapter responsibility."
+    },
+    {
+      "path": "src/cli/extension-command-options.ts",
+      "expected_count": 3,
+      "disposition": "transport_validation",
+      "reason": "Extension command option decoding occurs before the SDK extension runtime boundary."
+    },
+    {
+      "path": "src/cli/register-files-lookup.ts",
+      "expected_count": 2,
+      "disposition": "presentation_validation",
+      "reason": "Terminal file lookup argument conflicts are CLI presentation policy."
+    },
+    {
+      "path": "src/cli/migration-gates.ts",
+      "expected_count": 2,
+      "disposition": "host_safety",
+      "reason": "Process-level migration confirmation and environment fences are CLI host safety checks."
+    }
+  ],
+  "refusal_parity_contracts": [
+    {
+      "id": "history-author-selector",
+      "owner": "pm-0xmajx",
+      "code": "history_author_acknowledge_selector_required",
+      "members": [
+        {
+          "path": "src/sdk/author-attribution.ts",
+          "contains_all": [
+            "history_author_acknowledge_selector_required",
+            "required: \"Exactly one of --event or --all-actionable\""
+          ]
+        },
+        {
+          "path": "src/cli/register-history-author.ts",
+          "contains_all": ["resolveUnknownAuthorAcknowledgmentSelector"]
+        },
+        {
+          "path": "src/sdk/runtime.ts",
+          "contains_all": ["acknowledgeUnknownAuthorHistoryEventsFromTransport"]
+        },
+        {
+          "path": "tests/unit/sdk/read-contract-integrity.spec.ts",
+          "contains_all": [
+            "history_author_acknowledge_selector_required",
+            "history_author_acknowledge_selector_conflict"
+          ]
+        }
+      ]
+    }
+  ]
+}

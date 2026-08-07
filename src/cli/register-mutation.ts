@@ -25,13 +25,39 @@ import {
   runMergeReconcile,
   runMergeReceiptReport,
 } from "./commands/merge.js";
+import { runAppend } from "./commands/append.js";
+import { runClose } from "./commands/close.js";
+import { runCloseMany } from "./commands/close-many.js";
+import { runCopy } from "./commands/copy.js";
+import { runCreate } from "./commands/create.js";
+import { runDelete } from "./commands/delete.js";
+import { runDeps } from "./commands/deps.js";
+import { runDocs } from "./commands/docs.js";
+import { runFiles, runFilesDiscover } from "./commands/files.js";
+import { runFocus } from "./commands/focus.js";
+import {
+  assertHistoryCompactTarget,
+  runHistoryCompact,
+  runHistoryCompactBulk,
+} from "./commands/history-compact.js";
+import { runHistoryRedact } from "./commands/history-redact.js";
+import {
+  assertHistoryRepairTarget,
+  runHistoryRepair,
+  runHistoryRepairAll,
+} from "./commands/history-repair.js";
+import * as profileModule from "./commands/profile.js";
+import { runRestore } from "./commands/restore.js";
+import * as schemaModule from "./commands/schema.js";
+import { runUpdate } from "./commands/update.js";
+import { runUpdateMany } from "./commands/update-many.js";
 import { createStdinTokenResolver } from "../sdk/runtime-primitives.js";
 import { resolveDescriptionStdin } from "./description-stdin.js";
 import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
 import { registerStructuredMutationCommands } from "./register-structured-mutation.js";
 import { registerHistoryAuthorAcknowledgeCommand } from "./register-history-author.js";
 import { PLAN_SUBCOMMANDS, runPlan } from "./commands/plan.js";
-import { runNotes } from "./commands/notes.js";
+import { registerAnnotationCommands } from "./register-annotations.js";
 import { registerFilesLookupCommand } from "./register-files-lookup.js";
 import {
   isPureSnakeCaseAlias,
@@ -76,7 +102,7 @@ import {
 import type { RegisterMutationCommandsOptions } from "./register-mutation-options.js";
 export type { RegisterMutationCommandsOptions } from "./register-mutation-options.js";
 
-type SchemaCommandModule = typeof import("./commands/schema.js");
+type SchemaCommandModule = typeof schemaModule;
 type SchemaCommandResult =
   | Awaited<ReturnType<SchemaCommandModule["runSchemaList"]>>
   | Awaited<ReturnType<SchemaCommandModule["runSchemaAddType"]>>
@@ -323,7 +349,7 @@ function renderSchemaResultHuman(
   }
 }
 
-type ProfileCommandModule = typeof import("./commands/profile.js");
+type ProfileCommandModule = typeof profileModule;
 type ProfileCommandResult =
   | ReturnType<ProfileCommandModule["runProfileList"]>
   | ReturnType<ProfileCommandModule["runProfileShow"]>
@@ -850,7 +876,6 @@ async function runCreateAction(
     delete options.bodyFile;
   }
   const normalized = normalizeCreateOptions(options, { requireType: false });
-  const { runCreate } = await import("./commands/create.js");
   const result = await runCreate(normalized, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);
   printResult(result, globalOptions);
@@ -893,7 +918,6 @@ async function runCloseManyAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runCloseMany } = await import("./commands/close-many.js");
   const result = await runCloseMany(
     {
       status: readOptionString(options, "filterStatus"),
@@ -937,7 +961,6 @@ async function runUpdateManyAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runUpdateMany } = await import("./commands/update-many.js");
   const result = await runUpdateMany(
     {
       status: readOptionString(options, "filterStatus"),
@@ -975,7 +998,6 @@ async function runCloseAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runClose } = await import("./commands/close.js");
   const reasonFromOption =
     (typeof options.reason === "string" &&
       options.reason.trim().length > 0 &&
@@ -1312,11 +1334,6 @@ async function runHistoryCompactAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const {
-    runHistoryCompact,
-    runHistoryCompactBulk,
-    assertHistoryCompactTarget,
-  } = await import("./commands/history-compact.js");
   const ids =
     typeof options.ids === "string" ? splitCommaList(options.ids) : undefined;
   const allOver = parseNonNegativeIntFlag(options.allOver, "--all-over");
@@ -1402,7 +1419,6 @@ async function runSchemaAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const schemaModule = await import("./commands/schema.js");
   const { SCHEMA_SUBCOMMANDS } = schemaModule;
   let normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
   let typeName = name;
@@ -1492,101 +1508,6 @@ function assertSchemaSubcommandPresent(
   );
 }
 
-function resolveCommentSources(
-  text: string | undefined,
-  options: Record<string, unknown>,
-): {
-  add: string | undefined;
-  readFromStdin: boolean;
-  readFromFile: string | undefined;
-  editIndex: number | undefined;
-  deleteIndex: number | undefined;
-  isMutation: boolean;
-} {
-  const editIndex = typeof options.edit === "number" ? options.edit : undefined;
-  const deleteIndex =
-    typeof options.delete === "number" ? options.delete : undefined;
-  const addFromOption =
-    readOptionString(options, "add") ??
-    readOptionString(options, "body") ??
-    readOptionString(options, "comment");
-  const addFromPositional = typeof text === "string" ? text : undefined;
-  const readFromStdin = options.stdin === true;
-  const readFromFile = readOptionString(options, "file");
-  const sourceCount =
-    Number(addFromOption !== undefined) +
-    Number(addFromPositional !== undefined) +
-    Number(readFromStdin) +
-    Number(readFromFile !== undefined);
-  if (sourceCount > 1) {
-    if (
-      addFromOption !== undefined &&
-      addFromPositional !== undefined &&
-      !readFromStdin &&
-      readFromFile === undefined
-    ) {
-      throw new PmCliError(
-        "Specify comment text either as positional [text] or with --add, not both",
-        EXIT_CODE.USAGE,
-      );
-    }
-    throw new PmCliError(
-      "Specify comment text with exactly one source: positional [text], --add, --stdin, or --file",
-      EXIT_CODE.USAGE,
-    );
-  }
-  const add = addFromOption ?? addFromPositional;
-  const isMutation =
-    typeof add === "string" ||
-    readFromStdin ||
-    readFromFile !== undefined ||
-    editIndex !== undefined ||
-    deleteIndex !== undefined;
-  return {
-    add,
-    readFromStdin,
-    readFromFile,
-    editIndex,
-    deleteIndex,
-    isMutation,
-  };
-}
-
-async function runCommentsAction(
-  id: string,
-  text: string | undefined,
-  options: Record<string, unknown>,
-  command: Command,
-): Promise<void> {
-  const globalOptions = getGlobalOptions(command);
-  const startedAt = Date.now();
-  const sources = resolveCommentSources(text, options);
-  const { runComments } = await import("./commands/comments.js");
-  const result = await runComments(
-    id,
-    {
-      add: sources.add,
-      stdin: sources.readFromStdin,
-      file: sources.readFromFile,
-      edit: sources.editIndex,
-      delete: sources.deleteIndex,
-      limit: readOptionString(options, "limit"),
-      author: readOptionString(options, "author"),
-      message: readOptionString(options, "message"),
-      ownershipAppendBypass: options.ownershipAppendBypass === true,
-      force: Boolean(options.force),
-    } as Parameters<typeof runComments>[1],
-    globalOptions,
-  );
-  if (sources.isMutation) {
-    await invalidateSearchCachesForMutation(globalOptions, result);
-  }
-  printResult(result, globalOptions);
-  if (globalOptions.profile) {
-    printError(`profile:command=comments took_ms=${Date.now() - startedAt}`);
-  }
-}
-
 async function runCopyAction(
   id: string,
   options: Record<string, unknown>,
@@ -1594,7 +1515,6 @@ async function runCopyAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runCopy } = await import("./commands/copy.js");
   const result = await runCopy(
     id,
     {
@@ -1619,7 +1539,6 @@ async function runFocusAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runFocus } = await import("./commands/focus.js");
   const result = await runFocus(
     id,
     { clear: options.clear === true },
@@ -1656,7 +1575,6 @@ async function runUpdateAction(
     );
     delete options.bodyFile;
   }
-  const { runUpdate } = await import("./commands/update.js");
   const result = await runUpdate(
     id,
     normalizeUpdateOptions(options),
@@ -1685,7 +1603,6 @@ async function runDeleteAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runDelete } = await import("./commands/delete.js");
   const result = await runDelete(
     id,
     {
@@ -1703,23 +1620,6 @@ async function runDeleteAction(
   if (globalOptions.profile) {
     printError(`profile:command=delete took_ms=${Date.now() - startedAt}`);
   }
-}
-
-function resolveSingleTextSource(
-  label: string,
-  positional: string | undefined,
-  options: Record<string, unknown>,
-): string | undefined {
-  const addFromOption = readOptionString(options, "add");
-  const addFromPositional =
-    typeof positional === "string" ? positional : undefined;
-  if (addFromOption !== undefined && addFromPositional !== undefined) {
-    throw new PmCliError(
-      `Specify ${label} text either as positional [text] or with --add, not both`,
-      EXIT_CODE.USAGE,
-    );
-  }
-  return addFromOption ?? addFromPositional;
 }
 
 function resolveAppendBody(
@@ -1758,7 +1658,6 @@ async function runAppendAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runAppend } = await import("./commands/append.js");
   const result = await runAppend(
     id,
     {
@@ -1784,7 +1683,6 @@ async function runRestoreAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runRestore } = await import("./commands/restore.js");
   const result = await runRestore(
     id,
     target,
@@ -1810,7 +1708,6 @@ async function runProfileAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const profileModule = await import("./commands/profile.js");
   const { PROFILE_SUBCOMMANDS } = profileModule;
   const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
   if (!normalizedSubcommand) {
@@ -1866,92 +1763,6 @@ async function runProfileAction(
   }
 }
 
-async function runNotesAction(
-  id: string,
-  text: string | undefined,
-  options: Record<string, unknown>,
-  command: Command,
-): Promise<void> {
-  const globalOptions = getGlobalOptions(command);
-  const startedAt = Date.now();
-  const add = resolveSingleTextSource("note", text, options);
-  const result = await runNotes(
-    id,
-    {
-      add,
-      addJson: readOptionString(options, "addJson"),
-      stdin: options.stdin === true,
-      file: readOptionString(options, "file"),
-      edit: typeof options.edit === "number" ? options.edit : undefined,
-      delete: typeof options.delete === "number" ? options.delete : undefined,
-      limit: readOptionString(options, "limit"),
-      since: readOptionString(options, "since"),
-      eventType: readOptionString(options, "eventType"),
-      includeMeta: options.includeMeta === true,
-      author: readOptionString(options, "author"),
-      message: readOptionString(options, "message"),
-      ownershipAppendBypass: options.ownershipAppendBypass === true,
-      force: Boolean(options.force),
-    } as Parameters<typeof runNotes>[1],
-    globalOptions,
-  );
-  if (
-    typeof add === "string" ||
-    typeof options.addJson === "string" ||
-    options.stdin === true ||
-    typeof options.file === "string" ||
-    typeof options.edit === "number" ||
-    typeof options.delete === "number"
-  ) {
-    await invalidateSearchCachesForMutation(globalOptions, result);
-  }
-  printResult(result, globalOptions);
-  if (globalOptions.profile) {
-    printError(`profile:command=notes took_ms=${Date.now() - startedAt}`);
-  }
-}
-
-async function runLearningsAction(
-  id: string,
-  text: string | undefined,
-  options: Record<string, unknown>,
-  command: Command,
-): Promise<void> {
-  const globalOptions = getGlobalOptions(command);
-  const startedAt = Date.now();
-  const add = resolveSingleTextSource("learning", text, options);
-  const { runLearnings } = await import("./commands/learnings.js");
-  const result = await runLearnings(
-    id,
-    {
-      add,
-      stdin: options.stdin === true,
-      file: readOptionString(options, "file"),
-      edit: typeof options.edit === "number" ? options.edit : undefined,
-      delete: typeof options.delete === "number" ? options.delete : undefined,
-      limit: readOptionString(options, "limit"),
-      author: readOptionString(options, "author"),
-      message: readOptionString(options, "message"),
-      ownershipAppendBypass: options.ownershipAppendBypass === true,
-      force: Boolean(options.force),
-    } as Parameters<typeof runLearnings>[1],
-    globalOptions,
-  );
-  if (
-    typeof add === "string" ||
-    options.stdin === true ||
-    typeof options.file === "string" ||
-    typeof options.edit === "number" ||
-    typeof options.delete === "number"
-  ) {
-    await invalidateSearchCachesForMutation(globalOptions, result);
-  }
-  printResult(result, globalOptions);
-  if (globalOptions.profile) {
-    printError(`profile:command=learnings took_ms=${Date.now() - startedAt}`);
-  }
-}
-
 function readStringArrayOption(
   options: Record<string, unknown>,
   key: string,
@@ -1970,7 +1781,6 @@ async function runFilesAction(
   const addGlobValues = readStringArrayOption(options, "addGlob");
   const removeValues = readStringArrayOption(options, "remove");
   const migrateValues = readStringArrayOption(options, "migrate");
-  const { runFiles } = await import("./commands/files.js");
   const result = await runFiles(
     id,
     {
@@ -2025,7 +1835,6 @@ async function runFilesDiscoverAction(
     ...command.optsWithGlobals(),
     ...options,
   };
-  const { runFilesDiscover } = await import("./commands/files.js");
   const result = await runFilesDiscover(
     id,
     {
@@ -2060,7 +1869,6 @@ async function runDocsAction(
   const addGlobValues = readStringArrayOption(options, "addGlob");
   const removeValues = readStringArrayOption(options, "remove");
   const migrateValues = readStringArrayOption(options, "migrate");
-  const { runDocs } = await import("./commands/docs.js");
   const result = await runDocs(
     id,
     {
@@ -2107,7 +1915,6 @@ async function runDepsAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const { runDeps } = await import("./commands/deps.js");
   // --format and --collapse carry commander defaults ("tree"/"none"), so
   // they are always strings by the time the action runs; --maxDepth has no
   // default and may be unset. Use `as string` rather than String(...) so an
@@ -2231,8 +2038,14 @@ export function registerMutationCommands(
       "--replace-tests",
       "Atomically replace linked test entries with the provided --test values",
     )
-    .option("--replace-files", "Atomically replace linked file entries with the provided --file values")
-    .option("--replace-docs", "Atomically replace linked doc entries with the provided --doc values")
+    .option(
+      "--replace-files",
+      "Atomically replace linked file entries with the provided --file values",
+    )
+    .option(
+      "--replace-docs",
+      "Atomically replace linked doc entries with the provided --doc values",
+    )
     .option("--clear-deps", "Clear dependency entries")
     .option("--clear-comments", "Clear comments")
     .option("--clear-notes", "Clear notes")
@@ -2431,8 +2244,14 @@ export function registerMutationCommands(
       "--replace-tests",
       "Atomically replace linked tests with provided --test values",
     )
-    .option("--replace-files", "Atomically replace linked files with provided --file values")
-    .option("--replace-docs", "Atomically replace linked docs with provided --doc values")
+    .option(
+      "--replace-files",
+      "Atomically replace linked files with provided --file values",
+    )
+    .option(
+      "--replace-docs",
+      "Atomically replace linked docs with provided --doc values",
+    )
     .option(
       "--comment <value>",
       "Add comment seed author=<value>,created_at=<iso|now>,text=<value>",
@@ -3001,7 +2820,6 @@ export function registerMutationCommands(
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runHistoryRedact } = await import("./commands/history-redact.js");
       const literal = Array.isArray(options.literal)
         ? (options.literal as string[])
         : undefined;
@@ -3065,11 +2883,6 @@ export function registerMutationCommands(
       ) => {
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();
-        const {
-          runHistoryRepair,
-          runHistoryRepairAll,
-          assertHistoryRepairTarget,
-        } = await import("./commands/history-repair.js");
         const all = options.all === true;
         assertHistoryRepairTarget(id, all);
         const repairOptions = {
@@ -3309,120 +3122,11 @@ export function registerMutationCommands(
     );
   profileCommand.action(runProfileAction);
 
-  const commentsCommand = program
-    .command("comments")
-    .argument("<id>", "Item id")
-    .argument("[text]", "Optional comment text shorthand (equivalent to --add)")
-    .option(
-      "--add <text>",
-      "Add one comment entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
-    )
-    .option(
-      "--stdin",
-      "Read comment text from stdin (supports multiline markdown)",
-    )
-    .option(
-      "--file <path>",
-      "Read comment text from file (supports multiline markdown)",
-    )
-    .option(
-      "--edit <index>",
-      "Replace the comment at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)",
-      parsePositiveIntOption("--edit"),
-    )
-    .option(
-      "--delete <index>",
-      "Delete the comment at 1-based <index>",
-      parsePositiveIntOption("--delete"),
-    )
-    .option("--limit <n>", "Return only latest n comments")
-    .option(
-      "--author [value]",
-      "Comment author (optional; falls back to PM_AUTHOR/settings)",
-    )
-    .option("--message <value>", "History message")
-    .option("--force", "Force ownership override")
-    .description("List, add, edit, or delete comments for an item.")
-    .action(runCommentsAction);
-  addHiddenOption(commentsCommand, "--body <text>", "Alias for --add", false);
-  addHiddenOption(
-    commentsCommand,
-    "--comment <text>",
-    "Alias for --add",
-    false,
-  );
+  registerAnnotationCommands(program, parsePositiveIntOption);
 
-  program
-    .command("notes")
-    .argument("<id>", "Item id")
-    .argument(
-      "[text]",
-      "Optional note text shorthand (equivalent to --add; use - for stdin)",
-    )
-    .option("--add <text>", "Add a text note (- reads stdin)")
-    .option("--add-json <json>", "Append a merge-safe JSON event")
-    .option("--stdin", "Read note text from stdin")
-    .option("--file <path>", "Read note text from a UTF-8 file")
-    .option(
-      "--edit <index>",
-      "Replace a 1-based note using the selected text input",
-      parsePositiveIntOption("--edit"),
-    )
-    .option(
-      "--delete <index>",
-      "Delete the note at 1-based <index>",
-      parsePositiveIntOption("--delete"),
-    )
-    .option("--limit <n>", "Return only latest n notes")
-    .option("--since <timestamp>", "Filter JSON events from this ISO time")
-    .option("--event-type <value>", "Filter JSON events by top-level type")
-    .option("--include-meta", "Include count and truncation metadata")
-    .option("--author [value]", "Author; defaults to PM_AUTHOR/settings")
-    .option("--message <value>", "History message")
-    .option("--force", "Force ownership override")
-    .description("Manage merge-safe text notes and JSON context events.")
-    .action(runNotesAction);
-
-  program
-    .command("learnings")
-    .argument("<id>", "Item id")
-    .argument(
-      "[text]",
-      "Optional learning text shorthand (equivalent to --add; use - for stdin)",
-    )
-    .option(
-      "--add <text>",
-      "Add one learning entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
-    )
-    .option(
-      "--stdin",
-      "Read learning text from stdin (supports multiline markdown)",
-    )
-    .option(
-      "--file <path>",
-      "Read learning text from file (supports multiline markdown)",
-    )
-    .option(
-      "--edit <index>",
-      "Replace the learning at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)",
-      parsePositiveIntOption("--edit"),
-    )
-    .option(
-      "--delete <index>",
-      "Delete the learning at 1-based <index>",
-      parsePositiveIntOption("--delete"),
-    )
-    .option("--limit <n>", "Return only latest n learnings")
-    .option(
-      "--author [value]",
-      "Learning author (optional; falls back to PM_AUTHOR/settings)",
-    )
-    .option("--message <value>", "History message")
-    .option("--force", "Force ownership override")
-    .description("List, add, edit, or delete learnings for an item.")
-    .action(runLearningsAction);
-
-  const filesCommand = program.command("files").description("Manage files linked to an item.");
+  const filesCommand = program
+    .command("files")
+    .description("Manage files linked to an item.");
 
   filesCommand
     .argument("<id>", "Item id")
@@ -3476,7 +3180,9 @@ export function registerMutationCommands(
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")
-    .description("Discover existing file paths referenced in item text and optionally link missing files.")
+    .description(
+      "Discover existing file paths referenced in item text and optionally link missing files.",
+    )
     .action(runFilesDiscoverAction);
 
   registerFilesLookupCommand(filesCommand);

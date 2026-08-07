@@ -792,13 +792,13 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(`${LIFECYCLE_ACTIONS} ${PACKAGE_LIFECYCLE_FLAGS}`)})`,
     "      ;;",
     "    comments)",
-    `      COMPREPLY=(${compgen("--add --body --stdin --file --edit --delete --limit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --body --stdin --file --edit --delete --limit --full-history --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    notes)",
-    `      COMPREPLY=(${compgen("--add --add-json --stdin --file --edit --delete --limit --since --event-type --include-meta --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-json --stdin --file --edit --delete --limit --since --event-type --include-meta --full-history --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    learnings)",
-    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --full-history --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    files)",
     `      COMPREPLY=(${compgen("discover lookup --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --scope --limit --offset --no-truncate --strict-read --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1565,6 +1565,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--edit[Replace the comment at 1-based index (text from positional/--add/--stdin/--file)]:index' \\
             '--delete[Delete the comment at 1-based index]:index' \\
             '--limit[Return only latest n entries]:number' \\
+            '--full-history[Return complete post-mutation history]' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -1583,6 +1584,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--since[Return structured events at or after an ISO timestamp]:timestamp' \\
             '--event-type[Return structured events with this top-level type]:event_type' \\
             '--include-meta[Include result counts and truncation metadata]' \\
+            '--full-history[Return complete post-mutation history]' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -1597,6 +1599,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--edit[Replace the entry at a 1-based index]:index' \\
             '--delete[Delete the entry at a 1-based index]:index' \\
             '--limit[Return only latest n entries]:number' \\
+            '--full-history[Return complete post-mutation history]' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -2655,6 +2658,7 @@ complete -c pm -n '__fish_seen_subcommand_from notes' -l file -d 'Read entry tex
 complete -c pm -n '__fish_seen_subcommand_from notes' -l edit -d 'Replace the entry at a 1-based index' -r
 complete -c pm -n '__fish_seen_subcommand_from notes' -l delete -d 'Delete the entry at a 1-based index' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l limit -d 'Return only latest n entries' -r
+complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l full-history -d 'Return complete post-mutation history'
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l author -d 'Entry author' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l message -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l force -d 'Force override'

@@ -177,7 +177,7 @@ const MANY_GOVERNANCE_AND_CONTENT_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--filter-has-linked-command" },
   { flag: "--filter-no-linked-command" },
   { flag: "--ids", list: true },
-  { flag: "--limit" },
+      { flag: "--limit" },
   { flag: "--offset" },
 ];
 
@@ -278,6 +278,7 @@ export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--edit" },
   { flag: "--delete" },
   { flag: "--limit" },
+  { flag: "--full-history" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -306,6 +307,7 @@ export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--since" },
   { flag: "--event-type" },
   { flag: "--include-meta" },
+  { flag: "--full-history" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -315,6 +317,7 @@ export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
 export const LEARNINGS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add", aliases: ["--learning"] },
   { flag: "--limit" },
+  { flag: "--full-history" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },

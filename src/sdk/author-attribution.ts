@@ -5,10 +5,14 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { appendWorkspaceAuditEvent } from "../core/history/workspace-history.js";
+import {
+  appendWorkspaceAuditEvent,
+  WORKSPACE_HISTORY_ID,
+} from "../core/history/workspace-history.js";
 import { readSettings } from "../core/store/settings.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
-import { PmCliError } from "../core/shared/errors.js";
+import { PmCliError, type PmCliErrorContext } from "../core/shared/errors.js";
+import { readRuntimeString, readRuntimeStringArray } from "./runtime-input.js";
 
 /**
  * Refuse an acknowledgment argument as a classified usage error.
@@ -23,9 +27,9 @@ import { PmCliError } from "../core/shared/errors.js";
  */
 function refuseAuthorAcknowledgmentArgument(
   message: string,
-  code: string,
+  context: PmCliErrorContext,
 ): never {
-  throw new PmCliError(message, EXIT_CODE.USAGE, { code });
+  throw new PmCliError(message, EXIT_CODE.USAGE, context);
 }
 
 /** First release-governance anchor after which unknown authors require remediation. */
@@ -332,6 +336,90 @@ export interface AcknowledgeUnknownAuthorEventsOptions {
   reason: string;
 }
 
+/** Resolve the mutually exclusive CLI and SDK acknowledgment selectors. */
+export function resolveUnknownAuthorAcknowledgmentSelector(
+  rawEvents: readonly string[],
+  allActionable: boolean,
+): { events: UnknownAuthorHistoryEvent[]; all_actionable: boolean } {
+  const hasExplicitEvents = rawEvents.length > 0;
+  if (hasExplicitEvents && allActionable) {
+    refuseAuthorAcknowledgmentArgument(
+      "Specify exactly one selector: repeat --event or pass --all-actionable.",
+      {
+        code: "history_author_acknowledge_selector_conflict",
+        required: "Exactly one of --event or --all-actionable",
+        examples: [
+          'pm history-author-acknowledge --event pm-a1b2:4 --attributed-author agent --reviewer maintainer --reason "Verified provenance"',
+          'pm history-author-acknowledge --all-actionable --attributed-author import-agent --reviewer maintainer --reason "Reviewed the complete actionable set"',
+        ],
+      },
+    );
+  }
+  if (!hasExplicitEvents && !allActionable) {
+    refuseAuthorAcknowledgmentArgument(
+      "Specify exactly one selector: repeat --event or pass --all-actionable.",
+      {
+        code: "history_author_acknowledge_selector_required",
+        required: "Exactly one of --event or --all-actionable",
+        examples: [
+          'pm history-author-acknowledge --event pm-a1b2:4 --attributed-author agent --reviewer maintainer --reason "Verified provenance"',
+          'pm history-author-acknowledge --all-actionable --attributed-author import-agent --reviewer maintainer --reason "Reviewed the complete actionable set"',
+        ],
+      },
+    );
+  }
+  return {
+    events: parseUnknownAuthorHistoryEventCoordinates(rawEvents),
+    all_actionable: allActionable,
+  };
+}
+
+/** Parse user-facing item or workspace history coordinates into SDK events. */
+export function parseUnknownAuthorHistoryEventCoordinates(
+  values: readonly string[],
+): UnknownAuthorHistoryEvent[] {
+  return values.map((value) => {
+    const separator = value.lastIndexOf(":");
+    const itemId = value.slice(0, separator).trim();
+    const line = Number(value.slice(separator + 1));
+    const validItemId =
+      itemId === WORKSPACE_HISTORY_ID || /^[a-z0-9][a-z0-9-]*$/iu.test(itemId);
+    if (
+      separator < 1 ||
+      !validItemId ||
+      !Number.isSafeInteger(line) ||
+      line < 1
+    ) {
+      refuseAuthorAcknowledgmentArgument(
+        `history-author-acknowledge --event expects <item-id>:<one-based-line>, received "${value}".`,
+        { code: "history_author_acknowledge_target_unreadable" },
+      );
+    }
+    return { item_id: itemId, line };
+  });
+}
+
+/** Normalize an untyped transport payload and execute author acknowledgment. */
+export function acknowledgeUnknownAuthorHistoryEventsFromTransport(
+  pmRoot: string,
+  input: Record<string, unknown>,
+): Promise<{ acknowledged: number; history_path: string }> {
+  const selector = resolveUnknownAuthorAcknowledgmentSelector(
+    readRuntimeStringArray(input.historyEvent),
+    input.allActionable === true || input.all_actionable === true,
+  );
+  return acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+    events: selector.events,
+    all_actionable: selector.all_actionable,
+    attributed_author:
+      readRuntimeString(input, "attributedAuthor") ??
+      readRuntimeString(input, "attributed_author") ??
+      "",
+    reviewer: readRuntimeString(input, "reviewer") ?? "",
+    reason: readRuntimeString(input, "reason") ?? "",
+  });
+}
+
 /**
  * Append an audited disposition for immutable unknown-author events without
  * rewriting their original streams.
@@ -346,10 +434,16 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
   const explicitEvents = options.events ?? [];
   const selectorCount =
     Number(options.all_actionable === true) + Number(explicitEvents.length > 0);
+  if (selectorCount === 0) {
+    refuseAuthorAcknowledgmentArgument(
+      "Specify exactly one selector: events or all_actionable.",
+      { code: "history_author_acknowledge_selector_required" },
+    );
+  }
   if (selectorCount > 1) {
     refuseAuthorAcknowledgmentArgument(
       "Author acknowledgment accepts either explicit events or all_actionable, not both.",
-      "history_author_acknowledge_selector_conflict",
+      { code: "history_author_acknowledge_selector_conflict" },
     );
   }
   const selectedEvents =
@@ -368,7 +462,7 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
   if (requiredValuesMissing) {
     refuseAuthorAcknowledgmentArgument(
       "Author acknowledgment requires events, reviewer, attributed_author, and reason.",
-      "history_author_acknowledge_required_values_missing",
+      { code: "history_author_acknowledge_required_values_missing" },
     );
   }
   const uniqueEvents = [
@@ -384,14 +478,15 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
   );
   for (const event of uniqueEvents) {
     const invalidCoordinate = [
-      /^[a-z0-9][a-z0-9-]*$/i.test(event.item_id),
+      event.item_id === WORKSPACE_HISTORY_ID ||
+        /^[a-z0-9][a-z0-9-]*$/i.test(event.item_id),
       Number.isSafeInteger(event.line),
       event.line >= 1,
     ].includes(false);
     if (invalidCoordinate) {
       refuseAuthorAcknowledgmentArgument(
         `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
-        "history_author_acknowledge_target_unreadable",
+        { code: "history_author_acknowledge_target_unreadable" },
       );
     }
     let parsed: unknown;
@@ -405,13 +500,13 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
     } catch {
       refuseAuthorAcknowledgmentArgument(
         `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
-        "history_author_acknowledge_target_unreadable",
+        { code: "history_author_acknowledge_target_unreadable" },
       );
     }
     if (classifyHistoryAuthorEvent(parsed) !== "actionable_unknown") {
       refuseAuthorAcknowledgmentArgument(
         `Author acknowledgment target ${event.item_id}:${event.line} is not an actionable unknown-author event.`,
-        "history_author_acknowledge_target_not_actionable",
+        { code: "history_author_acknowledge_target_not_actionable" },
       );
     }
   }

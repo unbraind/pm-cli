@@ -190,7 +190,9 @@ const ACTION_FLAG_PARAMETER_OVERRIDES: Readonly<
   },
   files: { "--note": "addNote" },
   docs: { "--note": "addNote" },
-  notes: { "--file": "text" },
+  comments: { "--full-history": "full" },
+  notes: { "--file": "text", "--full-history": "full" },
+  learnings: { "--full-history": "full" },
   gc: { "--scope": "gcScope" },
   contracts: { "--action": "contractAction" },
   schema: {
