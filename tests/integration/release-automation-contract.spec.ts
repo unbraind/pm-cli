@@ -294,6 +294,11 @@ describe("release automation contract", () => {
     expect(gateSource).toContain('"pm-web exited with code"');
     expect(gateSource).toContain('"github api returned http 422"');
     expect(gateSource).toContain('"drift detected:"');
+    // Unknown-author acknowledgment refusals are argument validation, so the
+    // CLI boundary classifies them as usage errors and the gate keeps them
+    // expected-handled when expected-error capture is enabled.
+    expect(gateSource).toContain('"author acknowledgment target"');
+    expect(gateSource).toContain('"unknown-author acknowledgment target"');
     expect(gateSource).toContain(
       "KNOWN_EXPECTED_HANDLED_ENVIRONMENT_ISSUE_PATTERNS",
     );

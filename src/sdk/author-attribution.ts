@@ -7,6 +7,26 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { appendWorkspaceAuditEvent } from "../core/history/workspace-history.js";
 import { readSettings } from "../core/store/settings.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
+
+/**
+ * Refuse an acknowledgment argument as a classified usage error.
+ *
+ * Argument validation is an expected outcome of a public mutation surface, not a
+ * product failure. Raising a bare `TypeError` left the refusal at exit code 1,
+ * which the CLI observability boundary reports as an unclassified handled error
+ * and the release gate then reads as a blocking production issue. Carrying
+ * {@link EXIT_CODE.USAGE} plus a stable code keeps the refusal teachable and
+ * keeps expected validation out of the error channel without masking genuine
+ * failures, which retain their own exit codes.
+ */
+function refuseAuthorAcknowledgmentArgument(
+  message: string,
+  code: string,
+): never {
+  throw new PmCliError(message, EXIT_CODE.USAGE, { code });
+}
 
 /** First release-governance anchor after which unknown authors require remediation. */
 export const HISTORY_AUTHOR_ATTRIBUTION_BASELINE = "2026-07-15T06:22:12.276Z";
@@ -327,8 +347,9 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
   const selectorCount =
     Number(options.all_actionable === true) + Number(explicitEvents.length > 0);
   if (selectorCount > 1) {
-    throw new TypeError(
+    refuseAuthorAcknowledgmentArgument(
       "Author acknowledgment accepts either explicit events or all_actionable, not both.",
+      "history_author_acknowledge_selector_conflict",
     );
   }
   const selectedEvents =
@@ -345,8 +366,9 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
     reason.length > 0,
   ].includes(false);
   if (requiredValuesMissing) {
-    throw new TypeError(
+    refuseAuthorAcknowledgmentArgument(
       "Author acknowledgment requires events, reviewer, attributed_author, and reason.",
+      "history_author_acknowledge_required_values_missing",
     );
   }
   const uniqueEvents = [
@@ -367,8 +389,9 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
       event.line >= 1,
     ].includes(false);
     if (invalidCoordinate) {
-      throw new TypeError(
+      refuseAuthorAcknowledgmentArgument(
         `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
+        "history_author_acknowledge_target_unreadable",
       );
     }
     let parsed: unknown;
@@ -380,13 +403,15 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
       const line = raw.split(/\r?\n/)[event.line - 1];
       parsed = JSON.parse(line ?? "");
     } catch {
-      throw new TypeError(
+      refuseAuthorAcknowledgmentArgument(
         `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
+        "history_author_acknowledge_target_unreadable",
       );
     }
     if (classifyHistoryAuthorEvent(parsed) !== "actionable_unknown") {
-      throw new TypeError(
+      refuseAuthorAcknowledgmentArgument(
         `Author acknowledgment target ${event.item_id}:${event.line} is not an actionable unknown-author event.`,
+        "history_author_acknowledge_target_not_actionable",
       );
     }
   }

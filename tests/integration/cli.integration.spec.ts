@@ -230,7 +230,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         });
       }
     });
-  });
+    // A real filesystem install of all fifteen bundled packages. The unit twin in
+    // tests/unit/extensions/extension-command.spec.ts already carries its own
+    // budget for the same work; this instance was left on the suite-wide default
+    // and times out under coverage instrumentation, which inflates wall time
+    // against a budget measured without it (pm-h9gsix).
+  }, 90_000);
 
   it("installs npm package specs that expose pm extension resources", async () => {
     await withTempPmPath(async (context) => {

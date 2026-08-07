@@ -22,6 +22,11 @@ interface GateModule {
   measureDependencyContributors: (items: unknown, declarations: readonly unknown[]) => Map<string, unknown[]>;
   measureValidateWarnings: (report: unknown) => Map<string, number>;
   measureGraphProfile: (report: unknown) => Map<string, number>;
+  measureGraphFindings: (report: unknown) => Map<string, number>;
+  resolveGraphAuditMeasurements: (
+    context: Record<string, unknown>,
+    sources: Set<string>,
+  ) => { graph_profile: Map<string, number>; graph_finding: Map<string, number> };
   measureHealthChecks: (report: unknown) => Map<string, number>;
   selectorKey: (selector: unknown) => string | undefined;
   formatSelector: (selector: unknown) => string;
@@ -160,7 +165,14 @@ const LISTING = {
 };
 
 const VALIDATE = { warnings: ["validate_files_missing_linked_paths:7"] };
-const GRAPH = { profile: { isolated_active_nodes: 0, edges_by_kind: { blocks: 2 } } };
+const GRAPH = {
+  profile: { isolated_active_nodes: 0, edges_by_kind: { blocks: 2 } },
+  findings: [
+    { code: "duplicate_dependency_row", count: 3 },
+    { code: "legacy_ordering_cycle", count: 7 },
+    { code: "legacy_ordering_cycle", count: 2 },
+  ],
+};
 const HEALTH = { checks: [{ name: "storage", status: "ok" }] };
 
 /** Two committable paths, NUL-separated, exactly as `git ls-files -z` emits them. */
@@ -234,6 +246,30 @@ describe("tracker measurement gate: measurement primitives", () => {
     expect(counts.has("ratio")).toBe(false);
     expect(module.measureGraphProfile({ profile: null }).size).toBe(0);
     expect(module.measureGraphProfile(undefined).size).toBe(0);
+  });
+
+  it("sums graph audit findings per code and ignores unusable entries", async () => {
+    const { module } = await loadGate();
+    const counts = module.measureGraphFindings({
+      findings: [
+        { code: "duplicate_dependency_row", count: 3 },
+        { code: "legacy_ordering_cycle", count: 7 },
+        { code: "legacy_ordering_cycle", count: 2 },
+        { code: "missing_reference_terminal" },
+        { code: "", count: 9 },
+        { code: 7, count: 9 },
+        null,
+      ],
+    });
+    // Grouped entries sharing a code are one class, so the ratchet sums them.
+    expect(counts.get("legacy_ordering_cycle")).toBe(9);
+    expect(counts.get("duplicate_dependency_row")).toBe(3);
+    // A finding without a numeric count still exists, so it counts as one.
+    expect(counts.get("missing_reference_terminal")).toBe(1);
+    expect(counts.has("")).toBe(false);
+    expect(counts.size).toBe(3);
+    expect(module.measureGraphFindings({ findings: null }).size).toBe(0);
+    expect(module.measureGraphFindings(undefined).size).toBe(0);
   });
 
   it("maps health statuses to a stable severity and fails closed on unknown statuses", async () => {
@@ -516,6 +552,59 @@ describe("tracker measurement gate: tracker access", () => {
     expect(everything.measurements.graph_profile.get("isolated_active_nodes")).toBe(0);
     expect(everything.measurements.health_check.get("storage")).toBe(0);
     expect(everything.ownerStatuses.get("pm-closed")).toBe("closed");
+  });
+
+  it("runs the graph audit once for both graph-derived sources and not at all for neither", async () => {
+    const { module, spawnSync } = await loadGate({ spawn: trackerSpawn() });
+    const context = module.cliContext(new Map());
+
+    const neither = module.resolveGraphAuditMeasurements(context, new Set<string>());
+    expect(neither.graph_profile.size).toBe(0);
+    expect(neither.graph_finding.size).toBe(0);
+    expect(spawnSync).not.toHaveBeenCalled();
+
+    const both = module.resolveGraphAuditMeasurements(
+      context,
+      new Set(["graph_profile", "graph_finding"]),
+    );
+    expect(both.graph_profile.get("isolated_active_nodes")).toBe(0);
+    expect(both.graph_finding.get("duplicate_dependency_row")).toBe(3);
+    expect(both.graph_finding.get("legacy_ordering_cycle")).toBe(9);
+    // One invocation serves both projections of the same report.
+    expect(spawnSync).toHaveBeenCalledTimes(1);
+
+    const findingsOnly = module.resolveGraphAuditMeasurements(
+      context,
+      new Set(["graph_finding"]),
+    );
+    expect(findingsOnly.graph_profile.size).toBe(0);
+    expect(findingsOnly.graph_finding.get("duplicate_dependency_row")).toBe(3);
+  });
+
+  it("treats an undeclared graph finding code as a class nothing has ratcheted", async () => {
+    const { module } = await loadGate({ spawn: trackerSpawn() });
+    const measured = module.measureTracker(module.cliContext(new Map()), [
+      DECLARATION,
+      { selector: { source: "graph_finding", code: "duplicate_dependency_row" } },
+    ]);
+    expect(measured.measurements.graph_finding.get("duplicate_dependency_row")).toBe(3);
+    const evaluation = module.evaluateDeclarations({
+      declarations: [
+        {
+          id: "graph-finding-duplicate-dependency-row",
+          owner: "pm-owner",
+          selector: { source: "graph_finding", code: "duplicate_dependency_row" },
+          ceiling: 0,
+        },
+      ],
+      measurements: measured.measurements,
+      ownerStatuses: new Map([["pm-owner", "open"]]),
+    });
+    const codes = evaluation.violations.map((violation) => violation.selector);
+    // The declared class exceeds its ceiling, and the grouped cycle class is
+    // reported as undeclared because graph_finding is an exhaustive source.
+    expect(codes).toContain("graph_finding:duplicate_dependency_row");
+    expect(codes).toContain("graph_finding:legacy_ordering_cycle");
   });
 
   it("tolerates a listing envelope without an items array", async () => {

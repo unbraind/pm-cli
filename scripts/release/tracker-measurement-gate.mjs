@@ -60,11 +60,23 @@ export const SELECTOR_SOURCES = Object.freeze([
   "dependency_kind",
   "validate_warning",
   "graph_profile",
+  "graph_finding",
   "health_check",
 ]);
 
-/** Sources whose complete observed key set must be declared in the baseline. */
-export const EXHAUSTIVE_SELECTOR_SOURCES = Object.freeze(["validate_warning", "health_check"]);
+/**
+ * Sources whose complete observed key set must be declared in the baseline.
+ *
+ * `graph_finding` is exhaustive because the audit emits a finding only while the
+ * condition holds, exactly like a validate warning: an undeclared finding code
+ * is therefore a class nothing has ever ratcheted, and it must surface rather
+ * than pass silently.
+ */
+export const EXHAUSTIVE_SELECTOR_SOURCES = Object.freeze([
+  "validate_warning",
+  "graph_finding",
+  "health_check",
+]);
 
 /** Stable severity ordering used to ratchet `pm health` check statuses. */
 export const HEALTH_STATUS_SEVERITY = Object.freeze({ ok: 0, warn: 1, error: 2 });
@@ -124,6 +136,30 @@ export function measureGraphProfile(report) {
     if (typeof value === "number" && Number.isFinite(value)) {
       counts.set(field, value);
     }
+  }
+  return counts;
+}
+
+/**
+ * Count `pm graph audit --json` findings per finding code.
+ *
+ * The profile carries population fields; the findings carry the conditions the
+ * audit is willing to name, and only the findings can express a defect class
+ * such as an exactly duplicated stored dependency row. Findings are summed by
+ * code because the audit emits one entry per detected group (ordering cycles
+ * arrive as several entries sharing one code), and the ratchet is about how much
+ * of the class exists, not how it was grouped for reporting.
+ */
+export function measureGraphFindings(report) {
+  const counts = new Map();
+  for (const finding of Array.isArray(report?.findings) ? report.findings : []) {
+    const code = finding?.code;
+    const count = finding?.count;
+    if (typeof code !== "string" || code.length === 0) {
+      continue;
+    }
+    const increment = typeof count === "number" && Number.isFinite(count) ? count : 1;
+    counts.set(code, (counts.get(code) ?? 0) + increment);
   }
   return counts;
 }
@@ -189,6 +225,9 @@ export function selectorKey(selector) {
   }
   if (selector?.source === "graph_profile") {
     return selector.field;
+  }
+  if (selector?.source === "graph_finding") {
+    return selector.code;
   }
   if (selector?.source === "health_check") {
     return selector.name;
@@ -410,9 +449,7 @@ export function measureTracker(context, declarations) {
     validate_warning: sources.has("validate_warning")
       ? measureValidateWarnings(runCliJson(context, ["validate"]))
       : new Map(),
-    graph_profile: sources.has("graph_profile")
-      ? measureGraphProfile(runCliJson(context, ["graph", "audit"]))
-      : new Map(),
+    ...resolveGraphAuditMeasurements(context, sources),
     health_check: sources.has("health_check")
       ? measureHealthChecks(runCliJson(context, ["health", "--check-only"]))
       : new Map(),
@@ -422,6 +459,23 @@ export function measureTracker(context, declarations) {
     ownerStatuses,
     contributors: measureDependencyContributors(items, declarations),
     item_count: items.length,
+  };
+}
+
+/**
+ * Collect both graph-derived measurement maps from a single audit invocation.
+ *
+ * The profile and the findings are two projections of one report, so requesting
+ * them separately would run the audit twice on a workspace where it is already
+ * the slowest measurement in the bundle.
+ */
+export function resolveGraphAuditMeasurements(context, sources) {
+  const needsProfile = sources.has("graph_profile");
+  const needsFindings = sources.has("graph_finding");
+  const report = needsProfile || needsFindings ? runCliJson(context, ["graph", "audit"]) : null;
+  return {
+    graph_profile: needsProfile ? measureGraphProfile(report) : new Map(),
+    graph_finding: needsFindings ? measureGraphFindings(report) : new Map(),
   };
 }
 

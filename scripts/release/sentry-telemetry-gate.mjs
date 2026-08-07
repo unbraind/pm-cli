@@ -152,6 +152,14 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   // prove duplicate detection aborts before writes. Sentry records that handled
   // CommandError when expected-error capture is enabled for release smokes.
   'merge-strategy "fail": bead',
+  // Unknown-author acknowledgment refuses stale, duplicate and non-actionable
+  // targets by design; the refusals now carry EXIT_CODE.USAGE so the CLI
+  // boundary never reports them, and these patterns keep them classified when
+  // expected-error capture is enabled.
+  "author acknowledgment target",
+  "unknown-author acknowledgment target",
+  "author acknowledgment requires events, reviewer, attributed_author, and reason",
+  "author acknowledgment accepts either explicit events or all_actionable",
 ];
 const KNOWN_EXPECTED_HANDLED_VALIDATION_ISSUE_PATTERNS = [
   // Snapshot acceptance deliberately exercises the public identifier validator

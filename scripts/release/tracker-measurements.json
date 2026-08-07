@@ -104,28 +104,40 @@
     {
       "id": "health-settings",
       "owner": "pm-33cw",
-      "selector": { "source": "health_check", "name": "settings" },
+      "selector": {
+        "source": "health_check",
+        "name": "settings"
+      },
       "ceiling": 0,
       "measured_on": "2026-08-04"
     },
     {
       "id": "health-directories",
       "owner": "pm-33cw",
-      "selector": { "source": "health_check", "name": "directories" },
+      "selector": {
+        "source": "health_check",
+        "name": "directories"
+      },
       "ceiling": 0,
       "measured_on": "2026-08-04"
     },
     {
       "id": "health-settings-values",
       "owner": "pm-33cw",
-      "selector": { "source": "health_check", "name": "settings_values" },
+      "selector": {
+        "source": "health_check",
+        "name": "settings_values"
+      },
       "ceiling": 0,
       "measured_on": "2026-08-04"
     },
     {
       "id": "health-telemetry",
       "owner": "pm-7zs0",
-      "selector": { "source": "health_check", "name": "telemetry" },
+      "selector": {
+        "source": "health_check",
+        "name": "telemetry"
+      },
       "ceiling": 1,
       "measured_on": "2026-08-04",
       "note": "A pending local delivery queue remains an explicit observability limitation; an error status is a regression."
@@ -133,44 +145,117 @@
     {
       "id": "health-extensions",
       "owner": "pm-33cw",
-      "selector": { "source": "health_check", "name": "extensions" },
+      "selector": {
+        "source": "health_check",
+        "name": "extensions"
+      },
       "ceiling": 0,
       "measured_on": "2026-08-04"
     },
     {
       "id": "health-storage",
       "owner": "pm-33cw",
-      "selector": { "source": "health_check", "name": "storage" },
+      "selector": {
+        "source": "health_check",
+        "name": "storage"
+      },
       "ceiling": 0,
       "measured_on": "2026-08-04"
     },
     {
       "id": "health-locks",
       "owner": "pm-33cw",
-      "selector": { "source": "health_check", "name": "locks" },
+      "selector": {
+        "source": "health_check",
+        "name": "locks"
+      },
       "ceiling": 0,
       "measured_on": "2026-08-04"
     },
     {
       "id": "health-integrity",
       "owner": "pm-33cw",
-      "selector": { "source": "health_check", "name": "integrity" },
+      "selector": {
+        "source": "health_check",
+        "name": "integrity"
+      },
       "ceiling": 0,
       "measured_on": "2026-08-04"
     },
     {
       "id": "health-history-drift",
       "owner": "pm-33cw",
-      "selector": { "source": "health_check", "name": "history_drift" },
+      "selector": {
+        "source": "health_check",
+        "name": "history_drift"
+      },
       "ceiling": 0,
       "measured_on": "2026-08-04"
     },
     {
       "id": "health-vectorization",
       "owner": "pm-33cw",
-      "selector": { "source": "health_check", "name": "vectorization" },
+      "selector": {
+        "source": "health_check",
+        "name": "vectorization"
+      },
       "ceiling": 0,
       "measured_on": "2026-08-04"
+    },
+    {
+      "id": "graph-finding-duplicate-dependency-row",
+      "owner": "pm-flnefm",
+      "selector": {
+        "source": "graph_finding",
+        "code": "duplicate_dependency_row"
+      },
+      "ceiling": 0,
+      "measured_on": "2026-08-07",
+      "note": "Exactly duplicated stored dependency rows. The class recurred: it was first reproduced on 2026-07-28, and three fresh rows were minted on 2026-08-05 by dep-appending mutations that do not deduplicate. Repair still requires removing every copy and re-adding one, so the workspace passes through a state where a real edge is absent. Held at zero so a re-appearance fails before merge rather than being found by the next reviewer."
+    },
+    {
+      "id": "graph-finding-legacy-duplicate-edge",
+      "owner": "pm-96h7",
+      "selector": {
+        "source": "graph_finding",
+        "code": "legacy_duplicate_edge"
+      },
+      "ceiling": 8,
+      "measured_on": "2026-08-07",
+      "note": "Duplicated relationships between terminal endpoints. Informational because both endpoints are finished and no scheduler reads them; ratcheted so the terminal corpus cannot accumulate more while closed-item enrichment waves run."
+    },
+    {
+      "id": "graph-finding-legacy-no-blocker-sentinel",
+      "owner": "pm-96h7",
+      "selector": {
+        "source": "graph_finding",
+        "code": "legacy_no_blocker_sentinel"
+      },
+      "ceiling": 98,
+      "measured_on": "2026-08-07",
+      "note": "Legacy no-active-blocker sentinel references predating typed dependency rows. Never repaired on terminal holders because rewriting closed items drags the changelog; ratcheted so no new sentinel can be authored."
+    },
+    {
+      "id": "graph-finding-legacy-ordering-cycle",
+      "owner": "pm-jkbqt8",
+      "selector": {
+        "source": "graph_finding",
+        "code": "legacy_ordering_cycle"
+      },
+      "ceiling": 49,
+      "measured_on": "2026-08-07",
+      "note": "Members of terminal-only execution-order cycles, summed across the eight reported groups. Every member is closed or canceled, so acyclic false is not a defect here; the ceiling stops a ninth group or a growing group from appearing unnoticed, which is the shape a reciprocal blocks and blocked_by pair produces."
+    },
+    {
+      "id": "graph-finding-missing-reference-terminal",
+      "owner": "pm-96h7",
+      "selector": {
+        "source": "graph_finding",
+        "code": "missing_reference_terminal"
+      },
+      "ceiling": 3,
+      "measured_on": "2026-08-07",
+      "note": "Terminal dangling references to absent items. All three are pre-identifier sentinel strings rather than deleted items, so they are informational; ratcheted so a genuinely deleted item cannot add a fourth silently."
     }
   ]
 }

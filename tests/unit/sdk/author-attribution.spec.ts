@@ -13,8 +13,10 @@ import {
   applyInvocationAuthorOverride,
   acknowledgeUnknownAuthorHistoryEvents,
   createPmCliProgram,
+  EXIT_CODE,
   inspectHistoryAuthorStream,
   PmClient,
+  PmCliError,
   runAction,
   runConfig,
   runInit,
@@ -537,6 +539,83 @@ describe("SDK author attribution primitives", () => {
     ).rejects.toThrow(
       "Unknown-author acknowledgment target ../outside:1 is not readable",
     );
+  });
+
+  it("classifies every acknowledgment argument refusal as an expected usage error", async () => {
+    const tempRoot = await createTempRoot();
+    const pmRoot = path.join(tempRoot, ".agents", "pm");
+    await runInit(
+      undefined,
+      { path: pmRoot },
+      { defaults: true, agentGuidance: "skip" },
+    );
+    await writeFile(
+      path.join(pmRoot, "history", "pm-classified.jsonl"),
+      `${JSON.stringify({
+        ts: "2026-07-16T09:00:00.000Z",
+        author: "unknown",
+        op: "update",
+      })}\n${JSON.stringify({
+        ts: "2026-07-16T09:05:00.000Z",
+        author: "maintainer",
+        op: "update",
+      })}\n`,
+    );
+    const baseOptions = {
+      attributed_author: "original-agent",
+      reviewer: "maintainer",
+      reason: "Reviewed immutable event provenance.",
+    };
+    const refusals: { options: Record<string, unknown>; code: string }[] = [
+      {
+        options: {
+          ...baseOptions,
+          events: [{ item_id: "pm-classified", line: 1 }],
+          all_actionable: true,
+        },
+        code: "history_author_acknowledge_selector_conflict",
+      },
+      {
+        options: { ...baseOptions, reviewer: " ", events: [] },
+        code: "history_author_acknowledge_required_values_missing",
+      },
+      {
+        options: {
+          ...baseOptions,
+          events: [{ item_id: "pm-classified", line: 0 }],
+        },
+        code: "history_author_acknowledge_target_unreadable",
+      },
+      {
+        options: {
+          ...baseOptions,
+          events: [{ item_id: "pm-classified", line: 2 }],
+        },
+        code: "history_author_acknowledge_target_not_actionable",
+      },
+    ];
+    for (const refusal of refusals) {
+      const error = await acknowledgeUnknownAuthorHistoryEvents(
+        pmRoot,
+        refusal.options as never,
+      ).then(
+        () => null,
+        (thrown: unknown) => thrown,
+      );
+      expect(error).toBeInstanceOf(PmCliError);
+      expect((error as PmCliError).exitCode).toBe(EXIT_CODE.USAGE);
+      expect((error as PmCliError).code).toBe(refusal.code);
+    }
+
+    const unexpected = await acknowledgeUnknownAuthorHistoryEvents(
+      pmRoot,
+      { events: [{ item_id: "pm-classified", line: 1 }] } as never,
+    ).then(
+      () => null,
+      (thrown: unknown) => thrown,
+    );
+    expect(unexpected).toBeInstanceOf(Error);
+    expect(unexpected).not.toBeInstanceOf(PmCliError);
   });
 
   it("exposes unknown-author disposition through the typed SDK client", async () => {
