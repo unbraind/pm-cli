@@ -2,11 +2,13 @@ id: pm-hid9g1
 title: "Token budgets bind one call and never compose: the orientation protocol the project prescribes costs 38k bytes and spends a third of it re-describing items the agent was already given"
 description: "Measured on 2026-08-03 against the real tracker at 2,285 items using pm 2026.8.3.\n\nThe method was to price the protocol the project prescribes rather than the commands it ships. AGENTS.md tells an agent to orient with contracts --summary, context, search, list --status open, list --status in-progress, and next before creating work. Executed literally, that sequence costs:\n\n  contracts --summary                 9,749 bytes\n  context --limit 10                  9,144\n  search <keywords> --limit 10        4,270\n  list --status open --limit 20       4,832\n  list --status in_progress --limit 20  812\n  next                                9,660\n  total                              38,467 bytes, roughly 9,600 tokens\n\nEvery one of those calls is individually well behaved. Each honours its own bound, each carries an omission receipt, several accept an explicit --token-budget. The defect is not in any of them. It is that the bounds do not compose: there is no unit of accounting above a single invocation.\n\nThe measurable consequence is redundancy. Extracting item ids from the four read surfaces: 110 total mentions resolve to 76 distinct items, so 31 percent of what the agent pays for is a repeat. 28 items appear on more than one surface; pm-doxj, pm-pbyu and pm-ki67py are each described three times in a single cold start. The agent is charged for the same fact once per surface that happens to rank it, and no surface knows the others ran.\n\nThere is no mechanism to prevent this. context exposes --after, which is a resume cursor for continuing one traversal, not a suppression set for facts already delivered. No read accepts a seen-set, a session identity, or a group budget. The token budget vocabulary is complete and correct at the call level and simply has no term above it.\n\nWhy this is the binding constraint now. The project has already established, in closed work, that budgets must be declared, that a budget must bind against the representation actually emitted, that omission must be receipted, and that a command must be able to report its own token cost. All of that is per call. At one agent the redundancy is a 31 percent tax on orientation. At a fleet it multiplies by the agent count, and the fleet-amortization work assumes a shared assembly can be reused across agents - which is the across-agent form of exactly the same question this raises within one agent.\n\nThe scale-symmetry requirement matters here. The redundancy is a property of ranking overlap, not of corpus size: it is present at 2,285 items and would be present at 30. Any fix must therefore be free at small scale, which rules out a persistent session index as the baseline mechanism and argues for the suppression set travelling with the request.\n\nScope is the composition law for output budgets across calls, and the deduplication it makes possible. Individual command budgets, the encoding used per surface, and cross-agent assembly sharing each have their own owners; this is the term that is missing between them."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",context,context-management,scale,token-budget
 created_at: "2026-08-03T06:22:52.917Z"
-updated_at: "2026-08-03T20:38:41.659Z"
+updated_at: "2026-08-07T07:29:41.128Z"
+closed_at: "2026-08-07T07:02:22.215Z"
+completed_at: "2026-08-07T07:02:22.215Z"
 author: "harness:claude-code"
 estimated_minutes: 900
 acceptance_criteria: "A session or request-group identity can be supplied to successive reads, and a fact already served under that identity is not re-serialized in full; Suppressed repeats are represented by a reference the agent can resolve, not silently dropped, and the receipt says what was suppressed and why; A budget can be declared for a group of calls, and the group degrades deterministically when it is exhausted, exactly as a single call does today; The prescribed orientation sequence in AGENTS.md is measured end to end in CI, and the measurement is a ratchet that may only shrink; The mechanism composes with the fleet-level shared-assembly work rather than duplicating it: within-session dedupe and across-agent amortization use one representation; Small workspaces pay nothing for the machinery: at three items the orientation cost is unchanged or lower"
@@ -16,6 +18,9 @@ why_now: "Every per-call budget mechanism the project has built is now in place 
 parent: pm-mpbb
 risk: medium
 confidence: high
+resolution: Added strict versioned caller-carried output sessions that compose token spend and served facts across successive universal read calls.
+expected_result: "A request group declares one token ceiling, suppresses repeated item facts using resolvable references, degrades deterministically, and adds no overhead to reads that do not opt in."
+actual_result: "CLI, SDK, MCP, completions, and package egress carry exact whole-envelope session receipts; 2/2,243-item orientation calibration is shrink-only, temporary acceptance suppressed both repeats, and mutation-scoped use failed before writes."
 dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,related,"2026-08-03T06:23:57.876Z","harness:claude-code","cli:update:dep",detected
   pm-5t33or,related,"2026-08-03T06:23:57.876Z","harness:claude-code","cli:update:dep",detected
@@ -33,7 +38,54 @@ dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,blocked_by,"2026-08-03T11:15:45.320Z","harness:codex","cli:update:dep",detected
   pm-n7rr,implements,"2026-08-03T11:15:45.320Z","harness:codex","cli:update:dep",detected
   pm-cyn0y6,related,"2026-08-03T20:38:41.575Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-03T11:09:25.972Z","harness:codex","Estimate basis 2026-08-03: 900 minutes reflects a cross-call budget ledger, served-fact references, deterministic degradation, session and fleet composition, CI ratchet, and small-workspace no-regression proof."
   "2026-08-03T11:15:45.320Z","harness:codex","Sequencing 2026-08-03: establish trustworthy per-command ceilings in pm-5t33or before composing a session ledger, then use the same receipt and degradation algebra for within-session deduplication. This item implements the agent-facing simplification outcome because fewer commands are insufficient if the prescribed multi-call orientation still repeats a third of its bytes."
+  "2026-08-07T05:54:35.716Z","harness:codex","Duplicate/orientation evidence 2026-08-07: searched all 2,343 items across every status for output session token budget, seen/suppression, repeated item context, and closed session-budget predecessors; pm-hid9g1 is the canonical owner. pm-5t33or supplies the shipped per-call budget algebra, pm-sb0tns owns the remaining universal row/projection prerequisite, pm-tch9cs remains the distinct cross-agent amortization horizon."
+  "2026-08-07T06:28:08.159Z","harness:codex","Implementation checkpoint 2026-08-07: caller-carried versioned outputSession is now shared by CLI, SDK, MCP schemas, completions, and embedded output. Successive reads carry cumulative spend and a served-item set; repeated item facts become resolvable session:<session-id>:<item-id> references. The same generic row traversal covers nested arrays and object maps. Synthetic orientation calibration now runs context/list/search/get/next at 2 and 2,243 items: spend 3,663/20,000 and 9,999/20,000 tokens, suppressing 3 and 7 repeats. Non-session reads remain on the byte-compatible early-return path, so small trackers pay no default session overhead."
+  "2026-08-07T06:53:13.333Z","harness:codex","Verification evidence: pnpm test:coverage passed 438 test files and 6,898 tests with exact 100/100/100/100 coverage (49,315 statements, 35,764 branches, 10,074 functions, 47,780 lines; zero uncovered counts). Focused session/parser/object-map/adversarial fixed-point/calibration negative-control tests cover the new contracts without exclusions."
+  "2026-08-07T06:58:36.203Z","harness:codex","Manual acceptance 2026-08-07: in isolated tracker /tmp/tmp.FoOKATDTEM, built CLI initialized storage and created two real items. First list charged 473/4,000 tokens and carried two seen IDs; second search charged cumulative 879 tokens and replaced both repeated facts with session references. A create invocation carrying --output-session failed closed with exit 2 and item count remained exactly 2."
+  "2026-08-07T07:02:21.647Z","harness:codex","Closeout evidence: strict caller-carried output sessions compose context/list/search/get/next under one 20,000-token ceiling, replace repeated facts with resolvable references, fail closed at exhaustion and on mutation scope, and preserve byte-compatible no-session reads. The CI calibration now permits session bytes/spend only to shrink and suppression only to hold or improve at 2 and 2,243 items. Exact coverage, all quality gates, linked tests, and manual acceptance pass."
+  "2026-08-07T07:16:29.199Z","harness:codex","Exact-head static-gate correction after rebasing main: CodeFactor parity measured parseReadOutputSession at 17 against the mandatory 16 ceiling. Replaced sequential field branches with a declarative validation table, preserving strict errors and 100% focused branch coverage while reducing complexity below the gate. No contract or behavior changed."
+  "2026-08-07T07:29:41.128Z","harness:codex","Final rebased-head evidence: current origin/main plus this tranche passed 441 test files / 6,917 tests with exact 100% statements (49,640), branches (36,069), functions (10,152), and lines (48,085). ESLint, zero clones, 100% source/export/member docstrings, CodeFactor complexity <=16, SDK/package parity, contracts, 77 token surfaces, secrets, docs, calibration, tracker ratchet, SDK import costs, CLI transport floor, and changelog check all passed. The import-cost subprocess had one load-sensitive miss under concurrent host work, then its isolated mandatory rerun passed without weakening budgets."
+learnings[1]{created_at,author,text}:
+  "2026-08-07T07:02:19.900Z","harness:codex","Cross-call context accounting stays universal and small-workspace-free when the complete versioned ledger travels with the caller. The host can then reuse the same egress row contract across CLI, SDK, MCP, and packages without a daemon, persistent session index, or command-local cache."
+files[26]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,pm-changelog 2026.8.7 package provenance
+  scripts/release/context-intent-calibration-gate.mjs,project,full orientation sequence ratchet
+  scripts/release/context-intent-calibration.json,project,two-tier generated measurement
+  sdk/public-surface.json,project,reviewed public SDK surface
+  src/cli/main.ts,project,pre-action validation and global isolation
+  src/core/extensions/reserved-host-flags.ts,project,extension collision prevention
+  src/core/output/output.ts,project,universal host egress integration
+  src/core/shared/command-types.ts,project,host option typing
+  src/sdk/cli-bootstrap.ts,project,global flag bootstrap transport
+  src/sdk/cli-contracts/completeness.ts,project,CLI SDK coverage classification
+  src/sdk/cli-contracts/registration-helpers.ts,project,Commander global normalization
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,strict SDK and MCP schema
+  src/sdk/cli-contracts/tool-schema.ts,project,read action schema inclusion
+  src/sdk/cli-program.ts,project,public CLI flag
+  src/sdk/completion.ts,project,bash zsh fish global completion
+  src/sdk/core.ts,project,stable SDK subpath exports
+  src/sdk/generated-error-code-catalog.ts,project,generated invalid-session error vocabulary
+  src/sdk/index.ts,project,root SDK exports
+  src/sdk/read-output-contracts.ts,project,shared cross-call composition contract
+  src/sdk/read-output-session.ts,project,caller-carried session state and receipts
+  src/sdk/runtime-input.ts,project,SDK and MCP transport hoisting
+  tests/fixtures/contracts/full.json,project,generated CLI SDK MCP contracts
+  tests/types/read-output-contracts.test-d.ts,project,omission-aware session result types
+  tests/unit/commands/completion-command.spec.ts,project,all-shell session flag proof
+  tests/unit/scripts/release/context-intent-calibration-gate.spec.ts,project,measurement gate controls
+  tests/unit/sdk/read-output-transport.spec.ts,project,temporary-workspace CLI and MCP transport acceptance
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/cli/registration-helpers.spec.ts tests/unit/commands/completion-command.spec.ts,project,120,CLI bootstrap registration and all-shell completion transport
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/read-output-transport.spec.ts tests/unit/scripts/release/context-intent-calibration-gate.spec.ts,project,180,unit integration acceptance and calibration proof
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msilgeq9-9ochqo,test,passed,"2026-08-07T06:58:37.521Z","2026-08-07T06:59:04.209Z","2026-08-07T06:59:04.209Z",1,0,0
+  test-local-msilop5j-1lousr,test,passed,"2026-08-07T07:05:05.566Z","2026-08-07T07:05:30.967Z","2026-08-07T07:05:30.967Z",1,0,0
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,package-owned generated closeout
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,refreshed calibration measurements
+  docs/READ_OUTPUT_CONTRACTS.md,project,session state and receipt contract
+close_reason: "Delivered cross-call context-session budgeting and repeat suppression as universal SDK/CLI primitives. Versioned caller-carried state, strict validation, cumulative whole-envelope receipts, deterministic exhaustion, resolvable references, full transport/schema/completion exposure, and a shrink-only two-tier orientation ratchet are verified with exact coverage and temporary-workspace acceptance."
 body: ""

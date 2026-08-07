@@ -3,6 +3,7 @@ import { attachReadOutputContracts } from "../../../src/sdk/context-intent-contr
 import { updateReadOutputReceiptEstimate } from "../../../src/sdk/read-output-budget.js";
 import {
   PM_READ_OUTPUT_DIMENSIONS,
+  PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS,
   PM_READ_OUTPUT_OPTION_FLAGS,
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
   applyReadOutputDimensions,
@@ -12,6 +13,16 @@ import {
   resolveReadOutputSurface,
   validateReadOutputOptions,
 } from "../../../src/sdk/read-output-contracts.js";
+import {
+  boundReadOutputRows,
+  countReadOutputRows,
+  mapReadOutputRows,
+  readOutputRowCollections,
+} from "../../../src/sdk/read-output-rows.js";
+import {
+  attachReadOutputSessionReceipt,
+  parseReadOutputSession,
+} from "../../../src/sdk/read-output-session.js";
 
 describe("read output contracts", () => {
   it("declares the same four dimensions on every read surface", () => {
@@ -27,6 +38,9 @@ describe("read output contracts", () => {
       "--output-limit",
       "--output-budget",
       "--output-format",
+    ]);
+    expect(PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS).toEqual([
+      "--output-session",
     ]);
     for (const contract of PM_READ_OUTPUT_SURFACE_CONTRACTS) {
       expect(Object.keys(contract.dimensions).sort()).toEqual(
@@ -170,6 +184,30 @@ describe("read output contracts", () => {
     });
     expect(isReadOutputBudgetExceeded(projected)).toBe(true);
     expect(projected.read_output.estimated_tokens).toBeLessThanOrEqual(256);
+
+    const exhaustedSession = applyReadOutputDimensions(
+      "list",
+      {
+        outputSession: {
+          version: 1,
+          id: "exhausted",
+          token_budget: 256,
+          spent_tokens: 256,
+          seen_item_ids: [],
+        },
+      },
+      { items: [{ id: "pm-1", title: "Cannot fit" }] },
+    );
+    expect(exhaustedSession).toMatchObject({
+      output_budget_exceeded: { omitted_result: true },
+      read_output: { within_budget: false, result_omitted: true },
+      read_session: {
+        spent_before_tokens: 256,
+        spent_total_tokens: 256,
+        remaining_tokens: 0,
+        exhausted: true,
+      },
+    });
   });
 
   it("leaves mutations and unbounded reads byte-for-byte unchanged", () => {
@@ -320,6 +358,369 @@ describe("read output contracts", () => {
     expect(unbounded.read_output).toMatchObject({ within_budget: true });
   });
 
+  it("projects and bounds nested row paths through the same universal contract", () => {
+    const projected = applyReadOutputDimensions(
+      "graph",
+      { outputInclude: "id", outputLimit: 1 },
+      {
+        graph: {
+          nodes: [
+            { id: "pm-1", title: "One" },
+            { id: "pm-2", title: "Two" },
+          ],
+          edges: [
+            { id: "edge-1", kind: "blocks" },
+            { id: "edge-2", kind: "related" },
+          ],
+        },
+        count: 4,
+        row_contract: {
+          command: "graph",
+          row_keys: ["graph.nodes", "graph.edges"],
+        },
+      },
+    );
+    expect(projected).toMatchObject({
+      graph: {
+        nodes: [{ id: "pm-1" }],
+        edges: [{ id: "edge-1" }],
+      },
+      count: 2,
+      truncated: true,
+      read_output: { within_budget: true },
+    });
+  });
+
+  it("carries cross-call spend and replaces prior item facts with references", () => {
+    const first = applyReadOutputDimensions(
+      "list",
+      {
+        outputSession: {
+          version: 1,
+          id: "orientation",
+          token_budget: 2_000,
+          spent_tokens: 0,
+          seen_item_ids: [],
+        },
+      },
+      {
+        items: [
+          { id: "pm-1", title: "One" },
+          { id: "pm-2", title: "Two" },
+        ],
+        row_contract: { command: "list", row_keys: ["items"] },
+      },
+    ) as Record<string, unknown>;
+    const firstSession = first.read_session as {
+      spent_total_tokens: number;
+      next_state: Record<string, unknown>;
+    };
+    expect(firstSession).toMatchObject({
+      seen_before_count: 0,
+      new_item_count: 2,
+      suppressed_repeat_count: 0,
+      next_state: { seen_item_ids: ["pm-1", "pm-2"] },
+    });
+
+    const second = applyReadOutputDimensions(
+      "search",
+      { outputSession: firstSession.next_state },
+      {
+        items: [
+          { id: "pm-1", title: "Repeated prose that must disappear" },
+          { id: "pm-3", title: "Three" },
+        ],
+        row_contract: { command: "search", row_keys: ["items"] },
+      },
+    ) as Record<string, unknown>;
+    expect(second).toMatchObject({
+      items: [
+        { id: "pm-1", context_ref: "session:orientation:pm-1" },
+        { id: "pm-3", title: "Three" },
+      ],
+      read_session: {
+        seen_before_count: 2,
+        new_item_count: 1,
+        suppressed_repeat_count: 1,
+        next_state: { seen_item_ids: ["pm-1", "pm-2", "pm-3"] },
+      },
+    });
+    const secondSession = second.read_session as {
+      spent_before_tokens: number;
+      spent_total_tokens: number;
+    };
+    expect(secondSession.spent_before_tokens).toBe(
+      firstSession.spent_total_tokens,
+    );
+    expect(secondSession.spent_total_tokens).toBeGreaterThan(
+      secondSession.spent_before_tokens,
+    );
+    const secondRead = second.read_output as { estimated_tokens: number };
+    expect(secondRead.estimated_tokens).toBe(
+      Math.ceil(Buffer.byteLength(JSON.stringify(second), "utf8") / 4),
+    );
+  });
+
+  it("preserves context references after field projection", () => {
+    const projected = applyReadOutputDimensions(
+      "list",
+      {
+        outputInclude: "id,title",
+        outputSession: {
+          version: 1,
+          id: "orientation",
+          token_budget: 2_000,
+          spent_tokens: 100,
+          seen_item_ids: ["pm-1"],
+        },
+      },
+      {
+        items: [{ id: "pm-1", title: "Repeated", body: "discard" }],
+        row_contract: { command: "list", row_keys: ["items"] },
+      },
+    );
+    expect(projected).toMatchObject({
+      items: [{ id: "pm-1", context_ref: "session:orientation:pm-1" }],
+    });
+  });
+
+  it("rejects malformed session state before a read executes", () => {
+    expect(() =>
+      validateReadOutputOptions("list", {
+        outputSession: JSON.stringify({
+          version: 1,
+          id: "orientation",
+          token_budget: 2_000,
+          spent_tokens: 0,
+          seen_item_ids: [],
+          surprise: true,
+        }),
+      }),
+    ).toThrow('unknown field "surprise"');
+  });
+
+  it("strictly validates every caller-carried session field", () => {
+    for (const [value, message] of [
+      ["{", "valid JSON object"],
+      [null, "JSON object"],
+      [{ version: 2 }, "version must equal 1"],
+      [
+        {
+          version: 1,
+          id: 7,
+          token_budget: 256,
+          spent_tokens: 0,
+          seen_item_ids: [],
+        },
+        "id must be",
+      ],
+      [
+        {
+          version: 1,
+          id: "not portable!",
+          token_budget: 256,
+          spent_tokens: 0,
+          seen_item_ids: [],
+        },
+        "id must be",
+      ],
+      [
+        {
+          version: 1,
+          id: "session",
+          token_budget: "256",
+          spent_tokens: 0,
+          seen_item_ids: [],
+        },
+        "token_budget",
+      ],
+      [
+        {
+          version: 1,
+          id: "session",
+          token_budget: 255,
+          spent_tokens: 0,
+          seen_item_ids: [],
+        },
+        "token_budget",
+      ],
+      [
+        {
+          version: 1,
+          id: "session",
+          token_budget: 256,
+          spent_tokens: "0",
+          seen_item_ids: [],
+        },
+        "spent_tokens",
+      ],
+      [
+        {
+          version: 1,
+          id: "session",
+          token_budget: 256,
+          spent_tokens: -1,
+          seen_item_ids: [],
+        },
+        "spent_tokens",
+      ],
+      [
+        {
+          version: 1,
+          id: "session",
+          token_budget: 256,
+          spent_tokens: 257,
+          seen_item_ids: [],
+        },
+        "spent_tokens",
+      ],
+      [
+        {
+          version: 1,
+          id: "session",
+          token_budget: 256,
+          spent_tokens: 0,
+          seen_item_ids: "pm-1",
+        },
+        "seen_item_ids",
+      ],
+      [
+        {
+          version: 1,
+          id: "session",
+          token_budget: 256,
+          spent_tokens: 0,
+          seen_item_ids: [7],
+        },
+        "seen_item_ids",
+      ],
+      [
+        {
+          version: 1,
+          id: "session",
+          token_budget: 256,
+          spent_tokens: 0,
+          seen_item_ids: ["not portable!"],
+        },
+        "seen_item_ids",
+      ],
+    ] as const) {
+      expect(() => parseReadOutputSession(value)).toThrow(message);
+    }
+    expect(
+      parseReadOutputSession({
+        version: 1,
+        id: "session",
+        token_budget: 256,
+        spent_tokens: 0,
+        seen_item_ids: ["pm-z", "pm-a", "pm-z"],
+      }),
+    ).toMatchObject({ seen_item_ids: ["pm-a", "pm-z"] });
+  });
+
+  it("maps, counts, and bounds nested object rows and ignores invalid paths", () => {
+    const result = {
+      graph: {
+        nodes: {
+          first: { item_id: "pm-1", title: "One" },
+          second: { item: { id: "pm-2" }, title: "Two" },
+          literal: "value",
+          unidentified: { title: "No id" },
+        },
+      },
+      invalid: "not-an-object",
+      row_contract: {
+        command: "graph",
+        row_keys: ["graph.nodes", "invalid.rows"],
+      },
+    };
+    expect(readOutputRowCollections(result)).toHaveLength(1);
+    expect(countReadOutputRows(result)).toBe(4);
+    const mapped = mapReadOutputRows(result, (row, path, index) => ({
+      row,
+      path,
+      index,
+    }));
+    expect(mapped).toMatchObject({
+      graph: {
+        nodes: {
+          first: { path: "graph.nodes", index: 0 },
+          second: { path: "graph.nodes", index: 1 },
+        },
+      },
+    });
+    expect(boundReadOutputRows(result, 1)).toMatchObject({
+      truncated: true,
+      result: { graph: { nodes: { first: result.graph.nodes.first } } },
+    });
+
+    const sessionResult = applyReadOutputDimensions(
+      "graph",
+      {
+        outputSession: {
+          version: 1,
+          id: "object-map",
+          token_budget: 2_000,
+          spent_tokens: 0,
+          seen_item_ids: ["pm-1", "pm-2"],
+        },
+      },
+      result,
+    );
+    expect(sessionResult).toMatchObject({
+      graph: {
+        nodes: {
+          first: { id: "pm-1", context_ref: "session:object-map:pm-1" },
+          second: { id: "pm-2", context_ref: "session:object-map:pm-2" },
+          literal: "value",
+          unidentified: { title: "No id" },
+        },
+      },
+      read_session: { suppressed_repeat_count: 2, new_item_count: 0 },
+    });
+  });
+
+  it("bounds fixed-point receipt work for adversarial serializers", () => {
+    let directSerializations = 0;
+    const direct = attachReadOutputSessionReceipt(
+      {
+        toJSON: () => ({
+          value: "x".repeat(directSerializations++ % 2 === 0 ? 4 : 400),
+        }),
+      },
+      {
+        version: 1,
+        id: "adversarial-direct",
+        token_budget: 2_000,
+        spent_tokens: 0,
+        seen_item_ids: [],
+      },
+    );
+    expect(direct).toHaveProperty("read_session");
+    expect(directSerializations).toBe(8);
+
+    let composedSerializations = 0;
+    const composed = applyReadOutputDimensions(
+      "list",
+      {
+        outputSession: {
+          version: 1,
+          id: "adversarial-composed",
+          token_budget: 20_000,
+          spent_tokens: 0,
+          seen_item_ids: [],
+        },
+      },
+      {
+        toJSON: () => ({
+          value: "x".repeat(composedSerializations++ * 20 + 4),
+        }),
+      },
+    );
+    expect(composed).toHaveProperty("read_session");
+    expect(composedSerializations).toBe(144);
+  });
+
   it("compacts explanatory text and rows before omitting a budgeted result", () => {
     const textCompacted = applyReadOutputDimensions(
       "stats",
@@ -395,6 +796,55 @@ describe("read output contracts", () => {
       { items: makeRows("item"), related: makeRows("related") },
     );
     expect(inferredRows).toMatchObject({
+      has_more: true,
+      truncated: true,
+      read_output: { rows_compacted: true },
+    });
+
+    const objectRows = applyReadOutputDimensions(
+      "graph",
+      { outputBudget: 400 },
+      {
+        graph: {
+          nodes: Object.fromEntries(
+            Array.from({ length: 16 }, (_, index) => [
+              `pm-${index}`,
+              { id: `pm-${index}`, detail: "x".repeat(600) },
+            ]),
+          ),
+        },
+        row_contract: { command: "graph", row_keys: ["graph.nodes"] },
+      },
+    );
+    expect(objectRows).toMatchObject({
+      has_more: true,
+      truncated: true,
+      read_output: { rows_compacted: true },
+    });
+
+    const mixedRows = applyReadOutputDimensions(
+      "graph",
+      { outputBudget: 500 },
+      {
+        graph: {
+          nodes: Object.fromEntries(
+            Array.from({ length: 10 }, (_, index) => [
+              `pm-${index}`,
+              { id: `pm-${index}`, detail: "x".repeat(600) },
+            ]),
+          ),
+          edges: Array.from({ length: 8 }, (_, index) => ({
+            id: `edge-${index}`,
+            detail: "x".repeat(600),
+          })),
+        },
+        row_contract: {
+          command: "graph",
+          row_keys: ["graph.nodes", "graph.edges"],
+        },
+      },
+    );
+    expect(mixedRows).toMatchObject({
       has_more: true,
       truncated: true,
       read_output: { rows_compacted: true },

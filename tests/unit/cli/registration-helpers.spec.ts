@@ -104,6 +104,7 @@ describe("registration helpers", () => {
         outputLimit: "5",
         outputBudget: "800",
         outputFormat: "toon",
+        outputSession: '{"version":1}',
       }),
     } as unknown as Command;
     expect(getGlobalOptions(command)).toEqual({
@@ -121,6 +122,7 @@ describe("registration helpers", () => {
       outputLimit: "5",
       outputBudget: "800",
       outputFormat: "toon",
+      outputSession: '{"version":1}',
     });
 
     // A primitive (non-object) command yields an empty options reader so every option resolves to its default.

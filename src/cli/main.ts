@@ -814,6 +814,7 @@ function extractCommandScopedOptions(
   delete scoped.outputLimit;
   delete scoped.outputBudget;
   delete scoped.outputFormat;
+  delete scoped.outputSession;
 
   const looseOptions = parseLooseCommandOptions(commandArgs);
   for (const [key, value] of Object.entries(looseOptions)) {
@@ -2063,6 +2064,7 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
       outputLimit: rawGlobalOptions.outputLimit,
       outputBudget: rawGlobalOptions.outputBudget,
       outputFormat: rawGlobalOptions.outputFormat,
+      outputSession: rawGlobalOptions.outputSession,
     });
     await maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions);
     const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);

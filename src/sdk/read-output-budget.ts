@@ -5,6 +5,10 @@
  * read-output contract without expanding its public declaration module.
  */
 import type { PmReadOutputReceipt } from "./read-output-contracts.js";
+import {
+  countReadOutputRows,
+  readOutputRowCollections,
+} from "./read-output-rows.js";
 
 interface StringCompactionState {
   /** Whether at least one string was shortened. */
@@ -17,19 +21,6 @@ const MAX_COMPACTION_ITERATIONS = 64;
 /** Return whether a value is a non-array object record. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-/** Resolve declared row keys, falling back to top-level array properties. */
-function rowKeys(result: Record<string, unknown>): string[] {
-  const contract = result.row_contract;
-  if (isRecord(contract) && Array.isArray(contract.row_keys)) {
-    return contract.row_keys.filter(
-      (entry): entry is string => typeof entry === "string",
-    );
-  }
-  return Object.entries(result)
-    .filter(([, value]) => Array.isArray(value))
-    .map(([key]) => key);
 }
 
 /** Recursively shorten explanatory strings and record whether content changed. */
@@ -74,7 +65,6 @@ function compactRowsToBudget(
   receipt: PmReadOutputReceipt,
   budget: number,
 ): void {
-  const keys = rowKeys(result);
   for (
     let iteration = 0;
     iteration < MAX_COMPACTION_ITERATIONS;
@@ -82,28 +72,40 @@ function compactRowsToBudget(
   ) {
     updateReadOutputReceiptEstimate(result, receipt);
     if (receipt.estimated_tokens <= budget) return;
-    const candidate = keys
-      .map((key) => ({
-        key,
-        rows: Array.isArray(result[key]) ? (result[key] as unknown[]) : [],
+    const candidate = readOutputRowCollections(result)
+      .filter(
+        (collection) =>
+          (Array.isArray(collection.value)
+            ? collection.value.length
+            : Object.keys(collection.value).length) > 1,
+      )
+      .map((collection) => ({
+        collection,
+        length: Array.isArray(collection.value)
+          ? collection.value.length
+          : Object.keys(collection.value).length,
       }))
-      .filter(({ rows }) => rows.length > 1)
       .sort(
         (left, right) =>
-          right.rows.length - left.rows.length ||
-          left.key.localeCompare(right.key),
-      )[0];
+          right.length - left.length ||
+          left.collection.path.localeCompare(right.collection.path),
+      )[0]?.collection;
     if (!candidate) return;
-    candidate.rows.splice(-Math.max(1, Math.ceil(candidate.rows.length / 2)));
+    if (Array.isArray(candidate.value)) {
+      candidate.value.splice(
+        -Math.max(1, Math.ceil(candidate.value.length / 2)),
+      );
+    } else {
+      const keys = Object.keys(candidate.value);
+      for (const key of keys.slice(-Math.max(1, Math.ceil(keys.length / 2)))) {
+        delete candidate.value[key];
+      }
+    }
     receipt.rows_compacted = true;
     result.has_more = true;
     result.truncated = true;
     if (typeof result.count === "number") {
-      result.count = keys.reduce(
-        (total, key) =>
-          total + (Array.isArray(result[key]) ? result[key].length : 0),
-        0,
-      );
+      result.count = countReadOutputRows(result);
     }
   }
 }

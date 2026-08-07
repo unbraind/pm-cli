@@ -2,11 +2,13 @@ id: pm-sb0tns
 title: "Read surfaces have no common row contract: field projection reaches 4 of 11 commands and the row collection sits under a different key on each, so no single shell or jq expression works across pm"
 description: "Measured 2026-07-27 across the eleven read commands an agent or a shell pipeline actually uses: list, next, search, context, deps, graph, get, aggregate, activity, stats, events. Four capabilities decide whether a command can be composed with grep, jq, awk, or xargs. Field projection with --fields exists on four of eleven (list, search, context, get). An encoding choice with --format exists on six (list, next, search, context, deps, get) and is absent from graph, aggregate, activity, stats, and events. Row streaming with --stream exists on two (list, activity). One-row-per-line ndjson exists on four (list, search, context, activity). The newest and structurally richest surface, pm graph with its sixteen subcommands, has none of the four. The second-order problem is worse than the flag matrix. The collection of rows lives under a different key on every command: items on list and search, ready on next, ids on graph traversals, affected on graph impact, groups on aggregate, compact_activity on activity, and a set of scalar buckets on stats. An agent that has learned to pipe one command has learned nothing transferable about the next, and a wrapper script must special-case each surface. The consequence is measurable in tokens as well as in ergonomics: without --fields the only way to get a list of identifiers out of pm graph or pm aggregate is to fetch the full payload and discard almost all of it. This is the projection and row-identity axis specifically. Uniform row streaming as a constant-memory scale primitive is pm-mav1ak, format-flag grammar is pm-srns, the three incompatible list-family json projections are pm-pjnu91, and mode-paired envelopes that report a count beside an empty array are pm-cyrfjq. None of those four asks whether one expression can address a row on every surface."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ergonomics,cli,composability,contracts,tokens
 created_at: "2026-07-27T12:46:35.521Z"
-updated_at: "2026-08-03T09:06:53.307Z"
+updated_at: "2026-08-07T07:02:44.117Z"
+closed_at: "2026-08-07T07:02:20.762Z"
+completed_at: "2026-08-07T07:02:20.762Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "Every read surface declares its row collection through one contract, so the key that holds rows is derivable rather than memorized per command; --fields is available on every surface that returns rows, and requesting only identifiers costs output proportional to the identifiers rather than to the full payload; A documented one-liner extracts identifiers from any read command without special-casing, and that one-liner is exercised by a test so it cannot silently rot; Surfaces that genuinely cannot project fields state why in their contract rather than omitting the flag; The contract is declared once in the CLI contract layer and consumed by CLI, MCP, and completions, so a new read command inherits it instead of re-deciding it; The annotation read family, comments and notes and files, carries the declared row contract, since pm get omits those collections and they are the only path to them; Streaming read surfaces that emit no envelope are declared as such in the contract documentation rather than discovered by a parser failing on the first line"
@@ -17,6 +19,9 @@ why_now: "pm graph shipped sixteen subcommands with none of the four composabili
 parent: pm-mpbb
 risk: medium
 confidence: high
+resolution: "Superseded per-command row/projection special cases with one universal SDK read-row contract consumed by CLI, MCP, completions, and packages."
+expected_result: "Every declared read surface exposes derivable row identity and shared projection/bounding behavior, including nested arrays and keyed object maps."
+actual_result: "All 19 read surfaces inherit canonical output controls; declared dot-path rows are mapped, counted, bounded, compacted, and session-projected uniformly, with streaming documented separately and all verification green."
 dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
   pm-cxr0jb,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
@@ -31,7 +36,7 @@ dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-pjnu91,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
   pm-plwm,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
   pm-srns,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
-comments[14]{created_at,author,text}:
+comments[19]{created_at,author,text}:
   "2026-07-29T04:42:14.109Z","harness:claude-code","Fifth projection axis censused 2026-07-29, same shape as the four already recorded here. --summary is accepted by 4 of 18 read commands: graph, deps, health and contracts. It is absent from list, list-open, context, next, get, search, validate, stats, activity, aggregate, events, history, duplicates and test-all. The absence on validate is the sharpest: validate is the most verbose diagnostic in the product and AGENTS.md routes an unsure agent to it, yet the one flag that would bound it exits 2 with Unknown option --summary. So the axis coverage table is now --fields 4 of 11, --format 6 of 11, --stream 2 of 11, ndjson 4 of 11, --summary 4 of 18, and the four commands that accept --summary are not the same four that accept --fields. An agent cannot learn one bounding idiom and apply it; it must memorize a per-command matrix. That is the row contract this item owns, and the --summary column belongs in it."
   "2026-07-29T04:48:50.084Z","harness:claude-code","Projection-declaration column measured 2026-07-29, the read-side complement of the --fields column this item already tracks. Five read surfaces declare their projection five different ways. pm list emits a projection object naming mode and the exact field list. pm context emits sections_included and names them honestly - empty at brief, six at standard, ten at deep. pm activity emits only the boolean compact with no field list. pm search emits no projection key at all. pm get emits nothing: at brief depth the envelope outside .item is completely empty and children, claim_state and linked are dropped silently, all three being present at standard. So the same question - what did this shape leave out - has one good answer, one partial answer, one boolean, one absence, and one silent drop. The good answers already exist inside the product, which makes this a generalization job rather than a design job. Note the polarity too: every declaration names what is present, never what is absent, so a caller cannot compute the complement without already knowing the full field set. Omission polarity belongs to the budget contract on pm-5t33or; which key names the projection, and that every read surface has one, belongs here."
   "2026-07-30T10:27:24.125Z","harness:codex","Implementation evidence: shared row_contract declares active top-level row keys, a universal jq selector, and supported/unsupported field projection across core reads and graph subcommands."
@@ -46,15 +51,29 @@ comments[14]{created_at,author,text}:
   "2026-08-03T08:23:09.370Z","harness:codex","Manual acceptance: a fresh workspace appended and read an annotation, then the published row_contract jq_selector extracted the comment without command-specific logic. The packed SDK consumer resolved comments to row_keys=[comments]."
   "2026-08-03T08:53:23.951Z","harness:codex","Tranche boundary: this PR extends the universal row contract to comments, notes, learnings, files, docs, validate, and contracts; the same published selector extracted a real comment in fresh-workspace acceptance and the packed SDK resolved the contract. The item remains open because inheritable --fields projection on every row-producing surface is still broader than this tranche."
   "2026-08-03T09:06:53.307Z","harness:codex","PR evidence for delivered row-contract expansion: https://github.com/unbraind/pm-cli/pull/880. The canonical item remains open for the separately stated universal inheritable --fields residual."
+  "2026-08-07T05:54:39.735Z","harness:codex","Active tranche 2026-08-07: complete the residual universal projection contract needed by pm-hid9g1. The shared egress layer must traverse declared nested row paths and apply one SDK-owned session projection consistently across CLI, MCP, and embedded runtime surfaces; no command-local projection forks."
+  "2026-08-07T06:28:08.642Z","harness:codex","Implementation checkpoint 2026-08-07: the residual projection path now resolves row_contract.row_keys as dot paths and applies include, amount, session references, counting, and budget compaction consistently to nested arrays and object maps. Focused tests cover graph.nodes projection and object-map compaction; the existing universal jq selector remains the public extraction contract."
+  "2026-08-07T06:53:13.779Z","harness:codex","Verification evidence: universal read-row projections are included in the full pnpm test:coverage pass: 438 files, 6,898 tests, exact 100/100/100/100. Focused tests prove array and object-map row counting, mapping, bounding, nested-path rejection, mixed row compaction, and real temporary-tracker transport behavior."
+  "2026-08-07T06:58:36.774Z","harness:codex","Manual acceptance 2026-08-07: fresh temporary tracker list and search traversed the shared row contract without command-specific adapters; list delivered two facts, search replaced both with resolvable references, and exact whole-envelope receipts remained within budget."
+  "2026-08-07T07:02:20.297Z","harness:codex","Closeout evidence: the canonical --output-include/--output-limit contract now supersedes the fragmented legacy --fields family across all 19 declared read surfaces. Shared dot-path rows cover nested arrays and object maps; CLI, SDK, MCP schemas, completions, and package egress consume the same declaration. Streaming remains explicitly documented. Full exact coverage, linked PM tests, contract checks, manual temporary-tracker acceptance, and quality gates pass."
 notes[1]{created_at,author,text}:
   "2026-07-30T09:21:48.318Z","harness:claude-code","Cheap-form census extends this item's row-contract axis with a fourth flag, --summary, measured 2026-07-30. Present and effective on pm health (727 B vs 127,582 B plain, 175x), pm graph impact (488 B vs 223,214 B, 457x) and pm contracts (5,966 B vs 125,193 B). Absent entirely on pm context, which is both the orientation surface the agent guidance routes to first and a 9,067 B default payload with no cheap form at all - pm context --summary exits 2 as an unknown option. So the surface offers a bounded projection on three diagnostic commands and none on the one read that every agent session begins with.\n\nScope note: this stays inside this item's projection-and-row-identity boundary. It is not the streaming axis, not the encoding axis, not the list-family split, and not the zero-fill envelope class."
-files[5]{path,scope,note}:
+learnings[1]{created_at,author,text}:
+  "2026-08-07T07:02:19.515Z","harness:codex","A universal row primitive must treat row_contract.row_keys as dot paths and support both arrays and keyed object maps; otherwise graph-shaped SDK results silently bypass projection, counting, compaction, and session composition."
+files[8]{path,scope,note}:
   sdk/public-surface.json,project,regenerated public row contract signature
   src/sdk/output-projection.ts,project,Universal row-key selector and explicit field support contract
+  src/sdk/read-output-budget.ts,project,nested array and object-map compaction
+  src/sdk/read-output-contracts.ts,project,nested projection and amount integration
+  src/sdk/read-output-rows.ts,project,dot-path row collection primitives
   tests/fixtures/contracts/full.json,project,Generated universal read-row contract surface includes the public validator
   tests/integration/release-readiness-runtime.spec.ts,project,runtime row envelope ordering coverage
   tests/unit/sdk/read-row-contracts.spec.ts,project,Universal read row-contract spec shipped with PR 829
-tests[3]:
+tests[4]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts tests/integration/read-row-selector.integration.spec.ts
+    scope: project
+    timeout_seconds: 120
+    note: nested arrays object maps and selector coverage
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/read-row-contracts.spec.ts
     scope: project
     timeout_seconds: 240
@@ -64,6 +83,10 @@ tests[3]:
   - command: node scripts/run-tests.mjs test tests/unit/sdk/read-row-contracts.spec.ts
     path: tests/unit/sdk/read-row-contracts.spec.ts
     scope: project
-docs[1]{path,scope,note}:
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msilhfmj-o5tk7b,test,passed,"2026-08-07T06:59:14.225Z","2026-08-07T06:59:52.027Z","2026-08-07T06:59:52.027Z",4,0,0
+docs[2]{path,scope,note}:
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Universal row selector contract
+  docs/READ_OUTPUT_CONTRACTS.md,project,universal nested row behavior
+close_reason: "Completed the universal read-row/projection residual: one SDK-owned dot-path contract now maps, bounds, counts, compacts, and session-projects arrays and keyed object maps across CLI, SDK, MCP, completions, and packages. Verified by exact 100/100/100/100 coverage, four linked PM test commands, generated contract parity, token/static gates, and isolated live CLI acceptance."
 body: ""

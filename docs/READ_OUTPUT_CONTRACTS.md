@@ -1,6 +1,6 @@
 # Universal Read Output Contracts
 
-Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon) and [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon).
+Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), and [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon).
 
 ## Agent Quick Context
 
@@ -14,6 +14,58 @@ Every built-in read surface uses four output dimensions: what to include, how mu
 | Encoding  | `--output-format <toon\|json>`  | `outputFormat`  | Select the CLI renderer and record the requested encoding. |
 
 The contract covers `list`, `context`, `search`, `get`, `next`, `health`, `deps`, `graph`, `history`, `activity`, `validate`, `events`, `contracts`, `comments`, `notes`, `files`, `docs`, `stats`, and `aggregate`, including list aliases and `ctx`.
+
+Row shaping follows each envelope's `row_contract.row_keys`, including
+dot-delimited nested arrays and object maps such as `graph.nodes`. Include,
+amount, repeat suppression, and cost compaction therefore operate on the same
+machine-declared rows; they do not rely on command-specific top-level keys.
+
+## Cross-Call Context Sessions
+
+`--output-session <json>` / `outputSession` composes the four per-call
+dimensions across a request group. The caller supplies versioned state and
+passes the returned `read_session.next_state` to the next read:
+
+```json
+{
+  "version": 1,
+  "id": "orientation",
+  "token_budget": 4000,
+  "spent_tokens": 0,
+  "seen_item_ids": []
+}
+```
+
+The session ceiling and an explicit `--output-budget` both bind; the smaller
+remaining allowance wins. Rows for item facts already present in the caller's
+context become `{ "id": "pm-a1b2", "context_ref":
+"session:orientation:pm-a1b2" }` instead of repeating prose. References retain
+stable item identity and can be restored with `pm get <item-id> --brief` when
+the prior context is unavailable. The receipt reports estimated and charged
+tokens separately when the remaining group allowance is smaller than the
+minimum control envelope, plus the accumulated spend, remaining capacity,
+newly served items, and suppressed repeats.
+
+Session state is deliberately caller-carried: CLI processes, SDK clients, MCP
+hosts, and packages share the same deterministic primitive without a hidden
+daemon or mutable cache. Validation rejects unknown fields, invalid identifiers,
+unsupported schema versions, unsafe integers, and spend beyond the declared
+ceiling before a read executes.
+
+The mandatory orientation calibration runs `context`, `list`, `search`, `get`,
+and `next` against both a two-item tracker and a 2,243-item tracker. Its
+cross-call ceilings are strict: complete serialized bytes and cumulative spend
+may only shrink, while repeat suppression may only hold or improve. The gate
+also fixes the expected unique-fact shape:
+
+| Tracker tier | Group spend / budget | Seen items | Suppressed repeats | Delivered bytes |
+| ------------ | -------------------- | ---------- | ------------------ | --------------- |
+| 2 items      | 3,663 / 20,000       | 2          | 3                  | 14,646          |
+| 2,243 items  | 9,999 / 20,000       | 106        | 7                  | 39,985          |
+
+These are deterministic synthetic-corpus measurements from
+`scripts/release/context-intent-calibration.json`; they contain no hosted
+tracker content.
 
 ## Precedence and Compatibility
 
@@ -41,6 +93,13 @@ const result = await pm.list({
   outputInclude: "id,title,status",
   outputLimit: 10,
   outputBudget: 800,
+  outputSession: {
+    version: 1,
+    id: "orientation",
+    token_budget: 4000,
+    spent_tokens: 0,
+    seen_item_ids: [],
+  },
 });
 ```
 

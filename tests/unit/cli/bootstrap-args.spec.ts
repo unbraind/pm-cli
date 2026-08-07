@@ -89,12 +89,15 @@ describe("parseBootstrapGlobalOptions", () => {
         "--output-budget",
         "800",
         "--output-format=json",
+        "--output-session",
+        '{"version":1}',
       ]),
     ).toMatchObject({
       outputInclude: "id,title",
       outputLimit: "5",
       outputBudget: "800",
       outputFormat: "json",
+      outputSession: '{"version":1}',
     });
     expect(
       parseBootstrapGlobalOptions([
@@ -102,6 +105,7 @@ describe("parseBootstrapGlobalOptions", () => {
         "--output-limit=",
         "--output-budget=",
         "--output-format=yaml",
+        "--output-session=",
       ]),
     ).toEqual({
       path: undefined,
@@ -120,6 +124,7 @@ describe("parseBootstrapGlobalOptions", () => {
       "--output-limit",
       "--output-budget",
       "--output-format",
+      "--output-session",
     ]) {
       expect(
         parseBootstrapGlobalOptions([flag, "--json", "list"]),

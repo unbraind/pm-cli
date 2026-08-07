@@ -51,6 +51,7 @@ const PM_TOOL_READ_OUTPUT_PARAMETER_KEYS = [
   "outputLimit",
   "outputBudget",
   "outputFormat",
+  "outputSession",
 ] as const;
 
 /** Canonical top-level MCP properties that take precedence over runtime custom fields. */

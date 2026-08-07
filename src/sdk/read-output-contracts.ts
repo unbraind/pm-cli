@@ -6,7 +6,24 @@
  */
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { compactReadOutputToBudget, updateReadOutputReceiptEstimate } from "./read-output-budget.js";
+import {
+  compactReadOutputToBudget,
+  updateReadOutputReceiptEstimate,
+} from "./read-output-budget.js";
+import {
+  boundReadOutputRows,
+  countReadOutputRows,
+  mapReadOutputRows,
+  readOutputRowPaths,
+} from "./read-output-rows.js";
+import {
+  applyReadOutputSessionReferences,
+  attachReadOutputSessionReceipt,
+  parseReadOutputSession,
+  readOutputSessionRemainingTokens,
+  type PmReadOutputSessionReceipt,
+  type PmReadOutputSessionState,
+} from "./read-output-session.js";
 
 /** Stable output dimensions shared by every read surface. */
 export const PM_READ_OUTPUT_DIMENSIONS = [
@@ -55,6 +72,8 @@ export interface PmReadOutputOptions {
   outputBudget?: string | number;
   /** Requested static renderer encoding; streaming remains a command behavior. */
   outputFormat?: "json" | "toon";
+  /** Caller-carried cross-call budget and served-fact state. */
+  outputSession?: string | PmReadOutputSessionState;
 }
 
 /** Compatibility spelling retained for a command-specific output control. */
@@ -174,7 +193,11 @@ export type PmReadOutputResult<Result> =
 
 /** Select the omission-aware result type when an option shape can request a budget. */
 export type PmReadOutputResultFor<Result, Options> =
-  "outputBudget" extends keyof Options ? PmReadOutputResult<Result> : Result;
+  "outputBudget" extends keyof Options
+    ? PmReadOutputResult<Result>
+    : "outputSession" extends keyof Options
+      ? PmReadOutputResult<Result>
+      : Result;
 
 const READ_OUTPUT_PRECEDENCE = [
   "canonical",
@@ -194,6 +217,11 @@ const CANONICAL_OPTIONS: Record<PmReadOutputDimension, string> = {
 export const PM_READ_OUTPUT_OPTION_FLAGS: readonly string[] = Object.freeze(
   PM_READ_OUTPUT_DIMENSIONS.map((dimension) => CANONICAL_OPTIONS[dimension]),
 );
+
+/** Canonical control that composes the four per-call dimensions across reads. */
+export const PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS = Object.freeze([
+  "--output-session",
+] as const);
 
 const LEGACY_FLAGS_BY_COMMAND: Readonly<
   Record<PmReadOutputSurface, Partial<Record<PmReadOutputDimension, string[]>>>
@@ -335,7 +363,11 @@ function buildSurfaceContract(
       ]),
     ),
   ) as Record<PmReadOutputDimension, PmReadOutputDimensionContract>;
-  return Object.freeze({ command, dimensions, precedence: READ_OUTPUT_PRECEDENCE });
+  return Object.freeze({
+    command,
+    dimensions,
+    precedence: READ_OUTPUT_PRECEDENCE,
+  });
 }
 
 /** Universal output contract for every built-in read surface. */
@@ -373,6 +405,8 @@ const CANONICAL_OPTION_KEYS = [
   "output_budget",
   "outputFormat",
   "output_format",
+  "outputSession",
+  "output_session",
 ] as const;
 
 const HYBRID_READ_MUTATION_KEYS: Readonly<
@@ -412,6 +446,14 @@ const READ_OUTPUT_VALUE_VALIDATORS = [
     keys: ["outputFormat", "output_format"],
     valid: (value: unknown): boolean => value === "toon" || value === "json",
     message: "--output-format must be toon or json.",
+  },
+  {
+    keys: ["outputSession", "output_session"],
+    valid: (value: unknown): boolean => {
+      parseReadOutputSession(value);
+      return true;
+    },
+    message: "--output-session must be a valid session-state object.",
   },
 ] as const;
 
@@ -656,18 +698,6 @@ const ENVELOPE_KEYS = new Set([
   "truncated",
 ]);
 
-function rowKeys(result: Record<string, unknown>): string[] {
-  const contract = result.row_contract;
-  if (isRecord(contract) && Array.isArray(contract.row_keys)) {
-    return contract.row_keys.filter(
-      (entry): entry is string => typeof entry === "string",
-    );
-  }
-  return Object.entries(result)
-    .filter(([, value]) => Array.isArray(value))
-    .map(([key]) => key);
-}
-
 function projectRecordFields(
   value: Record<string, unknown>,
   selectors: readonly string[],
@@ -682,20 +712,14 @@ function applyIncludeProjection(
   result: Record<string, unknown>,
   selectors: readonly string[],
 ): Record<string, unknown> {
-  const rows = rowKeys(result);
+  const rows = readOutputRowPaths(result);
   const selectedRoot = selectors.some((selector) =>
     Object.hasOwn(result, selector.split(".")[0]!),
   );
   if (rows.length > 0 && !selectedRoot) {
-    return Object.fromEntries(
-      Object.entries(result).map(([key, value]) => [
-        key,
-        rows.includes(key) && Array.isArray(value)
-          ? value.map((entry) =>
-              isRecord(entry) ? projectRecordFields(entry, selectors) : entry,
-            )
-          : value,
-      ]),
+    const projected = { ...result };
+    return mapReadOutputRows(projected, (entry) =>
+      isRecord(entry) ? projectRecordFields(entry, selectors) : entry,
     );
   }
   return Object.fromEntries(
@@ -712,27 +736,12 @@ function applyAmountBound(
   amount: number | "unbounded",
 ): Record<string, unknown> {
   if (amount === "unbounded") return result;
-  let truncated = false;
-  const rowKeyList = rowKeys(result);
-  const rows = new Set(rowKeyList);
-  const bounded = Object.fromEntries(
-    Object.entries(result).map(([key, value]) => {
-      if (!rows.has(key) || !Array.isArray(value) || value.length <= amount) {
-        return [key, value];
-      }
-      truncated = true;
-      return [key, value.slice(0, amount)];
-    }),
-  );
+  const { result: bounded, truncated } = boundReadOutputRows(result, amount);
   if (!truncated) return bounded;
   bounded.has_more = true;
   bounded.truncated = true;
   if (typeof bounded.count === "number") {
-    bounded.count = rowKeyList.reduce(
-      (total, key) =>
-        total + (Array.isArray(bounded[key]) ? bounded[key].length : 0),
-      0,
-    );
+    bounded.count = countReadOutputRows(bounded);
   }
   bounded.applied_bound = {
     kind: "output_limit",
@@ -750,6 +759,65 @@ function requestedDimensions(
   );
 }
 
+/** Stabilize the per-call and cross-call receipts in one complete envelope. */
+function attachReadOutputSessionContracts(
+  result: Record<string, unknown>,
+  state: PmReadOutputSessionState,
+  receipt: PmReadOutputReceipt,
+): Record<string, unknown> {
+  let withSession = attachReadOutputSessionReceipt(result, state);
+  for (let iteration = 0; iteration < 8; iteration += 1) {
+    const previousReadEstimate = receipt.estimated_tokens;
+    const previousSessionEstimate = (
+      withSession.read_session as PmReadOutputSessionReceipt
+    ).spent_this_call_tokens;
+    updateReadOutputReceiptEstimate(withSession, receipt);
+    withSession = attachReadOutputSessionReceipt(withSession, state);
+    const sessionEstimate = (
+      withSession.read_session as PmReadOutputSessionReceipt
+    ).spent_this_call_tokens;
+    if (
+      receipt.estimated_tokens === previousReadEstimate &&
+      sessionEstimate === previousSessionEstimate
+    ) {
+      return withSession;
+    }
+  }
+  return withSession;
+}
+
+/** Apply field, amount, and repeat projections to every declared row path. */
+function projectReadOutputRows(
+  result: Record<string, unknown>,
+  resolved: PmResolvedReadOutputDimensions,
+  session: PmReadOutputSessionState | undefined,
+): Record<string, unknown> {
+  let projected = { ...result };
+  if (resolved.include?.source === "canonical") {
+    projected = applyIncludeProjection(projected, resolved.include.value);
+  }
+  if (resolved.amount?.source === "canonical") {
+    projected = applyAmountBound(projected, resolved.amount.value);
+  }
+  return session === undefined
+    ? projected
+    : applyReadOutputSessionReferences(projected, session);
+}
+
+/** Resolve the smallest binding per-call or remaining cross-call ceiling. */
+function resolveBindingReadOutputBudget(
+  resolved: PmResolvedReadOutputDimensions,
+  session: PmReadOutputSessionState | undefined,
+): number | undefined {
+  const budgets = [
+    ...(resolved.cost?.source === "canonical" ? [resolved.cost.value] : []),
+    ...(session === undefined
+      ? []
+      : [readOutputSessionRemainingTokens(session)]),
+  ];
+  return budgets.length === 0 ? undefined : Math.min(...budgets);
+}
+
 /** Apply universal field, row, and token bounds and attach an exact receipt. */
 export function applyReadOutputDimensions<
   Result extends Record<string, unknown>,
@@ -760,20 +828,17 @@ export function applyReadOutputDimensions<
 ): PmReadOutputResult<Result> {
   const resolved = resolveReadOutputDimensions(command, options);
   if (!resolved) return result;
+  const session = parseReadOutputSession(
+    options.outputSession ?? options.output_session,
+  );
   const requested = requestedDimensions(resolved);
   const canonicalRequested = requested.filter(
     (dimension) => resolved[dimension]?.source === "canonical",
   );
-  if (canonicalRequested.length === 0) {
+  if (canonicalRequested.length === 0 && session === undefined) {
     return result;
   }
-  let projected: Record<string, unknown> = { ...result };
-  if (resolved.include?.source === "canonical") {
-    projected = applyIncludeProjection(projected, resolved.include.value);
-  }
-  if (resolved.amount?.source === "canonical") {
-    projected = applyAmountBound(projected, resolved.amount.value);
-  }
+  let projected = projectReadOutputRows(result, resolved, session);
   const receipt: PmReadOutputReceipt = {
     contract_version: 1,
     command: resolved.command,
@@ -789,8 +854,7 @@ export function applyReadOutputDimensions<
   };
   projected.read_output = receipt;
   updateReadOutputReceiptEstimate(projected, receipt);
-  const budget =
-    resolved.cost?.source === "canonical" ? resolved.cost.value : undefined;
+  const budget = resolveBindingReadOutputBudget(resolved, session);
   if (budget !== undefined && receipt.estimated_tokens > budget) {
     projected = compactReadOutputToBudget(projected, receipt, budget);
   }
@@ -820,9 +884,21 @@ export function applyReadOutputDimensions<
       omitted as unknown as Record<string, unknown>,
       minimalReceipt,
     );
-    return omitted;
+    return session === undefined
+      ? omitted
+      : (attachReadOutputSessionContracts(
+          omitted as unknown as Record<string, unknown>,
+          session,
+          minimalReceipt,
+        ) as PmReadOutputResult<Result>);
   }
-  return projected as Result & { read_output: PmReadOutputReceipt };
+  return (
+    session === undefined
+      ? projected
+      : attachReadOutputSessionContracts(projected, session, receipt)
+  ) as Result & {
+    read_output: PmReadOutputReceipt;
+  };
 }
 
 /** Narrow a universal read result to its budget-omission branch. */

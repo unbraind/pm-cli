@@ -14663,6 +14663,20 @@
     },
     {
       "class": "usage",
+      "code": "invalid_read_output_session",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Invalid read output session condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/read-output-session.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "class": "usage",
       "code": "invalid_workspace_snapshot_target",
       "emitting_commands": [
         "*"
@@ -17482,6 +17496,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -17837,6 +17905,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "parent": {
@@ -18250,6 +18372,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -19126,6 +19302,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -19333,6 +19563,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -19526,6 +19810,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -19839,6 +20177,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -20125,6 +20517,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -20420,6 +20866,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -20615,6 +21115,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -21210,6 +21764,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -21592,6 +22200,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -21883,6 +22545,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -23847,6 +24563,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -25001,6 +25771,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "parentCycleSeverity": {
@@ -31319,6 +32143,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -31890,6 +32768,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "parent": {
@@ -32465,6 +33397,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -33036,6 +34022,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "parent": {
@@ -33611,6 +34651,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -34182,6 +35276,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "parent": {
@@ -34757,6 +35905,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -35330,6 +36532,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -35624,6 +36880,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -35908,6 +37218,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "parent": {
@@ -36241,6 +37605,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -36519,6 +37937,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -36806,6 +38278,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -37194,6 +38720,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "parent": {
@@ -37688,6 +39268,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "parent": {
             "description": "Parent item ID filter for hierarchical list queries.",
             "examples": [
@@ -37950,6 +39584,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -38184,6 +39872,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -39691,6 +41433,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -42017,6 +43813,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -42251,6 +44101,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -42657,6 +44561,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -42866,6 +44824,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -43098,6 +45110,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -44615,6 +46681,60 @@
               "unbounded"
             ]
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -44768,6 +46888,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {
@@ -45032,6 +47206,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "parentCycleSeverity": {
@@ -45587,6 +47815,60 @@
             "examples": [
               10,
               "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
             ]
           },
           "path": {

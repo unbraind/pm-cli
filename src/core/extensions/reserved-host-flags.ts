@@ -24,6 +24,7 @@ export const RESERVED_EXTENSION_HOST_FLAGS: readonly ReservedExtensionHostFlag[]
     { flag: "--output-limit", value_name: "count" },
     { flag: "--output-budget", value_name: "tokens" },
     { flag: "--output-format", value_name: "toon|json" },
+    { flag: "--output-session", value_name: "state" },
     { flag: "--quiet" },
     { flag: "--no-changed-fields" },
     { flag: "--full-changed-fields" },

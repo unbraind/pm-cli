@@ -3,7 +3,7 @@
 /**
  * Reproducible two-item and current-scale intent-budget calibration gate.
  *
- * Trackers: pm-7hbfch, pm-yekkvt, and pm-sf31yl.
+ * Trackers: pm-7hbfch, pm-yekkvt, pm-sf31yl, and pm-hid9g1.
  */
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -84,9 +84,12 @@ function withReadContracts(command, options, result) {
   return attachReadOutputContracts(command, options, result);
 }
 
-async function runIntent(command, manifest, global) {
+async function runIntent(command, manifest, global, sharedOptions = {}) {
   if (command === "context") {
-    const options = applyContextIntentProjection("context", { for: "orient" });
+    const options = applyContextIntentProjection("context", {
+      for: "orient",
+      ...sharedOptions,
+    });
     return withReadContracts(
       command,
       options,
@@ -94,7 +97,10 @@ async function runIntent(command, manifest, global) {
     );
   }
   if (command === "get") {
-    const options = applyContextIntentProjection("get", { for: "inspect" });
+    const options = applyContextIntentProjection("get", {
+      for: "inspect",
+      ...sharedOptions,
+    });
     return withReadContracts(
       command,
       options,
@@ -105,6 +111,7 @@ async function runIntent(command, manifest, global) {
     const options = applyContextIntentProjection("list", {
       for: "triage",
       status: "all",
+      ...sharedOptions,
     });
     return withReadContracts(
       command,
@@ -113,14 +120,88 @@ async function runIntent(command, manifest, global) {
     );
   }
   if (command === "next") {
-    const options = applyContextIntentProjection("next", { for: "execute" });
+    const options = applyContextIntentProjection("next", {
+      for: "execute",
+      ...sharedOptions,
+    });
     return withReadContracts(command, options, await runNext(options, global));
   }
-  const options = applyContextIntentProjection("search", { for: "discover" });
+  const options = applyContextIntentProjection("search", {
+    for: "discover",
+    ...sharedOptions,
+  });
   return withReadContracts(
     command,
     options,
     await runSearch(SCALE_SEARCH_QUERY, options, global),
+  );
+}
+
+/** Measure the AGENTS.md orientation read sequence under one carried budget. */
+async function runSessionOrientation(
+  manifest,
+  global,
+  runIntentFn = runIntent,
+) {
+  const tokenBudget = 20_000;
+  let state = {
+    version: 1,
+    id: "agents-orientation",
+    token_budget: tokenBudget,
+    spent_tokens: 0,
+    seen_item_ids: [],
+  };
+  let deliveredBytes = 0;
+  let suppressedRepeatCount = 0;
+  for (const command of ["context", "list", "search", "get", "next"]) {
+    const result = await runIntentFn(command, manifest, global, {
+      outputSession: state,
+    });
+    const receipt = result.read_session;
+    if (
+      receipt?.id !== state.id ||
+      receipt.measurement_scope !== "complete_read_envelope" ||
+      !Number.isFinite(receipt.spent_this_call_tokens) ||
+      !Number.isFinite(receipt.charged_this_call_tokens) ||
+      receipt.spent_before_tokens !== state.spent_tokens ||
+      receipt.spent_total_tokens > tokenBudget ||
+      receipt.next_state?.spent_tokens !== receipt.spent_total_tokens
+    ) {
+      throw new Error(`${command}: session orientation receipt drifted`);
+    }
+    if (
+      result.read_output?.estimated_tokens !==
+      Math.ceil(serializedBytes(result) / 4)
+    ) {
+      throw new Error(`${command}: complete session envelope estimate drifted`);
+    }
+    deliveredBytes += serializedBytes(result);
+    suppressedRepeatCount += receipt.suppressed_repeat_count;
+    state = receipt.next_state;
+  }
+  if (suppressedRepeatCount < 1) {
+    throw new Error("orientation session did not suppress repeated item facts");
+  }
+  return {
+    command_count: 5,
+    token_budget: tokenBudget,
+    spent_tokens: state.spent_tokens,
+    remaining_tokens: tokenBudget - state.spent_tokens,
+    seen_item_count: state.seen_item_ids.length,
+    suppressed_repeat_count: suppressedRepeatCount,
+    delivered_bytes: deliveredBytes,
+  };
+}
+
+/** Count every top-level collection declared by one calibrated intent. */
+function countIntentRows(result) {
+  if (Array.isArray(result.items)) return result.items.length;
+  return (
+    result.row_contract?.row_keys?.reduce(
+      (count, key) =>
+        count + (Array.isArray(result[key]) ? result[key].length : 0),
+      0,
+    ) ?? 0
   );
 }
 
@@ -250,6 +331,7 @@ async function measureTier(
     generateWorkspace = generateSyntheticWorkspace,
     cleanupWorkspaceRoot = cleanupTempRoot,
     runIntentFn = runIntent,
+    runSessionOrientationFn = runSessionOrientation,
     negativeControl = structuralEnforcementNegativeControl,
     runCursorWalkFn = runCursorWalk,
   } = {},
@@ -284,13 +366,7 @@ async function measureTier(
       }
       intents[command] = {
         delivered_bytes: serializedBytes(result),
-        delivered_rows: Array.isArray(result.items)
-          ? result.items.length
-          : (result.row_contract?.row_keys?.reduce(
-              (count, key) =>
-                count + (Array.isArray(result[key]) ? result[key].length : 0),
-              0,
-            ) ?? 0),
+        delivered_rows: countIntentRows(result),
         declared_tokens: result.context_intent.token_budget,
         measured_tokens: result.context_intent.estimated_tokens,
         degradation: result.context_intent.degradation,
@@ -299,6 +375,11 @@ async function measureTier(
     return {
       item_count: itemCount,
       intents,
+      session_orientation: await runSessionOrientationFn(
+        manifest,
+        global,
+        runIntentFn,
+      ),
       ...(itemCount === CURRENT_TRACKER_SCALE
         ? {
             cursor_walks: {
@@ -321,7 +402,7 @@ export async function measureContextIntentCalibration(
   process.env.PM_CONTEXT_USAGE_DISABLED = "1";
   try {
     return {
-      version: 1,
+      version: 2,
       metric: "utf8_bytes",
       token_estimate: "ceil(bytes / 4)",
       structural_negative_control:
@@ -346,6 +427,31 @@ function assertCalibrationCondition(condition, message) {
 
 function calibrationObjectKeys(value) {
   return value && typeof value === "object" ? Object.keys(value).sort() : [];
+}
+
+/** Enforce the approved cross-call orientation shape and performance ceiling. */
+function assertSessionOrientation(measuredSession, approvedSession) {
+  if (approvedSession === undefined && measuredSession === undefined) return;
+  assertCalibrationCondition(
+    approvedSession !== undefined && measuredSession !== undefined,
+    "calibration session orientation regressed",
+  );
+  const conditions = [
+    measuredSession.command_count === approvedSession.command_count,
+    measuredSession.token_budget === approvedSession.token_budget,
+    measuredSession.spent_tokens <= measuredSession.token_budget,
+    measuredSession.spent_tokens <= approvedSession.spent_tokens,
+    measuredSession.remaining_tokens ===
+      measuredSession.token_budget - measuredSession.spent_tokens,
+    measuredSession.seen_item_count === approvedSession.seen_item_count,
+    measuredSession.suppressed_repeat_count >=
+      approvedSession.suppressed_repeat_count,
+    measuredSession.delivered_bytes <= approvedSession.delivered_bytes,
+  ];
+  assertCalibrationCondition(
+    conditions.every(Boolean),
+    "calibration session orientation regressed",
+  );
 }
 
 function assertCalibrationTier(measuredTier, approvedTier) {
@@ -383,6 +489,10 @@ function assertCalibrationTier(measuredTier, approvedTier) {
       message,
     );
   }
+  assertSessionOrientation(
+    measuredTier.session_orientation,
+    approvedTier.session_orientation,
+  );
   const approvedWalkNames = calibrationObjectKeys(approvedTier.cursor_walks);
   const measuredWalkNames = calibrationObjectKeys(measuredTier.cursor_walks);
   assertCalibrationCondition(
@@ -455,6 +565,7 @@ export const _testOnly = {
   assertCursorRowParity,
   intentReceiptViolation,
   measureTier,
+  runSessionOrientation,
   runCursorWalk,
   validateCursorPage,
 };
