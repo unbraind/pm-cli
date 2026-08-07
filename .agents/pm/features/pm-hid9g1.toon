@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",context,context-management,scale,token-budget
 created_at: "2026-08-03T06:22:52.917Z"
-updated_at: "2026-08-07T09:54:51.474Z"
+updated_at: "2026-08-07T10:04:17.687Z"
 closed_at: "2026-08-07T07:02:22.215Z"
 completed_at: "2026-08-07T07:02:22.215Z"
 author: "harness:claude-code"
@@ -38,7 +38,7 @@ dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,blocked_by,"2026-08-03T11:15:45.320Z","harness:codex","cli:update:dep",detected
   pm-n7rr,implements,"2026-08-03T11:15:45.320Z","harness:codex","cli:update:dep",detected
   pm-cyn0y6,related,"2026-08-03T20:38:41.575Z","harness:claude-code","cli:update:dep",detected
-comments[19]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-08-03T11:09:25.972Z","harness:codex","Estimate basis 2026-08-03: 900 minutes reflects a cross-call budget ledger, served-fact references, deterministic degradation, session and fleet composition, CI ratchet, and small-workspace no-regression proof."
   "2026-08-03T11:15:45.320Z","harness:codex","Sequencing 2026-08-03: establish trustworthy per-command ceilings in pm-5t33or before composing a session ledger, then use the same receipt and degradation algebra for within-session deduplication. This item implements the agent-facing simplification outcome because fewer commands are insufficient if the prescribed multi-call orientation still repeats a third of its bytes."
   "2026-08-07T05:54:35.716Z","harness:codex","Duplicate/orientation evidence 2026-08-07: searched all 2,343 items across every status for output session token budget, seen/suppression, repeated item context, and closed session-budget predecessors; pm-hid9g1 is the canonical owner. pm-5t33or supplies the shipped per-call budget algebra, pm-sb0tns owns the remaining universal row/projection prerequisite, pm-tch9cs remains the distinct cross-agent amortization horizon."
@@ -58,6 +58,7 @@ comments[19]{created_at,author,text}:
   "2026-08-07T09:38:39.958Z","harness:codex","Final review-fix head verification: 441 files and 6,919 tests pass at exact 100% statements 49,665/49,665, branches 36,088/36,088, functions 10,158/10,158, and lines 48,110/48,110. Static quality, package boundaries, SDK/public-surface parity, contracts, token budgets, 2/2,243-item calibration, tracker ratchet, SDK import costs, and CLI transport floors also pass."
   "2026-08-07T09:44:33.702Z","harness:codex","Exact-head DeepScan follow-up: hosted finding NULL_POINTER correctly identified an optional-chain test assertion followed by an unchecked property access in the new pm_run schema regression. Added an explicit fail-closed guard before reading anyOf. The focused transport suite passes 8/8, ESLint passes with zero warnings, and full TypeScript typecheck passes."
   "2026-08-07T09:54:51.474Z","harness:codex","CodeRabbit exact-head follow-up: re-exported PmReadOutputSessionReceipt from contracts/runtime beside the result types that reference it; removed pm_run's last description override so its entire outputSession schema comes from the canonical public builder; and added explicit guards for both schema alternatives in the transport regression. Regenerated SDK surface/contracts; focused 8-test transport suite, ESLint, typecheck, contract check, and public-surface check pass."
+  "2026-08-07T10:04:17.687Z","harness:codex","CI exact-head remediation: static quality correctly enforced runtime.ts's 3,400 implementation-line ceiling after the new receipt export. Kept both public type exports on one declarative export line, restoring the exact 3,400-line boundary without suppressions or threshold changes. Full local static quality, package boundary, SDK parity, token/calibration/tracker gates, import costs, transport floor, ESLint, typecheck, and SDK surface check all pass."
 learnings[1]{created_at,author,text}:
   "2026-08-07T07:02:19.900Z","harness:codex","Cross-call context accounting stays universal and small-workspace-free when the complete versioned ledger travels with the caller. The host can then reuse the same egress row contract across CLI, SDK, MCP, and packages without a daemon, persistent session index, or command-local cache."
 files[26]{path,scope,note}:
