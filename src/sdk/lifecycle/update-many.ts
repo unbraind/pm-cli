@@ -52,6 +52,10 @@ import {
 } from "../query/list.js";
 import { runRestore } from "./restore.js";
 import { runUpdate, type UpdateCommandOptions } from "./update.js";
+import {
+  derivePmBulkMutationEffect,
+  type PmCommandEffectReceipt,
+} from "../cli-contracts/command-exit-contracts.js";
 
 const UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION = 1;
 const UPDATE_MANY_CHECKPOINT_SUBDIR = "update-many";
@@ -318,7 +322,7 @@ interface UpdateManyRollbackResultRow {
 }
 
 /** Documents the update many result payload exchanged by command, SDK, and package integrations. */
-export interface UpdateManyResult {
+export interface UpdateManyResult extends PmCommandEffectReceipt {
   /** Value that configures or reports mode for this contract. */
   mode: "dry_run" | "apply" | "rollback";
   /** Number of matched entries represented by this result. */
@@ -849,6 +853,12 @@ const runUpdateManyRollback = async (params: {
       ),
   );
   return {
+    ...derivePmBulkMutationEffect({
+      applied: rollback.restored_ids.length,
+      skipped: 0,
+      failed: rollback.failed_count,
+      unmatched: 0,
+    }),
     mode: "rollback",
     matched_count: checkpoint.items.length,
     dry_run: false,
@@ -1066,6 +1076,8 @@ const buildUpdateManyPlan = async (params: {
 const buildUpdateManyDryRunResult = (
   plan: UpdateManyPlan,
 ): UpdateManyResult => ({
+  outcome: "effect",
+  exit_code: EXIT_CODE.SUCCESS,
   mode: "dry_run",
   matched_count: plan.listed.items.length,
   dry_run: true,
@@ -1078,6 +1090,12 @@ const buildUpdateManyDryRunResult = (
 
 /** Builds the apply response for a plan whose rows are all already current. */
 const buildUpdateManyNoopResult = (plan: UpdateManyPlan): UpdateManyResult => ({
+  ...derivePmBulkMutationEffect({
+    applied: 0,
+    skipped: plan.listed.items.length,
+    failed: 0,
+    unmatched: plan.unmatchedIds?.length ?? 0,
+  }),
   mode: "apply",
   matched_count: plan.listed.items.length,
   dry_run: false,
@@ -1191,16 +1209,25 @@ const applyUpdateManyPlan = async (params: {
   /** Counts apply rows with one terminal status. */
   const countStatus = (status: UpdateManyApplyResultRow["status"]): number =>
     applied.rows.filter((row) => row.status === status).length;
+  const updatedCount = countStatus("updated");
+  const skippedCount = countStatus("skipped");
+  const failedCount = countStatus("failed");
   return {
+    ...derivePmBulkMutationEffect({
+      applied: updatedCount,
+      skipped: skippedCount,
+      failed: failedCount,
+      unmatched: params.plan.unmatchedIds?.length ?? 0,
+    }),
     mode: "apply",
     matched_count: params.plan.listed.items.length,
     dry_run: false,
     filters: params.plan.listed.filters,
     planned_update_options: params.plan.updateSummary,
     ...(checkpointInfo ? { checkpoint: checkpointInfo } : {}),
-    updated_count: countStatus("updated"),
-    skipped_count: countStatus("skipped"),
-    failed_count: countStatus("failed"),
+    updated_count: updatedCount,
+    skipped_count: skippedCount,
+    failed_count: failedCount,
     rows: applied.rows,
     ids: applied.updatedIds,
     ...buildUnmatchedIdFields(params.plan),

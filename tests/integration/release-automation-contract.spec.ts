@@ -270,7 +270,7 @@ describe("release automation contract", () => {
     expect(payload.telemetry.mode).toBe("off");
   });
 
-  it("keeps telemetry query command execution portable outside shell scripts", async () => {
+  it("keeps Sentry classification SDK-bound and telemetry command execution portable", async () => {
     const gateSource = await readFile(
       path.join(repoRoot, "scripts/release/sentry-telemetry-gate.mjs"),
       "utf8",
@@ -278,31 +278,27 @@ describe("release automation contract", () => {
     expect(gateSource).toContain('commandFor("sentry")');
     expect(gateSource).toContain("function isExpectedHandledCliIssue");
     expect(gateSource).toContain("issue?.isUnhandled === true");
-    expect(gateSource).toContain(
-      "const combinedText = issueTextValue(issue).toLowerCase();",
+    expect(gateSource).toContain("PM_ERROR_CODE_CATALOG");
+    expect(gateSource).toContain("resolveCanonicalPmErrorCodeContract");
+    expect(gateSource).toMatch(
+      /new Set\(\[\s*"usage",\s*"not_found",\s*"conflict",?\s*\]\)/u,
     );
-    expect(gateSource).toContain("KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS");
-    expect(gateSource).toContain('"dependency cycle"');
-    expect(gateSource).toContain('"no slack webhook configured"');
-    expect(gateSource).toContain('"slack webhook returned http"');
-    // Count-agnostic structural-error pattern (replaced the brittle per-count
-    // "validation failed: 1/2/3" + "found in" + "preflight" entries) plus the
-    // standup-export missing-parent-directory write failure.
-    expect(gateSource).toContain('"structural error(s)"');
-    expect(gateSource).toContain('"the parent directory does not exist"');
-    expect(gateSource).toContain('"tracker_not_initialized"');
-    expect(gateSource).toContain('"pm-web exited with code"');
-    expect(gateSource).toContain('"github api returned http 422"');
-    expect(gateSource).toContain('"drift detected:"');
-    // Unknown-author acknowledgment refusals are argument validation, so the
-    // CLI boundary classifies them as usage errors and the gate keeps them
-    // expected-handled when expected-error capture is enabled.
-    expect(gateSource).toContain('"author acknowledgment target"');
-    expect(gateSource).toContain('"unknown-author acknowledgment target"');
     expect(gateSource).toContain(
+      'readIssueContractValue(issue, "error_code", "pm.error_code")',
+    );
+    expect(gateSource).toContain(
+      'readIssueContractValue(issue, "exit_code", "pm.exit_code")',
+    );
+    expect(gateSource).toContain("contract.exit_code === exitCode");
+    expect(gateSource).toContain("enrichSentryIssuesWithLatestEvents");
+    expect(gateSource).toContain("enrichSentryIssuesViaCli");
+    expect(gateSource).not.toContain(
+      "KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS",
+    );
+    expect(gateSource).not.toContain(
       "KNOWN_EXPECTED_HANDLED_ENVIRONMENT_ISSUE_PATTERNS",
     );
-    expect(gateSource).toContain('"enospc: no space left on device"');
+    expect(gateSource).not.toContain("issueTextValue");
     expect(gateSource).toContain("ignored_expected_handled_total");
     expect(gateSource).toContain("function buildTelemetryCommandInvocation");
     expect(gateSource).toContain("function resolveTelemetrySummary");

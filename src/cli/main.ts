@@ -171,6 +171,7 @@ import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-runtime.js";
 import { validateReadOutputOptions } from "../sdk/read-output-contracts.js";
 import { loadContextIntentSnapshotForInvocation } from "./context-intent-invocation.js";
+import { isPmSuccessfulExitCode } from "../sdk/cli-contracts/command-exit-contracts.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 
@@ -596,7 +597,7 @@ function buildPostActionTelemetryOutcome(): TelemetryCommandOutcome {
   const processExitCode = typeof process.exitCode === "number" && Number.isFinite(process.exitCode) ? Math.max(0, Math.trunc(process.exitCode)) : undefined;
   const resultExitCode = readRecordNumber(result, "exit_code", "exitCode");
   const exitCode = processExitCode ?? resultExitCode ?? EXIT_CODE.SUCCESS;
-  const ok = exitCode === EXIT_CODE.SUCCESS;
+  const ok = isPmSuccessfulExitCode(exitCode);
   const errorCode = readRecordString(result, "error_code", "errorCode") ?? inferPostActionErrorCode(ok, exitCode);
   const errorCategory =
     normalizeTelemetryErrorCategory(readRecordString(result, "error_category", "errorCategory")) ??

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1444,
+    "covered_symbols": 1462,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1445
+    "required_symbols": 1463
   },
   "breaking_acknowledgements": [
     {
@@ -57,6 +57,36 @@
       ],
       "package_version": "2026.8.7",
       "reason": "pm-9stazf replaces CLI-only annotation restoration guidance with transport-neutral selectors"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmErrorCodeContract",
+        "signature ./sdk/contracts:PmErrorCodeContract",
+        "signature ./sdk/runtime:PmErrorCodeContract"
+      ],
+      "package_version": "2026.8.7",
+      "reason": "Add optional error-code canonicalization metadata while preserving every emitted code and the existing resolver contract; consumers may adopt resolveCanonicalPmErrorCodeContract incrementally."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContractsResult",
+        "signature ./sdk:EXIT_CODE",
+        "signature ./sdk/core:EXIT_CODE",
+        "signature ./sdk/runtime:ContractsResult",
+        "signature ./sdk/runtime:EXIT_CODE"
+      ],
+      "package_version": "2026.8.7",
+      "reason": "Add stable successful effect exits 6 and 7 plus generated command exit contracts; existing 0-5 meanings remain unchanged and bulk mutation result receipts now carry required outcome and exit_code fields."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCommandEffect",
+        "signature ./sdk:PmCommandEffectReceipt",
+        "signature ./sdk/contracts:PmCommandEffect",
+        "signature ./sdk/contracts:PmCommandEffectReceipt"
+      ],
+      "package_version": "2026.8.7",
+      "reason": "Report collected all-row bulk failures as dependency_failed exit 5 instead of a successful no-effect receipt; full no-effect and partial-effect exits remain 6 and 7."
     }
   ],
   "entrypoints": {
@@ -404,6 +434,12 @@
           "kind": "function",
           "name": "analyzeKnowledgeGraph",
           "signature": "(graph: RelationshipGraph) => RelationshipKnowledgeAnalysis | calls: (graph: RelationshipGraph) => RelationshipKnowledgeAnalysis"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "analyzePmCommandExitConformance",
+          "signature": "(observations: readonly PmCommandExitObservation[], expectedCommands?: readonly string[], contracts?: readonly PmCommandExitContract[]) => PmCommandExitConformanceReport | calls: (observations: readonly PmCommandExitObservation[], expectedCommands?: readonly string[], contracts?: readonly PmCommandExitContract[]) => PmCommandExitConformanceReport"
         },
         {
           "classification": "contract_data",
@@ -2245,7 +2281,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
         },
         {
           "classification": "supported",
@@ -2926,6 +2962,12 @@
           "signature": "(blueprint: ExtensionBlueprint) => ExtensionCapability[] | calls: (blueprint: ExtensionBlueprint) => ExtensionCapability[]"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "derivePmBulkMutationEffect",
+          "signature": "(counts: PmBulkMutationEffectCounts) => PmCommandEffectReceipt | calls: (counts: PmBulkMutationEffectCounts) => PmCommandEffectReceipt"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "deriveSchemaEvolutionMigrationId",
@@ -3373,7 +3415,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "EXIT_CODE",
-          "signature": "{ readonly SUCCESS: 0; readonly GENERIC_FAILURE: 1; readonly USAGE: 2; readonly NOT_FOUND: 3; readonly CONFLICT: 4; readonly DEPENDENCY_FAILED: 5; }"
+          "signature": "{ readonly SUCCESS: 0; readonly GENERIC_FAILURE: 1; readonly USAGE: 2; readonly NOT_FOUND: 3; readonly CONFLICT: 4; readonly DEPENDENCY_FAILED: 5; readonly NO_EFFECT: 6; readonly PARTIAL_EFFECT: 7; }"
         },
         {
           "classification": "advanced_export",
@@ -5406,8 +5448,20 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "isPmKnownExitCode",
+          "signature": "(exitCode: number) => exitCode is PmCommandExitCode | calls: (exitCode: number) => exitCode is PmCommandExitCode"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "isPmMutationReceipt",
           "signature": "(value: unknown) => value is PmCliMutationReceipt | calls: (value: unknown) => value is PmCliMutationReceipt"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isPmSuccessfulExitCode",
+          "signature": "(exitCode: number) => boolean | calls: (exitCode: number) => boolean"
         },
         {
           "classification": "contract_data",
@@ -7290,6 +7344,18 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_COMMAND_EXIT_CONTRACTS",
+          "signature": "readonly PmCommandExitContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_COMMAND_EXIT_OUTCOME_CONTRACTS",
+          "signature": "readonly [{ readonly exit_code: 0; readonly outcome: \"effect\"; readonly success: true; readonly meaning: \"The requested operation completed with its intended effect.\"; }, { readonly exit_code: 1; readonly outcome: \"internal_failure\"; readonly success: false; readonly meaning: \"An unexpected runtime or internal failure prevented completion.\"; }, { readonly exit_code: 2; readonly outcome: \"refused_input\"; readonly success: false; readonly meaning: \"The invocation was refused because its input or composition was invalid.\"; }, { readonly exit_code: 3; readonly outcome: \"refused_tracker_state\"; readonly success: false; readonly meaning: \"The requested tracker, item, or resource was not present.\"; }, { readonly exit_code: 4; readonly outcome: \"conflict\"; readonly success: false; readonly meaning: \"Current state or concurrency prevented the requested effect.\"; }, { readonly exit_code: 5; readonly outcome: \"dependency_failed\"; readonly success: false; readonly meaning: \"A required dependency operation failed.\"; }, { readonly exit_code: 6; readonly outcome: \"no_effect\"; readonly success: true; readonly meaning: \"The request was valid and completed, but matched nothing to change.\"; }, { readonly exit_code: 7; readonly outcome: \"partial_effect\"; readonly success: true; readonly meaning: \"The request completed and changed some, but not all, selected targets.\"; }]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
           "signature": "PmCommandOutputBudgetContract[]"
         },
@@ -7536,6 +7602,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_SUCCESS_EXIT_CODES",
+          "signature": "readonly [0, 6, 7]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_TOOL_ACTION_PARAMETER_CONTRACTS",
           "signature": "Readonly<Record<PmToolAction, PmActionSchemaContract>>"
         },
@@ -7610,6 +7682,12 @@
           "kind": "type",
           "name": "PmBulkMutationControlOptions",
           "signature": "export type PmBulkMutationControlOptions = { dryRun?: boolean; rollback?: boolean; noCheckpoint?: boolean; };"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmBulkMutationEffectCounts",
+          "signature": "export interface PmBulkMutationEffectCounts { applied: number; skipped: number; failed: number; unmatched: number; }"
         },
         {
           "classification": "contract_data",
@@ -7697,6 +7775,54 @@
         },
         {
           "classification": "contract_data",
+          "kind": "type",
+          "name": "PmCommandEffect",
+          "signature": "export type PmCommandEffect = \"effect\" | \"no_effect\" | \"partial_effect\" | \"dependency_failed\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandEffectReceipt",
+          "signature": "export interface PmCommandEffectReceipt { outcome: PmCommandEffect; exit_code: 0 | 5 | 6 | 7; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmCommandExitCode",
+          "signature": "export type PmCommandExitCode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandExitConformanceReport",
+          "signature": "export interface PmCommandExitConformanceReport { ok: boolean; missing_commands: string[]; undeclared_observations: PmCommandExitObservation[]; unreachable_exit_codes: PmCommandExitCode[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandExitContract",
+          "signature": "export interface PmCommandExitContract { command: string; exit_codes: readonly PmCommandExitCode[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandExitObservation",
+          "signature": "export interface PmCommandExitObservation { command: string; exit_code: number; replay_id: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmCommandExitOutcome",
+          "signature": "export type PmCommandExitOutcome = \"effect\" | \"internal_failure\" | \"refused_input\" | \"refused_tracker_state\" | \"conflict\" | \"dependency_failed\" | \"no_effect\" | \"partial_effect\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandExitOutcomeContract",
+          "signature": "export interface PmCommandExitOutcomeContract { exit_code: PmCommandExitCode; outcome: PmCommandExitOutcome; success: boolean; meaning: string; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "interface",
           "name": "PmCommandOutputBudgetContract",
           "signature": "export interface PmCommandOutputBudgetContract { command: string; budget_class: PmOutputBudgetClass; default_max_estimated_tokens: number; default_max_estimated_tokens_by_format: Readonly<{ toon: number; json: number; }>; degradation_ladder: readonly PmOutputDegradationStep[]; allows_unbounded_opt_out: boolean; token_estimate: \"ceil(utf8_bytes / 4)\"; }"
@@ -7777,7 +7903,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmErrorCodeContract",
-          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; }"
+          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; canonical_code?: string; aliases?: string[]; }"
         },
         {
           "classification": "contract_data",
@@ -9736,6 +9862,12 @@
           "signature": "(options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat | calls: (options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolveCanonicalPmErrorCodeContract",
+          "signature": "(code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract | calls: (code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "resolveClaimPrincipal",
@@ -9974,6 +10106,12 @@
           "kind": "function",
           "name": "resolvePmCliVersion",
           "signature": "(metaUrl: string, fallbackRelativeSegments?: string[]) => string | undefined | calls: (metaUrl: string, fallbackRelativeSegments?: string[]) => string | undefined"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmCommandExitContract",
+          "signature": "(commandPath: string) => PmCommandExitContract | undefined | calls: (commandPath: string) => PmCommandExitContract | undefined"
         },
         {
           "classification": "contract_data",
@@ -14634,6 +14772,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "analyzePmCommandExitConformance",
+          "signature": "(observations: readonly PmCommandExitObservation[], expectedCommands?: readonly string[], contracts?: readonly PmCommandExitContract[]) => PmCommandExitConformanceReport | calls: (observations: readonly PmCommandExitObservation[], expectedCommands?: readonly string[], contracts?: readonly PmCommandExitContract[]) => PmCommandExitConformanceReport"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "analyzePmToolActionParity",
           "signature": "(cliCommands?: readonly string[], toolActions?: readonly string[], waivers?: Readonly<Record<string, string>>) => { missing_cli_actions: string[]; waived_cli_actions: string[]; stale_waivers: string[]; } | calls: (cliCommands?: readonly string[], toolActions?: readonly string[], waivers?: Readonly<Record<string, string>>) => { missing_cli_actions: string[]; waived_cli_actions: string[]; stale_waivers: string[]; }"
         },
@@ -14882,6 +15026,12 @@
           "kind": "value",
           "name": "DEPS_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "derivePmBulkMutationEffect",
+          "signature": "(counts: PmBulkMutationEffectCounts) => PmCommandEffectReceipt | calls: (counts: PmBulkMutationEffectCounts) => PmCommandEffectReceipt"
         },
         {
           "classification": "contract_data",
@@ -15168,8 +15318,20 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "isPmKnownExitCode",
+          "signature": "(exitCode: number) => exitCode is PmCommandExitCode | calls: (exitCode: number) => exitCode is PmCommandExitCode"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "isPmMutationReceipt",
           "signature": "(value: unknown) => value is PmCliMutationReceipt | calls: (value: unknown) => value is PmCliMutationReceipt"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isPmSuccessfulExitCode",
+          "signature": "(exitCode: number) => boolean | calls: (exitCode: number) => boolean"
         },
         {
           "classification": "contract_data",
@@ -15290,6 +15452,18 @@
           "kind": "value",
           "name": "PM_CLI_ONLY_TOOL_ACTION_WAIVERS",
           "signature": "{ readonly help: \"Commander help rendering has no SDK operation result.\"; readonly item: \"The item namespace only groups lifecycle subcommands already exposed as actions.\"; readonly packages: \"The plural package alias only renders package-oriented help.\"; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_COMMAND_EXIT_CONTRACTS",
+          "signature": "readonly PmCommandExitContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_COMMAND_EXIT_OUTCOME_CONTRACTS",
+          "signature": "readonly [{ readonly exit_code: 0; readonly outcome: \"effect\"; readonly success: true; readonly meaning: \"The requested operation completed with its intended effect.\"; }, { readonly exit_code: 1; readonly outcome: \"internal_failure\"; readonly success: false; readonly meaning: \"An unexpected runtime or internal failure prevented completion.\"; }, { readonly exit_code: 2; readonly outcome: \"refused_input\"; readonly success: false; readonly meaning: \"The invocation was refused because its input or composition was invalid.\"; }, { readonly exit_code: 3; readonly outcome: \"refused_tracker_state\"; readonly success: false; readonly meaning: \"The requested tracker, item, or resource was not present.\"; }, { readonly exit_code: 4; readonly outcome: \"conflict\"; readonly success: false; readonly meaning: \"Current state or concurrency prevented the requested effect.\"; }, { readonly exit_code: 5; readonly outcome: \"dependency_failed\"; readonly success: false; readonly meaning: \"A required dependency operation failed.\"; }, { readonly exit_code: 6; readonly outcome: \"no_effect\"; readonly success: true; readonly meaning: \"The request was valid and completed, but matched nothing to change.\"; }, { readonly exit_code: 7; readonly outcome: \"partial_effect\"; readonly success: true; readonly meaning: \"The request completed and changed some, but not all, selected targets.\"; }]"
         },
         {
           "classification": "contract_data",
@@ -15432,6 +15606,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_SUCCESS_EXIT_CODES",
+          "signature": "readonly [0, 6, 7]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_TOOL_ACTION_PARAMETER_CONTRACTS",
           "signature": "Readonly<Record<PmToolAction, PmActionSchemaContract>>"
         },
@@ -15485,6 +15665,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmBulkMutationEffectCounts",
+          "signature": "export interface PmBulkMutationEffectCounts { applied: number; skipped: number; failed: number; unmatched: number; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmBulkMutationFilterOptions",
           "signature": "export type PmBulkMutationFilterOptions = OptionsFromContracts<typeof TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE>;"
@@ -15506,6 +15692,54 @@
           "kind": "type",
           "name": "PmCloseManyActionOptions",
           "signature": "export type PmCloseManyActionOptions = Pick<PmCloseActionOptions, \"reason\" | \"completedAt\" | \"resolution\" | \"expectedResult\" | \"actualResult\" | \"validateClose\" | \"author\" | \"message\" | \"force\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmCommandEffect",
+          "signature": "export type PmCommandEffect = \"effect\" | \"no_effect\" | \"partial_effect\" | \"dependency_failed\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandEffectReceipt",
+          "signature": "export interface PmCommandEffectReceipt { outcome: PmCommandEffect; exit_code: 0 | 5 | 6 | 7; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmCommandExitCode",
+          "signature": "export type PmCommandExitCode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandExitConformanceReport",
+          "signature": "export interface PmCommandExitConformanceReport { ok: boolean; missing_commands: string[]; undeclared_observations: PmCommandExitObservation[]; unreachable_exit_codes: PmCommandExitCode[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandExitContract",
+          "signature": "export interface PmCommandExitContract { command: string; exit_codes: readonly PmCommandExitCode[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandExitObservation",
+          "signature": "export interface PmCommandExitObservation { command: string; exit_code: number; replay_id: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmCommandExitOutcome",
+          "signature": "export type PmCommandExitOutcome = \"effect\" | \"internal_failure\" | \"refused_input\" | \"refused_tracker_state\" | \"conflict\" | \"dependency_failed\" | \"no_effect\" | \"partial_effect\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandExitOutcomeContract",
+          "signature": "export interface PmCommandExitOutcomeContract { exit_code: PmCommandExitCode; outcome: PmCommandExitOutcome; success: boolean; meaning: string; }"
         },
         {
           "classification": "contract_data",
@@ -15565,7 +15799,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmErrorCodeContract",
-          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; }"
+          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; canonical_code?: string; aliases?: string[]; }"
         },
         {
           "classification": "contract_data",
@@ -15828,8 +16062,20 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "resolveCanonicalPmErrorCodeContract",
+          "signature": "(code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract | calls: (code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "resolveContextIntentContract",
           "signature": "(command: string, intent: string, contracts?: readonly PmContextIntentContract[]) => PmContextIntentContract | undefined | calls: (command: string, intent: string, contracts?: readonly PmContextIntentContract[]) => PmContextIntentContract | undefined"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmCommandExitContract",
+          "signature": "(commandPath: string) => PmCommandExitContract | undefined | calls: (commandPath: string) => PmCommandExitContract | undefined"
         },
         {
           "classification": "contract_data",
@@ -16549,7 +16795,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "EXIT_CODE",
-          "signature": "{ readonly SUCCESS: 0; readonly GENERIC_FAILURE: 1; readonly USAGE: 2; readonly NOT_FOUND: 3; readonly CONFLICT: 4; readonly DEPENDENCY_FAILED: 5; }"
+          "signature": "{ readonly SUCCESS: 0; readonly GENERIC_FAILURE: 1; readonly USAGE: 2; readonly NOT_FOUND: 3; readonly CONFLICT: 4; readonly DEPENDENCY_FAILED: 5; readonly NO_EFFECT: 6; readonly PARTIAL_EFFECT: 7; }"
         },
         {
           "classification": "supported",
@@ -21037,7 +21283,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
         },
         {
           "classification": "supported",
@@ -21223,7 +21469,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "EXIT_CODE",
-          "signature": "{ readonly SUCCESS: 0; readonly GENERIC_FAILURE: 1; readonly USAGE: 2; readonly NOT_FOUND: 3; readonly CONFLICT: 4; readonly DEPENDENCY_FAILED: 5; }"
+          "signature": "{ readonly SUCCESS: 0; readonly GENERIC_FAILURE: 1; readonly USAGE: 2; readonly NOT_FOUND: 3; readonly CONFLICT: 4; readonly DEPENDENCY_FAILED: 5; readonly NO_EFFECT: 6; readonly PARTIAL_EFFECT: 7; }"
         },
         {
           "classification": "advanced_export",
@@ -22087,7 +22333,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmErrorCodeContract",
-          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; }"
+          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; canonical_code?: string; aliases?: string[]; }"
         },
         {
           "classification": "supported",

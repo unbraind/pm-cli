@@ -522,6 +522,7 @@ export type {
 } from "./cli-contracts.js";
 export * from "./compose.js";
 export * from "./compile-cache.js";
+export * from "./cli-contracts/command-exit-contracts.js";
 export * from "./context-relevance.js";
 export * from "./context-intent-contracts.js";
 export * from "./context-intent-runtime.js";

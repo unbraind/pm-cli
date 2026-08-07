@@ -17,6 +17,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/item/parse.ts"],
     emitting_commands: ["*"],
+    canonical_code: "acceptance_criteria_semicolon_forbidden",
+    aliases: [],
   },
   {
     code: "already_claimed_by",
@@ -28,6 +30,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/claim.ts"],
     emitting_commands: ["claim"],
+    canonical_code: "already_claimed_by",
+    aliases: [],
   },
   {
     code: "ambiguous_list_all",
@@ -39,6 +43,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/register-list-query.ts"],
     emitting_commands: ["*"],
+    canonical_code: "ambiguous_list_all",
+    aliases: [],
   },
   {
     code: "ambiguous_option_combination",
@@ -50,6 +56,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/plan.ts"],
     emitting_commands: ["plan"],
+    canonical_code: "ambiguous_option_combination",
+    aliases: [],
   },
   {
     code: "annotation_flag_like_value",
@@ -61,6 +69,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/annotations.ts"],
     emitting_commands: ["*"],
+    canonical_code: "annotation_flag_like_value",
+    aliases: [],
   },
   {
     code: "annotation_message_without_text",
@@ -72,6 +82,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/annotations.ts"],
     emitting_commands: ["*"],
+    canonical_code: "annotation_message_without_text",
+    aliases: [],
   },
   {
     code: "append_empty_body",
@@ -83,6 +95,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/append.ts"],
     emitting_commands: ["append"],
+    canonical_code: "append_empty_body",
+    aliases: [],
   },
   {
     code: "body_file_conflicts_with_body",
@@ -94,6 +108,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/io/body-file.ts"],
     emitting_commands: ["*"],
+    canonical_code: "body_file_conflicts_with_body",
+    aliases: [],
   },
   {
     code: "body_file_missing_path",
@@ -105,6 +121,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/io/body-file.ts"],
     emitting_commands: ["*"],
+    canonical_code: "body_file_missing_path",
+    aliases: [],
   },
   {
     code: "body_file_unreadable",
@@ -116,6 +134,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/io/body-file.ts"],
     emitting_commands: ["*"],
+    canonical_code: "body_file_unreadable",
+    aliases: [],
   },
   {
     code: "bundle_integrity_torn_install",
@@ -127,6 +147,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/bundle-integrity.ts"],
     emitting_commands: ["*"],
+    canonical_code: "bundle_integrity_torn_install",
+    aliases: [],
   },
   {
     code: "capability_undeclared",
@@ -138,6 +160,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
     emitting_commands: ["*"],
+    canonical_code: "capability_undeclared",
+    aliases: [],
   },
   {
     code: "capability_unused",
@@ -149,6 +173,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
     emitting_commands: ["*"],
+    canonical_code: "capability_unused",
+    aliases: [],
   },
   {
     code: "child_projection_item_bound_exceeded",
@@ -160,6 +186,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/item-children.ts"],
     emitting_commands: ["*"],
+    canonical_code: "child_projection_item_bound_exceeded",
+    aliases: [],
   },
   {
     code: "close_reason_required",
@@ -171,6 +199,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle-policy.ts", "sdk/lifecycle/close-many.ts"],
     emitting_commands: ["*", "close-many"],
+    canonical_code: "close_reason_required",
+    aliases: [],
   },
   {
     code: "close_through_update",
@@ -182,6 +212,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/telemetry/observability.ts"],
     emitting_commands: ["*"],
+    canonical_code: "close_through_update",
+    aliases: [],
   },
   {
     code: "close_validation_missing_fields",
@@ -193,6 +225,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/close.ts"],
     emitting_commands: ["close"],
+    canonical_code: "close_validation_missing_fields",
+    aliases: [],
   },
   {
     code: "collected_zero_items",
@@ -204,6 +238,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/test/execution.ts"],
     emitting_commands: ["*"],
+    canonical_code: "collected_zero_items",
+    aliases: [],
   },
   {
     code: "command_failed",
@@ -215,6 +251,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
     emitting_commands: ["*"],
+    canonical_code: "command_failed",
+    aliases: [],
   },
   {
     code: "command_namespace",
@@ -226,6 +264,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/cli-contracts/runtime-contracts.ts"],
     emitting_commands: ["*"],
+    canonical_code: "command_namespace",
+    aliases: [],
   },
   {
     code: "command_override_conflict",
@@ -237,6 +277,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
     emitting_commands: ["*"],
+    canonical_code: "command_override_conflict",
+    aliases: [],
   },
   {
     code: "config_duplicate",
@@ -248,6 +290,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "config_duplicate",
+    aliases: [],
   },
   {
     code: "config_key_unknown",
@@ -259,6 +303,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "config_key_unknown",
+    aliases: [],
   },
   {
     code: "config_value_invalid",
@@ -270,6 +316,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "config_value_invalid",
+    aliases: [],
   },
   {
     code: "conflicting_lifecycle_owner",
@@ -281,6 +329,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/register-operations.ts"],
     emitting_commands: ["*"],
+    canonical_code: "conflicting_lifecycle_owner",
+    aliases: [],
   },
   {
     code: "context_takes_no_item_argument",
@@ -292,6 +342,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
     emitting_commands: ["*"],
+    canonical_code: "context_takes_no_item_argument",
+    aliases: [],
   },
   {
     code: "core_item_field_requires_dedicated_flag",
@@ -303,6 +355,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/extensions/item-fields.ts"],
     emitting_commands: ["*"],
+    canonical_code: "core_item_field_requires_dedicated_flag",
+    aliases: [],
   },
   {
     code: "create_positional_type_without_title",
@@ -314,6 +368,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/register-mutation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "create_positional_type_without_title",
+    aliases: [],
   },
   {
     code: "dependency_edge_not_allowed",
@@ -325,6 +381,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/dependency-flag-validation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "dependency_edge_not_allowed",
+    aliases: [],
   },
   {
     code: "duplicate_command",
@@ -336,6 +394,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
     emitting_commands: ["*"],
+    canonical_code: "duplicate_command",
+    aliases: [],
   },
   {
     code: "duplicate_edge",
@@ -347,6 +407,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/graph/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "duplicate_edge",
+    aliases: [],
   },
   {
     code: "duplicate_sweep_cost_limit",
@@ -358,6 +420,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/similarity.ts"],
     emitting_commands: ["*"],
+    canonical_code: "duplicate_sweep_cost_limit",
+    aliases: [],
   },
   {
     code: "duplicate_target_circular",
@@ -369,6 +433,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/close.ts"],
     emitting_commands: ["close"],
+    canonical_code: "duplicate_target_circular",
+    aliases: [],
   },
   {
     code: "duplicate_target_is_duplicate",
@@ -380,6 +446,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/close.ts"],
     emitting_commands: ["close"],
+    canonical_code: "duplicate_target_is_duplicate",
+    aliases: [],
   },
   {
     code: "duplicate_target_missing",
@@ -391,6 +459,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/close.ts"],
     emitting_commands: ["close"],
+    canonical_code: "duplicate_target_missing",
+    aliases: [],
   },
   {
     code: "duplicate_target_self",
@@ -402,6 +472,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/close.ts"],
     emitting_commands: ["close"],
+    canonical_code: "duplicate_target_self",
+    aliases: [],
   },
   {
     code: "empty_surface",
@@ -413,6 +485,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
     emitting_commands: ["*"],
+    canonical_code: "empty_surface",
+    aliases: [],
   },
   {
     code: "event_cursor_query_mismatch",
@@ -424,6 +498,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
     emitting_commands: ["*"],
+    canonical_code: "event_cursor_query_mismatch",
+    aliases: [],
   },
   {
     code: "event_index_unavailable",
@@ -435,6 +511,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
     emitting_commands: ["*"],
+    canonical_code: "event_index_unavailable",
+    aliases: [],
   },
   {
     code: "extension_command_activation_failed",
@@ -446,6 +524,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commander-usage.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_command_activation_failed",
+    aliases: [],
   },
   {
     code: "extension_dependency_name_unsafe",
@@ -457,6 +537,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-sources.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_dependency_name_unsafe",
+    aliases: [],
   },
   {
     code: "extension_dependency_spec_invalid",
@@ -468,6 +550,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-sources.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_dependency_spec_invalid",
+    aliases: [],
   },
   {
     code: "extension_dependency_version_unsafe",
@@ -479,6 +563,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-sources.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_dependency_version_unsafe",
+    aliases: [],
   },
   {
     code: "extension_install_soft_failed",
@@ -490,6 +576,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/register-setup.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_install_soft_failed",
+    aliases: [],
   },
   {
     code: "extension_install_source_contains_destination",
@@ -501,6 +589,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-runtime.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_install_source_contains_destination",
+    aliases: [],
   },
   {
     code: "extension_item_field_reserved",
@@ -512,6 +602,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/extensions/item-fields.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_item_field_reserved",
+    aliases: [],
   },
   {
     code: "extension_item_field_type_conflict",
@@ -523,6 +615,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/extensions/item-fields.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_item_field_type_conflict",
+    aliases: [],
   },
   {
     code: "extension_item_field_unknown",
@@ -534,6 +628,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/extensions/item-fields.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_item_field_unknown",
+    aliases: [],
   },
   {
     code: "extension_mutation_guard_failed",
@@ -545,6 +641,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/extensions/extension-hook-runtime.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_mutation_guard_failed",
+    aliases: [],
   },
   {
     code: "extension_mutation_guard_invalid_decision",
@@ -556,6 +654,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/extensions/extension-hook-runtime.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_mutation_guard_invalid_decision",
+    aliases: [],
   },
   {
     code: "extension_mutation_guard_invalid_denial",
@@ -567,6 +667,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/extensions/extension-hook-runtime.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_mutation_guard_invalid_denial",
+    aliases: [],
   },
   {
     code: "extension_mutation_guard_timed_out",
@@ -578,6 +680,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/extensions/extension-hook-runtime.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_mutation_guard_timed_out",
+    aliases: [],
   },
   {
     code: "extension_update_health_partial_coverage",
@@ -589,6 +693,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "extension_update_health_partial_coverage",
+    aliases: [],
   },
   {
     code: "field_duplicate",
@@ -600,6 +706,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "field_duplicate",
+    aliases: [],
   },
   {
     code: "field_invalid",
@@ -611,6 +719,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "field_invalid",
+    aliases: [],
   },
   {
     code: "field_mcp_input_collision",
@@ -622,6 +732,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "field_mcp_input_collision",
+    aliases: [],
   },
   {
     code: "github_source_entry_unbuilt",
@@ -633,6 +745,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/shared.ts"],
     emitting_commands: ["*"],
+    canonical_code: "github_source_entry_unbuilt",
+    aliases: [],
   },
   {
     code: "history_author_acknowledge_required_values_missing",
@@ -644,6 +758,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/author-attribution.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_author_acknowledge_required_values_missing",
+    aliases: [],
   },
   {
     code: "history_author_acknowledge_selector_conflict",
@@ -655,6 +771,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/author-attribution.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_author_acknowledge_selector_conflict",
+    aliases: [],
   },
   {
     code: "history_author_acknowledge_selector_required",
@@ -666,6 +784,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/author-attribution.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_author_acknowledge_selector_required",
+    aliases: [],
   },
   {
     code: "history_author_acknowledge_target_not_actionable",
@@ -677,6 +797,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/author-attribution.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_author_acknowledge_target_not_actionable",
+    aliases: [],
   },
   {
     code: "history_author_acknowledge_target_unreadable",
@@ -688,6 +810,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/author-attribution.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_author_acknowledge_target_unreadable",
+    aliases: [],
   },
   {
     code: "history_drift_chain_mismatch",
@@ -699,6 +823,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_drift_chain_mismatch",
+    aliases: ["validate_history_drift_chain_mismatches"],
   },
   {
     code: "history_drift_hash_mismatch",
@@ -710,6 +836,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_drift_hash_mismatch",
+    aliases: ["validate_history_drift_hash_mismatches"],
   },
   {
     code: "history_drift_missing_stream",
@@ -721,6 +849,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_drift_missing_stream",
+    aliases: ["validate_history_drift_missing_streams"],
   },
   {
     code: "history_drift_unreadable_stream",
@@ -732,6 +862,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_drift_unreadable_stream",
+    aliases: ["validate_history_drift_unreadable_streams"],
   },
   {
     code: "history_merge_conflict_markers_detected",
@@ -743,6 +875,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/history/read.ts"],
     emitting_commands: ["*"],
+    canonical_code: "merge_conflict_markers_detected",
+    aliases: [],
   },
   {
     code: "history_stream_over_compact_threshold",
@@ -754,6 +888,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_stream_over_compact_threshold",
+    aliases: [],
   },
   {
     code: "history_target_out_of_range",
@@ -765,6 +901,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/history/projection.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_target_out_of_range",
+    aliases: [],
   },
   {
     code: "history_unknown_author_events",
@@ -776,6 +914,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_unknown_author_events",
+    aliases: ["validate_history_unknown_author_events"],
   },
   {
     code: "improvement_metric_contract_conflict",
@@ -787,6 +927,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/improvement-ledger.ts"],
     emitting_commands: ["*"],
+    canonical_code: "improvement_metric_contract_conflict",
+    aliases: [],
   },
   {
     code: "improvement_observation_conflict",
@@ -798,6 +940,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/improvement-ledger.ts"],
     emitting_commands: ["*"],
+    canonical_code: "improvement_observation_conflict",
+    aliases: [],
   },
   {
     code: "init_existing_settings_requires_force",
@@ -809,6 +953,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/init.ts"],
     emitting_commands: ["*"],
+    canonical_code: "init_existing_settings_requires_force",
+    aliases: [],
   },
   {
     code: "init_gitignore_unwritable",
@@ -820,6 +966,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/workspace.ts"],
     emitting_commands: ["*"],
+    canonical_code: "init_gitignore_unwritable",
+    aliases: [],
   },
   {
     code: "init_id_prefix_conflict",
@@ -831,6 +979,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/init.ts"],
     emitting_commands: ["*"],
+    canonical_code: "init_id_prefix_conflict",
+    aliases: [],
   },
   {
     code: "init_id_prefix_path_like",
@@ -842,6 +992,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/init.ts"],
     emitting_commands: ["*"],
+    canonical_code: "init_id_prefix_path_like",
+    aliases: [],
   },
   {
     code: "integrity_history_conflict_marker",
@@ -853,6 +1005,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "integrity_history_conflict_marker",
+    aliases: ["validate_storage_history_conflict_markers"],
   },
   {
     code: "integrity_history_invalid_json",
@@ -864,6 +1018,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "integrity_history_invalid_json",
+    aliases: [],
   },
   {
     code: "integrity_history_unreadable",
@@ -875,6 +1031,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "integrity_history_unreadable",
+    aliases: [],
   },
   {
     code: "integrity_item_ahead_format_version",
@@ -886,6 +1044,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "integrity_item_ahead_format_version",
+    aliases: ["validate_format_version_ahead_items"],
   },
   {
     code: "integrity_item_conflict_marker",
@@ -897,6 +1057,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "integrity_item_conflict_marker",
+    aliases: [],
   },
   {
     code: "integrity_item_outdated_format_version",
@@ -908,6 +1070,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "integrity_item_outdated_format_version",
+    aliases: ["validate_format_version_outdated_items"],
   },
   {
     code: "integrity_item_parse_failed",
@@ -919,6 +1083,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "integrity_item_parse_failed",
+    aliases: [],
   },
   {
     code: "integrity_item_unreadable",
@@ -930,6 +1096,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "integrity_item_unreadable",
+    aliases: [],
   },
   {
     code: "invalid_argument_value",
@@ -946,6 +1114,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "sdk/lifecycle/create.ts",
     ],
     emitting_commands: ["*", "create"],
+    canonical_code: "invalid_argument_value",
+    aliases: [],
   },
   {
     code: "invalid_command_usage",
@@ -957,6 +1127,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_command_usage",
+    aliases: [],
   },
   {
     code: "invalid_event_cursor",
@@ -968,6 +1140,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_event_cursor",
+    aliases: [],
   },
   {
     code: "invalid_event_follow_interval",
@@ -979,6 +1153,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_event_follow_interval",
+    aliases: [],
   },
   {
     code: "invalid_event_limit",
@@ -990,6 +1166,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_event_limit",
+    aliases: [],
   },
   {
     code: "invalid_event_since",
@@ -1001,6 +1179,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_event_since",
+    aliases: [],
   },
   {
     code: "invalid_history_analytics_limit",
@@ -1012,6 +1192,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/history-analytics.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_history_analytics_limit",
+    aliases: [],
   },
   {
     code: "invalid_history_analytics_minimum_sample",
@@ -1023,6 +1205,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/history-analytics.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_history_analytics_minimum_sample",
+    aliases: [],
   },
   {
     code: "invalid_history_analytics_since",
@@ -1034,6 +1218,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/history-analytics.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_history_analytics_since",
+    aliases: [],
   },
   {
     code: "invalid_improvement_ledger",
@@ -1045,6 +1231,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/improvement-ledger-validation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_improvement_ledger",
+    aliases: [],
   },
   {
     code: "invalid_improvement_metric",
@@ -1056,6 +1244,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/improvement-ledger.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_improvement_metric",
+    aliases: [],
   },
   {
     code: "invalid_improvement_observation",
@@ -1067,6 +1257,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/improvement-ledger.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_improvement_observation",
+    aliases: [],
   },
   {
     code: "invalid_improvement_observation_limit",
@@ -1078,6 +1270,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/improvement-ledger.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_improvement_observation_limit",
+    aliases: [],
   },
   {
     code: "invalid_improvement_observation_timestamp",
@@ -1089,6 +1283,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/improvement-ledger.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_improvement_observation_timestamp",
+    aliases: [],
   },
   {
     code: "invalid_provenance_predicate",
@@ -1100,6 +1296,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/history-provenance.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_provenance_predicate",
+    aliases: [],
   },
   {
     code: "invalid_query_cursor",
@@ -1111,6 +1309,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/pagination.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_query_cursor",
+    aliases: [],
   },
   {
     code: "invalid_read_output_session",
@@ -1122,6 +1322,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/read-output-session.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_read_output_session",
+    aliases: [],
   },
   {
     code: "invalid_workspace_snapshot_target",
@@ -1133,6 +1335,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/workspace-snapshot.ts"],
     emitting_commands: ["*"],
+    canonical_code: "invalid_workspace_snapshot_target",
+    aliases: [],
   },
   {
     code: "item_document_invalid",
@@ -1144,6 +1348,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/item/item-format.ts"],
     emitting_commands: ["*"],
+    canonical_code: "item_document_invalid",
+    aliases: [],
   },
   {
     code: "item_document_roundtrip_failed",
@@ -1155,6 +1361,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/item/item-format.ts"],
     emitting_commands: ["*"],
+    canonical_code: "item_document_roundtrip_failed",
+    aliases: [],
   },
   {
     code: "item_id_collision",
@@ -1166,6 +1374,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/copy.ts"],
     emitting_commands: ["copy"],
+    canonical_code: "item_id_collision",
+    aliases: [],
   },
   {
     code: "item_not_found",
@@ -1177,6 +1387,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
     emitting_commands: ["*"],
+    canonical_code: "item_not_found",
+    aliases: [],
   },
   {
     code: "likely_duplicate",
@@ -1188,6 +1400,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/similarity.ts"],
     emitting_commands: ["*"],
+    canonical_code: "likely_duplicate",
+    aliases: [],
   },
   {
     code: "linked_test_value_not_quoted",
@@ -1199,6 +1413,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
     emitting_commands: ["*"],
+    canonical_code: "linked_test_value_not_quoted",
+    aliases: [],
   },
   {
     code: "list_source_incomplete",
@@ -1210,6 +1426,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/query/list.ts"],
     emitting_commands: ["list"],
+    canonical_code: "list_source_incomplete",
+    aliases: [],
   },
   {
     code: "local_package_archive_unsafe",
@@ -1221,6 +1439,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-sources.ts"],
     emitting_commands: ["*"],
+    canonical_code: "local_package_archive_unsafe",
+    aliases: [],
   },
   {
     code: "local_source_not_found_bare_name",
@@ -1232,6 +1452,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-sources.ts"],
     emitting_commands: ["*"],
+    canonical_code: "local_source_not_found_bare_name",
+    aliases: [],
   },
   {
     code: "lock_conflict",
@@ -1247,6 +1469,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "core/telemetry/observability.ts",
     ],
     emitting_commands: ["*"],
+    canonical_code: "lock_conflict",
+    aliases: [],
   },
   {
     code: "locks_stale_count",
@@ -1258,6 +1482,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "locks_stale_count",
+    aliases: [],
   },
   {
     code: "locks_unreadable",
@@ -1269,6 +1495,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "locks_unreadable",
+    aliases: [],
   },
   {
     code: "malformed_plan_step_evidence",
@@ -1280,6 +1508,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/plan.ts"],
     emitting_commands: ["plan"],
+    canonical_code: "malformed_plan_step_evidence",
+    aliases: [],
   },
   {
     code: "manifest_capabilities_absent",
@@ -1291,6 +1521,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
     emitting_commands: ["*"],
+    canonical_code: "manifest_capabilities_absent",
+    aliases: [],
   },
   {
     code: "merge_conflict_markers_detected",
@@ -1302,6 +1534,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/item/item-format.ts"],
     emitting_commands: ["*"],
+    canonical_code: "merge_conflict_markers_detected",
+    aliases: ["history_merge_conflict_markers_detected"],
   },
   {
     code: "merge_git_config_unwritable",
@@ -1313,6 +1547,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/merge/install.ts"],
     emitting_commands: ["*"],
+    canonical_code: "merge_git_config_unwritable",
+    aliases: [],
   },
   {
     code: "merge_root_not_found",
@@ -1324,6 +1560,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/merge/install.ts"],
     emitting_commands: ["*"],
+    canonical_code: "merge_root_not_found",
+    aliases: [],
   },
   {
     code: "missing_directory",
@@ -1335,6 +1573,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "missing_directory",
+    aliases: [],
   },
   {
     code: "missing_lifecycle_target",
@@ -1346,6 +1586,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension.ts"],
     emitting_commands: ["*"],
+    canonical_code: "missing_lifecycle_target",
+    aliases: [],
   },
   {
     code: "missing_required_argument",
@@ -1364,6 +1606,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "sdk/invocation-author.ts",
     ],
     emitting_commands: ["*"],
+    canonical_code: "missing_required_argument",
+    aliases: [],
   },
   {
     code: "missing_required_option",
@@ -1381,6 +1625,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "sdk/lifecycle/plan.ts",
     ],
     emitting_commands: ["*", "create", "plan"],
+    canonical_code: "missing_required_option",
+    aliases: [],
   },
   {
     code: "module_import_failed",
@@ -1392,6 +1638,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
     emitting_commands: ["*"],
+    canonical_code: "module_import_failed",
+    aliases: [],
   },
   {
     code: "multi_target_github_install_ambiguous",
@@ -1403,6 +1651,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/register-setup.ts"],
     emitting_commands: ["*"],
+    canonical_code: "multi_target_github_install_ambiguous",
+    aliases: [],
   },
   {
     code: "mutation_author_required",
@@ -1414,6 +1664,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-guard.ts"],
     emitting_commands: ["*"],
+    canonical_code: "mutation_author_required",
+    aliases: [],
   },
   {
     code: "mutation_secret_guard_blocked",
@@ -1425,6 +1677,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-guard.ts"],
     emitting_commands: ["*"],
+    canonical_code: "mutation_secret_guard_blocked",
+    aliases: [],
   },
   {
     code: "no_matching_tests",
@@ -1436,6 +1690,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/test/execution.ts"],
     emitting_commands: ["*"],
+    canonical_code: "no_matching_tests",
+    aliases: [],
   },
   {
     code: "no_projects_matched_filters",
@@ -1447,6 +1703,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/test/execution.ts"],
     emitting_commands: ["*"],
+    canonical_code: "no_projects_matched_filters",
+    aliases: [],
   },
   {
     code: "no_test_files_found",
@@ -1458,6 +1716,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/test/execution.ts"],
     emitting_commands: ["*"],
+    canonical_code: "no_test_files_found",
+    aliases: [],
   },
   {
     code: "no_tests_found",
@@ -1469,6 +1729,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/test/execution.ts"],
     emitting_commands: ["*"],
+    canonical_code: "no_tests_found",
+    aliases: [],
   },
   {
     code: "no_update_fields",
@@ -1480,6 +1742,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
     emitting_commands: ["*"],
+    canonical_code: "no_update_fields",
+    aliases: [],
   },
   {
     code: "npm_package_not_found",
@@ -1491,6 +1755,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-sources.ts"],
     emitting_commands: ["*"],
+    canonical_code: "npm_package_not_found",
+    aliases: [],
   },
   {
     code: "ownership_conflict",
@@ -1506,6 +1772,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "sdk/annotations.ts",
     ],
     emitting_commands: ["*"],
+    canonical_code: "ownership_conflict",
+    aliases: [],
   },
   {
     code: "ownership_dependency_bypass_restricted_options",
@@ -1517,6 +1785,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/update.ts"],
     emitting_commands: ["update"],
+    canonical_code: "ownership_dependency_bypass_restricted_options",
+    aliases: [],
   },
   {
     code: "ownership_metadata_bypass_restricted_options",
@@ -1528,6 +1798,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/update.ts"],
     emitting_commands: ["update"],
+    canonical_code: "ownership_metadata_bypass_restricted_options",
+    aliases: [],
   },
   {
     code: "package_spec_empty",
@@ -1539,6 +1811,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "package_spec_empty",
+    aliases: [],
   },
   {
     code: "profile_name_empty",
@@ -1550,6 +1824,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "profile_name_empty",
+    aliases: [],
   },
   {
     code: "profile_name_not_normalized",
@@ -1561,6 +1837,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "profile_name_not_normalized",
+    aliases: [],
   },
   {
     code: "profile_summary_empty",
@@ -1572,6 +1850,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "profile_summary_empty",
+    aliases: [],
   },
   {
     code: "profile_title_empty",
@@ -1583,6 +1863,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "profile_title_empty",
+    aliases: [],
   },
   {
     code: "redundant_edge",
@@ -1594,6 +1876,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/graph/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "redundant_edge",
+    aliases: [],
   },
   {
     code: "reindex_already_running",
@@ -1605,6 +1889,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/governance/reindex.ts"],
     emitting_commands: ["*"],
+    canonical_code: "reindex_already_running",
+    aliases: [],
   },
   {
     code: "reserved_item_field",
@@ -1616,6 +1902,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
     emitting_commands: ["*"],
+    canonical_code: "reserved_item_field",
+    aliases: [],
   },
   {
     code: "schema_migration_input_required",
@@ -1627,6 +1915,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/migration-gates.ts"],
     emitting_commands: ["*"],
+    canonical_code: "schema_migration_input_required",
+    aliases: [],
   },
   {
     code: "settings_read_fs_error",
@@ -1638,6 +1928,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "settings_read_fs_error",
+    aliases: [],
   },
   {
     code: "settings_read_invalid_json",
@@ -1649,6 +1941,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "settings_read_invalid_json",
+    aliases: [],
   },
   {
     code: "settings_read_invalid_schema",
@@ -1660,6 +1954,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "settings_read_invalid_schema",
+    aliases: [],
   },
   {
     code: "settings_read_merge_failed",
@@ -1671,6 +1967,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "settings_read_merge_failed",
+    aliases: [],
   },
   {
     code: "status_duplicate",
@@ -1682,6 +1980,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "status_duplicate",
+    aliases: [],
   },
   {
     code: "status_invalid",
@@ -1693,6 +1993,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "status_invalid",
+    aliases: [],
   },
   {
     code: "stdin_json_invalid",
@@ -1704,6 +2006,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/structured-mutations.ts"],
     emitting_commands: ["*"],
+    canonical_code: "stdin_json_invalid",
+    aliases: [],
   },
   {
     code: "stdin_json_unknown_key",
@@ -1715,6 +2019,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/structured-mutations.ts"],
     emitting_commands: ["*"],
+    canonical_code: "stdin_json_unknown_key",
+    aliases: [],
   },
   {
     code: "structured_event_immutable",
@@ -1726,6 +2032,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/annotations.ts"],
     emitting_commands: ["*"],
+    canonical_code: "structured_event_immutable",
+    aliases: [],
   },
   {
     code: "structured_event_input_conflict",
@@ -1737,6 +2045,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/notes.ts"],
     emitting_commands: ["*"],
+    canonical_code: "structured_event_input_conflict",
+    aliases: [],
   },
   {
     code: "structured_event_json_empty",
@@ -1748,6 +2058,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/notes.ts"],
     emitting_commands: ["*"],
+    canonical_code: "structured_event_json_empty",
+    aliases: [],
   },
   {
     code: "structured_event_json_invalid",
@@ -1759,6 +2071,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/notes.ts"],
     emitting_commands: ["*"],
+    canonical_code: "structured_event_json_invalid",
+    aliases: [],
   },
   {
     code: "structured_event_since_invalid",
@@ -1770,6 +2084,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/notes.ts"],
     emitting_commands: ["*"],
+    canonical_code: "structured_event_since_invalid",
+    aliases: [],
   },
   {
     code: "telemetry_endpoint_probe_failed",
@@ -1781,6 +2097,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "telemetry_endpoint_probe_failed",
+    aliases: [],
   },
   {
     code: "telemetry_endpoint_probe_http_status",
@@ -1792,6 +2110,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "telemetry_endpoint_probe_http_status",
+    aliases: [],
   },
   {
     code: "telemetry_otel_export_failing",
@@ -1803,6 +2123,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "telemetry_otel_export_failing",
+    aliases: [],
   },
   {
     code: "telemetry_queue_high_retries",
@@ -1814,6 +2136,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "telemetry_queue_high_retries",
+    aliases: [],
   },
   {
     code: "telemetry_queue_invalid_rows",
@@ -1825,6 +2149,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "telemetry_queue_invalid_rows",
+    aliases: [],
   },
   {
     code: "telemetry_queue_pending",
@@ -1836,6 +2162,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "telemetry_queue_pending",
+    aliases: [],
   },
   {
     code: "telemetry_schema_version_behind",
@@ -1847,6 +2175,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "telemetry_schema_version_behind",
+    aliases: [],
   },
   {
     code: "telemetry_state_invalid_json",
@@ -1858,6 +2188,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "telemetry_state_invalid_json",
+    aliases: [],
   },
   {
     code: "template_type_unknown",
@@ -1869,6 +2201,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "template_type_unknown",
+    aliases: [],
   },
   {
     code: "terminal_plan_mutation",
@@ -1880,6 +2214,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/plan.ts"],
     emitting_commands: ["plan"],
+    canonical_code: "terminal_plan_mutation",
+    aliases: [],
   },
   {
     code: "terminal_state_conflict",
@@ -1891,6 +2227,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/telemetry/observability.ts"],
     emitting_commands: ["*"],
+    canonical_code: "terminal_state_conflict",
+    aliases: [],
   },
   {
     code: "tracked_runtime_cache_files",
@@ -1902,6 +2240,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "tracked_runtime_cache_files",
+    aliases: ["validate_storage_tracked_runtime_cache_files"],
   },
   {
     code: "tracker_not_initialized",
@@ -1913,6 +2253,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
     emitting_commands: ["*"],
+    canonical_code: "tracker_not_initialized",
+    aliases: [],
   },
   {
     code: "tracker_root_missing",
@@ -1924,6 +2266,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/store/item-store.ts"],
     emitting_commands: ["*"],
+    canonical_code: "tracker_root_missing",
+    aliases: [],
   },
   {
     code: "tracker_root_not_directory",
@@ -1935,6 +2279,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/store/item-store.ts"],
     emitting_commands: ["*"],
+    canonical_code: "tracker_root_not_directory",
+    aliases: [],
   },
   {
     code: "type_duplicate",
@@ -1946,6 +2292,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "type_duplicate",
+    aliases: [],
   },
   {
     code: "type_invalid",
@@ -1957,6 +2305,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "type_invalid",
+    aliases: [],
   },
   {
     code: "unknown_command",
@@ -1972,6 +2322,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "sdk/cli-contracts/runtime-contracts.ts",
     ],
     emitting_commands: ["*"],
+    canonical_code: "unknown_command",
+    aliases: [],
   },
   {
     code: "unknown_context_intent",
@@ -1983,6 +2335,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/context-intent-contracts.ts"],
     emitting_commands: ["*"],
+    canonical_code: "unknown_context_intent",
+    aliases: [],
   },
   {
     code: "unknown_error",
@@ -1994,6 +2348,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
     emitting_commands: ["*"],
+    canonical_code: "unknown_error",
+    aliases: [],
   },
   {
     code: "unknown_field",
@@ -2005,6 +2361,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/schema.ts"],
     emitting_commands: ["*"],
+    canonical_code: "unknown_field",
+    aliases: [],
   },
   {
     code: "unknown_field_projection",
@@ -2016,6 +2374,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/query/get.ts", "sdk/query/list.ts"],
     emitting_commands: ["get", "list"],
+    canonical_code: "unknown_field_projection",
+    aliases: [],
   },
   {
     code: "unknown_item_type",
@@ -2027,6 +2387,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/schema.ts"],
     emitting_commands: ["*"],
+    canonical_code: "unknown_item_type",
+    aliases: [],
   },
   {
     code: "unknown_lifecycle_action",
@@ -2038,6 +2400,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension.ts"],
     emitting_commands: ["*"],
+    canonical_code: "unknown_lifecycle_action",
+    aliases: [],
   },
   {
     code: "unknown_option",
@@ -2049,6 +2413,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
     emitting_commands: ["*"],
+    canonical_code: "unknown_option",
+    aliases: [],
   },
   {
     code: "unknown_plan_template",
@@ -2060,6 +2426,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/plan.ts"],
     emitting_commands: ["plan"],
+    canonical_code: "unknown_plan_template",
+    aliases: [],
   },
   {
     code: "unknown_provenance_dimension",
@@ -2071,6 +2439,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/history-provenance.ts"],
     emitting_commands: ["*"],
+    canonical_code: "unknown_provenance_dimension",
+    aliases: [],
   },
   {
     code: "unknown_status",
@@ -2082,6 +2452,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/schema.ts"],
     emitting_commands: ["*"],
+    canonical_code: "unknown_status",
+    aliases: [],
   },
   {
     code: "unknown_subcommand",
@@ -2098,6 +2470,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "sdk/telemetry.ts",
     ],
     emitting_commands: ["*"],
+    canonical_code: "unknown_subcommand",
+    aliases: [],
   },
   {
     code: "unsupported_update_option",
@@ -2109,6 +2483,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
     emitting_commands: ["*"],
+    canonical_code: "unsupported_update_option",
+    aliases: [],
   },
   {
     code: "validate_command_references_stale_pm_ids",
@@ -2120,6 +2496,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_command_references_stale_pm_ids",
+    aliases: [],
   },
   {
     code: "validate_files_missing_linked_paths",
@@ -2131,6 +2509,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_files_missing_linked_paths",
+    aliases: [],
   },
   {
     code: "validate_files_orphaned_paths",
@@ -2142,6 +2522,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_files_orphaned_paths",
+    aliases: [],
   },
   {
     code: "validate_files_tracked_all_strict_forces_pm_internals",
@@ -2153,6 +2535,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_files_tracked_all_strict_forces_pm_internals",
+    aliases: [],
   },
   {
     code: "validate_format_version_ahead_items",
@@ -2164,6 +2548,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "integrity_item_ahead_format_version",
+    aliases: [],
   },
   {
     code: "validate_format_version_outdated_items",
@@ -2175,6 +2561,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "integrity_item_outdated_format_version",
+    aliases: [],
   },
   {
     code: "validate_hierarchy_parent_cycle",
@@ -2186,6 +2574,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_hierarchy_parent_cycle",
+    aliases: [],
   },
   {
     code: "validate_hierarchy_parent_cycle_error",
@@ -2197,6 +2587,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_hierarchy_parent_cycle_error",
+    aliases: [],
   },
   {
     code: "validate_history_drift_chain_mismatches",
@@ -2208,6 +2600,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_drift_chain_mismatch",
+    aliases: [],
   },
   {
     code: "validate_history_drift_hash_mismatches",
@@ -2219,6 +2613,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_drift_hash_mismatch",
+    aliases: [],
   },
   {
     code: "validate_history_drift_missing_streams",
@@ -2230,6 +2626,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_drift_missing_stream",
+    aliases: [],
   },
   {
     code: "validate_history_drift_unreadable_streams",
@@ -2241,6 +2639,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_drift_unreadable_stream",
+    aliases: [],
   },
   {
     code: "validate_history_unknown_author_events",
@@ -2252,6 +2652,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "history_unknown_author_events",
+    aliases: [],
   },
   {
     code: "validate_lifecycle_active_closure_like_metadata",
@@ -2263,6 +2665,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_lifecycle_active_closure_like_metadata",
+    aliases: [],
   },
   {
     code: "validate_lifecycle_active_terminal_parent",
@@ -2274,6 +2678,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_lifecycle_active_terminal_parent",
+    aliases: [],
   },
   {
     code: "validate_lifecycle_dependency_cycles",
@@ -2285,6 +2691,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_lifecycle_dependency_cycles",
+    aliases: [],
   },
   {
     code: "validate_lifecycle_dependency_cycles_error",
@@ -2296,6 +2704,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_lifecycle_dependency_cycles_error",
+    aliases: [],
   },
   {
     code: "validate_lifecycle_stale_blockers",
@@ -2307,6 +2717,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_lifecycle_stale_blockers",
+    aliases: [],
   },
   {
     code: "validate_merge_fence_drift",
@@ -2318,6 +2730,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_merge_fence_drift",
+    aliases: [],
   },
   {
     code: "validate_metadata_custom_profile_missing_required_fields",
@@ -2330,6 +2744,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_metadata_custom_profile_missing_required_fields",
+    aliases: [],
   },
   {
     code: "validate_metadata_duplicate_issue_codes",
@@ -2341,6 +2757,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_metadata_duplicate_issue_codes",
+    aliases: [],
   },
   {
     code: "validate_metadata_missing_acceptance_criteria",
@@ -2352,6 +2770,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_metadata_missing_acceptance_criteria",
+    aliases: [],
   },
   {
     code: "validate_metadata_missing_close_reason",
@@ -2363,6 +2783,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_metadata_missing_close_reason",
+    aliases: [],
   },
   {
     code: "validate_metadata_missing_confidence",
@@ -2374,6 +2796,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_metadata_missing_confidence",
+    aliases: [],
   },
   {
     code: "validate_metadata_missing_estimate",
@@ -2385,6 +2809,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_metadata_missing_estimate",
+    aliases: [],
   },
   {
     code: "validate_metadata_missing_release",
@@ -2396,6 +2822,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_metadata_missing_release",
+    aliases: [],
   },
   {
     code: "validate_metadata_missing_reviewer",
@@ -2407,6 +2835,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_metadata_missing_reviewer",
+    aliases: [],
   },
   {
     code: "validate_metadata_missing_risk",
@@ -2418,6 +2848,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_metadata_missing_risk",
+    aliases: [],
   },
   {
     code: "validate_metadata_missing_sprint",
@@ -2429,6 +2861,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_metadata_missing_sprint",
+    aliases: [],
   },
   {
     code: "validate_resolution_missing_fields",
@@ -2440,6 +2874,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_resolution_missing_fields",
+    aliases: [],
   },
   {
     code: "validate_storage_duplicate_item_ids",
@@ -2451,6 +2887,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_storage_duplicate_item_ids",
+    aliases: [],
   },
   {
     code: "validate_storage_history_conflict_markers",
@@ -2462,6 +2900,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "integrity_history_conflict_marker",
+    aliases: [],
   },
   {
     code: "validate_storage_resurrected_items",
@@ -2473,6 +2913,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_storage_resurrected_items",
+    aliases: [],
   },
   {
     code: "validate_storage_tracked_runtime_cache_files",
@@ -2484,6 +2926,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "tracked_runtime_cache_files",
+    aliases: [],
   },
   {
     code: "validate_storage_unparseable_config",
@@ -2495,6 +2939,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_storage_unparseable_config",
+    aliases: [],
   },
   {
     code: "validate_storage_unparseable_history",
@@ -2506,6 +2952,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_storage_unparseable_history",
+    aliases: [],
   },
   {
     code: "validate_storage_unreadable_items",
@@ -2517,6 +2965,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "validate_storage_unreadable_items",
+    aliases: [],
   },
   {
     code: "vectorization_embedding_identity_changed",
@@ -2528,6 +2978,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "vectorization_embedding_identity_changed",
+    aliases: [],
   },
   {
     code: "vectorization_stale_items_remaining",
@@ -2539,6 +2991,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
+    canonical_code: "vectorization_stale_items_remaining",
+    aliases: [],
   },
   {
     code: "workflow_duplicate_type",
@@ -2550,6 +3004,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "workflow_duplicate_type",
+    aliases: [],
   },
   {
     code: "workflow_status_unknown",
@@ -2561,6 +3017,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "workflow_status_unknown",
+    aliases: [],
   },
   {
     code: "workflow_transition_malformed",
@@ -2572,6 +3030,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "workflow_transition_malformed",
+    aliases: [],
   },
   {
     code: "workflow_type_empty",
@@ -2583,6 +3043,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "workflow_type_empty",
+    aliases: [],
   },
   {
     code: "workflow_type_unknown",
@@ -2594,6 +3056,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
     emitting_commands: ["*"],
+    canonical_code: "workflow_type_unknown",
+    aliases: [],
   },
   {
     code: "workspace_history_state_conflict",
@@ -2605,6 +3069,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/history/workspace-history.ts"],
     emitting_commands: ["*"],
+    canonical_code: "workspace_history_state_conflict",
+    aliases: [],
   },
   {
     code: "workspace_root_pm_path",
@@ -2616,6 +3082,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/init.ts"],
     emitting_commands: ["*"],
+    canonical_code: "workspace_root_pm_path",
+    aliases: [],
   },
   {
     code: "workspace_snapshot_force_required",
@@ -2627,6 +3095,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/workspace-snapshot.ts"],
     emitting_commands: ["*"],
+    canonical_code: "workspace_snapshot_force_required",
+    aliases: [],
   },
   {
     code: "workspace_snapshot_manifest_mismatch",
@@ -2638,6 +3108,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/workspace-snapshot.ts"],
     emitting_commands: ["*"],
+    canonical_code: "workspace_snapshot_manifest_mismatch",
+    aliases: [],
   },
   {
     code: "workspace_snapshot_name_reserved_fingerprint",
@@ -2649,6 +3121,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/workspace-snapshot.ts"],
     emitting_commands: ["*"],
+    canonical_code: "workspace_snapshot_name_reserved_fingerprint",
+    aliases: [],
   },
   {
     code: "workspace_snapshot_not_found",
@@ -2660,6 +3134,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/workspace-snapshot.ts"],
     emitting_commands: ["*"],
+    canonical_code: "workspace_snapshot_not_found",
+    aliases: [],
   },
   {
     code: "wrong_item_type",
@@ -2671,5 +3147,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/plan.ts"],
     emitting_commands: ["plan"],
+    canonical_code: "wrong_item_type",
+    aliases: [],
   },
 ]);

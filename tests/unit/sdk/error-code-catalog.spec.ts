@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   definePmErrorCodeCatalog,
+  resolveCanonicalPmErrorCodeContract,
   resolvePmErrorCodeContract,
 } from "../../../src/sdk/error-code-catalog.js";
 
@@ -15,6 +16,20 @@ describe("error code catalog", () => {
       recovery: "Use a command returned by pm contracts.",
       sources: ["cli"],
       emitting_commands: ["help"],
+      canonical_code: "unknown_command",
+      aliases: ["unknown_subcommand"],
+    },
+    {
+      code: "unknown_subcommand",
+      meaning: "A nested command token is not registered.",
+      stability: "stable",
+      exit_code: 2,
+      class: "usage",
+      recovery: "Use a subcommand returned by pm contracts.",
+      sources: ["cli"],
+      emitting_commands: ["help"],
+      canonical_code: "unknown_command",
+      aliases: [],
     },
     {
       code: "extension_unavailable",
@@ -25,6 +40,8 @@ describe("error code catalog", () => {
       recovery: "Install or activate the package.",
       sources: ["extension"],
       emitting_commands: ["package"],
+      canonical_code: "extension_unavailable",
+      aliases: [],
     },
   ]);
 
@@ -32,6 +49,7 @@ describe("error code catalog", () => {
     expect(catalog.map(({ code }) => code)).toEqual([
       "extension_unavailable",
       "unknown_command",
+      "unknown_subcommand",
     ]);
     expect(
       resolvePmErrorCodeContract("unknown_command", catalog),
@@ -41,6 +59,37 @@ describe("error code catalog", () => {
       class: "usage",
       emitting_commands: ["help"],
     });
+    expect(
+      resolveCanonicalPmErrorCodeContract("unknown_subcommand", catalog),
+    ).toMatchObject({
+      code: "unknown_command",
+      aliases: ["unknown_subcommand"],
+    });
+
+    const defaults = definePmErrorCodeCatalog([
+      {
+        code: "default_contract",
+        meaning: "Uses normalized defaults.",
+        stability: "stable",
+        exit_code: 1,
+        class: "generic_failure",
+        recovery: "Retry.",
+        sources: ["sdk"],
+        emitting_commands: ["contracts"],
+      },
+    ]);
+    expect(defaults[0]).toMatchObject({
+      canonical_code: "default_contract",
+      aliases: [],
+    });
+    expect(
+      resolveCanonicalPmErrorCodeContract("default_contract", [
+        {
+          ...defaults[0]!,
+          canonical_code: undefined,
+        },
+      ]),
+    ).toMatchObject({ code: "default_contract" });
   });
 
   it("rejects duplicate and invalid catalog rows", () => {
@@ -68,6 +117,8 @@ describe("error code catalog", () => {
       { ...catalog[0]!, emitting_commands: [" "] },
       { ...catalog[0]!, exit_code: 9 as 1 },
       { ...catalog[0]!, class: "conflict" as const },
+      { ...catalog[0]!, canonical_code: "missing" },
+      { ...catalog[0]!, aliases: ["missing"] },
     ]) {
       expect(() => definePmErrorCodeCatalog([invalid])).toThrow(
         "Invalid pm error code contract",
@@ -76,5 +127,28 @@ describe("error code catalog", () => {
     expect(() => resolvePmErrorCodeContract("missing", catalog)).toThrow(
       'Unknown pm error code "missing"',
     );
+  });
+
+  it("rejects alias cycles and transport-incompatible canonical groups", () => {
+    expect(() =>
+      definePmErrorCodeCatalog([
+        {
+          ...catalog[1]!,
+          canonical_code: "unknown_subcommand",
+          aliases: [],
+        },
+        { ...catalog[2]!, aliases: [] },
+      ]),
+    ).toThrow("Alias cycle");
+    expect(() =>
+      definePmErrorCodeCatalog([
+        catalog[1]!,
+        {
+          ...catalog[2]!,
+          exit_code: 4,
+          class: "conflict",
+        },
+      ]),
+    ).toThrow("Alias transport mismatch");
   });
 });

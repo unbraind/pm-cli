@@ -173,6 +173,15 @@ function inferEmittingCommands(sources) {
   return [...commands].sort();
 }
 
+function isValidatedRecord(value, validateEntry) {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.entries(value).every(([key, entry]) => validateEntry(key, entry))
+  );
+}
+
 async function readStabilityLedger(stabilityPath) {
   const content = await readFile(stabilityPath, "utf8").catch((error) => {
     if (
@@ -188,27 +197,103 @@ async function readStabilityLedger(stabilityPath) {
   if (content === null) return null;
   const parsed = JSON.parse(content);
   if (
-    parsed?.schema_version !== 1 ||
+    (parsed?.schema_version !== 1 && parsed?.schema_version !== 2) ||
     !Array.isArray(parsed.stable_codes) ||
     parsed.stable_codes.some((code) => typeof code !== "string")
   ) {
     throw new Error("Invalid error-code stability ledger.");
   }
-  return new Set(parsed.stable_codes);
+  if (parsed.schema_version === 1) {
+    return {
+      stableCodes: new Set(parsed.stable_codes),
+      aliases: new Map(),
+      exitCodes: new Map(),
+      needsMigration: true,
+    };
+  }
+  if (
+    !isValidatedRecord(
+      parsed.aliases,
+      (alias, canonical) =>
+        /^[a-z][a-z0-9_]*$/.test(alias) &&
+        typeof canonical === "string" &&
+        /^[a-z][a-z0-9_]*$/.test(canonical),
+    ) ||
+    !isValidatedRecord(
+      parsed.exit_codes,
+      (code, exitCode) =>
+        /^[a-z][a-z0-9_]*$/.test(code) && Number.isInteger(exitCode),
+    )
+  ) {
+    throw new Error("Invalid error-code stability ledger.");
+  }
+  return {
+    stableCodes: new Set(parsed.stable_codes),
+    aliases: new Map(Object.entries(parsed.aliases)),
+    exitCodes: new Map(Object.entries(parsed.exit_codes)),
+    needsMigration: false,
+  };
 }
 
-function renderCatalogRow(code, entry, stableCodes) {
+function resolveCatalogExitCode(code, entry, ledger, allowMissingStableExit) {
   if (entry.explicitExitCodes.size > 1) {
     throw new Error(
       `Conflicting explicit exit codes for ${code}: ${[...entry.explicitExitCodes].sort((left, right) => left - right).join(", ")}`,
     );
   }
+  const explicitExitCode = [...entry.explicitExitCodes][0];
+  const reviewedExitCode = ledger.exitCodes.get(code);
+  if (
+    explicitExitCode !== undefined &&
+    reviewedExitCode !== undefined &&
+    explicitExitCode !== reviewedExitCode
+  ) {
+    throw new Error(
+      `Reviewed exit code disagrees with executable transport for ${code}: ${reviewedExitCode} != ${explicitExitCode}`,
+    );
+  }
+  if (
+    ledger.stableCodes.has(code) &&
+    reviewedExitCode === undefined &&
+    !allowMissingStableExit
+  ) {
+    throw new Error(
+      `Stable error code is missing a reviewed exit code: ${code}`,
+    );
+  }
   const exitCode =
-    [...entry.explicitExitCodes][0] ?? resolveFallbackExitCode(code);
+    reviewedExitCode ?? explicitExitCode ?? resolveFallbackExitCode(code);
   const errorClass = EXIT_CODE_CLASSES.get(exitCode);
   if (!errorClass) {
     throw new Error(`Unsupported public exit code for ${code}: ${exitCode}`);
   }
+  return exitCode;
+}
+
+function validateAliases(ledger, sourcesByCode, exitCodesByCode) {
+  for (const [alias, canonical] of ledger.aliases) {
+    if (
+      alias === canonical ||
+      !ledger.stableCodes.has(alias) ||
+      !ledger.stableCodes.has(canonical) ||
+      !sourcesByCode.has(alias) ||
+      !sourcesByCode.has(canonical) ||
+      ledger.aliases.has(canonical)
+    ) {
+      throw new Error(`Invalid error-code alias: ${alias} -> ${canonical}`);
+    }
+    if (exitCodesByCode.get(alias) !== exitCodesByCode.get(canonical)) {
+      throw new Error(`Alias transport mismatch: ${alias} -> ${canonical}`);
+    }
+  }
+}
+
+function renderCatalogRow(code, entry, ledger, exitCode, errorClass) {
+  const canonicalCode = ledger.aliases.get(code) ?? code;
+  const aliases = [...ledger.aliases.entries()]
+    .filter(([, canonical]) => canonical === code)
+    .map(([alias]) => alias)
+    .sort();
   const meaning = `${code.replaceAll("_", " ")} condition.`;
   return [
     "  {",
@@ -217,7 +302,7 @@ function renderCatalogRow(code, entry, stableCodes) {
       "meaning",
       meaning[0].toUpperCase() + meaning.slice(1),
     ),
-    `    stability: ${JSON.stringify(stableCodes.has(code) ? "stable" : "provisional")},`,
+    `    stability: ${JSON.stringify(ledger.stableCodes.has(code) ? "stable" : "provisional")},`,
     `    exit_code: ${exitCode},`,
     `    class: ${JSON.stringify(errorClass)},`,
     "    recovery:",
@@ -227,6 +312,8 @@ function renderCatalogRow(code, entry, stableCodes) {
       "emitting_commands",
       inferEmittingCommands(entry.sources),
     ),
+    `    canonical_code: ${JSON.stringify(canonicalCode)},`,
+    ...renderGeneratedStringArray("aliases", aliases),
     "  },",
   ].join("\n");
 }
@@ -254,15 +341,24 @@ export async function main(
   }
 
   const discoveredCodes = [...sourcesByCode.keys()].sort();
-  let stableCodes = await readStabilityLedger(stabilityPath);
-  const shouldCreateStabilityLedger = stableCodes === null;
-  if (stableCodes === null) {
+  let ledger = await readStabilityLedger(stabilityPath);
+  const shouldCreateStabilityLedger = ledger === null;
+  if (ledger === null) {
     if (args.includes("--check")) {
       throw new Error("Error-code stability ledger is missing.");
     }
-    stableCodes = new Set(discoveredCodes);
+    ledger = {
+      stableCodes: new Set(discoveredCodes),
+      aliases: new Map(),
+      exitCodes: new Map(),
+      needsMigration: true,
+    };
+  } else if (ledger.needsMigration && args.includes("--check")) {
+    throw new Error(
+      "Error-code stability ledger requires schema-version migration. Run pnpm contracts:errors:update.",
+    );
   }
-  const removedStableCodes = [...stableCodes].filter(
+  const removedStableCodes = [...ledger.stableCodes].filter(
     (code) => !sourcesByCode.has(code),
   );
   if (removedStableCodes.length > 0) {
@@ -271,15 +367,59 @@ export async function main(
     );
   }
 
+  const unexpectedExitCodes = [...ledger.exitCodes.keys()].filter(
+    (code) => !ledger.stableCodes.has(code),
+  );
+  if (unexpectedExitCodes.length > 0) {
+    throw new Error(
+      `Reviewed exit codes must name stable codes only: ${unexpectedExitCodes.join(", ")}`,
+    );
+  }
+  const exitCodesByCode = new Map(
+    [...sourcesByCode.entries()].map(([code, entry]) => [
+      code,
+      resolveCatalogExitCode(
+        code,
+        entry,
+        ledger,
+        shouldCreateStabilityLedger || ledger.needsMigration,
+      ),
+    ]),
+  );
+  validateAliases(ledger, sourcesByCode, exitCodesByCode);
+
   const rows = [...sourcesByCode.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([code, entry]) => renderCatalogRow(code, entry, stableCodes));
+    .map(([code, entry]) => {
+      const exitCode = exitCodesByCode.get(code);
+      return renderCatalogRow(
+        code,
+        entry,
+        ledger,
+        exitCode,
+        EXIT_CODE_CLASSES.get(exitCode),
+      );
+    });
 
-  if (shouldCreateStabilityLedger) {
+  if (shouldCreateStabilityLedger || ledger.needsMigration) {
     await mkdir(path.dirname(stabilityPath), { recursive: true });
+    const stableExitCodes = Object.fromEntries(
+      [...ledger.stableCodes]
+        .sort()
+        .map((code) => [code, exitCodesByCode.get(code)]),
+    );
     await writeFile(
       stabilityPath,
-      `${JSON.stringify({ schema_version: 1, stable_codes: discoveredCodes }, null, 2)}\n`,
+      `${JSON.stringify(
+        {
+          schema_version: 2,
+          stable_codes: [...ledger.stableCodes].sort(),
+          aliases: Object.fromEntries([...ledger.aliases].sort()),
+          exit_codes: stableExitCodes,
+        },
+        null,
+        2,
+      )}\n`,
       "utf8",
     );
   }

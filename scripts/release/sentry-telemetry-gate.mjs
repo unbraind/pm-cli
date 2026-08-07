@@ -1,7 +1,18 @@
 #!/usr/bin/env node
 
 import { existsSync } from "node:fs";
-import { commandFor, fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
+import {
+  PM_ERROR_CODE_CATALOG,
+  resolveCanonicalPmErrorCodeContract,
+} from "../../dist/sdk/contracts.js";
+import {
+  commandFor,
+  fail,
+  flagBool,
+  flagString,
+  parseFlags,
+  runCommand,
+} from "./utils.mjs";
 
 function parseIssuePayload(payload) {
   if (Array.isArray(payload)) {
@@ -44,14 +55,21 @@ function parseCsvSection(output, title) {
     if (tokens.length !== header.length) {
       continue;
     }
-    rows.push(Object.fromEntries(header.map((key, tokenIndex) => [key, tokens[tokenIndex]])));
+    rows.push(
+      Object.fromEntries(
+        header.map((key, tokenIndex) => [key, tokens[tokenIndex]]),
+      ),
+    );
   }
   return { header, rows };
 }
 
 function parseTelemetryMetrics(output) {
   const overall = parseCsvSection(output, "overall finish error rate");
-  const missingCoverage = parseCsvSection(output, "missing error code coverage");
+  const missingCoverage = parseCsvSection(
+    output,
+    "missing error code coverage",
+  );
   if (!overall || overall.rows.length === 0) {
     return {
       ok: false,
@@ -100,147 +118,93 @@ function sentrySeverityTally(issues) {
   return summary;
 }
 
-const KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS = [
-  "[starter-extension] activating",
-  "all 8 capabilities registered.",
-  "[starter-extension] commands:",
-  "[starter] preflight check for workspace",
-  "[starter] output_format service override active",
-  "[pm-ext-ts-starter] activating",
-  "[pm-ext-ts-starter] all capabilities registered.",
-  "run `pm init` first to initialise a pm workspace",
-];
-const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
-  "authentication required, not authenticated",
-  // Count-agnostic handled apply failures from issue-sync/dogfood paths:
-  // "All N item(s) failed to apply ...; no issues were created or updated."
-  "item(s) failed to apply",
-  "csv is missing required 'title' column",
-  "dependency cycle",
-  "failed to fetch issues from jira",
-  "no items imported",
-  "no slack webhook configured",
-  "slack webhook request failed",
-  "slack webhook returned http",
-  // Count-agnostic: validation / preflight structural-error CommandErrors are
-  // expected handled CLI failures regardless of how many errors are reported
-  // ("validation failed: N", "validation found N", "N structural error(s) found
-  // in", "preflight: N structural error(s)"). The brittle per-count list missed
-  // new counts (e.g. 4) and re-blocked the release on dogfood smoke output.
-  "structural error(s)",
-  // Handled write failure surfaced by the standup-export dogfood step when the
-  // target's parent directory is missing ("could not write to <path>: the parent
-  // directory does not exist — create it first ..."). Expected handled CLI error.
-  "the parent directory does not exist",
-  // Structured problem+json payload for commands run before a tracker exists.
-  // This is a handled CLI usage error, not an unhandled runtime failure.
-  "tracker_not_initialized",
-  // Starter SDK wrappers preserve handled command failures as CommandError
-  // titles, but Sentry truncates the embedded problem+json value before the
-  // tracker_not_initialized code. Keep the exact wrapper prefixes narrow.
-  "pm starter search: `pm search` failed:",
-  "pm starter context: `pm context` failed:",
-  // Expected handled failures from package dogfood/release-smoke commands.
-  // These stay behind the CommandError/PmCliError + isUnhandled=false guard.
-  "pm-web exited with code",
-  "github api returned http 422",
-  "drift detected:",
-  // A managed .gitignore fence is mandatory, but a read-only workspace is an
-  // expected environmental boundary once init surfaces path-safe recovery.
-  "workspace .gitignore is not writable",
-  // The package import dogfood deliberately runs merge-strategy=fail twice to
-  // prove duplicate detection aborts before writes. Sentry records that handled
-  // CommandError when expected-error capture is enabled for release smokes.
-  'merge-strategy "fail": bead',
-  // Unknown-author acknowledgment refuses stale, duplicate and non-actionable
-  // targets by design; the refusals now carry EXIT_CODE.USAGE so the CLI
-  // boundary never reports them, and these patterns keep them classified when
-  // expected-error capture is enabled.
-  "author acknowledgment target",
-  "unknown-author acknowledgment target",
-  "author acknowledgment requires events, reviewer, attributed_author, and reason",
-  "author acknowledgment accepts either explicit events or all_actionable",
-];
-const KNOWN_EXPECTED_HANDLED_VALIDATION_ISSUE_PATTERNS = [
-  // Snapshot acceptance deliberately exercises the public identifier validator
-  // with invalid input. Sentry reports this caught validation failure as Error
-  // rather than CommandError, so keep it in a separate exact-message allowlist
-  // that never applies to explicitly unhandled events.
-  "snapshot names and fingerprints must use lowercase letters, digits, dots, underscores, or hyphens",
-];
-const KNOWN_EXPECTED_HANDLED_ENVIRONMENT_ISSUE_PATTERNS = [
-  // Local disk exhaustion is an operational host-capacity failure surfaced by
-  // Node as Error/ENOSPC, not a pm-cli crash. It remains relevant in telemetry
-  // but should not block releases when the CLI caught and reported it.
-  "enospc: no space left on device",
-  // Emitted only after the launcher proves that its bundle manifest changed or
-  // an on-disk output is missing/hash-invalid. Generic module failures remain
-  // release-blocking and deliberately do not match this code.
-  "bundle_integrity_torn_install",
-];
+const EXPECTED_HANDLED_ERROR_CLASSES = new Set([
+  "usage",
+  "not_found",
+  "conflict",
+]);
 
-function issueTextValue(issue) {
-  const metadata = issue && typeof issue === "object" ? issue.metadata : null;
-  const metadataValue = metadata && typeof metadata.value === "string" ? metadata.value : "";
-  const title = issue && typeof issue.title === "string" ? issue.title : "";
-  return `${title}\n${metadataValue}`;
+function readIssueTag(issue, key) {
+  if (!issue || typeof issue !== "object") {
+    return undefined;
+  }
+  if (Array.isArray(issue.tags)) {
+    const tag = issue.tags.find((candidate) => candidate?.key === key);
+    return typeof tag?.value === "string" ? tag.value : undefined;
+  }
+  if (issue.tags && typeof issue.tags === "object") {
+    const value = issue.tags[key];
+    return typeof value === "string" || typeof value === "number"
+      ? String(value)
+      : undefined;
+  }
+  return undefined;
 }
 
-function isIgnoredConsoleNoiseIssue(issue) {
-  const logger = String(issue?.logger ?? "").toLowerCase();
-  if (logger !== "console") {
-    return false;
+function readIssueContractValue(issue, snakeKey, tagKey) {
+  if (!issue || typeof issue !== "object") {
+    return undefined;
   }
-  const combinedText = issueTextValue(issue).toLowerCase();
-  return KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
+  const metadata =
+    issue.metadata && typeof issue.metadata === "object"
+      ? issue.metadata
+      : null;
+  const extra =
+    issue.extra && typeof issue.extra === "object" ? issue.extra : null;
+  const candidates = [
+    issue[snakeKey],
+    metadata?.[snakeKey],
+    metadata?.[tagKey],
+    extra?.[snakeKey],
+    extra?.[tagKey],
+    readIssueTag(issue, tagKey),
+  ];
+  return candidates.find(
+    (candidate) =>
+      typeof candidate === "string" || typeof candidate === "number",
+  );
 }
 
 function isExpectedHandledCliIssue(issue) {
-  const metadata = issue && typeof issue === "object" ? issue.metadata : null;
-  const type = metadata && typeof metadata.type === "string" ? metadata.type : "";
-  if (issue?.isUnhandled === true) {
+  if (issue?.isUnhandled === true || readIssueTag(issue, "handled") === "no") {
     return false;
   }
-  const combinedText = issueTextValue(issue).toLowerCase();
-  const isKnownCliError =
-    (type === "PmCliError" || type === "CommandError") &&
-    KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
-  const isKnownValidationError =
-    (type === "Error" || type === "PmCliError" || type === "CommandError") &&
-    KNOWN_EXPECTED_HANDLED_VALIDATION_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
-  return isKnownCliError || isKnownValidationError;
-}
-
-function isExpectedHandledEnvironmentIssue(issue) {
-  const metadata = issue && typeof issue === "object" ? issue.metadata : null;
-  const type = metadata && typeof metadata.type === "string" ? metadata.type : "";
-  if (type !== "Error" || issue?.isUnhandled === true) {
+  const errorCode = readIssueContractValue(
+    issue,
+    "error_code",
+    "pm.error_code",
+  );
+  const exitCode = Number(
+    readIssueContractValue(issue, "exit_code", "pm.exit_code"),
+  );
+  if (typeof errorCode !== "string" || !Number.isInteger(exitCode)) {
     return false;
   }
-  const combinedText = issueTextValue(issue).toLowerCase();
-  return KNOWN_EXPECTED_HANDLED_ENVIRONMENT_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
+  try {
+    const contract = resolveCanonicalPmErrorCodeContract(
+      errorCode,
+      PM_ERROR_CODE_CATALOG,
+    );
+    return (
+      contract.exit_code === exitCode &&
+      EXPECTED_HANDLED_ERROR_CLASSES.has(contract.class)
+    );
+  } catch {
+    return false;
+  }
 }
 
 function partitionSentryIssuesForGate(issues) {
   const relevant = [];
-  const ignoredNoise = [];
   const ignoredExpected = [];
   for (const issue of issues) {
-    if (isIgnoredConsoleNoiseIssue(issue)) {
-      ignoredNoise.push(issue);
-      continue;
-    }
     if (isExpectedHandledCliIssue(issue)) {
-      ignoredExpected.push(issue);
-      continue;
-    }
-    if (isExpectedHandledEnvironmentIssue(issue)) {
       ignoredExpected.push(issue);
       continue;
     }
     relevant.push(issue);
   }
-  return { relevant, ignoredNoise, ignoredExpected };
+  return { relevant, ignoredExpected };
 }
 
 function redactedTokenCandidates() {
@@ -280,15 +244,140 @@ function buildSentryGateQuery(windowDays) {
 }
 
 function buildSentryIssuesUrl(project, query, limit) {
-  const baseUrl = process.env.SENTRY_URL || process.env.SENTRY_BASE_URL || "https://sentry.io";
+  const baseUrl =
+    process.env.SENTRY_URL ||
+    process.env.SENTRY_BASE_URL ||
+    "https://sentry.io";
   const { org, projectSlug } = parseSentryProject(project);
-  const url = new URL(`/api/0/projects/${encodeURIComponent(org)}/${encodeURIComponent(projectSlug)}/issues/`, baseUrl);
+  const url = new URL(
+    `/api/0/projects/${encodeURIComponent(org)}/${encodeURIComponent(projectSlug)}/issues/`,
+    baseUrl,
+  );
   url.searchParams.set("query", query);
   url.searchParams.set("limit", String(limit));
   return url;
 }
 
-function fetchSentryIssuesViaCli(project, query, limit, priorFailure) {
+function needsSentryContractEnrichment(issue) {
+  return Boolean(
+    issue &&
+    typeof issue === "object" &&
+    issue.isUnhandled !== true &&
+    (readIssueContractValue(issue, "error_code", "pm.error_code") ===
+      undefined ||
+      readIssueContractValue(issue, "exit_code", "pm.exit_code") === undefined),
+  );
+}
+
+async function enrichSentryIssueWithLatestEvent(issue, org, token) {
+  if (!needsSentryContractEnrichment(issue) || typeof issue.id !== "string") {
+    return issue;
+  }
+  const baseUrl =
+    process.env.SENTRY_URL ||
+    process.env.SENTRY_BASE_URL ||
+    "https://sentry.io";
+  const eventUrl = new URL(
+    `/api/0/organizations/${encodeURIComponent(org)}/issues/${encodeURIComponent(issue.id)}/events/latest/`,
+    baseUrl,
+  );
+  try {
+    const response = await fetch(eventUrl, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) {
+      return issue;
+    }
+    const body = await response.text();
+    const event = body.trim().length > 0 ? JSON.parse(body) : null;
+    if (!event || typeof event !== "object") {
+      return issue;
+    }
+    return {
+      ...issue,
+      tags: event.tags ?? issue.tags,
+      extra: event.extra ?? issue.extra,
+      contexts: event.contexts ?? issue.contexts,
+    };
+  } catch {
+    return issue;
+  }
+}
+
+async function enrichSentryIssuesWithLatestEvents(issues, project, token) {
+  const { org } = parseSentryProject(project);
+  const enriched = [];
+  for (let index = 0; index < issues.length; index += 10) {
+    const batch = await Promise.all(
+      issues
+        .slice(index, index + 10)
+        .map((issue) => enrichSentryIssueWithLatestEvent(issue, org, token)),
+    );
+    enriched.push(...batch);
+  }
+  return enriched;
+}
+
+function enrichSentryIssuesViaCli(issues, project, windowDays) {
+  const { org } = parseSentryProject(project);
+  return issues.map((issue) => {
+    if (
+      !needsSentryContractEnrichment(issue) ||
+      typeof issue.shortId !== "string"
+    ) {
+      return issue;
+    }
+    const eventResult = runCommand(
+      commandFor("sentry"),
+      [
+        "issue",
+        "events",
+        `${org}/${issue.shortId}`,
+        "--limit",
+        "1",
+        "--period",
+        `${windowDays > 0 ? windowDays : 90}d`,
+        "--fresh",
+        "--json",
+        "--fields",
+        "tags,metadata",
+      ],
+      { capture: true, allowFailure: true },
+    );
+    if (eventResult.status !== 0) {
+      return issue;
+    }
+    try {
+      const payload =
+        eventResult.stdout.trim().length > 0
+          ? JSON.parse(eventResult.stdout)
+          : [];
+      const event = parseIssuePayload(payload)[0];
+      if (!event || typeof event !== "object") {
+        return issue;
+      }
+      return {
+        ...issue,
+        tags: event.tags ?? issue.tags,
+        metadata: event.metadata ?? issue.metadata,
+      };
+    } catch {
+      return issue;
+    }
+  });
+}
+
+function fetchSentryIssuesViaCli(
+  project,
+  query,
+  limit,
+  priorFailure,
+  windowDays,
+) {
   const result = runCommand(
     commandFor("sentry"),
     [
@@ -312,19 +401,25 @@ function fetchSentryIssuesViaCli(project, query, limit, priorFailure) {
     const stderr = result.stderr.trim();
     return {
       ok: false,
-      reason: stderr.length > 0 ? `sentry_cli_query_failed:${stderr}` : priorFailure,
+      reason:
+        stderr.length > 0 ? `sentry_cli_query_failed:${stderr}` : priorFailure,
       token_source: null,
       issues: [],
     };
   }
 
   try {
-    const payload = result.stdout.trim().length > 0 ? JSON.parse(result.stdout) : [];
+    const payload =
+      result.stdout.trim().length > 0 ? JSON.parse(result.stdout) : [];
     return {
       ok: true,
       reason: null,
       token_source: "sentry_cli",
-      issues: parseIssuePayload(payload),
+      issues: enrichSentryIssuesViaCli(
+        parseIssuePayload(payload),
+        project,
+        windowDays,
+      ),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -337,11 +432,23 @@ function fetchSentryIssuesViaCli(project, query, limit, priorFailure) {
   }
 }
 
-async function fetchSentryIssues(project, query, limit, allowCliFallback) {
+async function fetchSentryIssues(
+  project,
+  query,
+  limit,
+  allowCliFallback,
+  windowDays,
+) {
   const tokens = redactedTokenCandidates();
   if (tokens.length === 0) {
     if (allowCliFallback) {
-      return fetchSentryIssuesViaCli(project, query, limit, "missing_sentry_auth_token");
+      return fetchSentryIssuesViaCli(
+        project,
+        query,
+        limit,
+        "missing_sentry_auth_token",
+        windowDays,
+      );
     }
     return {
       ok: false,
@@ -368,11 +475,16 @@ async function fetchSentryIssues(project, query, limit, allowCliFallback) {
         continue;
       }
       const payload = body.trim().length > 0 ? JSON.parse(body) : [];
+      const issues = parseIssuePayload(payload);
       return {
         ok: true,
         reason: null,
         token_source: tokenSource,
-        issues: parseIssuePayload(payload),
+        issues: await enrichSentryIssuesWithLatestEvents(
+          issues,
+          project,
+          token,
+        ),
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -381,7 +493,13 @@ async function fetchSentryIssues(project, query, limit, allowCliFallback) {
   }
 
   if (allowCliFallback) {
-    return fetchSentryIssuesViaCli(project, query, limit, lastFailure);
+    return fetchSentryIssuesViaCli(
+      project,
+      query,
+      limit,
+      lastFailure,
+      windowDays,
+    );
   }
 
   return {
@@ -418,7 +536,11 @@ function parseNumber(value, key, fallback, { integer = false } = {}) {
   // numeric guard (e.g. an empty `--sentry-window-days` would mean "unbounded");
   // reject blank values explicitly instead of accepting a surprise zero.
   const parsed = value.trim() === "" ? Number.NaN : Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0 || (integer && !Number.isInteger(parsed))) {
+  if (
+    !Number.isFinite(parsed) ||
+    parsed < 0 ||
+    (integer && !Number.isInteger(parsed))
+  ) {
     fail(`Invalid --${key} value "${value}".`);
   }
   return parsed;
@@ -449,9 +571,17 @@ function buildInitialTelemetrySummary(telemetryMode) {
   };
 }
 
-function buildTelemetrySummaryFromCommand(telemetryCommand, telemetryMode, maxTelemetryErrorRate, maxTelemetryMissingRows) {
+function buildTelemetrySummaryFromCommand(
+  telemetryCommand,
+  telemetryMode,
+  maxTelemetryErrorRate,
+  maxTelemetryMissingRows,
+) {
   if (telemetryCommand.status !== 0) {
-    const stderr = typeof telemetryCommand.stderr === "string" ? telemetryCommand.stderr.trim() : "";
+    const stderr =
+      typeof telemetryCommand.stderr === "string"
+        ? telemetryCommand.stderr.trim()
+        : "";
     return {
       checked: true,
       mode: telemetryMode,
@@ -484,19 +614,19 @@ function buildTelemetrySummaryFromCommand(telemetryCommand, telemetryMode, maxTe
   };
 }
 
-function runTelemetryGateCommand(telemetryCommandPath, telemetryDays, telemetryMode) {
+function runTelemetryGateCommand(
+  telemetryCommandPath,
+  telemetryDays,
+  telemetryMode,
+) {
   const telemetryInvocation = telemetryCommandPath
     ? buildTelemetryCommandInvocation(telemetryCommandPath, telemetryDays)
     : null;
   return telemetryInvocation
-    ? runCommand(
-        telemetryInvocation.command,
-        telemetryInvocation.args,
-        {
-          capture: true,
-          allowFailure: telemetryMode !== "required",
-        },
-      )
+    ? runCommand(telemetryInvocation.command, telemetryInvocation.args, {
+        capture: true,
+        allowFailure: telemetryMode !== "required",
+      })
     : {
         status: 127,
         stdout: "",
@@ -510,10 +640,16 @@ function resolveTelemetrySummary(params) {
     return buildInitialTelemetrySummary(params.telemetryMode);
   }
   if (params.telemetryMode === "required" && !params.telemetryCommandPath) {
-    fail("telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter");
+    fail(
+      "telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter",
+    );
   }
   return buildTelemetrySummaryFromCommand(
-    runTelemetryGateCommand(params.telemetryCommandPath, params.telemetryDays, params.telemetryMode),
+    runTelemetryGateCommand(
+      params.telemetryCommandPath,
+      params.telemetryDays,
+      params.telemetryMode,
+    ),
     params.telemetryMode,
     params.maxTelemetryErrorRate,
     params.maxTelemetryMissingRows,
@@ -539,7 +675,9 @@ function buildSentryTelemetryGateResult(params) {
       window_days: params.sentryWindowDays,
       checked: params.sentryFetch.ok,
       warning: params.sentryFetch.ok ? null : params.sentryFetch.reason,
-      token_source: params.sentryFetch.ok ? params.sentryFetch.token_source : null,
+      token_source: params.sentryFetch.ok
+        ? params.sentryFetch.token_source
+        : null,
       critical: params.sentrySummary.critical,
       high: params.sentrySummary.high,
       total: params.sentrySummary.total,
@@ -551,12 +689,10 @@ function buildSentryTelemetryGateResult(params) {
         .map((issue) => issue?.title)
         .filter((value) => typeof value === "string")
         .slice(0, 8),
-      ignored_noise_total: params.sentryPartition.ignoredNoise.length,
-      ignored_noise_short_ids: params.sentryPartition.ignoredNoise
-        .map((issue) => issue?.shortId)
-        .filter((value) => typeof value === "string")
-        .slice(0, 25),
-      ignored_expected_handled_total: params.sentryPartition.ignoredExpected.length,
+      ignored_noise_total: 0,
+      ignored_noise_short_ids: [],
+      ignored_expected_handled_total:
+        params.sentryPartition.ignoredExpected.length,
       ignored_expected_handled_short_ids: params.sentryPartition.ignoredExpected
         .map((issue) => issue?.shortId)
         .filter((value) => typeof value === "string")
@@ -576,7 +712,7 @@ function printSentryTelemetryGateResult(result, outputJson, context) {
   const message =
     `Sentry/telemetry gate ${result.ok ? "passed" : "failed"} ` +
     `(critical=${context.sentrySummary.critical}, high=${context.sentrySummary.high}, ` +
-    `sentry_window_days=${context.sentryWindowDays}, ignored_noise=${context.sentryPartition.ignoredNoise.length}, ` +
+    `sentry_window_days=${context.sentryWindowDays}, ignored_noise=0, ` +
     `ignored_expected_handled=${context.sentryPartition.ignoredExpected.length}, telemetry_mode=${context.telemetryMode}).`;
   if (result.ok) {
     console.log(message);
@@ -594,21 +730,44 @@ async function main() {
 
   const outputJson = flagBool(flags, "json", false);
   const sentryProject = flagString(flags, "sentry-project", "unbrained/pm-cli");
-  const sentryLimit = parseNumber(flagString(flags, "sentry-limit", null), "sentry-limit", 200);
+  const sentryLimit = parseNumber(
+    flagString(flags, "sentry-limit", null),
+    "sentry-limit",
+    200,
+  );
   // Sentry's relative-date syntax (`lastSeen:-Nd`) only accepts whole days, so a
   // decimal window would yield a malformed query (400 / ignored filter); require
   // an integer day count.
-  const sentryWindowDays = parseNumber(flagString(flags, "sentry-window-days", null), "sentry-window-days", 14, {
-    integer: true,
-  });
-  const maxCritical = parseNumber(flagString(flags, "max-critical", null), "max-critical", 0);
-  const maxHigh = parseNumber(flagString(flags, "max-high", null), "max-high", 0);
+  const sentryWindowDays = parseNumber(
+    flagString(flags, "sentry-window-days", null),
+    "sentry-window-days",
+    14,
+    {
+      integer: true,
+    },
+  );
+  const maxCritical = parseNumber(
+    flagString(flags, "max-critical", null),
+    "max-critical",
+    0,
+  );
+  const maxHigh = parseNumber(
+    flagString(flags, "max-high", null),
+    "max-high",
+    0,
+  );
   const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
   const telemetryCommandPath =
     flagString(flags, "telemetry-command", null) ??
     process.env.PM_TELEMETRY_QUERY_COMMAND ??
-    (existsSync("scripts/prod/telemetry/query-telemetry.sh") ? "scripts/prod/telemetry/query-telemetry.sh" : null);
-  const telemetryDays = parseNumber(flagString(flags, "telemetry-days", null), "telemetry-days", 7);
+    (existsSync("scripts/prod/telemetry/query-telemetry.sh")
+      ? "scripts/prod/telemetry/query-telemetry.sh"
+      : null);
+  const telemetryDays = parseNumber(
+    flagString(flags, "telemetry-days", null),
+    "telemetry-days",
+    7,
+  );
   const maxTelemetryErrorRate = parseNumber(
     flagString(flags, "max-telemetry-error-rate", null),
     "max-telemetry-error-rate",
@@ -621,25 +780,32 @@ async function main() {
   );
 
   if (!["off", "best-effort", "required"].includes(telemetryMode)) {
-    fail(`Unsupported --telemetry-mode value "${telemetryMode}". Use off, best-effort, or required.`);
+    fail(
+      `Unsupported --telemetry-mode value "${telemetryMode}". Use off, best-effort, or required.`,
+    );
   }
 
   const sentryTokenConfigured = redactedTokenCandidates().length > 0;
-  const sentryAccessRequired = telemetryMode === "required" || sentryTokenConfigured;
+  const sentryAccessRequired =
+    telemetryMode === "required" || sentryTokenConfigured;
   const allowSentryCliFallback =
-    telemetryMode === "required" || (telemetryMode === "best-effort" && sentryTokenConfigured);
+    telemetryMode === "required" ||
+    (telemetryMode === "best-effort" && sentryTokenConfigured);
   const sentryFetch = await fetchSentryIssues(
     sentryProject,
     buildSentryGateQuery(sentryWindowDays),
     sentryLimit,
     allowSentryCliFallback,
+    sentryWindowDays,
   );
   const sentryIssues = sentryFetch.ok ? sentryFetch.issues : [];
   const sentryPartition = partitionSentryIssuesForGate(sentryIssues);
   const sentrySummary = sentrySeverityTally(sentryPartition.relevant);
   const sentryAccessOk = sentryFetch.ok || !sentryAccessRequired;
   const sentryThresholdOk =
-    sentryAccessOk && sentrySummary.critical <= maxCritical && sentrySummary.high <= maxHigh;
+    sentryAccessOk &&
+    sentrySummary.critical <= maxCritical &&
+    sentrySummary.high <= maxHigh;
 
   const telemetrySummary = resolveTelemetrySummary({
     telemetryMode,
@@ -667,7 +833,12 @@ async function main() {
     telemetrySummary,
   });
 
-  printSentryTelemetryGateResult(result, outputJson, { sentrySummary, sentryWindowDays, sentryPartition, telemetryMode });
+  printSentryTelemetryGateResult(result, outputJson, {
+    sentrySummary,
+    sentryWindowDays,
+    sentryPartition,
+    telemetryMode,
+  });
 
   if (!ok) {
     process.exitCode = 1;

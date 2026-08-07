@@ -167,6 +167,12 @@ import {
   resolvePmCommandOutputEnvelope,
   type PmCommandOutputEnvelopeContract,
 } from "../output-contracts.js";
+import {
+  PM_COMMAND_EXIT_OUTCOME_CONTRACTS,
+  resolvePmCommandExitContract,
+  type PmCommandExitContract,
+  type PmCommandExitOutcomeContract,
+} from "./command-exit-contracts.js";
 
 /** Documents the contracts command options payload exchanged by command, SDK, and package integrations. */
 export interface ContractsCommandOptions {
@@ -314,6 +320,14 @@ export interface ContractsResult {
     budget: PmCommandOutputBudgetContract;
     envelope: PmCommandOutputEnvelopeContract;
   }>;
+  /** Stable outcome vocabulary and exhaustive per-command process exit sets. */
+  command_exit_contracts?: {
+    vocabulary: readonly PmCommandExitOutcomeContract[];
+    command_sets: Array<{
+      commands: string[];
+      exit_codes: PmCommandExitContract["exit_codes"];
+    }>;
+  };
 }
 
 type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
@@ -2520,6 +2534,36 @@ function buildCommandOutputContracts(
   }));
 }
 
+function buildCommandExitContractGroups(
+  commands: readonly string[],
+): NonNullable<ContractsResult["command_exit_contracts"]>["command_sets"] {
+  const groups = new Map<
+    string,
+    NonNullable<
+      ContractsResult["command_exit_contracts"]
+    >["command_sets"][number]
+  >();
+  for (const command of commands) {
+    const contract = resolvePmCommandExitContract(command);
+    const exitCodes =
+      contract === undefined
+        ? [
+            EXIT_CODE.SUCCESS,
+            EXIT_CODE.GENERIC_FAILURE,
+            EXIT_CODE.USAGE,
+            EXIT_CODE.NOT_FOUND,
+            EXIT_CODE.CONFLICT,
+            EXIT_CODE.DEPENDENCY_FAILED,
+          ]
+        : contract.exit_codes;
+    const key = exitCodes.join(",");
+    const group = groups.get(key) ?? { commands: [], exit_codes: exitCodes };
+    group.commands.push(command);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+}
+
 function resolveExtensionCommandContracts(
   selection: ContractsSelection,
   runtime: ContractsRuntimeContext,
@@ -2788,6 +2832,10 @@ export async function runContracts(
     result.error_codes = PM_ERROR_CODE_CATALOG;
     result.command_output_contracts =
       buildCommandOutputContracts(outputCommands);
+    result.command_exit_contracts = {
+      vocabulary: PM_COMMAND_EXIT_OUTCOME_CONTRACTS,
+      command_sets: buildCommandExitContractGroups(outputCommands),
+    };
   }
 
   return result;
@@ -2800,6 +2848,7 @@ export const _testOnlyContractsCommand = {
   buildExtensionActionSchemaBranch,
   buildCommandSummarySurface,
   buildCommandOutputContracts,
+  buildCommandExitContractGroups,
   buildRuntimeFieldFlagContracts,
   collectActionContractDescriptors,
   collectExtensionCommandContracts,

@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- The CLI has 195 error codes and contracts none of them: the surface agents read when they are wrong is the only one with no enumeration, no stability promise, and no gate ([pm-x4nn3z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-x4nn3z.toon))
+
 ### Fixed
 
+- The release gate classifies production errors by message prose and reads none of the 236 error codes the product declares, so every waiver is a latent re-block and a broad substring is a silent waiver ([pm-dqtzva](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dqtzva.toon))
 - The mandatory command-wiring replication set is enforced only by a prose checklist, and the census shows partial application is the single largest recurring defect class in the record ([pm-7rrqsk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7rrqsk.toon))
 - pm get silently discards --output-include field names because entity reads bind the flag to sections while collection reads bind it to fields, and the omission receipt reports no omissions either way ([pm-0k19l7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0k19l7.toon))
 - GH-919: \_workspace author-attribution coordinates cannot be acknowledged ([pm-ety1qc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ety1qc.toon))
@@ -12,6 +17,7 @@
 
 ### Other
 
+- Every command declares its exit-code set, and the code distinguishes applied from applied-to-nothing ([pm-hqa8g1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hqa8g1.toon))
 - Floor polarity for the tracker measurement ratchet, with graph edge and node floors declared ([pm-z0cfor](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-z0cfor.toon))
 - Refresh tsx to 4.23.11 with full release-gate proof ([pm-nw1y14](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-nw1y14.toon))
 

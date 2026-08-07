@@ -79,12 +79,25 @@ The default summary stays bounded. Larger intent and error catalogs are emitted 
 - recovery guidance;
 - source modules that emit the code.
 - inferred CLI command roots (`*` for cross-cutting runtime failures).
+- canonical code and compatibility aliases for concept-level handling.
 
 Existing catalog entries are recorded in `scripts/error-code-stability.json`.
 The generator refuses to remove one of those stable codes unless the reviewed
 compatibility ledger is changed explicitly. Newly discovered codes are emitted
 as provisional until deliberately promoted, so adding a runtime declaration
 does not accidentally promise permanent compatibility.
+
+The compatibility ledger also pins every stable code to its reviewed process
+exit. An executable `PmCliError` declaration that disagrees with that mapping
+fails generation, and a stable code without a mapping fails the drift check.
+Reviewed alias groups preserve every emitted legacy spelling while exposing one
+canonical concept to SDK, package, CLI-contract, and observability consumers.
+Aliases must resolve directly to a declared stable canonical code and share its
+exit class; cycles, missing targets, and transport mismatches fail closed.
+
+Use `resolvePmErrorCodeContract` when the exact emitted spelling matters, and
+`resolveCanonicalPmErrorCodeContract` when one handler should cover a complete
+compatibility group.
 
 `PM_ERROR_CODE_EXIT_CLASS_CONTRACTS` is the portable shell taxonomy: exit 1 is
 generic failure, 2 is usage, 3 is not-found, 4 is conflict, and 5 is dependency

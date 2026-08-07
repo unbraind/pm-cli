@@ -17,6 +17,8 @@ import { attachReadOutputContracts } from "../../sdk/context-intent-contracts.js
 import { attachOutputTokenAccounting } from "../../sdk/output-token-accounting.js";
 import { resolveReadOutputEncoding } from "../../sdk/read-output-contracts.js";
 
+const DECLARED_PROCESS_EXIT_CODES = new Set<number>(Object.values(EXIT_CODE));
+
 /** Documents the output options payload exchanged by command, SDK, and package integrations. */
 export interface OutputOptions {
   /** Value that configures or reports json for this contract. */
@@ -521,6 +523,14 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
 
 /** Implements print result for the public runtime surface of this module. */
 export function printResult(result: unknown, options: OutputOptions): void {
+  if (
+    isPlainObject(result) &&
+    Number.isInteger(result.exit_code) &&
+    DECLARED_PROCESS_EXIT_CODES.has(Number(result.exit_code)) &&
+    (process.exitCode === undefined || process.exitCode === EXIT_CODE.SUCCESS)
+  ) {
+    process.exitCode = Number(result.exit_code);
+  }
   const projected = options.idOnly
     ? projectMutationResult(result, { idOnly: true })
     : options.fullChangedFields

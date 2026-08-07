@@ -2,20 +2,45 @@ id: pm-dqtzva
 title: "The release gate classifies production errors by message prose and reads none of the 236 error codes the product declares, so every waiver is a latent re-block and a broad substring is a silent waiver"
 description: "The gate that decides whether production errors block a release partitions Sentry issues by lowercased message substring. It carries 34 hand-written patterns across four lists (8 console, 23 CLI, 1 validation, 2 environment) and references none of the 236 stable error codes the product declares, even though the handled-error channel already ships pm.error_code to Sentry as a tag and every refusal envelope carries a code and a urn:pm-cli:error type. Two failure modes follow and both are already realized in this repository. Latent re-block: message text is under no contract, so any wording change silently unmatches its pattern and re-blocks a cut; the file's own comments record that a per-count list re-blocked a release once a new count appeared, and the repair was to loosen the prose rather than to bind to a code. Silent over-waiver: broad substrings such as structural error(s) and item(s) failed to apply waive any future unrelated exception whose message happens to contain them, and no check asserts that a pattern still matches something or that it matches only what it intends. The asymmetry is inverted today: the release contract spec pins the allowlist pattern strings, so the waiver list is frozen while the messages it must match are free."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:ci","area:observability",gate,release
 created_at: "2026-08-07T05:19:52.392Z"
-updated_at: "2026-08-07T05:19:52.392Z"
+updated_at: "2026-08-07T19:58:09.612Z"
+closed_at: "2026-08-07T18:14:33.621Z"
+completed_at: "2026-08-07T18:14:33.621Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The release error classifier decides from the declared error code and exit code, not from message text, for every family it waives; A check fails when a waiver entry matches nothing in the window, so a dead waiver cannot silently persist; A check fails when a waiver entry matches an error family it was not declared for, proving the waiver is not broader than its intent; Error messages become free to reword without touching the release gate, and a negative control proves a rewording no longer re-blocks a cut"
 parent: pm-u9d0
 risk: medium
 confidence: high
+resolution: "Replaced Sentry message allowlists with canonical pm.error_code plus exact pm.exit_code classification from the public SDK catalog, including latest-event enrichment and negative controls."
+expected_result: "Sentry release gating classifies only exact declared code/exit contracts, fails closed for missing or mismatched metadata, and remains invariant under message rewording without broad or dead prose waivers."
+actual_result: "Release classification is SDK-backed and message-independent across API and CLI transports; broad and dead prose waivers were removed entirely, with fail-closed mismatch behavior."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-c3uru0,discovered_from,"2026-08-07T05:19:52.392Z","harness:claude-code","cli:create:dep",detected
   pm-ei6x66,related,"2026-08-07T05:19:52.392Z","harness:claude-code","cli:create:dep",detected
   pm-x4nn3z,blocked_by,"2026-08-07T05:19:52.392Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-07T05:19:52.392Z","harness:claude-code","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-08-07T17:58:34.635Z","harness:codex","Start 2026-08-07: prerequisite pm-x4nn3z is now closed with reviewed stable-code exits and canonical aliases. This item is the canonical all-status match for replacing Sentry message-prose waivers; no duplicate created. Active scope is the release/Sentry classifier and its tests/docs only."
+  "2026-08-07T18:05:33.165Z","harness:codex","TDD red evidence: node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts failed 1/54 as intended. The current gate ignored prose-only tracker_not_initialized and blocked a reworded event carrying valid structured invalid_workspace_snapshot_target/exit=2, proving classification is inverted relative to the SDK contract."
+  "2026-08-07T18:14:31.347Z","harness:codex","Implementation evidence: replaced all 34 prose patterns with SDK catalog resolution plus exact exit matching; only handled usage/not_found/conflict classes can be ignored. Both token API and authenticated sentry CLI paths enrich issue rows from latest-event tags. Negative controls prove arbitrary rewording stays ignored only with a valid contract, while prose-only, unknown, mismatched, unhandled, generic_failure, dependency_failed, ENOSPC, and torn-install events block. Verification: linked 75/75 tests passed; focused ESLint and pnpm typecheck passed. Live required-mode run read Sentry and telemetry successfully: 2 historical unclassified issues remained blocking, 0 ignored, telemetry error rate 0.86%, and 0 missing error-code rows."
+  "2026-08-07T19:40:41.491Z","harness:codex","Final local evidence: structured Sentry gate tests are included in the exact 100/100/100/100 repository coverage run (6966 tests). Security scans, package artifact, contracts/surface, and deterministic quality gates passed. Live release telemetry remains separately verified against structured SDK codes; no prose-pattern waiver was reintroduced."
+  "2026-08-07T19:58:09.612Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/932. Initial implementation commit dd7c2fe90f76ff788fff90bd513bbc048f66fb6a; exact-head checks and AI review loop are pending."
+learnings[1]{created_at,author,text}:
+  "2026-08-07T18:14:32.667Z","harness:codex",A release gate should derive retry-safe handling from the same public transport contract consumers use. Eliminating per-message waiver entries makes dead-entry and substring-overreach states structurally impossible; missing event metadata must remain blocking.
+files[3]{path,scope,note}:
+  scripts/release/sentry-telemetry-gate.mjs,project,SDK-bound Sentry release classification and latest-event enrichment
+  tests/integration/release-automation-contract.spec.ts,project,Release automation source contract for SDK-based classification
+  tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,"TDD contract,mismatch,rewording,and transport fallback coverage"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/integration/release-automation-contract.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msj9jvv7-r42f94,test,passed,"2026-08-07T18:13:25.152Z","2026-08-07T18:13:37.171Z","2026-08-07T18:13:37.171Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated release record for structured Sentry classification
+  docs/RELEASING.md,project,Maintainer contract for structured Sentry release classification
+close_reason: "SDK-bound Sentry classifier implemented and verified with TDD, API/CLI latest-event enrichment, integration contracts, documentation, typecheck, lint, isolated linked tests, and live reliability evidence."
 body: ""

@@ -459,6 +459,8 @@ export const EXIT_CODE = {
   NOT_FOUND: 3,
   CONFLICT: 4,
   DEPENDENCY_FAILED: 5,
+  NO_EFFECT: 6,
+  PARTIAL_EFFECT: 7,
 } as const;
 
 /** Restricts telemetry error category values accepted by command, SDK, and storage contracts. */
