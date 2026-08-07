@@ -17477,7 +17477,7 @@
             "type": "boolean"
           },
           "full": {
-            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "description": "Return the complete post-mutation comment history instead of the bounded mutation receipt projection.",
             "type": "boolean"
           },
           "id": {
@@ -21353,7 +21353,7 @@
             "type": "boolean"
           },
           "full": {
-            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "description": "Return the complete post-mutation learning history instead of the bounded mutation receipt projection.",
             "type": "boolean"
           },
           "id": {
@@ -22532,7 +22532,7 @@
             "type": "boolean"
           },
           "full": {
-            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "description": "Return the complete post-mutation note history instead of the bounded mutation receipt projection.",
             "type": "boolean"
           },
           "id": {
@@ -43860,7 +43860,7 @@
             "type": "boolean"
           },
           "full": {
-            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "description": "Return the complete post-mutation comment history instead of the bounded mutation receipt projection.",
             "type": "boolean"
           },
           "id": {
@@ -44150,7 +44150,7 @@
             "type": "boolean"
           },
           "full": {
-            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "description": "Return the complete post-mutation note history instead of the bounded mutation receipt projection.",
             "type": "boolean"
           },
           "id": {
@@ -44387,7 +44387,7 @@
             "type": "boolean"
           },
           "full": {
-            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "description": "Return the complete post-mutation learning history instead of the bounded mutation receipt projection.",
             "type": "boolean"
           },
           "id": {

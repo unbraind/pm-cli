@@ -85,6 +85,42 @@ describe("SDK read contract integrity", () => {
         ],
       },
     });
+
+    expect(
+      applyReadOutputDimensions(
+        "get",
+        { outputInclude: "id" },
+        {
+          item: { id: "pm-1", title: "One", body: "withheld" },
+          children: [],
+          omission_receipt: {
+            has_omissions: true,
+            omitted_field_group_count: 1,
+            omitted_field_groups: [
+              {
+                name: "upstream_context",
+                restore_with: "--depth full",
+              },
+            ],
+          },
+        },
+      ),
+    ).toMatchObject({
+      item: { id: "pm-1" },
+      omission_receipt: {
+        has_omissions: true,
+        omitted_field_group_count: 4,
+        omitted_field_groups: [
+          { name: "upstream_context", restore_with: "--depth full" },
+          { name: "item.body", restore_with: "--output-include item.body" },
+          {
+            name: "item.title",
+            restore_with: "--output-include item.title",
+          },
+          { name: "children", restore_with: "--output-include children" },
+        ],
+      },
+    });
   });
 
   it("refuses unknown and ambiguous get selectors with the valid vocabulary", () => {

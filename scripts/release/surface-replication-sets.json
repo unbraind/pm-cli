@@ -62,6 +62,7 @@
         "src/cli/register-annotations.ts",
         "src/sdk/cli-contracts/flag-contracts.ts",
         "src/sdk/cli-contracts/tool-schema.ts",
+        "src/sdk/cli-contracts/tool-parameter-tables.ts",
         "src/sdk/completion.ts",
         "src/sdk/runtime.ts",
         "tests/unit/sdk/read-contract-integrity.spec.ts",

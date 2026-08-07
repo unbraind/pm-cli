@@ -109,6 +109,26 @@ describe("surface replication gate", () => {
     ]);
   });
 
+  it("fails when an annotation trigger changes without the tool parameter table", async () => {
+    const config = JSON.parse(
+      await readFile(
+        path.resolve("scripts/release/surface-replication-sets.json"),
+        "utf8",
+      ),
+    ) as Record<string, unknown>;
+
+    const report = await validateSurfaceReplication(config, {
+      repoRoot: path.resolve("."),
+      changedFiles: ["src/sdk/annotations.ts"],
+      today: "2026-08-07",
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.violations).toContain(
+      "set:annotation-mutation-receipts:member:src/sdk/cli-contracts/tool-parameter-tables.ts:unchanged",
+    );
+  });
+
   it("reports recurrence density, cap overlap, and CLI refusal totals", async () => {
     const root = await fixtureRoot();
     await writeFile(

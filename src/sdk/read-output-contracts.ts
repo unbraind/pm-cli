@@ -803,10 +803,19 @@ function applyGetIncludeProjection(
         restore_with: `--output-include ${section}`,
       })),
   ];
+  const inheritedOmittedFieldGroups =
+    isRecord(projected.omission_receipt) &&
+    Array.isArray(projected.omission_receipt.omitted_field_groups)
+      ? projected.omission_receipt.omitted_field_groups
+      : [];
+  const combinedOmittedFieldGroups = [
+    ...inheritedOmittedFieldGroups,
+    ...omittedFieldGroups,
+  ];
   projected.omission_receipt = {
-    has_omissions: omittedFieldGroups.length > 0,
-    omitted_field_group_count: omittedFieldGroups.length,
-    omitted_field_groups: omittedFieldGroups,
+    has_omissions: combinedOmittedFieldGroups.length > 0,
+    omitted_field_group_count: combinedOmittedFieldGroups.length,
+    omitted_field_groups: combinedOmittedFieldGroups,
   };
   return projected;
 }

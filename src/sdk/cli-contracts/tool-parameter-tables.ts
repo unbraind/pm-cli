@@ -2021,11 +2021,27 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
       examples: [600, "1200"],
     },
   },
+  comments: {
+    full: {
+      description:
+        "Return the complete post-mutation comment history instead of the bounded mutation receipt projection.",
+    },
+  },
   notes: {
+    full: {
+      description:
+        "Return the complete post-mutation note history instead of the bounded mutation receipt projection.",
+    },
     since: {
       description:
         "Inclusive ISO 8601 creation timestamp lower bound for structured note event filtering.",
       examples: ["2026-01-01T00:00:00.000Z"],
+    },
+  },
+  learnings: {
+    full: {
+      description:
+        "Return the complete post-mutation learning history instead of the bounded mutation receipt projection.",
     },
   },
   next: {
