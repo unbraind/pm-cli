@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:ci","area:observability",gate,release
 created_at: "2026-08-07T05:19:52.392Z"
-updated_at: "2026-08-07T19:40:41.492Z"
+updated_at: "2026-08-07T19:58:09.612Z"
 closed_at: "2026-08-07T18:14:33.621Z"
 completed_at: "2026-08-07T18:14:33.621Z"
 author: "harness:claude-code"
@@ -23,11 +23,12 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-ei6x66,related,"2026-08-07T05:19:52.392Z","harness:claude-code","cli:create:dep",detected
   pm-x4nn3z,blocked_by,"2026-08-07T05:19:52.392Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-07T05:19:52.392Z","harness:claude-code","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-07T17:58:34.635Z","harness:codex","Start 2026-08-07: prerequisite pm-x4nn3z is now closed with reviewed stable-code exits and canonical aliases. This item is the canonical all-status match for replacing Sentry message-prose waivers; no duplicate created. Active scope is the release/Sentry classifier and its tests/docs only."
   "2026-08-07T18:05:33.165Z","harness:codex","TDD red evidence: node scripts/run-tests.mjs test -- tests/unit/scripts/release/sentry-telemetry-gate.spec.ts failed 1/54 as intended. The current gate ignored prose-only tracker_not_initialized and blocked a reworded event carrying valid structured invalid_workspace_snapshot_target/exit=2, proving classification is inverted relative to the SDK contract."
   "2026-08-07T18:14:31.347Z","harness:codex","Implementation evidence: replaced all 34 prose patterns with SDK catalog resolution plus exact exit matching; only handled usage/not_found/conflict classes can be ignored. Both token API and authenticated sentry CLI paths enrich issue rows from latest-event tags. Negative controls prove arbitrary rewording stays ignored only with a valid contract, while prose-only, unknown, mismatched, unhandled, generic_failure, dependency_failed, ENOSPC, and torn-install events block. Verification: linked 75/75 tests passed; focused ESLint and pnpm typecheck passed. Live required-mode run read Sentry and telemetry successfully: 2 historical unclassified issues remained blocking, 0 ignored, telemetry error rate 0.86%, and 0 missing error-code rows."
   "2026-08-07T19:40:41.491Z","harness:codex","Final local evidence: structured Sentry gate tests are included in the exact 100/100/100/100 repository coverage run (6966 tests). Security scans, package artifact, contracts/surface, and deterministic quality gates passed. Live release telemetry remains separately verified against structured SDK codes; no prose-pattern waiver was reintroduced."
+  "2026-08-07T19:58:09.612Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/932. Initial implementation commit dd7c2fe90f76ff788fff90bd513bbc048f66fb6a; exact-head checks and AI review loop are pending."
 learnings[1]{created_at,author,text}:
   "2026-08-07T18:14:32.667Z","harness:codex",A release gate should derive retry-safe handling from the same public transport contract consumers use. Eliminating per-message waiver entries makes dead-entry and substring-overreach states structurally impossible; missing event metadata must remain blocking.
 files[3]{path,scope,note}:

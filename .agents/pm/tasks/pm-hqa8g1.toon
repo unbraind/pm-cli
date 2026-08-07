@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: ci-gates,composability,governance
 created_at: "2026-08-01T13:09:48.878Z"
-updated_at: "2026-08-07T19:40:42.068Z"
+updated_at: "2026-08-07T19:58:09.757Z"
 closed_at: "2026-08-07T18:33:26.199Z"
 completed_at: "2026-08-07T18:33:26.199Z"
 author: "harness:claude-code"
@@ -27,13 +27,14 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,verifies,"2026-08-01T20:22:18.095Z","harness:codex","cli:update:dep",detected
   pm-psy1,verifies,"2026-08-07T18:29:47.632Z","harness:codex","cli:update:dep",detected
   pm-x1z3,implements,"2026-08-07T18:29:47.632Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-07T18:14:55.950Z","harness:codex","Start 2026-08-07: prerequisite pm-x4nn3z is live-verified closed. All-status search confirms pm-hqa8g1 is the canonical command exit/effect contract; adjacent pm-f05lsg owns recovery closure and pm-srns owns broad SDK hardening. Active scope is generated per-command exit contracts, effect semantics, replay conformance, CLI contracts output, and scripting docs."
   "2026-08-07T18:18:09.758Z","harness:codex","TDD red evidence: isolated process acceptance test expected update-many with zero matches to return exit 6 plus a no_effect receipt, but current CLI returned 0. The test also specifies distinct partial_effect=7 and full effect=0 behavior for update-many and close-many."
   "2026-08-07T18:29:50.326Z","harness:codex","Implementation evidence: introduced stable exits 6=no_effect and 7=partial_effect; generated declarations cover every core command; pm contracts --command update-many --full exposes vocabulary and [0..7]; CLI output only honors declared exits; telemetry treats 0/6/7 as successful; isolated real-process replay verified update-many and close-many full/no/partial effects. Focused TDD and projection suite: 10/10 passed."
   "2026-08-07T18:33:24.929Z","harness:codex","Closure evidence: linked suite passed 10/10 in an isolated schema tracker; contracts snapshot current; SDK public surface current with an explicit reviewed compatibility acknowledgment; docs link gate passed; full real-process output verified command_exit_contracts for update-many."
   "2026-08-07T18:44:48.409Z","harness:codex","Full-suite correction evidence: the initial 6961-test coverage run exposed four intentional contract assertions. Moved the new SDK module into sdk/cli-contracts to restore the 120-file directory cap; updated canonical 0-7 mapping; partial close now asserts exit 7; an all-row strict-validation failure now exits 5 dependency_failed rather than being mislabeled successful no_effect. Focused regression set passes 98/98 and SDK surface is current."
   "2026-08-07T19:40:42.068Z","harness:codex","Final local acceptance evidence: packed @unbrained/pm-cli 2026.8.7 into an unrelated temporary workspace; npx and bunx both reported 2026.8.7; init/create/TOON get/full contracts and SDK subpath import passed; real update-many returned 6/no_effect for zero matches and 7/partial_effect for one real plus one missing id. Repository coverage is exact 100/100/100/100 across 6966 tests; contracts, SDK surface, package artifact, security scans, changelog, and deterministic lint gates passed."
+  "2026-08-07T19:58:09.757Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/932. Initial implementation commit dd7c2fe90f76ff788fff90bd513bbc048f66fb6a; exact-head checks and AI review loop are pending."
 learnings[1]{created_at,author,text}:
   "2026-08-07T18:33:23.829Z","harness:codex",Group commands sharing an exit set in contracts output instead of repeating arrays per command; the SDK resolver can remain per-command while the agent-facing projection stays token efficient.
 files[18]{path,scope,note}:

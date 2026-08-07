@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[7]: agent-ux,"area:cli","area:contracts",diagnostics,error-contract,scripting,simplification
 created_at: "2026-07-26T06:02:22.287Z"
-updated_at: "2026-08-07T19:40:40.906Z"
+updated_at: "2026-08-07T19:58:09.655Z"
 closed_at: "2026-08-07T17:58:21.512Z"
 completed_at: "2026-08-07T17:58:21.512Z"
 author: "harness:claude-code"
@@ -53,7 +53,7 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[20]{created_at,author,text}:
+comments[21]{created_at,author,text}:
   "2026-07-26T14:27:05.518Z","harness:codex","GitHub report linkage: GH-745 https://github.com/unbraind/pm-cli/issues/745 demonstrates unsupported PmClient actions returning literal 64 while EXIT_CODE.USAGE is 2. Reusing this canonical all-status error-contract feature; no duplicate item created."
   "2026-07-26T14:47:00.511Z","harness:codex","Evidence: SDK native dispatch now imports and uses the canonical EXIT_CODE.USAGE contract for every unsupported extension-action branch. Focused regression tests passed, full coverage passed 374/374 files and 6420/6420 tests at literal 100/100/100/100, lint/static quality/contracts passed, and an unrelated temporary consumer installed the packed tarball and observed exitCode=2 matching the exported EXIT_CODE.USAGE."
   "2026-07-26T15:12:40.567Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/748. Initial exact implementation commit 004790f7; hosted exact-head checks and AI review loop pending."
@@ -74,6 +74,7 @@ comments[20]{created_at,author,text}:
   "2026-08-07T17:49:18.951Z","harness:codex","Start 2026-08-07: all-status duplicate searches for error code contract, catalog, diagnostics, structured recovery, exit semantics, and release classification found this canonical feature plus its existing blocked consumers pm-dqtzva, pm-hqa8g1, and pm-f05lsg. Scope begins with this item only: finish the SDK-first vocabulary/stability/alias and grammar-to-code foundations, then claim blocked consumers only when their implementation becomes active. Live orientation found zero pre-existing in-progress items, no open PRs, clean main before required guide-shell installation churn was reverted, npm 2026.8.7 published, and today's sole v2026.8.7 release already immutable."
   "2026-08-07T17:58:20.467Z","harness:codex","Implementation evidence 2026-08-07: evolved the compatibility ledger to schema v2 with explicit stable-code exit mappings; generation now rejects missing reviewed exits, runtime/ledger disagreement, non-stable mappings, invalid alias targets, alias chains/cycles, and transport-incompatible aliases. Ten redundant health/validate/history spellings remain emitted for compatibility but resolve to canonical concepts. Added optional canonical_code/aliases SDK fields plus resolveCanonicalPmErrorCodeContract, regenerated the public catalog and SDK surface with an explicit compatibility acknowledgement, and documented exact-versus-canonical consumption. TDD proof: both focused suites pass 9/9; contracts:errors:check, typecheck, and sdk:surface:check pass. Existing exact-code resolution and every emitted stable spelling remain preserved."
   "2026-08-07T19:40:40.906Z","harness:codex","Final local evidence: repository coverage passed 449/449 files and 6966/6966 tests at exact 100/100/100/100; contracts, SDK surface, ESLint, zero-clone duplication, 100% docstrings, package boundary/parity, token budgets, context calibration, tracker ratchets, secret scan, npm audit, Trivy, ShellCheck, package artifact, and generated changelog gates passed. Packed npm consumer imported the SDK contracts subpath and resolved the stable command exit/error vocabulary."
+  "2026-08-07T19:58:09.654Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/932. Initial implementation commit dd7c2fe90f76ff788fff90bd513bbc048f66fb6a; exact-head checks and AI review loop are pending."
 learnings[1]{created_at,author,text}:
   "2026-08-07T17:58:20.951Z","harness:codex","Stable error codes need two independent guards: executable declarations prove runtime transport where available, while a reviewed ledger pins diagnostic-only and cross-cutting codes; generation must fail when the two disagree."
 files[17]{path,scope,note}:
