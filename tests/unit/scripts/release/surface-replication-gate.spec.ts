@@ -34,6 +34,7 @@ function declaration() {
         id: "fixture-surface",
         owner: "pm-fixture",
         triggers: ["src/sdk/a.ts", "src/cli/b.ts"],
+        required_changed_members: ["src/sdk/a.ts", "src/cli/b.ts"],
         members: [
           { path: "src/sdk/a.ts", contains_all: ["sharedContract"] },
           { path: "src/cli/b.ts", contains_all: ["sharedContract"] },
@@ -78,6 +79,34 @@ describe("surface replication gate", () => {
     expect(report.violations).toContain(
       "set:fixture-surface:member:src/cli/b.ts:missing:sharedContract",
     );
+    expect(report.violations).toContain(
+      "set:fixture-surface:member:src/cli/b.ts:unchanged",
+    );
+  });
+
+  it("requires every declared recurrence member in the activating changeset", async () => {
+    const root = await fixtureRoot();
+    await writeFile(
+      path.join(root, "src/sdk/a.ts"),
+      "sharedContract\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(root, "src/cli/b.ts"),
+      "sharedContract\n",
+      "utf8",
+    );
+
+    const report = await validateSurfaceReplication(declaration(), {
+      repoRoot: root,
+      changedFiles: ["src/sdk/a.ts"],
+      today: "2026-08-07",
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.violations).toEqual([
+      "set:fixture-surface:member:src/cli/b.ts:unchanged",
+    ]);
   });
 
   it("reports recurrence density, cap overlap, and CLI refusal totals", async () => {
@@ -93,6 +122,16 @@ describe("surface replication gate", () => {
       "utf8",
     );
     const config = declaration();
+    config.sets.push({
+      id: "fixture-surface-copy",
+      owner: "pm-fixture",
+      triggers: ["src/sdk/a.ts", "src/cli/b.ts"],
+      required_changed_members: ["src/sdk/a.ts", "src/cli/b.ts"],
+      members: [
+        { path: "src/sdk/a.ts", contains_all: ["sharedContract"] },
+        { path: "src/cli/b.ts", contains_all: ["sharedContract"] },
+      ],
+    });
     config.cli_refusal_dispositions.push({
       path: "src/cli/b.ts",
       expected_count: 1,
@@ -190,7 +229,11 @@ describe("surface replication gate", () => {
       'new PmCliError("one")\nnew PmCliError("two")\n',
       "utf8",
     );
-    await writeFile(path.join(root, "src", "cli", "ignore.txt"), "ignored\n", "utf8");
+    await writeFile(
+      path.join(root, "src", "cli", "ignore.txt"),
+      "ignored\n",
+      "utf8",
+    );
     await writeFile(path.join(root, "src", "sdk", "a.ts"), "shared\n", "utf8");
 
     await expect(
@@ -211,6 +254,12 @@ describe("surface replication gate", () => {
     await expect(
       validateSurfaceReplication(
         { version: 1, sets: [], source_file_line_cap: 1.5 },
+        { repoRoot: root, changedFiles: [], today: "2026-08-07" },
+      ),
+    ).resolves.toMatchObject({ ok: false });
+    await expect(
+      validateSurfaceReplication(
+        { version: 1, sets: [], source_file_line_cap: 0 },
         { repoRoot: root, changedFiles: [], today: "2026-08-07" },
       ),
     ).resolves.toMatchObject({ ok: false });
@@ -248,6 +297,7 @@ describe("surface replication gate", () => {
             id: "fixture-members",
             owner: "pm-fixture",
             triggers: ["src/sdk/a.ts"],
+            required_changed_members: ["missing.ts"],
             members: [
               null,
               "member",
@@ -258,6 +308,40 @@ describe("surface replication gate", () => {
               { path: "number-pattern.ts", contains_all: [1] },
               { path: "missing.ts", contains_all: ["shared"] },
             ],
+          },
+          {
+            id: "missing-required",
+            owner: "pm-fixture",
+            triggers: ["other.ts"],
+            members: [{ path: "other.ts", contains_all: ["shared"] }],
+          },
+          {
+            id: "empty-required",
+            owner: "pm-fixture",
+            triggers: ["other.ts"],
+            required_changed_members: [],
+            members: [{ path: "other.ts", contains_all: ["shared"] }],
+          },
+          {
+            id: "typed-required",
+            owner: "pm-fixture",
+            triggers: ["other.ts"],
+            required_changed_members: [7],
+            members: [{ path: "other.ts", contains_all: ["shared"] }],
+          },
+          {
+            id: "empty-path-required",
+            owner: "pm-fixture",
+            triggers: ["other.ts"],
+            required_changed_members: [""],
+            members: [{ path: "other.ts", contains_all: ["shared"] }],
+          },
+          {
+            id: "foreign-required",
+            owner: "pm-fixture",
+            triggers: ["other.ts"],
+            required_changed_members: ["foreign.ts"],
+            members: [{ path: "other.ts", contains_all: ["shared"] }],
           },
         ],
         refusal_parity_contracts: [{ id: "empty", members: undefined }],
@@ -286,16 +370,21 @@ describe("surface replication gate", () => {
       expect.arrayContaining([
         "set:invalid",
         "set:fixture-members:invalid_member",
+        "set:fixture-members:member:missing.ts:unchanged",
         "set:fixture-members:member:missing.ts:missing:<file>",
+        "set:missing-required:invalid_required_changed_members",
+        "set:empty-required:invalid_required_changed_members",
+        "set:typed-required:invalid_required_changed_members",
+        "set:empty-path-required:invalid_required_changed_members",
+        "set:foreign-required:invalid_required_changed_members",
         "cli_refusal:src/cli/a.ts:expected_1:actual_2",
         "cli_refusal:src/cli/nested/z.ts:undispositioned:1",
         "cli_refusal:src/cli/stale.ts:stale_disposition",
       ]),
     );
-    expect(report.cli_owned_refusals.files.map(({ path: file }) => file)).toEqual([
-      "src/cli/a.ts",
-      "src/cli/nested/z.ts",
-    ]);
+    expect(
+      report.cli_owned_refusals.files.map(({ path: file }) => file),
+    ).toEqual(["src/cli/a.ts", "src/cli/nested/z.ts"]);
     expect(report.active_sets[0]).toMatchObject({
       largest_source: null,
       largest_source_implementation_lines: 0,
@@ -304,7 +393,11 @@ describe("surface replication gate", () => {
 
   it("rejects invalid and expired waiver candidates before accepting a valid owner", async () => {
     const root = await fixtureRoot();
-    await writeFile(path.join(root, "src/sdk/a.ts"), "sharedContract\n", "utf8");
+    await writeFile(
+      path.join(root, "src/sdk/a.ts"),
+      "sharedContract\n",
+      "utf8",
+    );
     await writeFile(path.join(root, "src/cli/b.ts"), "drifted\n", "utf8");
     const config = declaration();
     config.waivers.push(
@@ -347,6 +440,27 @@ describe("surface replication gate", () => {
         set_id: "fixture-surface",
         member_path: "src/cli/b.ts",
         pm_item: "pm-waiver",
+        reason: "Non-ISO expiry waiver candidate.",
+        expires_on: "tomorrow",
+      },
+      {
+        set_id: "fixture-surface",
+        member_path: "src/cli/b.ts",
+        pm_item: "pm-waiver",
+        reason: "Impossible calendar expiry waiver candidate.",
+        expires_on: "2026-02-30",
+      },
+      {
+        set_id: "fixture-surface",
+        member_path: "src/cli/b.ts",
+        pm_item: "pm-waiver",
+        reason: "Unparseable ISO-shaped expiry waiver candidate.",
+        expires_on: "2026-99-99",
+      },
+      {
+        set_id: "fixture-surface",
+        member_path: "src/cli/b.ts",
+        pm_item: "pm-waiver",
         reason: "Expired waiver candidate.",
         expires_on: "2026-08-06",
       },
@@ -374,8 +488,16 @@ describe("surface replication gate", () => {
 
   it("discovers committed, staged, and unstaged changes from a real Git worktree", async () => {
     const root = await fixtureRoot();
-    await writeFile(path.join(root, "src/sdk/a.ts"), "sharedContract\n", "utf8");
-    await writeFile(path.join(root, "src/cli/b.ts"), "sharedContract\n", "utf8");
+    await writeFile(
+      path.join(root, "src/sdk/a.ts"),
+      "sharedContract\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(root, "src/cli/b.ts"),
+      "sharedContract\n",
+      "utf8",
+    );
     runGit(root, ["init", "-b", "main"]);
     runGit(root, ["config", "user.email", "fixture@example.test"]);
     runGit(root, ["config", "user.name", "Fixture"]);
@@ -419,18 +541,43 @@ describe("surface replication gate", () => {
     ).rejects.toThrow("Unable to resolve a base revision");
   });
 
+  it("treats a missing CLI source tree as an empty refusal inventory", async () => {
+    const root = await fixtureRoot();
+    await rm(path.join(root, "src", "cli"), { recursive: true, force: true });
+    const config = { ...declaration(), sets: [] };
+
+    await expect(
+      validateSurfaceReplication(config, {
+        repoRoot: root,
+        changedFiles: [],
+        today: "2026-08-07",
+      }),
+    ).resolves.toMatchObject({ ok: true, cli_owned_refusals: { total: 0 } });
+
+    await writeFile(path.join(root, "src", "cli"), "not a directory\n", "utf8");
+    await expect(
+      validateSurfaceReplication(config, {
+        repoRoot: root,
+        changedFiles: [],
+        today: "2026-08-07",
+      }),
+    ).rejects.toMatchObject({ code: "ENOTDIR" });
+  });
+
   it("loads default and explicit declarations through the public main function", async () => {
     await expect(main(["--list-waivers"])).resolves.toEqual({ waivers: [] });
+    await expect(main(["--declaration", "--list-waivers"])).resolves.toEqual({
+      waivers: [],
+    });
     await expect(
-      main(["--declaration", "--list-waivers"]),
-    ).resolves.toEqual({ waivers: [] });
-    await expect(
-      main(["--changed-files", "docs/SDK_CONTEXT_INTEGRITY.md, ,README.md"]),
+      main(["--changed-files", "README.md, ,package.json"]),
     ).resolves.toMatchObject({
       ok: true,
-      changed_files: ["docs/SDK_CONTEXT_INTEGRITY.md", "README.md"],
+      changed_files: ["README.md", "package.json"],
     });
-    await expect(main(["--changed-files"])).resolves.toMatchObject({ ok: true });
+    await expect(main(["--changed-files"])).resolves.toMatchObject({
+      ok: true,
+    });
 
     const root = await fixtureRoot();
     const defaultConfig = JSON.parse(
@@ -447,11 +594,7 @@ describe("surface replication gate", () => {
       "utf8",
     );
     await expect(
-      main([
-        "--declaration",
-        waiverlessDeclarationPath,
-        "--list-waivers",
-      ]),
+      main(["--declaration", waiverlessDeclarationPath, "--list-waivers"]),
     ).resolves.toEqual({ waivers: [] });
     await writeFile(
       declarationPath,
@@ -459,13 +602,34 @@ describe("surface replication gate", () => {
       "utf8",
     );
     await expect(
-      main([
-        "--declaration",
-        declarationPath,
-        "--changed-files",
-        "README.md",
-      ]),
+      main(["--declaration", declarationPath, "--changed-files", "README.md"]),
     ).resolves.toMatchObject({ ok: true });
+
+    const gitDeclarationPath = path.join(root, "git-declaration.json");
+    await writeFile(
+      gitDeclarationPath,
+      `${JSON.stringify({
+        version: 1,
+        source_file_line_cap: 10,
+        sets: [],
+        cli_refusal_dispositions: [],
+      })}\n`,
+      "utf8",
+    );
+    await writeFile(
+      path.join(root, "src", "sdk", "a.ts"),
+      "baseline\n",
+      "utf8",
+    );
+    runGit(root, ["init", "-b", "main"]);
+    runGit(root, ["config", "user.email", "fixture@example.test"]);
+    runGit(root, ["config", "user.name", "Fixture"]);
+    runGit(root, ["add", "."]);
+    runGit(root, ["commit", "-m", "baseline"]);
+    await writeFile(path.join(root, "src", "sdk", "a.ts"), "changed\n", "utf8");
+    await expect(
+      main(["--declaration", gitDeclarationPath], { repoRoot: root }),
+    ).resolves.toMatchObject({ ok: true, changed_files: ["src/sdk/a.ts"] });
 
     await writeFile(
       declarationPath,
@@ -473,12 +637,7 @@ describe("surface replication gate", () => {
       "utf8",
     );
     await expect(
-      main([
-        "--declaration",
-        declarationPath,
-        "--changed-files",
-        "README.md",
-      ]),
+      main(["--declaration", declarationPath, "--changed-files", "README.md"]),
     ).rejects.toThrow("declaration:invalid");
   });
 
@@ -539,11 +698,11 @@ describe("surface replication gate", () => {
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
-    const processExit = vi
-      .spyOn(process, "exit")
-      .mockImplementation(((code?: string | number | null) => {
-        throw new Error(`exit:${String(code)}`);
-      }) as typeof process.exit);
+    const processExit = vi.spyOn(process, "exit").mockImplementation(((
+      code?: string | number | null,
+    ) => {
+      throw new Error(`exit:${String(code)}`);
+    }) as typeof process.exit);
     try {
       await expect(
         runSurfaceReplicationEntrypoint({

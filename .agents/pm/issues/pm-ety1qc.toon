@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:40.505Z"
-updated_at: "2026-08-07T14:58:56.450Z"
-closed_at: "2026-08-07T14:58:55.902Z"
-completed_at: "2026-08-07T14:58:55.902Z"
+updated_at: "2026-08-07T15:48:53.509Z"
+closed_at: "2026-08-07T15:48:52.967Z"
+completed_at: "2026-08-07T15:48:52.967Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Author-attribution findings using the _workspace coordinate can be acknowledged through a documented stable command; acknowledgement preserves provenance and is visible to health and validation in a fresh clone; negative controls reject unknown workspace coordinates and tests cover CLI, SDK, and compact output receipts"
@@ -27,20 +27,29 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-demq,supersedes,"2026-08-07T08:34:29.539Z","harness:codex","cli:update:dep",detected
   pm-h90s,discovered_from,"2026-08-07T08:34:29.539Z","harness:codex","cli:update:dep",detected
   pm-0xmajx,implements,"2026-08-07T13:58:33.225Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-07T08:33:40.505Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/919. Duplicate check searched all 2,351 items and every status for _workspace,history-author-acknowledge,malformed coordinates,author attribution,and GH-919; no canonical issue existed."
   "2026-08-07T14:58:10.087Z","harness:codex","Final evidence: ordinary item IDs and _workspace:<line> coordinates now share one selector parser, conflict policy, and transport helper. CLI duplicate logic was removed; MCP delegates the same SDK contract. All author-attribution, catalog, contract, and exact coverage gates pass."
-learnings[1]{created_at,author,text}:
+  "2026-08-07T15:13:00.623Z","harness:codex","PR #929 review found that shared author-acknowledgment argument failures emit usage exit code 2 while generated catalog heuristics still classify selector conflict and target failures as conflict/generic failure. Reopened to make the public implementation, catalog generator, and tests agree."
+  "2026-08-07T15:24:32.002Z","harness:codex","Review implementation evidence: the generated public error catalog now explicitly classifies SDK wrapper codes history_author_acknowledge_selector_conflict, target_not_actionable, and target_unreadable as usage exit 2, matching runtime behavior; generator regression coverage added."
+  "2026-08-07T15:48:47.471Z","harness:codex","Final verification: linked generator, author-attribution, SDK integrity, and CLI integration tests passed through pm test; contracts and generated error catalog are current and exact runtime usage exits are preserved."
+learnings[2]{created_at,author,text}:
   "2026-08-07T14:58:10.600Z","harness:codex","Synthetic workspace coordinates are first-class history selectors, not malformed item IDs. Parsing them once in the SDK prevents transport-specific acknowledgment gaps and error-code drift."
-files[5]{path,scope,note}:
-  src/sdk/author-attribution.ts,project,workspace coordinate parser and transport helper
+  "2026-08-07T15:48:48.073Z","harness:codex","When a shared SDK refusal helper emits a stable transport exit, generated catalogs need explicit overrides for wrapper codes whose names otherwise imply the wrong generic class."
+files[7]{path,scope,note}:
+  scripts/generate-error-code-catalog.mjs,project,Pins SDK-owned author acknowledgment wrapper refusals to usage exit semantics
   src/cli/register-history-author.ts,project,CLI workspace coordinate acceptance
+  src/sdk/author-attribution.ts,project,workspace coordinate parser and transport helper
+  src/sdk/generated-error-code-catalog.ts,project,Generated catalog now matches runtime author acknowledgment exits
   src/sdk/runtime.ts,project,MCP workspace coordinate parity
-  tests/unit/sdk/author-attribution.spec.ts,project,workspace coordinate unit coverage
   tests/integration/sdk-context-integrity.integration.spec.ts,project,workspace coordinate CLI acceptance
-tests[1]{command,scope,timeout_seconds}:
+  tests/unit/sdk/author-attribution.spec.ts,project,workspace coordinate unit coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/generate-error-code-catalog.spec.ts tests/unit/sdk/read-contract-integrity.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msj4cvwz-l2lpl8,test,passed,"2026-08-07T15:47:50.772Z","2026-08-07T15:48:12.563Z","2026-08-07T15:48:12.563Z",2,0,0
 docs[1]{path,scope,note}:
   docs/SDK_CONTEXT_INTEGRITY.md,project,workspace history coordinate grammar
-close_reason: "Unified _workspace author-coordinate parsing and normalization across CLI, SDK, and MCP with stable refusals and full contract proof; exact-head 100% coverage and all release gates pass."
+close_reason: Unified workspace author coordinates across CLI/SDK/MCP and corrected generated wrapper exit semantics; linked tests and contract gates pass.
 body: ""

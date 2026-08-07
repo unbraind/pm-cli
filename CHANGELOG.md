@@ -4,11 +4,11 @@
 
 ### Fixed
 
+- pm get silently discards --output-include field names because entity reads bind the flag to sections while collection reads bind it to fields, and the omission receipt reports no omissions either way ([pm-0k19l7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0k19l7.toon))
 - GH-919: \_workspace author-attribution coordinates cannot be acknowledged ([pm-ety1qc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ety1qc.toon))
+- pm comments write response replays the entire accumulated history, so one append can emit hundreds of comments ([pm-9stazf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9stazf.toon))
 - The mandatory command-wiring replication set is enforced only by a prose checklist, and the census shows partial application is the single largest recurring defect class in the record ([pm-7rrqsk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7rrqsk.toon))
 - GH-457: pm health hangs during vectorization check with no output (never-block violation) ([pm-tu71](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tu71.toon))
-- pm comments write response replays the entire accumulated history, so one append can emit hundreds of comments ([pm-9stazf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9stazf.toon))
-- pm get silently discards --output-include field names because entity reads bind the flag to sections while collection reads bind it to fields, and the omission receipt reports no omissions either way ([pm-0k19l7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0k19l7.toon))
 
 ### Other
 

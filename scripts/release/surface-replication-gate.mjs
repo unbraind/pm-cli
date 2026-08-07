@@ -63,7 +63,21 @@ function changedFilesFromGit(root) {
 
 async function collectTypeScriptFiles(directory) {
   const files = [];
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
+  let entries;
+  try {
+    entries = await readdir(directory, { withFileTypes: true });
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return files;
+    }
+    throw error;
+  }
+  for (const entry of entries) {
     const absolute = path.join(directory, entry.name);
     if (entry.isDirectory()) {
       files.push(...(await collectTypeScriptFiles(absolute)));
@@ -91,6 +105,61 @@ function validateMemberShape(member, label, violations) {
   return true;
 }
 
+function isReplicationSetDeclaration(set) {
+  return (
+    typeof set === "object" &&
+    set !== null &&
+    typeof set.id === "string" &&
+    /^pm-[a-z0-9]+$/u.test(set.owner ?? "") &&
+    Array.isArray(set.triggers) &&
+    set.triggers.length > 0 &&
+    set.triggers.every(
+      (trigger) => typeof trigger === "string" && trigger.length > 0,
+    ) &&
+    Array.isArray(set.members) &&
+    set.members.length > 0
+  );
+}
+
+function normalizeReplicationSet(set) {
+  if (!isReplicationSetDeclaration(set)) {
+    return { set: null, violation: "set:invalid" };
+  }
+  const memberPaths = new Set(
+    set.members.flatMap((member) =>
+      typeof member === "object" &&
+      member !== null &&
+      typeof member.path === "string"
+        ? [member.path]
+        : [],
+    ),
+  );
+  const requiredChangedMembers = set.required_changed_members;
+  if (
+    !Array.isArray(requiredChangedMembers) ||
+    requiredChangedMembers.length === 0 ||
+    requiredChangedMembers.some(
+      (memberPath) =>
+        typeof memberPath !== "string" ||
+        memberPath.length === 0 ||
+        !memberPaths.has(memberPath),
+    )
+  ) {
+    return {
+      set,
+      memberPaths,
+      requiredPaths: [],
+      violation: `set:${set.id}:invalid_required_changed_members`,
+    };
+  }
+  return {
+    set,
+    memberPaths,
+    requiredPaths: requiredChangedMembers,
+    violation: null,
+  };
+}
+
 function activeWaiver(config, setId, memberPath, today) {
   return (config.waivers ?? []).find(
     (waiver) =>
@@ -99,6 +168,11 @@ function activeWaiver(config, setId, memberPath, today) {
       typeof waiver.reason === "string" &&
       /^pm-[a-z0-9]+$/u.test(waiver.pm_item ?? "") &&
       typeof waiver.expires_on === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/u.test(waiver.expires_on) &&
+      !Number.isNaN(Date.parse(`${waiver.expires_on}T00:00:00.000Z`)) &&
+      new Date(`${waiver.expires_on}T00:00:00.000Z`)
+        .toISOString()
+        .slice(0, 10) === waiver.expires_on &&
       waiver.expires_on >= today,
   );
 }
@@ -199,22 +273,30 @@ async function validateActiveSets(config, changedFiles, root, today) {
   const reports = [];
   const violations = [];
   const waivers = [];
-  for (const set of config.sets) {
+  for (const candidate of config.sets) {
+    const normalized = normalizeReplicationSet(candidate);
+    if (normalized.violation !== null) {
+      violations.push(normalized.violation);
+    }
+    if (normalized.set === null) continue;
+    const { memberPaths, requiredPaths, set } = normalized;
     if (
-      typeof set !== "object" ||
-      set === null ||
-      typeof set.id !== "string" ||
-      !/^pm-[a-z0-9]+$/u.test(set.owner ?? "") ||
-      !Array.isArray(set.triggers) ||
-      !Array.isArray(set.members)
+      !changedFiles.some(
+        (file) => set.triggers.includes(file) || requiredPaths.includes(file),
+      )
     ) {
-      violations.push("set:invalid");
       continue;
     }
-    const changedMembers = changedFiles.filter((file) =>
-      set.triggers.includes(file),
-    );
-    if (changedMembers.length === 0) continue;
+    for (const memberPath of requiredPaths) {
+      if (changedFiles.includes(memberPath)) continue;
+      const waiver = activeWaiver(config, set.id, memberPath, today);
+      if (waiver) {
+        waivers.push({ set_id: set.id, member_path: memberPath, ...waiver });
+      } else {
+        violations.push(`set:${set.id}:member:${memberPath}:unchanged`);
+      }
+    }
+    const changedMembers = changedFiles.filter((file) => memberPaths.has(file));
     const memberResult = await validateMembers(
       config,
       set.id,
@@ -254,7 +336,8 @@ export async function validateSurfaceReplication(config, options = {}) {
   if (
     config.version !== 1 ||
     !Array.isArray(config.sets) ||
-    !Number.isSafeInteger(config.source_file_line_cap)
+    !Number.isSafeInteger(config.source_file_line_cap) ||
+    config.source_file_line_cap <= 0
   ) {
     return {
       ok: false,
@@ -295,13 +378,25 @@ export async function validateSurfaceReplication(config, options = {}) {
     active_sets: reports,
     recurrence_size_candidates: reports,
     cli_owned_refusals: refusals,
-    applied_waivers: appliedWaivers,
+    applied_waivers: [
+      ...new Map(
+        appliedWaivers.map((waiver) => [
+          [
+            waiver.set_id,
+            waiver.member_path,
+            waiver.pm_item,
+            waiver.expires_on,
+          ].join(":"),
+          waiver,
+        ]),
+      ).values(),
+    ],
     violations: violations.sort(),
   };
 }
 
 /** Load the declaration, support waiver inventory, and run the gate. */
-export async function main(argv = process.argv.slice(2)) {
+export async function main(argv = process.argv.slice(2), options = {}) {
   const { flags } = parseFlags(argv);
   const declaration = flags.get("declaration");
   const declarationPath =
@@ -314,13 +409,16 @@ export async function main(argv = process.argv.slice(2)) {
   }
   const explicitChanged = flags.get("changed-files");
   const result = await validateSurfaceReplication(config, {
+    repoRoot: options.repoRoot,
     changedFiles:
-      explicitChanged === undefined || explicitChanged === true
+      explicitChanged === undefined
         ? undefined
-        : String(explicitChanged)
-            .split(",")
-            .map((value) => value.trim())
-            .filter(Boolean),
+        : explicitChanged === true
+          ? []
+          : String(explicitChanged)
+              .split(",")
+              .map((value) => value.trim())
+              .filter(Boolean),
   });
   if (!result.ok) {
     throw new Error(

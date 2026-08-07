@@ -28,7 +28,7 @@ pm comments pm-a1b2 --edit 3 --message "Corrected evidence" --full-history
 pm notes pm-a1b2 --delete 2 --full-history
 ```
 
-SDK callers use `fullHistory: true`; MCP callers use `full: true`. The default stays bounded on every transport.
+SDK callers use `fullHistory: true`; MCP callers use `full: true`. The default stays bounded on every transport. An omission receipt identifies the semantic `full_history` selector and includes its CLI (`--full-history`), SDK (`fullHistory`), and MCP (`full`) spellings, so non-CLI consumers never need to interpret shell-only guidance.
 
 ## Author acknowledgment coordinates
 

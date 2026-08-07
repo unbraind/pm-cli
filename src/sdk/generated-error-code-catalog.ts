@@ -649,8 +649,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     code: "history_author_acknowledge_selector_conflict",
     meaning: "History author acknowledge selector conflict condition.",
     stability: "provisional",
-    exit_code: 4,
-    class: "conflict",
+    exit_code: 2,
+    class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/author-attribution.ts"],
@@ -671,8 +671,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     code: "history_author_acknowledge_target_not_actionable",
     meaning: "History author acknowledge target not actionable condition.",
     stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
+    exit_code: 2,
+    class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/author-attribution.ts"],
@@ -682,8 +682,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     code: "history_author_acknowledge_target_unreadable",
     meaning: "History author acknowledge target unreadable condition.",
     stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
+    exit_code: 2,
+    class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/author-attribution.ts"],

@@ -24,6 +24,7 @@ describe("generate error code catalog", () => {
         'const generic = { code: "unknown_error" };',
         'const typed = { code: "typed_failure" as const };',
         'const long = { code: "validate_metadata_custom_profile_missing_required_fields" };',
+        'const wrappedUsage = { code: "history_author_acknowledge_selector_conflict" };',
         'const ignored = { code: dynamicCode, other: "value" };',
       ].join("\n"),
       "utf8",
@@ -58,6 +59,9 @@ describe("generate error code catalog", () => {
     expect(output).toContain('class: "usage"');
     expect(output).toMatch(
       /code: "unknown_error",[\s\S]*?exit_code: 1,[\s\S]*?class: "generic_failure"/u,
+    );
+    expect(output).toMatch(
+      /code: "history_author_acknowledge_selector_conflict",[\s\S]*?exit_code: 2,[\s\S]*?class: "usage"/u,
     );
     expect(output).toContain('emitting_commands: ["*"]');
     expect(output).toContain('code: "ambiguous_list_all"');

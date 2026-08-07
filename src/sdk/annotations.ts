@@ -62,14 +62,29 @@ export interface AnnotationMutationReceipt {
   full_history_included: boolean;
 }
 
+/** Transport-neutral selectors that restore a complete annotation collection. */
+export interface AnnotationHistoryRestoration {
+  /** Stable semantic selector shared by every transport. */
+  selector: "full_history";
+  /** Equivalent CLI flag. */
+  cli_flag: "--full-history";
+  /** Equivalent direct SDK option. */
+  sdk_option: "fullHistory";
+  /** Equivalent MCP tool option. */
+  mcp_option: "full";
+}
+
 /** Describes annotation history withheld from a bounded mutation response. */
 export interface AnnotationOmissionReceipt {
   /** Whether any historical collection entries were withheld. */
   has_omissions: boolean;
   /** Number of independently restorable field groups withheld. */
   omitted_field_group_count: number;
-  /** Omitted groups and the CLI flag that restores each group. */
-  omitted_field_groups: Array<{ name: string; restore_with: string }>;
+  /** Omitted groups and the transport-neutral selectors that restore them. */
+  omitted_field_groups: Array<{
+    name: string;
+    restore_with: AnnotationHistoryRestoration;
+  }>;
 }
 
 /** Map transport-level `full` onto the SDK annotation history option. */
@@ -693,7 +708,8 @@ function renderAnnotationResult<
       : mutation.entry === undefined
         ? []
         : [mutation.entry];
-  const historyOmitted = mutation !== undefined && !fullHistory;
+  const historyOmitted =
+    mutation !== undefined && entries.length < allEntries.length;
   return {
     id,
     [collectionKey]: entries,
@@ -713,7 +729,7 @@ function renderAnnotationResult<
             action: mutation.action,
             entry_index: mutation.entryIndex,
             changed_count: 1,
-            full_history_included: fullHistory,
+            full_history_included: !historyOmitted,
           },
           omission_receipt: {
             has_omissions: historyOmitted,
@@ -722,7 +738,12 @@ function renderAnnotationResult<
               ? [
                   {
                     name: `${collectionKey}_history`,
-                    restore_with: "--full-history",
+                    restore_with: {
+                      selector: "full_history",
+                      cli_flag: "--full-history",
+                      sdk_option: "fullHistory",
+                      mcp_option: "full",
+                    },
                   },
                 ]
               : [],

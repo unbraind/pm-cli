@@ -50,6 +50,13 @@
       ],
       "package_version": "2026.8.7",
       "reason": "pm-9stazf adds bounded annotation mutation receipts with explicit fullHistory opt-in; pm-tu71 makes vector refresh explicit"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AnnotationOmissionReceipt"
+      ],
+      "package_version": "2026.8.7",
+      "reason": "pm-9stazf replaces CLI-only annotation restoration guidance with transport-neutral selectors"
     }
   ],
   "entrypoints": {
@@ -461,6 +468,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "AnnotationHistoryRestoration",
+          "signature": "export interface AnnotationHistoryRestoration { selector: \"full_history\"; cli_flag: \"--full-history\"; sdk_option: \"fullHistory\"; mcp_option: \"full\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "AnnotationInput",
           "signature": "export interface AnnotationInput { mode: \"list\" | \"add\" | \"stdin\" | \"file\" | \"edit\" | \"delete\"; value?: string; rawValue?: string; emptyFlag?: string; index?: number; }"
         },
@@ -474,7 +487,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "AnnotationOmissionReceipt",
-          "signature": "export interface AnnotationOmissionReceipt { has_omissions: boolean; omitted_field_group_count: number; omitted_field_groups: Array<{ name: string; restore_with: string; }>; }"
+          "signature": "export interface AnnotationOmissionReceipt { has_omissions: boolean; omitted_field_group_count: number; omitted_field_groups: Array<{ name: string; restore_with: AnnotationHistoryRestoration; }>; }"
         },
         {
           "classification": "advanced_export",

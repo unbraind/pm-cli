@@ -37,6 +37,7 @@ export {
   type AnnotationCommandResult,
   type AnnotationEntry,
   type AnnotationInput,
+  type AnnotationHistoryRestoration,
   type AnnotationMutationReceipt,
   type AnnotationOmissionReceipt,
   type AnnotationSourceOptions,

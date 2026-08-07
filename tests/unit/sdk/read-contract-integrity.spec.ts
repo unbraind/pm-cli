@@ -97,12 +97,8 @@ describe("SDK read contract integrity", () => {
       applyReadOutputDimensions("get", { outputInclude: "missing" }, result),
     ).toThrow(/Valid selectors:.*id.*title.*item/u);
     expect(() =>
-      applyReadOutputDimensions(
-        "get",
-        { outputInclude: "item,id" },
-        result,
-      ),
-    ).toThrow(/cannot mix full sections with projected fields/u);
+      applyReadOutputDimensions("get", { outputInclude: "item,id" }, result),
+    ).toThrow(/cannot mix a full item with projected item fields/u);
   });
 
   it("returns bounded mutation receipts independently of annotation history size", async () => {
@@ -146,7 +142,12 @@ describe("SDK read contract integrity", () => {
             omitted_field_groups: [
               {
                 name: `${collection}_history`,
-                restore_with: "--full-history",
+                restore_with: {
+                  selector: "full_history",
+                  cli_flag: "--full-history",
+                  sdk_option: "fullHistory",
+                  mcp_option: "full",
+                },
               },
             ],
           },
@@ -166,6 +167,49 @@ describe("SDK read contract integrity", () => {
         ).toHaveLength(22);
         expect(full).toMatchObject({
           total_count: 22,
+          omission_receipt: { has_omissions: false },
+        });
+      }
+    });
+  });
+
+  it("marks mutation receipts complete when no annotation history is withheld", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, {
+        title: "complete annotation receipts",
+        tags: "sdk,receipts",
+        estimate: "10",
+      });
+      const runners = [
+        ["comments", runComments],
+        ["notes", runNotes],
+        ["learnings", runLearnings],
+      ] as const;
+
+      for (const [collection, run] of runners) {
+        const added = await run(
+          id,
+          { add: `${collection}-only` },
+          { path: context.pmPath },
+        );
+        expect(added).toMatchObject({
+          count: 1,
+          total_count: 1,
+          has_more: false,
+          mutation_receipt: { full_history_included: true },
+          omission_receipt: {
+            has_omissions: false,
+            omitted_field_group_count: 0,
+            omitted_field_groups: [],
+          },
+        });
+
+        const deleted = await run(id, { delete: 1 }, { path: context.pmPath });
+        expect(deleted).toMatchObject({
+          count: 0,
+          total_count: 0,
+          has_more: false,
+          mutation_receipt: { full_history_included: true },
           omission_receipt: { has_omissions: false },
         });
       }

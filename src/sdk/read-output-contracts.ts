@@ -726,9 +726,7 @@ function getProjectionVocabulary(result: Record<string, unknown>): {
   const sections = Object.keys(result)
     .filter(
       (key) =>
-        key !== "item" &&
-        key !== "read_output" &&
-        !ENVELOPE_KEYS.has(key),
+        key !== "item" && key !== "read_output" && !ENVELOPE_KEYS.has(key),
     )
     .sort((left, right) => left.localeCompare(right));
   return {
@@ -770,7 +768,7 @@ function applyGetIncludeProjection(
     .filter((selector, index, values) => values.indexOf(selector) === index);
   if (fullItem && itemSelectors.length > 0) {
     throw new PmCliError(
-      "--output-include cannot mix full sections with projected fields; use item or item.<field>, not both.",
+      "--output-include cannot mix a full item with projected item fields; use item or item.<field>, not both.",
       EXIT_CODE.USAGE,
     );
   }
@@ -792,11 +790,11 @@ function applyGetIncludeProjection(
       ? []
       : itemSelectors.length > 0
         ? vocabulary.itemFields
-          .filter((field) => !itemSelectors.includes(field))
-          .map((field) => ({
-            name: `item.${field}`,
-            restore_with: `--output-include item.${field}`,
-          }))
+            .filter((field) => !itemSelectors.includes(field))
+            .map((field) => ({
+              name: `item.${field}`,
+              restore_with: `--output-include item.${field}`,
+            }))
         : [{ name: "item", restore_with: "--output-include item" }]),
     ...vocabulary.sections
       .filter((section) => !selectedSections.has(section))
@@ -829,9 +827,10 @@ function applyIncludeProjection(
         : [],
     ),
   );
-  const selectedRoot = selectors.some((selector) =>
-    Object.hasOwn(result, selector.split(".")[0]!) &&
-    !rows.some((rowPath) => selector.startsWith(`${rowPath}.`)),
+  const selectedRoot = selectors.some(
+    (selector) =>
+      Object.hasOwn(result, selector.split(".")[0]!) &&
+      !rows.some((rowPath) => selector.startsWith(`${rowPath}.`)),
   );
   if (rows.length > 0 && (!selectedRoot || qualifiedRowSelectors.length > 0)) {
     const projected = { ...result };
@@ -1038,11 +1037,7 @@ export function applyReadOutputDimensions<
   if (budget !== undefined && receipt.estimated_tokens > budget) {
     projected = compactReadOutputToBudget(projected, receipt, budget);
     if (session !== undefined) {
-      projected = attachReadOutputSessionContracts(
-        projected,
-        session,
-        receipt,
-      );
+      projected = attachReadOutputSessionContracts(projected, session, receipt);
     }
   }
   if (budget !== undefined && receipt.estimated_tokens > budget) {

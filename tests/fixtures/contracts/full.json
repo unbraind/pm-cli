@@ -14134,12 +14134,12 @@
       "stability": "provisional"
     },
     {
-      "class": "conflict",
+      "class": "usage",
       "code": "history_author_acknowledge_selector_conflict",
       "emitting_commands": [
         "*"
       ],
-      "exit_code": 4,
+      "exit_code": 2,
       "meaning": "History author acknowledge selector conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -14162,12 +14162,12 @@
       "stability": "stable"
     },
     {
-      "class": "generic_failure",
+      "class": "usage",
       "code": "history_author_acknowledge_target_not_actionable",
       "emitting_commands": [
         "*"
       ],
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "History author acknowledge target not actionable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -14176,12 +14176,12 @@
       "stability": "provisional"
     },
     {
-      "class": "generic_failure",
+      "class": "usage",
       "code": "history_author_acknowledge_target_unreadable",
       "emitting_commands": [
         "*"
       ],
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "History author acknowledge target unreadable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
