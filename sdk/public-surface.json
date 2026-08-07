@@ -15641,6 +15641,12 @@
         {
           "classification": "contract_data",
           "kind": "interface",
+          "name": "PmReadOutputSessionReceipt",
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
           "name": "PmReadOutputSessionState",
           "signature": "export interface PmReadOutputSessionState { version: 1; id: string; token_budget: number; spent_tokens: number; seen_item_ids: string[]; }"
         },
@@ -22009,6 +22015,12 @@
           "kind": "type",
           "name": "PmReadOutputResultFor",
           "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputSessionReceipt",
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
         },
         {
           "classification": "supported",

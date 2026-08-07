@@ -18,11 +18,15 @@ import type {
   PmReadOutputOptions as CoreReadOutputOptions,
   PmReadOutputSessionState as CoreReadOutputSessionState,
 } from "../../src/sdk/core.js";
-import type { PmReadOutputSessionState as ContractsReadOutputSessionState } from "../../src/sdk/contracts.js";
+import type {
+  PmReadOutputSessionReceipt as ContractsReadOutputSessionReceipt,
+  PmReadOutputSessionState as ContractsReadOutputSessionState,
+} from "../../src/sdk/contracts.js";
 import type {
   PmContextIntentContract,
   PmErrorCodeContract,
   PmReadOutputOptions as RuntimeReadOutputOptions,
+  PmReadOutputSessionReceipt as RuntimeReadOutputSessionReceipt,
   PmReadOutputSurfaceContract,
   PmReadOutputSessionState as RuntimeReadOutputSessionState,
 } from "../../src/sdk/runtime.js";
@@ -66,7 +70,11 @@ declare const sessionState: CoreReadOutputSessionState &
 void sessionState;
 
 declare const typedReadResult: PmReadOutputResult<ListResult>;
-const typedSessionReceipt: PmReadOutputSessionReceipt | undefined =
+const typedSessionReceipt:
+  | (PmReadOutputSessionReceipt &
+      ContractsReadOutputSessionReceipt &
+      RuntimeReadOutputSessionReceipt)
+  | undefined =
   typedReadResult.read_session;
 void typedSessionReceipt;
 

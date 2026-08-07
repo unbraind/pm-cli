@@ -44,7 +44,7 @@ describe("universal read-output transport contracts", () => {
     expect(properties?.outputInclude).toMatchObject({ minLength: 1 });
     const outputSession = properties?.outputSession;
     if (!outputSession) {
-      throw new Error("pm_run must expose the canonical outputSession schema");
+      throw new Error("pm_list must expose the canonical outputSession schema");
     }
     expect(outputSession).toMatchObject({
       anyOf: expect.any(Array),
@@ -60,14 +60,15 @@ describe("universal read-output transport contracts", () => {
         seen_item_ids: { maxItems: 10_000 },
       },
     });
-    expect(
-      (
-        sessionAlternatives[1]?.properties as Record<
-          string,
-          Record<string, unknown>
-        >
-      ).seen_item_ids,
-    ).not.toHaveProperty("uniqueItems");
+    const objectAlternative = sessionAlternatives[1] as
+      | { properties: Record<string, Record<string, unknown>> }
+      | undefined;
+    if (!objectAlternative) {
+      throw new Error("outputSession must expose its object state alternative");
+    }
+    expect(objectAlternative.properties.seen_item_ids).not.toHaveProperty(
+      "uniqueItems",
+    );
   });
 
   it("rejects an unsupported canonical output format at invocation time", () => {

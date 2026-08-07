@@ -56,8 +56,6 @@ const READ_OUTPUT_TOOL_PROPERTIES = {
   },
   outputSession: {
     ...CANONICAL_OUTPUT_SESSION_TOOL_PROPERTY,
-    description:
-      "Caller-carried session state that composes a token ceiling across reads and replaces repeated item facts with resolvable references.",
   },
 } as const;
 
