@@ -11,3 +11,4 @@ export * from "./flag-invocation-contracts.js";
 export * from "./output-token-accounting.js";
 export * from "./output-contracts.js";
 export * from "./read-output-contracts.js";
+export type { PmReadOutputSessionState } from "./read-output-session.js";

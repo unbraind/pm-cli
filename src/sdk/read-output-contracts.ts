@@ -188,8 +188,13 @@ export interface PmReadOutputBudgetExceeded {
 
 /** Read result with an optional shaping receipt or a discriminated omission. */
 export type PmReadOutputResult<Result> =
-  | (Result & { read_output?: PmReadOutputReceipt })
-  | PmReadOutputBudgetExceeded;
+  | (Result & {
+      read_output?: PmReadOutputReceipt;
+      read_session?: PmReadOutputSessionReceipt;
+    })
+  | (PmReadOutputBudgetExceeded & {
+      read_session?: PmReadOutputSessionReceipt;
+    });
 
 /** Select the omission-aware result type when an option shape can request a budget. */
 export type PmReadOutputResultFor<Result, Options> =
@@ -713,13 +718,28 @@ function applyIncludeProjection(
   selectors: readonly string[],
 ): Record<string, unknown> {
   const rows = readOutputRowPaths(result);
-  const selectedRoot = selectors.some((selector) =>
-    Object.hasOwn(result, selector.split(".")[0]!),
+  const qualifiedRowSelectors = selectors.flatMap((selector) =>
+    rows.flatMap((rowPath) =>
+      selector.startsWith(`${rowPath}.`)
+        ? [selector.slice(rowPath.length + 1)]
+        : [],
+    ),
   );
-  if (rows.length > 0 && !selectedRoot) {
+  const selectedRoot = selectors.some((selector) =>
+    Object.hasOwn(result, selector.split(".")[0]!) &&
+    !rows.some((rowPath) => selector.startsWith(`${rowPath}.`)),
+  );
+  if (rows.length > 0 && (!selectedRoot || qualifiedRowSelectors.length > 0)) {
     const projected = { ...result };
     return mapReadOutputRows(projected, (entry) =>
-      isRecord(entry) ? projectRecordFields(entry, selectors) : entry,
+      isRecord(entry)
+        ? projectRecordFields(
+            entry,
+            qualifiedRowSelectors.length > 0
+              ? qualifiedRowSelectors
+              : selectors,
+          )
+        : entry,
     );
   }
   return Object.fromEntries(
@@ -818,6 +838,54 @@ function resolveBindingReadOutputBudget(
   return budgets.length === 0 ? undefined : Math.min(...budgets);
 }
 
+/** Build the smallest truthful omission envelope or reject an exhausted session. */
+function omitReadOutputForBudget(
+  resolved: PmResolvedReadOutputDimensions,
+  requested: PmReadOutputDimension[],
+  session: PmReadOutputSessionState | undefined,
+  budget: number,
+): Record<string, unknown> {
+  const minimalReceipt: PmReadOutputReceipt = {
+    contract_version: 1,
+    command: resolved.command,
+    requested_dimensions: requested,
+    precedence: resolved.precedence,
+    legacy_aliases_used: [],
+    migration_hints: [],
+    estimated_tokens: 0,
+    within_budget: false,
+    strings_compacted: false,
+    rows_compacted: false,
+    result_omitted: true,
+  };
+  const omitted: PmReadOutputBudgetExceeded = {
+    output_budget_exceeded: {
+      omitted_result: true,
+      reason: "requested_budget_infeasible",
+      restore_with: "Increase --output-budget or narrow the read.",
+    },
+    read_output: minimalReceipt,
+  };
+  const boundedOmission =
+    session === undefined
+      ? (omitted as unknown as Record<string, unknown>)
+      : attachReadOutputSessionContracts(
+          omitted as unknown as Record<string, unknown>,
+          session,
+          minimalReceipt,
+        );
+  if (session === undefined) {
+    updateReadOutputReceiptEstimate(boundedOmission, minimalReceipt);
+  }
+  if (session !== undefined && minimalReceipt.estimated_tokens > budget) {
+    throw new PmCliError(
+      "The remaining output-session budget cannot fit its mandatory receipts; start a new session with a larger token_budget.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return boundedOmission;
+}
+
 /** Apply universal field, row, and token bounds and attach an exact receipt. */
 export function applyReadOutputDimensions<
   Result extends Record<string, unknown>,
@@ -870,45 +938,12 @@ export function applyReadOutputDimensions<
     }
   }
   if (budget !== undefined && receipt.estimated_tokens > budget) {
-    const minimalReceipt: PmReadOutputReceipt = {
-      contract_version: 1,
-      command: resolved.command,
-      requested_dimensions: requested,
-      precedence: resolved.precedence,
-      legacy_aliases_used: [],
-      migration_hints: [],
-      estimated_tokens: 0,
-      within_budget: false,
-      strings_compacted: false,
-      rows_compacted: false,
-      result_omitted: true,
-    };
-    const omitted: PmReadOutputBudgetExceeded = {
-      output_budget_exceeded: {
-        omitted_result: true,
-        reason: "requested_budget_infeasible",
-        restore_with: "Increase --output-budget or narrow the read.",
-      },
-      read_output: minimalReceipt,
-    };
-    const boundedOmission =
-      session === undefined
-        ? (omitted as unknown as Record<string, unknown>)
-        : attachReadOutputSessionContracts(
-            omitted as unknown as Record<string, unknown>,
-            session,
-            minimalReceipt,
-          );
-    if (session === undefined) {
-      updateReadOutputReceiptEstimate(boundedOmission, minimalReceipt);
-    }
-    if (minimalReceipt.estimated_tokens > budget) {
-      throw new PmCliError(
-        "The remaining output-session budget cannot fit its mandatory receipts; start a new session with a larger token_budget.",
-        EXIT_CODE.USAGE,
-      );
-    }
-    return boundedOmission as PmReadOutputResult<Result>;
+    return omitReadOutputForBudget(
+      resolved,
+      requested,
+      session,
+      budget,
+    ) as PmReadOutputResult<Result>;
   }
   return projected as Result & {
     read_output: PmReadOutputReceipt;

@@ -49,6 +49,8 @@ describe("run-tests", () => {
     vi.doMock("node:child_process", () => ({ spawn }));
     mockFsPromises();
     process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    process.env.PM_SOURCE_PM_PATH = "/outer/tracker/.agents/pm";
+    process.env.PM_SOURCE_WORKSPACE_ROOT = "/outer/workspace";
     process.argv = [
       "node",
       "scripts/run-tests.mjs",
@@ -77,6 +79,9 @@ describe("run-tests", () => {
         "coverage-threshold-gate.mjs",
       ),
     ]);
+    const childEnvironment = spawn.mock.calls.at(0)?.[2]?.env;
+    expect(childEnvironment).not.toHaveProperty("PM_SOURCE_PM_PATH");
+    expect(childEnvironment).not.toHaveProperty("PM_SOURCE_WORKSPACE_ROOT");
     expect(process.exitCode).toBe(0);
   });
 

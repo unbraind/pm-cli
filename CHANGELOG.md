@@ -4,7 +4,7 @@
 
 ### Added
 
-- Token budgets bind one call and never compose: the orientation protocol the project prescribes costs 38k bytes and spends a third of it re-describing items the agent was already given ([pm-hid9g1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hid9g1.toon))
+- Caller-carried output sessions compose token budgets across reads and suppress repeated item facts ([pm-hid9g1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hid9g1.toon))
 - Fleet attribution analytics: per-harness and per-model throughput, rework, and defect-escape rates derived from immutable history alone ([pm-gw6uyq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gw6uyq.toon))
 - Improvement ledger: measured properties of pm carry a recorded time series, because a ceiling proves a number did not grow and can never prove a change made it smaller ([pm-chahyq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-chahyq.toon))
 
@@ -14,6 +14,7 @@
 
 ### Fixed
 
+- Nested pm test coverage changes repository-root fixtures because outer PM_PATH sandboxing leaks into package-owned run-tests ([pm-ay3l0p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ay3l0p.toon))
 - Read surfaces have no common row contract: field projection reaches 4 of 11 commands and the row collection sits under a different key on each, so no single shell or jq expression works across pm ([pm-sb0tns](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sb0tns.toon))
 - Sentry PM-CLI-2W: rejected unknown-author acknowledgments are emitted as high production errors ([pm-c3uru0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c3uru0.toon))
 - Expose live bounded provenance coverage over immutable history ([pm-1wiugq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1wiugq.toon))

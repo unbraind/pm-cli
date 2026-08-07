@@ -28,6 +28,10 @@ export interface ToolDefinition {
   inputSchema: Record<string, unknown>;
 }
 
+const CANONICAL_OUTPUT_SESSION_TOOL_PROPERTY = (
+  buildPmActionToolInputSchema("list").properties as Record<string, unknown>
+).outputSession as Record<string, unknown>;
+
 const READ_OUTPUT_TOOL_PROPERTIES = {
   outputInclude: {
     type: "string",
@@ -49,6 +53,11 @@ const READ_OUTPUT_TOOL_PROPERTIES = {
     type: "string",
     enum: ["json", "toon"],
     description: "Universal read-result encoding selector.",
+  },
+  outputSession: {
+    ...CANONICAL_OUTPUT_SESSION_TOOL_PROPERTY,
+    description:
+      "Caller-carried session state that composes a token ceiling across reads and replaces repeated item facts with resolvable references.",
   },
 } as const;
 

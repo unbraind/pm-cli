@@ -71,6 +71,12 @@ export interface PmReadOutputSessionReceipt {
   next_state: PmReadOutputSessionState;
 }
 
+/** Smallest session ceiling that can carry a useful result and both receipts. */
+export const PM_READ_OUTPUT_SESSION_MIN_TOKENS = 256;
+
+/** Maximum caller-carried served-item identities accepted in one session state. */
+export const PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS = 10_000;
+
 const SESSION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/u;
 const ITEM_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u;
 const SESSION_KEYS = new Set([
@@ -93,8 +99,8 @@ const SESSION_FIELD_VALIDATIONS = [
   {
     valid: (state: Record<string, unknown>) =>
       Number.isSafeInteger(state.token_budget) &&
-      (state.token_budget as number) >= 256,
-    reason: "token_budget must be a safe integer of at least 256.",
+      (state.token_budget as number) >= PM_READ_OUTPUT_SESSION_MIN_TOKENS,
+    reason: `token_budget must be a safe integer of at least ${PM_READ_OUTPUT_SESSION_MIN_TOKENS}.`,
   },
   {
     valid: (state: Record<string, unknown>) =>
@@ -107,10 +113,12 @@ const SESSION_FIELD_VALIDATIONS = [
   {
     valid: (state: Record<string, unknown>) =>
       Array.isArray(state.seen_item_ids) &&
+      state.seen_item_ids.length <=
+        PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS &&
       state.seen_item_ids.every(
         (id) => typeof id === "string" && ITEM_ID_PATTERN.test(id),
       ),
-    reason: "seen_item_ids must contain only portable item identifiers.",
+    reason: `seen_item_ids must contain at most ${PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS} portable item identifiers.`,
   },
 ] as const;
 
@@ -247,8 +255,7 @@ export function attachReadOutputSessionReceipt(
     },
   };
   const withReceipt = { ...result, read_session: receipt };
-  let estimate = 0;
-  for (let iteration = 0; iteration < 8; iteration += 1) {
+  const applyEstimate = (estimate: number): void => {
     receipt.spent_this_call_tokens = estimate;
     receipt.charged_this_call_tokens = Math.min(
       state.token_budget - state.spent_tokens,
@@ -262,14 +269,22 @@ export function attachReadOutputSessionReceipt(
       0,
       state.token_budget - receipt.spent_total_tokens,
     );
-    receipt.exhausted = receipt.remaining_tokens < 256;
+    receipt.exhausted =
+      receipt.remaining_tokens < PM_READ_OUTPUT_SESSION_MIN_TOKENS;
     receipt.next_state.spent_tokens = receipt.spent_total_tokens;
+  };
+  let estimate = 0;
+  let highestMeasuredEstimate = 0;
+  for (let iteration = 0; iteration < 8; iteration += 1) {
+    applyEstimate(estimate);
     const measured = Math.ceil(
       Buffer.byteLength(JSON.stringify(withReceipt), "utf8") / 4,
     );
     if (measured === estimate) return withReceipt;
+    highestMeasuredEstimate = Math.max(highestMeasuredEstimate, measured);
     estimate = measured;
   }
+  applyEstimate(highestMeasuredEstimate);
   return withReceipt;
 }
 

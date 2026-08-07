@@ -17514,8 +17514,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -17925,8 +17925,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -18392,8 +18392,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -19320,8 +19320,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -19581,8 +19581,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -19830,8 +19830,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -20195,8 +20195,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -20537,8 +20537,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -20884,8 +20884,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -21135,8 +21135,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -21782,8 +21782,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -22218,8 +22218,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -22565,8 +22565,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -23788,6 +23788,60 @@
             ],
             "description": "Universal read row ceiling, or unbounded to disable the shared ceiling."
           },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "maxItems": 10000,
+                    "type": "array"
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried session state that composes a token ceiling across reads and replaces repeated item facts with resolvable references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
@@ -24581,8 +24635,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -25791,8 +25845,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -32161,8 +32215,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -32788,8 +32842,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -33415,8 +33469,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -34042,8 +34096,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -34669,8 +34723,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -35296,8 +35350,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -35923,8 +35977,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -36550,8 +36604,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -36898,8 +36952,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -37238,8 +37292,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -37623,8 +37677,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -37957,8 +38011,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -38298,8 +38352,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -38740,8 +38794,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -39286,8 +39340,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -39602,8 +39656,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -39892,8 +39946,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -41453,8 +41507,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -43831,8 +43885,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -44121,8 +44175,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -44579,8 +44633,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -44844,8 +44898,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -45130,8 +45184,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -46699,8 +46753,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -46908,8 +46962,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -47226,8 +47280,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,
@@ -47835,8 +47889,8 @@
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
                       "type": "string"
                     },
-                    "type": "array",
-                    "uniqueItems": true
+                    "maxItems": 10000,
+                    "type": "array"
                   },
                   "spent_tokens": {
                     "minimum": 0,

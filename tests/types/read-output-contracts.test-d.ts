@@ -12,13 +12,19 @@ import {
   type ListResult,
   type PmReadOutputOptions,
   type PmReadOutputResult,
+  type PmReadOutputSessionReceipt,
 } from "../../src/sdk/index.js";
-import type { PmReadOutputOptions as CoreReadOutputOptions } from "../../src/sdk/core.js";
+import type {
+  PmReadOutputOptions as CoreReadOutputOptions,
+  PmReadOutputSessionState as CoreReadOutputSessionState,
+} from "../../src/sdk/core.js";
+import type { PmReadOutputSessionState as ContractsReadOutputSessionState } from "../../src/sdk/contracts.js";
 import type {
   PmContextIntentContract,
   PmErrorCodeContract,
   PmReadOutputOptions as RuntimeReadOutputOptions,
   PmReadOutputSurfaceContract,
+  PmReadOutputSessionState as RuntimeReadOutputSessionState,
 } from "../../src/sdk/runtime.js";
 
 const options = {
@@ -53,6 +59,16 @@ declare const errorContract: PmErrorCodeContract;
 void intentContract;
 void surfaceContract;
 void errorContract;
+
+declare const sessionState: CoreReadOutputSessionState &
+  ContractsReadOutputSessionState &
+  RuntimeReadOutputSessionState;
+void sessionState;
+
+declare const typedReadResult: PmReadOutputResult<ListResult>;
+const typedSessionReceipt: PmReadOutputSessionReceipt | undefined =
+  typedReadResult.read_session;
+void typedSessionReceipt;
 
 const client = new PmClient();
 const ordinaryClientRead: Promise<ListResult> = client.list({ limit: "2" });

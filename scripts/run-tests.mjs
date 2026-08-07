@@ -52,6 +52,8 @@ async function run() {
       PM_GLOBAL_PATH: pmGlobalPath,
     };
     delete baseEnv.PM_CLI_PACKAGE_ROOT;
+    delete baseEnv.PM_SOURCE_PM_PATH;
+    delete baseEnv.PM_SOURCE_WORKSPACE_ROOT;
 
     if (!skipBuild) {
       const buildExitCode = await new Promise((resolve, reject) => {

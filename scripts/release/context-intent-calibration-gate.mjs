@@ -31,6 +31,11 @@ const REPORT_PATH = path.join(
   "context-intent-calibration.json",
 );
 const CALIBRATION_REGRESSION_MARGIN = 1.15;
+const IMMUTABLE_SESSION_STATE_FIELDS = Object.freeze([
+  "id",
+  "version",
+  "token_budget",
+]);
 const INVARIANT_CONTINUATION_KEYS = Object.freeze([
   "applied_limit",
   "completeness",
@@ -165,7 +170,10 @@ async function runSessionOrientation(
       !Number.isFinite(receipt.charged_this_call_tokens) ||
       receipt.spent_before_tokens !== state.spent_tokens ||
       receipt.spent_total_tokens > tokenBudget ||
-      receipt.next_state?.spent_tokens !== receipt.spent_total_tokens
+      receipt.next_state?.spent_tokens !== receipt.spent_total_tokens ||
+      !IMMUTABLE_SESSION_STATE_FIELDS.every(
+        (field) => receipt.next_state?.[field] === state[field],
+      )
     ) {
       throw new Error(`${command}: session orientation receipt drifted`);
     }
