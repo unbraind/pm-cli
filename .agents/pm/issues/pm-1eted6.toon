@@ -6,8 +6,10 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:01.251Z"
-updated_at: "2026-08-07T08:34:25.758Z"
+updated_at: "2026-08-07T08:47:20.241Z"
 author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Before any mutating command, pm detects when the executing binary is older than the project-declared or lockfile-resolved CLI/SDK version and emits a deterministic actionable refusal or explicit acknowledgement path; read-only commands remain available for diagnosis; unit, integration, packaged npx/bunx, and stale-binary negative-control tests prove the guard without reading the real tracker"
 parent: pm-usfg
 risk: high
 confidence: high
@@ -16,10 +18,10 @@ expected_result: "Read paths expose a structured version mismatch and mutation p
 actual_result: Older global and stale local binaries mutate a project whose declared and locked pm-cli version is newer without any diagnostic.
 affected_version: 2026.8.6
 component: CLI bootstrap and workspace compatibility
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-59gj,related,"2026-08-07T08:33:01.251Z","harness:codex","cli:create:dep",detected
   pm-rnpb,discovered_from,"2026-08-07T08:34:25.672Z","harness:codex","cli:update:dep",detected
-  pm-usfg,blocks,"2026-08-07T08:34:25.672Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-07T08:33:01.251Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/926. Duplicate check searched all 2,351 items across every status for stale global pm,pinned/newer CLI and SDK,lockfile mismatch,and GH-926; no canonical issue existed."
+  "2026-08-07T08:47:15.053Z","harness:codex","Governance repair: removed the redundant blocks edge to its scalar parent pm-usfg. Parent lineage remains authoritative and avoids increasing the active blocks asymmetry population tracked by pm-jkbqt8."
 body: ""

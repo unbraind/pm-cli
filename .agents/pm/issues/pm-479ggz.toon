@@ -6,8 +6,10 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:37.258Z"
-updated_at: "2026-08-07T08:34:26.542Z"
+updated_at: "2026-08-07T08:47:20.726Z"
 author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "package manage and its diagnostics accept the universal read controls advertised by the runtime contract, or reject unsupported controls before execution with a precise recovery receipt; CLI and SDK contract parity tests cover token budgets, context sessions, fields, cursors, and output formats; a temporary-project acceptance test proves the installed extension path"
 parent: pm-tnud
 risk: medium
 confidence: high
@@ -16,11 +18,11 @@ expected_result: Read-only package manage diagnostics accept the universal read-
 actual_result: package manage succeeds only without universal output controls and rejects output-format JSON or lean shaping as mutation-scoped.
 affected_version: 2026.8.6
 component: package lifecycle and universal read output
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-hid9g1,related,"2026-08-07T08:33:37.258Z","harness:codex","cli:create:dep",detected
   pm-x6jf,related,"2026-08-07T08:33:37.258Z","harness:codex","cli:create:dep",detected
   pm-hid9g1,discovered_from,"2026-08-07T08:34:26.431Z","harness:codex","cli:update:dep",detected
-  pm-tnud,blocks,"2026-08-07T08:34:26.431Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-07T08:33:37.258Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/925. Duplicate check searched all 2,351 items and every status for package manage,read-only diagnostics,universal output controls,output-format,and GH-925; no canonical issue existed."
+  "2026-08-07T08:47:18.992Z","harness:codex","Governance repair: removed the redundant blocks edge to its scalar parent pm-tnud. Parent lineage remains authoritative and avoids increasing the active blocks asymmetry population tracked by pm-jkbqt8."
 body: ""

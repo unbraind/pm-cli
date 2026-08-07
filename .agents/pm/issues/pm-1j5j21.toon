@@ -6,8 +6,10 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:38.852Z"
-updated_at: "2026-08-07T08:34:28.049Z"
+updated_at: "2026-08-07T08:47:21.733Z"
 author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: Merge-decision receipts required by validation survive a fresh clone and clean CI checkout without relying on ignored local files; the field-aware merge driver and health/validate surfaces agree on durable evidence; isolated two-branch merge tests cover both lossless and discarded-value decisions and keep history hash validation intact
 parent: pm-doxj
 risk: critical
 confidence: high

@@ -6,8 +6,10 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:40.505Z"
-updated_at: "2026-08-07T08:34:29.647Z"
+updated_at: "2026-08-07T08:47:22.836Z"
 author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "Author-attribution findings using the _workspace coordinate can be acknowledged through a documented stable command; acknowledgement preserves provenance and is visible to health and validation in a fresh clone; negative controls reject unknown workspace coordinates and tests cover CLI, SDK, and compact output receipts"
 parent: pm-doxj
 risk: high
 confidence: high

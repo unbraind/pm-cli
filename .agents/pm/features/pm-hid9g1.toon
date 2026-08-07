@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",context,context-management,scale,token-budget
 created_at: "2026-08-03T06:22:52.917Z"
-updated_at: "2026-08-07T08:23:29.640Z"
+updated_at: "2026-08-07T08:47:54.342Z"
 closed_at: "2026-08-07T07:02:22.215Z"
 completed_at: "2026-08-07T07:02:22.215Z"
 author: "harness:claude-code"
@@ -38,7 +38,7 @@ dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,blocked_by,"2026-08-03T11:15:45.320Z","harness:codex","cli:update:dep",detected
   pm-n7rr,implements,"2026-08-03T11:15:45.320Z","harness:codex","cli:update:dep",detected
   pm-cyn0y6,related,"2026-08-03T20:38:41.575Z","harness:claude-code","cli:update:dep",detected
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-08-03T11:09:25.972Z","harness:codex","Estimate basis 2026-08-03: 900 minutes reflects a cross-call budget ledger, served-fact references, deterministic degradation, session and fleet composition, CI ratchet, and small-workspace no-regression proof."
   "2026-08-03T11:15:45.320Z","harness:codex","Sequencing 2026-08-03: establish trustworthy per-command ceilings in pm-5t33or before composing a session ledger, then use the same receipt and degradation algebra for within-session deduplication. This item implements the agent-facing simplification outcome because fewer commands are insufficient if the prescribed multi-call orientation still repeats a third of its bytes."
   "2026-08-07T05:54:35.716Z","harness:codex","Duplicate/orientation evidence 2026-08-07: searched all 2,343 items across every status for output session token budget, seen/suppression, repeated item context, and closed session-budget predecessors; pm-hid9g1 is the canonical owner. pm-5t33or supplies the shipped per-call budget algebra, pm-sb0tns owns the remaining universal row/projection prerequisite, pm-tch9cs remains the distinct cross-agent amortization horizon."
@@ -53,6 +53,7 @@ comments[14]{created_at,author,text}:
   "2026-08-07T07:49:44.821Z","harness:codex","Exact review-fix coverage: full pnpm test:coverage passes at 100% statements 49,641/49,641, branches 36,071/36,071, functions 10,152/10,152, and lines 48,086/48,086. The DeepScan guard correction therefore preserves the tranche's mandatory 100/100/100/100 gate."
   "2026-08-07T08:01:04.424Z","harness:codex","GitHub exact-head review loop for c5e95b159: all required Actions and external gates are green, including 4 coverage shards plus aggregator, static, smokes, compatibility, typecheck, Windows, macOS/Linux runtime, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, benchmarks, CodeFactor, Codecov, Hound, and DeepScan (0 new issues). Every bot conversation comment was dispositioned and reacted to. CodeRabbit and Sourcery remained provider-rate-limited and Greptile produced no review after more than the requested 20-minute maximum; these are explicit external limitations, not approvals or hidden findings."
   "2026-08-07T08:23:29.640Z","harness:codex","CodeRabbit P1 remediation: session receipts are now attached before the binding remaining-budget decision, reattached after compaction, and included in omission feasibility. A call whose mandatory receipts cannot fit fails closed instead of returning a falsely budget-compliant envelope. New regressions prove both a fresh 256-token session and a later call with exactly 256 tokens remaining return 254-token complete envelopes with exact spent/charged receipts; a larger terminal receipt is rejected. Focused 22-test suite, ESLint complexity ceiling, typecheck, real 2/2243-item calibration, and full coverage pass at exact 100% (49,648 statements, 36,077 branches, 10,152 functions, 48,093 lines)."
+  "2026-08-07T08:47:54.341Z","harness:codex","Exact-head CI governance evidence: static gate on 73cf0e15f correctly rejected the six newly filed GitHub lineage items because acceptance criteria and estimates were missing, and rejected three new blocks rows under pm-jkbqt8's active non-growth ceiling. Enriched all six issues with measurable acceptance criteria and estimates; removed two redundant blocks-to-parent rows; retained the GH-920/GH-921 companion edge as related because the live pm-jkbqt8 finding proves blocks is not readiness-safe. Released every temporary claim; pm list-in-progress is zero; tracker-measurement-gate passes without changing thresholds."
 learnings[1]{created_at,author,text}:
   "2026-08-07T07:02:19.900Z","harness:codex","Cross-call context accounting stays universal and small-workspace-free when the complete versioned ledger travels with the caller. The host can then reuse the same egress row contract across CLI, SDK, MCP, and packages without a daemon, persistent session index, or command-local cache."
 files[26]{path,scope,note}:
