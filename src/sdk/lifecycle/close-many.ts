@@ -29,6 +29,10 @@ import { runClose, type CloseCommandOptions } from "./close.js";
 import { hasListFilters } from "../query/list-filter-shared.js";
 import { runList, type ListOptions, type ListedItem } from "../query/list.js";
 import { runRestore } from "./restore.js";
+import {
+  derivePmBulkMutationEffect,
+  type PmCommandEffectReceipt,
+} from "../cli-contracts/command-exit-contracts.js";
 
 const CLOSE_MANY_CHECKPOINT_SCHEMA_VERSION = 1;
 const CLOSE_MANY_CHECKPOINT_SUBDIR = "close-many";
@@ -108,11 +112,12 @@ interface CloseManyPlanContext {
   force: boolean;
   listed: Awaited<ReturnType<typeof runList>>;
   matched: ListedItem[];
+  unmatchedIds: string[];
   planRows: CloseManyPlanRow[];
 }
 
 /** Documents the close many result payload exchanged by command, SDK, and package integrations. */
-export interface CloseManyResult {
+export interface CloseManyResult extends PmCommandEffectReceipt {
   /** Value that configures or reports mode for this contract. */
   mode: "dry_run" | "apply" | "rollback";
   /** Number of matched entries represented by this result. */
@@ -156,6 +161,10 @@ export interface CloseManyResult {
       }>;
   /** Value that configures or reports ids for this contract. */
   ids: string[];
+  /** Explicitly requested --ids values that matched no selected item. */
+  unmatched_ids?: string[];
+  /** Number of explicitly requested --ids values that matched no selected item. */
+  unmatched_count?: number;
 }
 
 function hasCloseManyFilters(
@@ -336,6 +345,12 @@ async function runCloseManyRollback(params: {
       ),
   );
   return {
+    ...derivePmBulkMutationEffect({
+      applied: rollback.restored_ids.length,
+      skipped: 0,
+      failed: rollback.failed_count,
+      unmatched: 0,
+    }),
     mode: "rollback",
     matched_count: checkpoint.items.length,
     dry_run: false,
@@ -553,6 +568,15 @@ async function buildCloseManyPlanContext(params: {
     listed.items as ListedItem[],
     parentByChild,
   );
+  const requestedIds = [
+    ...new Set(
+      String(params.options.list?.ids ?? "")
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  ];
+  const matchedIds = new Set(matched.map((item) => item.id));
   const closePlannedIds = resolveCloseManyPlannedIds(
     matched,
     statusRegistry,
@@ -567,6 +591,7 @@ async function buildCloseManyPlanContext(params: {
     force,
     listed,
     matched,
+    unmatchedIds: requestedIds.filter((id) => !matchedIds.has(id)),
     planRows: planCloseManyRows(
       matched,
       childrenByParent,
@@ -581,6 +606,8 @@ function buildCloseManyDryRunResult(
   context: CloseManyPlanContext,
 ): CloseManyResult {
   return {
+    outcome: "effect",
+    exit_code: EXIT_CODE.SUCCESS,
     mode: "dry_run",
     matched_count: context.matched.length,
     dry_run: true,
@@ -591,6 +618,12 @@ function buildCloseManyDryRunResult(
       : {}),
     item_plans: context.planRows,
     ids: [],
+    ...(context.unmatchedIds.length > 0
+      ? {
+          unmatched_ids: context.unmatchedIds,
+          unmatched_count: context.unmatchedIds.length,
+        }
+      : {}),
   };
 }
 
@@ -688,8 +721,17 @@ export async function runCloseMany(
     closeOptions,
     global,
   });
+  const closedCount = rows.filter((row) => row.status === "closed").length;
+  const skippedCount = rows.filter((row) => row.status === "skipped").length;
+  const failedCount = rows.filter((row) => row.status === "failed").length;
 
   return {
+    ...derivePmBulkMutationEffect({
+      applied: closedCount,
+      skipped: skippedCount,
+      failed: failedCount,
+      unmatched: context.unmatchedIds.length,
+    }),
     mode: "apply",
     matched_count: context.matched.length,
     dry_run: false,
@@ -699,11 +741,17 @@ export async function runCloseMany(
       ? { validate_close: context.validateCloseMode }
       : {}),
     ...(checkpointInfo ? { checkpoint: checkpointInfo } : {}),
-    closed_count: rows.filter((row) => row.status === "closed").length,
-    skipped_count: rows.filter((row) => row.status === "skipped").length,
-    failed_count: rows.filter((row) => row.status === "failed").length,
+    closed_count: closedCount,
+    skipped_count: skippedCount,
+    failed_count: failedCount,
     rows,
     ids: closedIds,
+    ...(context.unmatchedIds.length > 0
+      ? {
+          unmatched_ids: context.unmatchedIds,
+          unmatched_count: context.unmatchedIds.length,
+        }
+      : {}),
   };
 }
 

@@ -21,7 +21,8 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon),
 [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), stable peer compatibility
 [pm-csuce0](../.agents/pm/issues/pm-csuce0.toon), and artifact budgets
 [pm-998juj](../.agents/pm/tasks/pm-998juj.toon), plus exact-tag recovery
-[pm-lwnifd](../.agents/pm/issues/pm-lwnifd.toon).
+[pm-lwnifd](../.agents/pm/issues/pm-lwnifd.toon), and SDK-bound reliability
+classification [pm-dqtzva](../.agents/pm/issues/pm-dqtzva.toon).
 
 ## Version Policy
 
@@ -176,6 +177,16 @@ Run the public Sentry/telemetry threshold gate through the package script alias:
 ```bash
 pnpm sentry:telemetry:gate -- --telemetry-mode best-effort
 ```
+
+The Sentry threshold gate reads the latest event for each issue and classifies
+expected handled failures from the SDK error catalog. An event is ignored only
+when it is handled, its `pm.error_code` resolves to a declared canonical code,
+its `pm.exit_code` exactly matches that code's transport contract, and the
+semantic class is `usage`, `not_found`, or `conflict`. Message and title prose
+never participate. Unknown codes, missing or mismatched exits, unhandled
+events, and every `generic_failure` or `dependency_failed` remain blocking.
+This keeps rewording independent from release policy and makes stale or broad
+message allowlists impossible.
 
 If private reliability checks identify repeated user friction, either confirm the current release already contains the remediation with regression coverage or fix it before continuing.
 

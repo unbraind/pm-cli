@@ -59,6 +59,88 @@ export interface PmErrorCodeContract {
   sources: string[];
   /** CLI command roots inferred from executable declaration ownership. */
   emitting_commands: string[];
+  /** Canonical machine identifier for this compatibility group. */
+  canonical_code?: string;
+  /** Stable compatibility spellings that resolve to this canonical code. */
+  aliases?: string[];
+}
+
+function isValidNormalizedErrorCodeContract(
+  declaration: PmErrorCodeContract,
+  sources: readonly string[],
+  emittingCommands: readonly string[],
+  canonicalCode: string,
+  aliases: readonly string[],
+): boolean {
+  return ![
+    [1, 2, 3, 4, 5].includes(declaration.exit_code),
+    declaration.meaning.trim().length > 0,
+    declaration.recovery.trim().length > 0,
+    sources.length > 0,
+    emittingCommands.length > 0,
+    /^[a-z][a-z0-9_]*$/.test(canonicalCode),
+    aliases.every((alias) => /^[a-z][a-z0-9_]*$/.test(alias)),
+    ERROR_CLASS_BY_EXIT_CODE.get(declaration.exit_code) === declaration.class,
+  ].includes(false);
+}
+
+function resolveCanonicalErrorCodeDeclaration(
+  declaration: Readonly<PmErrorCodeContract>,
+  byCode: ReadonlyMap<string, Readonly<PmErrorCodeContract>>,
+): Readonly<PmErrorCodeContract> {
+  let current = declaration;
+  const path = new Set<string>();
+  while (current.canonical_code !== current.code) {
+    if (path.has(current.code)) {
+      throw new TypeError(
+        `Alias cycle in pm error code catalog: ${declaration.code}`,
+      );
+    }
+    path.add(current.code);
+    const target = byCode.get(current.canonical_code!);
+    if (!target) {
+      throw new TypeError(
+        `Invalid pm error code contract: ${declaration.code}`,
+      );
+    }
+    current = target;
+  }
+  return current;
+}
+
+function validateErrorCodeAliases(
+  declarations: readonly Readonly<PmErrorCodeContract>[],
+): void {
+  const byCode = new Map(declarations.map((entry) => [entry.code, entry]));
+  for (const declaration of declarations) {
+    const canonical = resolveCanonicalErrorCodeDeclaration(declaration, byCode);
+    if (
+      canonical.exit_code !== declaration.exit_code ||
+      canonical.class !== declaration.class
+    ) {
+      throw new TypeError(
+        `Alias transport mismatch for pm error code: ${declaration.code}`,
+      );
+    }
+    const expectedAliases = declarations
+      .filter(
+        (candidate) =>
+          candidate.code !== canonical.code &&
+          candidate.canonical_code === canonical.code,
+      )
+      .map((candidate) => candidate.code)
+      .sort();
+    if (
+      declaration.code === canonical.code
+        ? JSON.stringify(declaration.aliases) !==
+          JSON.stringify(expectedAliases)
+        : declaration.aliases!.length > 0
+    ) {
+      throw new TypeError(
+        `Invalid pm error code contract: ${declaration.code}`,
+      );
+    }
+  }
 }
 
 /** Validate, normalize, sort, and freeze an error-code catalog. */
@@ -81,13 +163,16 @@ export function definePmErrorCodeCatalog(
     const emittingCommands = normalizeContractList(
       declaration.emitting_commands,
     );
+    const canonicalCode = (declaration.canonical_code ?? code).trim();
+    const aliases = normalizeContractList(declaration.aliases ?? []);
     if (
-      ![1, 2, 3, 4, 5].includes(declaration.exit_code) ||
-      declaration.meaning.trim().length === 0 ||
-      declaration.recovery.trim().length === 0 ||
-      sources.length === 0 ||
-      emittingCommands.length === 0 ||
-      ERROR_CLASS_BY_EXIT_CODE.get(declaration.exit_code) !== declaration.class
+      !isValidNormalizedErrorCodeContract(
+        declaration,
+        sources,
+        emittingCommands,
+        canonicalCode,
+        aliases,
+      )
     ) {
       throw new TypeError(`Invalid pm error code contract: ${code}`);
     }
@@ -98,10 +183,25 @@ export function definePmErrorCodeCatalog(
       recovery: declaration.recovery.trim(),
       sources,
       emitting_commands: emittingCommands,
+      canonical_code: canonicalCode,
+      aliases,
     });
   });
+  validateErrorCodeAliases(normalized);
   return Object.freeze(
     normalized.sort((left, right) => left.code.localeCompare(right.code)),
+  );
+}
+
+/** Resolve an emitted code through its stable compatibility alias group. */
+export function resolveCanonicalPmErrorCodeContract(
+  code: string,
+  catalog: readonly PmErrorCodeContract[],
+): PmErrorCodeContract {
+  const emitted = resolvePmErrorCodeContract(code, catalog);
+  return resolvePmErrorCodeContract(
+    emitted.canonical_code ?? emitted.code,
+    catalog,
   );
 }
 

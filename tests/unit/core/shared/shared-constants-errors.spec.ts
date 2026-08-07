@@ -145,6 +145,8 @@ describe("shared constants and errors contracts", () => {
       NOT_FOUND: 3,
       CONFLICT: 4,
       DEPENDENCY_FAILED: 5,
+      NO_EFFECT: 6,
+      PARTIAL_EFFECT: 7,
     });
   });
 

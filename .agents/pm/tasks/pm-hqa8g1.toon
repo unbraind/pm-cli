@@ -2,22 +2,65 @@ id: pm-hqa8g1
 title: "Every command declares its exit-code set, and the code distinguishes applied from applied-to-nothing"
 description: "The exit code is the only part of a command result a shell reads without parsing, and it is the only part of a command result this product has never declared. Every other channel is contracted: the output envelope has a format grammar, read surfaces carry a row contract, error codes exist as an enumerated set of one hundred and ninety-five. Exit codes are assigned at each call site by convention and are described nowhere, so a script or an agent that branches on success cannot rely on success meaning anything in particular.\n\nEvidence taken 2026-08-01 against 2026.8.1, in an isolated sandbox. A bulk mutation that matched none of its requested ids exits 0. Specifically, update-many with two nonexistent ids exits 0, and close-many with one nonexistent id exits 0, both having changed nothing. A partially matched request, one real id and one bogus, also exits 0. Meanwhile a history verification failure is only detectable through an opt-in strict exit flag, and a read that omits its entire result under a budget constraint also exits 0. The same numeric result therefore covers applied, applied in part, applied to nothing, and served nothing.\n\nWhat a contract has to say. For every command: which codes it can return, what each means as a statement about effect rather than about internals, and which conditions are opt-in rather than default. At minimum the vocabulary needs to distinguish a request that succeeded and had an effect, a request that succeeded and deliberately had no effect, a request that was refused for bad input, a request that was refused for tracker state, and an internal failure. The distinction between the first two is the one that is missing today and the one that costs the most, because it is exactly the distinction a shell operator is asking about.\n\nWhere it is declared. In the same contract tables the flags and error codes already live in, so the surface can be generated and checked rather than documented and drifted, and so the published contracts output carries it for agents that read contracts before acting.\n\nHow it is enforced. A conformance check asserts that every command declares its exit-code set, that every declared code is reachable from at least one input in the replay corpus, and that no command returns an undeclared code. A negative control proves the check can fail.\n\nRelationship to adjacent work. The error-code taxonomy item owns the names and shapes of failures; this item owns the numeric channel and the effect semantics behind it, and the two must agree, which is why the taxonomy is a prerequisite here rather than a duplicate. The bulk selector item filed today carries the concrete instance of the missing distinction and depends on this contract for the general rule."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[3]: ci-gates,composability,governance
 created_at: "2026-08-01T13:09:48.878Z"
-updated_at: "2026-08-01T20:25:36.879Z"
+updated_at: "2026-08-07T19:40:42.068Z"
+closed_at: "2026-08-07T18:33:26.199Z"
+completed_at: "2026-08-07T18:33:26.199Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Every command declares its exit-code set in the same contract tables that already carry its flags and error codes, and the set is rendered by the contracts output; The vocabulary distinguishes succeeded with effect, succeeded with no effect, refused for input, refused for tracker state, and internal failure; A conformance check asserts no command returns an undeclared code and every declared code is reachable from the replay corpus, with a negative control; The scripting contract documents the exit-code semantics once, and no command describes its own numeric convention separately"
 parent: pm-33cw
 risk: medium
 confidence: 82
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Implemented generated SDK and CLI exit-effect contracts with stable success exits 6 and 7 and replay conformance.
+expected_result: Every active core command has a generated numeric exit set; contracts output exposes the vocabulary; real bulk mutations distinguish full no and partial effect; conformance fails on undeclared or unreachable exits.
+actual_result: All core roots are generated from PM_CORE_COMMAND_NAMES; full contracts output groups equivalent sets token-efficiently; update-many and close-many emit 0 effect 6 no_effect and 7 partial_effect; telemetry treats all three as success; real temporary-tracker replay and negative controls pass.
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-33cw,implements,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
   pm-f05lsg,related,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
   pm-psy1,related,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
   pm-srns,related,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
   pm-x4nn3z,blocked_by,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,verifies,"2026-08-01T20:22:18.095Z","harness:codex","cli:update:dep",detected
+  pm-psy1,verifies,"2026-08-07T18:29:47.632Z","harness:codex","cli:update:dep",detected
+  pm-x1z3,implements,"2026-08-07T18:29:47.632Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-08-07T18:14:55.950Z","harness:codex","Start 2026-08-07: prerequisite pm-x4nn3z is live-verified closed. All-status search confirms pm-hqa8g1 is the canonical command exit/effect contract; adjacent pm-f05lsg owns recovery closure and pm-srns owns broad SDK hardening. Active scope is generated per-command exit contracts, effect semantics, replay conformance, CLI contracts output, and scripting docs."
+  "2026-08-07T18:18:09.758Z","harness:codex","TDD red evidence: isolated process acceptance test expected update-many with zero matches to return exit 6 plus a no_effect receipt, but current CLI returned 0. The test also specifies distinct partial_effect=7 and full effect=0 behavior for update-many and close-many."
+  "2026-08-07T18:29:50.326Z","harness:codex","Implementation evidence: introduced stable exits 6=no_effect and 7=partial_effect; generated declarations cover every core command; pm contracts --command update-many --full exposes vocabulary and [0..7]; CLI output only honors declared exits; telemetry treats 0/6/7 as successful; isolated real-process replay verified update-many and close-many full/no/partial effects. Focused TDD and projection suite: 10/10 passed."
+  "2026-08-07T18:33:24.929Z","harness:codex","Closure evidence: linked suite passed 10/10 in an isolated schema tracker; contracts snapshot current; SDK public surface current with an explicit reviewed compatibility acknowledgment; docs link gate passed; full real-process output verified command_exit_contracts for update-many."
+  "2026-08-07T18:44:48.409Z","harness:codex","Full-suite correction evidence: the initial 6961-test coverage run exposed four intentional contract assertions. Moved the new SDK module into sdk/cli-contracts to restore the 120-file directory cap; updated canonical 0-7 mapping; partial close now asserts exit 7; an all-row strict-validation failure now exits 5 dependency_failed rather than being mislabeled successful no_effect. Focused regression set passes 98/98 and SDK surface is current."
+  "2026-08-07T19:40:42.068Z","harness:codex","Final local acceptance evidence: packed @unbrained/pm-cli 2026.8.7 into an unrelated temporary workspace; npx and bunx both reported 2026.8.7; init/create/TOON get/full contracts and SDK subpath import passed; real update-many returned 6/no_effect for zero matches and 7/partial_effect for one real plus one missing id. Repository coverage is exact 100/100/100/100 across 6966 tests; contracts, SDK surface, package artifact, security scans, changelog, and deterministic lint gates passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-07T18:33:23.829Z","harness:codex",Group commands sharing an exit set in contracts output instead of repeating arrays per command; the SDK resolver can remain per-command while the agent-facing projection stays token efficient.
+files[18]{path,scope,note}:
+  sdk/public-surface.json,project,Reviewed SDK compatibility snapshot
+  src/cli/main.ts,project,Exit and effect contract implementation
+  src/core/output/output.ts,project,Exit and effect contract implementation
+  src/core/shared/constants.ts,project,Exit and effect contract implementation
+  src/sdk/cli-contracts/command-exit-contracts.ts,project,Generated exit and effect contract implementation
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Exit and effect contract implementation
+  src/sdk/contracts.ts,project,Exit and effect contract implementation
+  src/sdk/index.ts,project,Exit and effect contract implementation
+  src/sdk/lifecycle/close-many.ts,project,Exit and effect contract implementation
+  src/sdk/lifecycle/update-many.ts,project,Exit and effect contract implementation
+  tests/fixtures/contracts/full.json,project,Generated full contracts snapshot
+  tests/integration/command-exit-effect-contract.spec.ts,project,TDD and conformance coverage
+  tests/unit/cli/command-exit-telemetry.spec.ts,project,TDD and conformance coverage
+  tests/unit/commands/close-command.spec.ts,project,Bulk full partial and failed process exit regression coverage
+  tests/unit/core/output/command-exit-code.spec.ts,project,TDD and conformance coverage
+  tests/unit/core/shared/shared-constants-errors.spec.ts,project,Canonical process exit vocabulary coverage
+  tests/unit/sdk/command-exit-contracts.spec.ts,project,TDD and conformance coverage
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,TDD and conformance coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/command-exit-contracts.spec.ts tests/unit/cli/command-exit-telemetry.spec.ts tests/unit/core/output/command-exit-code.spec.ts tests/integration/command-exit-effect-contract.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msja8tnx-iehei9,test,passed,"2026-08-07T18:32:42.704Z","2026-08-07T18:33:00.717Z","2026-08-07T18:33:00.717Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated release record for command exit effect contracts
+  docs/SCRIPTING.md,project,Canonical shell exit and effect semantics
+close_reason: Generated exit sets now cover every core command; effect-aware bulk commands distinguish 0/6/7 in shell and structured receipts; contracts output SDK telemetry scripting docs conformance gates and temporary-directory acceptance are complete.
 body: ""

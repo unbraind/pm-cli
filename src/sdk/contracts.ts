@@ -4,6 +4,7 @@
  * Exposes command and action contract data without loading SDK runtime code.
  */
 export * from "./cli-contracts.js";
+export * from "./cli-contracts/command-exit-contracts.js";
 export * from "./context-intent-contracts.js";
 export * from "./error-code-catalog.js";
 export * from "./generated-error-code-catalog.js";

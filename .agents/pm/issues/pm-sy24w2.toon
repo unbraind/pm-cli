@@ -1,0 +1,29 @@
+id: pm-sy24w2
+title: "GH-930: duplicates --status all silently scans zero items"
+description: Core duplicates accepts the natural all-status sentinel as a literal status and returns a false-clean zero-item scan instead of inspecting all lifecycle states or refusing invalid input.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-07T19:42:18.033Z"
+updated_at: "2026-08-07T19:47:13.693Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Core duplicates treats --status all as explicit no restriction with candidate-count parity to an omitted filter; configured status validation still rejects unknown values; structured cost and filter receipts expose the effective selection; CLI SDK contracts docs and negative tests prevent another false-clean zero-scan regression.
+parent: pm-n7rr
+risk: medium
+confidence: high
+severity: high
+environment: @unbrained/pm-cli 2026.8.7 with project extensions enabled or disabled
+repro_steps: Compare pm duplicates --status all --threshold 0.82 --limit 100 with the same command omitting --status; the former reports cost.item_count=0 while the latter reports the full tracker count.
+expected_result: Explicit all-status duplicate scans inspect the same complete lifecycle corpus as the unfiltered command and cannot silently degrade to zero candidates.
+actual_result: "On 2026.8.7 explicit all reports cost.item_count=0 while omission reports the full tracker, both with exit 0."
+customer_impact: Agents receive an exit-0 false-clean duplicate audit and can create duplicate work despite following the required all-status workflow.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-i02t,verifies,"2026-08-07T19:42:18.033Z","harness:codex","cli:create:dep",detected
+  pm-mp49,discovered_from,"2026-08-07T19:42:18.033Z","harness:codex","cli:create:dep",detected
+  pm-n7rr,implements,"2026-08-07T19:42:18.033Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-07T19:42:18.033Z","harness:codex","Duplicate check 2026-08-07: searched all PM statuses for GH-930, duplicates status all, unknown status, and zero-item duplicate scans. Closed pm-mp49 fixed the package-owned dedupe-audit rejection path and pm-i02t covers list/search all-status semantics; neither covers the core duplicates false-clean acceptance regression, so this distinct item preserves those typed relationships."
+  "2026-08-07T19:42:58.576Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/930; backlink comment: https://github.com/unbraind/pm-cli/issues/930#issuecomment-5221326386."
+body: ""

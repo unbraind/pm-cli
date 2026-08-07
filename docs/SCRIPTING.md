@@ -1,6 +1,6 @@
 # CLI Scripting Contract
 
-Tracked by [pm-psy1](../.agents/pm/tasks/pm-psy1.toon), [pm-gknu](../.agents/pm/issues/pm-gknu.toon), [pm-999jh7](../.agents/pm/issues/pm-999jh7.toon), and [pm-srns](../.agents/pm/issues/pm-srns.toon).
+Tracked by [pm-psy1](../.agents/pm/tasks/pm-psy1.toon), [pm-hqa8g1](../.agents/pm/tasks/pm-hqa8g1.toon), [pm-gknu](../.agents/pm/issues/pm-gknu.toon), [pm-999jh7](../.agents/pm/issues/pm-999jh7.toon), and [pm-srns](../.agents/pm/issues/pm-srns.toon).
 
 Use this contract when composing `pm` with shells, CI runners, `jq`, or another process. Exact flags remain discoverable from `pm <command> --help --json` and `pm contracts --command <command> --flags-only --json`.
 
@@ -14,6 +14,32 @@ Use this contract when composing `pm` with shells, CI runners, `jq`, or another 
 | `3`  | Requested tracker or resource was not found.                                     | Correct the path or ID.                              |
 | `4`  | State or concurrency conflict.                                                   | Refresh live state before deciding whether to retry. |
 | `5`  | A required dependency operation failed.                                          | Inspect the dependency evidence before retrying.     |
+| `6`  | The request succeeded but matched nothing to change.                              | Treat as success and inspect the effect receipt.      |
+| `7`  | The request succeeded and changed only part of the selected targets.              | Treat as success and inspect unmatched/skipped rows.  |
+
+Exits `0`, `6`, and `7` are successful outcomes. Bulk mutation envelopes repeat
+the distinction as `outcome: effect`, `outcome: no_effect`, or `outcome:
+partial_effect` with the same `exit_code`. Because POSIX shells treat every
+nonzero exit as a false condition, scripts invoking effect-aware bulk commands
+must preserve and classify the status explicitly rather than relying on a bare
+`if` condition:
+
+```bash
+set +e
+result=$(pm update-many --ids "$ids" --tags reviewed --json)
+status=$?
+set -e
+
+case "$status" in
+  0|6|7) printf '%s\n' "$result" | jq '{outcome, matched_count, updated_count}' ;;
+  *)     printf '%s\n' "pm update-many failed with exit $status" >&2; exit "$status" ;;
+esac
+```
+
+The generated contract is authoritative. `pm contracts --command update-many
+--full --json` returns `command_exit_contracts.vocabulary` and the selected
+command's exhaustive `exit_codes`; SDK consumers can use the same declarations
+and `isPmSuccessfulExitCode` from `@unbrained/pm-cli/sdk/contracts`.
 
 Successful structured results are written to stdout. Diagnostics, warnings, profiles, and errors are written to stderr so `--json`, `--format ndjson`, CSV, and table stdout remain pipe-safe. Never merge stderr into stdout before parsing structured output.
 

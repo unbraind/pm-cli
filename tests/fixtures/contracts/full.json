@@ -1042,6 +1042,206 @@
       "canonical": "package"
     }
   ],
+  "command_exit_contracts": {
+    "command_sets": [
+      {
+        "commands": [
+          "activity",
+          "aggregate",
+          "append",
+          "claim",
+          "close",
+          "close-task",
+          "comments",
+          "config",
+          "context",
+          "contracts",
+          "copy",
+          "create",
+          "ctx",
+          "delete",
+          "deps",
+          "docs",
+          "duplicates",
+          "eval",
+          "event",
+          "events",
+          "extension",
+          "extension activate",
+          "extension adopt",
+          "extension adopt-all",
+          "extension catalog",
+          "extension deactivate",
+          "extension describe",
+          "extension doctor",
+          "extension explore",
+          "extension init",
+          "extension install",
+          "extension manage",
+          "extension migrate",
+          "extension reload",
+          "extension uninstall",
+          "files",
+          "focus",
+          "gc",
+          "get",
+          "graph",
+          "health",
+          "help",
+          "history",
+          "history-author-acknowledge",
+          "history-compact",
+          "history-redact",
+          "history-repair",
+          "init",
+          "install",
+          "item",
+          "item complete",
+          "item mutate",
+          "learnings",
+          "list",
+          "list-all",
+          "list-blocked",
+          "list-canceled",
+          "list-closed",
+          "list-draft",
+          "list-in-progress",
+          "list-open",
+          "meet",
+          "merge",
+          "next",
+          "notes",
+          "package",
+          "package activate",
+          "package adopt",
+          "package adopt-all",
+          "package catalog",
+          "package deactivate",
+          "package describe",
+          "package doctor",
+          "package explore",
+          "package init",
+          "package install",
+          "package manage",
+          "package migrate",
+          "package reload",
+          "package uninstall",
+          "packages",
+          "packages activate",
+          "packages adopt",
+          "packages adopt-all",
+          "packages catalog",
+          "packages deactivate",
+          "packages describe",
+          "packages doctor",
+          "packages explore",
+          "packages init",
+          "packages install",
+          "packages manage",
+          "packages migrate",
+          "packages reload",
+          "packages uninstall",
+          "pause-task",
+          "plan",
+          "profile",
+          "release",
+          "remind",
+          "restore",
+          "schema",
+          "search",
+          "start-task",
+          "stats",
+          "telemetry",
+          "test",
+          "test-all",
+          "update",
+          "upgrade",
+          "validate",
+          "workspace",
+          "workspace snapshot",
+          "workspace snapshot create",
+          "workspace snapshot delete",
+          "workspace snapshot inspect",
+          "workspace snapshot list",
+          "workspace snapshot restore"
+        ],
+        "exit_codes": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "commands": [
+          "close-many",
+          "update-many"
+        ],
+        "exit_codes": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    ],
+    "vocabulary": [
+      {
+        "exit_code": 0,
+        "meaning": "The requested operation completed with its intended effect.",
+        "outcome": "effect",
+        "success": true
+      },
+      {
+        "exit_code": 1,
+        "meaning": "An unexpected runtime or internal failure prevented completion.",
+        "outcome": "internal_failure",
+        "success": false
+      },
+      {
+        "exit_code": 2,
+        "meaning": "The invocation was refused because its input or composition was invalid.",
+        "outcome": "refused_input",
+        "success": false
+      },
+      {
+        "exit_code": 3,
+        "meaning": "The requested tracker, item, or resource was not present.",
+        "outcome": "refused_tracker_state",
+        "success": false
+      },
+      {
+        "exit_code": 4,
+        "meaning": "Current state or concurrency prevented the requested effect.",
+        "outcome": "conflict",
+        "success": false
+      },
+      {
+        "exit_code": 5,
+        "meaning": "A required dependency operation failed.",
+        "outcome": "dependency_failed",
+        "success": false
+      },
+      {
+        "exit_code": 6,
+        "meaning": "The request was valid and completed, but matched nothing to change.",
+        "outcome": "no_effect",
+        "success": true
+      },
+      {
+        "exit_code": 7,
+        "meaning": "The request completed and changed some, but not all, selected targets.",
+        "outcome": "partial_effect",
+        "success": true
+      }
+    ]
+  },
   "command_flags": [
     {
       "command": "activity",
@@ -13320,6 +13520,8 @@
   ],
   "error_codes": [
     {
+      "aliases": [],
+      "canonical_code": "acceptance_criteria_semicolon_forbidden",
       "class": "usage",
       "code": "acceptance_criteria_semicolon_forbidden",
       "emitting_commands": [
@@ -13334,6 +13536,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "already_claimed_by",
       "class": "conflict",
       "code": "already_claimed_by",
       "emitting_commands": [
@@ -13348,6 +13552,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "ambiguous_list_all",
       "class": "usage",
       "code": "ambiguous_list_all",
       "emitting_commands": [
@@ -13362,6 +13568,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "ambiguous_option_combination",
       "class": "usage",
       "code": "ambiguous_option_combination",
       "emitting_commands": [
@@ -13376,6 +13584,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "annotation_flag_like_value",
       "class": "usage",
       "code": "annotation_flag_like_value",
       "emitting_commands": [
@@ -13390,6 +13600,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "annotation_message_without_text",
       "class": "usage",
       "code": "annotation_message_without_text",
       "emitting_commands": [
@@ -13404,6 +13616,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "append_empty_body",
       "class": "usage",
       "code": "append_empty_body",
       "emitting_commands": [
@@ -13418,6 +13632,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "body_file_conflicts_with_body",
       "class": "usage",
       "code": "body_file_conflicts_with_body",
       "emitting_commands": [
@@ -13432,6 +13648,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "body_file_missing_path",
       "class": "usage",
       "code": "body_file_missing_path",
       "emitting_commands": [
@@ -13446,6 +13664,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "body_file_unreadable",
       "class": "not_found",
       "code": "body_file_unreadable",
       "emitting_commands": [
@@ -13460,6 +13680,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "bundle_integrity_torn_install",
       "class": "generic_failure",
       "code": "bundle_integrity_torn_install",
       "emitting_commands": [
@@ -13474,6 +13696,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "capability_undeclared",
       "class": "generic_failure",
       "code": "capability_undeclared",
       "emitting_commands": [
@@ -13488,6 +13712,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "capability_unused",
       "class": "generic_failure",
       "code": "capability_unused",
       "emitting_commands": [
@@ -13502,6 +13728,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "child_projection_item_bound_exceeded",
       "class": "generic_failure",
       "code": "child_projection_item_bound_exceeded",
       "emitting_commands": [
@@ -13516,6 +13744,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "close_reason_required",
       "class": "usage",
       "code": "close_reason_required",
       "emitting_commands": [
@@ -13532,6 +13762,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "close_through_update",
       "class": "generic_failure",
       "code": "close_through_update",
       "emitting_commands": [
@@ -13546,6 +13778,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "close_validation_missing_fields",
       "class": "usage",
       "code": "close_validation_missing_fields",
       "emitting_commands": [
@@ -13560,6 +13794,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "collected_zero_items",
       "class": "generic_failure",
       "code": "collected_zero_items",
       "emitting_commands": [
@@ -13574,6 +13810,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "command_failed",
       "class": "generic_failure",
       "code": "command_failed",
       "emitting_commands": [
@@ -13588,6 +13826,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "command_namespace",
       "class": "usage",
       "code": "command_namespace",
       "emitting_commands": [
@@ -13602,6 +13842,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "command_override_conflict",
       "class": "conflict",
       "code": "command_override_conflict",
       "emitting_commands": [
@@ -13616,6 +13858,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "config_duplicate",
       "class": "generic_failure",
       "code": "config_duplicate",
       "emitting_commands": [
@@ -13630,6 +13874,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "config_key_unknown",
       "class": "usage",
       "code": "config_key_unknown",
       "emitting_commands": [
@@ -13644,6 +13890,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "config_value_invalid",
       "class": "usage",
       "code": "config_value_invalid",
       "emitting_commands": [
@@ -13658,6 +13906,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "conflicting_lifecycle_owner",
       "class": "usage",
       "code": "conflicting_lifecycle_owner",
       "emitting_commands": [
@@ -13672,6 +13922,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "context_takes_no_item_argument",
       "class": "generic_failure",
       "code": "context_takes_no_item_argument",
       "emitting_commands": [
@@ -13686,6 +13938,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "core_item_field_requires_dedicated_flag",
       "class": "usage",
       "code": "core_item_field_requires_dedicated_flag",
       "emitting_commands": [
@@ -13700,6 +13954,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "create_positional_type_without_title",
       "class": "usage",
       "code": "create_positional_type_without_title",
       "emitting_commands": [
@@ -13714,6 +13970,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "dependency_edge_not_allowed",
       "class": "usage",
       "code": "dependency_edge_not_allowed",
       "emitting_commands": [
@@ -13728,6 +13986,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "duplicate_command",
       "class": "generic_failure",
       "code": "duplicate_command",
       "emitting_commands": [
@@ -13742,6 +14002,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "duplicate_edge",
       "class": "generic_failure",
       "code": "duplicate_edge",
       "emitting_commands": [
@@ -13756,6 +14018,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "duplicate_sweep_cost_limit",
       "class": "conflict",
       "code": "duplicate_sweep_cost_limit",
       "emitting_commands": [
@@ -13770,6 +14034,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "duplicate_target_circular",
       "class": "usage",
       "code": "duplicate_target_circular",
       "emitting_commands": [
@@ -13784,6 +14050,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "duplicate_target_is_duplicate",
       "class": "usage",
       "code": "duplicate_target_is_duplicate",
       "emitting_commands": [
@@ -13798,6 +14066,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "duplicate_target_missing",
       "class": "usage",
       "code": "duplicate_target_missing",
       "emitting_commands": [
@@ -13812,6 +14082,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "duplicate_target_self",
       "class": "usage",
       "code": "duplicate_target_self",
       "emitting_commands": [
@@ -13826,6 +14098,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "empty_surface",
       "class": "generic_failure",
       "code": "empty_surface",
       "emitting_commands": [
@@ -13840,6 +14114,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "event_cursor_query_mismatch",
       "class": "usage",
       "code": "event_cursor_query_mismatch",
       "emitting_commands": [
@@ -13854,6 +14130,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "event_index_unavailable",
       "class": "generic_failure",
       "code": "event_index_unavailable",
       "emitting_commands": [
@@ -13868,6 +14146,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_command_activation_failed",
       "class": "generic_failure",
       "code": "extension_command_activation_failed",
       "emitting_commands": [
@@ -13882,6 +14162,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_dependency_name_unsafe",
       "class": "usage",
       "code": "extension_dependency_name_unsafe",
       "emitting_commands": [
@@ -13896,6 +14178,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_dependency_spec_invalid",
       "class": "usage",
       "code": "extension_dependency_spec_invalid",
       "emitting_commands": [
@@ -13910,6 +14194,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_dependency_version_unsafe",
       "class": "usage",
       "code": "extension_dependency_version_unsafe",
       "emitting_commands": [
@@ -13924,6 +14210,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_install_soft_failed",
       "class": "generic_failure",
       "code": "extension_install_soft_failed",
       "emitting_commands": [
@@ -13938,6 +14226,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_install_source_contains_destination",
       "class": "usage",
       "code": "extension_install_source_contains_destination",
       "emitting_commands": [
@@ -13952,6 +14242,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_item_field_reserved",
       "class": "usage",
       "code": "extension_item_field_reserved",
       "emitting_commands": [
@@ -13966,6 +14258,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_item_field_type_conflict",
       "class": "usage",
       "code": "extension_item_field_type_conflict",
       "emitting_commands": [
@@ -13980,6 +14274,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_item_field_unknown",
       "class": "usage",
       "code": "extension_item_field_unknown",
       "emitting_commands": [
@@ -13994,6 +14290,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_mutation_guard_failed",
       "class": "conflict",
       "code": "extension_mutation_guard_failed",
       "emitting_commands": [
@@ -14008,6 +14306,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_mutation_guard_invalid_decision",
       "class": "conflict",
       "code": "extension_mutation_guard_invalid_decision",
       "emitting_commands": [
@@ -14022,6 +14322,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_mutation_guard_invalid_denial",
       "class": "conflict",
       "code": "extension_mutation_guard_invalid_denial",
       "emitting_commands": [
@@ -14036,6 +14338,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_mutation_guard_timed_out",
       "class": "conflict",
       "code": "extension_mutation_guard_timed_out",
       "emitting_commands": [
@@ -14050,6 +14354,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "extension_update_health_partial_coverage",
       "class": "generic_failure",
       "code": "extension_update_health_partial_coverage",
       "emitting_commands": [
@@ -14064,6 +14370,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "field_duplicate",
       "class": "generic_failure",
       "code": "field_duplicate",
       "emitting_commands": [
@@ -14078,6 +14386,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "field_invalid",
       "class": "usage",
       "code": "field_invalid",
       "emitting_commands": [
@@ -14092,6 +14402,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "field_mcp_input_collision",
       "class": "generic_failure",
       "code": "field_mcp_input_collision",
       "emitting_commands": [
@@ -14106,6 +14418,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "github_source_entry_unbuilt",
       "class": "usage",
       "code": "github_source_entry_unbuilt",
       "emitting_commands": [
@@ -14120,6 +14434,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_author_acknowledge_required_values_missing",
       "class": "usage",
       "code": "history_author_acknowledge_required_values_missing",
       "emitting_commands": [
@@ -14134,6 +14450,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_author_acknowledge_selector_conflict",
       "class": "usage",
       "code": "history_author_acknowledge_selector_conflict",
       "emitting_commands": [
@@ -14148,6 +14466,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_author_acknowledge_selector_required",
       "class": "usage",
       "code": "history_author_acknowledge_selector_required",
       "emitting_commands": [
@@ -14162,6 +14482,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_author_acknowledge_target_not_actionable",
       "class": "usage",
       "code": "history_author_acknowledge_target_not_actionable",
       "emitting_commands": [
@@ -14176,6 +14498,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_author_acknowledge_target_unreadable",
       "class": "usage",
       "code": "history_author_acknowledge_target_unreadable",
       "emitting_commands": [
@@ -14190,6 +14514,10 @@
       "stability": "provisional"
     },
     {
+      "aliases": [
+        "validate_history_drift_chain_mismatches"
+      ],
+      "canonical_code": "history_drift_chain_mismatch",
       "class": "generic_failure",
       "code": "history_drift_chain_mismatch",
       "emitting_commands": [
@@ -14204,6 +14532,10 @@
       "stability": "stable"
     },
     {
+      "aliases": [
+        "validate_history_drift_hash_mismatches"
+      ],
+      "canonical_code": "history_drift_hash_mismatch",
       "class": "generic_failure",
       "code": "history_drift_hash_mismatch",
       "emitting_commands": [
@@ -14218,6 +14550,10 @@
       "stability": "stable"
     },
     {
+      "aliases": [
+        "validate_history_drift_missing_streams"
+      ],
+      "canonical_code": "history_drift_missing_stream",
       "class": "generic_failure",
       "code": "history_drift_missing_stream",
       "emitting_commands": [
@@ -14232,6 +14568,10 @@
       "stability": "stable"
     },
     {
+      "aliases": [
+        "validate_history_drift_unreadable_streams"
+      ],
+      "canonical_code": "history_drift_unreadable_stream",
       "class": "generic_failure",
       "code": "history_drift_unreadable_stream",
       "emitting_commands": [
@@ -14246,6 +14586,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "merge_conflict_markers_detected",
       "class": "generic_failure",
       "code": "history_merge_conflict_markers_detected",
       "emitting_commands": [
@@ -14260,6 +14602,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_stream_over_compact_threshold",
       "class": "generic_failure",
       "code": "history_stream_over_compact_threshold",
       "emitting_commands": [
@@ -14274,6 +14618,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_target_out_of_range",
       "class": "generic_failure",
       "code": "history_target_out_of_range",
       "emitting_commands": [
@@ -14288,6 +14634,10 @@
       "stability": "stable"
     },
     {
+      "aliases": [
+        "validate_history_unknown_author_events"
+      ],
+      "canonical_code": "history_unknown_author_events",
       "class": "usage",
       "code": "history_unknown_author_events",
       "emitting_commands": [
@@ -14302,6 +14652,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "improvement_metric_contract_conflict",
       "class": "conflict",
       "code": "improvement_metric_contract_conflict",
       "emitting_commands": [
@@ -14316,6 +14668,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "improvement_observation_conflict",
       "class": "conflict",
       "code": "improvement_observation_conflict",
       "emitting_commands": [
@@ -14330,6 +14684,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "init_existing_settings_requires_force",
       "class": "usage",
       "code": "init_existing_settings_requires_force",
       "emitting_commands": [
@@ -14344,6 +14700,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "init_gitignore_unwritable",
       "class": "generic_failure",
       "code": "init_gitignore_unwritable",
       "emitting_commands": [
@@ -14358,6 +14716,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "init_id_prefix_conflict",
       "class": "usage",
       "code": "init_id_prefix_conflict",
       "emitting_commands": [
@@ -14372,6 +14732,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "init_id_prefix_path_like",
       "class": "usage",
       "code": "init_id_prefix_path_like",
       "emitting_commands": [
@@ -14386,6 +14748,10 @@
       "stability": "stable"
     },
     {
+      "aliases": [
+        "validate_storage_history_conflict_markers"
+      ],
+      "canonical_code": "integrity_history_conflict_marker",
       "class": "conflict",
       "code": "integrity_history_conflict_marker",
       "emitting_commands": [
@@ -14400,6 +14766,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "integrity_history_invalid_json",
       "class": "usage",
       "code": "integrity_history_invalid_json",
       "emitting_commands": [
@@ -14414,6 +14782,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "integrity_history_unreadable",
       "class": "generic_failure",
       "code": "integrity_history_unreadable",
       "emitting_commands": [
@@ -14428,6 +14798,10 @@
       "stability": "stable"
     },
     {
+      "aliases": [
+        "validate_format_version_ahead_items"
+      ],
+      "canonical_code": "integrity_item_ahead_format_version",
       "class": "generic_failure",
       "code": "integrity_item_ahead_format_version",
       "emitting_commands": [
@@ -14442,6 +14816,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "integrity_item_conflict_marker",
       "class": "conflict",
       "code": "integrity_item_conflict_marker",
       "emitting_commands": [
@@ -14456,6 +14832,10 @@
       "stability": "stable"
     },
     {
+      "aliases": [
+        "validate_format_version_outdated_items"
+      ],
+      "canonical_code": "integrity_item_outdated_format_version",
       "class": "generic_failure",
       "code": "integrity_item_outdated_format_version",
       "emitting_commands": [
@@ -14470,6 +14850,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "integrity_item_parse_failed",
       "class": "generic_failure",
       "code": "integrity_item_parse_failed",
       "emitting_commands": [
@@ -14484,6 +14866,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "integrity_item_unreadable",
       "class": "generic_failure",
       "code": "integrity_item_unreadable",
       "emitting_commands": [
@@ -14498,6 +14882,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_argument_value",
       "class": "usage",
       "code": "invalid_argument_value",
       "emitting_commands": [
@@ -14516,6 +14902,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_command_usage",
       "class": "usage",
       "code": "invalid_command_usage",
       "emitting_commands": [
@@ -14531,6 +14919,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_event_cursor",
       "class": "usage",
       "code": "invalid_event_cursor",
       "emitting_commands": [
@@ -14545,6 +14935,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_event_follow_interval",
       "class": "usage",
       "code": "invalid_event_follow_interval",
       "emitting_commands": [
@@ -14559,6 +14951,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_event_limit",
       "class": "usage",
       "code": "invalid_event_limit",
       "emitting_commands": [
@@ -14573,6 +14967,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_event_since",
       "class": "usage",
       "code": "invalid_event_since",
       "emitting_commands": [
@@ -14587,6 +14983,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_history_analytics_limit",
       "class": "usage",
       "code": "invalid_history_analytics_limit",
       "emitting_commands": [
@@ -14601,6 +14999,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_history_analytics_minimum_sample",
       "class": "usage",
       "code": "invalid_history_analytics_minimum_sample",
       "emitting_commands": [
@@ -14615,6 +15015,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_history_analytics_since",
       "class": "usage",
       "code": "invalid_history_analytics_since",
       "emitting_commands": [
@@ -14629,6 +15031,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_improvement_ledger",
       "class": "generic_failure",
       "code": "invalid_improvement_ledger",
       "emitting_commands": [
@@ -14643,6 +15047,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_improvement_metric",
       "class": "usage",
       "code": "invalid_improvement_metric",
       "emitting_commands": [
@@ -14657,6 +15063,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_improvement_observation",
       "class": "usage",
       "code": "invalid_improvement_observation",
       "emitting_commands": [
@@ -14671,6 +15079,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_improvement_observation_limit",
       "class": "usage",
       "code": "invalid_improvement_observation_limit",
       "emitting_commands": [
@@ -14685,6 +15095,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_improvement_observation_timestamp",
       "class": "usage",
       "code": "invalid_improvement_observation_timestamp",
       "emitting_commands": [
@@ -14699,6 +15111,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_provenance_predicate",
       "class": "usage",
       "code": "invalid_provenance_predicate",
       "emitting_commands": [
@@ -14713,6 +15127,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_query_cursor",
       "class": "usage",
       "code": "invalid_query_cursor",
       "emitting_commands": [
@@ -14727,6 +15143,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_read_output_session",
       "class": "usage",
       "code": "invalid_read_output_session",
       "emitting_commands": [
@@ -14741,6 +15159,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "invalid_workspace_snapshot_target",
       "class": "usage",
       "code": "invalid_workspace_snapshot_target",
       "emitting_commands": [
@@ -14755,6 +15175,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "item_document_invalid",
       "class": "generic_failure",
       "code": "item_document_invalid",
       "emitting_commands": [
@@ -14769,6 +15191,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "item_document_roundtrip_failed",
       "class": "generic_failure",
       "code": "item_document_roundtrip_failed",
       "emitting_commands": [
@@ -14783,6 +15207,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "item_id_collision",
       "class": "conflict",
       "code": "item_id_collision",
       "emitting_commands": [
@@ -14797,6 +15223,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "item_not_found",
       "class": "not_found",
       "code": "item_not_found",
       "emitting_commands": [
@@ -14812,6 +15240,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "likely_duplicate",
       "class": "conflict",
       "code": "likely_duplicate",
       "emitting_commands": [
@@ -14826,6 +15256,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "linked_test_value_not_quoted",
       "class": "generic_failure",
       "code": "linked_test_value_not_quoted",
       "emitting_commands": [
@@ -14840,6 +15272,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "list_source_incomplete",
       "class": "generic_failure",
       "code": "list_source_incomplete",
       "emitting_commands": [
@@ -14854,6 +15288,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "local_package_archive_unsafe",
       "class": "usage",
       "code": "local_package_archive_unsafe",
       "emitting_commands": [
@@ -14868,6 +15304,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "local_source_not_found_bare_name",
       "class": "not_found",
       "code": "local_source_not_found_bare_name",
       "emitting_commands": [
@@ -14882,6 +15320,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "lock_conflict",
       "class": "conflict",
       "code": "lock_conflict",
       "emitting_commands": [
@@ -14898,6 +15338,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "locks_stale_count",
       "class": "generic_failure",
       "code": "locks_stale_count",
       "emitting_commands": [
@@ -14912,6 +15354,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "locks_unreadable",
       "class": "generic_failure",
       "code": "locks_unreadable",
       "emitting_commands": [
@@ -14926,6 +15370,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "malformed_plan_step_evidence",
       "class": "usage",
       "code": "malformed_plan_step_evidence",
       "emitting_commands": [
@@ -14940,6 +15386,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "manifest_capabilities_absent",
       "class": "generic_failure",
       "code": "manifest_capabilities_absent",
       "emitting_commands": [
@@ -14954,6 +15402,10 @@
       "stability": "stable"
     },
     {
+      "aliases": [
+        "history_merge_conflict_markers_detected"
+      ],
+      "canonical_code": "merge_conflict_markers_detected",
       "class": "generic_failure",
       "code": "merge_conflict_markers_detected",
       "emitting_commands": [
@@ -14968,6 +15420,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "merge_git_config_unwritable",
       "class": "dependency_failed",
       "code": "merge_git_config_unwritable",
       "emitting_commands": [
@@ -14982,6 +15436,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "merge_root_not_found",
       "class": "not_found",
       "code": "merge_root_not_found",
       "emitting_commands": [
@@ -14996,6 +15452,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "missing_directory",
       "class": "generic_failure",
       "code": "missing_directory",
       "emitting_commands": [
@@ -15010,6 +15468,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "missing_lifecycle_target",
       "class": "usage",
       "code": "missing_lifecycle_target",
       "emitting_commands": [
@@ -15024,6 +15484,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "missing_required_argument",
       "class": "usage",
       "code": "missing_required_argument",
       "emitting_commands": [
@@ -15043,6 +15505,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "missing_required_option",
       "class": "usage",
       "code": "missing_required_option",
       "emitting_commands": [
@@ -15063,6 +15527,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "module_import_failed",
       "class": "generic_failure",
       "code": "module_import_failed",
       "emitting_commands": [
@@ -15077,6 +15543,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "multi_target_github_install_ambiguous",
       "class": "usage",
       "code": "multi_target_github_install_ambiguous",
       "emitting_commands": [
@@ -15091,6 +15559,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "mutation_author_required",
       "class": "usage",
       "code": "mutation_author_required",
       "emitting_commands": [
@@ -15105,6 +15575,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "mutation_secret_guard_blocked",
       "class": "conflict",
       "code": "mutation_secret_guard_blocked",
       "emitting_commands": [
@@ -15119,6 +15591,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "no_matching_tests",
       "class": "generic_failure",
       "code": "no_matching_tests",
       "emitting_commands": [
@@ -15133,6 +15607,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "no_projects_matched_filters",
       "class": "generic_failure",
       "code": "no_projects_matched_filters",
       "emitting_commands": [
@@ -15147,6 +15623,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "no_test_files_found",
       "class": "generic_failure",
       "code": "no_test_files_found",
       "emitting_commands": [
@@ -15161,6 +15639,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "no_tests_found",
       "class": "generic_failure",
       "code": "no_tests_found",
       "emitting_commands": [
@@ -15175,6 +15655,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "no_update_fields",
       "class": "generic_failure",
       "code": "no_update_fields",
       "emitting_commands": [
@@ -15190,6 +15672,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "npm_package_not_found",
       "class": "not_found",
       "code": "npm_package_not_found",
       "emitting_commands": [
@@ -15204,6 +15688,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "ownership_conflict",
       "class": "conflict",
       "code": "ownership_conflict",
       "emitting_commands": [
@@ -15220,6 +15706,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "ownership_dependency_bypass_restricted_options",
       "class": "generic_failure",
       "code": "ownership_dependency_bypass_restricted_options",
       "emitting_commands": [
@@ -15234,6 +15722,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "ownership_metadata_bypass_restricted_options",
       "class": "generic_failure",
       "code": "ownership_metadata_bypass_restricted_options",
       "emitting_commands": [
@@ -15248,6 +15738,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "package_spec_empty",
       "class": "generic_failure",
       "code": "package_spec_empty",
       "emitting_commands": [
@@ -15262,6 +15754,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "profile_name_empty",
       "class": "generic_failure",
       "code": "profile_name_empty",
       "emitting_commands": [
@@ -15276,6 +15770,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "profile_name_not_normalized",
       "class": "generic_failure",
       "code": "profile_name_not_normalized",
       "emitting_commands": [
@@ -15290,6 +15786,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "profile_summary_empty",
       "class": "generic_failure",
       "code": "profile_summary_empty",
       "emitting_commands": [
@@ -15304,6 +15802,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "profile_title_empty",
       "class": "generic_failure",
       "code": "profile_title_empty",
       "emitting_commands": [
@@ -15318,6 +15818,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "redundant_edge",
       "class": "generic_failure",
       "code": "redundant_edge",
       "emitting_commands": [
@@ -15332,6 +15834,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "reindex_already_running",
       "class": "conflict",
       "code": "reindex_already_running",
       "emitting_commands": [
@@ -15346,6 +15850,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "reserved_item_field",
       "class": "generic_failure",
       "code": "reserved_item_field",
       "emitting_commands": [
@@ -15360,6 +15866,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "schema_migration_input_required",
       "class": "usage",
       "code": "schema_migration_input_required",
       "emitting_commands": [
@@ -15374,6 +15882,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "settings_read_fs_error",
       "class": "generic_failure",
       "code": "settings_read_fs_error",
       "emitting_commands": [
@@ -15388,6 +15898,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "settings_read_invalid_json",
       "class": "usage",
       "code": "settings_read_invalid_json",
       "emitting_commands": [
@@ -15402,6 +15914,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "settings_read_invalid_schema",
       "class": "usage",
       "code": "settings_read_invalid_schema",
       "emitting_commands": [
@@ -15416,6 +15930,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "settings_read_merge_failed",
       "class": "generic_failure",
       "code": "settings_read_merge_failed",
       "emitting_commands": [
@@ -15430,6 +15946,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "status_duplicate",
       "class": "generic_failure",
       "code": "status_duplicate",
       "emitting_commands": [
@@ -15444,6 +15962,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "status_invalid",
       "class": "usage",
       "code": "status_invalid",
       "emitting_commands": [
@@ -15458,6 +15978,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "stdin_json_invalid",
       "class": "usage",
       "code": "stdin_json_invalid",
       "emitting_commands": [
@@ -15472,6 +15994,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "stdin_json_unknown_key",
       "class": "usage",
       "code": "stdin_json_unknown_key",
       "emitting_commands": [
@@ -15486,6 +16010,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "structured_event_immutable",
       "class": "usage",
       "code": "structured_event_immutable",
       "emitting_commands": [
@@ -15500,6 +16026,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "structured_event_input_conflict",
       "class": "usage",
       "code": "structured_event_input_conflict",
       "emitting_commands": [
@@ -15514,6 +16042,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "structured_event_json_empty",
       "class": "usage",
       "code": "structured_event_json_empty",
       "emitting_commands": [
@@ -15528,6 +16058,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "structured_event_json_invalid",
       "class": "usage",
       "code": "structured_event_json_invalid",
       "emitting_commands": [
@@ -15542,6 +16074,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "structured_event_since_invalid",
       "class": "usage",
       "code": "structured_event_since_invalid",
       "emitting_commands": [
@@ -15556,6 +16090,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "telemetry_endpoint_probe_failed",
       "class": "generic_failure",
       "code": "telemetry_endpoint_probe_failed",
       "emitting_commands": [
@@ -15570,6 +16106,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "telemetry_endpoint_probe_http_status",
       "class": "generic_failure",
       "code": "telemetry_endpoint_probe_http_status",
       "emitting_commands": [
@@ -15584,6 +16122,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "telemetry_otel_export_failing",
       "class": "generic_failure",
       "code": "telemetry_otel_export_failing",
       "emitting_commands": [
@@ -15598,6 +16138,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "telemetry_queue_high_retries",
       "class": "generic_failure",
       "code": "telemetry_queue_high_retries",
       "emitting_commands": [
@@ -15612,6 +16154,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "telemetry_queue_invalid_rows",
       "class": "usage",
       "code": "telemetry_queue_invalid_rows",
       "emitting_commands": [
@@ -15626,6 +16170,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "telemetry_queue_pending",
       "class": "generic_failure",
       "code": "telemetry_queue_pending",
       "emitting_commands": [
@@ -15640,6 +16186,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "telemetry_schema_version_behind",
       "class": "generic_failure",
       "code": "telemetry_schema_version_behind",
       "emitting_commands": [
@@ -15654,6 +16202,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "telemetry_state_invalid_json",
       "class": "usage",
       "code": "telemetry_state_invalid_json",
       "emitting_commands": [
@@ -15668,6 +16218,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "template_type_unknown",
       "class": "usage",
       "code": "template_type_unknown",
       "emitting_commands": [
@@ -15682,6 +16234,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "terminal_plan_mutation",
       "class": "conflict",
       "code": "terminal_plan_mutation",
       "emitting_commands": [
@@ -15696,6 +16250,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "terminal_state_conflict",
       "class": "conflict",
       "code": "terminal_state_conflict",
       "emitting_commands": [
@@ -15710,6 +16266,10 @@
       "stability": "stable"
     },
     {
+      "aliases": [
+        "validate_storage_tracked_runtime_cache_files"
+      ],
+      "canonical_code": "tracked_runtime_cache_files",
       "class": "generic_failure",
       "code": "tracked_runtime_cache_files",
       "emitting_commands": [
@@ -15724,6 +16284,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "tracker_not_initialized",
       "class": "generic_failure",
       "code": "tracker_not_initialized",
       "emitting_commands": [
@@ -15739,6 +16301,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "tracker_root_missing",
       "class": "not_found",
       "code": "tracker_root_missing",
       "emitting_commands": [
@@ -15753,6 +16317,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "tracker_root_not_directory",
       "class": "usage",
       "code": "tracker_root_not_directory",
       "emitting_commands": [
@@ -15767,6 +16333,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "type_duplicate",
       "class": "generic_failure",
       "code": "type_duplicate",
       "emitting_commands": [
@@ -15781,6 +16349,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "type_invalid",
       "class": "usage",
       "code": "type_invalid",
       "emitting_commands": [
@@ -15795,6 +16365,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_command",
       "class": "usage",
       "code": "unknown_command",
       "emitting_commands": [
@@ -15811,6 +16383,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_context_intent",
       "class": "usage",
       "code": "unknown_context_intent",
       "emitting_commands": [
@@ -15825,6 +16399,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_error",
       "class": "generic_failure",
       "code": "unknown_error",
       "emitting_commands": [
@@ -15839,6 +16415,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_field",
       "class": "not_found",
       "code": "unknown_field",
       "emitting_commands": [
@@ -15853,6 +16431,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_field_projection",
       "class": "usage",
       "code": "unknown_field_projection",
       "emitting_commands": [
@@ -15869,6 +16449,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_item_type",
       "class": "not_found",
       "code": "unknown_item_type",
       "emitting_commands": [
@@ -15883,6 +16465,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_lifecycle_action",
       "class": "usage",
       "code": "unknown_lifecycle_action",
       "emitting_commands": [
@@ -15897,6 +16481,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_option",
       "class": "usage",
       "code": "unknown_option",
       "emitting_commands": [
@@ -15912,6 +16498,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_plan_template",
       "class": "usage",
       "code": "unknown_plan_template",
       "emitting_commands": [
@@ -15926,6 +16514,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_provenance_dimension",
       "class": "usage",
       "code": "unknown_provenance_dimension",
       "emitting_commands": [
@@ -15940,6 +16530,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_status",
       "class": "not_found",
       "code": "unknown_status",
       "emitting_commands": [
@@ -15954,6 +16546,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unknown_subcommand",
       "class": "usage",
       "code": "unknown_subcommand",
       "emitting_commands": [
@@ -15971,6 +16565,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "unsupported_update_option",
       "class": "generic_failure",
       "code": "unsupported_update_option",
       "emitting_commands": [
@@ -15985,6 +16581,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_command_references_stale_pm_ids",
       "class": "generic_failure",
       "code": "validate_command_references_stale_pm_ids",
       "emitting_commands": [
@@ -15999,6 +16597,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_files_missing_linked_paths",
       "class": "generic_failure",
       "code": "validate_files_missing_linked_paths",
       "emitting_commands": [
@@ -16013,6 +16613,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_files_orphaned_paths",
       "class": "generic_failure",
       "code": "validate_files_orphaned_paths",
       "emitting_commands": [
@@ -16027,6 +16629,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_files_tracked_all_strict_forces_pm_internals",
       "class": "generic_failure",
       "code": "validate_files_tracked_all_strict_forces_pm_internals",
       "emitting_commands": [
@@ -16041,6 +16645,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "integrity_item_ahead_format_version",
       "class": "generic_failure",
       "code": "validate_format_version_ahead_items",
       "emitting_commands": [
@@ -16055,6 +16661,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "integrity_item_outdated_format_version",
       "class": "generic_failure",
       "code": "validate_format_version_outdated_items",
       "emitting_commands": [
@@ -16069,6 +16677,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_hierarchy_parent_cycle",
       "class": "generic_failure",
       "code": "validate_hierarchy_parent_cycle",
       "emitting_commands": [
@@ -16083,6 +16693,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_hierarchy_parent_cycle_error",
       "class": "generic_failure",
       "code": "validate_hierarchy_parent_cycle_error",
       "emitting_commands": [
@@ -16097,6 +16709,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_drift_chain_mismatch",
       "class": "generic_failure",
       "code": "validate_history_drift_chain_mismatches",
       "emitting_commands": [
@@ -16111,6 +16725,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_drift_hash_mismatch",
       "class": "generic_failure",
       "code": "validate_history_drift_hash_mismatches",
       "emitting_commands": [
@@ -16125,6 +16741,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_drift_missing_stream",
       "class": "generic_failure",
       "code": "validate_history_drift_missing_streams",
       "emitting_commands": [
@@ -16139,6 +16757,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_drift_unreadable_stream",
       "class": "generic_failure",
       "code": "validate_history_drift_unreadable_streams",
       "emitting_commands": [
@@ -16153,6 +16773,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_unknown_author_events",
       "class": "usage",
       "code": "validate_history_unknown_author_events",
       "emitting_commands": [
@@ -16167,6 +16789,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_lifecycle_active_closure_like_metadata",
       "class": "generic_failure",
       "code": "validate_lifecycle_active_closure_like_metadata",
       "emitting_commands": [
@@ -16181,6 +16805,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_lifecycle_active_terminal_parent",
       "class": "generic_failure",
       "code": "validate_lifecycle_active_terminal_parent",
       "emitting_commands": [
@@ -16195,6 +16821,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_lifecycle_dependency_cycles",
       "class": "generic_failure",
       "code": "validate_lifecycle_dependency_cycles",
       "emitting_commands": [
@@ -16209,6 +16837,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_lifecycle_dependency_cycles_error",
       "class": "generic_failure",
       "code": "validate_lifecycle_dependency_cycles_error",
       "emitting_commands": [
@@ -16223,6 +16853,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_lifecycle_stale_blockers",
       "class": "generic_failure",
       "code": "validate_lifecycle_stale_blockers",
       "emitting_commands": [
@@ -16237,6 +16869,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_merge_fence_drift",
       "class": "generic_failure",
       "code": "validate_merge_fence_drift",
       "emitting_commands": [
@@ -16251,6 +16885,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_metadata_custom_profile_missing_required_fields",
       "class": "usage",
       "code": "validate_metadata_custom_profile_missing_required_fields",
       "emitting_commands": [
@@ -16265,6 +16901,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_metadata_duplicate_issue_codes",
       "class": "generic_failure",
       "code": "validate_metadata_duplicate_issue_codes",
       "emitting_commands": [
@@ -16279,6 +16917,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_metadata_missing_acceptance_criteria",
       "class": "generic_failure",
       "code": "validate_metadata_missing_acceptance_criteria",
       "emitting_commands": [
@@ -16293,6 +16933,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_metadata_missing_close_reason",
       "class": "generic_failure",
       "code": "validate_metadata_missing_close_reason",
       "emitting_commands": [
@@ -16307,6 +16949,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_metadata_missing_confidence",
       "class": "generic_failure",
       "code": "validate_metadata_missing_confidence",
       "emitting_commands": [
@@ -16321,6 +16965,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_metadata_missing_estimate",
       "class": "generic_failure",
       "code": "validate_metadata_missing_estimate",
       "emitting_commands": [
@@ -16335,6 +16981,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_metadata_missing_release",
       "class": "generic_failure",
       "code": "validate_metadata_missing_release",
       "emitting_commands": [
@@ -16349,6 +16997,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_metadata_missing_reviewer",
       "class": "generic_failure",
       "code": "validate_metadata_missing_reviewer",
       "emitting_commands": [
@@ -16363,6 +17013,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_metadata_missing_risk",
       "class": "generic_failure",
       "code": "validate_metadata_missing_risk",
       "emitting_commands": [
@@ -16377,6 +17029,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_metadata_missing_sprint",
       "class": "generic_failure",
       "code": "validate_metadata_missing_sprint",
       "emitting_commands": [
@@ -16391,6 +17045,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_resolution_missing_fields",
       "class": "generic_failure",
       "code": "validate_resolution_missing_fields",
       "emitting_commands": [
@@ -16405,6 +17061,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_storage_duplicate_item_ids",
       "class": "generic_failure",
       "code": "validate_storage_duplicate_item_ids",
       "emitting_commands": [
@@ -16419,6 +17077,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "integrity_history_conflict_marker",
       "class": "conflict",
       "code": "validate_storage_history_conflict_markers",
       "emitting_commands": [
@@ -16433,6 +17093,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_storage_resurrected_items",
       "class": "generic_failure",
       "code": "validate_storage_resurrected_items",
       "emitting_commands": [
@@ -16447,6 +17109,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "tracked_runtime_cache_files",
       "class": "generic_failure",
       "code": "validate_storage_tracked_runtime_cache_files",
       "emitting_commands": [
@@ -16461,6 +17125,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_storage_unparseable_config",
       "class": "generic_failure",
       "code": "validate_storage_unparseable_config",
       "emitting_commands": [
@@ -16475,6 +17141,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_storage_unparseable_history",
       "class": "generic_failure",
       "code": "validate_storage_unparseable_history",
       "emitting_commands": [
@@ -16489,6 +17157,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "validate_storage_unreadable_items",
       "class": "generic_failure",
       "code": "validate_storage_unreadable_items",
       "emitting_commands": [
@@ -16503,6 +17173,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "vectorization_embedding_identity_changed",
       "class": "generic_failure",
       "code": "vectorization_embedding_identity_changed",
       "emitting_commands": [
@@ -16517,6 +17189,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "vectorization_stale_items_remaining",
       "class": "generic_failure",
       "code": "vectorization_stale_items_remaining",
       "emitting_commands": [
@@ -16531,6 +17205,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "workflow_duplicate_type",
       "class": "generic_failure",
       "code": "workflow_duplicate_type",
       "emitting_commands": [
@@ -16545,6 +17221,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "workflow_status_unknown",
       "class": "usage",
       "code": "workflow_status_unknown",
       "emitting_commands": [
@@ -16559,6 +17237,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "workflow_transition_malformed",
       "class": "generic_failure",
       "code": "workflow_transition_malformed",
       "emitting_commands": [
@@ -16573,6 +17253,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "workflow_type_empty",
       "class": "generic_failure",
       "code": "workflow_type_empty",
       "emitting_commands": [
@@ -16587,6 +17269,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "workflow_type_unknown",
       "class": "usage",
       "code": "workflow_type_unknown",
       "emitting_commands": [
@@ -16601,6 +17285,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "workspace_history_state_conflict",
       "class": "conflict",
       "code": "workspace_history_state_conflict",
       "emitting_commands": [
@@ -16615,6 +17301,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "workspace_root_pm_path",
       "class": "usage",
       "code": "workspace_root_pm_path",
       "emitting_commands": [
@@ -16629,6 +17317,8 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "workspace_snapshot_force_required",
       "class": "usage",
       "code": "workspace_snapshot_force_required",
       "emitting_commands": [
@@ -16643,6 +17333,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "workspace_snapshot_manifest_mismatch",
       "class": "conflict",
       "code": "workspace_snapshot_manifest_mismatch",
       "emitting_commands": [
@@ -16657,6 +17349,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "workspace_snapshot_name_reserved_fingerprint",
       "class": "usage",
       "code": "workspace_snapshot_name_reserved_fingerprint",
       "emitting_commands": [
@@ -16671,6 +17365,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "workspace_snapshot_not_found",
       "class": "not_found",
       "code": "workspace_snapshot_not_found",
       "emitting_commands": [
@@ -16685,6 +17381,8 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "wrong_item_type",
       "class": "usage",
       "code": "wrong_item_type",
       "emitting_commands": [
