@@ -12,6 +12,7 @@
 
 ### Other
 
+- Floor polarity for the tracker measurement ratchet, with graph edge and node floors declared ([pm-z0cfor](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-z0cfor.toon))
 - Refresh tsx to 4.23.11 with full release-gate proof ([pm-nw1y14](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-nw1y14.toon))
 
 ## 2026.8.7 - 2026-08-07

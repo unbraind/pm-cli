@@ -1,0 +1,26 @@
+id: pm-4vz6mz
+title: "The relationship graph's only automated reader is a nine-field census with no structural property, so the deepest enforceable statement about an 11,291-edge record is that every active item has two edges"
+description: "This project ships sixteen relationship-graph subcommands: ancestors, descendants, predecessors, successors, paths, impact, analyze, audit, communities, redundancy, dominators, slack, centrality, articulation, plan, and index. Measured 2026-08-07, exactly one of them is read by any automated surface. `graph audit` is invoked four times from scripts/release/tracker-measurement-gate.mjs. The other fifteen have zero references in scripts/, zero in .github/, and between one and six mentions in docs/ each. Nothing runs them in CI, no gate consumes their output, and no test asserts anything about what they compute.\n\nThe single consumer reads the audit's `profile` object, and that object exposes nine fields: nodes, edges, edge_basis, edges_by_kind, active_nodes, missing_nodes, isolated_active_nodes, degree_leq_one_active_nodes, and coverage_by_type. Eight are counts and one is a per-type coverage map. None is a structural property. The two that come closest are degree measures at the very bottom of the scale: whether an active item has zero edges, and whether it has at most one.\n\nSo the deepest enforceable statement this project can make about a record of 2,365 nodes and 11,291 deduplicated directed edges is that every active item has at least two edges. A record in which every item carries exactly one parent edge and one sibling edge passes every check that runs, and is indistinguishable by any automated means from one carrying a ten-layer typed lineage with a traversable strategic ladder. Betweenness, dominance, articulation, slack, community structure, redundancy, critical path and layer depth are all computed correctly by the product, printed to a terminal, and read by nothing.\n\nThat is why the outcome-ladder gap went two weeks without being produced by anything. It is not that the check was scoped to active items by oversight; it is that no check could have expressed the property at all, because the only graph surface any check reads cannot name it.\n\nThe stated purpose of the relationship graph is that the project, with its whole timeline and history, can be understood by running graph algorithms over the record. The algorithms exist and are correct. The enrichment that feeds them is authored deliberately, pass after pass. Neither half is joined to an enforcement surface, so the quality of the record's structure is currently unfalsifiable."
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:ci",gate,governance,graph,measurement
+created_at: "2026-08-07T17:12:24.771Z"
+updated_at: "2026-08-07T17:12:24.771Z"
+author: "harness:claude-code"
+estimated_minutes: 360
+acceptance_criteria: "At least one structural graph property beyond a degree count is computed by an automated surface and compared against a declaration, so a record whose lineage collapses to a spine fails rather than passes; The audit profile exposes the structural properties the graph analytics already compute, so a consumer does not have to re-run and re-parse a second subcommand to reach them; Every graph subcommand either has a named automated consumer or is recorded as deliberately interactive-only, and the classification is data rather than an absence of references; The typed reachability of terminal items to an outcome is measured over the whole record rather than the active scope, so a property that only holds for the current frontier cannot report as satisfied; A negative control proves the new structural check fails on a record whose typed relationships have been stripped to a spine"
+parent: pm-96h7
+risk: high
+confidence: high
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4k6b,related,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
+  pm-bzmeaa,related,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
+  pm-flnefm,related,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
+  pm-g4k74y,blocked_by,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
+  pm-h6b73t,discovered_from,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
+  pm-jkbqt8,related,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
+  pm-mfy1ux,related,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
+  pm-t4d7nz,implements,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
+body: ""

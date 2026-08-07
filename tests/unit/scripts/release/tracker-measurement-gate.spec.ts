@@ -34,6 +34,9 @@ interface GateModule {
     declaration: unknown,
     measurements: Record<string, Map<string, number>>,
   ) => { observed?: number; error?: string };
+  resolveDeclaredBound: (
+    declaration: unknown,
+  ) => { polarity: string; value: unknown } | null;
   evaluateDeclarations: (input: {
     declarations: unknown;
     measurements: Record<string, Map<string, number>>;
@@ -531,6 +534,123 @@ describe("tracker measurement gate: evaluation", () => {
   });
 });
 
+describe("tracker measurement gate: floor polarity", () => {
+  const measurements = () => ({
+    dependency_kind: new Map([["blocks", 3]]),
+    validate_warning: new Map(),
+    graph_profile: new Map([["edges", 3]]),
+  });
+  const FLOOR = {
+    id: "edge-floor",
+    owner: "pm-owner",
+    selector: { source: "graph_profile", field: "edges" },
+    floor: 3,
+  };
+  const owners = () => new Map([["pm-owner", "open"]]);
+
+  it("resolves exactly one declared polarity and refuses zero or both", async () => {
+    const { module } = await loadGate();
+    expect(module.resolveDeclaredBound({ ceiling: 4 })).toEqual({ polarity: "ceiling", value: 4 });
+    expect(module.resolveDeclaredBound({ floor: 7 })).toEqual({ polarity: "floor", value: 7 });
+    expect(module.resolveDeclaredBound({ ceiling: 1, floor: 1 })).toBeNull();
+    expect(module.resolveDeclaredBound({})).toBeNull();
+    expect(module.resolveDeclaredBound(undefined)).toBeNull();
+  });
+
+  it("passes a property at its declared floor and fails one that fell below it", async () => {
+    const { module } = await loadGate();
+    const atFloor = module.evaluateDeclarations({
+      declarations: [FLOOR],
+      measurements: measurements(),
+      ownerStatuses: owners(),
+    });
+    expect(atFloor.violations).toHaveLength(0);
+    expect(atFloor.observations[0]).toMatchObject({
+      observed: 3,
+      ok: true,
+      reason: "within_floor",
+      polarity: "floor",
+    });
+
+    const undercut = module.evaluateDeclarations({
+      declarations: [{ ...FLOOR, floor: 5 }],
+      measurements: measurements(),
+      ownerStatuses: owners(),
+    });
+    expect(undercut.violations).toHaveLength(1);
+    const rendered = module.formatViolation(undercut.violations[0]);
+    expect(rendered).toContain("declared floor 5");
+    expect(rendered).toContain("-2 since it was filed");
+    expect(rendered).toContain("floor_undercut");
+  });
+
+  it("never attributes contributors to a floor violation", async () => {
+    const { module } = await loadGate();
+    // Contributor rows are read from the record as it stands, so they can name
+    // what was added past a ceiling and can never name what was removed.
+    const result = module.evaluateDeclarations({
+      declarations: [{ ...FLOOR, floor: 9 }],
+      measurements: measurements(),
+      ownerStatuses: owners(),
+      contributors: new Map([["graph_profile:edges", [{ item_id: "pm-new" }]]]),
+    });
+    expect(result.violations[0].contributors).toBeUndefined();
+    expect(result.violations[0].contributor_count).toBeUndefined();
+    expect(module.formatViolation(result.violations[0])).not.toContain("mutations:");
+  });
+
+  it("fails a declaration with no polarity and one whose floor is not a count", async () => {
+    const { module } = await loadGate();
+    const noPolarity = module.evaluateDeclarations({
+      declarations: [{ id: "none", owner: "pm-owner", selector: FLOOR.selector }],
+      measurements: measurements(),
+      ownerStatuses: owners(),
+    });
+    expect(noPolarity.violations[0].reason).toBe("bound_polarity_not_declared");
+
+    const bothPolarities = module.evaluateDeclarations({
+      declarations: [{ ...FLOOR, ceiling: 1 }],
+      measurements: measurements(),
+      ownerStatuses: owners(),
+    });
+    expect(bothPolarities.violations[0].reason).toBe("bound_polarity_not_declared");
+
+    const badFloor = module.evaluateDeclarations({
+      declarations: [{ ...FLOOR, floor: -1 }, { ...FLOOR, floor: 1.5 }],
+      measurements: measurements(),
+      ownerStatuses: owners(),
+    });
+    expect(badFloor.violations).toHaveLength(2);
+    expect(badFloor.violations[0].reason).toBe("floor_not_a_count");
+  });
+
+  it("ratchets a floor upward toward observation and never lowers one", async () => {
+    const { module } = await loadGate();
+    const document = {
+      version: 1,
+      declarations: [
+        { id: "a", floor: 1 },
+        { id: "b", floor: 4 },
+        { id: "c", floor: 1, measured_on: "2026-08-03" },
+      ],
+    };
+    const updated = module.buildUpdatedDeclarations(
+      document,
+      {
+        observations: [
+          { id: "a", observed: 6, retired: false },
+          { id: "b", observed: 2, retired: false },
+          { id: "c", observed: 1, retired: false },
+        ],
+      },
+      "2026-08-04",
+    );
+    expect(updated.declarations[0]).toEqual({ id: "a", floor: 6, measured_on: "2026-08-04" });
+    expect(updated.declarations[1]).toEqual({ id: "b", floor: 4, measured_on: undefined });
+    expect(updated.declarations[2]).toEqual({ id: "c", floor: 1, measured_on: "2026-08-03" });
+  });
+});
+
 describe("tracker measurement gate: tracker access", () => {
   it("collects only the measurements the declared selectors need", async () => {
     const { module, spawnSync } = await loadGate({ spawn: trackerSpawn() });
@@ -810,7 +930,7 @@ describe("tracker measurement gate: entrypoint", () => {
     });
     expect(() => module.main(["--declarations", declarationsPath])).toThrow("EXIT:1");
     expect(errorText(stderr)).toContain("Tracker measurement ratchet failed");
-    expect(errorText(stderr)).toContain("A filed measurement is a ceiling");
+    expect(errorText(stderr)).toContain("A filed measurement is a ratchet");
     expect(exit).toHaveBeenCalledWith(1);
   });
 
@@ -908,7 +1028,9 @@ describe("tracker measurement gate: entrypoint", () => {
     };
     const { module, exit, rmSync, stderr } = await loadGate({ spawn });
     expect(() => module.runNegativeControl(new Map())).toThrow("EXIT:1");
-    expect(errorText(stderr)).toContain("negative control did not fail");
+    // The seeded workspace carries no dependency row, so the floor control still
+    // fires and only the ceiling half goes undetected — the gate must name which.
+    expect(errorText(stderr)).toContain("negative control did not report ceiling_exceeded");
     expect(exit).toHaveBeenCalledWith(1);
     expect(rmSync).toHaveBeenCalledWith(expect.stringContaining("pm-tracker-ratchet-fixed"), {
       recursive: true,

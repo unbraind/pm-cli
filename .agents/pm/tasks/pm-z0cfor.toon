@@ -1,0 +1,34 @@
+id: pm-z0cfor
+title: "Floor polarity for the tracker measurement ratchet, with graph edge and node floors declared"
+description: "Add the second polarity to the tracker measurement ratchet so a declaration can guard a property whose good direction is up, and declare the first two floors.\n\nDelivered in scripts/release/tracker-measurement-gate.mjs: a `resolveDeclaredBound` helper that accepts exactly one of `ceiling` or `floor` and refuses zero or both; a `bound_polarity_not_declared` refusal for an ambiguous declaration and a `floor_not_a_count` refusal mirroring the existing ceiling check; `floor_undercut` and `within_floor` evaluation reasons; a floor branch in the re-baseline path that takes the maximum of declared and observed so a floor rises toward observation and is never lowered; a violation line that names its polarity and renders the shortfall as a negative distance; and a negative control that now proves both polarities fail, because a control that exercises one direction leaves the other a hypothesis.\n\nContributor attribution is deliberately restricted to ceiling violations. Contributor rows are read from the record as it stands, so they can name the mutations that pushed a population past a ceiling and can never name rows that were deleted below a floor. Claiming otherwise would be the more useful-looking behaviour and would be wrong.\n\nTwo floors declared in scripts/release/tracker-measurements.json: total deduplicated directed relationship edges, owned by pm-96h7, and total graph nodes, owned by pm-o2kc. Both were baselined from the gate's own commit view via --update at 11,318 edges and 2,368 nodes."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:ci",gate,governance,measurement
+created_at: "2026-08-07T17:21:22.188Z"
+updated_at: "2026-08-07T17:21:38.661Z"
+closed_at: "2026-08-07T17:21:38.596Z"
+completed_at: "2026-08-07T17:21:38.596Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "A declaration may carry a floor, and an observed value below it fails the gate with a distinct reason; The re-baseline path raises a floor and never lowers it, mirroring the ceiling path in the opposite direction; The negative control proves both a ceiling violation and a floor violation fail; Total deduplicated directed edges and total graph nodes are declared as floors from a commit-view measurement"
+parent: pm-g4k74y
+risk: medium
+confidence: high
+resolution: "The ratchet now enforces two directions. scripts/release/tracker-measurement-gate.mjs gained resolveDeclaredBound, the bound_polarity_not_declared and floor_not_a_count refusals, floor_undercut and within_floor reasons, a Math.max re-baseline branch for floors, a polarity-naming violation line, and a negative control that proves both directions fail. scripts/release/tracker-measurements.json declares graph-profile-edges-floor at 11,318 owned by pm-96h7 and graph-profile-nodes-floor at 2,368 owned by pm-o2kc, both baselined from the gate's own commit view."
+expected_result: "A declaration guarding a property whose good direction is up fails when the property falls, and re-baselining cannot be used to accept the regression."
+actual_result: "Verified locally: the dual negative control reports ceiling_exceeded at declared 0 observed 1 and floor_undercut at declared floor 2 observed 1, and exits 0 only when both fire. The full check passes with 26 enforced and 0 retired over 2,365 items in a commit view of 6,025 committable files. The spec runs 46 tests green at 100 percent statements, branches, functions and lines over the gate script."
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4vz6mz,related,"2026-08-07T17:21:22.188Z","harness:claude-code","cli:create:dep",detected
+  pm-96h7,related,"2026-08-07T17:21:22.188Z","harness:claude-code","cli:create:dep",detected
+  pm-g4k74y,implements,"2026-08-07T17:21:22.188Z","harness:claude-code","cli:create:dep",detected
+  pm-ips23h,discovered_from,"2026-08-07T17:21:22.188Z","harness:claude-code","cli:create:dep",detected
+  pm-o2kc,related,"2026-08-07T17:21:22.188Z","harness:claude-code","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-08-07T17:21:22.188Z","harness:claude-code","cli:create:dep",detected
+files[2]{path,scope}:
+  scripts/release/tracker-measurement-gate.mjs,project
+  scripts/release/tracker-measurements.json,project
+tests[1]{command,scope}:
+  tests/unit/scripts/release/tracker-measurement-gate.spec.ts,project
+close_reason: Floor polarity shipped with both negative controls green and the first two floors declared.
+body: ""

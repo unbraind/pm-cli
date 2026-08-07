@@ -1,0 +1,25 @@
+id: pm-431035
+title: "The durable graph index is keyed by query shape and excluded from version control, so every clone, CI job and agent worktree pays a full exact-Brandes rebuild that does not survive the declared scale tiers"
+description: "`pm graph` maintains a durable index whose cache entries are keyed by query shape, and the index directory is excluded from version control. Both facts are individually reasonable and together they mean the cost every fresh reader pays is the cold cost, never the warm one.\n\nMeasured 2026-08-07 against the live tracker at 2,365 nodes and 11,291 deduplicated directed edges. With the index cleared, `pm graph centrality` takes 7,023 ms. Warm, the same call takes 804 to 1,204 ms. The first call carrying a `--kind` selection not already cached takes 6,430 ms, and the identical call repeated takes 1,180 ms. Clearing the index and issuing five distinct kind selections produces exactly five cache entries, so a shape is a cache key. Nothing bounds the entry count, and the selectable shape space is combinatorial: ten registered edge kinds already present in the record give a thousand-odd subsets before `--max-depth`, `--direction` and `--limit` multiply it.\n\nThe index reports `min_items_threshold: 500` and `persist_enabled: true`, and it lives under a path matched by .gitignore. Every clone, every CI job, every agent worktree and every container therefore begins with zero entries, so the seven-second path is the path automation always takes and the one-second path is only ever reached by a maintainer who has already asked the same question in the same working copy.\n\nThe algorithm underneath is exact Brandes betweenness, documented as such in src/sdk/graph/centrality.ts. That is theta of V times E. The declared scale tiers in scripts/bench/scale-workspace.mjs are 10,000, 100,000 and 1,000,000 items, and the graph fixture in scripts/benchmarks/graph-adapter-scale.mjs defaults to a million nodes. Exact betweenness does not survive those tiers: the cold cost grows with the product of nodes and edges, so a corpus two orders of magnitude larger than today's is four orders of magnitude more work. `--limit` bounds the returned rows and not the computation, so a caller who asks for ten rows still pays for all of them.\n\nNothing measures any of this. `centrality` appears in no script and no workflow. The token budget gate covers list, get, context and search and no graph subcommand. There is no declared time budget, no approximation or sampling path, no warm-cache precondition stated anywhere, and the million-node fixture that exists is never pointed at an analytic."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:sdk",graph,performance,scale
+created_at: "2026-08-07T17:12:55.432Z"
+updated_at: "2026-08-07T17:12:55.432Z"
+author: "harness:claude-code"
+estimated_minutes: 420
+acceptance_criteria: "Every graph analytic declares a cost class and a bound, and a call whose corpus would exceed the bound is refused or served by a declared approximation rather than run to completion silently; An analytic that cannot be exact at the declared scale tiers has a sampled or approximate path, and the served envelope states which one answered so a reader never mistakes an estimate for an exact value; The cold and warm cost of each analytic is measured by a benchmark at more than one scale tier, and the million-item fixture that already exists is pointed at the analytics rather than only at adapter synchronization; Durable index entries are bounded by an explicit policy, and the entry count and its eviction rule are readable rather than implied by cache growth; A row bound never implies a compute bound: either --limit reduces the work performed, or the envelope states that it does not"
+parent: pm-9rxu
+risk: high
+confidence: high
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4k6b,related,"2026-08-07T17:12:55.432Z","harness:claude-code","cli:create:dep",detected
+  pm-4vz6mz,discovered_from,"2026-08-07T17:12:55.432Z","harness:claude-code","cli:create:dep",detected
+  pm-5t33or,related,"2026-08-07T17:12:55.432Z","harness:claude-code","cli:create:dep",detected
+  pm-9rgaal,implements,"2026-08-07T17:12:55.432Z","harness:claude-code","cli:create:dep",detected
+  pm-e5yupa,related,"2026-08-07T17:12:55.432Z","harness:claude-code","cli:create:dep",detected
+  pm-mfy1ux,related,"2026-08-07T17:12:55.432Z","harness:claude-code","cli:create:dep",detected
+  pm-o87av6,implements,"2026-08-07T17:12:55.432Z","harness:claude-code","cli:create:dep",detected
+  pm-sf31yl,related,"2026-08-07T17:12:55.432Z","harness:claude-code","cli:create:dep",detected
+body: ""

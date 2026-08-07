@@ -11,12 +11,20 @@
 // attention is on the affected items.
 //
 // This gate closes that loop. Each declaration names the item that owns the
-// defect, a selector that recomputes the population from tracked data, and the
-// count that was filed. An observed count above its declared ceiling fails the
-// build and names the owner, the selector, both counts, and the overshoot.
+// property, a selector that recomputes the population from tracked data, and the
+// count that was filed. A declaration is enforced in one of two directions and
+// a violation names the owner, the selector, both counts, and the distance.
 //
-// Ceilings retire themselves: when the owning item reaches a terminal status its
-// declaration stops being enforced, so no ceiling outlives the defect it guards
+// A `ceiling` guards a defect population: observed above declared fails. A
+// `floor` guards a deliberately authored property: observed below declared
+// fails (pm-g4k74y). Without the second polarity the gate could state that a
+// defect may not grow and could not state that the typed relationship structure
+// this project spends every maintenance pass authoring may not be destroyed —
+// and `--dep-remove` deletes every row matching its selector, so a mass deletion
+// would have read as an improvement in every ceiling simultaneously.
+//
+// Bounds retire themselves: when the owning item reaches a terminal status its
+// declaration stops being enforced, so no bound outlives the property it guards
 // and honest work never needs a waiver to close.
 //
 //   node scripts/release/tracker-measurement-gate.mjs                   # check (default)
@@ -81,8 +89,38 @@ export const EXHAUSTIVE_SELECTOR_SOURCES = Object.freeze([
 /** Stable severity ordering used to ratchet `pm health` check statuses. */
 export const HEALTH_STATUS_SEVERITY = Object.freeze({ ok: 0, warn: 1, error: 2 });
 
-/** Owner statuses that retire a ceiling because the defect it guards is finished. */
+/** Owner statuses that retire a bound because the property it guards is finished. */
 export const TERMINAL_OWNER_STATUSES = Object.freeze(["closed", "canceled"]);
+
+/**
+ * Directions a declaration may be enforced in.
+ *
+ * A `ceiling` guards a defect population, whose good direction is down. A
+ * `floor` guards a quality property, whose good direction is up. Both are
+ * ratchets and neither may be relaxed by `--update`; the difference is only
+ * which side of the declared number the violation lies on. Without the second
+ * polarity the gate can state that a defect may not grow and cannot state that
+ * a deliberately authored structure may not be destroyed (pm-g4k74y).
+ */
+export const BOUND_POLARITIES = Object.freeze(["ceiling", "floor"]);
+
+/**
+ * Resolve the single bound a declaration is enforced against.
+ *
+ * Exactly one polarity may be declared. Declaring both would let a population
+ * be pinned to a range, which no owning item has ever filed and which would
+ * make `--update` ambiguous; declaring neither leaves nothing to compare.
+ */
+export function resolveDeclaredBound(declaration) {
+  const declared = BOUND_POLARITIES.filter((polarity) =>
+    Object.hasOwn(declaration ?? {}, polarity),
+  );
+  if (declared.length !== 1) {
+    return null;
+  }
+  const polarity = declared[0];
+  return { polarity, value: declaration[polarity] };
+}
 
 /**
  * Count stored dependency rows per kind across a tracker item collection.
@@ -276,8 +314,16 @@ function resolveNonComparableObservation(base, ownerStatus, result) {
   if (base.retired) {
     return { ...base, observed: result.observed, ok: true, reason: "retired_with_owner" };
   }
-  if (!Number.isInteger(base.ceiling) || base.ceiling < 0) {
-    return { ...base, observed: result.observed, ok: false, reason: "ceiling_not_a_count" };
+  if (base.polarity === null) {
+    return { ...base, observed: result.observed, ok: false, reason: "bound_polarity_not_declared" };
+  }
+  if (!Number.isInteger(base.bound) || base.bound < 0) {
+    return {
+      ...base,
+      observed: result.observed,
+      ok: false,
+      reason: `${base.polarity}_not_a_count`,
+    };
   }
   return null;
 }
@@ -285,11 +331,15 @@ function resolveNonComparableObservation(base, ownerStatus, result) {
 /** Evaluate one declaration against its measured count and owning lifecycle state. */
 function evaluateDeclaration(declaration, measurements, ownerStatuses, contributors) {
   const ownerStatus = ownerStatuses?.get?.(declaration?.owner);
+  const bound = resolveDeclaredBound(declaration);
   const base = {
     id: declaration?.id,
     owner: declaration?.owner,
     selector: formatSelector(declaration?.selector),
     ceiling: declaration?.ceiling,
+    floor: declaration?.floor,
+    polarity: bound?.polarity ?? null,
+    bound: bound?.value,
     owner_status: ownerStatus ?? null,
     retired: TERMINAL_OWNER_STATUSES.includes(ownerStatus),
   };
@@ -298,21 +348,42 @@ function evaluateDeclaration(declaration, measurements, ownerStatuses, contribut
   if (nonComparable !== null) {
     return nonComparable;
   }
-  const ceiling = base.ceiling;
-  const exceeded = result.observed > ceiling;
-  const contributionRows = contributors?.get?.(base.selector) ?? [];
-  const overshoot = result.observed - ceiling;
+  const outcome = resolveBoundOutcome(base.polarity, result.observed, base.bound);
   return {
     ...base,
     observed: result.observed,
-    ok: !exceeded,
-    reason: exceeded ? "ceiling_exceeded" : "within_ceiling",
-    ...(exceeded
-      ? {
-          contributor_count: contributionRows.length,
-          contributors: contributionRows.slice(0, Math.min(overshoot, 8)),
-        }
-      : {}),
+    ok: !outcome.violated,
+    reason: outcome.reason,
+    ...resolveContribution(base, outcome, result.observed, contributors),
+  };
+}
+
+/** Compare an observation against its bound in the declared direction. */
+function resolveBoundOutcome(polarity, observed, bound) {
+  if (polarity === "ceiling") {
+    const violated = observed > bound;
+    return { violated, reason: violated ? "ceiling_exceeded" : "within_ceiling", overshoot: observed - bound };
+  }
+  const violated = observed < bound;
+  return { violated, reason: violated ? "floor_undercut" : "within_floor", overshoot: bound - observed };
+}
+
+/**
+ * Attach the mutations that pushed a ceiling past its declaration.
+ *
+ * Contributor rows are read from the record as it stands, so they can name what
+ * was added above a ceiling and can never name what was removed below a floor.
+ * Attaching them to a floor violation would be the more useful-looking
+ * behaviour and would attribute a deletion to whichever rows survived it.
+ */
+function resolveContribution(base, outcome, observed, contributors) {
+  if (!outcome.violated || base.polarity !== "ceiling") {
+    return {};
+  }
+  const rows = contributors?.get?.(base.selector) ?? [];
+  return {
+    contributor_count: rows.length,
+    contributors: rows.slice(0, Math.min(outcome.overshoot, 8)),
   };
 }
 
@@ -364,7 +435,9 @@ export function formatViolation(observation) {
   const overshoot =
     observation.reason === "ceiling_exceeded"
       ? ` (+${String(observation.observed - observation.ceiling)} since it was filed)`
-      : "";
+      : observation.reason === "floor_undercut"
+        ? ` (-${String(observation.floor - observation.observed)} since it was filed)`
+        : "";
   const contributorRows = Array.isArray(observation.contributors) ? observation.contributors : [];
   const contributors = contributorRows
     .map(
@@ -373,7 +446,14 @@ export function formatViolation(observation) {
     )
     .join("; ");
   const contributorSuffix = contributors.length > 0 ? `; mutations: ${contributors}` : "";
-  return `${observation.id ?? "<unnamed>"} [${observation.selector}] owner ${observation.owner ?? "<none>"} (${observation.owner_status ?? "unknown"}): declared ${String(observation.ceiling)}, observed ${observed}${overshoot} — ${observation.reason}${contributorSuffix}`;
+  // A ceiling keeps the original wording so a reader who has seen this gate fail
+  // before reads the same line; a floor names its polarity, because "declared 3,
+  // observed 2" is otherwise indistinguishable from a ceiling that passed.
+  const declared =
+    observation.polarity === "floor"
+      ? `floor ${String(observation.floor)}`
+      : String(observation.ceiling);
+  return `${observation.id ?? "<unnamed>"} [${observation.selector}] owner ${observation.owner ?? "<none>"} (${observation.owner_status ?? "unknown"}): declared ${declared}, observed ${observed}${overshoot} — ${observation.reason}${contributorSuffix}`;
 }
 
 /** Rebuild the declaration list from the observed counts, for `--update`. */
@@ -385,6 +465,16 @@ export function buildUpdatedDeclarations(document, evaluation, today) {
       const entry = observed.get(declaration.id);
       if (entry === undefined || entry.observed === null || entry.retired) {
         return declaration;
+      }
+      // Both polarities tighten only. A ceiling follows a shrinking population
+      // down; a floor follows a growing property up. Neither is ever relaxed
+      // here, so re-baselining can never be the way a regression is accepted.
+      if (Object.hasOwn(declaration, "floor")) {
+        return {
+          ...declaration,
+          floor: Math.max(declaration.floor, entry.observed),
+          measured_on: entry.observed > declaration.floor ? today : declaration.measured_on,
+        };
       }
       return {
         ...declaration,
@@ -591,21 +681,35 @@ export function runNegativeControl(flags) {
       "--dep",
       `id=${String(blocker.id)},kind=blocks`,
     ]);
+    // One control per polarity. The workspace holds exactly one blocks row, so a
+    // ceiling of zero must be exceeded and a floor of two must be undercut; a
+    // gate that can only prove one direction leaves the other unexercised.
     const declarations = [
       {
-        id: "negative-control",
+        id: "negative-control-ceiling",
         owner: String(dependent.id),
         selector: { source: "dependency_kind", kind: "blocks" },
         ceiling: 0,
       },
+      {
+        id: "negative-control-floor",
+        owner: String(dependent.id),
+        selector: { source: "dependency_kind", kind: "blocks" },
+        floor: 2,
+      },
     ];
     const { measurements, ownerStatuses } = measureTracker(context, declarations);
     const evaluation = evaluateDeclarations({ declarations, measurements, ownerStatuses });
-    if (evaluation.violations.length === 0) {
-      fail("Tracker measurement negative control did not fail on a row beyond its declared ceiling.");
+    const reasons = new Set(evaluation.violations.map((violation) => violation.reason));
+    for (const expected of ["ceiling_exceeded", "floor_undercut"]) {
+      if (!reasons.has(expected)) {
+        fail(`Tracker measurement negative control did not report ${expected}.`);
+      }
     }
     process.stdout.write(
-      `Tracker measurement negative control passed: ${formatViolation(evaluation.violations[0])}\n`,
+      `Tracker measurement negative control passed both polarities:\n${evaluation.violations
+        .map((violation) => `- ${formatViolation(violation)}`)
+        .join("\n")}\n`,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -669,7 +773,8 @@ export function main(argv = process.argv.slice(2)) {
   if (evaluation.violations.length > 0) {
     fail(
       `Tracker measurement ratchet failed (${scope}):\n${evaluation.violations.map((violation) => `- ${formatViolation(violation)}`).join("\n")}\n` +
-        "A filed measurement is a ceiling. Shrink the population, or move the owning item to a terminal status to retire it.",
+        "A filed measurement is a ratchet. A ceiling means shrink the population; a floor means restore the property. " +
+          "Either way, re-declaring is not the remedy — move the owning item to a terminal status to retire the bound.",
     );
   }
 

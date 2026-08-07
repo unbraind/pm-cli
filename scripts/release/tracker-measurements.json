@@ -1,7 +1,29 @@
 {
   "version": 1,
-  "description": "Population measurements filed by pm items, enforced as ceilings (pm-ips23h). Each declaration names the item that owns the defect, a selector that recomputes the population from tracked data, and the count that was filed. A ceiling retires automatically when its owner reaches a terminal status.",
+  "description": "Measurements filed by pm items, enforced as ratchets (pm-ips23h, pm-g4k74y). Each declaration names the item that owns the property, a selector that recomputes it from tracked data, and the number that was filed. A ceiling fails when the observed value rises above it and guards a defect population; a floor fails when the observed value falls below it and guards a deliberately authored property. Exactly one polarity per declaration. Either bound retires automatically when its owner reaches a terminal status. The floors below exist because every ceiling reads a mass deletion of typed relationships as an improvement, and --dep-remove deletes every row matching its selector.",
   "declarations": [
+    {
+      "id": "graph-profile-edges-floor",
+      "owner": "pm-96h7",
+      "selector": {
+        "source": "graph_profile",
+        "field": "edges"
+      },
+      "floor": 11318,
+      "measured_on": "2026-08-07",
+      "note": "Total deduplicated directed relationship edges. The typed graph is authored deliberately, pass after pass, and is the substrate every graph analytic and the strategic outcome ladder read. Nothing else in this document can notice it shrinking: every ceiling here falls when edges are removed, so before this floor existed a mass deletion improved the gate's verdict. Legitimate reductions do exist — retiring an alias kind or removing a genuinely wrong edge — and they must lower this number deliberately by editing it here, because --update only ever raises a floor."
+    },
+    {
+      "id": "graph-profile-nodes-floor",
+      "owner": "pm-o2kc",
+      "selector": {
+        "source": "graph_profile",
+        "field": "nodes"
+      },
+      "floor": 2368,
+      "measured_on": "2026-08-07",
+      "note": "Total graph nodes, which tracks the item corpus including terminal items. The record is append-only by intent and items are closed rather than deleted, so this number only ever rises; a fall means items left the record, which is the one mutation no amount of history verification can reconstruct from the remaining streams."
+    },
     {
       "id": "dependency-kind-blocks",
       "owner": "pm-jkbqt8",
@@ -138,8 +160,8 @@
         "source": "health_check",
         "name": "telemetry"
       },
-      "ceiling": 1,
-      "measured_on": "2026-08-04",
+      "ceiling": 0,
+      "measured_on": "2026-08-07",
       "note": "A pending local delivery queue remains an explicit observability limitation; an error status is a regression."
     },
     {
