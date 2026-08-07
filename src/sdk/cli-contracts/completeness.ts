@@ -13,6 +13,7 @@ import {
 } from "./flag-contracts.js";
 import { pmToolActionParameterKeys } from "./tool-schema.js";
 import {
+  PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS,
   PM_READ_OUTPUT_OPTION_FLAGS,
   resolveReadOutputSurface,
 } from "../read-output-contracts.js";
@@ -78,6 +79,7 @@ const CLI_TRANSPORT_FLAGS = new Set([
   "--output-limit",
   "--output-budget",
   "--output-format",
+  "--output-session",
   "--no-changed-fields",
   "--no-extensions",
   "--no-pager",
@@ -87,7 +89,10 @@ const CLI_TRANSPORT_FLAGS = new Set([
   "--interval-ms",
 ]);
 
-const READ_OUTPUT_OPTION_FLAGS = new Set(PM_READ_OUTPUT_OPTION_FLAGS);
+const READ_OUTPUT_OPTION_FLAGS = new Set([
+  ...PM_READ_OUTPUT_OPTION_FLAGS,
+  ...PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS,
+]);
 
 const CLI_PRESENTATION_FLAGS = new Set([
   "--brief",

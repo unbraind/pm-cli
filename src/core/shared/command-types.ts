@@ -27,6 +27,8 @@ export interface GlobalOptions {
   outputBudget?: string;
   /** Canonical renderer encoding for read output. */
   outputFormat?: "toon" | "json";
+  /** Caller-carried cross-call budget and served-item state. */
+  outputSession?: string;
   /** Filesystem path used for path resolution. */
   path?: string;
   /** Value that configures or reports no extensions for this contract. */

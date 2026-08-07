@@ -14,6 +14,7 @@ const CANONICAL_KEYS = [
   "outputLimit",
   "outputBudget",
   "outputFormat",
+  "outputSession",
 ] as const;
 
 describe("universal read-output transport contracts", () => {
@@ -37,6 +38,9 @@ describe("universal read-output transport contracts", () => {
       expect.arrayContaining(CANONICAL_KEYS),
     );
     expect(properties?.outputInclude).toMatchObject({ minLength: 1 });
+    expect(properties?.outputSession).toMatchObject({
+      anyOf: expect.any(Array),
+    });
   });
 
   it("rejects an unsupported canonical output format at invocation time", () => {
@@ -50,6 +54,96 @@ describe("universal read-output transport contracts", () => {
     expect(result.stderr).toContain("--output-format must be toon or json");
   });
 
+  it("carries session state between real CLI reads in a temporary tracker", async () => {
+    await withTempPmPath(async ({ runCli }) => {
+      for (const title of ["Alpha session item", "Beta session item"]) {
+        expect(
+          runCli([
+            "create",
+            "--create-mode",
+            "progressive",
+            "--title",
+            title,
+            "--type",
+            "Task",
+            "--json",
+            "--no-extensions",
+          ]).code,
+        ).toBe(0);
+      }
+      const initialState = {
+        version: 1,
+        id: "orientation",
+        token_budget: 4_000,
+        spent_tokens: 0,
+        seen_item_ids: [],
+      };
+      const first = runCli(
+        [
+          "list",
+          "--output-session",
+          JSON.stringify(initialState),
+          "--json",
+          "--no-extensions",
+        ],
+        { expectJson: true },
+      );
+      expect(first.code).toBe(0);
+      const firstEnvelope = first.json as Record<string, unknown>;
+      const firstReceipt = firstEnvelope.read_session as Record<
+        string,
+        unknown
+      >;
+      const second = runCli(
+        [
+          "list",
+          "--output-session",
+          JSON.stringify(firstReceipt.next_state),
+          "--json",
+          "--no-extensions",
+        ],
+        { expectJson: true },
+      );
+      expect(second.code).toBe(0);
+      const secondEnvelope = second.json as Record<string, unknown>;
+      expect(secondEnvelope.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            context_ref: expect.stringMatching(/^session:orientation:pm-/u),
+          }),
+        ]),
+      );
+      expect(secondEnvelope.read_session).toMatchObject({
+        seen_before_count: 2,
+        new_item_count: 0,
+        suppressed_repeat_count: 2,
+      });
+    });
+  });
+
+  it("rejects session controls on mutation commands before writing", async () => {
+    await withTempPmPath(async ({ runCli }) => {
+      const result = runCli([
+        "create",
+        "--title",
+        "Must not exist",
+        "--type",
+        "Task",
+        "--output-session",
+        '{"version":1,"id":"invalid-scope","token_budget":2000,"spent_tokens":0,"seen_item_ids":[]}',
+        "--no-extensions",
+      ]);
+      expect(result.code).toBe(2);
+      expect(result.stderr).toContain(
+        "Universal output controls apply only to read commands",
+      );
+      const list = runCli(["list", "--json", "--no-extensions"], {
+        expectJson: true,
+      });
+      expect(list.json).toMatchObject({ count: 0, items: [] });
+    });
+  });
+
   it("hoists top-level MCP controls while preserving nested precedence", () => {
     expect(
       optionsWithAuthor({
@@ -57,6 +151,7 @@ describe("universal read-output transport contracts", () => {
         outputLimit: 5,
         outputBudget: 600,
         outputFormat: "toon",
+        outputSession: { version: 1 },
         options: { outputLimit: 3 },
       }),
     ).toMatchObject({
@@ -64,6 +159,7 @@ describe("universal read-output transport contracts", () => {
       outputLimit: 3,
       outputBudget: 600,
       outputFormat: "toon",
+      outputSession: { version: 1 },
     });
   });
 
@@ -74,12 +170,14 @@ describe("universal read-output transport contracts", () => {
         outputLimit: 5,
         outputBudget: "600",
         outputFormat: "json",
+        outputSession: '{"version":1}',
       }),
     ).toMatchObject({
       outputInclude: "id,title",
       outputLimit: "5",
       outputBudget: "600",
       outputFormat: "json",
+      outputSession: '{"version":1}',
     });
   });
 

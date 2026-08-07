@@ -39,6 +39,10 @@ export function createPmCliProgram(version: string): Command {
     .option("--output-limit <count>", "Bound rows in read output")
     .option("--output-budget <tokens>", "Bound estimated tokens in read output")
     .option("--output-format <toon|json>", "Select the read-output encoding")
+    .option(
+      "--output-session <state>",
+      "Carry a JSON session budget and served-item ledger across read calls",
+    )
     .option("--quiet", "Suppress stdout output")
     .option(
       "--no-changed-fields",

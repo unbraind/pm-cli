@@ -19,6 +19,7 @@ const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>([
   "--output-limit",
   "--output-budget",
   "--output-format",
+  "--output-session",
 ]);
 
 const OUTPUT_VALUE_FLAGS = new Set<string>([
@@ -26,6 +27,7 @@ const OUTPUT_VALUE_FLAGS = new Set<string>([
   "--output-limit",
   "--output-budget",
   "--output-format",
+  "--output-session",
 ]);
 
 /** Whether a global value-consuming flag uses its inline `--flag=value` form. */
@@ -70,6 +72,8 @@ export interface BootstrapGlobalOptions {
   outputBudget?: string;
   /** Canonical renderer encoding for read output. */
   outputFormat?: "toon" | "json";
+  /** Caller-carried cross-call budget and served-item state. */
+  outputSession?: string;
   /** Invocation-wide mutation author override. */
   author?: string;
   /** Whether `--author` was present without its required value. */
@@ -167,6 +171,9 @@ export function parseBootstrapGlobalOptions(
             | "json",
         }
       : {}),
+    ...(state.outputValues.get("--output-session") === undefined
+      ? {}
+      : { outputSession: state.outputValues.get("--output-session") }),
     ...(state.author === ""
       ? { authorMissingValue: true }
       : state.author !== undefined

@@ -61,5 +61,15 @@ const budgetedClientRead: Promise<PmReadOutputResult<ListResult>> = client.list(
     outputBudget: 256,
   },
 );
+const sessionClientRead: Promise<PmReadOutputResult<ListResult>> = client.list({
+  outputSession: {
+    version: 1,
+    id: "orientation",
+    token_budget: 2_000,
+    spent_tokens: 0,
+    seen_item_ids: [],
+  },
+});
 void ordinaryClientRead;
 void budgetedClientRead;
+void sessionClientRead;

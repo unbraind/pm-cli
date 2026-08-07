@@ -213,19 +213,19 @@ metadata as a continuation negative control. The checked-in report is
 
 | Intent | 2-item tokens / budget | 2,243-item tokens / budget | Current-scale rows | Degradation |
 | ------ | ---------------------- | -------------------------- | ------------------ | ----------- |
-| `context:orient` | 707 / 2,400 | 1,000 / 2,400 | 3 | bounded sections |
+| `context:orient` | 735 / 2,400 | 1,028 / 2,400 | 3 | bounded sections |
 | `get:inspect` | 401 / 3,200 | 415 / 3,200 | item envelope | standard item |
-| `list:triage` | 393 / 3,200 | 3,181 / 3,200 | 70 | budget-derived rows |
+| `list:triage` | 443 / 3,200 | 3,189 / 3,200 | 69 | budget-derived rows |
 | `next:execute` | 395 / 1,200 | 1,171 / 1,200 | 14 | budget-derived rows |
-| `search:discover` | 301 / 1,800 | 1,763 / 1,800 | 28 | budget-derived rows |
+| `search:discover` | 350 / 1,800 | 1,761 / 1,800 | 27 | budget-derived rows |
 
 Whole-answer cursor cost is measured against the unprojected single call for
 the identical ordered row set:
 
 | Family | Rows | Pages | Optimized bytes/row | Optimized walk | Repeated-metadata control | Unbounded call | Walk / unbounded |
 | ------ | ---- | ----- | ------------------- | -------------- | ------------------------- | -------------- | ---------------- |
-| `list:triage` | 1,998 | 30 | 172.29 | 344,234 B | 379,875 B | 1,558,741 B | 0.2208 |
-| `search:discover` | 1,998 | 64 | 201.24 | 402,075 B | 454,869 B | 1,681,847 B | 0.2391 |
+| `list:triage` | 1,998 | 31 | 172.93 | 345,519 B | 387,489 B | 1,558,741 B | 0.2217 |
+| `search:discover` | 1,998 | 66 | 202.50 | 404,591 B | 470,046 B | 1,681,847 B | 0.2406 |
 
 These are corpus-generated figures, not live tracker payloads. The generated
 corpus contains 2,243 items; the `status:all` query intentionally excludes 245

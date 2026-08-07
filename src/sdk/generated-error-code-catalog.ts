@@ -1069,6 +1069,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     emitting_commands: ["*"],
   },
   {
+    code: "invalid_read_output_session",
+    meaning: "Invalid read output session condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/read-output-session.ts"],
+    emitting_commands: ["*"],
+  },
+  {
     code: "invalid_workspace_snapshot_target",
     meaning: "Invalid workspace snapshot target condition.",
     stability: "provisional",

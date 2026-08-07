@@ -107,6 +107,7 @@ export * from "./agent-session-context.js";
 export {
   PM_READ_OUTPUT_DIMENSIONS,
   PM_READ_OUTPUT_OPTION_FLAGS,
+  PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS,
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
   applyReadOutputDimensions,
   isReadOutputBudgetExceeded,
@@ -115,6 +116,12 @@ export {
   resolveReadOutputSurface,
   validateReadOutputOptions,
 } from "./read-output-contracts.js";
+export {
+  applyReadOutputSessionReferences,
+  attachReadOutputSessionReceipt,
+  parseReadOutputSession,
+  readOutputSessionRemainingTokens,
+} from "./read-output-session.js";
 export type {
   PmReadOutputBudgetExceeded,
   PmReadOutputDimension,
@@ -126,6 +133,11 @@ export type {
   PmReadOutputSurface,
   PmReadOutputSurfaceContract,
 } from "./read-output-contracts.js";
+export type {
+  PmReadOutputSessionReceipt,
+  PmReadOutputSessionReference,
+  PmReadOutputSessionState,
+} from "./read-output-session.js";
 export type {
   ItemDocument,
   ItemMetadata,

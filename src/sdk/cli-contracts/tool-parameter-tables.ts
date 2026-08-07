@@ -25,6 +25,39 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   },
   outputBudget: { type: "integer", minimum: 1 },
   outputFormat: { type: "string", enum: ["json", "toon"] },
+  outputSession: {
+    anyOf: [
+      { type: "string", minLength: 1 },
+      {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "version",
+          "id",
+          "token_budget",
+          "spent_tokens",
+          "seen_item_ids",
+        ],
+        properties: {
+          version: { const: 1 },
+          id: {
+            type: "string",
+            pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+          },
+          token_budget: { type: "integer", minimum: 256 },
+          spent_tokens: { type: "integer", minimum: 0 },
+          seen_item_ids: {
+            type: "array",
+            uniqueItems: true,
+            items: {
+              type: "string",
+              pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+            },
+          },
+        },
+      },
+    ],
+  },
   path: { type: "string" },
   pmExecutable: { type: "string" },
   timeoutMs: { type: "number" },
@@ -902,6 +935,19 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   outputFormat: {
     description: "Universal read-result encoding selector.",
     examples: ["toon", "json"],
+  },
+  outputSession: {
+    description:
+      "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+    examples: [
+      {
+        version: 1,
+        id: "orientation",
+        token_budget: 4000,
+        spent_tokens: 0,
+        seen_item_ids: [],
+      },
+    ],
   },
   profile: {
     description: "Emit deterministic timing diagnostics to stderr.",

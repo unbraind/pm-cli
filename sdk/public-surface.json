@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1433,
+    "covered_symbols": 1441,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,824 +8,9 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1434
+    "required_symbols": 1442
   },
-  "breaking_acknowledgements": [
-    {
-      "changes": [
-        "signature ./sdk:DeleteResult",
-        "signature ./sdk:PmCliError",
-        "signature ./sdk:PmCliErrorContext",
-        "signature ./sdk/core:DeleteResult",
-        "signature ./sdk/core:PmCliError",
-        "signature ./sdk/runtime:DeleteResult",
-        "signature ./sdk/runtime:PmCliError"
-      ],
-      "package_version": "2026.7.25",
-      "reason": "Additive structured context, tombstone result, and context-integrity SDK contracts for the 2026.7.25 release"
-    },
-    {
-      "changes": [
-        "signature ./sdk/governance:_testOnlySimilarity"
-      ],
-      "package_version": "2026.7.25",
-      "reason": "Additive deterministic duplicate-cluster verification seams for the 2026.7.25 release"
-    },
-    {
-      "changes": [
-        "signature ./sdk:HarnessDetectionSignals",
-        "signature ./sdk:PmSettings",
-        "signature ./sdk:ResolvedAuthorIdentity",
-        "signature ./sdk/core:HarnessDetectionSignals",
-        "signature ./sdk/core:PmSettings",
-        "signature ./sdk/core:ResolvedAuthorIdentity",
-        "signature ./sdk/runtime:PmSettings"
-      ],
-      "package_version": "2026.7.25",
-      "reason": "Additive optional agent provenance and required default-backed settings registry contract tracked by pm-qwuber and pm-03pq3o"
-    },
-    {
-      "changes": [
-        "signature ./sdk:PmSettings",
-        "signature ./sdk/core:PmSettings",
-        "signature ./sdk/runtime:PmSettings"
-      ],
-      "package_version": "2026.7.25",
-      "reason": "Add optional structured agent provenance and workspace harness registry contracts tracked by pm-qwuber and pm-03pq3o"
-    },
-    {
-      "changes": [
-        "signature ./sdk:SecretGuardFinding",
-        "signature ./sdk/governance:SecretGuardFinding"
-      ],
-      "package_version": "2026.7.25",
-      "reason": "Expose npm_token and slack_token detector rules in the documented SecretGuardFinding union"
-    },
-    {
-      "changes": [
-        "signature ./sdk:DetectedAgentIdentity",
-        "signature ./sdk:ItemMetadata",
-        "signature ./sdk/core:DetectedAgentIdentity",
-        "signature ./sdk/core:ItemMetadata",
-        "signature ./sdk/runtime:ItemMetadata"
-      ],
-      "package_version": "2026.7.26",
-      "reason": "Add privacy-safe optional agent instance and claim principal metadata plus exhaustive action coverage APIs"
-    },
-    {
-      "changes": [
-        "signature ./sdk:ImportExportContext",
-        "signature ./sdk:PM_TOOL_ACTION_PARAMETER_CONTRACTS",
-        "signature ./sdk:PM_TOOL_ACTIONS",
-        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-        "signature ./sdk:PmClient",
-        "signature ./sdk:ServiceOverride",
-        "signature ./sdk/authoring:ImportExportContext",
-        "signature ./sdk/authoring:ServiceOverride",
-        "signature ./sdk/contracts:PM_TOOL_ACTION_PARAMETER_CONTRACTS",
-        "signature ./sdk/contracts:PM_TOOL_ACTIONS",
-        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-        "signature ./sdk/core:PmClient",
-        "signature ./sdk/runtime:PmClient",
-        "symbol ./sdk:_testOnlyCliContracts removed"
-      ],
-      "package_version": "2026.7.26",
-      "reason": "Additive aggregate, duplicate discovery, isolated runtime, host SDK context, and explicit service decision contracts; legacy handlers remain supported"
-    },
-    {
-      "changes": [
-        "signature ./sdk:PM_CORE_COMMAND_NAMES",
-        "signature ./sdk/contracts:PM_CORE_COMMAND_NAMES"
-      ],
-      "package_version": "2026.7.26",
-      "reason": "Add the already-exposed duplicates CLI to the canonical core-command tuple so action availability and extension reservations are truthful."
-    },
-    {
-      "changes": [
-        "signature ./sdk:handleServiceOverride",
-        "signature ./sdk/authoring:handleServiceOverride"
-      ],
-      "package_version": "2026.7.26",
-      "reason": "Move the public surface to a first-class package artifact and correct aggregate exclusion accounting plus additive command contracts."
-    },
-    {
-      "changes": [
-        "signature ./sdk:HistoryRepairCommandOptions",
-        "signature ./sdk:ItemDocumentMergeResult",
-        "signature ./sdk:MergeDriverResult",
-        "signature ./sdk:MergeReconcileResult",
-        "signature ./sdk/merge:ItemDocumentMergeResult",
-        "signature ./sdk/merge:MergeDriverResult",
-        "signature ./sdk/merge:MergeReconcileResult"
-      ],
-      "package_version": "2026.7.26",
-      "reason": "Add audited merge receipt provenance and reconciliation result fields for durable branch-merge conformance"
-    },
-    {
-      "changes": [
-        "signature ./sdk:AgentClientInfo",
-        "signature ./sdk:AgentModelSource",
-        "signature ./sdk:DetectedAgentIdentity",
-        "signature ./sdk:HarnessDetectionSignals",
-        "signature ./sdk:HarnessSignalDescriptor",
-        "signature ./sdk:PmSettings",
-        "signature ./sdk:TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE",
-        "signature ./sdk:TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE",
-        "signature ./sdk/contracts:TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE",
-        "signature ./sdk/contracts:TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE",
-        "signature ./sdk/core:AgentClientInfo",
-        "signature ./sdk/core:AgentModelSource",
-        "signature ./sdk/core:DetectedAgentIdentity",
-        "signature ./sdk/core:HarnessDetectionSignals",
-        "signature ./sdk/core:HarnessSignalDescriptor",
-        "signature ./sdk/core:PmSettings",
-        "signature ./sdk/runtime:PmSettings"
-      ],
-      "package_version": "2026.7.27",
-      "reason": "Extend optional agent provenance and strict action option contracts while preserving legacy model fields and runtime behavior"
-    },
-    {
-      "changes": [
-        "signature ./sdk:Dependency",
-        "signature ./sdk:ListOptions",
-        "signature ./sdk/core:Dependency",
-        "signature ./sdk/core:ListOptions",
-        "signature ./sdk/query:ListOptions",
-        "signature ./sdk/runtime:Dependency",
-        "signature ./sdk/runtime:ListOptions"
-      ],
-      "package_version": "2026.7.27",
-      "reason": "Additive optional list strict-read and dependency provenance fields; result completeness is a required truthfulness contract in the new minor release"
-    },
-    {
-      "changes": [
-        "signature ./sdk:ContractsResult",
-        "signature ./sdk:ListCompactResult",
-        "signature ./sdk:MergeFenceAuditResult",
-        "signature ./sdk:MergeInstallResult",
-        "signature ./sdk/merge:MergeFenceAuditResult",
-        "signature ./sdk/merge:MergeInstallResult",
-        "signature ./sdk/query:ListCompactResult",
-        "signature ./sdk/runtime:ContractsResult",
-        "signature ./sdk/runtime:ListCompactResult"
-      ],
-      "package_version": "2026.7.27",
-      "reason": "List results now identify brief and compact projections explicitly, contracts expose per-command projection defaults, and merge-fence results declare project schema scope; consumers should accept the new metadata fields and brief mode."
-    },
-    {
-      "changes": [
-        "signature ./sdk:ContractsResult",
-        "signature ./sdk/runtime:ContractsResult"
-      ],
-      "package_version": "2026.7.27",
-      "reason": "pm-gmdzaa makes unfiltered contracts summary-first and adds optional output policy metadata; full:true preserves the complete contract surface"
-    },
-    {
-      "changes": [
-        "signature ./sdk:WorkspaceContracts",
-        "signature ./sdk/runtime:WorkspaceContracts"
-      ],
-      "package_version": "2026.7.27",
-      "reason": "WorkspaceContracts gains optional additive runtime field and extension command discovery metadata"
-    },
-    {
-      "changes": [
-        "signature ./sdk:CommandDefinition",
-        "signature ./sdk:RegisteredExtensionCommandDefinition",
-        "signature ./sdk:WorkspaceExtensionCommandContract",
-        "signature ./sdk/authoring:CommandDefinition",
-        "signature ./sdk/runtime:WorkspaceExtensionCommandContract"
-      ],
-      "package_version": "2026.7.27",
-      "reason": "Additive optional workspace capability metadata and extension command visibility tier"
-    },
-    {
-      "changes": [
-        "signature ./sdk:MergeInstallResult",
-        "signature ./sdk/merge:MergeInstallResult"
-      ],
-      "package_version": "2026.7.28",
-      "reason": "Add optional canonical pm_root metadata to merge-install results while preserving existing fields"
-    },
-    {
-      "changes": [
-        "signature ./sdk:ExtensionBlueprintLintCode",
-        "signature ./sdk/authoring:ExtensionBlueprintLintCode",
-        "signature ./sdk/testing:ExtensionBlueprintLintCode"
-      ],
-      "package_version": "2026.7.28",
-      "reason": "Extension blueprint lint now rejects host-owned and malformed long flags before activation; exhaustive lint-code consumers should handle host_owned_flag_collision and malformed_long_flag."
-    },
-    {
-      "changes": [
-        "signature ./sdk:defineWorkspaceRecipe",
-        "signature ./sdk:WorkspaceRecipeOperation"
-      ],
-      "package_version": "2026.7.28",
-      "reason": "Export snapshot schema and strengthen workspace recipe JSON/exact-key contracts"
-    },
-    {
-      "changes": [
-        "signature ./sdk:CLOSE_ACTION_OPTION_KEYS",
-        "signature ./sdk:CloseCommandOptions",
-        "signature ./sdk:ContextFocusItem",
-        "signature ./sdk:ItemMetadata",
-        "signature ./sdk:NestedSettingResultValue",
-        "signature ./sdk:TOOL_UPDATE_OPTION_CONTRACT_SOURCE",
-        "signature ./sdk:UpdateCommandOptions",
-        "signature ./sdk:WorkspaceMemorySelection",
-        "signature ./sdk:WorkspaceMemorySnapshot",
-        "signature ./sdk/contracts:CLOSE_ACTION_OPTION_KEYS",
-        "signature ./sdk/contracts:TOOL_UPDATE_OPTION_CONTRACT_SOURCE",
-        "signature ./sdk/core:ItemMetadata",
-        "signature ./sdk/query:WorkspaceMemorySelection",
-        "signature ./sdk/query:WorkspaceMemorySnapshot",
-        "signature ./sdk/runtime:CloseCommandOptions",
-        "signature ./sdk/runtime:ContextFocusItem",
-        "signature ./sdk/runtime:ItemMetadata",
-        "signature ./sdk/runtime:UpdateCommandOptions"
-      ],
-      "package_version": "2026.7.28",
-      "reason": "Add optional completion timestamps, blocker provenance, and configuration metadata while preserving existing inputs and fallbacks (pm-bwnclq, pm-r2suqb, pm-5ecnar)."
-    },
-    {
-      "changes": [
-        "signature ./sdk:PmUpdateManyActionOptions",
-        "signature ./sdk/contracts:PmUpdateManyActionOptions"
-      ],
-      "package_version": "2026.7.28",
-      "reason": "Add optional completion timestamps, blocker provenance, and configuration metadata while preserving existing inputs and fallbacks (pm-bwnclq, pm-r2suqb, pm-5ecnar)."
-    },
-    {
-      "changes": [
-        "signature ./sdk:PmCloseManyActionOptions",
-        "signature ./sdk/contracts:PmCloseManyActionOptions"
-      ],
-      "package_version": "2026.7.28",
-      "reason": "Expose completedAt on close-many typed SDK inputs for lifecycle parity"
-    },
-    {
-      "changes": [
-        "signature ./sdk:PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
-        "signature ./sdk:PM_CORE_COMMAND_NAMES",
-        "signature ./sdk:TestCommandOptions",
-        "signature ./sdk:TestResult",
-        "signature ./sdk/contracts:PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
-        "signature ./sdk/contracts:PM_CORE_COMMAND_NAMES"
-      ],
-      "package_version": "2026.7.29",
-      "reason": "Additive workspace command, eval contract, and typed test measurement SDK primitives for pm-1jrdri pm-wd61s2 pm-ygerpy"
-    },
-    {
-      "changes": [
-        "symbol ./sdk:EvalQuery removed",
-        "symbol ./sdk:EvalQuerySet removed",
-        "symbol ./sdk:EvalSearchMode removed"
-      ],
-      "package_version": "2026.7.29",
-      "reason": "Keep EvalSearchMode package-owned while exposing versioned eval query values and parser from the aggregate SDK"
-    },
-    {
-      "changes": [
-        "signature ./sdk:resolveCompletionTimestamp",
-        "signature ./sdk:ResolvedCompletionTimestamp"
-      ],
-      "package_version": "2026.7.29",
-      "reason": "GH-808 replaces an unsound always-resolved declaration with an explicit discriminated unresolved outcome"
-    },
-    {
-      "changes": [
-        "signature ./sdk:CorpusShape",
-        "signature ./sdk:CorpusShapeProfile",
-        "signature ./sdk:defineCorpusShape"
-      ],
-      "package_version": "2026.7.29",
-      "reason": "Correct unpublished PR corpus-shape draft before merge"
-    },
-    {
-      "changes": [
-        "signature ./sdk:DepsCommandOptions",
-        "signature ./sdk:DepsResult",
-        "signature ./sdk:GraphCommandOptions",
-        "signature ./sdk:runGraph",
-        "signature ./sdk:RunHealthOptions",
-        "signature ./sdk:ValidateCommandOptions",
-        "signature ./sdk:ValidateResult",
-        "signature ./sdk/core:DepsCommandOptions",
-        "signature ./sdk/core:DepsResult",
-        "signature ./sdk/governance:RunHealthOptions",
-        "signature ./sdk/governance:ValidateCommandOptions",
-        "signature ./sdk/governance:ValidateResult",
-        "signature ./sdk/graph:GraphCommandOptions",
-        "signature ./sdk/graph:runGraph",
-        "signature ./sdk/runtime:DepsCommandOptions",
-        "signature ./sdk/runtime:DepsResult",
-        "signature ./sdk/runtime:RunHealthOptions",
-        "signature ./sdk/runtime:ValidateCommandOptions",
-        "signature ./sdk/runtime:ValidateResult"
-      ],
-      "package_version": "2026.7.29",
-      "reason": "Additive bounded-read controls and guaranteed projection receipts; runtime defaults remain compatible"
-    },
-    {
-      "changes": [
-        "signature ./sdk:ContractsResult",
-        "signature ./sdk/runtime:ContractsResult"
-      ],
-      "package_version": "2026.7.29",
-      "reason": "ContractsResult gains additive optional context_intents and error_codes full-projection fields"
-    },
-    {
-      "changes": [
-        "error code context_intent_unsupported removed"
-      ],
-      "package_version": "2026.7.29",
-      "reason": "ContractsResult additive full-projection fields and context-intent schema parameters"
-    },
-    {
-      "changes": [
-        "signature ./sdk:_testOnlyHealthCommand",
-        "signature ./sdk:analyzeGraphImpact",
-        "signature ./sdk:GraphImpactResult",
-        "signature ./sdk:RelationshipImpactAnalysis",
-        "signature ./sdk/governance:_testOnlyHealthCommand",
-        "signature ./sdk/graph:analyzeGraphImpact",
-        "signature ./sdk/graph:GraphImpactResult",
-        "signature ./sdk/graph:RelationshipImpactAnalysis"
-      ],
-      "package_version": "2026.7.30",
-      "reason": "Additive optional cursor, row, intent, and health projection contracts; no existing callable behavior or required member was removed"
-    },
-    {
-      "changes": [
-        "signature ./sdk:acquireItemMetadataDerivedIndexLock",
-        "signature ./sdk:CommandHandlerResult",
-        "signature ./sdk:FlagDefinition",
-        "signature ./sdk:SchemaFieldDefinition",
-        "signature ./sdk:SchemaItemTypeCommandOptionPolicyDefinition",
-        "signature ./sdk:SchemaItemTypeOptionDefinition",
-        "signature ./sdk/authoring:CommandHandlerResult",
-        "signature ./sdk/authoring:FlagDefinition",
-        "signature ./sdk/authoring:SchemaFieldDefinition",
-        "signature ./sdk/authoring:SchemaItemTypeCommandOptionPolicyDefinition",
-        "signature ./sdk/authoring:SchemaItemTypeOptionDefinition",
-        "signature ./sdk/query:acquireItemMetadataDerivedIndexLock",
-        "signature ./sdk/runtime:FlagDefinition"
-      ],
-      "package_version": "2026.7.30",
-      "reason": "Close extension authoring metadata contracts to reject misspelled properties and add explicit structured failure and required-lock fields."
-    },
-    {
-      "changes": [
-        "signature ./sdk:DepsResult",
-        "signature ./sdk:GraphAnalyzeResult",
-        "signature ./sdk:GraphCentralityResult",
-        "signature ./sdk:PM_READ_ROW_CONTRACTS",
-        "signature ./sdk:PM_READ_ROW_JQ_SELECTOR",
-        "signature ./sdk:ReadRowContract",
-        "signature ./sdk:RelationshipCoverageProfile",
-        "signature ./sdk:RelationshipGraphScaleFixture",
-        "signature ./sdk/core:DepsResult",
-        "signature ./sdk/graph:GraphAnalyzeResult",
-        "signature ./sdk/graph:GraphCentralityResult",
-        "signature ./sdk/graph:RelationshipCoverageProfile",
-        "signature ./sdk/graph:RelationshipGraphScaleFixture",
-        "signature ./sdk/runtime:DepsResult"
-      ],
-      "package_version": "2026.7.31",
-      "reason": "Read-row selectors now distinguish scalar envelopes from iterable collections, and every edge count declares its counting basis."
-    },
-    {
-      "changes": [
-        "signature ./sdk:PM_READ_ROW_CONTRACTS",
-        "signature ./sdk:PM_READ_ROW_JQ_SELECTOR"
-      ],
-      "package_version": "2026.7.31",
-      "reason": "Read-row selectors now distinguish scalar envelopes from iterable collections, resolve nested dependency paths, and every edge count declares its counting basis."
-    },
-    {
-      "changes": [
-        "signature ./sdk:AcknowledgeUnknownAuthorEventsOptions",
-        "signature ./sdk:AnnotationCommandConfig",
-        "signature ./sdk:HistoryAuthorAttributionScan",
-        "signature ./sdk:InitTargetResolution",
-        "signature ./sdk:inspectHistoryAuthorStream",
-        "signature ./sdk:LogNote",
-        "signature ./sdk:NotesCommandOptions",
-        "signature ./sdk:NotesResult",
-        "signature ./sdk:PmCliErrorContext",
-        "signature ./sdk:runAnnotationCommand",
-        "signature ./sdk:RunHealthOptions",
-        "signature ./sdk:scanHistoryAuthorAttribution",
-        "signature ./sdk:SchemaFieldDefinition",
-        "signature ./sdk:WorkspaceFieldContract",
-        "signature ./sdk/authoring:SchemaFieldDefinition",
-        "signature ./sdk/core:NotesCommandOptions",
-        "signature ./sdk/core:NotesResult",
-        "signature ./sdk/governance:AcknowledgeUnknownAuthorEventsOptions",
-        "signature ./sdk/governance:HistoryAuthorAttributionScan",
-        "signature ./sdk/governance:inspectHistoryAuthorStream",
-        "signature ./sdk/governance:RunHealthOptions",
-        "signature ./sdk/governance:scanHistoryAuthorAttribution",
-        "signature ./sdk/runtime:LogNote",
-        "signature ./sdk/runtime:NotesCommandOptions",
-        "signature ./sdk/runtime:NotesResult",
-        "signature ./sdk/runtime:RunHealthOptions",
-        "signature ./sdk/runtime:WorkspaceFieldContract"
-      ],
-      "package_version": "2026.7.31",
-      "reason": "Expand universal SDK context primitives with typed runtime containers, merge-safe structured events, init target provenance, and actionable author diagnostics."
-    },
-    {
-      "changes": [
-        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-        "signature ./sdk:PmContextIntentReceipt",
-        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-        "signature ./sdk/contracts:PmContextIntentReceipt"
-      ],
-      "package_version": "2026.7.31",
-      "reason": "Intent receipts now require truthful feasibility and omission state; tool schema 4.3.0 adds tokenBudget to list get and search"
-    },
-    {
-      "changes": [
-        "signature ./sdk:AGENT_PROVENANCE_DIMENSIONS",
-        "signature ./sdk:AgentClientInfo",
-        "signature ./sdk:AgentModelSource",
-        "signature ./sdk:DetectedAgentIdentity",
-        "signature ./sdk:HarnessDetectionSignals",
-        "signature ./sdk:HarnessSignalDescriptor",
-        "signature ./sdk:PmSettings",
-        "signature ./sdk/core:AGENT_PROVENANCE_DIMENSIONS",
-        "signature ./sdk/core:AgentClientInfo",
-        "signature ./sdk/core:AgentModelSource",
-        "signature ./sdk/core:DetectedAgentIdentity",
-        "signature ./sdk/core:HarnessDetectionSignals",
-        "signature ./sdk/core:HarnessSignalDescriptor",
-        "signature ./sdk/core:PmSettings",
-        "signature ./sdk/runtime:PmSettings"
-      ],
-      "package_version": "2026.8.1",
-      "reason": "Additive optional session provenance and episode fields broaden identity contracts without removing or requiring existing consumer fields."
-    },
-    {
-      "changes": [
-        "signature ./sdk:AgentEpisodeGroup",
-        "signature ./sdk/core:AgentEpisodeGroup"
-      ],
-      "package_version": "2026.8.1",
-      "reason": "Strengthen AgentEpisodeGroup.entries from a possibly empty array to a truthful non-empty tuple; every produced group already contains at least one immutable history event."
-    },
-    {
-      "changes": [
-        "signature ./sdk:assertRegisteredHook",
-        "signature ./sdk:EXTENSION_CAPABILITY_REGISTRATION_SURFACES",
-        "signature ./sdk:EXTENSION_POLICY_SURFACES",
-        "signature ./sdk:ExtensionActivationResult",
-        "signature ./sdk:ExtensionApi",
-        "signature ./sdk:ExtensionBlueprintHooks",
-        "signature ./sdk:ExtensionHookRegistry",
-        "signature ./sdk:ExtensionTestHarness",
-        "signature ./sdk:PM_EXTENSION_POLICY_SURFACE_CONTRACTS",
-        "signature ./sdk:RegisteredHookKind",
-        "signature ./sdk:RunRegisteredCommandForTestOptions",
-        "signature ./sdk/authoring:EXTENSION_CAPABILITY_REGISTRATION_SURFACES",
-        "signature ./sdk/authoring:EXTENSION_POLICY_SURFACES",
-        "signature ./sdk/authoring:ExtensionActivationResult",
-        "signature ./sdk/authoring:ExtensionApi",
-        "signature ./sdk/authoring:ExtensionBlueprintHooks",
-        "signature ./sdk/authoring:ExtensionHookRegistry",
-        "signature ./sdk/contracts:PM_EXTENSION_POLICY_SURFACE_CONTRACTS",
-        "signature ./sdk/testing:assertRegisteredHook",
-        "signature ./sdk/testing:ExtensionTestHarness",
-        "signature ./sdk/testing:RegisteredHookKind",
-        "signature ./sdk/testing:RunRegisteredCommandForTestOptions"
-      ],
-      "package_version": "2026.8.1",
-      "reason": "Additive extension mutation guards and host-bound test SDK options extend object contracts while preserving existing calls."
-    },
-    {
-      "changes": [
-        "signature ./sdk:ExtensionHookRegistry",
-        "signature ./sdk/authoring:ExtensionHookRegistry"
-      ],
-      "package_version": "2026.8.1",
-      "reason": "Transactional beforeMutation is a required host registry member; package call sites remain source-compatible and receive the field from pm."
-    },
-    {
-      "changes": [
-        "signature ./sdk:PM_TOOL_ACTION_PARAMETER_CONTRACTS",
-        "signature ./sdk:PM_TOOL_ACTIONS",
-        "signature ./sdk:PmContextIntentReceipt",
-        "signature ./sdk:PmToolAction",
-        "signature ./sdk/contracts:PM_TOOL_ACTION_PARAMETER_CONTRACTS",
-        "signature ./sdk/contracts:PM_TOOL_ACTIONS",
-        "signature ./sdk/contracts:PmContextIntentReceipt",
-        "signature ./sdk/contracts:PmToolAction"
-      ],
-      "package_version": "2026.8.1",
-      "reason": "Unify CLI SDK MCP action contracts, add optional budget diagnostics, and expose newly reachable native actions; existing action names and receipt fields remain compatible."
-    },
-    {
-      "changes": [
-        "error code missing_required_parameter removed"
-      ],
-      "package_version": "2026.8.1",
-      "reason": "Remove an unshipped generated error-code entry before review; runtime behavior continues to use the established usage-error envelope."
-    },
-    {
-      "changes": [
-        "signature ./sdk:BootstrapGlobalOptions",
-        "signature ./sdk:GlobalOptions",
-        "signature ./sdk/runtime:GlobalOptions"
-      ],
-      "package_version": "2026.8.1",
-      "reason": "Additive optional tokenAccounting output instrumentation flag shared by CLI SDK and MCP"
-    },
-    {
-      "changes": [
-        "signature ./sdk:HistoryRedactResult"
-      ],
-      "package_version": "2026.8.2",
-      "reason": "Remove secret-bearing matcher and replacement fields from history-redact results (GH-864)"
-    },
-    {
-      "changes": [
-        "signature ./sdk:PmClient",
-        "signature ./sdk:runTelemetry",
-        "signature ./sdk:TOOL_UPDATE_OPTION_CONTRACT_SOURCE",
-        "signature ./sdk:UpdateCommandOptions",
-        "signature ./sdk/contracts:TOOL_UPDATE_OPTION_CONTRACT_SOURCE",
-        "signature ./sdk/core:PmClient",
-        "signature ./sdk/runtime:PmClient",
-        "signature ./sdk/runtime:UpdateCommandOptions"
-      ],
-      "package_version": "2026.8.2",
-      "reason": "Additive SDK reverse-file lookup, atomic evidence replacement, and precise telemetry receipt contracts tracked by pm-f86lth, pm-cstuys, and pm-u5c27w"
-    },
-    {
-      "changes": [
-        "signature ./sdk:BootstrapGlobalOptions",
-        "signature ./sdk:ContractsResult",
-        "signature ./sdk:GlobalOptions",
-        "signature ./sdk:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-        "signature ./sdk:PmClient",
-        "signature ./sdk/contracts:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-        "signature ./sdk/core:PmClient",
-        "signature ./sdk/runtime:ContractsResult",
-        "signature ./sdk/runtime:GlobalOptions",
-        "signature ./sdk/runtime:PmClient"
-      ],
-      "package_version": "2026.8.2",
-      "reason": "Add optional universal read-output controls and request-scoped context-intent declarations while preserving existing SDK call shapes"
-    },
-    {
-      "changes": [
-        "signature ./sdk:applyReadOutputDimensions",
-        "signature ./sdk:PmReadOutputReceipt",
-        "signature ./sdk/contracts:applyReadOutputDimensions",
-        "signature ./sdk/contracts:PmReadOutputReceipt"
-      ],
-      "package_version": "2026.8.2",
-      "reason": "Unreleased read-output API now models budget omission as a discriminated union and reports string and row compaction explicitly"
-    },
-    {
-      "changes": [
-        "signature ./sdk:aggregate",
-        "signature ./sdk:comments",
-        "signature ./sdk:context",
-        "signature ./sdk:deps",
-        "signature ./sdk:docs",
-        "signature ./sdk:files",
-        "signature ./sdk:get",
-        "signature ./sdk:graph",
-        "signature ./sdk:health",
-        "signature ./sdk:list",
-        "signature ./sdk:next",
-        "signature ./sdk:notes",
-        "signature ./sdk:PmClient",
-        "signature ./sdk:search",
-        "signature ./sdk:stats",
-        "signature ./sdk:validate",
-        "signature ./sdk/core:aggregate",
-        "signature ./sdk/core:comments",
-        "signature ./sdk/core:context",
-        "signature ./sdk/core:deps",
-        "signature ./sdk/core:docs",
-        "signature ./sdk/core:files",
-        "signature ./sdk/core:get",
-        "signature ./sdk/core:graph",
-        "signature ./sdk/core:list",
-        "signature ./sdk/core:next",
-        "signature ./sdk/core:notes",
-        "signature ./sdk/core:PmClient",
-        "signature ./sdk/core:search",
-        "signature ./sdk/runtime:aggregate",
-        "signature ./sdk/runtime:comments",
-        "signature ./sdk/runtime:context",
-        "signature ./sdk/runtime:deps",
-        "signature ./sdk/runtime:docs",
-        "signature ./sdk/runtime:files",
-        "signature ./sdk/runtime:get",
-        "signature ./sdk/runtime:graph",
-        "signature ./sdk/runtime:health",
-        "signature ./sdk/runtime:list",
-        "signature ./sdk/runtime:next",
-        "signature ./sdk/runtime:notes",
-        "signature ./sdk/runtime:PmClient",
-        "signature ./sdk/runtime:search",
-        "signature ./sdk/runtime:stats",
-        "signature ./sdk/runtime:validate"
-      ],
-      "package_version": "2026.8.2",
-      "reason": "Unreleased budgeted read methods now expose omission-aware conditional results while unbudgeted SDK calls retain their prior result types"
-    },
-    {
-      "changes": [
-        "signature ./sdk:aggregate",
-        "signature ./sdk:comments",
-        "signature ./sdk:context",
-        "signature ./sdk:deps",
-        "signature ./sdk:docs",
-        "signature ./sdk:files",
-        "signature ./sdk:get",
-        "signature ./sdk:graph",
-        "signature ./sdk:health",
-        "signature ./sdk:list",
-        "signature ./sdk:next",
-        "signature ./sdk:notes",
-        "signature ./sdk:PmClient",
-        "signature ./sdk:search",
-        "signature ./sdk:stats",
-        "signature ./sdk:validate",
-        "signature ./sdk/core:aggregate",
-        "signature ./sdk/core:comments",
-        "signature ./sdk/core:context",
-        "signature ./sdk/core:deps",
-        "signature ./sdk/core:docs",
-        "signature ./sdk/core:files",
-        "signature ./sdk/core:get",
-        "signature ./sdk/core:graph",
-        "signature ./sdk/core:list",
-        "signature ./sdk/core:next",
-        "signature ./sdk/core:notes",
-        "signature ./sdk/core:PmClient",
-        "signature ./sdk/core:search",
-        "signature ./sdk/runtime:aggregate",
-        "signature ./sdk/runtime:comments",
-        "signature ./sdk/runtime:context",
-        "signature ./sdk/runtime:deps",
-        "signature ./sdk/runtime:docs",
-        "signature ./sdk/runtime:files",
-        "signature ./sdk/runtime:get",
-        "signature ./sdk/runtime:graph",
-        "signature ./sdk/runtime:health",
-        "signature ./sdk/runtime:list",
-        "signature ./sdk/runtime:next",
-        "signature ./sdk/runtime:notes",
-        "signature ./sdk/runtime:PmClient",
-        "signature ./sdk/runtime:search",
-        "signature ./sdk/runtime:stats",
-        "signature ./sdk/runtime:validate"
-      ],
-      "package_version": "2026.8.2",
-      "reason": "Preserve omission-aware conditional read signatures while extracting public runtime contracts below the implementation file limit"
-    },
-    {
-      "changes": [
-        "signature ./sdk:ActivityCommandOptions",
-        "signature ./sdk:ActivityResult",
-        "signature ./sdk:AGENT_PROVENANCE_DIMENSIONS",
-        "signature ./sdk:AgentModelSource",
-        "signature ./sdk:HarnessDetectionSignals",
-        "signature ./sdk:HarnessSignalDescriptor",
-        "signature ./sdk:HistoryCommandOptions",
-        "signature ./sdk:HistoryResult",
-        "signature ./sdk:ListMutationEventsOptions",
-        "signature ./sdk:MutationEvent",
-        "signature ./sdk:MutationEventPage",
-        "signature ./sdk:PM_MODE_PAIRED_OUTPUT_PROJECTION_CONTRACTS",
-        "signature ./sdk:PM_READ_ROW_CONTRACTS",
-        "signature ./sdk:PmSettings",
-        "signature ./sdk:runWithWorkspaceHarnessSignalDescriptors",
-        "signature ./sdk/core:AGENT_PROVENANCE_DIMENSIONS",
-        "signature ./sdk/core:AgentModelSource",
-        "signature ./sdk/core:HarnessDetectionSignals",
-        "signature ./sdk/core:HarnessSignalDescriptor",
-        "signature ./sdk/core:PmSettings",
-        "signature ./sdk/core:runWithWorkspaceHarnessSignalDescriptors",
-        "signature ./sdk/query:ActivityCommandOptions",
-        "signature ./sdk/query:ActivityResult",
-        "signature ./sdk/query:HistoryCommandOptions",
-        "signature ./sdk/query:HistoryResult",
-        "signature ./sdk/runtime:PmSettings"
-      ],
-      "package_version": "2026.8.2",
-      "reason": "Additive provenance projections, filters, version dimension, and optional probe controls intentionally expand public SDK contracts without removing existing behavior."
-    },
-    {
-      "changes": [
-        "signature ./sdk:PM_READ_ROW_CONTRACTS",
-        "signature ./sdk:PROFILE_LINT_CODES",
-        "signature ./sdk/authoring:PROFILE_LINT_CODES"
-      ],
-      "package_version": "2026.8.3",
-      "reason": "Intentional additive universal row-contract and profile diagnostic vocabulary expansion for pm-sb0tns and pm-yfdav2"
-    },
-    {
-      "changes": [
-        "signature ./sdk:ContextOptions",
-        "signature ./sdk:ContextResult",
-        "signature ./sdk:ExtensionManifest",
-        "signature ./sdk/authoring:ExtensionManifest",
-        "signature ./sdk/core:ContextOptions",
-        "signature ./sdk/core:ContextResult",
-        "signature ./sdk/query:ContextOptions",
-        "signature ./sdk/query:ContextResult",
-        "signature ./sdk/runtime:ContextOptions",
-        "signature ./sdk/runtime:ContextResult"
-      ],
-      "package_version": "2026.8.3",
-      "reason": "Add optional static extension contribution inventory and context health contracts"
-    },
-    {
-      "changes": [
-        "signature ./sdk:AggregateResult",
-        "signature ./sdk/core:AggregateResult",
-        "signature ./sdk/query:AggregateResult",
-        "signature ./sdk/runtime:AggregateResult"
-      ],
-      "package_version": "2026.8.3",
-      "reason": "Aggregate filter metadata now discloses multi-status OR selections through optional status_values while preserving status compatibility"
-    },
-    {
-      "changes": [
-        "signature ./sdk:ContractsResult",
-        "signature ./sdk:PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
-        "signature ./sdk:PmCommandOutputBudgetContract",
-        "signature ./sdk:PmErrorCodeContract",
-        "signature ./sdk:resolvePmCommandOutputBudget",
-        "signature ./sdk/contracts:PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
-        "signature ./sdk/contracts:PmCommandOutputBudgetContract",
-        "signature ./sdk/contracts:PmErrorCodeContract",
-        "signature ./sdk/contracts:resolvePmCommandOutputBudget",
-        "signature ./sdk/runtime:ContractsResult",
-        "signature ./sdk/runtime:PmErrorCodeContract"
-      ],
-      "package_version": "2026.8.4",
-      "reason": "Output contracts now expose format-aware budgets, envelope families, and classified error metadata; existing call forms and runtime fields remain compatible."
-    },
-    {
-      "changes": [
-        "signature ./sdk:parseMutationReceipt",
-        "signature ./sdk/contracts:parseMutationReceipt"
-      ],
-      "package_version": "2026.8.4",
-      "reason": "PR 895 pre-merge correction: expose explicit string JSON and decoded unknown mutation-receipt overloads before the new API is released."
-    },
-    {
-      "changes": [
-        "signature ./sdk:BulkItemMutation"
-      ],
-      "package_version": "2026.8.4",
-      "reason": "Add the release mutation variant required for atomic evidence-close-release completion; exhaustive BulkItemMutation consumers must handle release"
-    },
-    {
-      "changes": [
-        "signature ./sdk:createExtensionContributionInventory",
-        "signature ./sdk:definePreflightOverride",
-        "signature ./sdk:ExtensionActivationSummary",
-        "signature ./sdk:ExtensionApi",
-        "signature ./sdk:ExtensionBlueprint",
-        "signature ./sdk:ExtensionCommandOptions",
-        "signature ./sdk:ExtensionContributionInventory",
-        "signature ./sdk:PmClient",
-        "signature ./sdk/authoring:createExtensionContributionInventory",
-        "signature ./sdk/authoring:definePreflightOverride",
-        "signature ./sdk/authoring:ExtensionApi",
-        "signature ./sdk/authoring:ExtensionBlueprint",
-        "signature ./sdk/authoring:ExtensionContributionInventory",
-        "signature ./sdk/core:PmClient",
-        "signature ./sdk/runtime:ExtensionCommandOptions",
-        "signature ./sdk/runtime:PmClient",
-        "signature ./sdk/testing:ExtensionActivationSummary",
-        "signature ./sdk/testing:ExtensionBlueprint"
-      ],
-      "package_version": "2026.8.5",
-      "reason": "intentional extension lifecycle SDK contract expansion with source-compatible callback overloads"
-    },
-    {
-      "changes": [
-        "signature ./sdk:StatsCommandOptions",
-        "signature ./sdk:StatsResult",
-        "signature ./sdk/runtime:StatsCommandOptions",
-        "signature ./sdk/runtime:StatsResult"
-      ],
-      "package_version": "2026.8.6",
-      "reason": "Expand stats with optional audited improvement and bounded history analytics fields; existing calls and result fields remain compatible"
-    }
-  ],
+  "breaking_acknowledgements": [],
   "entrypoints": {
     "./sdk": {
       "classification": "advanced_export",
@@ -1341,6 +526,12 @@
           "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result> | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result>"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "applyReadOutputSessionReferences",
+          "signature": "(result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown> | calls: (result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown>"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "applyRegisteredItemFieldDefaultsAndValidation",
@@ -1625,6 +816,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "attachReadOutputSessionReceipt",
+          "signature": "(result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown> | calls: (result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "auditMergeAttributeFence",
           "signature": "(pmRoot: string, typeFolders: string[]) => Promise<MergeFenceAuditResult> | calls: (pmRoot: string, typeFolders: string[]) => Promise<MergeFenceAuditResult>"
         },
@@ -1698,7 +895,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "BootstrapGlobalOptions",
-          "signature": "export interface BootstrapGlobalOptions { path?: string; noExtensions: boolean; noPager: boolean; json: boolean; quiet: boolean; lean: boolean; tokenAccounting: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; author?: string; authorMissingValue?: true; }"
+          "signature": "export interface BootstrapGlobalOptions { path?: string; noExtensions: boolean; noPager: boolean; json: boolean; quiet: boolean; lean: boolean; tokenAccounting: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; author?: string; authorMissingValue?: true; }"
         },
         {
           "classification": "advanced_export",
@@ -1723,6 +920,12 @@
           "kind": "function",
           "name": "boundAgentEpisodeIdentity",
           "signature": "(value: unknown, strict: boolean) => AgentEpisodeIdentity | undefined | calls: (value: unknown, strict: boolean) => AgentEpisodeIdentity | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "boundReadOutputRows",
+          "signature": "(result: Record<string, unknown>, amount: number) => { result: Record<string, unknown>; truncated: boolean; } | calls: (result: Record<string, unknown>, amount: number) => { result: Record<string, unknown>; truncated: boolean; }"
         },
         {
           "classification": "supported",
@@ -3031,6 +2234,12 @@
           "kind": "function",
           "name": "countFailureCategories",
           "signature": "(runResults: TestRunResult[]) => Record<LinkedTestFailureCategory, number> | calls: (runResults: TestRunResult[]) => Record<LinkedTestFailureCategory, number>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "countReadOutputRows",
+          "signature": "(result: Record<string, unknown>) => number | calls: (result: Record<string, unknown>) => number"
         },
         {
           "classification": "supported",
@@ -5196,7 +4405,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "GlobalOptions",
-          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
+          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
         },
         {
           "classification": "supported",
@@ -6777,6 +5986,12 @@
           "signature": "(raw: string) => boolean | calls: (raw: string) => boolean"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "mapReadOutputRows",
+          "signature": "(result: Record<string, unknown>, transform: (row: unknown, path: string, index: number) => unknown) => Record<string, unknown> | calls: (result: Record<string, unknown>, transform: (row: unknown, path: string, index: number) => unknown) => Record<string, unknown>"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "markMergeReceiptReconciled",
@@ -7719,6 +6934,12 @@
           "signature": "(raw: string | undefined, label?: string) => Set<number> | undefined | calls: (raw: string | undefined, label?: string) => Set<number> | undefined"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseReadOutputSession",
+          "signature": "(value: unknown) => PmReadOutputSessionState | undefined | calls: (value: unknown) => PmReadOutputSessionState | undefined"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "parseRegisteredItemFieldAssignments",
@@ -8173,6 +7394,12 @@
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
           "signature": "\"1.1.0\""
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
+          "signature": "readonly [\"--output-session\"]"
         },
         {
           "classification": "supported",
@@ -8646,7 +7873,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; }"
         },
         {
           "classification": "supported",
@@ -8664,7 +7891,31 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmReadOutputRowCollection",
+          "signature": "export interface PmReadOutputRowCollection { path: string; value: unknown[] | Record<string, unknown>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputSessionReceipt",
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputSessionReference",
+          "signature": "export interface PmReadOutputSessionReference { id: string; context_ref: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputSessionState",
+          "signature": "export interface PmReadOutputSessionState { version: 1; id: string; token_budget: number; spent_tokens: number; seen_item_ids: string[]; }"
         },
         {
           "classification": "supported",
@@ -9271,6 +8522,24 @@
           "kind": "function",
           "name": "readLocatedItem",
           "signature": "(item: LocatedItem, options?: { schema?: RuntimeSchemaSettings; extensionFieldNames?: readonly string[]; warnings?: string[]; }) => Promise<{ raw: string; document: ItemDocument; }> | calls: (item: LocatedItem, options?: { schema?: RuntimeSchemaSettings; extensionFieldNames?: readonly string[]; warnings?: string[]; }) => Promise<{ raw: string; document: ItemDocument; }>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "readOutputRowCollections",
+          "signature": "(result: Record<string, unknown>) => PmReadOutputRowCollection[] | calls: (result: Record<string, unknown>) => PmReadOutputRowCollection[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "readOutputRowPaths",
+          "signature": "(result: Record<string, unknown>) => string[] | calls: (result: Record<string, unknown>) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readOutputSessionRemainingTokens",
+          "signature": "(state: PmReadOutputSessionState) => number | calls: (state: PmReadOutputSessionState) => number"
         },
         {
           "classification": "supported",
@@ -16031,6 +15300,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
+          "signature": "readonly [\"--output-session\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_READ_OUTPUT_DIMENSIONS",
           "signature": "readonly [\"include\", \"amount\", \"cost\", \"encoding\"]"
         },
@@ -16320,7 +15595,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; }"
         },
         {
           "classification": "contract_data",
@@ -16338,7 +15613,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
         },
         {
           "classification": "contract_data",
@@ -16900,6 +16175,18 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "applyReadOutputSessionReferences",
+          "signature": "(result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown> | calls: (result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "attachReadOutputSessionReceipt",
+          "signature": "(result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown> | calls: (result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown>"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "AuthorSource",
           "signature": "export type AuthorSource = \"asserted\" | \"configured\" | \"detected\" | \"unknown\";"
@@ -17404,9 +16691,21 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "parseReadOutputSession",
+          "signature": "(value: unknown) => PmReadOutputSessionState | undefined | calls: (value: unknown) => PmReadOutputSessionState | undefined"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "PM_CLI_EXPECTED_ERROR_NAME",
           "signature": "\"PmCliError\""
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
+          "signature": "readonly [\"--output-session\"]"
         },
         {
           "classification": "supported",
@@ -17484,7 +16783,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; }"
         },
         {
           "classification": "supported",
@@ -17502,7 +16801,25 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputSessionReceipt",
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputSessionReference",
+          "signature": "export interface PmReadOutputSessionReference { id: string; context_ref: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputSessionState",
+          "signature": "export interface PmReadOutputSessionState { version: 1; id: string; token_budget: number; spent_tokens: number; seen_item_ids: string[]; }"
         },
         {
           "classification": "supported",
@@ -17527,6 +16844,12 @@
           "kind": "function",
           "name": "readAuthorEnvironment",
           "signature": "() => string | undefined | calls: () => string | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readOutputSessionRemainingTokens",
+          "signature": "(state: PmReadOutputSessionState) => number | calls: (state: PmReadOutputSessionState) => number"
         },
         {
           "classification": "supported",
@@ -21978,7 +21301,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "GlobalOptions",
-          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
+          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
         },
         {
           "classification": "supported",
@@ -22644,7 +21967,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; }"
         },
         {
           "classification": "supported",
@@ -22656,7 +21979,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
         },
         {
           "classification": "supported",
@@ -24493,6 +23816,7 @@
     "invalid_improvement_observation_timestamp",
     "invalid_provenance_predicate",
     "invalid_query_cursor",
+    "invalid_read_output_session",
     "invalid_workspace_snapshot_target",
     "item_document_invalid",
     "item_document_roundtrip_failed",

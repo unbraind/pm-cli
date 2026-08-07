@@ -524,6 +524,8 @@ export * from "./lifecycle-completion.js";
 export * from "./lifecycle-policy.js";
 export * from "./output-projection.js";
 export * from "./read-output-contracts.js";
+export * from "./read-output-rows.js";
+export * from "./read-output-session.js";
 export * from "./output-token-accounting.js";
 export * from "./context-packing.js";
 export * from "./context-usage.js";

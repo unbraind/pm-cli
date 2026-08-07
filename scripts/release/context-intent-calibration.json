@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "metric": "utf8_bytes",
   "token_estimate": "ceil(bytes / 4)",
   "structural_negative_control": "remove context_intent and repeat first-page metadata on a continuation",
@@ -8,10 +8,10 @@
       "item_count": 2,
       "intents": {
         "context": {
-          "delivered_bytes": 2828,
+          "delivered_bytes": 2938,
           "delivered_rows": 1,
           "declared_tokens": 2400,
-          "measured_tokens": 707,
+          "measured_tokens": 735,
           "degradation": "bounded_sections"
         },
         "get": {
@@ -22,10 +22,10 @@
           "degradation": "standard_item"
         },
         "list": {
-          "delivered_bytes": 1572,
+          "delivered_bytes": 1769,
           "delivered_rows": 2,
           "declared_tokens": 3200,
-          "measured_tokens": 393,
+          "measured_tokens": 443,
           "degradation": "bounded_fields_and_rows"
         },
         "next": {
@@ -36,22 +36,31 @@
           "degradation": "bounded_ranked_rows"
         },
         "search": {
-          "delivered_bytes": 1204,
+          "delivered_bytes": 1399,
           "delivered_rows": 2,
           "declared_tokens": 1800,
-          "measured_tokens": 301,
+          "measured_tokens": 350,
           "degradation": "bounded_ranked_rows"
         }
+      },
+      "session_orientation": {
+        "command_count": 5,
+        "token_budget": 20000,
+        "spent_tokens": 3663,
+        "remaining_tokens": 16337,
+        "seen_item_count": 2,
+        "suppressed_repeat_count": 3,
+        "delivered_bytes": 14646
       }
     },
     {
       "item_count": 2243,
       "intents": {
         "context": {
-          "delivered_bytes": 3999,
+          "delivered_bytes": 4109,
           "delivered_rows": 3,
           "declared_tokens": 2400,
-          "measured_tokens": 1000,
+          "measured_tokens": 1028,
           "degradation": "bounded_sections"
         },
         "get": {
@@ -62,10 +71,10 @@
           "degradation": "standard_item"
         },
         "list": {
-          "delivered_bytes": 12721,
-          "delivered_rows": 70,
+          "delivered_bytes": 12755,
+          "delivered_rows": 69,
           "declared_tokens": 3200,
-          "measured_tokens": 3181,
+          "measured_tokens": 3189,
           "degradation": "budget_row_compaction"
         },
         "next": {
@@ -76,31 +85,40 @@
           "degradation": "budget_row_compaction"
         },
         "search": {
-          "delivered_bytes": 7050,
-          "delivered_rows": 28,
+          "delivered_bytes": 7041,
+          "delivered_rows": 27,
           "declared_tokens": 1800,
-          "measured_tokens": 1763,
+          "measured_tokens": 1761,
           "degradation": "budget_row_compaction"
         }
+      },
+      "session_orientation": {
+        "command_count": 5,
+        "token_budget": 20000,
+        "spent_tokens": 9999,
+        "remaining_tokens": 10001,
+        "seen_item_count": 106,
+        "suppressed_repeat_count": 7,
+        "delivered_bytes": 39985
       },
       "cursor_walks": {
         "list": {
           "rows": 1998,
-          "pages": 30,
-          "bytes_per_row": 172.29,
-          "optimized_walk_bytes": 344234,
-          "repeated_metadata_control_bytes": 379875,
+          "pages": 31,
+          "bytes_per_row": 172.93,
+          "optimized_walk_bytes": 345519,
+          "repeated_metadata_control_bytes": 387489,
           "unbounded_single_call_bytes": 1558741,
-          "optimized_to_unbounded_ratio": 0.2208
+          "optimized_to_unbounded_ratio": 0.2217
         },
         "search": {
           "rows": 1998,
-          "pages": 64,
-          "bytes_per_row": 201.24,
-          "optimized_walk_bytes": 402075,
-          "repeated_metadata_control_bytes": 454869,
+          "pages": 66,
+          "bytes_per_row": 202.5,
+          "optimized_walk_bytes": 404591,
+          "repeated_metadata_control_bytes": 470046,
           "unbounded_single_call_bytes": 1681847,
-          "optimized_to_unbounded_ratio": 0.2391
+          "optimized_to_unbounded_ratio": 0.2406
         }
       }
     }

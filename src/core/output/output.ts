@@ -41,6 +41,8 @@ export interface OutputOptions {
   outputBudget?: string;
   /** Canonical renderer encoding for read output. */
   outputFormat?: "toon" | "json";
+  /** Caller-carried cross-call budget and served-item state. */
+  outputSession?: string;
   /** Fallback output format used when callers do not provide an override. */
   defaultOutputFormat?: "toon" | "json";
   /** Value that configures or reports command for this contract. */
@@ -448,6 +450,7 @@ function formatEffectiveOutput(
         ["outputLimit", options.outputLimit],
         ["outputBudget", options.outputBudget],
         ["outputFormat", options.outputFormat],
+        ["outputSession", options.outputSession],
       ].filter((entry): entry is [string, string] => entry[1] !== undefined),
     ),
   };
