@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",context,context-management,scale,token-budget
 created_at: "2026-08-03T06:22:52.917Z"
-updated_at: "2026-08-07T07:49:44.821Z"
+updated_at: "2026-08-07T08:01:04.424Z"
 closed_at: "2026-08-07T07:02:22.215Z"
 completed_at: "2026-08-07T07:02:22.215Z"
 author: "harness:claude-code"
@@ -38,7 +38,7 @@ dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,blocked_by,"2026-08-03T11:15:45.320Z","harness:codex","cli:update:dep",detected
   pm-n7rr,implements,"2026-08-03T11:15:45.320Z","harness:codex","cli:update:dep",detected
   pm-cyn0y6,related,"2026-08-03T20:38:41.575Z","harness:claude-code","cli:update:dep",detected
-comments[12]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-08-03T11:09:25.972Z","harness:codex","Estimate basis 2026-08-03: 900 minutes reflects a cross-call budget ledger, served-fact references, deterministic degradation, session and fleet composition, CI ratchet, and small-workspace no-regression proof."
   "2026-08-03T11:15:45.320Z","harness:codex","Sequencing 2026-08-03: establish trustworthy per-command ceilings in pm-5t33or before composing a session ledger, then use the same receipt and degradation algebra for within-session deduplication. This item implements the agent-facing simplification outcome because fewer commands are insufficient if the prescribed multi-call orientation still repeats a third of its bytes."
   "2026-08-07T05:54:35.716Z","harness:codex","Duplicate/orientation evidence 2026-08-07: searched all 2,343 items across every status for output session token budget, seen/suppression, repeated item context, and closed session-budget predecessors; pm-hid9g1 is the canonical owner. pm-5t33or supplies the shipped per-call budget algebra, pm-sb0tns owns the remaining universal row/projection prerequisite, pm-tch9cs remains the distinct cross-agent amortization horizon."
@@ -51,6 +51,7 @@ comments[12]{created_at,author,text}:
   "2026-08-07T07:30:50.067Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/927 reviews the exact-head context-session budgeting, universal transport/schema integration, strict calibration, and generated contract changes. Initial reviewed implementation commit: 48f89b5bba8a663238f1ed66f8902b4da719f1e8."
   "2026-08-07T07:44:26.466Z","harness:codex","Review evidence (PR #927, DeepScan): replaced assertion-mediated session-presence narrowing in scripts/release/context-intent-calibration-gate.mjs with an explicit symmetric undefined guard before property access; added both one-sided-missing negative controls in tests/unit/scripts/release/context-intent-calibration-gate.spec.ts. Focused 10-test suite, ESLint, full TypeScript typecheck, and the real 2/2243-item calibration gate pass. This is follow-up evidence on the closed item; it remains closed and unclaimed."
   "2026-08-07T07:49:44.821Z","harness:codex","Exact review-fix coverage: full pnpm test:coverage passes at 100% statements 49,641/49,641, branches 36,071/36,071, functions 10,152/10,152, and lines 48,086/48,086. The DeepScan guard correction therefore preserves the tranche's mandatory 100/100/100/100 gate."
+  "2026-08-07T08:01:04.424Z","harness:codex","GitHub exact-head review loop for c5e95b159: all required Actions and external gates are green, including 4 coverage shards plus aggregator, static, smokes, compatibility, typecheck, Windows, macOS/Linux runtime, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, benchmarks, CodeFactor, Codecov, Hound, and DeepScan (0 new issues). Every bot conversation comment was dispositioned and reacted to. CodeRabbit and Sourcery remained provider-rate-limited and Greptile produced no review after more than the requested 20-minute maximum; these are explicit external limitations, not approvals or hidden findings."
 learnings[1]{created_at,author,text}:
   "2026-08-07T07:02:19.900Z","harness:codex","Cross-call context accounting stays universal and small-workspace-free when the complete versioned ledger travels with the caller. The host can then reuse the same egress row contract across CLI, SDK, MCP, and packages without a daemon, persistent session index, or command-local cache."
 files[26]{path,scope,note}:
