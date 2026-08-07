@@ -1,0 +1,25 @@
+id: pm-1eted6
+title: "GH-926: warn before a stale pm binary mutates a project pinned to a newer CLI/SDK"
+description: "A PATH-resolved pm binary older than the project dependency or lockfile can perform tracker mutations without warning, risking schema, history, merge-fence, validation, and SDK drift."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-07T08:33:01.251Z"
+updated_at: "2026-08-07T08:34:25.758Z"
+author: "harness:codex"
+parent: pm-usfg
+risk: high
+confidence: high
+severity: high
+expected_result: "Read paths expose a structured version mismatch and mutation paths fail closed unless an explicit recovery override is supplied, with package-manager-neutral remediation."
+actual_result: Older global and stale local binaries mutate a project whose declared and locked pm-cli version is newer without any diagnostic.
+affected_version: 2026.8.6
+component: CLI bootstrap and workspace compatibility
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-59gj,related,"2026-08-07T08:33:01.251Z","harness:codex","cli:create:dep",detected
+  pm-rnpb,discovered_from,"2026-08-07T08:34:25.672Z","harness:codex","cli:update:dep",detected
+  pm-usfg,blocks,"2026-08-07T08:34:25.672Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-07T08:33:01.251Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/926. Duplicate check searched all 2,351 items across every status for stale global pm,pinned/newer CLI and SDK,lockfile mismatch,and GH-926; no canonical issue existed."
+body: ""

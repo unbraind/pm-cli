@@ -1,0 +1,26 @@
+id: pm-jtwsct
+title: "GH-920: health conflates lossless merge receipts with discarded-value decisions"
+description: "health counts every pending merge receipt as a blocking merge decision even when the field-aware merge preserved both agents' changes, training agents to clear the same signal that protects against genuine data loss."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-07T08:33:39.644Z"
+updated_at: "2026-08-07T08:34:28.881Z"
+author: "harness:codex"
+parent: pm-doxj
+risk: high
+confidence: high
+severity: high
+expected_result: "Strict health blocks on discarded-value decisions, reports lossless receipts separately, and names discarded fields so the signal is actionable."
+actual_result: Lossless and lossy receipts both increment pending_merge_decisions and fail strict health with no classification in the health envelope.
+affected_version: 2026.8.5
+component: merge health and receipt classification
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-g5sx,related,"2026-08-07T08:33:39.644Z","harness:codex","cli:create:dep",detected
+  pm-ysqb6n,related,"2026-08-07T08:33:39.644Z","harness:codex","cli:create:dep",detected
+  pm-1j5j21,blocks,"2026-08-07T08:34:28.760Z","harness:codex","cli:update:dep",detected
+  pm-g5sx,discovered_from,"2026-08-07T08:34:28.760Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-07T08:33:39.644Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/920. Duplicate check searched all 2,351 items and every status for lossless merge receipts,pending decisions,strict health,discarded fields,and GH-920; no canonical issue existed."
+body: ""
