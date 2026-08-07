@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",output-contract,token-efficiency
 created_at: "2026-08-07T11:16:55.129Z"
-updated_at: "2026-08-07T15:48:54.565Z"
+updated_at: "2026-08-07T16:05:01.230Z"
 closed_at: "2026-08-07T15:48:54.035Z"
 completed_at: "2026-08-07T15:48:54.035Z"
 author: "harness:claude-code"
@@ -40,11 +40,12 @@ dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
   pm-tuadp2,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-x4nn3z,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
   pm-ydshl9,related,"2026-08-07T11:19:55.144Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-07T14:58:02.927Z","harness:codex","Final evidence: get projection now accepts bare item fields and item.<field>, supports full item and present sections, rejects unknown or conflicting selectors with stable usage guidance, and emits exact omission receipts. CLI/SDK integration passed inside the 445-file, 6,938-test suite; coverage is 49,824/49,824 statements, 36,260/36,260 branches, 10,203/10,203 functions, and 48,261/48,261 lines."
   "2026-08-07T15:11:53.205Z","harness:codex","PR #929 review correctly noted that the conflict is full item plus projected item fields, not full sections plus fields. Reopened for the precise shared refusal text and test assertion."
   "2026-08-07T15:24:32.605Z","harness:codex","Review implementation evidence: ambiguous get projection refusal now names the exact conflict—a full item cannot be mixed with projected item fields—and the SDK negative contract asserts that vocabulary."
   "2026-08-07T15:48:48.646Z","harness:codex","Final verification: linked selector unit/integration tests passed through pm test; exact repository coverage and contract snapshot gates passed; packed artifact acceptance confirmed no regression to CLI or SDK mutation flows."
+  "2026-08-07T16:05:01.230Z","harness:codex","Hosted PR evidence: PR #929 exact head 35f4635a187721b4bcbad643c3185bf33b6571ab completed with 29 successful checks, 3 intentional skips, 0 failures, and 0 pending. CodeRabbit supplied ten actionable first-round findings; all ten were implemented, individually replied to, positively reacted to, and resolved. CodeRabbit and Sourcery exact-head rereviews were provider-rate-limited and are recorded as limitations rather than approvals. Codecov confirms all modified coverable lines covered and no failed tests; DeepScan reports 0 new issues; CodeFactor, CodeQL, Semgrep, Windows, security, compatibility, smoke, static, coverage, and runtime gates are green. CodSpeed completed but its comment compared different runtime environments and reported unrelated pagination/BM25 variance despite no measured implementation or benchmark changes, so it was explicitly acknowledged as non-actionable noise. Final inventory: mergeable CLEAN, zero unresolved threads, and every bot comment/review read, replied or dispositioned, and reacted to."
 learnings[2]{created_at,author,text}:
   "2026-08-07T14:58:03.382Z","harness:codex",Entity read projection must derive its selectable top-level vocabulary from the actual result envelope while keeping item-field vocabulary stable; otherwise a selector either lies about absent data or silently disappears.
   "2026-08-07T15:48:49.314Z","harness:codex",Projection conflicts should name the exact entity and depth pair so an agent can repair the selector without translating generic section terminology.
