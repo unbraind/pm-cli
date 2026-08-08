@@ -26,6 +26,7 @@ import {
 } from "../../../src/sdk/workspace-snapshot.js";
 import { acquireLock } from "../../../src/core/lock/lock.js";
 import { getLockPath } from "../../../src/core/store/paths.js";
+import { PmCliError } from "../../../src/core/shared/errors.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("workspace snapshots", () => {
@@ -388,9 +389,17 @@ describe("workspace snapshots", () => {
         deleted: "object",
         target: created.manifest.fingerprint,
       });
-      await expect(
-        createWorkspaceSnapshot(pmPath, { name: "../escape" }),
-      ).rejects.toThrow("must use lowercase");
+      // An invalid snapshot name is a correct refusal, not a production fault.
+      // It must carry a declared usage contract so error reporting classifies
+      // it as expected instead of raising a high Sentry issue that blocks
+      // releases until it ages out of the reliability window.
+      const invalidName = await createWorkspaceSnapshot(pmPath, {
+        name: "../escape",
+      }).catch((error: unknown) => error as PmCliError);
+      expect(invalidName).toBeInstanceOf(PmCliError);
+      expect(invalidName.message).toContain("must use lowercase");
+      expect(invalidName.code).toBe("invalid_workspace_snapshot_target");
+      expect(invalidName.exitCode).toBe(2);
       await expect(
         createWorkspaceSnapshot(pmPath, { name: "a".repeat(64) }),
       ).rejects.toThrow("must not be 64-character");
@@ -543,5 +552,48 @@ describe("workspace snapshots", () => {
       "staging->root",
       "remove:backup",
     ]);
+  });
+
+  // Untyped, these escape as raw Node errors: captured as unactionable
+  // production exceptions that name a scrubbed `copyfile` frame and nothing an
+  // operator can act on.
+  it("converts host storage and permission faults into declared, path-free refusals", async () => {
+    const { withSnapshotFilesystemGuard } = _testOnlyWorkspaceSnapshot;
+    const secretPath = ["/home", "someone", "private-project"].join("/");
+
+    const exhausted = await withSnapshotFilesystemGuard("restore_stage", async () => {
+      throw Object.assign(
+        new Error(`ENOSPC: no space left on device, copyfile '${secretPath}/a' -> '${secretPath}/b'`),
+        { code: "ENOSPC" },
+      );
+    }).catch((error: unknown) => error as PmCliError);
+
+    expect(exhausted).toBeInstanceOf(PmCliError);
+    expect(exhausted.code).toBe("workspace_snapshot_storage_exhausted");
+    expect(exhausted.context.reason).toBe("ENOSPC");
+    expect(exhausted.message).toContain("restore_stage");
+    // The bounded operation label is reported; workspace topology is not.
+    expect(exhausted.message).not.toContain(secretPath);
+    expect(JSON.stringify(exhausted.context)).not.toContain(secretPath);
+    expect(exhausted.context.nextSteps?.length).toBeGreaterThan(0);
+    expect(exhausted.context.recovery?.suggested_retry).toBe("pm gc --json");
+
+    const denied = await withSnapshotFilesystemGuard("create_object", async () => {
+      throw Object.assign(new Error("EROFS: read-only file system"), { code: "EROFS" });
+    }).catch((error: unknown) => error as PmCliError);
+    expect(denied.code).toBe("workspace_snapshot_permission_denied");
+    expect(denied.message).toContain("create_object");
+
+    // A fault that is not a host environment condition stays untouched, so real
+    // defects are still reported as defects.
+    await expect(
+      withSnapshotFilesystemGuard("create_object", async () => {
+        throw new Error("genuine defect");
+      }),
+    ).rejects.toThrow("genuine defect");
+
+    await expect(
+      withSnapshotFilesystemGuard("create_object", async () => "ok"),
+    ).resolves.toBe("ok");
   });
 });

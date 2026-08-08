@@ -17382,6 +17382,38 @@
     },
     {
       "aliases": [],
+      "canonical_code": "workspace_snapshot_permission_denied",
+      "class": "generic_failure",
+      "code": "workspace_snapshot_permission_denied",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Workspace snapshot permission denied condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-snapshot.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "workspace_snapshot_storage_exhausted",
+      "class": "generic_failure",
+      "code": "workspace_snapshot_storage_exhausted",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Workspace snapshot storage exhausted condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-snapshot.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "wrong_item_type",
       "class": "usage",
       "code": "wrong_item_type",

@@ -3138,6 +3138,32 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     aliases: [],
   },
   {
+    code: "workspace_snapshot_permission_denied",
+    meaning: "Workspace snapshot permission denied condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/workspace-snapshot.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "workspace_snapshot_permission_denied",
+    aliases: [],
+  },
+  {
+    code: "workspace_snapshot_storage_exhausted",
+    meaning: "Workspace snapshot storage exhausted condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/workspace-snapshot.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "workspace_snapshot_storage_exhausted",
+    aliases: [],
+  },
+  {
     code: "wrong_item_type",
     meaning: "Wrong item type condition.",
     stability: "stable",

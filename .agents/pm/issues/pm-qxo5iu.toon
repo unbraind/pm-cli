@@ -1,0 +1,39 @@
+id: pm-qxo5iu
+title: "Sentry exception capture never writes the pm.error_code and pm.exit_code tags the release gate reads, so every unexpected runtime error is unclassifiable by construction and blocks the daily cut for the full rolling window"
+description: "The release reliability gate was rebound to canonical error codes (pm-dqtzva), and it reads pm.error_code plus pm.exit_code from Sentry issue tags, failing closed when either is absent. The exception producer never satisfies that contract. sentryCaptureCliError calls captureException with an extra bag only: exit_code and error_context land in event extras, which the gate does not read, and no tag is written at capture time. The only writer of those tags is setSentryCommandFinishTags, reached through sentryFinishCommandSpan, which begins with an early return when no command span is active. Two consequences follow and both are realized. Ordering: in the unknown-error path the capture runs before the finish call, so the scope tags do not exist yet when the event is sent. Span dependence: any failure raised before or outside an active command span never reaches the tag writer at all, so no ordering fix alone can satisfy the contract. The result is a producer/consumer split in which the gate demands a contract the reporter cannot emit for the exact class of events the gate exists to judge. Every unexpected runtime fault therefore enters the window as unclassifiable, fails closed, and blocks every scheduled release until it ages out of --sentry-window-days or a human resolves it by hand. The 2026-08-08 scheduled cut failed this way on two untagged handled events. Duplicate check searched sentry exception capture tags, captureException pm.error_code, and command span gating across all statuses; pm-9iho covers console-integration leakage and pm-dqtzva covers the consumer side, neither owns the producer tag contract."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:ci","area:observability",error-taxonomy,gate,release,sentry
+created_at: "2026-08-08T07:48:05.769Z"
+updated_at: "2026-08-08T08:00:40.782Z"
+closed_at: "2026-08-08T07:59:16.848Z"
+completed_at: "2026-08-08T07:59:16.848Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "Every Sentry event the CLI captures carries pm.error_code and pm.exit_code tags, set at capture time and independent of whether a command span is active; An error with no declared code is tagged with an explicit unclassified sentinel rather than no tag, so the gate always has a value to judge; A negative control proves an error raised before any command span still arrives tagged; The release gate's fail-closed branch can no longer be reached by a CLI-produced event, and a test asserts producer/consumer contract parity against the declared catalog"
+parent: pm-5oj5
+risk: high
+confidence: high
+resolution: "sentryCaptureCliError now attaches pm.error_code and pm.exit_code to the captured event itself, independent of any active command span, with an unclassified_runtime_error sentinel for undeclared faults."
+expected_result: "Every CLI-produced Sentry event carries the contract the release gate reads, so the gate's fail-closed branch is unreachable for lack of metadata while still blocking genuine unclassified defects."
+actual_result: Tags are set at capture time for span and no-span paths; undeclared faults tag the sentinel and still block; Node errno codes are not promoted to pm codes; 43 sentry-helper tests pass.
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+  pm-23lmm5,related,"2026-08-08T07:48:05.769Z","harness:claude-code","cli:create:dep",detected
+  pm-4odf0c,related,"2026-08-08T07:48:05.769Z","harness:claude-code","cli:create:dep",detected
+  pm-9iho,related,"2026-08-08T07:48:05.769Z","harness:claude-code","cli:create:dep",detected
+  pm-dqtzva,related,"2026-08-08T07:48:05.769Z","harness:claude-code","cli:create:dep",detected
+  pm-e70zh5,discovered_from,"2026-08-08T07:48:05.769Z","harness:claude-code","cli:create:dep",detected
+  pm-qyg51h,related,"2026-08-08T07:48:05.769Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-08-08T07:48:05.769Z","harness:claude-code","cli:create:dep",detected
+  pm-1qkivy,related,"2026-08-08T08:00:37.636Z","harness:claude-code","cli:update:dep",detected
+  pm-3lhth4,blocks,"2026-08-08T08:00:37.636Z","harness:claude-code","cli:update:dep",detected
+  pm-rtn5h6,related,"2026-08-08T08:00:37.636Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-08T07:58:24.554Z","harness:claude-code","Root cause confirmed against the 2026-08-08 scheduled cut (run 31238168668). The gate read pm.error_code/pm.exit_code from Sentry issue tags and failed closed; both blocking events (PM-CLI-2S, PM-CLI-2Q) carried handled=yes and neither tag. sentryCaptureCliError put exit_code only into event extras, and the sole tag writer (setSentryCommandFinishTags via sentryFinishCommandSpan) begins with an early return when no command span is active — so the unknown-error path captured before the writer ran, and any pre-span failure never reached it at all. Fix attaches the contract to the event itself at capture time. An undeclared fault now tags unclassified_runtime_error, which resolves to no catalog contract and therefore still blocks, so fail-closed is preserved for real defects while becoming reachable-by-construction rather than unsatisfiable. A Node errno error (string code, no numeric exitCode) is deliberately not promoted to a pm code. Evidence: 43 sentry-helper tests pass including a no-active-span negative control."
+files[1]{path,scope,note}:
+  src/core/sentry/helpers.ts,project,"Capture-time pm.error_code/pm.exit_code tags,span-independent"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry/sentry-helpers.spec.ts,project,240
+close_reason: Capture-time contract tags shipped with a no-active-span negative control; the 2026-08-08 blocking events are resolved and the gate passes at high=0.
+body: ""

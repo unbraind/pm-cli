@@ -738,17 +738,72 @@ describe("sentry command runtime helpers", () => {
     sentryCaptureCliError(unexpected);
     expect(sentry.captureException).toHaveBeenCalledWith(unexpected, {
       extra: { exit_code: 70, error_context: { detail: "x" } },
+      tags: { "pm.error_code": "unclassified_runtime_error", "pm.exit_code": "70" },
     });
 
     // A plain Error without exitCode/context properties → empty extras object.
     const bareError = new Error("bare");
     sentryCaptureCliError(bareError);
-    expect(sentry.captureException).toHaveBeenLastCalledWith(bareError, { extra: {} });
+    expect(sentry.captureException).toHaveBeenLastCalledWith(bareError, {
+      extra: {},
+      tags: { "pm.error_code": "unclassified_runtime_error", "pm.exit_code": "1" },
+    });
 
     sentryCaptureCliError("string failure");
     const wrapped = sentry.captureException.mock.calls.at(-1)?.[0] as Error;
     expect(wrapped).toBeInstanceOf(Error);
     expect(wrapped.message).toBe("string failure");
+  });
+
+  // The release reliability gate reads pm.error_code/pm.exit_code from issue
+  // TAGS and fails closed when either is missing. The scope writer that used to
+  // be the only source of those tags returns early without an active command
+  // span, so capture must carry them itself or the gate becomes unsatisfiable.
+  it("tags every captured event with the release-gate error contract, without an active command span", () => {
+    const sentry = buildFakeSentry(buildFakeSpan());
+    vi.mocked(getSentry).mockReturnValue(sentry as never);
+
+    // No sentryStartCommandSpan() call here: there is deliberately no active span.
+    sentryCaptureCliError(new Error("no span active"));
+
+    const tags = sentry.captureException.mock.calls.at(-1)?.[1]?.tags as Record<string, string>;
+    expect(tags).toEqual({
+      "pm.error_code": "unclassified_runtime_error",
+      "pm.exit_code": "1",
+    });
+    expect(sentry.setTag).not.toHaveBeenCalledWith("pm.error_code", expect.anything());
+  });
+
+  it("reports a Node errno code as unclassified rather than as a declared pm contract", () => {
+    const sentry = buildFakeSentry(buildFakeSpan());
+    vi.mocked(getSentry).mockReturnValue(sentry as never);
+
+    // errno errors carry a string `code` but no numeric `exitCode`; tagging
+    // ENOSPC as a pm error code would fabricate a catalog contract.
+    sentryCaptureCliError(Object.assign(new Error("ENOSPC: no space left on device"), { code: "ENOSPC" }));
+
+    expect(sentry.captureException.mock.calls.at(-1)?.[1]?.tags).toEqual({
+      "pm.error_code": "unclassified_runtime_error",
+      "pm.exit_code": "1",
+    });
+  });
+
+  it("propagates a declared pm error contract onto the captured event tags", () => {
+    const sentry = buildFakeSentry(buildFakeSpan());
+    vi.mocked(getSentry).mockReturnValue(sentry as never);
+
+    // DEPENDENCY_FAILED is outside the expected-outcome set, so it is captured.
+    sentryCaptureCliError(
+      Object.assign(new Error("declared"), {
+        code: "linked_test_failed",
+        exitCode: EXIT_CODE.DEPENDENCY_FAILED,
+      }),
+    );
+
+    expect(sentry.captureException.mock.calls.at(-1)?.[1]?.tags).toEqual({
+      "pm.error_code": "linked_test_failed",
+      "pm.exit_code": String(EXIT_CODE.DEPENDENCY_FAILED),
+    });
   });
 
   it("prefers the structured logger for usage errors and falls back to captureMessage", () => {

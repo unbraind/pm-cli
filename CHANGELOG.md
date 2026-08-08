@@ -8,6 +8,9 @@
 
 ### Fixed
 
+- Sentry exception capture never writes the pm.error_code and pm.exit_code tags the release gate reads, so every unexpected runtime error is unclassifiable by construction and blocks the daily cut for the full rolling window ([pm-qxo5iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qxo5iu.toon))
+- Sentry PM-CLI-2S: resource-exhausted copy reports a high handled error without actionable storage guidance ([pm-4odf0c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4odf0c.toon))
+- Sentry PM-CLI-2Q: expected snapshot-name validation is captured as a high production error ([pm-qyg51h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qyg51h.toon))
 - The release gate classifies production errors by message prose and reads none of the 236 error codes the product declares, so every waiver is a latent re-block and a broad substring is a silent waiver ([pm-dqtzva](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dqtzva.toon))
 - The mandatory command-wiring replication set is enforced only by a prose checklist, and the census shows partial application is the single largest recurring defect class in the record ([pm-7rrqsk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7rrqsk.toon))
 - pm get silently discards --output-include field names because entity reads bind the flag to sections while collection reads bind it to fields, and the omission receipt reports no omissions either way ([pm-0k19l7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0k19l7.toon))

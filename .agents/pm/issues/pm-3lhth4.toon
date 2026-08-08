@@ -1,0 +1,24 @@
+id: pm-3lhth4
+title: "Host environment faults escape untyped at every filesystem boundary except the one just guarded, and the recurrence is only ever discovered as a production error that blocks a release"
+description: "Snapshot create and restore now translate host filesystem faults into declared refusals, but that boundary is one of roughly thirty-two await-ed filesystem calls across core and sdk, and it is the only one that has it. Everywhere else an ENOSPC, EACCES, EROFS, EDQUOT or platform-specific errno propagates as a raw Node error: it reaches the user as a stack-shaped message naming a scrubbed syscall frame, it carries no declared code, and it is reported as an unexpected production exception. The observability record shows this is a family and not an incident. Four of the fifteen most recent production issues are exactly this shape — ENOSPC copyfile, EACCES open, EISDIR read, and an unknown system error -122 — each filed, triaged and resolved as an individual defect, with nothing in the graph or in CI relating them. The cost is asymmetric: because these events are indistinguishable from genuine defects, each one enters the release reliability window as unclassifiable and blocks every scheduled cut until a human resolves it by hand, which is what happened on 2026-08-08. The missing artifacts are a shared translation primitive at the IO boundary and a gate that fails when a new unguarded filesystem call site is introduced, so the family stops being rediscovered one production error at a time. Duplicate check searched raw errno boundary, environment fault typed refusal and filesystem error taxonomy across all statuses; pm-j668gl owns errno string literals in the Windows test suite and pm-4odf0c owned the single snapshot instance, neither owns the boundary or the gate."
+type: Issue
+status: open
+priority: 1
+tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
+created_at: "2026-08-08T08:00:22.880Z"
+updated_at: "2026-08-08T08:00:22.880Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
+parent: pm-o2kc
+risk: medium
+confidence: high
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1qkivy,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
+  pm-4odf0c,discovered_from,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
+  pm-f05lsg,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
+  pm-ouyq3n,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
+  pm-qxo5iu,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
+  pm-rtn5h6,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
+body: ""

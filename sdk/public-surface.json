@@ -24348,6 +24348,8 @@
     "workspace_snapshot_manifest_mismatch",
     "workspace_snapshot_name_reserved_fingerprint",
     "workspace_snapshot_not_found",
+    "workspace_snapshot_permission_denied",
+    "workspace_snapshot_storage_exhausted",
     "wrong_item_type"
   ],
   "package": "@unbrained/pm-cli",

@@ -131,6 +131,7 @@ class WorkspaceLockHeartbeat {
 /** Internal heartbeat constructor exposed only for deterministic lock tests. */
 export const _testOnlyWorkspaceSnapshot = {
   WorkspaceLockHeartbeat,
+  withSnapshotFilesystemGuard,
 };
 
 /** Immutable manifest stored with every content-addressed snapshot object. */
@@ -353,6 +354,107 @@ function isErrno(error: unknown, code: string): boolean {
   );
 }
 
+/**
+ * Environment faults a snapshot copy or write can raise that are conditions of
+ * the host rather than defects in pm.
+ *
+ * Left untyped these escape as raw Node errors, are captured as unactionable
+ * production exceptions, and name only a scrubbed `copyfile` frame — the
+ * operator learns that a copy ran out of space but not which bounded operation
+ * failed or how to recover from it.
+ */
+const SNAPSHOT_ENVIRONMENT_FAULTS: ReadonlyMap<
+  string,
+  { code: string; summary: string; required: string }
+> = new Map([
+  [
+    "ENOSPC",
+    {
+      code: "workspace_snapshot_storage_exhausted",
+      summary: "ran out of storage space",
+      required:
+        "Free storage on the filesystem holding the tracker, then retry.",
+    },
+  ],
+  [
+    "EDQUOT",
+    {
+      code: "workspace_snapshot_storage_exhausted",
+      summary: "exceeded the filesystem quota",
+      required: "Raise or reclaim the filesystem quota, then retry.",
+    },
+  ],
+  [
+    "EACCES",
+    {
+      code: "workspace_snapshot_permission_denied",
+      summary: "was denied filesystem permission",
+      required: "Grant write access to the tracker directory, then retry.",
+    },
+  ],
+  [
+    "EPERM",
+    {
+      code: "workspace_snapshot_permission_denied",
+      summary: "was denied filesystem permission",
+      required: "Grant write access to the tracker directory, then retry.",
+    },
+  ],
+  [
+    "EROFS",
+    {
+      code: "workspace_snapshot_permission_denied",
+      summary: "targeted a read-only filesystem",
+      required: "Remount the tracker filesystem read-write, then retry.",
+    },
+  ],
+]);
+
+/**
+ * Runs a bounded snapshot filesystem stage, converting host environment faults
+ * into declared refusals.
+ *
+ * The operation label is a fixed identifier, never a path: snapshot failures
+ * are reported without disclosing workspace topology.
+ */
+async function withSnapshotFilesystemGuard<T>(
+  operation: string,
+  run: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    const errno =
+      typeof error === "object" && error !== null && "code" in error
+        ? (error as { code?: unknown }).code
+        : undefined;
+    const fault =
+      typeof errno === "string"
+        ? SNAPSHOT_ENVIRONMENT_FAULTS.get(errno)
+        : undefined;
+    if (!fault) throw error;
+    throw new PmCliError(
+      `Workspace snapshot stage ${operation} ${fault.summary}`,
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: fault.code,
+        reason: errno as string,
+        required: fault.required,
+        why: "Snapshot create and restore copy the authoritative tracker state in full before any swap, so the whole stage needs headroom and write access up front.",
+        examples: [
+          "pm workspace snapshot list --json",
+          "pm gc --json",
+        ],
+        nextSteps: [
+          fault.required,
+          "Reclaim tracker cache space with pm gc, then retry the snapshot operation.",
+        ],
+        recovery: { suggested_retry: "pm gc --json" },
+      },
+    );
+  }
+}
+
 function snapshotStore(pmRoot: string): string {
   return path.join(pmRoot, SNAPSHOT_RUNTIME_PATH);
 }
@@ -517,18 +619,20 @@ export async function createWorkspaceSnapshot(
       "objects",
       `.create-${process.pid}-${crypto.randomUUID()}`,
     );
-    await mkdir(path.join(temporaryRoot, "files"), { recursive: true });
-    for (const [index, file] of manifest.files.entries()) {
-      const target = path.join(temporaryRoot, "files", file);
-      await mkdir(path.dirname(target), { recursive: true });
-      await writeFile(target, contents[index]);
-    }
-    await writeFile(
-      path.join(temporaryRoot, "manifest.json"),
-      `${JSON.stringify(manifest, null, 2)}\n`,
-      "utf8",
-    );
-    await mkdir(path.dirname(objectRoot), { recursive: true });
+    await withSnapshotFilesystemGuard("create_object", async () => {
+      await mkdir(path.join(temporaryRoot, "files"), { recursive: true });
+      for (const [index, file] of manifest.files.entries()) {
+        const target = path.join(temporaryRoot, "files", file);
+        await mkdir(path.dirname(target), { recursive: true });
+        await writeFile(target, contents[index]);
+      }
+      await writeFile(
+        path.join(temporaryRoot, "manifest.json"),
+        `${JSON.stringify(manifest, null, 2)}\n`,
+        "utf8",
+      );
+      await mkdir(path.dirname(objectRoot), { recursive: true });
+    });
     deduplicated = await publishWorkspaceSnapshotObject(
       temporaryRoot,
       objectRoot,
@@ -778,12 +882,14 @@ export async function restoreWorkspaceSnapshotWithRecovery(
     const base = path.basename(pmRoot);
     staging = path.join(parent, `.${base}.restore-${crypto.randomUUID()}`);
     const backup = path.join(parent, `.${base}.backup-${crypto.randomUUID()}`);
-    await mkdir(staging, { recursive: true });
-    await cp(source, staging, { recursive: true, force: false });
-    await mkdir(path.join(staging, "runtime"), { recursive: true });
-    await cp(store, path.join(staging, SNAPSHOT_RUNTIME_PATH), {
-      recursive: true,
-      force: false,
+    await withSnapshotFilesystemGuard("restore_stage", async () => {
+      await mkdir(staging as string, { recursive: true });
+      await cp(source, staging as string, { recursive: true, force: false });
+      await mkdir(path.join(staging as string, "runtime"), { recursive: true });
+      await cp(store, path.join(staging as string, SNAPSHOT_RUNTIME_PATH), {
+        recursive: true,
+        force: false,
+      });
     });
     const audit = await appendWorkspaceAuditEvent({
       pmRoot: staging,

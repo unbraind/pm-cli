@@ -185,6 +185,67 @@ export function sentryFinishCommandSpan(
   activeCommandSpan = undefined;
 }
 
+/**
+ * Tag value recorded when a captured error declares no canonical pm error code.
+ *
+ * The release reliability gate classifies Sentry issues from the `pm.error_code`
+ * and `pm.exit_code` tags and fails closed when either is absent. Emitting this
+ * sentinel keeps the producer side of that contract total: an undeclared runtime
+ * fault is still classifiable (and still blocks, because it resolves to no
+ * catalog contract) instead of being unjudgeable for lack of a tag.
+ */
+export const UNCLASSIFIED_CAPTURED_ERROR_CODE = "unclassified_runtime_error";
+
+/** Reads the declared error contract carried by a thrown value, if any. */
+function readCapturedErrorContract(error: unknown): {
+  error_code: string;
+  exit_code: number;
+} {
+  if (error instanceof PmCliError) {
+    return {
+      error_code: error.code ?? UNCLASSIFIED_CAPTURED_ERROR_CODE,
+      exit_code: error.exitCode,
+    };
+  }
+  const candidate =
+    typeof error === "object" && error !== null
+      ? (error as { code?: unknown; exitCode?: unknown })
+      : undefined;
+  const hasDeclaredExitCode = typeof candidate?.exitCode === "number";
+  const exitCode = hasDeclaredExitCode
+    ? Math.trunc(candidate?.exitCode as number)
+    : EXIT_CODE.GENERIC_FAILURE;
+  // A declared pm code always travels with a numeric exit code. Requiring both
+  // halves keeps a Node errno error (string `code`, no `exitCode`) from being
+  // reported as though it were a catalog contract.
+  const hasDeclaredErrorCode =
+    typeof candidate?.code === "string" &&
+    candidate.code.length > 0 &&
+    hasDeclaredExitCode;
+  return {
+    error_code: hasDeclaredErrorCode
+      ? (candidate?.code as string)
+      : UNCLASSIFIED_CAPTURED_ERROR_CODE,
+    exit_code: exitCode,
+  };
+}
+
+/**
+ * Builds the contract tags every captured event carries.
+ *
+ * These are attached to the event itself rather than to the ambient scope
+ * because the scope writer (`sentryFinishCommandSpan`) returns early when no
+ * command span is active, and the unknown-error path captures before that
+ * writer runs.
+ */
+function buildCapturedErrorTags(error: unknown): Record<string, string> {
+  const contract = readCapturedErrorContract(error);
+  return {
+    "pm.error_code": contract.error_code,
+    "pm.exit_code": String(contract.exit_code),
+  };
+}
+
 /** Implements sentry capture cli error for the public runtime surface of this module. */
 export function sentryCaptureCliError(error: unknown): void {
   if (!shouldCaptureCliError(error)) return;
@@ -192,6 +253,7 @@ export function sentryCaptureCliError(error: unknown): void {
   const Sentry = getSentry();
   if (!Sentry) return;
 
+  const tags = buildCapturedErrorTags(error);
   if (error instanceof Error) {
     const extras: Record<string, unknown> = {};
     if (
@@ -206,9 +268,9 @@ export function sentryCaptureCliError(error: unknown): void {
     ) {
       extras.error_context = (error as { context: unknown }).context;
     }
-    Sentry.captureException(error, { extra: extras });
+    Sentry.captureException(error, { extra: extras, tags });
   } else {
-    Sentry.captureException(new Error(String(error)));
+    Sentry.captureException(new Error(String(error)), { tags });
   }
 }
 

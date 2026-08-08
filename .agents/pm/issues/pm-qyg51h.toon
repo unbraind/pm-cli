@@ -2,11 +2,13 @@ id: pm-qyg51h
 title: "Sentry PM-CLI-2Q: expected snapshot-name validation is captured as a high production error"
 description: "A single handled invalid snapshot-name outcome from release 2026.7.29 is unresolved at high priority in Sentry. The validation message is useful at the CLI boundary but should be classified as an expected input error rather than a production runtime fault. Duplicate check searched the exact Sentry key, the complete validation phrase, snapshot fingerprint validation, and all-status expected-error classifier items; no exact owner exists."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: error-classification,sentry,snapshots,telemetry
 created_at: "2026-08-01T12:13:39.832Z"
-updated_at: "2026-08-07T19:54:22.757Z"
+updated_at: "2026-08-08T07:59:06.154Z"
+closed_at: "2026-08-08T07:59:05.615Z"
+completed_at: "2026-08-08T07:59:05.615Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Invalid snapshot names keep the current actionable CLI validation and nonzero usage outcome; expected handled validation is excluded from high Sentry issue capture; negative controls still capture unexpected snapshot runtime faults; classification and telemetry gates pass
@@ -17,6 +19,9 @@ why_now: The live seven-day Sentry query returns this as one of only two unresol
 parent: pm-5oj5
 risk: low
 confidence: 95
+resolution: "Snapshot target validation refuses as a declared PmCliError (invalid_workspace_snapshot_target, exit 2), which shouldCaptureCliError excludes from Sentry capture."
+expected_result: "An invalid snapshot name is an expected usage refusal, not a high production error, and does not gate releases."
+actual_result: "Refusal carries the declared usage contract, is never captured, and a regression test asserts type, code and exit code instead of message text."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-lg9i,related,"2026-08-01T12:13:39.832Z","harness:codex","cli:create:dep",detected
   pm-rxqcp9,related,"2026-08-01T12:13:39.832Z","harness:codex","cli:create:dep",detected
@@ -24,7 +29,13 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-dqtzva,related,"2026-08-07T11:20:21.017Z","harness:claude-code","cli:update:dep",detected
   pm-x4nn3z,related,"2026-08-07T11:20:21.017Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-07T11:20:21.017Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-01T12:13:39.832Z","harness:codex","Duplicate-check evidence: exact all-status searches found general handled-error classifier fixes and snapshot primitives but no PM-CLI-2Q owner. Evidence stores only the public error class and release; raw events and private environment data remain outside PM."
   "2026-08-07T19:54:22.757Z","harness:codex","Live structured gate refresh 2026-08-07: PM-CLI-2Q remains one of two high groups in the 14-day release window after the gate moved from prose patterns to SDK error-code and exit-code classification. Telemetry is healthy at 0.91% finish errors with zero failures missing codes. This item remains open and unclaimed; only contract-level classification evidence is retained."
+  "2026-08-08T07:58:25.530Z","harness:claude-code","Verified already fixed in HEAD rather than re-fixed. At v2026.7.29 validateSnapshotTarget threw a bare Error, which shouldCaptureCliError treats as unexpected and captures; commit acbd3f639 made it a PmCliError with code invalid_workspace_snapshot_target and EXIT_CODE.USAGE, and shouldCaptureCliError returns false for every PmCliError, so the refusal no longer reaches Sentry. Confirmed by diffing git show v2026.7.29:src/sdk/workspace-snapshot.ts against HEAD. Strengthened the existing name-validation test from a message-substring assertion to the actual contract (PmCliError instance, declared code, exit 2), so a regression to a bare throw fails the suite instead of silently reopening the release-blocking behaviour."
+files[1]{path,scope,note}:
+  src/sdk/workspace-snapshot.ts,project,Snapshot target validation refuses as a declared usage error
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts,project,300
+close_reason: Verified fixed in HEAD and locked with a contract regression test; Sentry PM-CLI-2Q resolved in next release and the reliability gate now passes with high=0.
 body: ""
