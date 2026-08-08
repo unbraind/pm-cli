@@ -1,5 +1,54 @@
 {
   "version": 1,
+  "local_preflight": {
+    "command": "pnpm verify:preflight",
+    "steps": [
+      { "id": "build", "gates": ["compilation"] },
+      { "id": "typecheck", "gates": ["compilation"] },
+      { "id": "docs-skills-gate", "gates": ["documentation"] },
+      {
+        "id": "static-quality-gate",
+        "gates": ["static-quality", "tracker-context-quality"]
+      },
+      { "id": "context-entitlement-gate", "gates": ["context-retrieval"] },
+      { "id": "coverage", "gates": ["test-coverage"] },
+      { "id": "version-policy", "gates": ["release-integrity"] },
+      { "id": "secret-scan", "gates": ["security"] },
+      { "id": "npx-smoke", "gates": ["package-consumer"] },
+      {
+        "id": "package-first-dogfood",
+        "gates": ["package-consumer"],
+        "optional_flag": "--skip-dogfood"
+      },
+      { "id": "npm-pack-dry-run", "gates": ["package-consumer"] },
+      {
+        "id": "compatibility-check",
+        "gates": ["compatibility"],
+        "optional_flag": "--skip-compatibility"
+      },
+      {
+        "id": "sentry-telemetry-gate",
+        "gates": ["release-integrity"],
+        "optional_flag": "--skip-telemetry-sentry"
+      },
+      { "id": "hosted-analysis-gate", "gates": ["static-quality"] },
+      {
+        "id": "greptile-review",
+        "gates": ["static-quality"],
+        "optional_flag": "--skip-greptile"
+      }
+    ],
+    "hosted_only": [
+      {
+        "gate": "harness-environment-isolation",
+        "reason": "Requires distinct clean Claude Code, Codex, and GitHub runner environments."
+      },
+      {
+        "gate": "tracker-integrity",
+        "reason": "The authoritative merge receipt and representative-history check runs against a fresh GitHub checkout."
+      }
+    ]
+  },
   "gates": [
     {
       "id": "compilation",

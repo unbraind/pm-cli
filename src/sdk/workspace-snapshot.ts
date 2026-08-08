@@ -22,6 +22,7 @@ import { acquireLock } from "../core/lock/lock.js";
 import { getLockPath } from "../core/store/paths.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { withHostEnvironmentBoundary } from "./environment/host-environment-errors.js";
 
 /** Current content-addressed workspace snapshot manifest schema identifier. */
 export const SNAPSHOT_SCHEMA =
@@ -36,6 +37,11 @@ const EXCLUDED_ROOT_NAMES = new Set([
 ]);
 const SNAPSHOT_TARGET_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
 const WORKSPACE_WRITER_LOCK_ID = "sdk-workspace-transaction";
+const SNAPSHOT_HOST_FAULT_CODES = {
+  capacity: { code: "workspace_snapshot_storage_exhausted" },
+  permission: { code: "workspace_snapshot_permission_denied" },
+  resource: { code: "workspace_snapshot_storage_exhausted" },
+} as const;
 
 /** Filesystem operations required by atomic snapshot publish and restore swaps. */
 export interface WorkspaceSnapshotAtomicOperations {
@@ -355,62 +361,6 @@ function isErrno(error: unknown, code: string): boolean {
 }
 
 /**
- * Environment faults a snapshot copy or write can raise that are conditions of
- * the host rather than defects in pm.
- *
- * Left untyped these escape as raw Node errors, are captured as unactionable
- * production exceptions, and name only a scrubbed `copyfile` frame — the
- * operator learns that a copy ran out of space but not which bounded operation
- * failed or how to recover from it.
- */
-const SNAPSHOT_ENVIRONMENT_FAULTS: ReadonlyMap<
-  string,
-  { code: string; summary: string; required: string }
-> = new Map([
-  [
-    "ENOSPC",
-    {
-      code: "workspace_snapshot_storage_exhausted",
-      summary: "ran out of storage space",
-      required:
-        "Free storage on the filesystem holding the tracker, then retry.",
-    },
-  ],
-  [
-    "EDQUOT",
-    {
-      code: "workspace_snapshot_storage_exhausted",
-      summary: "exceeded the filesystem quota",
-      required: "Raise or reclaim the filesystem quota, then retry.",
-    },
-  ],
-  [
-    "EACCES",
-    {
-      code: "workspace_snapshot_permission_denied",
-      summary: "was denied filesystem permission",
-      required: "Grant write access to the tracker directory, then retry.",
-    },
-  ],
-  [
-    "EPERM",
-    {
-      code: "workspace_snapshot_permission_denied",
-      summary: "was denied filesystem permission",
-      required: "Grant write access to the tracker directory, then retry.",
-    },
-  ],
-  [
-    "EROFS",
-    {
-      code: "workspace_snapshot_permission_denied",
-      summary: "targeted a read-only filesystem",
-      required: "Remount the tracker filesystem read-write, then retry.",
-    },
-  ],
-]);
-
-/**
  * Runs a bounded snapshot filesystem stage, converting host environment faults
  * into declared refusals.
  *
@@ -421,38 +371,18 @@ async function withSnapshotFilesystemGuard<T>(
   operation: string,
   run: () => Promise<T>,
 ): Promise<T> {
-  try {
-    return await run();
-  } catch (error) {
-    const errno =
-      typeof error === "object" && error !== null && "code" in error
-        ? (error as { code?: unknown }).code
-        : undefined;
-    const fault =
-      typeof errno === "string"
-        ? SNAPSHOT_ENVIRONMENT_FAULTS.get(errno)
-        : undefined;
-    if (!fault) throw error;
-    throw new PmCliError(
-      `Workspace snapshot stage ${operation} ${fault.summary}`,
-      EXIT_CODE.GENERIC_FAILURE,
-      {
-        code: fault.code,
-        reason: errno as string,
-        required: fault.required,
-        why: "Snapshot create and restore copy the authoritative tracker state in full before any swap, so the whole stage needs headroom and write access up front.",
-        examples: [
-          "pm workspace snapshot list --json",
-          "pm gc --json",
-        ],
-        nextSteps: [
-          fault.required,
-          "Reclaim tracker cache space with pm gc, then retry the snapshot operation.",
-        ],
-        recovery: { suggested_retry: "pm gc --json" },
-      },
-    );
-  }
+  return withHostEnvironmentBoundary(`workspace_snapshot_${operation}`, run, {
+    codes: {
+      capacity: SNAPSHOT_HOST_FAULT_CODES.capacity.code,
+      permission: SNAPSHOT_HOST_FAULT_CODES.permission.code,
+      resource: SNAPSHOT_HOST_FAULT_CODES.resource.code,
+    },
+    why: "Snapshot create and restore copy authoritative tracker state before activation, so the stage needs capacity and write access up front.",
+    nextSteps: [
+      "Reclaim rebuildable tracker cache space with pm gc, then retry.",
+    ],
+    suggestedRetry: "pm gc --json",
+  });
 }
 
 function snapshotStore(pmRoot: string): string {

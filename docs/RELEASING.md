@@ -23,6 +23,8 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon),
 [pm-998juj](../.agents/pm/tasks/pm-998juj.toon), plus exact-tag recovery
 [pm-lwnifd](../.agents/pm/issues/pm-lwnifd.toon), and SDK-bound reliability
 classification [pm-dqtzva](../.agents/pm/issues/pm-dqtzva.toon).
+The local/hosted gate selection contract is tracked by
+[pm-ei6x66](../.agents/pm/tasks/pm-ei6x66.toon).
 
 ## Version Policy
 
@@ -147,6 +149,19 @@ Practical examples:
 If a changelog routing rule appears incorrect, fix classifier behavior in the `pm-changelog` package/repo and then consume the updated package here. Do not patch generator internals in this repository.
 
 ## Local Release Parity Checklist
+
+Before the release-specific checks below, run the canonical registry-owned
+local preflight:
+
+```bash
+pnpm verify:preflight
+```
+
+This alias executes the ordered local gate selection declared in
+`scripts/release/gate-registry.json` and verifies the resulting receipt against
+that declaration. The same registry maps named PR, nightly, and release
+workflow gates; hosted-only entries must declare why no faithful local
+equivalent exists.
 
 1. Confirm the UTC calendar date. Do not use an ordinal diagnostic as a
    production target.

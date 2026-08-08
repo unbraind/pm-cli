@@ -32,7 +32,10 @@ async function fixtureRoot(): Promise<string> {
     path.join(root, ".github", "workflows", "ci.yml"),
     "jobs:\n  test:\n    steps:\n      - name: Checkout\n      - name: Build\n      - name: Run quality gate\n",
   );
-  await writeFile(path.join(root, "tests", "negative.spec.ts"), "rejects drift");
+  await writeFile(
+    path.join(root, "tests", "negative.spec.ts"),
+    "rejects drift",
+  );
   await writeFile(path.join(root, "src", "claim.ts"), "CI gate");
   return root;
 }
@@ -40,6 +43,11 @@ async function fixtureRoot(): Promise<string> {
 function registry() {
   return {
     version: 1,
+    local_preflight: {
+      command: "pnpm verify:preflight",
+      steps: [{ id: "quality", gates: ["quality"] }],
+      hosted_only: [],
+    },
     gates: [
       {
         id: "quality",
@@ -96,9 +104,9 @@ describe("gate registry", () => {
 
   it("accepts exact ownership, negative controls, and source claims", async () => {
     const root = await fixtureRoot();
-    await expect(validateGateRegistry(registry(), { repoRoot: root })).resolves.toEqual(
-      [],
-    );
+    await expect(
+      validateGateRegistry(registry(), { repoRoot: root }),
+    ).resolves.toEqual([]);
   });
 
   it("fails closed for malformed, duplicate, stale, and missing policy", async () => {
@@ -145,6 +153,51 @@ describe("gate registry", () => {
     await expect(
       validateGateRegistry(invalidNegative, { repoRoot: root }),
     ).resolves.toContain("gate:quality:negative_control_invalid");
+
+    const invalidLocal = registry();
+    invalidLocal.local_preflight = {
+      command: "wrong",
+      steps: [],
+      hosted_only: [],
+    };
+    await expect(
+      validateGateRegistry(invalidLocal, { repoRoot: root }),
+    ).resolves.toContain("local_preflight:invalid");
+
+    const invalidStep = registry();
+    invalidStep.local_preflight.steps.push({
+      id: "quality",
+      gates: ["missing"],
+    });
+    await expect(
+      validateGateRegistry(invalidStep, { repoRoot: root }),
+    ).resolves.toContain("local_preflight:step_invalid");
+
+    const hostedOnly = registry();
+    hostedOnly.local_preflight.steps = [];
+    hostedOnly.local_preflight.hosted_only = [
+      {
+        gate: "quality",
+        reason: "This fixture gate requires a clean hosted runner environment.",
+      },
+    ];
+    await expect(
+      validateGateRegistry(hostedOnly, { repoRoot: root }),
+    ).resolves.toEqual([]);
+
+    const invalidHostedOnly = registry();
+    invalidHostedOnly.local_preflight.steps = [];
+    invalidHostedOnly.local_preflight.hosted_only = [
+      { gate: "missing", reason: "short" },
+    ];
+    await expect(
+      validateGateRegistry(invalidHostedOnly, { repoRoot: root }),
+    ).resolves.toEqual(
+      expect.arrayContaining([
+        "local_preflight:hosted_only_invalid",
+        "local_preflight:gate:quality:unmapped",
+      ]),
+    );
   });
 
   it("reports missing enforced pipelines, assertions, claims, and invalid ids", async () => {
@@ -226,9 +279,8 @@ describe("gate registry", () => {
     });
     expect(result.enforced_pipeline_count).toBe(inventory.discovered.length);
     expect(inventory.discovered.length).toBe(
-      committed.gates.flatMap(
-        (gate: { pipelines: string[] }) => gate.pipelines,
-      ).length,
+      committed.gates.flatMap((gate: { pipelines: string[] }) => gate.pipelines)
+        .length,
     );
     expect(committed.version).toBe(1);
     const root = await fixtureRoot();
@@ -294,12 +346,12 @@ describe("gate registry", () => {
     });
     expect(stdout).toHaveBeenCalled();
     stdout.mockRestore();
-    const exit = vi
-      .spyOn(process, "exit")
-      .mockImplementation((() => {
-        throw new Error("EXIT:1");
-      }) as never);
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const exit = vi.spyOn(process, "exit").mockImplementation((() => {
+      throw new Error("EXIT:1");
+    }) as never);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     await expect(
       runGateRegistryEntrypoint({
         argv: [process.execPath, scriptPath],

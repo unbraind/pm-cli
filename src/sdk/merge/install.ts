@@ -26,6 +26,7 @@ import {
   resolveGovernanceKnobs,
 } from "../../core/store/settings.js";
 import { isPathOutsideRoot } from "../workspace.js";
+import { resolveSourceContextWritePolicy } from "../environment/source-context.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -119,6 +120,69 @@ export interface MergeInstallResult {
   guidance: string[];
   /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
+}
+
+/** Resolved tracker and workspace selection for one merge-install invocation. */
+export interface MergeInstallContextResolution {
+  /** Tracker root selected without performing filesystem writes. */
+  pm_root: string;
+  /** Starting path used to discover the enclosing Git workspace. */
+  workspace_start: string;
+  /** Whether complete inherited source coordinates were present. */
+  source_coordinates_available: boolean;
+  /** Whether inherited source coordinates were selected. */
+  source_context_selected: boolean;
+  /** Source-coordinate write policy active for the invocation. */
+  source_policy: ReturnType<typeof resolveSourceContextWritePolicy>;
+}
+
+/** Resolve explicit, inherited-source, and current-workspace precedence without I/O. */
+export function resolveMergeInstallContext(options: {
+  cwd: string;
+  explicitPath?: string;
+  dryRun: boolean;
+  environment: Readonly<Record<string, string | undefined>>;
+}): MergeInstallContextResolution {
+  const explicitPath = options.explicitPath?.trim();
+  const sourceWorkspaceRoot =
+    options.environment.PM_SOURCE_WORKSPACE_ROOT?.trim();
+  const sourcePmRoot = options.environment.PM_SOURCE_PM_PATH?.trim();
+  const sourcePolicy = resolveSourceContextWritePolicy(options.environment);
+  const sourceCoordinatesAvailable = Boolean(
+    sourceWorkspaceRoot && sourcePmRoot,
+  );
+  const sourceContextSelected =
+    explicitPath === undefined &&
+    sourceCoordinatesAvailable &&
+    (options.dryRun || sourcePolicy.source_writes_allowed);
+  if (explicitPath !== undefined) {
+    const pmRoot = resolvePmRoot(options.cwd, explicitPath);
+    return {
+      pm_root: pmRoot,
+      workspace_start: pmRoot,
+      source_coordinates_available: sourceCoordinatesAvailable,
+      source_context_selected: false,
+      source_policy: sourcePolicy,
+    };
+  }
+  if (sourceContextSelected) {
+    return {
+      pm_root: path.resolve(sourcePmRoot as string),
+      workspace_start: path.resolve(sourceWorkspaceRoot as string),
+      source_coordinates_available: true,
+      source_context_selected: true,
+      source_policy: sourcePolicy,
+    };
+  }
+  return {
+    pm_root: sourceCoordinatesAvailable
+      ? resolvePmRoot(options.cwd, ".agents/pm")
+      : resolvePmRoot(options.cwd),
+    workspace_start: options.cwd,
+    source_coordinates_available: sourceCoordinatesAvailable,
+    source_context_selected: false,
+    source_policy: sourcePolicy,
+  };
 }
 
 /** Result of auditing clone-local driver definitions behind a committed fence. */
@@ -564,34 +628,20 @@ export async function runMergeInstall(
   options: MergeInstallOptions,
   global: GlobalOptions,
 ): Promise<MergeInstallResult> {
-  const explicitPath = global.path?.trim();
-  const sourceWorkspaceRoot = process.env.PM_SOURCE_WORKSPACE_ROOT?.trim();
-  const sourcePmRoot = process.env.PM_SOURCE_PM_PATH?.trim();
-  const usesLinkedTestSourceContext =
-    explicitPath === undefined &&
-    sourceWorkspaceRoot !== undefined &&
-    sourceWorkspaceRoot.length > 0 &&
-    sourcePmRoot !== undefined &&
-    sourcePmRoot.length > 0;
-  const pmRoot =
-    explicitPath !== undefined
-      ? resolvePmRoot(process.cwd(), explicitPath)
-      : usesLinkedTestSourceContext
-        ? path.resolve(sourcePmRoot)
-        : resolvePmRoot(process.cwd());
+  const context = resolveMergeInstallContext({
+    cwd: process.cwd(),
+    explicitPath: global.path,
+    dryRun: options.dryRun === true,
+    environment: process.env,
+  });
+  const pmRoot = context.pm_root;
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
       `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
       EXIT_CODE.NOT_FOUND,
     );
   }
-  const workspaceRoot = await resolveGitWorkspaceRoot(
-    explicitPath !== undefined
-      ? pmRoot
-      : usesLinkedTestSourceContext
-        ? path.resolve(sourceWorkspaceRoot)
-        : process.cwd(),
-  );
+  const workspaceRoot = await resolveGitWorkspaceRoot(context.workspace_start);
   return installMergeFence({
     pmRoot,
     workspaceRoot,

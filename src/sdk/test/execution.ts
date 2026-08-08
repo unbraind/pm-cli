@@ -75,6 +75,7 @@ import {
   queryTestRunMeasurementsBelow,
   type TestRunMeasurementDiff,
 } from "./measurements.js";
+import { SOURCE_CONTEXT_ACCESS_ENV } from "../environment/source-context.js";
 
 const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
 const DEFAULT_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = 3000;
@@ -2286,6 +2287,7 @@ function buildLinkedTestExecutionEnv(params: {
     process.env.PM_SOURCE_WORKSPACE_ROOT ?? process.cwd();
   executionEnv.PM_SOURCE_PM_PATH =
     params.executionContext.source_project_pm_path;
+  executionEnv[SOURCE_CONTEXT_ACCESS_ENV] = "read_only";
   return executionEnv;
 }
 

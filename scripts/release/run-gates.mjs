@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 
-import { commandFor, fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
+import { readFileSync } from "node:fs";
+import {
+  commandFor,
+  fail,
+  flagBool,
+  flagString,
+  parseFlags,
+  repoRoot,
+  runCommand,
+} from "./utils.mjs";
 
 const releasePolicyToken = process.env.RELEASE_POLICY_TOKEN?.trim() ?? "";
 delete process.env.RELEASE_POLICY_TOKEN;
@@ -50,6 +59,23 @@ function runCheckedStep(name, command, args, options = {}) {
   return result;
 }
 
+/** Prove the executed local gate receipt exactly matches the governed registry order. */
+function assertRegistryPreflightReceipt(checks) {
+  const registry = JSON.parse(
+    readFileSync(`${repoRoot}/scripts/release/gate-registry.json`, "utf8"),
+  );
+  const expected = registry.local_preflight?.steps?.map((step) => step.id);
+  const actual = checks.map((check) => check.name);
+  if (
+    !Array.isArray(expected) ||
+    JSON.stringify(expected) !== JSON.stringify(actual)
+  ) {
+    fail(
+      `Local preflight drifted from gate-registry.json: expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`,
+    );
+  }
+}
+
 function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
@@ -66,8 +92,16 @@ function main() {
   const sentryWindowDays = flagString(flags, "sentry-window-days", "14");
   const maxSentryCritical = flagString(flags, "max-sentry-critical", "0");
   const maxSentryHigh = flagString(flags, "max-sentry-high", "0");
-  const maxTelemetryErrorRate = flagString(flags, "max-telemetry-error-rate", "6");
-  const maxTelemetryMissingRows = flagString(flags, "max-telemetry-missing-error-rows", "0");
+  const maxTelemetryErrorRate = flagString(
+    flags,
+    "max-telemetry-error-rate",
+    "6",
+  );
+  const maxTelemetryMissingRows = flagString(
+    flags,
+    "max-telemetry-missing-error-rows",
+    "0",
+  );
 
   const pnpm = commandFor("pnpm");
   const npm = commandFor("npm");
@@ -79,7 +113,9 @@ function main() {
   runCheckedStep("typecheck", pnpm, ["typecheck"]);
   checks.push({ name: "typecheck", ok: true });
 
-  runCheckedStep("docs-skills-gate", process.execPath, ["scripts/release/docs-skills-gate.mjs"]);
+  runCheckedStep("docs-skills-gate", process.execPath, [
+    "scripts/release/docs-skills-gate.mjs",
+  ]);
   checks.push({ name: "docs-skills-gate", ok: true });
 
   runCheckedStep("static-quality-gate", pnpm, ["quality:static"]);
@@ -88,7 +124,9 @@ function main() {
   runCheckedStep("context-entitlement-gate", pnpm, ["quality:context-eval"]);
   checks.push({ name: "context-entitlement-gate", ok: true });
 
-  runCheckedStep("coverage", pnpm, ["test:coverage"], { env: { PM_RUN_TESTS_SKIP_BUILD: "1" } });
+  runCheckedStep("coverage", pnpm, ["test:coverage"], {
+    env: { PM_RUN_TESTS_SKIP_BUILD: "1" },
+  });
   checks.push({ name: "coverage", ok: true });
 
   runCheckedStep("version-policy", pnpm, ["version:check"]);
@@ -194,10 +232,12 @@ function main() {
   }
 
   if (outputJson) {
+    assertRegistryPreflightReceipt(checks);
     process.stdout.write(`${JSON.stringify({ ok: true, checks }, null, 2)}\n`);
     return;
   }
 
+  assertRegistryPreflightReceipt(checks);
   console.log("Release gates passed.");
 }
 

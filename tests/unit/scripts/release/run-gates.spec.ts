@@ -17,14 +17,20 @@ describe("scripts/release/run-gates", () => {
     const helpLog = vi.spyOn(console, "log").mockImplementation(() => {});
     await harness.importModule("scripts/release/run-gates.mjs", "runGatesHelp");
     expect(spawnSync).not.toHaveBeenCalled();
-    expect(String(helpLog.mock.calls.at(-1)?.[0] ?? "")).toContain("--skip-compatibility");
-    expect(String(helpLog.mock.calls.at(-1)?.[0] ?? "")).toContain("exact Git HEAD");
+    expect(String(helpLog.mock.calls.at(-1)?.[0] ?? "")).toContain(
+      "--skip-compatibility",
+    );
+    expect(String(helpLog.mock.calls.at(-1)?.[0] ?? "")).toContain(
+      "exact Git HEAD",
+    );
   });
 
   it("marks dogfood/compatibility/sentry checks skipped and emits a JSON summary", async () => {
     const spawnSync = vi.fn((_command: string, args: string[]) => ({
       status: 0,
-      stdout: args.includes("scripts/release/hosted-analysis-gate.mjs") ? '{"ok":true}' : "",
+      stdout: args.includes("scripts/release/hosted-analysis-gate.mjs")
+        ? '{"ok":true}'
+        : "",
       stderr: "",
     }));
     vi.doMock("node:child_process", () => ({ spawnSync }));
@@ -39,15 +45,46 @@ describe("scripts/release/run-gates", () => {
       "--telemetry-mode",
       "required",
     ];
-    const jsonWriteSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    await harness.importModule("scripts/release/run-gates.mjs", "runGatesSkips");
-    const payload = JSON.parse(String(jsonWriteSpy.mock.calls.at(-1)?.[0] ?? "{}")) as GatePayload;
+    const jsonWriteSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+    await harness.importModule(
+      "scripts/release/run-gates.mjs",
+      "runGatesSkips",
+    );
+    const payload = JSON.parse(
+      String(jsonWriteSpy.mock.calls.at(-1)?.[0] ?? "{}"),
+    ) as GatePayload;
     expect(payload.ok).toBe(true);
-    expect(payload.checks.some((entry) => entry.name === "package-first-dogfood" && entry.skipped === true)).toBe(true);
-    expect(payload.checks.some((entry) => entry.name === "compatibility-check" && entry.skipped === true)).toBe(true);
-    expect(payload.checks.some((entry) => entry.name === "greptile-review" && entry.skipped === true)).toBe(true);
-    expect(payload.checks.some((entry) => entry.name === "sentry-telemetry-gate" && entry.skipped === true)).toBe(true);
-    expect(payload.checks.some((entry) => entry.name === "hosted-analysis-gate" && entry.skipped !== true)).toBe(true);
+    expect(
+      payload.checks.some(
+        (entry) =>
+          entry.name === "package-first-dogfood" && entry.skipped === true,
+      ),
+    ).toBe(true);
+    expect(
+      payload.checks.some(
+        (entry) =>
+          entry.name === "compatibility-check" && entry.skipped === true,
+      ),
+    ).toBe(true);
+    expect(
+      payload.checks.some(
+        (entry) => entry.name === "greptile-review" && entry.skipped === true,
+      ),
+    ).toBe(true);
+    expect(
+      payload.checks.some(
+        (entry) =>
+          entry.name === "sentry-telemetry-gate" && entry.skipped === true,
+      ),
+    ).toBe(true);
+    expect(
+      payload.checks.some(
+        (entry) =>
+          entry.name === "hosted-analysis-gate" && entry.skipped !== true,
+      ),
+    ).toBe(true);
     expect(spawnSync).toHaveBeenCalled();
   });
 
@@ -55,7 +92,9 @@ describe("scripts/release/run-gates", () => {
     process.env.RELEASE_POLICY_TOKEN = "policy-token";
     const spawnSync = vi.fn((_command: string, args: string[]) => ({
       status: 0,
-      stdout: args.includes("scripts/release/hosted-analysis-gate.mjs") ? '{"ok":true}' : "",
+      stdout: args.includes("scripts/release/hosted-analysis-gate.mjs")
+        ? '{"ok":true}'
+        : "",
       stderr: "",
     }));
     vi.doMock("node:child_process", () => ({ spawnSync }));
@@ -68,15 +107,26 @@ describe("scripts/release/run-gates", () => {
       "--skip-telemetry-sentry",
     ];
     vi.spyOn(console, "log").mockImplementation(() => {});
-    await harness.importModule("scripts/release/run-gates.mjs", "scopedPolicyToken");
+    await harness.importModule(
+      "scripts/release/run-gates.mjs",
+      "scopedPolicyToken",
+    );
 
     expect(process.env.RELEASE_POLICY_TOKEN).toBeUndefined();
     const hostedCall = spawnSync.mock.calls.find((call) =>
-      ((call[1] as string[] | undefined) ?? []).includes("scripts/release/hosted-analysis-gate.mjs"),
+      ((call[1] as string[] | undefined) ?? []).includes(
+        "scripts/release/hosted-analysis-gate.mjs",
+      ),
     );
-    expect(hostedCall?.[2]).toMatchObject({ env: expect.objectContaining({ GH_TOKEN: "policy-token" }) });
-    for (const call of spawnSync.mock.calls.filter((entry) => entry !== hostedCall)) {
-      expect(call[2]).toMatchObject({ env: expect.not.objectContaining({ GH_TOKEN: "policy-token" }) });
+    expect(hostedCall?.[2]).toMatchObject({
+      env: expect.objectContaining({ GH_TOKEN: "policy-token" }),
+    });
+    for (const call of spawnSync.mock.calls.filter(
+      (entry) => entry !== hostedCall,
+    )) {
+      expect(call[2]).toMatchObject({
+        env: expect.not.objectContaining({ GH_TOKEN: "policy-token" }),
+      });
     }
   });
 
@@ -87,15 +137,24 @@ describe("scripts/release/run-gates", () => {
         return { status: 0, stdout: '{"compatibility":"ok"}', stderr: "" };
       }
       if (joined.includes("sentry-telemetry-gate.mjs")) {
-        return { status: 0, stdout: '{"ok":true,"mode":"best-effort"}', stderr: "" };
+        return {
+          status: 0,
+          stdout: '{"ok":true,"mode":"best-effort"}',
+          stderr: "",
+        };
       }
       if (joined.includes("greptile-review-gate.mjs")) {
-        return { status: 0, stdout: '{"ok":true,"skipped":false,"findings":0}', stderr: "" };
+        return {
+          status: 0,
+          stdout: '{"ok":true,"skipped":false,"findings":0}',
+          stderr: "",
+        };
       }
       if (joined.includes("hosted-analysis-gate.mjs")) {
         return {
           status: 0,
-          stdout: '{"ok":true,"analyzers":{"deepscan":{"new_issues":0},"codefactor":{"new_issues":0}}}',
+          stdout:
+            '{"ok":true,"analyzers":{"deepscan":{"new_issues":0},"codefactor":{"new_issues":0}}}',
           stderr: "",
         };
       }
@@ -139,13 +198,18 @@ describe("scripts/release/run-gates", () => {
       spawnSync.mock.calls.some((c) => {
         const args = (c[1] as string[] | undefined) ?? [];
         const joined = [c[0], ...args].join(" ");
-        return joined.includes("static-quality-gate.mts") && !joined.includes("quality:static");
+        return (
+          joined.includes("static-quality-gate.mts") &&
+          !joined.includes("quality:static")
+        );
       }),
     ).toBe(false);
     expect(
       spawnSync.mock.calls.some(([, args]) => {
         const commandArgs = args as string[];
-        const scriptIndex = commandArgs.indexOf("scripts/release/sentry-telemetry-gate.mjs");
+        const scriptIndex = commandArgs.indexOf(
+          "scripts/release/sentry-telemetry-gate.mjs",
+        );
         const telemetryModeIndex = commandArgs.indexOf("--telemetry-mode");
         const windowDaysIndex = commandArgs.indexOf("--sentry-window-days");
         return (
@@ -158,7 +222,11 @@ describe("scripts/release/run-gates", () => {
         );
       }),
     ).toBe(true);
-    expect(logSpy.mock.calls.some((c) => String(c[0]).includes("Release gates passed."))).toBe(true);
+    expect(
+      logSpy.mock.calls.some((c) =>
+        String(c[0]).includes("Release gates passed."),
+      ),
+    ).toBe(true);
     logSpy.mockRestore();
   });
 
@@ -166,15 +234,29 @@ describe("scripts/release/run-gates", () => {
     const spawnSync = vi.fn((command: string, args: string[]) => {
       const joined = [command, ...args].join(" ");
       if (joined.includes("compatibility-check.mjs")) {
-        return { status: 9, stdout: "  compat out  ", stderr: "  compat err  " };
+        return {
+          status: 9,
+          stdout: "  compat out  ",
+          stderr: "  compat err  ",
+        };
       }
       return { status: 0, stdout: "", stderr: "" };
     });
     vi.doMock("node:child_process", () => ({ spawnSync }));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const exitSpy = harness.mockProcessExit();
-    process.argv = ["node", "scripts/release/run-gates.mjs", "--skip-dogfood", "--skip-telemetry-sentry"];
-    await expect(harness.importModule("scripts/release/run-gates.mjs", "runGatesFailDetail")).rejects.toThrow("EXIT:9");
+    process.argv = [
+      "node",
+      "scripts/release/run-gates.mjs",
+      "--skip-dogfood",
+      "--skip-telemetry-sentry",
+    ];
+    await expect(
+      harness.importModule(
+        "scripts/release/run-gates.mjs",
+        "runGatesFailDetail",
+      ),
+    ).rejects.toThrow("EXIT:9");
     const msg = String(errorSpy.mock.calls.at(-1)?.[0] ?? "");
     expect(msg).toContain("Gate failed: compatibility-check");
     expect(msg).toContain("stdout:");
@@ -197,8 +279,15 @@ describe("scripts/release/run-gates", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const exitSpy = harness.mockProcessExit();
     process.argv = ["node", "scripts/release/run-gates.mjs"];
-    await expect(harness.importModule("scripts/release/run-gates.mjs", "runGatesFailNoDetail")).rejects.toThrow("EXIT:1");
-    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toBe("Gate failed: build");
+    await expect(
+      harness.importModule(
+        "scripts/release/run-gates.mjs",
+        "runGatesFailNoDetail",
+      ),
+    ).rejects.toThrow("EXIT:1");
+    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toBe(
+      "Gate failed: build",
+    );
     exitSpy.mockRestore();
     errorSpy.mockRestore();
   });
@@ -214,10 +303,18 @@ describe("scripts/release/run-gates", () => {
     vi.doMock("node:child_process", () => ({ spawnSync }));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const exitSpy = harness.mockProcessExit();
-    process.argv = ["node", "scripts/release/run-gates.mjs", "--skip-dogfood", "--skip-telemetry-sentry"];
-    await expect(harness.importModule("scripts/release/run-gates.mjs", "runGatesFailStdoutOnly")).rejects.toThrow(
-      "EXIT:3",
-    );
+    process.argv = [
+      "node",
+      "scripts/release/run-gates.mjs",
+      "--skip-dogfood",
+      "--skip-telemetry-sentry",
+    ];
+    await expect(
+      harness.importModule(
+        "scripts/release/run-gates.mjs",
+        "runGatesFailStdoutOnly",
+      ),
+    ).rejects.toThrow("EXIT:3");
     const msg = String(errorSpy.mock.calls.at(-1)?.[0] ?? "");
     expect(msg).toContain("stdout:");
     expect(msg).toContain("only out");
@@ -243,10 +340,56 @@ describe("scripts/release/run-gates", () => {
     vi.doMock("node:child_process", () => ({ spawnSync }));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const exitSpy = harness.mockProcessExit();
-    process.argv = ["node", "scripts/release/run-gates.mjs", "--json", "--skip-dogfood", "--skip-telemetry-sentry"];
-    await expect(harness.importModule("scripts/release/run-gates.mjs", "runGatesParseFail")).rejects.toThrow("EXIT:1");
-    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain("Failed to parse JSON for compatibility-check");
+    process.argv = [
+      "node",
+      "scripts/release/run-gates.mjs",
+      "--json",
+      "--skip-dogfood",
+      "--skip-telemetry-sentry",
+    ];
+    await expect(
+      harness.importModule(
+        "scripts/release/run-gates.mjs",
+        "runGatesParseFail",
+      ),
+    ).rejects.toThrow("EXIT:1");
+    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain(
+      "Failed to parse JSON for compatibility-check",
+    );
     exitSpy.mockRestore();
     errorSpy.mockRestore();
+  });
+
+  it("fails when the executed receipt drifts from the registry", async () => {
+    vi.doMock("node:fs", () => ({
+      readFileSync: () =>
+        JSON.stringify({ local_preflight: { steps: [{ id: "missing" }] } }),
+    }));
+    vi.doMock("node:child_process", () => ({
+      spawnSync: (_command: string, args: string[]) => ({
+        status: 0,
+        stdout: args.some((arg) => arg.endsWith("hosted-analysis-gate.mjs"))
+          ? '{"ok":true}'
+          : "",
+        stderr: "",
+      }),
+    }));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const exitSpy = harness.mockProcessExit();
+    process.argv = [
+      "node",
+      "scripts/release/run-gates.mjs",
+      "--skip-dogfood",
+      "--skip-compatibility",
+      "--skip-greptile",
+      "--skip-telemetry-sentry",
+    ];
+    await expect(
+      harness.importModule("scripts/release/run-gates.mjs", "receiptDrift"),
+    ).rejects.toThrow("EXIT:1");
+    expect(String(errorSpy.mock.calls.at(-1)?.[0])).toContain(
+      "Local preflight drifted",
+    );
+    exitSpy.mockRestore();
   });
 });

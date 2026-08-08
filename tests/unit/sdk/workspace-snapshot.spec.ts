@@ -561,12 +561,17 @@ describe("workspace snapshots", () => {
     const { withSnapshotFilesystemGuard } = _testOnlyWorkspaceSnapshot;
     const secretPath = ["/home", "someone", "private-project"].join("/");
 
-    const exhausted = await withSnapshotFilesystemGuard("restore_stage", async () => {
-      throw Object.assign(
-        new Error(`ENOSPC: no space left on device, copyfile '${secretPath}/a' -> '${secretPath}/b'`),
-        { code: "ENOSPC" },
-      );
-    }).catch((error: unknown) => error as PmCliError);
+    const exhausted = await withSnapshotFilesystemGuard(
+      "restore_stage",
+      async () => {
+        throw Object.assign(
+          new Error(
+            `ENOSPC: no space left on device, copyfile '${secretPath}/a' -> '${secretPath}/b'`,
+          ),
+          { code: "ENOSPC" },
+        );
+      },
+    ).catch((error: unknown) => error as PmCliError);
 
     expect(exhausted).toBeInstanceOf(PmCliError);
     expect(exhausted.code).toBe("workspace_snapshot_storage_exhausted");
@@ -578,9 +583,14 @@ describe("workspace snapshots", () => {
     expect(exhausted.context.nextSteps?.length).toBeGreaterThan(0);
     expect(exhausted.context.recovery?.suggested_retry).toBe("pm gc --json");
 
-    const denied = await withSnapshotFilesystemGuard("create_object", async () => {
-      throw Object.assign(new Error("EROFS: read-only file system"), { code: "EROFS" });
-    }).catch((error: unknown) => error as PmCliError);
+    const denied = await withSnapshotFilesystemGuard(
+      "create_object",
+      async () => {
+        throw Object.assign(new Error("EROFS: read-only file system"), {
+          code: "EROFS",
+        });
+      },
+    ).catch((error: unknown) => error as PmCliError);
     expect(denied.code).toBe("workspace_snapshot_permission_denied");
     expect(denied.message).toContain("create_object");
 

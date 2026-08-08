@@ -42,9 +42,7 @@ function gateNamesFromWorkflow(source, file) {
   const names = [];
   for (const job of Object.values(jobs)) {
     const steps =
-      typeof job === "object" &&
-      job !== null &&
-      Array.isArray(job.steps)
+      typeof job === "object" && job !== null && Array.isArray(job.steps)
         ? job.steps
         : [];
     for (const step of steps) {
@@ -81,7 +79,9 @@ function requiredStrings(value, label, violations) {
   if (
     !Array.isArray(value) ||
     value.length === 0 ||
-    value.some((entry) => typeof entry !== "string" || entry.trim().length === 0)
+    value.some(
+      (entry) => typeof entry !== "string" || entry.trim().length === 0,
+    )
   ) {
     violations.push(`${label}:requires_non_empty_strings`);
     return [];
@@ -117,10 +117,7 @@ async function validateGatePolicy(
   registeredPipelines,
   violations,
 ) {
-  if (
-    typeof gate.id !== "string" ||
-    !/^[a-z0-9][a-z0-9-]*$/.test(gate.id)
-  ) {
+  if (typeof gate.id !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(gate.id)) {
     violations.push("gate:id_invalid");
     return;
   }
@@ -180,11 +177,70 @@ async function validateClaim(claim, root, ids, violations) {
   }
 }
 
+function validLocalPreflightStep(step, gateIds, stepIds) {
+  return !(
+    typeof step !== "object" ||
+    step === null ||
+    typeof step.id !== "string" ||
+    stepIds.has(step.id) ||
+    !Array.isArray(step.gates) ||
+    step.gates.length === 0 ||
+    step.gates.some((gate) => !gateIds.has(gate)) ||
+    (step.optional_flag !== undefined &&
+      (typeof step.optional_flag !== "string" ||
+        !step.optional_flag.startsWith("--skip-")))
+  );
+}
+
+function validHostedOnlyGate(waiver, gateIds, covered) {
+  return !(
+    typeof waiver !== "object" ||
+    waiver === null ||
+    typeof waiver.gate !== "string" ||
+    !gateIds.has(waiver.gate) ||
+    covered.has(waiver.gate) ||
+    typeof waiver.reason !== "string" ||
+    waiver.reason.trim().length < 20
+  );
+}
+
+/** Validate the one local preflight selection and every reasoned hosted-only waiver. */
+function validateLocalPreflight(localPreflight, gateIds, violations) {
+  const invalidDeclaration =
+    typeof localPreflight !== "object" ||
+    localPreflight === null ||
+    localPreflight.command !== "pnpm verify:preflight" ||
+    !Array.isArray(localPreflight.steps) ||
+    !Array.isArray(localPreflight.hosted_only);
+  if (invalidDeclaration) {
+    violations.push("local_preflight:invalid");
+    return;
+  }
+  const covered = new Set();
+  const stepIds = new Set();
+  for (const step of localPreflight.steps) {
+    if (!validLocalPreflightStep(step, gateIds, stepIds)) {
+      violations.push("local_preflight:step_invalid");
+      continue;
+    }
+    stepIds.add(step.id);
+    for (const gate of step.gates) covered.add(gate);
+  }
+  for (const waiver of localPreflight.hosted_only) {
+    if (!validHostedOnlyGate(waiver, gateIds, covered)) {
+      violations.push("local_preflight:hosted_only_invalid");
+      continue;
+    }
+    covered.add(waiver.gate);
+  }
+  for (const gate of gateIds) {
+    if (!covered.has(gate))
+      violations.push(`local_preflight:gate:${gate}:unmapped`);
+  }
+}
+
 /** Validate registry policy and exact parity with enforced workflow steps. */
-export async function validateGateRegistry(
-  registry,
-  options = {},
-) {
+export async function validateGateRegistry(registry, options = {}) {
   const root = options.repoRoot ?? repoRoot;
   const discovered =
     options.discovered ??
@@ -196,14 +252,9 @@ export async function validateGateRegistry(
   const ids = new Set();
   const registeredPipelines = new Set();
   for (const gate of registry.gates) {
-    await validateGatePolicy(
-      gate,
-      root,
-      ids,
-      registeredPipelines,
-      violations,
-    );
+    await validateGatePolicy(gate, root, ids, registeredPipelines, violations);
   }
+  validateLocalPreflight(registry.local_preflight, ids, violations);
   for (const pipeline of discovered) {
     if (!registeredPipelines.has(pipeline)) {
       violations.push(`pipeline:${pipeline}:unregistered`);
@@ -237,7 +288,9 @@ export async function main(argv = process.argv.slice(2)) {
   const registry = JSON.parse(await readFile(registryPath, "utf8"));
   const violations = await validateGateRegistry(registry, { discovered });
   if (violations.length > 0) {
-    throw new Error(`Gate registry validation failed:\n${violations.join("\n")}`);
+    throw new Error(
+      `Gate registry validation failed:\n${violations.join("\n")}`,
+    );
   }
   return {
     ok: true,

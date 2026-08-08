@@ -224,77 +224,134 @@
     {
       "path": "src/cli/register-mutation.ts",
       "expected_count": 21,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "transport_validation",
       "reason": "Commander mutation syntax and local filesystem argument checks remain CLI transport policy while business mutations execute through SDK actions."
     },
     {
       "path": "src/cli/register-annotations.ts",
       "expected_count": 3,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "transport_validation",
       "reason": "Annotation text-source and positive-index conflicts are Commander transport checks before the shared SDK mutation executes."
     },
     {
       "path": "src/cli/register-list-query.ts",
       "expected_count": 14,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "transport_validation",
       "reason": "Human query syntax, output destinations, and stream conflicts are CLI transport contracts."
     },
     {
       "path": "src/cli/register-operations.ts",
       "expected_count": 8,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "transport_validation",
       "reason": "Interactive operation flags and shell-facing setup errors are owned by the CLI adapter."
     },
     {
       "path": "src/cli/main.ts",
       "expected_count": 7,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "transport_validation",
       "reason": "Root command dispatch, plugin resolution, and process-level usage failures are CLI host responsibilities."
     },
     {
       "path": "src/cli/register-setup.ts",
       "expected_count": 6,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "transport_validation",
       "reason": "Installation and shell setup arguments are not SDK domain mutations."
     },
     {
       "path": "src/cli/register-structured-mutation.ts",
       "expected_count": 4,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "transport_validation",
       "reason": "Structured stdin framing failures belong to the CLI transport before SDK dispatch."
     },
     {
       "path": "src/cli/stats-analytics-json.ts",
       "expected_count": 3,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "presentation_validation",
       "reason": "CLI-only analytics JSON projection errors are presentation-layer contracts."
     },
     {
       "path": "src/cli/schema-registration-helpers.ts",
       "expected_count": 3,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "transport_validation",
       "reason": "Commander schema flag normalization remains an adapter responsibility."
     },
     {
       "path": "src/cli/extension-command-options.ts",
       "expected_count": 3,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "transport_validation",
       "reason": "Extension command option decoding occurs before the SDK extension runtime boundary."
     },
     {
       "path": "src/cli/register-files-lookup.ts",
       "expected_count": 2,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "presentation_validation",
       "reason": "Terminal file lookup argument conflicts are CLI presentation policy."
     },
     {
       "path": "src/cli/migration-gates.ts",
       "expected_count": 2,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-0xmajx",
       "disposition": "host_safety",
       "reason": "Process-level migration confirmation and environment fences are CLI host safety checks."
     }
   ],
   "refusal_parity_contracts": [
+    {
+      "id": "project-runtime-stale-mutation",
+      "owner": "pm-1eted6",
+      "code": "project_runtime_stale_mutation",
+      "members": [
+        {
+          "path": "src/sdk/environment/project-runtime-compatibility.ts",
+          "contains_all": [
+            "project_runtime_stale_mutation",
+            "assertProjectRuntimeCompatibility",
+            "PM_ALLOW_STALE_CLI"
+          ]
+        },
+        {
+          "path": "src/cli.ts",
+          "contains_all": ["runRuntimeCompatibleCli"]
+        },
+        {
+          "path": "src/cli/runtime-compatibility-boundary.ts",
+          "contains_all": [
+            "assertProjectRuntimeCompatibility",
+            "formatPmCliErrorForJson"
+          ]
+        },
+        {
+          "path": "tests/unit/sdk/project-runtime-compatibility.spec.ts",
+          "contains_all": [
+            "project_runtime_stale_mutation",
+            "keeps reads available"
+          ]
+        }
+      ]
+    },
     {
       "id": "history-author-selector",
       "owner": "pm-0xmajx",

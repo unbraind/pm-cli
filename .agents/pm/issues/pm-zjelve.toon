@@ -1,0 +1,40 @@
+id: pm-zjelve
+title: Make stale-runtime compatibility classification action-aware across mixed CLI commands
+description: "The initial stale-runtime mutation guard correctly protects direct lifecycle writes but its final diff review found mixed read/write command families need action-aware classification. Preserve read-only context for events, dependency graphs, config reads, schema/profile inspection, package diagnostics, telemetry stats, snapshot inspection, templates, and VCS reads while fencing each corresponding mutation, repair, refresh, export-to-file, and package-management form."
+type: Issue
+status: closed
+priority: 0
+tags[5]: cli,context,runtime-compatibility,safety,sdk
+created_at: "2026-08-08T10:54:15.899Z"
+updated_at: "2026-08-08T11:10:40.603Z"
+closed_at: "2026-08-08T11:10:27.919Z"
+completed_at: "2026-08-08T11:10:27.919Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: "table-driven tests cover every mixed command family and both read/write branches; packaged stale-runtime CLI permits representative reads and refuses representative writes; exact coverage, lint, typecheck, and surface gates pass"
+parent: pm-doxj
+severity: high
+resolution: "Added action-aware classifier dispatch for mixed CLI families, including validation and health repair modes, while preserving help, checks, previews, dry runs, and diagnostic reads."
+expected_result: "Every supported mixed command is classified by its effective action: diagnostic reads remain available under a stale runtime and all mutation-capable forms are refused."
+actual_result: "The public classifier now distinguishes read and write actions across 18 mixed command aliases/families, backed by 50 table-driven classification cases and packaged CLI refusal coverage. Full repository coverage and lint pass exactly."
+component: sdk-runtime
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0xmajx,verifies,"2026-08-08T10:54:15.899Z","harness:codex","cli:create:dep",detected
+  pm-1eted6,discovered_from,"2026-08-08T10:54:15.899Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-08T10:54:15.899Z","harness:codex","Duplicate check: all-status searches for action-aware stale runtime classifier and stale runtime read commands found no matching implementation item. This follow-up was discovered during final diff review of pm-1eted6 and tightens that completed primitive without reopening its already verified baseline."
+  "2026-08-08T11:10:27.292Z","harness:codex","Verification evidence: focused packaged/runtime tests pass 57 tests before the expanded matrix; the final repository run passes all 453 files / 7,047 tests at exact 50,251/50,251 statements, 36,654/36,654 branches, 10,318/10,318 functions, and 48,655/48,655 lines. Full lint passes ESLint, zero clone detection, 100% docstrings, package/SDK parity, refusal inventories, token/context and tracker ratchets, registry validation, SDK surface, and performance floors; typecheck also passes."
+learnings[1]{created_at,author,text}:
+  "2026-08-08T11:10:26.777Z","harness:codex","A command-name mutation allowlist is insufficient for a universal CLI: compatibility fences need action-level semantics for mixed commands and must test both false-positive read refusal and false-negative write exposure."
+files[2]{path,scope,note}:
+  src/sdk/environment/project-runtime-compatibility.ts,project,Action-aware runtime mutation classifier
+  tests/unit/sdk/project-runtime-compatibility.spec.ts,project,Exhaustive mixed command classification matrix
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/project-runtime-compatibility.spec.ts tests/unit/cli/runtime-compatibility-boundary.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msk9ein9-q4jiwt,test,passed,"2026-08-08T10:57:04.608Z","2026-08-08T10:57:12.932Z","2026-08-08T10:57:12.932Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated runtime compatibility fix record
+  docs/SDK_RUNTIME_BOUNDARIES.md,project,Mixed command read/write boundary documentation
+close_reason: Completed action-aware stale-runtime classification with representative packaged refusal proof and exact full-repository quality gates.
+body: ""
