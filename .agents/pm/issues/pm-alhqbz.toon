@@ -1,0 +1,46 @@
+id: pm-alhqbz
+title: "GH-933: nested PM writes in non-PM linked tests can mutate the source project"
+description: "A linked test whose outer command is not pm still exports PM_SOURCE_PM_PATH and PM_SOURCE_WORKSPACE_ROOT. A nested package lifecycle can therefore run a mutating pm command such as merge install against the source workspace. Preserve cross-project validation from GH-689 while making nested source-context mutation an explicit opt-in or a fail-closed boundary. GitHub: https://github.com/unbraind/pm-cli/issues/933"
+type: Issue
+status: closed
+priority: 1
+tags[4]: context-integrity,linked-tests,sdk,security
+created_at: "2026-08-08T10:14:38.912Z"
+updated_at: "2026-08-08T10:34:24.008Z"
+closed_at: "2026-08-08T10:32:57.708Z"
+completed_at: "2026-08-08T10:32:57.708Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Non-PM linked tests cannot silently mutate the source PM workspace through nested pm lifecycle commands; validation/read workflows retain the source identity they need; explicit opt-in is typed, documented, and observable; unit, integration, negative-control, full coverage, and temporary installed-package acceptance pass"
+parent: pm-usfg
+resolution: fixed
+expected_result: Nested package lifecycles retain source identity for validation but cannot mutate source merge configuration implicitly; one explicit typed override is available and observable.
+actual_result: "Linked-test source context is now read-only by contract. Nested merge-install writes select the sibling workspace, dry-run source reads remain compatible, protected environment keys prevent metadata bypass, and an explicit override is exposed through the public SDK resolver."
+fixed_version: 2026.8.8
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-954h0o,discovered_from,"2026-08-08T10:14:38.912Z","harness:codex","cli:create:dep",detected
+  pm-ei6x66,related,"2026-08-08T10:14:38.912Z","harness:codex","cli:create:dep",detected
+  pm-0xmajx,verifies,"2026-08-08T10:22:22.632Z","harness:codex","cli:update:dep",detected
+  pm-3lhth4,related,"2026-08-08T10:22:22.632Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-08T10:14:38.912Z","harness:codex","Duplicate-check evidence: all-status searches for GH-933, nested PM writes, PM_SOURCE_PM_PATH nested lifecycle, and the exact GitHub title found no canonical item. pm-954h0o/GH-682 is closed related lineage that intentionally preserved source VCS identity for validation; this issue owns the missing mutation boundary without reopening that completed behavior."
+  "2026-08-08T10:32:50.788Z","harness:codex","Completion evidence 2026-08-08: linked-test children mark inherited source coordinates read_only; access and override keys cannot be changed by linked-test metadata; merge-install dry runs may inspect source state, while writes select the current package unless PM_ALLOW_SOURCE_CONTEXT_WRITES=1. The typed resolver reports selection. Focused 72/72 tests and full 6,997-test exact coverage pass. Packed-artifact acceptance used two temporary Git repos: the nested sibling npm lifecycle installed its own fence, the source fence SHA-256 stayed byte-identical, and the run passed."
+files[9]{path,scope,note}:
+  sdk/public-surface.json,project,Records additive public SDK contract
+  src/sdk/environment/source-context.ts,project,Typed inherited source-context access policy and explicit override primitive
+  src/sdk/index.ts,project,Exports source-context and merge resolution primitives
+  src/sdk/merge/index.ts,project,Exports merge context resolver from focused SDK entrypoint
+  src/sdk/merge/install.ts,project,Selects current workspace for nested writes and exposes reusable resolution
+  src/sdk/test/execution.ts,project,Marks linked-test child source coordinates read-only
+  src/sdk/test/parsers.ts,project,Protects access and override variables from linked-test metadata
+  tests/unit/sdk/merge-safety.spec.ts,project,Source sibling and explicit override integration coverage
+  tests/unit/sdk/source-context.spec.ts,project,Policy parser and real child-process negative controls
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/source-context.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/commands/linked-test-parsers.spec.ts --reporter=dot,project,180
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msk8gy5y-9krk33,test,passed,"2026-08-08T10:30:50.957Z","2026-08-08T10:31:06.742Z","2026-08-08T10:31:06.742Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated closed-item release note
+  docs/AGENT_RUNTIME_PRIMITIVES.md,project,Documents read-only inheritance and explicit recovery override
+close_reason: "Implemented and verified with linked tests, exact 100/100/100/100 coverage, static/security gates, and temporary installed-package acceptance."
+body: ""

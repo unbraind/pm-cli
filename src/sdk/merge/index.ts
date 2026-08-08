@@ -45,11 +45,13 @@ export {
   PM_GITATTRIBUTES_END,
   PM_GITATTRIBUTES_START,
   refreshMergeAttributeFenceIfInstalled,
+  resolveMergeInstallContext,
   runMergeInstall,
   type MergeFenceAuditResult,
   type MergeDriverConfigurationAuditResult,
   type MergeFenceRefreshOutcome,
   type MergeInstallOptions,
+  type MergeInstallContextResolution,
   type MergeInstallResult,
 } from "./install.js";
 export {

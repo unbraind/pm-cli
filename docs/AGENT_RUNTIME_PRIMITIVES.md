@@ -25,6 +25,8 @@ historical projections, and versioned legacy identity are tracked by
 [pm-ffz0a9](../.agents/pm/issues/pm-ffz0a9.toon),
 [pm-v8gfi7](../.agents/pm/issues/pm-v8gfi7.toon), and
 [pm-3yxwv5](../.agents/pm/issues/pm-3yxwv5.toon).
+[pm-alhqbz](../.agents/pm/issues/pm-alhqbz.toon) governs the nested source-write
+boundary retained by linked-test package lifecycles.
 
 `pm` treats project management as context management. These primitives keep
 mutation provenance, source-workspace identity, extension flags, and bounded
@@ -198,10 +200,15 @@ Every extension command, parser, preflight hook, renderer, and service receives:
 Linked tests set `PM_SOURCE_WORKSPACE_ROOT` before replacing `PM_PATH` and
 `PM_GLOBAL_PATH`, and protect `PM_SOURCE_PM_PATH` as the read-only source
 tracker coordinate for source-repository lifecycle commands such as
-`pm merge install`. Extensions can therefore inspect source VCS metadata
-without writing real tracker state. Package code should prefer `pm_root_rel`
-in output and persisted evidence to avoid leaking host-specific absolute
-paths.
+`pm merge install`. They also set `PM_SOURCE_CONTEXT_ACCESS=read_only`.
+Validation may continue to inspect the source coordinates, but a nested
+non-dry-run `pm merge install` selects the current package repository instead
+of the source workspace. A maintainer can deliberately opt into the legacy
+source mutation for one invocation with `PM_ALLOW_SOURCE_CONTEXT_WRITES=1`;
+`resolveMergeInstallContext()` reports whether that override selects the source.
+Both variables are protected from linked-test `env_set` and `env_clear`
+metadata. Package code should prefer `pm_root_rel` in output and persisted
+evidence to avoid leaking host-specific absolute paths.
 
 ## Strict extension flag descriptors
 

@@ -9,9 +9,8 @@ import * as nodeModule from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  runCliWithBundleIntegrity,
-} from "./cli/bundle-integrity.js";
+import { runCliWithBundleIntegrity } from "./cli/bundle-integrity.js";
+import { runRuntimeCompatibleCli } from "./cli/runtime-compatibility-boundary.js";
 import {
   pruneCompileCacheGenerations,
   resolveCompileCacheGeneration,
@@ -44,7 +43,8 @@ function enableNodeCompileCache(): void {
   const generation = resolveCompileCacheGeneration(
     readPackageVersionForPath(fileURLToPath(import.meta.url)),
   );
-  const cacheDir = configuredCacheDir ?? path.join(defaultCacheRoot, generation);
+  const cacheDir =
+    configuredCacheDir ?? path.join(defaultCacheRoot, generation);
   try {
     if (configuredCacheDir === undefined) {
       pruneCompileCacheGenerations(defaultCacheRoot, generation);
@@ -116,10 +116,20 @@ export const _testOnly = {
 if (!printFastVersionIfRequested()) {
   enableNodeCompileCache();
   const cliEntrypointPath = fileURLToPath(import.meta.url);
-  await runCliWithBundleIntegrity(
-    process.argv.slice(2),
-    cliEntrypointPath,
-    () => import("./cli/main.js"),
-    process.stderr.write.bind(process.stderr),
-  );
+  const executingVersion = readPackageVersionForPath(cliEntrypointPath);
+  const invocationArgv = process.argv.slice(2);
+  await runRuntimeCompatibleCli({
+    executingVersion,
+    projectRoot: process.cwd(),
+    argv: invocationArgv,
+    allowStale: process.env.PM_ALLOW_STALE_CLI === "1",
+    run: () =>
+      runCliWithBundleIntegrity(
+        invocationArgv,
+        cliEntrypointPath,
+        () => import("./cli/main.js"),
+        process.stderr.write.bind(process.stderr),
+      ),
+    writeError: process.stderr.write.bind(process.stderr),
+  });
 }

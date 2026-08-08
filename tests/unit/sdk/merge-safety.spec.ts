@@ -31,6 +31,7 @@ import {
   mergeJsonDocuments,
   mergeRelationshipEventStreams,
   refreshMergeAttributeFenceIfInstalled,
+  resolveMergeInstallContext,
   runMergeDriver,
   runMergeInstall,
 } from "../../../src/sdk/index.js";
@@ -1387,6 +1388,10 @@ describe("public merge-safety SDK primitives", () => {
       );
       const previousSourcePmPath = process.env.PM_SOURCE_PM_PATH;
       const previousSourceWorkspaceRoot = process.env.PM_SOURCE_WORKSPACE_ROOT;
+      const previousSourceContextAccess =
+        process.env.PM_SOURCE_CONTEXT_ACCESS;
+      const previousSourceWriteOverride =
+        process.env.PM_ALLOW_SOURCE_CONTEXT_WRITES;
       process.env.PM_SOURCE_PM_PATH = context.pmPath;
       process.env.PM_SOURCE_WORKSPACE_ROOT = context.tempRoot;
       try {
@@ -1396,15 +1401,52 @@ describe("public merge-safety SDK primitives", () => {
         expect(sourceInstalled.gitattributes.patterns).toContain(
           '".agents/pm/tasks/*.toon" merge=pm-item-toon',
         );
+        process.env.PM_SOURCE_CONTEXT_ACCESS = "read_only";
+        const previousCwd = process.cwd();
+        try {
+          process.chdir(sandboxRoot);
+          const sandboxInstalled = await runMergeInstall({}, {});
+          expect(sandboxInstalled.workspace_root).toBe(canonicalSandboxRoot);
+          expect(
+            resolveMergeInstallContext({
+              cwd: sandboxRoot,
+              dryRun: false,
+              environment: process.env,
+            }),
+          ).toMatchObject({
+            source_context_selected: false,
+            source_policy: { write_override_applied: false },
+          });
+          await expect(
+            readFile(path.join(context.tempRoot, ".gitattributes"), "utf8"),
+          ).rejects.toMatchObject({ code: "ENOENT" });
+          process.env.PM_ALLOW_SOURCE_CONTEXT_WRITES = "1";
+          const overridden = await runMergeInstall({ dryRun: true }, {});
+          expect(overridden.workspace_root).toBe(context.tempRoot);
+          expect(
+            resolveMergeInstallContext({
+              cwd: sandboxRoot,
+              dryRun: false,
+              environment: process.env,
+            }),
+          ).toMatchObject({
+            source_context_selected: true,
+            source_policy: { write_override_applied: true },
+          });
+        } finally {
+          process.chdir(previousCwd);
+        }
         delete process.env.PM_SOURCE_PM_PATH;
         delete process.env.PM_SOURCE_WORKSPACE_ROOT;
-        const previousCwd = process.cwd();
+        delete process.env.PM_SOURCE_CONTEXT_ACCESS;
+        delete process.env.PM_ALLOW_SOURCE_CONTEXT_WRITES;
+        const sourceFallbackCwd = process.cwd();
         try {
           process.chdir(context.tempRoot);
           const cwdInstalled = await runMergeInstall({ dryRun: true }, {});
           expect(cwdInstalled.workspace_root).toBe(context.tempRoot);
         } finally {
-          process.chdir(previousCwd);
+          process.chdir(sourceFallbackCwd);
         }
         process.env.PM_SOURCE_PM_PATH = context.pmPath;
         process.env.PM_SOURCE_WORKSPACE_ROOT = context.tempRoot;
@@ -1429,6 +1471,17 @@ describe("public merge-safety SDK primitives", () => {
           delete process.env.PM_SOURCE_WORKSPACE_ROOT;
         } else {
           process.env.PM_SOURCE_WORKSPACE_ROOT = previousSourceWorkspaceRoot;
+        }
+        if (previousSourceContextAccess === undefined) {
+          delete process.env.PM_SOURCE_CONTEXT_ACCESS;
+        } else {
+          process.env.PM_SOURCE_CONTEXT_ACCESS = previousSourceContextAccess;
+        }
+        if (previousSourceWriteOverride === undefined) {
+          delete process.env.PM_ALLOW_SOURCE_CONTEXT_WRITES;
+        } else {
+          process.env.PM_ALLOW_SOURCE_CONTEXT_WRITES =
+            previousSourceWriteOverride;
         }
       }
     });

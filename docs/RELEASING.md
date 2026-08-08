@@ -23,6 +23,8 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon),
 [pm-998juj](../.agents/pm/tasks/pm-998juj.toon), plus exact-tag recovery
 [pm-lwnifd](../.agents/pm/issues/pm-lwnifd.toon), and SDK-bound reliability
 classification [pm-dqtzva](../.agents/pm/issues/pm-dqtzva.toon).
+The local/hosted gate selection contract is tracked by
+[pm-ei6x66](../.agents/pm/tasks/pm-ei6x66.toon).
 
 ## Version Policy
 
@@ -195,7 +197,19 @@ The build writes `dist/cli-bundle/bundle-manifest.json` atomically with SHA-256 
 4. Run the same release pipeline locally.
 
 Push the final implementation commit first, wait for DeepScan and CodeFactor to
-finish on that reviewed SHA, and run the mandatory local hosted-analysis proof:
+finish on that reviewed SHA, then run the canonical registry-owned preflight:
+
+```bash
+pnpm verify:preflight
+```
+
+The registry supplies the ordered executable plan, command arguments,
+environment, capture policy, and explicit skip policy. Its receipt distinguishes
+passed checks from declared skips. The same registry maps named PR, nightly,
+and release workflow gates; hosted-only entries must explain why no faithful
+local equivalent exists.
+
+The preflight includes the mandatory local hosted-analysis proof:
 
 ```bash
 pnpm quality:hosted-analysis

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1462,
+    "covered_symbols": 1464,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1463
+    "required_symbols": 1465
   },
   "breaking_acknowledgements": [
     {
@@ -87,6 +87,13 @@
       ],
       "package_version": "2026.8.7",
       "reason": "Report collected all-row bulk failures as dependency_failed exit 5 instead of a successful no-effect receipt; full no-effect and partial-effect exits remain 6 and 7."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ProjectRuntimeCompatibilityResult"
+      ],
+      "package_version": "2026.8.7",
+      "reason": "Extend project runtime inspection with optional stale-read diagnostics for pm-1eted6; existing result fields and behavior remain compatible."
     }
   ],
   "entrypoints": {
@@ -784,6 +791,12 @@
           "signature": "export interface AssertProjectProfileOptions { strict?: boolean; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertProjectRuntimeCompatibility",
+          "signature": "(options: { executingVersion: string; projectRoot: string; argv: readonly string[]; allowStale?: boolean; }) => ProjectRuntimeCompatibilityResult | calls: (options: { executingVersion: string; projectRoot: string; argv: readonly string[]; allowStale?: boolean; }) => ProjectRuntimeCompatibilityResult"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "assertRegisteredCommandContract",
@@ -1372,6 +1385,12 @@
           "signature": "(parsed: unknown) => \"actionable_unknown\" | \"attributed\" | \"legacy_unknown\" | calls: (parsed: unknown) => \"attributed\" | \"legacy_unknown\" | \"actionable_unknown\""
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "classifyHostEnvironmentFault",
+          "signature": "(error: unknown) => string | null | calls: (error: unknown) => string | null"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "classifyImplicitSemanticFallbackReason",
@@ -1784,6 +1803,12 @@
           "kind": "function",
           "name": "compareCriticalItems",
           "signature": "(left: ItemMetadata, right: ItemMetadata, statusRegistry: RuntimeStatusRegistry) => number | calls: (left: ItemMetadata, right: ItemMetadata, statusRegistry: RuntimeStatusRegistry) => number"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "comparePmDateVersions",
+          "signature": "(left: string, right: string) => number | null | calls: (left: string, right: string) => number | null"
         },
         {
           "classification": "supported",
@@ -3074,6 +3099,12 @@
           "kind": "function",
           "name": "discoverNearbyPmRoot",
           "signature": "(cwd: string, excludedRoot?: string) => string | undefined | calls: (cwd: string, excludedRoot?: string) => string | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "discoverProjectRuntimeVersionPins",
+          "signature": "(projectRoot: string) => ProjectRuntimeVersionPin[] | calls: (projectRoot: string) => ProjectRuntimeVersionPin[]"
         },
         {
           "classification": "supported",
@@ -5164,6 +5195,18 @@
           "signature": "export interface HistoryVerificationResult { ok: boolean; entries: number; errors: string[]; latest_after_hash?: string; current_item_hash?: string; current_matches_latest?: boolean; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "HostEnvironmentBoundaryOptions",
+          "signature": "export interface HostEnvironmentBoundaryOptions { codes?: HostEnvironmentFaultCodeOverrides; why?: string; nextSteps?: readonly string[]; suggestedRetry?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "HostEnvironmentFaultCodeOverrides",
+          "signature": "export interface HostEnvironmentFaultCodeOverrides { capacity?: string; permission?: string; resource?: string; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "HotFile",
@@ -5332,6 +5375,12 @@
           "signature": "(itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"acknowledged_actionable_event_count\" | \"actionable_events\" | \"actionable_unknown_event_count\" | \"checked_events\" | \"legacy_unknown_event_count\" | \"samples_truncated\" | \"samples\" | \"unknown_event_count\"> | calls: (itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"checked_events\" | \"unknown_event_count\" | \"legacy_unknown_event_count\" | \"actionable_unknown_event_count\" | \"acknowledged_actionable_event_count\" | \"samples\" | \"samples_truncated\" | \"actionable_events\">"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "inspectProjectRuntimeCompatibility",
+          "signature": "(options: { executingVersion: string; projectRoot: string; argv: readonly string[]; allowStale?: boolean; }) => ProjectRuntimeCompatibilityResult | calls: (options: { executingVersion: string; projectRoot: string; argv: readonly string[]; allowStale?: boolean; }) => ProjectRuntimeCompatibilityResult"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "inspectStaleInProgressItems",
@@ -5468,6 +5517,12 @@
           "kind": "function",
           "name": "isPmToolAction",
           "signature": "(value: string) => value is PmToolAction | calls: (value: string) => value is PmToolAction"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "isProjectMutatingInvocation",
+          "signature": "(argv: readonly string[]) => boolean | calls: (argv: readonly string[]) => boolean"
         },
         {
           "classification": "advanced_export",
@@ -6242,6 +6297,12 @@
           "kind": "function",
           "name": "mergeHistoryStreams",
           "signature": "(baseRaw: string, oursRaw: string, theirsRaw: string) => HistoryMergeResult | calls: (baseRaw: string, oursRaw: string, theirsRaw: string) => HistoryMergeResult"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MergeInstallContextResolution",
+          "signature": "export interface MergeInstallContextResolution { pm_root: string; workspace_start: string; source_coordinates_available: boolean; source_context_selected: boolean; source_policy: ReturnType<typeof resolveSourceContextWritePolicy>; }"
         },
         {
           "classification": "supported",
@@ -8578,6 +8639,24 @@
           "signature": "(window: HistoryAnalyticsWindow, descriptors?: readonly HarnessSignalDescriptor[], options?: Pick<HistoryAnalyticsWindowOptions, \"minimumSample\">) => ProvenanceCoverageAnalytics | calls: (window: HistoryAnalyticsWindow, descriptors?: readonly HarnessSignalDescriptor[], options?: Pick<HistoryAnalyticsWindowOptions, \"minimumSample\">) => ProvenanceCoverageAnalytics"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ProjectRuntimeCompatibilityResult",
+          "signature": "export interface ProjectRuntimeCompatibilityResult { compatible: boolean; executing_version: string; project_version?: string; source?: ProjectRuntimeVersionPin[\"source\"]; command?: string; mutating: boolean; stale?: boolean; warning?: ProjectRuntimeCompatibilityWarning; override_applied: boolean; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ProjectRuntimeCompatibilityWarning",
+          "signature": "export interface ProjectRuntimeCompatibilityWarning { code: \"project_runtime_stale_read\"; executing_version: string; project_version: string; source: ProjectRuntimeVersionPin[\"source\"]; message: string; next_steps: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ProjectRuntimeVersionPin",
+          "signature": "export interface ProjectRuntimeVersionPin { version: string; source: \"package.json\" | \"installed-package\" | \"package-lock.json\" | \"pnpm-lock.yaml\" | \"yarn.lock\"; }"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "projectValidateCounts",
@@ -10079,6 +10158,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "resolveMergeInstallContext",
+          "signature": "(options: { cwd: string; explicitPath?: string; dryRun: boolean; environment: Readonly<Record<string, string | undefined>>; }) => MergeInstallContextResolution | calls: (options: { cwd: string; explicitPath?: string; dryRun: boolean; environment: Readonly<Record<string, string | undefined>>; }) => MergeInstallContextResolution"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "resolveMissingMetadataFilters",
           "signature": "(options: { filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; filterReviewerMissing?: boolean; filterRiskMissing?: boolean; filterConfidenceMissing?: boolean; filterSprintMissing?: boolean; filterReleaseMissing?: boolean; }) => MissingMetadataFilters | calls: (options: { filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; filterReviewerMissing?: boolean; filterRiskMissing?: boolean; filterConfidenceMissing?: boolean; filterSprintMissing?: boolean; filterReleaseMissing?: boolean; }) => MissingMetadataFilters"
@@ -10268,6 +10353,12 @@
           "kind": "function",
           "name": "resolveSettingsWithSemanticRuntimeDefaults",
           "signature": "(settings: PmSettings) => SemanticRuntimeDefaultsResolution | calls: (settings: PmSettings) => SemanticRuntimeDefaultsResolution"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveSourceContextWritePolicy",
+          "signature": "(environment: Readonly<Record<string, string | undefined>>) => SourceContextWritePolicy | calls: (environment: Readonly<Record<string, string | undefined>>) => SourceContextWritePolicy"
         },
         {
           "classification": "advanced_export",
@@ -12035,6 +12126,30 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "value",
+          "name": "SOURCE_CONTEXT_ACCESS_ENV",
+          "signature": "\"PM_SOURCE_CONTEXT_ACCESS\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "SOURCE_CONTEXT_WRITE_OVERRIDE_ENV",
+          "signature": "\"PM_ALLOW_SOURCE_CONTEXT_WRITES\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "SourceContextAccessMode",
+          "signature": "export type SourceContextAccessMode = \"read_only\" | \"write\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "SourceContextWritePolicy",
+          "signature": "export interface SourceContextWritePolicy { access: SourceContextAccessMode; write_override_applied: boolean; source_writes_allowed: boolean; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "splitAcceptanceCriteria",
           "signature": "(value: unknown) => string[] | calls: (value: unknown) => string[]"
@@ -12767,6 +12882,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "function",
+          "name": "translateHostEnvironmentFault",
+          "signature": "(error: unknown, operation: string, options?: HostEnvironmentBoundaryOptions) => PmCliError | null | calls: (error: unknown, operation: string, options?: HostEnvironmentBoundaryOptions) => PmCliError | null"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "value",
           "name": "TYPE_TO_FOLDER",
           "signature": "Record<\"Chore\" | \"Decision\" | \"Epic\" | \"Event\" | \"Feature\" | \"Issue\" | \"Meeting\" | \"Milestone\" | \"Plan\" | \"Reminder\" | \"Task\", string>"
@@ -13070,6 +13191,12 @@
           "kind": "function",
           "name": "withFlagAliasMetadata",
           "signature": "(flagContracts: CliFlagContract[]) => CliFlagContract[] | calls: (flagContracts: CliFlagContract[]) => CliFlagContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "withHostEnvironmentBoundary",
+          "signature": "<T>(operation: string, run: () => Promise<T>, options?: HostEnvironmentBoundaryOptions) => Promise<T> | calls: <T>(operation: string, run: () => Promise<T>, options?: HostEnvironmentBoundaryOptions) => Promise<T>"
         },
         {
           "classification": "supported",
@@ -19326,6 +19453,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "MergeInstallContextResolution",
+          "signature": "export interface MergeInstallContextResolution { pm_root: string; workspace_start: string; source_coordinates_available: boolean; source_context_selected: boolean; source_policy: ReturnType<typeof resolveSourceContextWritePolicy>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "MergeInstallOptions",
           "signature": "export interface MergeInstallOptions { dryRun?: boolean; }"
         },
@@ -19400,6 +19533,12 @@
           "kind": "interface",
           "name": "RelationshipStreamMergeResult",
           "signature": "export interface RelationshipStreamMergeResult { merged: string; strategy: HistoryMergeStrategy; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveMergeInstallContext",
+          "signature": "(options: { cwd: string; explicitPath?: string; dryRun: boolean; environment: Readonly<Record<string, string | undefined>>; }) => MergeInstallContextResolution | calls: (options: { cwd: string; explicitPath?: string; dryRun: boolean; environment: Readonly<Record<string, string | undefined>>; }) => MergeInstallContextResolution"
         },
         {
           "classification": "supported",
@@ -24180,6 +24319,10 @@
     "history_stream_over_compact_threshold",
     "history_target_out_of_range",
     "history_unknown_author_events",
+    "host_environment_capacity_fault",
+    "host_environment_operation_invalid",
+    "host_environment_permission_fault",
+    "host_environment_resource_fault",
     "improvement_metric_contract_conflict",
     "improvement_observation_conflict",
     "init_existing_settings_requires_force",
@@ -24251,6 +24394,8 @@
     "profile_name_not_normalized",
     "profile_summary_empty",
     "profile_title_empty",
+    "project_runtime_stale_mutation",
+    "project_runtime_stale_read",
     "redundant_edge",
     "reindex_already_running",
     "reserved_item_field",
@@ -24349,6 +24494,7 @@
     "workspace_snapshot_name_reserved_fingerprint",
     "workspace_snapshot_not_found",
     "workspace_snapshot_permission_denied",
+    "workspace_snapshot_resource_exhausted",
     "workspace_snapshot_storage_exhausted",
     "wrong_item_type"
   ],

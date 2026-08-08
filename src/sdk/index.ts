@@ -200,11 +200,13 @@ export {
   findGitWorkspaceRoot,
   installMergeFence,
   refreshMergeAttributeFenceIfInstalled,
+  resolveMergeInstallContext,
   resolveProjectMergeTypeFolders,
   runMergeInstall,
   type MergeFenceAuditResult,
   type MergeFenceRefreshOutcome,
   type MergeInstallOptions,
+  type MergeInstallContextResolution,
   type MergeInstallResult,
 } from "./merge/install.js";
 export {
@@ -522,6 +524,9 @@ export type {
 } from "./cli-contracts.js";
 export * from "./compose.js";
 export * from "./compile-cache.js";
+export * from "./environment/project-runtime-compatibility.js";
+export * from "./environment/source-context.js";
+export * from "./environment/host-environment-errors.js";
 export * from "./cli-contracts/command-exit-contracts.js";
 export * from "./context-relevance.js";
 export * from "./context-intent-contracts.js";

@@ -10,6 +10,10 @@ import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import { STRUCTURED_LINKED_TEST_KEYS } from "./entry.js";
 import { SCOPE_VALUES } from "../../types/index.js";
 import type { LinkedTest, LinkScope } from "../../types/index.js";
+import {
+  SOURCE_CONTEXT_ACCESS_ENV,
+  SOURCE_CONTEXT_WRITE_OVERRIDE_ENV,
+} from "../environment/source-context.js";
 
 /**
  * Shared linked-test field parsers used by the `create` and `test` commands.
@@ -31,6 +35,8 @@ export const LINKED_TEST_PROTECTED_ENV_KEYS = new Set([
   "PM_GLOBAL_PATH",
   "PM_SOURCE_PM_PATH",
   "PM_SOURCE_WORKSPACE_ROOT",
+  SOURCE_CONTEXT_ACCESS_ENV,
+  SOURCE_CONTEXT_WRITE_OVERRIDE_ENV,
   "FORCE_COLOR",
 ]);
 /** Public contract for linked test env name pattern, shared by SDK and presentation-layer consumers. */

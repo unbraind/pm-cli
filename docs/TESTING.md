@@ -16,6 +16,8 @@ Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), 
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
+Local/hosted gate parity is tracked by [pm-ei6x66](../.agents/pm/tasks/pm-ei6x66.toon).
+
 ## Standard Local Checks
 
 ```bash
@@ -25,6 +27,21 @@ pnpm typecheck
 node scripts/run-tests.mjs test
 node scripts/run-tests.mjs coverage
 ```
+
+For the exact ordered local preflight used to make release-readiness claims,
+run the registry-owned entrypoint:
+
+```bash
+pnpm verify:preflight
+```
+
+`scripts/release/gate-registry.json` is the executable plan for this command:
+each ordered step declares its command, arguments, environment, capture mode,
+and whether an explicit skip flag is permitted. Receipts distinguish passed
+steps from declared skips, and `quality:gate-registry` maps hosted workflow
+claims to the same canonical gate IDs. Hosted-only environment isolation and
+tracker-integrity steps remain explicit entries with reasons rather than
+silently disappearing from local parity.
 
 `node scripts/run-tests.mjs` wraps Vitest in temporary tracker roots, then cleans them up.
 

@@ -155,6 +155,8 @@ describe("surface replication gate", () => {
     config.cli_refusal_dispositions.push({
       path: "src/cli/b.ts",
       expected_count: 1,
+      rule_ownership: "all_occurrences",
+      owner: "pm-fixture",
       disposition: "transport_validation",
       reason:
         "The fixture refusal is explicitly owned by its transport adapter.",
@@ -172,6 +174,14 @@ describe("surface replication gate", () => {
       source_cap_utilization: 0.2,
     });
     expect(report.cli_owned_refusals.total).toBe(1);
+    expect(report.cli_owned_refusals.files[0]?.rules).toEqual([
+      {
+        id: "src/cli/b.ts#1",
+        line: 2,
+        disposition: "transport_validation",
+        owner: "pm-fixture",
+      },
+    ]);
   });
 
   it("makes an active waiver queryable without hiding it", async () => {
@@ -506,7 +516,7 @@ describe("surface replication gate", () => {
     });
   });
 
-  it("discovers committed, staged, and unstaged changes from a real Git worktree", async () => {
+  it("discovers committed, staged, unstaged, and untracked changes from a real Git worktree", async () => {
     const root = await fixtureRoot();
     await writeFile(
       path.join(root, "src/sdk/a.ts"),
@@ -538,6 +548,7 @@ describe("surface replication gate", () => {
     );
     await writeFile(path.join(root, "staged.txt"), "staged\n", "utf8");
     runGit(root, ["add", "staged.txt"]);
+    await writeFile(path.join(root, "untracked.txt"), "untracked\n", "utf8");
 
     const report = await validateSurfaceReplication(declaration(), {
       repoRoot: root,
@@ -547,6 +558,7 @@ describe("surface replication gate", () => {
       "src/cli/b.ts",
       "src/sdk/a.ts",
       "staged.txt",
+      "untracked.txt",
     ]);
 
     const noBaseRoot = await fixtureRoot();

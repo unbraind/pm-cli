@@ -1,0 +1,46 @@
+id: pm-5dwz1a
+title: "GHSA-2v37-7h3g-55p8: pin patched nanoid in the Vite/PostCSS development graph"
+description: "GitHub Scorecard and a fresh full pnpm audit report the high-severity nanoid custom-generator infinite-loop advisory through the development-only @codspeed/vitest-plugin -> Vite -> PostCSS graph. Raise the repository override floor to the mature patched 3.3.17 release without broadening unrelated dependency updates, then prove the complete dependency and quality inventories clean."
+type: Issue
+status: closed
+priority: 0
+tags[5]: dependencies,release-gate,scorecard,security,vulnerability
+created_at: "2026-08-08T10:37:34.842Z"
+updated_at: "2026-08-08T10:51:12.444Z"
+closed_at: "2026-08-08T10:50:52.238Z"
+completed_at: "2026-08-08T10:50:52.238Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: "nanoid resolves to patched 3.3.17 or newer within the compatible 3.x line; pnpm audit reports zero vulnerabilities; full lint, typecheck, build, exact 100/100/100/100 coverage, package acceptance, and security gates pass"
+parent: pm-qwoy
+severity: high
+resolution: "Raised the compatible nanoid 3.x security floor to 3.3.17 and refreshed the lockfile, eliminating GHSA-2v37-7h3g-55p8 without unrelated dependency churn."
+expected_result: The resolved dependency graph contains no vulnerable nanoid release; pnpm audit and repository security gates report zero vulnerabilities while all SDK/CLI quality and coverage gates remain green.
+actual_result: "The workspace override resolves the sole nanoid instance to patched 3.3.17; full pnpm audit reports zero vulnerabilities, exact coverage passes 100/100/100/100, and all lint/static/SDK/measurement gates pass."
+affected_version: 2026.8.7
+component: dependencies
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2cv2o1,discovered_from,"2026-08-08T10:37:34.842Z","harness:codex","cli:create:dep",detected
+  pm-8l1m5t,related,"2026-08-08T10:37:34.842Z","harness:codex","cli:create:dep",detected
+  pm-gnzh,verifies,"2026-08-08T10:37:34.842Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-08T10:37:34.842Z","harness:codex","Duplicate check: exact all-status searches for GHSA-2v37-7h3g-55p8 and nanoid 3.3.17 returned zero items. Closed pm-2cv2o1 addressed different brace-expansion and PostCSS advisories and explicitly established the lockfile-native audit requirement,so this new advisory preserves that completed lineage rather than reopening it."
+  "2026-08-08T10:38:15.271Z","harness:codex","Security fix evidence: pnpm now resolves exactly one nanoid version, 3.3.17, through PostCSS/Vite/@codspeed. A fresh full pnpm audit reports zero info, low, moderate, high, or critical vulnerabilities across 357 dependencies."
+  "2026-08-08T10:44:30.076Z","harness:codex","Gate feedback: the first full linked run passed exact coverage and pnpm audit, then lint failed closed because this newly created item lacked an estimate. Added the 60-minute implementation estimate; no measurement threshold or gate was changed."
+  "2026-08-08T10:50:51.490Z","harness:codex","Final local evidence: exact coverage passed 453 files / 6,997 tests with 50,221/50,221 statements, 36,629/36,629 branches, 10,293/10,293 functions, and 48,629/48,629 lines. The rerun lint gate passed ESLint, zero-clone analysis, 100% docstrings, package/SDK parity, refusal inventory, token/context ratchets, tracker measurements, gate registry, SDK surface, and performance floors. Typecheck, secret scan, and package-artifact acceptance also pass."
+learnings[1]{created_at,author,text}:
+  "2026-08-08T10:50:50.989Z","harness:codex","Security inventories are complementary: the GitHub Scorecard SARIF alert surfaced after the package-manager graph had drifted, so both a fresh full pnpm audit and GitHub code-scanning inventory remain required release evidence."
+files[2]{path,scope,note}:
+  pnpm-lock.yaml,project,Resolved patched dependency graph
+  pnpm-workspace.yaml,project,Secure transitive nanoid floor
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  pnpm audit,project,240
+  pnpm lint,project,600
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msk8xzvv-l842y5,test,failed,"2026-08-08T10:38:15.780Z","2026-08-08T10:44:22.123Z","2026-08-08T10:44:22.123Z",2,1,0
+  test-local-msk9543s-xns5wq,test,passed,"2026-08-08T10:47:21.322Z","2026-08-08T10:49:54.184Z","2026-08-08T10:49:54.184Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated security fix release record
+close_reason: "Patched nanoid to 3.3.17; full audit is clean and the complete local quality, coverage, package, and security evidence passes."
+body: ""

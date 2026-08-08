@@ -91,16 +91,32 @@ describe("release automation contract", () => {
     );
     expect(packageJson.scripts?.["changelog:pm:check"]).toContain("--check");
 
+    const gateRegistry = JSON.parse(
+      await readFile(
+        path.join(repoRoot, "scripts/release/gate-registry.json"),
+        "utf8",
+      ),
+    ) as {
+      local_preflight: {
+        steps: Array<{
+          id: string;
+          executable: { command: string; args: string[] };
+        }>;
+      };
+    };
+    const staticStep = gateRegistry.local_preflight.steps.find(
+      (step) => step.id === "static-quality-gate",
+    );
+    expect(staticStep?.executable).toEqual({
+      command: "pnpm",
+      args: ["quality:static"],
+    });
     const runGatesSource = await readFile(
       path.join(repoRoot, "scripts/release/run-gates.mjs"),
       "utf8",
     );
-    expect(runGatesSource).toMatch(
-      /runCheckedStep\(\s*["']static-quality-gate["']\s*,\s*pnpm\s*,\s*\[\s*["']quality:static["']\s*\]\s*\)/,
-    );
-    expect(runGatesSource).not.toMatch(
-      /runCheckedStep\(\s*["']static-quality-gate["']\s*,\s*process\.execPath/,
-    );
+    expect(runGatesSource).toContain("for (const step of steps)");
+    expect(runGatesSource).toContain("executable.args.map(substitute)");
   });
 
   it("keeps unused underscore conventions aligned across TypeScript and Node script lint surfaces", async () => {
@@ -228,6 +244,10 @@ describe("release automation contract", () => {
       path.join(repoRoot, "scripts/release/run-gates.mjs"),
       "utf8",
     );
+    const gateRegistry = await readFile(
+      path.join(repoRoot, "scripts/release/gate-registry.json"),
+      "utf8",
+    );
     expect(workflow).toContain(
       "RELEASE_POLICY_TOKEN: ${{ secrets.RELEASE_PAT }}",
     );
@@ -235,9 +255,9 @@ describe("release automation contract", () => {
     expect(workflow).not.toContain("GH_TOKEN: ${{ secrets.RELEASE_PAT");
     expect(pipeline).toContain("delete process.env.RELEASE_POLICY_TOKEN");
     expect(gates).toContain("delete process.env.RELEASE_POLICY_TOKEN");
-    expect(gates).toMatch(
-      /hosted-analysis-gate[\s\S]*?env: releasePolicyToken \? \{ GH_TOKEN: releasePolicyToken \} : undefined/,
-    );
+    expect(gateRegistry).toContain('"GH_TOKEN": "{{release_policy_token}}"');
+    expect(gates).toContain("release_policy_token: releasePolicyToken");
+    expect(gates).toContain(".filter(([, value]) => value.length > 0)");
   });
 
   it("allows the external Sentry gate to be disabled in unauthenticated automation", () => {
@@ -332,11 +352,12 @@ describe("release automation contract", () => {
       "utf8",
     );
     expect(releaseWorkflow).toContain("--sentry-window-days 14");
-    const gatesSource = await readFile(
-      path.join(repoRoot, "scripts/release/run-gates.mjs"),
+    const gateRegistry = await readFile(
+      path.join(repoRoot, "scripts/release/gate-registry.json"),
       "utf8",
     );
-    expect(gatesSource).toContain('"--sentry-window-days"');
+    expect(gateRegistry).toContain('"--sentry-window-days"');
+    expect(gateRegistry).toContain('"{{sentry_window_days}}"');
   });
 
   it("keeps tracker-only changes outside release relevance", async () => {

@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 
-import { commandFor, fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
+import { readFileSync } from "node:fs";
+import {
+  commandFor,
+  fail,
+  flagBool,
+  flagString,
+  parseFlags,
+  repoRoot,
+  runCommand,
+} from "./utils.mjs";
 
 const releasePolicyToken = process.env.RELEASE_POLICY_TOKEN?.trim() ?? "";
 delete process.env.RELEASE_POLICY_TOKEN;
@@ -58,139 +67,75 @@ function main() {
   }
 
   const outputJson = flagBool(flags, "json", false);
-  const skipCompatibility = flagBool(flags, "skip-compatibility", false);
-  const skipDogfood = flagBool(flags, "skip-dogfood", false);
-  const skipGreptile = flagBool(flags, "skip-greptile", false);
-  const skipTelemetrySentry = flagBool(flags, "skip-telemetry-sentry", false);
-  const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
-  const sentryWindowDays = flagString(flags, "sentry-window-days", "14");
-  const maxSentryCritical = flagString(flags, "max-sentry-critical", "0");
-  const maxSentryHigh = flagString(flags, "max-sentry-high", "0");
-  const maxTelemetryErrorRate = flagString(flags, "max-telemetry-error-rate", "6");
-  const maxTelemetryMissingRows = flagString(flags, "max-telemetry-missing-error-rows", "0");
-
-  const pnpm = commandFor("pnpm");
-  const npm = commandFor("npm");
-  const checks = [];
-
-  runCheckedStep("build", pnpm, ["build"]);
-  checks.push({ name: "build", ok: true });
-
-  runCheckedStep("typecheck", pnpm, ["typecheck"]);
-  checks.push({ name: "typecheck", ok: true });
-
-  runCheckedStep("docs-skills-gate", process.execPath, ["scripts/release/docs-skills-gate.mjs"]);
-  checks.push({ name: "docs-skills-gate", ok: true });
-
-  runCheckedStep("static-quality-gate", pnpm, ["quality:static"]);
-  checks.push({ name: "static-quality-gate", ok: true });
-
-  runCheckedStep("context-entitlement-gate", pnpm, ["quality:context-eval"]);
-  checks.push({ name: "context-entitlement-gate", ok: true });
-
-  runCheckedStep("coverage", pnpm, ["test:coverage"], { env: { PM_RUN_TESTS_SKIP_BUILD: "1" } });
-  checks.push({ name: "coverage", ok: true });
-
-  runCheckedStep("version-policy", pnpm, ["version:check"]);
-  checks.push({ name: "version-policy", ok: true });
-
-  runCheckedStep("secret-scan", pnpm, ["security:scan"]);
-  checks.push({ name: "secret-scan", ok: true });
-
-  runCheckedStep("npx-smoke", pnpm, ["smoke:npx"]);
-  checks.push({ name: "npx-smoke", ok: true });
-
-  if (!skipDogfood) {
-    runCheckedStep("package-first-dogfood", pnpm, ["dogfood:package-first"]);
-    checks.push({ name: "package-first-dogfood", ok: true });
-  } else {
-    checks.push({ name: "package-first-dogfood", ok: true, skipped: true });
-  }
-
-  // Keep the same packaging validation but avoid huge tarball file listings in gate logs.
-  runCheckedStep("npm-pack-dry-run", npm, ["pack", "--dry-run", "--silent"]);
-  checks.push({ name: "npm-pack-dry-run", ok: true });
-
-  if (!skipCompatibility) {
-    const compatibilityResult = runCheckedStep(
-      "compatibility-check",
-      process.execPath,
-      ["scripts/release/compatibility-check.mjs", "--json"],
-      { capture: true },
-    );
-    checks.push({
-      name: "compatibility-check",
-      ok: true,
-      details: parseJson(compatibilityResult.stdout, "compatibility-check"),
-    });
-  } else {
-    checks.push({ name: "compatibility-check", ok: true, skipped: true });
-  }
-
-  if (!skipTelemetrySentry) {
-    const sentryTelemetry = runCheckedStep(
-      "sentry-telemetry-gate",
-      process.execPath,
-      [
-        "scripts/release/sentry-telemetry-gate.mjs",
-        "--json",
-        "--telemetry-mode",
-        telemetryMode,
-        "--sentry-window-days",
-        sentryWindowDays,
-        "--max-critical",
-        maxSentryCritical,
-        "--max-high",
-        maxSentryHigh,
-        "--max-telemetry-error-rate",
-        maxTelemetryErrorRate,
-        "--max-telemetry-missing-error-rows",
-        maxTelemetryMissingRows,
-      ],
-      { capture: true },
-    );
-    checks.push({
-      name: "sentry-telemetry-gate",
-      ok: true,
-      details: parseJson(sentryTelemetry.stdout, "sentry-telemetry-gate"),
-    });
-  } else {
-    checks.push({ name: "sentry-telemetry-gate", ok: true, skipped: true });
-  }
-
-  const hostedAnalysis = runCheckedStep(
-    "hosted-analysis-gate",
-    process.execPath,
-    ["scripts/release/hosted-analysis-gate.mjs", "--json"],
-    {
-      capture: true,
-      env: releasePolicyToken ? { GH_TOKEN: releasePolicyToken } : undefined,
-    },
+  const variables = {
+    telemetry_mode: flagString(flags, "telemetry-mode", "best-effort"),
+    sentry_window_days: flagString(flags, "sentry-window-days", "14"),
+    max_sentry_critical: flagString(flags, "max-sentry-critical", "0"),
+    max_sentry_high: flagString(flags, "max-sentry-high", "0"),
+    max_telemetry_error_rate: flagString(
+      flags,
+      "max-telemetry-error-rate",
+      "6",
+    ),
+    max_telemetry_missing_error_rows: flagString(
+      flags,
+      "max-telemetry-missing-error-rows",
+      "0",
+    ),
+    release_policy_token: releasePolicyToken,
+  };
+  const registry = JSON.parse(
+    readFileSync(`${repoRoot}/scripts/release/gate-registry.json`, "utf8"),
   );
-  checks.push({
-    name: "hosted-analysis-gate",
-    ok: true,
-    details: parseJson(hostedAnalysis.stdout, "hosted-analysis-gate"),
-  });
-
-  // Greptile review is a best-effort gate: it surfaces the Greptile CLI reviewer
-  // in the local pipeline and fails on findings when authenticated, but skips
-  // gracefully where the Greptile CLI is unavailable (e.g. GitHub Actions has no
-  // Greptile token), so it never blocks environments that cannot run it.
-  if (!skipGreptile) {
-    const greptile = runCheckedStep(
-      "greptile-review",
-      process.execPath,
-      ["scripts/release/greptile-review-gate.mjs", "--json"],
-      { capture: true },
+  const steps = registry.local_preflight?.steps;
+  if (!Array.isArray(steps)) fail("Local preflight registry has no steps.");
+  const checks = [];
+  for (const step of steps) {
+    if (
+      step.skip_policy === "optional" &&
+      flagBool(flags, step.optional_flag.slice(2), false)
+    ) {
+      checks.push({
+        name: step.id,
+        status: "skipped",
+        ok: false,
+        skipped: true,
+        reason: `Requested by ${step.optional_flag}`,
+      });
+      continue;
+    }
+    const substitute = (value) =>
+      value.replace(/\{\{([a-z0-9_]+)\}\}/gu, (_match, name) => {
+        if (!(name in variables)) fail(`Unknown gate variable: ${name}`);
+        return variables[name];
+      });
+    const executable = step.executable;
+    const command =
+      executable.command === "node"
+        ? process.execPath
+        : commandFor(executable.command);
+    const env = Object.fromEntries(
+      Object.entries(executable.env ?? {})
+        .map(([key, value]) => [key, substitute(value)])
+        .filter(([, value]) => value.length > 0),
+    );
+    const result = runCheckedStep(
+      step.id,
+      command,
+      executable.args.map(substitute),
+      {
+        capture: executable.capture_json === true,
+        env: Object.keys(env).length > 0 ? env : undefined,
+      },
     );
     checks.push({
-      name: "greptile-review",
+      name: step.id,
+      status: "passed",
       ok: true,
-      details: parseJson(greptile.stdout, "greptile-review"),
+      ...(executable.capture_json === true
+        ? { details: parseJson(result.stdout, step.id) }
+        : {}),
     });
-  } else {
-    checks.push({ name: "greptile-review", ok: true, skipped: true });
   }
 
   if (outputJson) {

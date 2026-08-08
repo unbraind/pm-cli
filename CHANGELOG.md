@@ -8,6 +8,11 @@
 
 ### Fixed
 
+- PR \#935 review remediation: executable gate registry and fail-closed runtime context parsing ([pm-n41vay](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n41vay.toon))
+- GH-926: warn before a stale pm binary mutates a project pinned to a newer CLI/SDK ([pm-1eted6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1eted6.toon))
+- PR \#935 CI: preserve dependency-free fast-version startup and regenerate runtime contracts ([pm-dskxwf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dskxwf.toon))
+- Make stale-runtime compatibility classification action-aware across mixed CLI commands ([pm-zjelve](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zjelve.toon))
+- CLI and SDK refusal contracts now preserve consistent codes and recovery semantics ([pm-0xmajx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0xmajx.toon))
 - Sentry exception capture never writes the pm.error_code and pm.exit_code tags the release gate reads, so every unexpected runtime error is unclassifiable by construction and blocks the daily cut for the full rolling window ([pm-qxo5iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qxo5iu.toon))
 - Sentry PM-CLI-2S: resource-exhausted copy reports a high handled error without actionable storage guidance ([pm-4odf0c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4odf0c.toon))
 - Sentry PM-CLI-2Q: expected snapshot-name validation is captured as a high production error ([pm-qyg51h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qyg51h.toon))
@@ -18,8 +23,14 @@
 - pm comments write response replays the entire accumulated history, so one append can emit hundreds of comments ([pm-9stazf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9stazf.toon))
 - GH-457: pm health hangs during vectorization check with no output (never-block violation) ([pm-tu71](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tu71.toon))
 
+### Security
+
+- GHSA-2v37-7h3g-55p8: pin patched nanoid in the Vite/PostCSS development graph ([pm-5dwz1a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5dwz1a.toon))
+- GH-933: nested PM writes in non-PM linked tests can mutate the source project ([pm-alhqbz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-alhqbz.toon))
+
 ### Other
 
+- One governed verification plan now drives local preflight and maps hosted release gates ([pm-ei6x66](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ei6x66.toon))
 - Every command declares its exit-code set, and the code distinguishes applied from applied-to-nothing ([pm-hqa8g1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hqa8g1.toon))
 - Floor polarity for the tracker measurement ratchet, with graph edge and node floors declared ([pm-z0cfor](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-z0cfor.toon))
 - Refresh tsx to 4.23.11 with full release-gate proof ([pm-nw1y14](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-nw1y14.toon))

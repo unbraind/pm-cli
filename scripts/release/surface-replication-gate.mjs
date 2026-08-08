@@ -52,6 +52,7 @@ function changedFilesFromGit(root) {
   for (const args of [
     ["diff", "--name-only", "--diff-filter=ACMR"],
     ["diff", "--cached", "--name-only", "--diff-filter=ACMR"],
+    ["ls-files", "--others", "--exclude-standard"],
   ]) {
     for (const file of gitLines(args, root)) changed.add(file);
   }
@@ -230,11 +231,19 @@ async function refusalInventory(config, root) {
     path.join(root, "src", "cli"),
   )) {
     const source = await readFile(absolute, "utf8");
-    const count = source.match(/new\s+PmCliError\s*\(/gu)?.length ?? 0;
+    const matches = [...source.matchAll(/new\s+PmCliError\s*\(/gu)];
+    const count = matches.length;
     if (count > 0) {
+      const relativePath = path
+        .relative(root, absolute)
+        .replaceAll(path.sep, "/");
       actual.push({
-        path: path.relative(root, absolute).replaceAll(path.sep, "/"),
+        path: relativePath,
         count,
+        rules: matches.map((match, index) => ({
+          id: `${relativePath}#${index + 1}`,
+          line: source.slice(0, match.index).split(/\r?\n/u).length,
+        })),
       });
     }
   }
@@ -250,6 +259,7 @@ async function refusalInventory(config, root) {
     }
     if (
       disposition.expected_count !== entry.count ||
+      disposition.rule_ownership !== "all_occurrences" ||
       typeof disposition.reason !== "string" ||
       disposition.reason.trim().length < 20
     ) {
@@ -257,6 +267,11 @@ async function refusalInventory(config, root) {
         `cli_refusal:${entry.path}:expected_${disposition.expected_count}:actual_${entry.count}`,
       );
     }
+    entry.rules = entry.rules.map((rule) => ({
+      ...rule,
+      disposition: disposition.disposition,
+      owner: disposition.owner,
+    }));
     declared.delete(entry.path);
   }
   for (const stale of declared.keys()) {
