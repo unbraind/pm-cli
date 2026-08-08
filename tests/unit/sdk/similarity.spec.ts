@@ -136,6 +136,12 @@ describe("SDK item similarity governance", () => {
           statuses: [" all "],
         }),
       ).resolves.toMatchObject({ filters: { statuses: null } });
+      await expect(
+        findDuplicateClusters({
+          pmRoot: context.pmPath,
+          statuses: ["all", "open"],
+        }),
+      ).rejects.toThrow(/cannot be combined with other statuses/);
 
       await expect(
         findDuplicateClusters({

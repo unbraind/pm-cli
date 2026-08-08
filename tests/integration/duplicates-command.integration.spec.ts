@@ -64,6 +64,7 @@ describe("duplicates command integration", () => {
       expect(explicitAllStatuses.code).toBe(0);
       expect(explicitAllStatuses.json).toMatchObject({
         count: 1,
+        filters: { statuses: null },
         cost: {
           item_count: allStatuses.json?.cost?.item_count,
         },
@@ -74,7 +75,7 @@ describe("duplicates command integration", () => {
           "duplicates",
           "--json",
           "--status",
-          "open,,closed",
+          " OPEN ,, CLOSED ",
           "--threshold",
           "1",
           "--since",
@@ -85,7 +86,26 @@ describe("duplicates command integration", () => {
         { expectJson: true },
       );
       expect(filtered.code).toBe(0);
-      expect(filtered.json).toMatchObject({ count: 1 });
+      expect(filtered.json).toMatchObject({
+        count: 1,
+        filters: { statuses: ["open", "closed"] },
+      });
+
+      const mixedAll = context.runCli(
+        ["duplicates", "--json", "--status", "all,open"],
+        { expectJson: true },
+      );
+      expect(mixedAll.code).toBe(2);
+      expect(mixedAll.stderr).toContain(
+        "cannot be combined with other statuses",
+      );
+
+      const mixedUnknown = context.runCli(
+        ["duplicates", "--json", "--status", "all,not-a-runtime-status"],
+        { expectJson: true },
+      );
+      expect(mixedUnknown.code).toBe(2);
+      expect(mixedUnknown.stderr).toContain("not-a-runtime-status");
 
       const invalid = context.runCli(
         ["duplicates", "--json", "--threshold", "2"],

@@ -50,9 +50,9 @@ describe("health vector provider boundary", () => {
           { skipDrift: true },
         );
         expect(requests).toBe(0);
-        expect(result.checks.some((check) => check.name === "integrity")).toBe(
-          true,
-        );
+        expect(
+          result.checks.find((check) => check.name === "integrity"),
+        ).toMatchObject({ name: "integrity", status: "ok" });
         expect(
           result.checks.find((check) => check.name === "vectorization")
             ?.details,

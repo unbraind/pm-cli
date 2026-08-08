@@ -127,17 +127,19 @@ function handleInstallCommand(pmArgs: string[]): SpawnResult {
   return pmJson({ details: { installed_count: 1 } });
 }
 
+const PACKAGE_CATALOG_ROWS = [
+  { alias: "audit", aliases: ["audit", "governance-audit"] },
+  ...[
+    "beads", "calendar", "guide-shell", "kanban", "lifecycle-hooks", "linked-test-adapters",
+    "search-advanced", "templates", "todos",
+  ].map((alias) => ({ alias })),
+];
+
 function packageCatalogPayload(): SpawnResult {
   return pmJson({
     details: {
-      total: 9,
-      packages: [
-        { alias: "audit", aliases: ["audit", "governance-audit"] },
-        ...[
-          "beads", "calendar", "guide-shell", "kanban", "lifecycle-hooks", "linked-test-adapters",
-          "search-advanced", "templates", "todos",
-        ].map((alias) => ({ alias })),
-      ],
+      total: PACKAGE_CATALOG_ROWS.length,
+      packages: PACKAGE_CATALOG_ROWS,
     },
   });
 }
@@ -148,7 +150,10 @@ function handlePackageCommand(pmArgs: string[]): SpawnResult | undefined {
     return packageCatalogPayload();
   }
   if (sub === "list") {
-    return pmJson({ action: "catalog", details: { total: 10 } });
+    return pmJson({
+      action: "catalog",
+      details: { total: PACKAGE_CATALOG_ROWS.length },
+    });
   }
   if (sub === "doctor") {
     return pmJson({ details: { summary: { activation_failure_count: 0, blocking_failure_count: 0 }, triage: { warning_codes: [] } } });

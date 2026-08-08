@@ -231,7 +231,10 @@ function validateDuplicateClusterOptions(
 async function loadPreparedDuplicateItems(
   options: FindDuplicateClustersOptions,
   since: Date | undefined,
-): Promise<PreparedDuplicateItem[]> {
+): Promise<{
+  items: PreparedDuplicateItem[];
+  statuses: string[] | undefined;
+}> {
   const pmRoot = resolvePmRoot(options.cwd ?? process.cwd(), options.pmRoot);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings);
@@ -239,37 +242,47 @@ async function loadPreparedDuplicateItems(
     ?.map((status) => status.trim().toLowerCase())
     .filter(Boolean);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const normalizedStatuses = requestedStatuses?.includes("all")
-    ? undefined
-    : requestedStatuses?.map((status) => {
-        const normalized = normalizeStatusInput(status, statusRegistry);
-        if (!normalized) {
-          throw new PmCliError(
-            `Unknown duplicate-cluster status "${status}". Allowed: all, ${statusRegistry.definitions.map((entry) => entry.id).join(", ")}.`,
-            EXIT_CODE.USAGE,
-          );
-        }
-        return normalized;
-      });
-  const allowedStatuses = normalizedStatuses
-    ? new Set(normalizedStatuses)
+  const normalizedStatuses = requestedStatuses?.map((status) => {
+    if (status === "all") return status;
+    const normalized = normalizeStatusInput(status, statusRegistry);
+    if (!normalized) {
+      throw new PmCliError(
+        `Unknown duplicate-cluster status "${status}". Allowed: all, ${statusRegistry.definitions.map((entry) => entry.id).join(", ")}.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    return normalized;
+  });
+  const hasAll = normalizedStatuses?.includes("all") === true;
+  if (hasAll && normalizedStatuses?.some((status) => status !== "all")) {
+    throw new PmCliError(
+      'The "all" status cannot be combined with other statuses.',
+      EXIT_CODE.USAGE,
+    );
+  }
+  const effectiveStatuses = hasAll ? undefined : normalizedStatuses;
+  const allowedStatuses = effectiveStatuses
+    ? new Set(effectiveStatuses)
     : undefined;
-  return (
-    await listAllItemMetadataLight(
-      pmRoot,
-      settings.item_format,
-      typeRegistry.type_to_folder,
-      undefined,
-      settings.schema,
+  return {
+    items: (
+      await listAllItemMetadataLight(
+        pmRoot,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+        undefined,
+        settings.schema,
+      )
     )
-  )
-    .filter(
-      (item) =>
-        (!allowedStatuses || allowedStatuses.has(item.status)) &&
-        (!since || new Date(item.created_at).getTime() >= since.getTime()),
-    )
-    .sort((left, right) => left.id.localeCompare(right.id))
-    .map((item) => ({ item, prepared: prepareSimilarityText(item.title) }));
+      .filter(
+        (item) =>
+          (!allowedStatuses || allowedStatuses.has(item.status)) &&
+          (!since || new Date(item.created_at).getTime() >= since.getTime()),
+      )
+      .sort((left, right) => left.id.localeCompare(right.id))
+      .map((item) => ({ item, prepared: prepareSimilarityText(item.title) })),
+    statuses: effectiveStatuses,
+  };
 }
 
 function collectDuplicateCandidatePairs(
@@ -501,7 +514,7 @@ export async function findDuplicateClusters(
     limit: undefined,
   });
   const { limit, since } = validateDuplicateClusterOptions(options);
-  const items = await loadPreparedDuplicateItems(options, since);
+  const { items, statuses } = await loadPreparedDuplicateItems(options, since);
   const candidates = collectDuplicateCandidatePairs(items);
   const union = createDuplicateUnionFind(items.length);
   const matches = scoreDuplicateCandidates(items, candidates, threshold, union);
@@ -512,13 +525,7 @@ export async function findDuplicateClusters(
     threshold,
     source: "metadata_scan",
     filters: {
-      statuses:
-        options.statuses?.some(
-          (status) => status.trim().toLowerCase() === "all",
-        ) === true
-          ? null
-          : (options.statuses?.map((status) => status.trim()).filter(Boolean) ??
-            null),
+      statuses: statuses ?? null,
       since: options.since ?? null,
     },
     cost: {

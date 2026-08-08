@@ -4,14 +4,14 @@
 
 ### Fixed
 
+- GH-920: health conflates lossless merge receipts with discarded-value decisions ([pm-jtwsct](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jtwsct.toon))
+- GH-937: package list exposes alias rows as packages and overstates the catalog total ([pm-fr6u17](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fr6u17.toon))
+- GH-930: duplicates --status all silently scans zero items ([pm-sy24w2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sy24w2.toon))
 - Post-merge guidance names history-repair, which clears drift but never settles the merge receipt, so every merged item leaves a permanent merge_decisions_unreviewed warning ([pm-lwmstb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lwmstb.toon))
 - GH-925: package manage diagnostics reject universal read-output controls ([pm-479ggz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-479ggz.toon))
-- GH-937: package list exposes alias rows as packages and overstates the catalog total ([pm-fr6u17](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fr6u17.toon))
 - Surface replication gate activates unrelated sets through shared required members ([pm-kmnvug](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kmnvug.toon))
 - GH-924: closed completed plans still recommend pm close ([pm-ltlcsw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ltlcsw.toon))
 - Merge direction decides which agent's value survives: the same two branches converge to different item state depending on which side merges, and nothing reports the divergence ([pm-dlx7v7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dlx7v7.toon))
-- GH-920: health conflates lossless merge receipts with discarded-value decisions ([pm-jtwsct](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jtwsct.toon))
-- GH-930: duplicates --status all silently scans zero items ([pm-sy24w2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sy24w2.toon))
 - GH-931: linked-test detector misclassifies unrelated node dist/cli.js commands as pm ([pm-u3o3ur](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u3o3ur.toon))
 - Release candidate acceptance hard-codes the pre-bump CLI version and blocks the daily cut ([pm-7ipajv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7ipajv.toon))
 
