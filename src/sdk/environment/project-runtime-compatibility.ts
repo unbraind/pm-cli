@@ -424,10 +424,15 @@ export function isProjectMutatingInvocation(argv: readonly string[]): boolean {
   if (!commandToken) return false;
   if (hasAnyToken(argv, ["--help", "-h", "--dry-run"])) return false;
   const { command, index: commandIndex } = commandToken;
-  const positionals = argv
-    .slice(commandIndex + 1)
-    .filter((token) => !token.startsWith("-"))
-    .map((token) => token.toLowerCase());
+  const positionals: string[] = [];
+  for (let index = commandIndex + 1; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (GLOBAL_VALUE_FLAGS.has(token)) {
+      index += 1;
+      continue;
+    }
+    if (!token.startsWith("-")) positionals.push(token.toLowerCase());
+  }
   const mixedClassifier = MIXED_COMMAND_CLASSIFIERS[command];
   return mixedClassifier
     ? mixedClassifier(argv, positionals)

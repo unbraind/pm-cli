@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags: []
 created_at: "2026-08-08T11:42:58.003Z"
-updated_at: "2026-08-08T12:24:01.863Z"
+updated_at: "2026-08-08T12:45:18.663Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#311a8aed9ab7c477f6e67245"
 author: "harness:codex"
@@ -21,10 +21,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-dskxwf,discovered_from,"2026-08-08T11:42:58.003Z","harness:codex","cli:create:dep",detected
   pm-ei6x66,related,"2026-08-08T11:42:58.003Z","harness:codex","cli:create:dep",detected
   pm-zjelve,related,"2026-08-08T11:42:58.003Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-08T11:42:58.003Z","harness:codex","Duplicate check: searched all statuses for PR 935, CodeRabbit review, runtime gates, pins, and source context; no canonical review-remediation item existed. This item consolidates all eleven findings from one paid feedback round."
   "2026-08-08T11:55:35.315Z","harness:codex","Implementation evidence: all eleven CodeRabbit findings were verified as valid. The local registry now supplies actual commands, arguments, environment, capture mode, and skip policy; skips emit status=skipped and ok=false. Runtime flags accept equals forms without re-scanning ambiguous values, lockfile parsing is package-entry bounded, upper/exclusion dependency ranges do not become floors, inherited source access fails closed, and snapshot resource exhaustion has its own public code. Focused suite passes 100/100 tests; lint, static quality, typecheck, generated contracts, and SDK surface checks pass."
   "2026-08-08T12:16:50.098Z","harness:codex","Full verification evidence: all 453 test files and 7,057 tests pass. Exact coverage is statements 50,225/50,225, branches 36,680/36,680, functions 10,319/10,319, and lines 48,630/48,630: 100/100/100/100 with zero uncovered counts."
+  "2026-08-08T12:45:18.663Z","harness:codex","CodeRabbit exact-head follow-up validated: global value flags after the command left their values in mixed-command positionals, so schema --author alice add-type Bug could be classified as a read. The classifier now skips each global flag and its value after command resolution; focused SDK/CLI regression suite passes 76 tests."
 files[10]{path,scope,note}:
   scripts/release/gate-registry.json,project,Executable local preflight plan and skip policy
   scripts/release/gate-registry.mjs,project,Fail-closed executable plan validation

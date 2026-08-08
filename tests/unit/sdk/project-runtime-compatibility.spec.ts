@@ -61,6 +61,7 @@ describe("project runtime compatibility", () => {
     [["schema", "add-type", "Bug", "--infer"], false],
     [["schema", "add-type", "Bug", "--infer=true"], false],
     [["schema", "add-type", "Bug"], true],
+    [["schema", "--author", "alice", "add-type", "Bug"], true],
     [["profile", "lint", "agile"], false],
     [["profile", "apply", "agile"], true],
     [["package", "explore"], false],
