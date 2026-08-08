@@ -196,17 +196,18 @@ export function sentryFinishCommandSpan(
  */
 export const UNCLASSIFIED_CAPTURED_ERROR_CODE = "unclassified_runtime_error";
 
-/** Reads the declared error contract carried by a thrown value, if any. */
+/**
+ * Reads the declared error contract carried by a thrown value, if any.
+ *
+ * There is deliberately no `PmCliError` special case: `shouldCaptureCliError`
+ * rejects every `PmCliError` before capture, so such a branch would be
+ * unreachable — and a `PmCliError` carries a public `code` and a numeric
+ * `exitCode`, so the general path below would classify it identically anyway.
+ */
 function readCapturedErrorContract(error: unknown): {
   error_code: string;
   exit_code: number;
 } {
-  if (error instanceof PmCliError) {
-    return {
-      error_code: error.code ?? UNCLASSIFIED_CAPTURED_ERROR_CODE,
-      exit_code: error.exitCode,
-    };
-  }
   const candidate =
     typeof error === "object" && error !== null
       ? (error as { code?: unknown; exitCode?: unknown })
