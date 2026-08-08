@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: concurrency,convergence,merge,multi-agent
 created_at: "2026-08-02T21:03:14.740Z"
-updated_at: "2026-08-02T21:10:19.288Z"
+updated_at: "2026-08-08T14:06:00.769Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Resolving the same scalar conflict from either direction yields the same retained value, or the retained value is chosen by a declared deterministic tie-break that both directions compute identically and that the contracts surface names; A workspace can determine from recorded data alone that a merge discarded a value, which field it was, and what the discarded value was, without consulting the transient driver stdout; pm validate reports an unreconciled discarded merge value as a warning until it is explicitly accepted or re-applied; The merge conformance property covers the scalar field class in both directions, and a regression that makes a scalar field direction-dependent fails it"
@@ -30,4 +30,6 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,related,"2026-08-02T21:10:19.121Z","harness:claude-code","cli:update:dep",detected
   pm-o87av6,implements,"2026-08-02T21:10:19.121Z","harness:claude-code","cli:update:dep",detected
   pm-qx95lz,related,"2026-08-02T21:10:19.121Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-08T14:06:00.768Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/936. All-status duplicate review found this canonical issue already owns direction-dependent retained scalars, durable discarded-value evidence, validation warnings until explicit acceptance, and bidirectional conformance. GH-936 supplies a concrete pm merge reconcile reproduction where discarded_events is nested under ok:true / exit 0; no duplicate PM item created."
 body: ""
