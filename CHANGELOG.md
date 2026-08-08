@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Surface replication gate activates unrelated sets through shared required members ([pm-kmnvug](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kmnvug.toon))
 - GH-937: package list exposes alias rows as packages and overstates the catalog total ([pm-fr6u17](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fr6u17.toon))
+- Surface replication gate activates unrelated sets through shared required members ([pm-kmnvug](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kmnvug.toon))
 - GH-924: closed completed plans still recommend pm close ([pm-ltlcsw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ltlcsw.toon))
 - Merge direction decides which agent's value survives: the same two branches converge to different item state depending on which side merges, and nothing reports the divergence ([pm-dlx7v7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dlx7v7.toon))
 - GH-920: health conflates lossless merge receipts with discarded-value decisions ([pm-jtwsct](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jtwsct.toon))

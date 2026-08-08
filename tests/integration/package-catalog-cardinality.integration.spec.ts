@@ -9,10 +9,11 @@ describe("package catalog cardinality", () => {
         { expectJson: true },
       );
       expect(result.code).toBe(0);
-      const packages = result.json?.details?.packages as Array<{
+      const packages = (result.json?.details?.packages ?? []) as Array<{
         aliases: string[];
         package_name: string;
       }>;
+      expect(packages.length).toBeGreaterThan(0);
       expect(result.json?.details?.total).toBe(packages.length);
       expect(new Set(packages.map((entry) => entry.package_name)).size).toBe(
         packages.length,
