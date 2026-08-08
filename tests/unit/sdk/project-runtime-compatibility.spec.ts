@@ -176,14 +176,21 @@ describe("project runtime compatibility", () => {
         projectRoot: root,
         argv: ["context"],
       }),
-    ).toMatchObject({ compatible: true, mutating: false });
-    expect(
-      inspectProjectRuntimeCompatibility({
-        executingVersion: "2026.8.7",
-        projectRoot: root,
-        argv: ["context"],
-      }).project_version,
-    ).toBe("2026.8.9");
+    ).toMatchObject({
+      compatible: true,
+      mutating: false,
+      stale: true,
+      project_version: "2026.8.9",
+      warning: {
+        code: "project_runtime_stale_read",
+        executing_version: "2026.8.7",
+        project_version: "2026.8.9",
+        source: "package.json",
+        next_steps: expect.arrayContaining([
+          expect.stringContaining("project's installed"),
+        ]),
+      },
+    });
     expect(() =>
       assertProjectRuntimeCompatibility({
         executingVersion: "2026.8.7",
@@ -234,6 +241,8 @@ describe("project runtime compatibility", () => {
     });
     expect(help.status).toBe(0);
     expect(help.stdout).toContain("Create a new project management item");
+    expect(help.stderr).toContain("project_runtime_stale_read");
+    expect(help.stderr).toContain("Running 2026.8.7; project pin 2026.8.9");
   });
 
   it("ignores unreadable and unrelated manifests", async () => {
@@ -259,6 +268,6 @@ describe("project runtime compatibility", () => {
         projectRoot: root,
         argv: ["create"],
       }),
-    ).toMatchObject({ compatible: true });
+    ).toMatchObject({ compatible: true, stale: false });
   });
 });

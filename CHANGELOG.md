@@ -8,9 +8,9 @@
 
 ### Fixed
 
+- GH-926: warn before a stale pm binary mutates a project pinned to a newer CLI/SDK ([pm-1eted6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1eted6.toon))
 - PR \#935 CI: preserve dependency-free fast-version startup and regenerate runtime contracts ([pm-dskxwf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dskxwf.toon))
 - Make stale-runtime compatibility classification action-aware across mixed CLI commands ([pm-zjelve](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zjelve.toon))
-- GH-926: warn before a stale pm binary mutates a project pinned to a newer CLI/SDK ([pm-1eted6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1eted6.toon))
 - CLI and SDK refusal contracts now preserve consistent codes and recovery semantics ([pm-0xmajx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0xmajx.toon))
 - Sentry exception capture never writes the pm.error_code and pm.exit_code tags the release gate reads, so every unexpected runtime error is unclassifiable by construction and blocks the daily cut for the full rolling window ([pm-qxo5iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qxo5iu.toon))
 - Sentry PM-CLI-2S: resource-exhausted copy reports a high handled error without actionable storage guidance ([pm-4odf0c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4odf0c.toon))

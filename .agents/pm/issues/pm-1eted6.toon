@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:01.251Z"
-updated_at: "2026-08-08T10:34:22.786Z"
-closed_at: "2026-08-08T10:32:55.172Z"
-completed_at: "2026-08-08T10:32:55.172Z"
+updated_at: "2026-08-08T12:42:52.280Z"
+closed_at: "2026-08-08T12:42:51.814Z"
+completed_at: "2026-08-08T12:42:51.814Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Before any mutating command, pm detects when the executing binary is older than the project-declared or lockfile-resolved CLI/SDK version and emits a deterministic actionable refusal or explicit acknowledgement path; read-only commands remain available for diagnosis; unit, integration, packaged npx/bunx, and stale-binary negative-control tests prove the guard without reading the real tracker"
@@ -18,33 +18,37 @@ confidence: high
 severity: high
 resolution: fixed
 expected_result: "Read paths expose a structured version mismatch and mutation paths fail closed unless an explicit recovery override is supplied, with package-manager-neutral remediation."
-actual_result: The SDK and early CLI bootstrap now discover the highest local pm version pin and fail stale mutations closed with a stable structured refusal and package-neutral recovery. Read-only diagnosis and explicit one-invocation recovery remain available; packaged negative controls pass.
+actual_result: "Stale mutations fail closed before bundle dispatch; stale context, read-only health, help, and other reads continue successfully while emitting project_runtime_stale_read with executing/project versions, redaction-safe source, and package-manager-neutral remediation. JSON warnings use stderr so the normal stdout result remains parseable; SDK callers receive the same typed warning."
 affected_version: 2026.8.6
 fixed_version: 2026.8.8
 component: CLI bootstrap and workspace compatibility
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-59gj,related,"2026-08-07T08:33:01.251Z","harness:codex","cli:create:dep",detected
   pm-rnpb,discovered_from,"2026-08-07T08:34:25.672Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-07T08:33:01.251Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/926. Duplicate check searched all 2,351 items across every status for stale global pm,pinned/newer CLI and SDK,lockfile mismatch,and GH-926; no canonical issue existed."
   "2026-08-07T08:47:15.053Z","harness:codex","Governance repair: removed the redundant blocks edge to its scalar parent pm-usfg. Parent lineage remains authoritative and avoids increasing the active blocks asymmetry population tracked by pm-jkbqt8."
   "2026-08-08T10:32:48.490Z","harness:codex","Completion evidence 2026-08-08: the public SDK discovers the strongest declared, installed, npm, pnpm, or yarn date-version pin; read/help/dry-run paths remain available; stale writes return project_runtime_stale_mutation exit 4 before bundle dispatch; PM_ALLOW_STALE_CLI=1 is explicit and observable. Linked tests pass, packed npx and bunx consumers pass, and temporary stale mutation acceptance returned exit 4 without touching the real tracker."
-files[8]{path,scope,note}:
+  "2026-08-08T12:27:55.099Z","harness:codex","Review correction: Sourcery's PR #935 assessment is valid against the live GitHub issue. GH-926 says context/health and other reads should expose the mismatch. Implementing a stable non-blocking warning now rather than closing the item on mutation safety alone."
+  "2026-08-08T12:41:12.094Z","harness:codex","Verification 2026-08-08: focused SDK/CLI suite passes 75 tests, including packaged dist execution in a temporary pinned project. Exact repository coverage passes 453 files and 7,061 tests at 50,228/50,228 statements, 36,690/36,690 branches, 10,319/10,319 functions, and 48,631/48,631 lines. SDK surface, contract snapshot, lint, typecheck, zero-clone, and 100% docstring gates are current."
+  "2026-08-08T12:42:51.289Z","harness:codex","Manual temporary-workspace acceptance: initialized an isolated tracker, pinned @unbrained/pm-cli 2026.8.9, then ran built pm 2026.8.7 context --json. Exit was 0; stdout parsed as the context object; stderr parsed as type=warning, code=project_runtime_stale_read with exact executing/project versions. Temporary evidence directory was removed after verification."
+files[9]{path,scope,note}:
   sdk/public-surface.json,project,Reviewed additive SDK surface snapshot
   src/cli.ts,project,Runs the stale-runtime guard before mutation dispatch with structured errors
   src/cli/runtime-compatibility-boundary.ts,project,Testable early CLI boundary preserving JSON and human error contracts
   src/sdk/environment/project-runtime-compatibility.ts,project,Public SDK compatibility discovery classification and refusal primitive
   src/sdk/generated-error-code-catalog.ts,project,Generated stable error vocabulary includes the stale mutation refusal
   src/sdk/index.ts,project,Exports the new runtime compatibility and host boundary primitives
+  tests/fixtures/contracts/full.json,project,Generated CLI contract snapshot refreshed for the public warning vocabulary
   tests/unit/cli/runtime-compatibility-boundary.spec.ts,project,Structured human success and defect propagation coverage
   tests/unit/sdk/project-runtime-compatibility.spec.ts,project,Unit lockfile packaged CLI and negative-control coverage
-tests[2]{command,scope,timeout_seconds}:
+tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/cli/runtime-compatibility-boundary.spec.ts tests/unit/sdk/project-runtime-compatibility.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/sdk/project-runtime-compatibility.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msk8ff5e-minevi,test,passed,"2026-08-08T10:29:41.484Z","2026-08-08T10:29:55.442Z","2026-08-08T10:29:55.442Z",2,0,0
+  test-local-mskd4ftx-txl0bx,test,passed,"2026-08-08T12:41:12.675Z","2026-08-08T12:41:21.189Z","2026-08-08T12:41:21.189Z",1,0,0
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated closed-item release note
   docs/SDK_RUNTIME_BOUNDARIES.md,project,Consumer guidance for runtime pin discovery reads refusal and override
-close_reason: "Implemented and verified with linked tests, exact 100/100/100/100 coverage, static/security gates, and temporary installed-package acceptance."
+close_reason: "Implemented the complete GH-926 compatibility contract: typed SDK mismatch inspection, fail-closed stale mutation refusal, non-blocking structured stale-read warnings for context/health/help and other reads, explicit recovery override, generated surfaces, docs, packaged temporary-workspace acceptance, linked tests, and exact 100/100/100/100 repository coverage."
 body: ""

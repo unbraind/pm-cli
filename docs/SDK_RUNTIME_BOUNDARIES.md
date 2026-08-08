@@ -16,8 +16,14 @@ preferred. The SDK discovers the strongest project-local pm version pin from
 the package manifest, installed package metadata, and supported lockfiles. A
 CLI older than that pin refuses mutation with
 `project_runtime_stale_mutation`; read commands stay available so an agent can
-recover context before upgrading. `PM_ALLOW_STALE_CLI=1` is the explicit,
-auditable emergency override.
+recover context before upgrading. Stale reads, including `context` and
+read-only `health` invocations, emit the non-blocking
+`project_runtime_stale_read` warning. JSON modes write a single structured
+warning object to stderr, leaving the command's normal stdout envelope valid;
+human modes identify both versions, the redaction-safe pin source, and a
+package-manager-neutral recovery action. SDK callers receive the same warning
+inside `ProjectRuntimeCompatibilityResult`. `PM_ALLOW_STALE_CLI=1` is the
+explicit, auditable emergency override.
 
 The public `isProjectMutatingInvocation` classifier applies the same decision
 to package hosts and the bundled CLI. It resolves mixed command families by

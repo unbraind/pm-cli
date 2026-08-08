@@ -131,8 +131,7 @@ const MIXED_COMMAND_CLASSIFIERS: Readonly<
   Record<string, MixedCommandClassifier>
 > = {
   changelog: (argv, positionals) => {
-    if (positionals[0] === "generate")
-      return !hasAnyToken(argv, ["--check"]);
+    if (positionals[0] === "generate") return !hasAnyToken(argv, ["--check"]);
     const exportIndex = argv.indexOf("export");
     return (
       positionals[0] === "export" &&
@@ -231,8 +230,28 @@ export interface ProjectRuntimeCompatibilityResult {
   command?: string;
   /** Whether the selected invocation can mutate project state. */
   mutating: boolean;
+  /** Whether the active executable is older than the strongest project pin. */
+  stale?: boolean;
+  /** Non-blocking diagnostic attached to stale read-only invocations. */
+  warning?: ProjectRuntimeCompatibilityWarning;
   /** Whether the explicit one-invocation recovery override was accepted. */
   override_applied: boolean;
+}
+
+/** Structured, package-manager-neutral warning returned for a stale read. */
+export interface ProjectRuntimeCompatibilityWarning {
+  /** Stable warning code for filtering and automation. */
+  code: "project_runtime_stale_read";
+  /** Active executable package version. */
+  executing_version: string;
+  /** Strongest newer project version pin. */
+  project_version: string;
+  /** Redaction-safe origin of the project pin. */
+  source: ProjectRuntimeVersionPin["source"];
+  /** Concise explanation of the mismatch. */
+  message: string;
+  /** Package-manager-neutral recovery actions. */
+  next_steps: string[];
 }
 
 /** Parse the supported date-version coordinates used by pm releases. */
@@ -394,8 +413,7 @@ function commandTokenFromArgv(
       index += 1;
       continue;
     }
-    if (!token.startsWith("-"))
-      return { command: token.toLowerCase(), index };
+    if (!token.startsWith("-")) return { command: token.toLowerCase(), index };
   }
   return undefined;
 }
@@ -438,6 +456,21 @@ export function inspectProjectRuntimeCompatibility(options: {
   const stale =
     newest !== undefined &&
     comparePmDateVersions(options.executingVersion, newest.version) === -1;
+  const warning =
+    stale && !mutating
+      ? {
+          code: "project_runtime_stale_read" as const,
+          executing_version: options.executingVersion,
+          project_version: newest.version,
+          source: newest.source,
+          message:
+            "This read is using an older pm runtime than the project requires.",
+          next_steps: [
+            `Run the command through the project's installed ${PACKAGE_NAME} ${newest.version}.`,
+            "Install the project dependencies with its declared package manager if the local executable is missing.",
+          ],
+        }
+      : undefined;
   return {
     compatible: !mutating || !stale || options.allowStale === true,
     executing_version: options.executingVersion,
@@ -446,6 +479,8 @@ export function inspectProjectRuntimeCompatibility(options: {
       : {}),
     ...(command ? { command } : {}),
     mutating,
+    stale,
+    ...(warning ? { warning } : {}),
     override_applied: stale && mutating && options.allowStale === true,
   };
 }

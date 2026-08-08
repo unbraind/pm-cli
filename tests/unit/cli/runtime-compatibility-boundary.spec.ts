@@ -19,6 +19,46 @@ afterEach(async () => {
 
 describe("CLI runtime compatibility boundary", () => {
   it.each([
+    [["--json", "context"], true],
+    [["--output-format", "json", "health", "--check-only"], true],
+    [["--output-format=json", "context"], true],
+    [["context"], false],
+  ] as const)("warns without blocking stale read %j", async (argv, json) => {
+    const writeError = vi.fn();
+    const run = vi.fn(async () => undefined);
+    const projectRoot = await mkdtemp(
+      path.join(tmpdir(), "pm-runtime-boundary-"),
+    );
+    roots.push(projectRoot);
+    await writeFile(
+      path.join(projectRoot, "package.json"),
+      JSON.stringify(newerPin),
+    );
+    await runRuntimeCompatibleCli({
+      executingVersion: "2026.8.7",
+      projectRoot,
+      argv,
+      allowStale: false,
+      run,
+      writeError,
+    });
+    expect(process.exitCode).toBeUndefined();
+    expect(run).toHaveBeenCalledOnce();
+    const rendered = String(writeError.mock.calls[0]?.[0]);
+    if (json) {
+      expect(JSON.parse(rendered)).toMatchObject({
+        type: "warning",
+        code: "project_runtime_stale_read",
+        executing_version: "2026.8.7",
+        project_version: "2026.8.9",
+      });
+    } else {
+      expect(rendered).toContain("project_runtime_stale_read");
+      expect(rendered).toContain("Running 2026.8.7; project pin 2026.8.9");
+    }
+  });
+
+  it.each([
     [["--json", "create"], true],
     [["--output-format", "json", "create"], true],
     [["--output-format=json", "create"], true],
@@ -57,16 +97,18 @@ describe("CLI runtime compatibility boundary", () => {
 
   it("runs without a readable executable version and returns no exit code", async () => {
     const run = vi.fn(async () => undefined);
+    const writeError = vi.fn();
     await expect(
       runRuntimeCompatibleCli({
         projectRoot: "/missing",
         argv: ["create"],
         allowStale: false,
         run,
-        writeError: vi.fn(),
+        writeError,
       }),
     ).resolves.toBeUndefined();
     expect(run).toHaveBeenCalledOnce();
+    expect(writeError).not.toHaveBeenCalled();
     expect(process.exitCode).toBeUndefined();
   });
 

@@ -15899,6 +15899,22 @@
     },
     {
       "aliases": [],
+      "canonical_code": "project_runtime_stale_read",
+      "class": "generic_failure",
+      "code": "project_runtime_stale_read",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Project runtime stale read condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/environment/project-runtime-compatibility.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "redundant_edge",
       "class": "generic_failure",
       "code": "redundant_edge",

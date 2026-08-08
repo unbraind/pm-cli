@@ -1932,6 +1932,19 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     aliases: [],
   },
   {
+    code: "project_runtime_stale_read",
+    meaning: "Project runtime stale read condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/environment/project-runtime-compatibility.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "project_runtime_stale_read",
+    aliases: [],
+  },
+  {
     code: "redundant_edge",
     meaning: "Redundant edge condition.",
     stability: "stable",
