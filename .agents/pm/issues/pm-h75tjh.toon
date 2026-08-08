@@ -1,0 +1,28 @@
+id: pm-h75tjh
+title: "The release gate cannot classify Sentry events emitted before its own contract producer shipped, so a correct usage refusal from an older release blocks the daily cut for the whole rolling window and clears only by hand"
+description: "The release reliability gate classifies a Sentry issue as an expected handled refusal only when the issue carries both pm.error_code and pm.exit_code, resolves them against the canonical catalog, and finds a class in usage, not_found or conflict. That producer contract shipped with the pm-qxo5iu fix. The consumer window is time-based (is:unresolved level:[fatal,error] lastSeen:-Nd, N=14), so it necessarily admits events emitted by releases that predate the producer and can never carry the tags. For those events isExpectedHandledCliIssue returns false at the both-tags-present guard, enrichSentryIssueWithLatestEvent cannot repair them because the stored event has no such tags, and they are counted as blocking high severity. The producer fix has no retroactive reach, and the only available remedy is a human resolving the issue in Sentry.\n\nRealized on 2026-08-08. The scheduled run at 03:52Z reported high=2, threshold_ok=false, ignored_expected_handled_total=0, blocking PM-CLI-2S and PM-CLI-2Q. PM-CLI-2Q is Error: Snapshot names and fingerprints must use lowercase letters, digits, dots, underscores, or hyphens; its latest event is release pm-cli@2026.7.29, handled=yes, and its tag set contains no pm.error_code and no pm.exit_code. Reproducing the same input against the current build refuses correctly with exit 2 and code invalid_workspace_snapshot_target, whose catalog contract is exit_code 2 and class usage. That class is a member of EXPECTED_HANDLED_ERROR_CLASSES, so had the event carried the tags the gate would have partitioned it into ignored_expected_handled and the scheduled cut would have succeeded. A correct refusal blocked a release for want of a tag its emitting version never wrote. PM-CLI-2S is the host-capacity instance owned by pm-3lhth4. Both were resolved by hand and the release only happened through a manual dispatch at 13:37Z, which published 2026.8.8.\n\nThe general shape is a consumer whose judgement depends on a producer version while its selection window depends on time. Any future change to the contract producer reopens the same blind window for its full duration."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-08T21:55:01.387Z"
+updated_at: "2026-08-08T22:02:21.796Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "The gate declares the minimum producer version whose events it can classify by contract tags and partitions issues whose last-seen release precedes it into a named reported class rather than counting them as blocking unclassified faults; A blocked cut names per blocking issue whether it blocked as a genuine unexpected fault or as an event carrying no contract tags; A negative control proves both directions: a fixture issue with usage-class tags is ignored, and the same issue without tags from a pre-contract release appears in the legacy partition and not in the blocking set; Regression evidence records the 2026-08-08 counterfactual that PM-CLI-2Q resolves to invalid_workspace_snapshot_target exit 2 class usage and would have been ignored had its event carried the tags"
+parent: pm-5oj5
+risk: medium
+confidence: high
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3lhth4,related_to,"2026-08-08T21:55:01.387Z","harness:claude-code","cli:create:dep",detected
+  pm-dqtzva,related_to,"2026-08-08T21:55:01.387Z","harness:claude-code","cli:create:dep",detected
+  pm-e70zh5,related_to,"2026-08-08T21:55:01.387Z","harness:claude-code","cli:create:dep",detected
+  pm-qxo5iu,discovered_from,"2026-08-08T21:55:01.387Z","harness:claude-code","cli:create:dep",detected
+  pm-o0sqz5,related_to,"2026-08-08T22:02:21.597Z","harness:claude-code","cli:update:dep",detected
+  pm-w7ccmv,implements,"2026-08-08T22:02:21.597Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-08T21:55:27.320Z","harness:claude-code","Duplicate check before filing: searched sentry suppression, beforeSend, PmCliError suppression, host environment fault, ENOSPC and errno boundary. Nearest owners are pm-qxo5iu (closed, producer side, cited as discovered_from), pm-dqtzva (gate classified by message prose, rebound to error codes), pm-3lhth4 (open, owns the untyped host-fault family and therefore PM-CLI-2S) and pm-e70zh5 (open, owns the scheduled-failure rate). None of them covers a consumer whose classifier is producer-version dependent while its selection window is time based. Filed as the distinct residual."
+files[2]{path,scope,note}:
+  scripts/release/sentry-telemetry-gate.mjs,project,isExpectedHandledCliIssue requires both contract tags and returns false without them; buildSentryIssuesQuery selects by lastSeen window
+  src/core/sentry/helpers.ts,project,buildCapturedErrorTags is the producer that shipped with pm-qxo5iu and cannot reach events already stored
+body: ""
