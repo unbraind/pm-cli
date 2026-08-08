@@ -1590,6 +1590,19 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     aliases: ["history_merge_conflict_markers_detected"],
   },
   {
+    code: "merge_decisions_unreviewed",
+    meaning: "Merge decisions unreviewed condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_decisions_unreviewed",
+    aliases: [],
+  },
+  {
     code: "merge_git_config_unwritable",
     meaning: "Merge git config unwritable condition.",
     stability: "stable",
@@ -1600,6 +1613,19 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["sdk/merge/install.ts"],
     emitting_commands: ["*"],
     canonical_code: "merge_git_config_unwritable",
+    aliases: [],
+  },
+  {
+    code: "merge_reconcile_discards_require_acceptance",
+    meaning: "Merge reconcile discards require acceptance condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/reconcile.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_reconcile_discards_require_acceptance",
     aliases: [],
   },
   {
@@ -2796,6 +2822,19 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
     canonical_code: "validate_lifecycle_stale_blockers",
+    aliases: [],
+  },
+  {
+    code: "validate_merge_decisions_unreviewed",
+    meaning: "Validate merge decisions unreviewed condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "validate_merge_decisions_unreviewed",
     aliases: [],
   },
   {

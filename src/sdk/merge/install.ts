@@ -769,7 +769,7 @@ export async function installMergeFence(options: {
     guidance: [
       "Commit .gitattributes so every branch and collaborator shares the merge mapping.",
       'git config is per-clone: each collaborator (and each fresh worktree/clone) runs "pm merge install" once.',
-      'After merging branches, run "pm validate" and, if history drift is reported, "pm history-repair --all" to reconcile item state with merged history.',
+      'After merging branches, run "pm merge reconcile --dry-run" to inspect the complete receipt and history repair, then apply "pm merge reconcile"; use --force only after explicitly accepting any discarded values.',
       "Custom item types registered later refresh this fence automatically (pm schema add-type/remove-type); rerun pm merge install only after out-of-band type-folder edits.",
     ],
     generated_at: nowIso(),

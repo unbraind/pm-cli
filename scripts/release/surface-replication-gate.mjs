@@ -295,11 +295,7 @@ async function validateActiveSets(config, changedFiles, root, today) {
     }
     if (normalized.set === null) continue;
     const { memberPaths, requiredPaths, set } = normalized;
-    if (
-      !changedFiles.some(
-        (file) => set.triggers.includes(file) || requiredPaths.includes(file),
-      )
-    ) {
+    if (!changedFiles.some((file) => set.triggers.includes(file))) {
       continue;
     }
     for (const memberPath of requiredPaths) {

@@ -57,6 +57,7 @@ export const PM_READ_OUTPUT_SURFACES = [
   "docs",
   "stats",
   "aggregate",
+  "package-manage",
 ] as const;
 
 /** Built-in read command supported by the universal output contract. */
@@ -298,6 +299,7 @@ const LEGACY_FLAGS_BY_COMMAND: Readonly<
   docs: {},
   stats: {},
   aggregate: {},
+  "package-manage": {},
 };
 
 const VALUE_BEARING_INCLUDE_ALIASES = new Set(["--fields", "--section"]);
@@ -390,7 +392,15 @@ const SURFACE_CONTRACT_BY_COMMAND = new Map(
 export function resolveReadOutputSurface(
   command: string,
 ): PmReadOutputSurface | undefined {
-  const root = command.trim().toLowerCase().split(/\s+/u)[0]!;
+  const normalizedCommand = command
+    .trim()
+    .toLowerCase()
+    .replaceAll(/\s+/gu, " ");
+  const root =
+    normalizedCommand === "package manage" ||
+    normalizedCommand === "package-manage"
+      ? "package-manage"
+      : normalizedCommand.split(" ")[0]!;
   const normalized = root.startsWith("list-")
     ? "list"
     : root === "ctx"

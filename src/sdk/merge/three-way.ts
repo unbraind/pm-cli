@@ -442,6 +442,8 @@ export interface ItemDocumentMergeResult {
   conflict_decisions: ItemMergeConflictDecision[];
   /** Which side unresolvable conflicts were resolved toward. */
   preferred: MergePreferredSide;
+  /** Scalar-conflict selection contract used for this merge. */
+  conflict_resolution: "preferred_side" | "stable_value_order";
 }
 
 function jsonEquals(left: unknown, right: unknown): boolean {
@@ -513,6 +515,26 @@ function mergeScalarThreeWay(
   };
 }
 
+function mergeItemScalarThreeWay(
+  base: unknown,
+  ours: unknown,
+  theirs: unknown,
+  preferred: MergePreferredSide,
+  conflictResolution: "preferred_side" | "stable_value_order",
+): ScalarMergeOutcome {
+  const outcome = mergeScalarThreeWay(base, ours, theirs, preferred);
+  if (!outcome.conflict || conflictResolution === "preferred_side") {
+    return outcome;
+  }
+  const retainTheirs =
+    stableStringify(theirs).localeCompare(stableStringify(ours)) < 0;
+  return {
+    value: retainTheirs ? theirs : ours,
+    from_theirs: retainTheirs,
+    conflict: true,
+  };
+}
+
 function toMetadataRecord(document: ItemDocument): Record<string, unknown> {
   return { ...(document.metadata as unknown as Record<string, unknown>) };
 }
@@ -550,6 +572,7 @@ function mergeItemMetadataRecords(
   oursRecord: Record<string, unknown>,
   theirsRecord: Record<string, unknown>,
   preferred: MergePreferredSide,
+  conflictResolution: "preferred_side" | "stable_value_order",
 ): ItemMetadataMergeAccumulator {
   const unionFieldSet = new Set<string>(ITEM_UNION_COLLECTION_FIELDS);
   const latestFieldSet = new Set<string>(ITEM_LATEST_TIMESTAMP_FIELDS);
@@ -583,11 +606,12 @@ function mergeItemMetadataRecords(
       accumulator.merged[field] = latestTimestamp(oursValue, theirsValue);
       continue;
     }
-    const outcome = mergeScalarThreeWay(
+    const outcome = mergeItemScalarThreeWay(
       baseValue,
       oursValue,
       theirsValue,
       preferred,
+      conflictResolution,
     );
     if (outcome.value !== undefined) {
       accumulator.merged[field] = outcome.value;
@@ -600,7 +624,7 @@ function mergeItemMetadataRecords(
         ours: oursValue,
         theirs: theirsValue,
         retained: outcome.value,
-        discarded: preferred === "theirs" ? oursValue : theirsValue,
+        discarded: outcome.from_theirs ? oursValue : theirsValue,
       });
     } else if (outcome.from_theirs) {
       accumulator.fieldsFromTheirs.push(field);
@@ -615,8 +639,8 @@ function mergeItemMetadataRecords(
  * concurrent appends never conflict; `updated_at` resolves to the latest
  * timestamp so disjoint-field edits never collide on the shared freshness
  * scalar; every other metadata field and the body use classic three-way
- * resolution. Unresolvable both-sides-changed conflicts are resolved toward
- * the preferred side but reported in `conflict_fields`, and the merged output
+ * resolution. Unresolvable both-sides-changed conflicts use the configured
+ * scalar policy but remain reported in `conflict_fields`, and the merged output
  * is always canonically serialized — count-prefixed TOON array headers are
  * recomputed, so the hand-resolution corruption class (stale `notes[N]`
  * headers) cannot be produced by this merge.
@@ -628,9 +652,12 @@ export function mergeItemDocuments(
   options: ItemDocumentFormatOptions & {
     /** Side that wins unresolvable conflicts (default "ours"). */
     preferred?: MergePreferredSide;
+    /** Direction-independent scalar selection used by the Git driver. */
+    conflictResolution?: "preferred_side" | "stable_value_order";
   } = {},
 ): ItemDocumentMergeResult {
   const preferred: MergePreferredSide = options.preferred ?? "ours";
+  const conflictResolution = options.conflictResolution ?? "preferred_side";
   // An empty base means both branches created the file independently
   // (add/add); three-way falls back to treating every differing field as an
   // ours/theirs decision, which the scalar resolver already models.
@@ -650,13 +677,20 @@ export function mergeItemDocuments(
     fieldsFromTheirs,
     unionFields,
     conflictDecisions,
-  } = mergeItemMetadataRecords(baseRecord, oursRecord, theirsRecord, preferred);
+  } = mergeItemMetadataRecords(
+    baseRecord,
+    oursRecord,
+    theirsRecord,
+    preferred,
+    conflictResolution,
+  );
 
-  const bodyOutcome = mergeScalarThreeWay(
+  const bodyOutcome = mergeItemScalarThreeWay(
     hasBase ? base.body : "",
     ours.body,
     theirs.body,
     preferred,
+    conflictResolution,
   );
   if (bodyOutcome.conflict) {
     conflictFields.push("body");
@@ -666,7 +700,7 @@ export function mergeItemDocuments(
       ours: ours.body,
       theirs: theirs.body,
       retained: bodyOutcome.value,
-      discarded: preferred === "theirs" ? ours.body : theirs.body,
+      discarded: bodyOutcome.from_theirs ? ours.body : theirs.body,
     });
   } else if (bodyOutcome.from_theirs) {
     fieldsFromTheirs.push("body");
@@ -686,6 +720,7 @@ export function mergeItemDocuments(
     union_fields: unionFields,
     conflict_decisions: conflictDecisions,
     preferred,
+    conflict_resolution: conflictResolution,
   };
 }
 

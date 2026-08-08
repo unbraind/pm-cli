@@ -130,6 +130,12 @@ describe("SDK item similarity governance", () => {
           .map((cluster) => cluster.id)
           .sort((left, right) => left.localeCompare(right)),
       );
+      await expect(
+        findDuplicateClusters({
+          pmRoot: context.pmPath,
+          statuses: [" all "],
+        }),
+      ).resolves.toMatchObject({ filters: { statuses: null } });
 
       await expect(
         findDuplicateClusters({
@@ -152,6 +158,12 @@ describe("SDK item similarity governance", () => {
       await expect(
         findDuplicateClusters({ pmRoot: context.pmPath, limit: 1_001 }),
       ).rejects.toThrow(/integer from 0 to 1000/);
+      await expect(
+        findDuplicateClusters({
+          pmRoot: context.pmPath,
+          statuses: ["not-a-runtime-status"],
+        }),
+      ).rejects.toThrow(/Unknown duplicate-cluster status/);
     });
   });
 

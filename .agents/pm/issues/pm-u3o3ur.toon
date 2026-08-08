@@ -2,11 +2,13 @@ id: pm-u3o3ur
 title: "GH-931: linked-test detector misclassifies unrelated node dist/cli.js commands as pm"
 description: "The linked-test execution classifier treats any Node script ending in dist/cli.js as the pm CLI, so unrelated project commands receive false PM context, mismatch, and sandbox diagnostics."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-07T19:42:35.002Z"
-updated_at: "2026-08-07T19:47:13.723Z"
+updated_at: "2026-08-08T16:50:02.004Z"
+closed_at: "2026-08-08T16:50:01.574Z"
+completed_at: "2026-08-08T16:50:01.574Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: PM command detection proves executable identity instead of matching a generic dist/cli.js suffix; actual pm binary package and checkout invocations remain recognized; unrelated Node CLIs remain non-PM with and without leading environment assignments; execution-context and mismatch receipts stay accurate across CLI and SDK tests.
@@ -16,14 +18,26 @@ confidence: high
 severity: high
 environment: @unbrained/pm-cli 2026.8.7 linked-test runner in a non-pm consuming project
 repro_steps: "Link node dist/cli.js schema research --format json with pm test --add-json, run pm test ITEM --run, and observe execution_context.is_pm_command=true plus mismatch_detected=true for the unrelated executable; repeat with a leading environment assignment."
+resolution: fixed
 expected_result: Only an executable whose pm identity is established receives PM execution context; generic project dist/cli.js commands remain ordinary linked tests.
-actual_result: The 2026.8.7 suffix heuristic marks every node path ending in dist/cli.js as pm and emits false mismatch metadata.
+actual_result: "Linked-test detection now resolves generic node dist/cli.js paths to an owning package.json and classifies them as pm only when the package name is @unbrained/pm-cli; checkout and packaged pm invocations remain recognized, and unrelated CLIs remain ordinary tests."
 customer_impact: "Ordinary project tests are mislabeled and can be failed or rerouted by PM context enforcement, undermining the trustworthiness of linked verification evidence."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-92if,implements,"2026-08-07T19:42:35.002Z","harness:codex","cli:create:dep",detected
   pm-e97jyf,discovered_from,"2026-08-07T19:42:35.002Z","harness:codex","cli:create:dep",detected
   pm-oslr,verifies,"2026-08-07T19:42:35.002Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-07T19:42:35.002Z","harness:codex","Duplicate check 2026-08-07: searched all PM statuses for GH-931, dist/cli.js, is_pm_command, linked-test command classification, and false PM context. Open pm-e97jyf owns broad direct-versus-linked execution-context parity and closed pm-oslr owns the SDK execution primitive; neither owns this executable-identity false positive, so this focused child issue is distinct and typed to both."
   "2026-08-07T19:42:58.650Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/931; backlink comment: https://github.com/unbraind/pm-cli/issues/931#issuecomment-5221326380."
+  "2026-08-08T16:46:56.777Z","harness:codex","Verification evidence (2026-08-08): full release pipeline reached the pre-commit hosted-review boundary after all local gates passed. Exact coverage: 460 files, 7072 tests, statements 50283/50283, branches 36738/36738, functions 10330/10330, lines 48684/48684. Static quality/docstrings, docs/skills, SDK surface, package boundary/parity, token/context/retrieval/tracker/security/version, packed npx (13 packages), and 88-command temporary package-first dogfood all passed. Manual packed external acceptance also passed all-status duplicates, 13 unique package rows with aliases, SDK direction-independent merge, package-manage output resolution, merge install, and health classification. The remaining greptile gate refusal is expected before a reviewable commit: no committed code changes to review against main."
+learnings[1]{created_at,author,text}:
+  "2026-08-08T16:49:43.511Z","harness:codex",Executable suffixes are not identities; linked-test context routing must establish package ownership before applying pm-specific sandbox and mismatch policy.
+files[2]{path,scope,note}:
+  src/sdk/test/linked-command-detection.ts,project,package-owned pm CLI identity validation
+  tests/unit/sdk/linked-command-identity.spec.ts,project,Unit coverage for package-identity linked command detection
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/linked-command-identity.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msklwmpy-4jmp0f,test,passed,"2026-08-08T16:47:05.109Z","2026-08-08T16:47:13.414Z","2026-08-08T16:47:13.414Z",1,0,0
+close_reason: Established package-owned linked-test executable identity with focused unit proof and full release-gate evidence.
 body: ""

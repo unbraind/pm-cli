@@ -18,6 +18,8 @@ pm get pm-a1b2 --output-include item,claim_state
 
 An unknown selector is a usage refusal that lists the valid vocabulary. Selecting the complete `item` object together with an item field is also refused because the two selectors express conflicting projection depths. Every successful projection carries an `omission_receipt` with the exact selectors needed to restore withheld item fields or sections.
 
+The same SDK-owned read-output registry now declares `package manage` as a first-class read surface. Package authors can resolve either `package manage` or `package-manage` to its canonical contract and discover the universal include, amount, cost, and encoding dimensions without copying CLI knowledge.
+
 ## Bounded annotation mutations
 
 Adding, editing, or deleting a comment, note, or learning returns the changed entry plus mutation and omission receipts. The reply size therefore stays independent of the item’s existing annotation history. Pass `--full-history` when a human or integration genuinely needs the complete post-mutation collection:
@@ -47,6 +49,8 @@ The SDK exposes `resolveUnknownAuthorAcknowledgmentSelector` and `parseUnknownAu
 ## Health provider boundary
 
 `pm health` is read-only by default and never refreshes embeddings merely because a semantic provider is configured. Provider I/O requires `--refresh-vectors`; `--skip-vectors` or `--no-refresh` records the explicit non-provider path. Provider requests remain bounded by the configured embedding timeout, and a failed refresh reports the responsible vector diagnostic plus the skip remediation.
+
+Storage integrity is evaluated independently of that provider boundary. Lossless merge receipts remain visible as provenance, while only receipts containing discarded scalar values produce `merge_decisions_unreviewed` guidance; neither classification enables vector refresh or remote provider I/O.
 
 ## Replication and refusal gate
 

@@ -37,6 +37,8 @@ export interface MergeDecisionReceipt {
   item_id: string;
   /** Preferred side used for scalar conflicts. */
   preferred: MergePreferredSide;
+  /** Scalar-conflict selection contract used by the item driver. */
+  conflict_resolution: "preferred_side" | "stable_value_order";
   /** Fields selected cleanly from the other branch. */
   fields_from_theirs: string[];
   /** Collections combined from both branches. */
@@ -67,6 +69,8 @@ export interface MergeDecisionReceiptSummary {
   union_fields: string[];
   /** Preferred side used for scalar conflicts. */
   preferred: MergePreferredSide;
+  /** Scalar-conflict selection contract used by the item driver. */
+  conflict_resolution: "preferred_side" | "stable_value_order";
   /** Hashes proving the retained and discarded values without publishing them. */
   decisions: Array<{
     field: string;
@@ -91,7 +95,12 @@ async function resolveReceiptDirectory(cwd: string): Promise<string | null> {
   try {
     const { stdout } = await execFileAsync(
       "git",
-      ["rev-parse", "--path-format=absolute", "--git-path", "pm-merge-receipts"],
+      [
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-path",
+        "pm-merge-receipts",
+      ],
       { cwd, encoding: "utf8", windowsHide: true, timeout: 10_000 },
     );
     return stdout.trim();
@@ -116,6 +125,7 @@ export function summarizeMergeReceipt(
     fields_from_theirs: receipt.fields_from_theirs,
     union_fields: receipt.union_fields,
     preferred: receipt.preferred,
+    conflict_resolution: receipt.conflict_resolution,
     decisions: receipt.decisions.map((decision) => ({
       field: decision.field,
       retained_hash: sha256Hex(stableStringify(decision.retained)),
@@ -129,6 +139,7 @@ export async function writeMergeReceipt(params: {
   cwd: string;
   itemPath: string;
   preferred: MergePreferredSide;
+  conflictResolution?: "preferred_side" | "stable_value_order";
   fieldsFromTheirs: string[];
   unionFields: string[];
   decisions: ItemMergeConflictDecision[];
@@ -151,6 +162,7 @@ export async function writeMergeReceipt(params: {
     item_path: itemPath.replaceAll("\\", "/"),
     item_id: itemId,
     preferred: params.preferred,
+    conflict_resolution: params.conflictResolution ?? "preferred_side",
     fields_from_theirs: [...params.fieldsFromTheirs],
     union_fields: [...params.unionFields],
     decisions: structuredClone(params.decisions),
@@ -165,10 +177,10 @@ export async function writeMergeReceipt(params: {
   return receipt;
 }
 
-/** Read all clone-local receipts, optionally including reconciled history. */
+/** Read clone-local receipts with explicit reconciled/lossless classification controls. */
 export async function listMergeReceipts(
   cwd: string,
-  options: { includeReconciled?: boolean } = {},
+  options: { includeReconciled?: boolean; includeLossless?: boolean } = {},
 ): Promise<MergeDecisionReceipt[]> {
   const directory = await resolveReceiptDirectory(cwd);
   if (directory === null || !(await pathExists(directory))) {
@@ -189,11 +201,18 @@ export async function listMergeReceipts(
       const parsed = JSON.parse(
         await readFile(path.join(directory, name), "utf8"),
       ) as MergeDecisionReceipt;
+      const normalizedReceipt: MergeDecisionReceipt = {
+        ...parsed,
+        conflict_resolution: parsed.conflict_resolution ?? "preferred_side",
+      };
       if (
-        parsed.version === 1 &&
-        (options.includeReconciled || parsed.state === "pending")
+        normalizedReceipt.version === 1 &&
+        (options.includeReconciled || normalizedReceipt.state === "pending") &&
+        (options.includeLossless !== false ||
+          (Array.isArray(normalizedReceipt.decisions) &&
+            normalizedReceipt.decisions.length > 0))
       ) {
-        receipts.push(parsed);
+        receipts.push(normalizedReceipt);
       }
     } catch {
       // A damaged clone-local receipt is reported by merge report through the
@@ -203,6 +222,24 @@ export async function listMergeReceipts(
   return receipts.sort((left, right) =>
     left.created_at.localeCompare(right.created_at),
   );
+}
+
+/** Split merge provenance into receipts with discarded values and receipts whose composition was lossless. */
+export function partitionMergeReceipts(receipts: MergeDecisionReceipt[]): {
+  /** Receipts that require an explicit decision because at least one competing scalar value was discarded. */
+  pendingDecisions: MergeDecisionReceipt[];
+  /** Receipts that record provenance without a discarded competing scalar value. */
+  lossless: MergeDecisionReceipt[];
+} {
+  const pendingDecisions: MergeDecisionReceipt[] = [];
+  const lossless: MergeDecisionReceipt[] = [];
+  for (const receipt of receipts) {
+    (Array.isArray(receipt.decisions) && receipt.decisions.length > 0
+      ? pendingDecisions
+      : lossless
+    ).push(receipt);
+  }
+  return { pendingDecisions, lossless };
 }
 
 /** Mark a receipt as represented by a committed merge history event. */
@@ -231,7 +268,10 @@ export async function runMergeReceiptReport(options: {
   /** Repository directory to inspect; defaults to the process working directory. */
   cwd?: string;
 }): Promise<MergeReceiptReport> {
-  const receipts = await listMergeReceipts(options.cwd ?? process.cwd(), options);
+  const receipts = await listMergeReceipts(options.cwd ?? process.cwd(), {
+    ...options,
+    includeLossless: true,
+  });
   return {
     ok: true,
     count: receipts.length,

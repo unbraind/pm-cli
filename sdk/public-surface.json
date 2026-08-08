@@ -94,6 +94,28 @@
       ],
       "package_version": "2026.8.7",
       "reason": "Extend project runtime inspection with optional stale-read diagnostics for pm-1eted6; existing result fields and behavior remain compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:DuplicateClustersResult",
+        "signature ./sdk:ItemDocumentMergeResult",
+        "signature ./sdk:listMergeReceipts",
+        "signature ./sdk:MergeDecisionReceipt",
+        "signature ./sdk:MergeDecisionReceiptSummary",
+        "signature ./sdk:MergeDriverResult",
+        "signature ./sdk:mergeItemDocuments",
+        "signature ./sdk:PM_READ_OUTPUT_SURFACES",
+        "signature ./sdk/contracts:PM_READ_OUTPUT_SURFACES",
+        "signature ./sdk/governance:DuplicateClustersResult",
+        "signature ./sdk/merge:ItemDocumentMergeResult",
+        "signature ./sdk/merge:listMergeReceipts",
+        "signature ./sdk/merge:MergeDecisionReceipt",
+        "signature ./sdk/merge:MergeDecisionReceiptSummary",
+        "signature ./sdk/merge:MergeDriverResult",
+        "signature ./sdk/merge:mergeItemDocuments"
+      ],
+      "package_version": "2026.8.8",
+      "reason": "Truthful merge receipts, duplicate filters, and package read-output contracts"
     }
   ],
   "entrypoints": {
@@ -3146,7 +3168,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DuplicateClustersResult",
-          "signature": "export interface DuplicateClustersResult { clusters: DuplicateCluster[]; count: number; threshold: number; source: \"metadata_scan\"; cost: { item_count: number; candidate_pairs: number; scored_pairs: number; }; }"
+          "signature": "export interface DuplicateClustersResult { clusters: DuplicateCluster[]; count: number; threshold: number; source: \"metadata_scan\"; filters: { statuses: string[] | null; since: string | null; }; cost: { item_count: number; candidate_pairs: number; scored_pairs: number; }; }"
         },
         {
           "classification": "supported",
@@ -5624,7 +5646,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemDocumentMergeResult",
-          "signature": "export interface ItemDocumentMergeResult { merged: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; conflict_decisions: ItemMergeConflictDecision[]; preferred: MergePreferredSide; }"
+          "signature": "export interface ItemDocumentMergeResult { merged: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; conflict_decisions: ItemMergeConflictDecision[]; preferred: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; }"
         },
         {
           "classification": "advanced_export",
@@ -5984,7 +6006,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "listMergeReceipts",
-          "signature": "(cwd: string, options?: { includeReconciled?: boolean; }) => Promise<MergeDecisionReceipt[]> | calls: (cwd: string, options?: { includeReconciled?: boolean; }) => Promise<MergeDecisionReceipt[]>"
+          "signature": "(cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; }) => Promise<MergeDecisionReceipt[]> | calls: (cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; }) => Promise<MergeDecisionReceipt[]>"
         },
         {
           "classification": "supported",
@@ -6242,13 +6264,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceipt",
-          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; preferred: MergePreferredSide; fields_from_theirs: string[]; union_fields: string[]; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; }"
+          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; preferred: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceiptSummary",
-          "signature": "export interface MergeDecisionReceiptSummary { receipt_id: string; item_id: string; item_path: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; preferred: MergePreferredSide; decisions: Array<{ field: string; retained_hash: string; discarded_hash: string; }>; }"
+          "signature": "export interface MergeDecisionReceiptSummary { receipt_id: string; item_id: string; item_path: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; preferred: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; decisions: Array<{ field: string; retained_hash: string; discarded_hash: string; }>; }"
         },
         {
           "classification": "supported",
@@ -6272,7 +6294,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDriverResult",
-          "signature": "export interface MergeDriverResult { ok: boolean; artifact: MergeDriverArtifact; output_path: string; preferred: MergePreferredSide; conflicts: string[]; history?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; relationship?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; item?: { fields_from_theirs: string[]; union_fields: string[]; }; json?: { paths_from_theirs: string[]; }; receipt?: MergeDecisionReceiptSummary; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeDriverResult { ok: boolean; artifact: MergeDriverArtifact; output_path: string; preferred: MergePreferredSide; conflicts: string[]; history?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; relationship?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; item?: { fields_from_theirs: string[]; union_fields: string[]; conflict_resolution: \"stable_value_order\"; }; json?: { paths_from_theirs: string[]; }; receipt?: MergeDecisionReceiptSummary; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -6320,7 +6342,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "mergeItemDocuments",
-          "signature": "(baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; }) => ItemDocumentMergeResult | calls: (baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; }) => ItemDocumentMergeResult"
+          "signature": "(baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: \"preferred_side\" | \"stable_value_order\"; }) => ItemDocumentMergeResult | calls: (baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: \"preferred_side\" | \"stable_value_order\"; }) => ItemDocumentMergeResult"
         },
         {
           "classification": "supported",
@@ -7646,7 +7668,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_READ_OUTPUT_SURFACES",
-          "signature": "readonly [\"list\", \"context\", \"search\", \"get\", \"next\", \"health\", \"deps\", \"graph\", \"history\", \"activity\", \"validate\", \"events\", \"contracts\", \"comments\", \"notes\", \"files\", \"docs\", \"stats\", \"aggregate\"]"
+          "signature": "readonly [\"list\", \"context\", \"search\", \"get\", \"next\", \"health\", \"deps\", \"graph\", \"history\", \"activity\", \"validate\", \"events\", \"contracts\", \"comments\", \"notes\", \"files\", \"docs\", \"stats\", \"aggregate\", \"package-manage\"]"
         },
         {
           "classification": "advanced_export",
@@ -15728,7 +15750,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_READ_OUTPUT_SURFACES",
-          "signature": "readonly [\"list\", \"context\", \"search\", \"get\", \"next\", \"health\", \"deps\", \"graph\", \"history\", \"activity\", \"validate\", \"events\", \"contracts\", \"comments\", \"notes\", \"files\", \"docs\", \"stats\", \"aggregate\"]"
+          "signature": "readonly [\"list\", \"context\", \"search\", \"get\", \"next\", \"health\", \"deps\", \"graph\", \"history\", \"activity\", \"validate\", \"events\", \"contracts\", \"comments\", \"notes\", \"files\", \"docs\", \"stats\", \"aggregate\", \"package-manage\"]"
         },
         {
           "classification": "contract_data",
@@ -17594,7 +17616,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DuplicateClustersResult",
-          "signature": "export interface DuplicateClustersResult { clusters: DuplicateCluster[]; count: number; threshold: number; source: \"metadata_scan\"; cost: { item_count: number; candidate_pairs: number; scored_pairs: number; }; }"
+          "signature": "export interface DuplicateClustersResult { clusters: DuplicateCluster[]; count: number; threshold: number; source: \"metadata_scan\"; filters: { statuses: string[] | null; since: string | null; }; cost: { item_count: number; candidate_pairs: number; scored_pairs: number; }; }"
         },
         {
           "classification": "supported",
@@ -19364,7 +19386,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemDocumentMergeResult",
-          "signature": "export interface ItemDocumentMergeResult { merged: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; conflict_decisions: ItemMergeConflictDecision[]; preferred: MergePreferredSide; }"
+          "signature": "export interface ItemDocumentMergeResult { merged: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; conflict_decisions: ItemMergeConflictDecision[]; preferred: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; }"
         },
         {
           "classification": "supported",
@@ -19382,7 +19404,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "listMergeReceipts",
-          "signature": "(cwd: string, options?: { includeReconciled?: boolean; }) => Promise<MergeDecisionReceipt[]> | calls: (cwd: string, options?: { includeReconciled?: boolean; }) => Promise<MergeDecisionReceipt[]>"
+          "signature": "(cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; }) => Promise<MergeDecisionReceipt[]> | calls: (cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; }) => Promise<MergeDecisionReceipt[]>"
         },
         {
           "classification": "supported",
@@ -19400,13 +19422,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceipt",
-          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; preferred: MergePreferredSide; fields_from_theirs: string[]; union_fields: string[]; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; }"
+          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; preferred: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceiptSummary",
-          "signature": "export interface MergeDecisionReceiptSummary { receipt_id: string; item_id: string; item_path: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; preferred: MergePreferredSide; decisions: Array<{ field: string; retained_hash: string; discarded_hash: string; }>; }"
+          "signature": "export interface MergeDecisionReceiptSummary { receipt_id: string; item_id: string; item_path: string; conflict_fields: string[]; fields_from_theirs: string[]; union_fields: string[]; preferred: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; decisions: Array<{ field: string; retained_hash: string; discarded_hash: string; }>; }"
         },
         {
           "classification": "supported",
@@ -19430,7 +19452,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDriverResult",
-          "signature": "export interface MergeDriverResult { ok: boolean; artifact: MergeDriverArtifact; output_path: string; preferred: MergePreferredSide; conflicts: string[]; history?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; relationship?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; item?: { fields_from_theirs: string[]; union_fields: string[]; }; json?: { paths_from_theirs: string[]; }; receipt?: MergeDecisionReceiptSummary; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeDriverResult { ok: boolean; artifact: MergeDriverArtifact; output_path: string; preferred: MergePreferredSide; conflicts: string[]; history?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; relationship?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; item?: { fields_from_theirs: string[]; union_fields: string[]; conflict_resolution: \"stable_value_order\"; }; json?: { paths_from_theirs: string[]; }; receipt?: MergeDecisionReceiptSummary; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -19472,7 +19494,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "mergeItemDocuments",
-          "signature": "(baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; }) => ItemDocumentMergeResult | calls: (baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; }) => ItemDocumentMergeResult"
+          "signature": "(baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: \"preferred_side\" | \"stable_value_order\"; }) => ItemDocumentMergeResult | calls: (baseRaw: string, oursRaw: string, theirsRaw: string, options?: ItemDocumentFormatOptions & { preferred?: MergePreferredSide; conflictResolution?: \"preferred_side\" | \"stable_value_order\"; }) => ItemDocumentMergeResult"
         },
         {
           "classification": "supported",
@@ -24370,7 +24392,9 @@
     "malformed_plan_step_evidence",
     "manifest_capabilities_absent",
     "merge_conflict_markers_detected",
+    "merge_decisions_unreviewed",
     "merge_git_config_unwritable",
+    "merge_reconcile_discards_require_acceptance",
     "merge_root_not_found",
     "missing_directory",
     "missing_lifecycle_target",
@@ -24461,6 +24485,7 @@
     "validate_lifecycle_dependency_cycles",
     "validate_lifecycle_dependency_cycles_error",
     "validate_lifecycle_stale_blockers",
+    "validate_merge_decisions_unreviewed",
     "validate_merge_fence_drift",
     "validate_metadata_custom_profile_missing_required_fields",
     "validate_metadata_duplicate_issue_codes",
