@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:merge",diagnostics,multi-agent,remediation
 created_at: "2026-07-28T10:29:04.048Z"
-updated_at: "2026-08-08T16:50:20.530Z"
-closed_at: "2026-08-08T16:50:04.545Z"
-completed_at: "2026-08-08T16:50:04.545Z"
+updated_at: "2026-08-08T17:19:38.927Z"
+closed_at: "2026-08-08T17:18:21.494Z"
+completed_at: "2026-08-08T17:18:21.494Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: Following the remediation text the merge driver and pm health emit returns the workspace to zero warnings; no path clears history drift while leaving a receipt pending
@@ -17,31 +17,37 @@ risk: medium
 confidence: high
 resolution: fixed
 expected_result: "Post-merge guidance directs agents to pm merge reconcile, distinguishes drift repair from receipt settlement, and leaves lossless audit evidence non-blocking while refusing lossy application without deliberate confirmation."
-actual_result: "Merge reconciliation, installation guidance, and diagnostics now point at pm merge reconcile --dry-run; reconciliation audits all receipts, rejects lossless receipt application without force, and preserves legacy receipt compatibility."
+actual_result: "Merge guidance routes through receipt-aware reconciliation, lossy application requires deliberate acceptance, and generated error-code plus SDK surface catalogs publish the refusal and diagnostic contracts."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-9j2r3b,related,"2026-07-28T10:31:19.920Z","harness:claude-code","cli:update:dep",detected
   pm-ei6x66,related,"2026-07-28T10:31:19.920Z","harness:claude-code","cli:update:dep",detected
   pm-g5sx,related,"2026-07-28T10:31:19.920Z","harness:claude-code","cli:update:dep",detected
   pm-ysqb6n,discovered_from,"2026-07-28T10:31:19.920Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-02T21:11:34.671Z","harness:claude-code","Receipt scope evidence (2026-08-02). The merge receipt is not only unsettled, it is the sole record of what a merge destroyed: for a scalar conflict it carries retained_hash and discarded_hash and no values, so once the driver stdout is gone there is no way to recover or even read the losing value. Two clones merging the same branch pair in opposite directions produce opposite receipts, both validate clean afterwards, and nothing joins the two. See pm-dlx7v7."
   "2026-08-08T16:46:58.106Z","harness:codex","Verification evidence (2026-08-08): full release pipeline reached the pre-commit hosted-review boundary after all local gates passed. Exact coverage: 460 files, 7072 tests, statements 50283/50283, branches 36738/36738, functions 10330/10330, lines 48684/48684. Static quality/docstrings, docs/skills, SDK surface, package boundary/parity, token/context/retrieval/tracker/security/version, packed npx (13 packages), and 88-command temporary package-first dogfood all passed. Manual packed external acceptance also passed all-status duplicates, 13 unique package rows with aliases, SDK direction-independent merge, package-manage output resolution, merge install, and health classification. The remaining greptile gate refusal is expected before a reviewable commit: no committed code changes to review against main."
+  "2026-08-08T17:13:00.825Z","harness:codex","Hosted contract verification: after refreshing the full runtime snapshot, contracts:check correctly found the generated error-code catalog stale for the new merge_reconcile_discards_require_acceptance refusal. Reopened and claimed this canonical merge-remediation item for generated catalog parity."
+  "2026-08-08T17:18:18.273Z","harness:codex","Hosted static-gate fix evidence: regenerated error-code catalog and SDK surface now include merge reconciliation and merge-decision diagnostic codes; error catalog tests, pnpm contracts:check, and complete static quality gates pass."
 learnings[2]{created_at,author,text}:
   "2026-07-28T10:34:43.096Z","harness:claude-code","Remediation text is part of the product's contract with agents, and it can be wrong in a way tests never catch: every assertion here passes, because each individual command does what its own tests say. The defect only exists in the composition — follow the printed guidance to the letter, then check whether the system reports itself clean. It did not.\n\nWorth generalizing into a habit: after any operation that prints \"run X next\", run X and then re-run the full diagnostic. The gap between \"the remediation succeeded\" and \"the workspace is clean\" is where this class lives, and drift-clean-but-receipt-pending is invisible unless both are checked."
   "2026-08-08T16:49:46.462Z","harness:codex","Merge receipts are evidence, not blanket repair instructions; remediation must distinguish audit-only lossless receipts from streams that need a deliberate lossy decision."
-files[5]{path,scope,note}:
+files[7]{path,scope,note}:
+  sdk/public-surface.json,project,Generated public SDK error-code surface parity
   src/core/diagnostics/remediation.ts,project,health and validate remediation mapping
+  src/sdk/generated-error-code-catalog.ts,project,Generated merge reconciliation refusal and remediation code catalog
   src/sdk/merge/driver.ts,project,post-merge reconcile guidance
   src/sdk/merge/install.ts,project,installed contract guidance
   src/sdk/merge/reconcile.ts,project,explicit lossy acceptance boundary
   tests/unit/sdk/merge-reconcile.spec.ts,project,SDK merge reconcile mock parity for shared receipt classification
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/merge-reconcile-command.spec.ts tests/integration/remediation-registry.spec.ts,project,300
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/error-code-catalog.spec.ts tests/unit/scripts/generate-error-code-catalog.spec.ts,project,300
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msklxaiu-cjfuyn,test,passed,"2026-08-08T16:47:32.808Z","2026-08-08T16:47:44.262Z","2026-08-08T16:47:44.262Z",1,0,0
+  test-local-mskn0ko3-2evpha,test,passed,"2026-08-08T17:17:59.158Z","2026-08-08T17:18:16.995Z","2026-08-08T17:18:16.995Z",2,0,0
 docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,agent post-merge workflow
   docs/COMMANDS.md,project,reconciliation command contract
   docs/MERGE_SAFETY.md,project,merge safety gate
-close_reason: Corrected merge remediation and reconciliation guidance with receipt-aware safety and compatibility proof.
+close_reason: Merge remediation implementation and generated error-code/SDK surface contracts verified.
 body: ""

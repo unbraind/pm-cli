@@ -15485,6 +15485,22 @@
     },
     {
       "aliases": [],
+      "canonical_code": "merge_decisions_unreviewed",
+      "class": "generic_failure",
+      "code": "merge_decisions_unreviewed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Merge decisions unreviewed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "merge_git_config_unwritable",
       "class": "dependency_failed",
       "code": "merge_git_config_unwritable",
@@ -15498,6 +15514,22 @@
         "sdk/merge/install.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "merge_reconcile_discards_require_acceptance",
+      "class": "conflict",
+      "code": "merge_reconcile_discards_require_acceptance",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Merge reconcile discards require acceptance condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/merge/reconcile.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -16963,6 +16995,22 @@
         "core/diagnostics/remediation.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "validate_merge_decisions_unreviewed",
+      "class": "generic_failure",
+      "code": "validate_merge_decisions_unreviewed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Validate merge decisions unreviewed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -28050,6 +28098,45 @@
         "intent",
         "default"
       ]
+    },
+    {
+      "command": "package-manage",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
     }
   ],
   "row_contract": {
@@ -30113,6 +30200,106 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "maxItems": 10000,
+                    "type": "array"
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
