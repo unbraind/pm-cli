@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- PR \#935 review remediation: executable gate registry and fail-closed runtime context parsing ([pm-n41vay](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n41vay.toon))
 - GH-926: warn before a stale pm binary mutates a project pinned to a newer CLI/SDK ([pm-1eted6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1eted6.toon))
 - PR \#935 CI: preserve dependency-free fast-version startup and regenerate runtime contracts ([pm-dskxwf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dskxwf.toon))
 - Make stale-runtime compatibility classification action-aware across mixed CLI commands ([pm-zjelve](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zjelve.toon))
