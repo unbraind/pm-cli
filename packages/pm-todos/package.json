@@ -1,6 +1,6 @@
 {
   "name": "@unbrained/pm-todos",
-  "version": "2026.8.7",
+  "version": "2026.8.8",
   "private": true,
   "type": "module",
   "description": "First-party pm package for Todo markdown import and export.",
