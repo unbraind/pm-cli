@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: sentry,storage,telemetry,ux
 created_at: "2026-08-01T12:13:22.473Z"
-updated_at: "2026-08-08T08:00:41.424Z"
+updated_at: "2026-08-08T08:11:23.770Z"
 closed_at: "2026-08-08T07:59:06.742Z"
 completed_at: "2026-08-08T07:59:06.742Z"
 author: "harness:codex"
@@ -22,14 +22,13 @@ confidence: 90
 resolution: withSnapshotFilesystemGuard converts host ENOSPC/EDQUOT/EACCES/EPERM/EROFS faults raised by the create_object and restore_stage stages into declared PmCliError refusals with recovery guidance.
 expected_result: "Resource exhaustion reports the bounded operation and recovery path without disclosing workspace topology, and stops creating unactionable high Sentry issues."
 actual_result: "Both stages refuse with workspace_snapshot_storage_exhausted or workspace_snapshot_permission_denied; tests assert paths appear in neither message nor context, and non-errno faults still propagate as defects."
-dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-nb08,related,"2026-08-01T12:13:22.473Z","harness:codex","cli:create:dep",detected
   pm-23lmm5,related,"2026-08-07T11:20:20.364Z","harness:claude-code","cli:update:dep",detected
   pm-dqtzva,related,"2026-08-07T11:20:20.364Z","harness:claude-code","cli:update:dep",detected
   pm-qyg51h,related,"2026-08-07T11:20:20.364Z","harness:claude-code","cli:update:dep",detected
   pm-x4nn3z,related,"2026-08-07T11:20:20.364Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-07T11:20:20.364Z","harness:claude-code","cli:update:dep",detected
-  pm-3lhth4,blocks,"2026-08-08T08:00:41.302Z","harness:claude-code","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-08-01T12:13:22.473Z","harness:codex","Duplicate-check evidence: exact all-status searches found storage and Sentry precedents but no item owning PM-CLI-2S or this copy-resource classification. Live evidence is summarized without raw paths, entity identifiers, hostnames, or event payloads."
   "2026-08-07T19:54:22.750Z","harness:codex","Live structured gate refresh 2026-08-07: PM-CLI-2S remains one of two high groups in the 14-day release window after the gate moved from prose patterns to SDK error-code and exit-code classification. Telemetry is healthy at 0.91% finish errors with zero failures missing codes. This item remains open and unclaimed; no raw path, event payload, host identity, or private topology was retained."

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: "area:sdk",data-quality,identity,provenance
 created_at: "2026-08-03T06:21:42.773Z"
-updated_at: "2026-08-07T11:23:43.166Z"
+updated_at: "2026-08-08T08:10:41.851Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "No provenance dimension is sourced from an environment key whose value domain is boolean or presence-only; Each descriptor key declares the dimension value domain it is expected to carry, and a value outside that domain is refused rather than recorded; The nested-session fact, if worth recording, is recorded in a dimension whose name says what it means rather than being smuggled into role; A corpus check reports zero provenance values that are bare booleans or single digits across all dimensions"
@@ -27,7 +27,8 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-lu6sca,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
   pm-pj2isb,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
   pm-rbg1qo,discovered_from,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-03T11:09:27.894Z","harness:codex","Estimate basis 2026-08-03: 240 minutes covers value-domain declarations, invalid boolean rejection, a correctly named nested-session dimension, corpus check, and regression coverage."
   "2026-08-07T11:23:43.166Z","harness:claude-code","Confirmed still live at 2026.8.7 on 2026-08-07 with no identity flags passed. A create from Claude Code recorded author harness:claude-code with author_source detected, agent_model claude-opus-5 from probe, effort xhigh from environment, version 2.1.224 from probe — and role literally \"1\" from environment, with topic null. Model, effort and version capture are working end to end; role and topic remain the only two dimensions that do not carry meaning. Fleet analytics grouping on role today would bucket every nested session under the string \"1\"."
+  "2026-08-08T08:10:41.851Z","harness:claude-code","Reproduced live on 2026-08-08 against pm-cli 2026.8.7, HEAD build. A create recorded this session carries agent_provenance role {value: \"1\", source: \"environment\"} alongside a correctly resolved model {claude-opus-5, probe}, effort {xhigh, environment} and version {2.1.226, probe}. So the dimension is not merely unpopulated: it is populated with the boolean child-session flag rendered as a string, which is worse than null because it types as a valid role and will group every nested claude-code invocation under one meaningless label in fleet analytics. Sibling dimension topic is null in the same record, which pm-3zgh2c owns. Evidence is the last history entry of pm-3lhth4."
 body: ""
