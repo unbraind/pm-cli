@@ -9,6 +9,8 @@ import path from "node:path";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 
+export { PmCliError };
+
 const PACKAGE_NAME = "@unbrained/pm-cli";
 const MUTATING_COMMANDS = new Set([
   "append",
@@ -84,7 +86,7 @@ function hasAnyToken(
   argv: readonly string[],
   tokens: readonly string[],
 ): boolean {
-  return argv.some((token) => tokens.includes(token));
+  return argv.some((token) => tokens.includes(token.split("=", 1)[0]));
 }
 
 /** Classify package/extension compatibility aliases from subcommands and legacy flags. */
@@ -129,11 +131,12 @@ const MIXED_COMMAND_CLASSIFIERS: Readonly<
   Record<string, MixedCommandClassifier>
 > = {
   changelog: (argv, positionals) => {
-    if (positionals[0] === "generate") return !argv.includes("--check");
+    if (positionals[0] === "generate")
+      return !hasAnyToken(argv, ["--check"]);
     const exportIndex = argv.indexOf("export");
     return (
       positionals[0] === "export" &&
-      (argv.includes("--output") ||
+      (hasAnyToken(argv, ["--output"]) ||
         (exportIndex >= 0 &&
           argv[exportIndex + 1] !== undefined &&
           !argv[exportIndex + 1].startsWith("-")))
@@ -153,7 +156,7 @@ const MIXED_COMMAND_CLASSIFIERS: Readonly<
   extension: isPackageMutation,
   files: (argv, positionals) =>
     hasAnyToken(argv, ["--add", "--add-glob", "--migrate", "--remove"]) ||
-    (positionals[0] === "discover" && argv.includes("--apply")),
+    (positionals[0] === "discover" && hasAnyToken(argv, ["--apply"])),
   health: (argv) =>
     !hasAnyToken(argv, ["--check-only", "--no-refresh", "--skip-vectors"]),
   learnings: (argv) =>
@@ -176,7 +179,7 @@ const MIXED_COMMAND_CLASSIFIERS: Readonly<
       "rename-field",
       "rename-type",
     ].includes(positionals[0] ?? "") &&
-    !(argv.includes("--infer") && !argv.includes("--apply")),
+    !(hasAnyToken(argv, ["--infer"]) && !hasAnyToken(argv, ["--apply"])),
   telemetry: (_argv, positionals) =>
     positionals.slice(0, 2).some((token) => ["clear", "flush"].includes(token)),
   templates: (_argv, positionals) => positionals[0] === "save",
@@ -276,7 +279,7 @@ function readJsonRecord(filePath: string): Record<string, unknown> | null {
   }
 }
 
-/** Extract the minimum explicit pm date version from dependency declarations. */
+/** Extract the highest explicit lower-bound pm date version from dependency declarations. */
 function dependencyPin(
   packageJson: Record<string, unknown>,
 ): string | undefined {
@@ -290,8 +293,10 @@ function dependencyPin(
     const dependencies = packageJson[field];
     if (typeof dependencies !== "object" || dependencies === null) continue;
     const value = (dependencies as Record<string, unknown>)[PACKAGE_NAME];
-    const version =
-      typeof value === "string" ? value.match(VERSION_PATTERN)?.[0] : undefined;
+    const specification = typeof value === "string" ? value.trim() : "";
+    const version = /^[<!]/u.test(specification)
+      ? undefined
+      : specification.match(VERSION_PATTERN)?.[0];
     if (version) versions.push(version);
   }
   return versions.sort(
@@ -312,22 +317,33 @@ function packageLockPin(projectRoot: string): string | undefined {
   return typeof version === "string" ? version : undefined;
 }
 
-/** Read the highest nearby exact coordinate from a text lockfile package block. */
+/** Read the exact coordinate from the matching text lockfile package block. */
 function textLockPin(
   projectRoot: string,
   file: "pnpm-lock.yaml" | "yarn.lock",
 ): string | undefined {
   try {
-    const source = fs.readFileSync(path.join(projectRoot, file), "utf8");
-    const packageIndex = source.indexOf(PACKAGE_NAME);
-    if (packageIndex < 0) return undefined;
-    return [
-      ...source
-        .slice(packageIndex, packageIndex + 600)
-        .matchAll(new RegExp(VERSION_PATTERN.source, "gu")),
-    ]
-      .map((match) => match[0])
-      .sort((left, right) => comparePmDateVersions(right, left) as number)[0];
+    const lines = fs
+      .readFileSync(path.join(projectRoot, file), "utf8")
+      .split(/\r?\n/u);
+    const packageLineIndex = lines.findIndex((line) =>
+      line.includes(PACKAGE_NAME),
+    );
+    if (packageLineIndex < 0) return undefined;
+    const packageIndent = lines[packageLineIndex].match(/^\s*/u)![0].length;
+    const entry = [lines[packageLineIndex]];
+    for (let index = packageLineIndex + 1; index < lines.length; index += 1) {
+      const line = lines[index];
+      const trimmed = line.trim();
+      const indent = line.match(/^\s*/u)![0].length;
+      if (trimmed.length > 0 && indent <= packageIndent) break;
+      entry.push(line);
+    }
+    const entrySource = entry.join("\n");
+    const explicitVersion = entrySource.match(
+      /^\s*version(?::\s*|\s+)["']?(\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?)/mu,
+    )?.[1];
+    return explicitVersion ?? entry[0].match(VERSION_PATTERN)?.[0];
   } catch {
     return undefined;
   }
@@ -368,28 +384,28 @@ export function discoverProjectRuntimeVersionPins(
   return pins;
 }
 
-/** Resolve the first command token while preserving path-like global option values. */
-function commandFromArgv(argv: readonly string[]): string | undefined {
+/** Resolve the first command token and index while preserving global option values. */
+function commandTokenFromArgv(
+  argv: readonly string[],
+): { command: string; index: number } | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (GLOBAL_VALUE_FLAGS.has(token)) {
       index += 1;
       continue;
     }
-    if (!token.startsWith("-")) return token.toLowerCase();
+    if (!token.startsWith("-"))
+      return { command: token.toLowerCase(), index };
   }
   return undefined;
 }
 
 /** Classify mutation-capable invocations while preserving explicit read modes. */
 export function isProjectMutatingInvocation(argv: readonly string[]): boolean {
-  const command = commandFromArgv(argv);
-  if (!command) return false;
-  if (argv.includes("--help") || argv.includes("-h")) return false;
-  if (argv.includes("--dry-run")) return false;
-  const commandIndex = argv.findIndex(
-    (token) => token.toLowerCase() === command,
-  );
+  const commandToken = commandTokenFromArgv(argv);
+  if (!commandToken) return false;
+  if (hasAnyToken(argv, ["--help", "-h", "--dry-run"])) return false;
+  const { command, index: commandIndex } = commandToken;
   const positionals = argv
     .slice(commandIndex + 1)
     .filter((token) => !token.startsWith("-"))
@@ -407,7 +423,7 @@ export function inspectProjectRuntimeCompatibility(options: {
   argv: readonly string[];
   allowStale?: boolean;
 }): ProjectRuntimeCompatibilityResult {
-  const command = commandFromArgv(options.argv);
+  const command = commandTokenFromArgv(options.argv)?.command;
   const mutating = isProjectMutatingInvocation(options.argv);
   const pins = discoverProjectRuntimeVersionPins(options.projectRoot)
     .filter(

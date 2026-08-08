@@ -28,11 +28,12 @@ export interface SourceContextWritePolicy {
 export function resolveSourceContextWritePolicy(
   environment: Readonly<Record<string, string | undefined>>,
 ): SourceContextWritePolicy {
+  const declaredAccess = environment[SOURCE_CONTEXT_ACCESS_ENV];
   const access =
-    environment[SOURCE_CONTEXT_ACCESS_ENV]?.trim().toLowerCase() ===
-    "read_only"
-      ? "read_only"
-      : "write";
+    declaredAccess === undefined ||
+    declaredAccess.trim().toLowerCase() === "write"
+      ? "write"
+      : "read_only";
   const writeOverrideApplied =
     access === "read_only" &&
     environment[SOURCE_CONTEXT_WRITE_OVERRIDE_ENV]?.trim() === "1";

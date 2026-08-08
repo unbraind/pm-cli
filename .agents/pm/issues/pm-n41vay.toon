@@ -1,0 +1,50 @@
+id: pm-n41vay
+title: "PR #935 review remediation: executable gate registry and fail-closed runtime context parsing"
+description: "Resolve the complete CodeRabbit exact-head review inventory for PR #935 across registry-driven preflight execution, CLI equals-form argument parsing, dependency-pin discovery, source-context write safety, host resource fault taxonomy, public documentation, and regression assertions."
+type: Issue
+status: in_progress
+priority: 0
+tags: []
+created_at: "2026-08-08T11:42:58.003Z"
+updated_at: "2026-08-08T12:24:01.863Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#311a8aed9ab7c477f6e67245"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Gate registry is the executable source of truth with explicit skip receipts; Runtime parsing handles equals-form flags and unambiguous command positions; Pin discovery, source-context safety, and host fault codes are regression-tested; Public docs avoid internal operational topology and preflight runs after final push"
+parent: pm-doxj
+severity: high
+expected_result: "All eleven inline findings are fixed with focused tests, every bot thread is acknowledged and resolved, and the refreshed exact-head CI/review inventory is green."
+actual_result: CodeRabbit reported eleven findings on exact head a651ae6; remediation is pending.
+component: SDK runtime and release gates
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dskxwf,discovered_from,"2026-08-08T11:42:58.003Z","harness:codex","cli:create:dep",detected
+  pm-ei6x66,related,"2026-08-08T11:42:58.003Z","harness:codex","cli:create:dep",detected
+  pm-zjelve,related,"2026-08-08T11:42:58.003Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-08T11:42:58.003Z","harness:codex","Duplicate check: searched all statuses for PR 935, CodeRabbit review, runtime gates, pins, and source context; no canonical review-remediation item existed. This item consolidates all eleven findings from one paid feedback round."
+  "2026-08-08T11:55:35.315Z","harness:codex","Implementation evidence: all eleven CodeRabbit findings were verified as valid. The local registry now supplies actual commands, arguments, environment, capture mode, and skip policy; skips emit status=skipped and ok=false. Runtime flags accept equals forms without re-scanning ambiguous values, lockfile parsing is package-entry bounded, upper/exclusion dependency ranges do not become floors, inherited source access fails closed, and snapshot resource exhaustion has its own public code. Focused suite passes 100/100 tests; lint, static quality, typecheck, generated contracts, and SDK surface checks pass."
+  "2026-08-08T12:16:50.098Z","harness:codex","Full verification evidence: all 453 test files and 7,057 tests pass. Exact coverage is statements 50,225/50,225, branches 36,680/36,680, functions 10,319/10,319, and lines 48,630/48,630: 100/100/100/100 with zero uncovered counts."
+files[10]{path,scope,note}:
+  scripts/release/gate-registry.json,project,Executable local preflight plan and skip policy
+  scripts/release/gate-registry.mjs,project,Fail-closed executable plan validation
+  scripts/release/run-gates.mjs,project,Registry-driven execution and status receipts
+  sdk/public-surface.json,project,Generated additive SDK error surface
+  src/cli/runtime-compatibility-boundary.ts,project,Equals-form JSON refusal rendering
+  src/sdk/environment/project-runtime-compatibility.ts,project,Action parsing and bounded dependency pin discovery
+  src/sdk/environment/source-context.ts,project,Fail-closed inherited source access
+  src/sdk/generated-error-code-catalog.ts,project,Generated public resource fault code
+  src/sdk/workspace-snapshot.ts,project,Resource-specific snapshot fault contract
+  tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,900
+  node scripts/run-tests.mjs test -- tests/unit/sdk/project-runtime-compatibility.spec.ts tests/unit/cli/runtime-compatibility-boundary.spec.ts tests/unit/sdk/source-context.spec.ts tests/unit/sdk/workspace-snapshot.spec.ts tests/unit/scripts/release/gate-registry.spec.ts tests/unit/scripts/release/run-gates.spec.ts,project,240
+  "pnpm lint && pnpm typecheck && pnpm contracts:check && pnpm sdk:surface:check",project,900
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mskci5vl-9mk4bn,test,passed,"2026-08-08T12:16:50.526Z","2026-08-08T12:24:01.857Z","2026-08-08T12:24:01.857Z",3,0,0
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated public outcome wording
+  docs/RELEASING.md,project,Final-push preflight order and registry execution contract
+  docs/SDK_RUNTIME_BOUNDARIES.md,project,Public refusal and host fault behavior
+  docs/TESTING.md,project,Executable preflight receipt semantics
+body: ""

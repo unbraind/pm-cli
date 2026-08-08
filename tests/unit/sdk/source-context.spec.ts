@@ -37,6 +37,26 @@ describe("source context write policy", () => {
       write_override_applied: true,
       source_writes_allowed: true,
     });
+    for (const declaredAccess of ["", "unknown", " read-only "]) {
+      expect(
+        resolveSourceContextWritePolicy({
+          [SOURCE_CONTEXT_ACCESS_ENV]: declaredAccess,
+        }),
+      ).toEqual({
+        access: "read_only",
+        write_override_applied: false,
+        source_writes_allowed: false,
+      });
+    }
+    expect(
+      resolveSourceContextWritePolicy({
+        [SOURCE_CONTEXT_ACCESS_ENV]: " WRITE ",
+      }),
+    ).toEqual({
+      access: "write",
+      write_override_applied: false,
+      source_writes_allowed: true,
+    });
   });
 
   it("protects the host-owned access and override variables from test metadata", () => {

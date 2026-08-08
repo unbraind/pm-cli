@@ -35,12 +35,13 @@ run the registry-owned entrypoint:
 pnpm verify:preflight
 ```
 
-`scripts/release/gate-registry.json` is the single selection manifest for this
-command. `run-gates.mjs` refuses a missing, reordered, or undeclared receipt,
-and `quality:gate-registry` separately maps hosted workflow claims to the same
-canonical gate IDs. Hosted-only environment isolation and tracker-integrity
-steps remain explicit entries with reasons rather than silently disappearing
-from local parity.
+`scripts/release/gate-registry.json` is the executable plan for this command:
+each ordered step declares its command, arguments, environment, capture mode,
+and whether an explicit skip flag is permitted. Receipts distinguish passed
+steps from declared skips, and `quality:gate-registry` maps hosted workflow
+claims to the same canonical gate IDs. Hosted-only environment isolation and
+tracker-integrity steps remain explicit entries with reasons rather than
+silently disappearing from local parity.
 
 `node scripts/run-tests.mjs` wraps Vitest in temporary tracker roots, then cleans them up.
 

@@ -14653,6 +14653,70 @@
     },
     {
       "aliases": [],
+      "canonical_code": "host_environment_capacity_fault",
+      "class": "generic_failure",
+      "code": "host_environment_capacity_fault",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Host environment capacity fault condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/environment/host-environment-errors.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "host_environment_operation_invalid",
+      "class": "usage",
+      "code": "host_environment_operation_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Host environment operation invalid condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/environment/host-environment-errors.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "host_environment_permission_fault",
+      "class": "generic_failure",
+      "code": "host_environment_permission_fault",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Host environment permission fault condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/environment/host-environment-errors.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "host_environment_resource_fault",
+      "class": "generic_failure",
+      "code": "host_environment_resource_fault",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Host environment resource fault condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/environment/host-environment-errors.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "improvement_metric_contract_conflict",
       "class": "conflict",
       "code": "improvement_metric_contract_conflict",
@@ -15816,6 +15880,22 @@
         "core/profile/profile-lint.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "project_runtime_stale_mutation",
+      "class": "conflict",
+      "code": "project_runtime_stale_mutation",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Project runtime stale mutation condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/environment/project-runtime-compatibility.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -17390,6 +17470,22 @@
       ],
       "exit_code": 1,
       "meaning": "Workspace snapshot permission denied condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-snapshot.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "workspace_snapshot_resource_exhausted",
+      "class": "generic_failure",
+      "code": "workspace_snapshot_resource_exhausted",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Workspace snapshot resource exhausted condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/workspace-snapshot.ts"

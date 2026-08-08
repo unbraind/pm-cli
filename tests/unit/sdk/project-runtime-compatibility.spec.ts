@@ -40,10 +40,12 @@ describe("project runtime compatibility", () => {
     [["create", "--help"], false],
     [["comments", "pm-a"], false],
     [["comments", "pm-a", "--add", "x"], true],
+    [["comments", "pm-a", "--add=x"], true],
     [["learnings", "pm-a", "--add", "x"], true],
     [["notes", "pm-a"], false],
     [["files", "pm-a", "--list"], false],
     [["files", "discover", "pm-a", "--apply"], true],
+    [["files", "discover", "pm-a", "--apply=true"], true],
     [["docs", "pm-a", "--add-glob", "docs/**"], true],
     [["deps", "pm-a"], false],
     [["events", "--follow"], false],
@@ -57,6 +59,7 @@ describe("project runtime compatibility", () => {
     [["schema", "list"], false],
     [["schema"], false],
     [["schema", "add-type", "Bug", "--infer"], false],
+    [["schema", "add-type", "Bug", "--infer=true"], false],
     [["schema", "add-type", "Bug"], true],
     [["profile", "lint", "agile"], false],
     [["profile", "apply", "agile"], true],
@@ -85,8 +88,10 @@ describe("project runtime compatibility", () => {
     [["validate", "--check-resolution"], false],
     [["validate", "--auto-fix", "--fix-scope", "metadata"], true],
     [["update-many", "--dry-run"], false],
+    [["update-many", "--dry-run=true"], false],
     [["unknown-command"], false],
     [["--pm-path", "--odd-path", "create", "Task", "x"], true],
+    [["--author", "merge", "merge", "report"], false],
   ] as const)("classifies %j mutation capability as %s", (argv, expected) => {
     expect(isProjectMutatingInvocation(argv)).toBe(expected);
   });
@@ -117,11 +122,11 @@ describe("project runtime compatibility", () => {
     );
     await writeFile(
       path.join(root, "pnpm-lock.yaml"),
-      "dependencies:\n  '@unbrained/pm-cli':\n    version: 2026.8.11\n",
+      "dependencies:\n  '@unbrained/pm-cli':\n    version: 2026.8.11\n  neighboring-package:\n    version: 2099.1.1\n",
     );
     await writeFile(
       path.join(root, "yarn.lock"),
-      '"@unbrained/pm-cli@^2026.8.8":\n  version "2026.8.12"\n',
+      '"@unbrained/pm-cli@^2026.8.8":\n  version "2026.8.12"\nneighboring-package@^1:\n  version "2099.1.1"\n',
     );
     expect(discoverProjectRuntimeVersionPins(root)).toEqual([
       { version: "2026.8.13", source: "package.json" },
@@ -137,6 +142,26 @@ describe("project runtime compatibility", () => {
         argv: ["context"],
       }).project_version,
     ).toBe("2026.8.13");
+    await writeFile(
+      path.join(root, "yarn.lock"),
+      '"@unbrained/pm-cli@2026.8.14":\n  checksum "sha512-example"\n',
+    );
+    expect(discoverProjectRuntimeVersionPins(root)).toContainEqual({
+      version: "2026.8.14",
+      source: "yarn.lock",
+    });
+  });
+
+  it("ignores dependency upper bounds and exclusions as runtime floors", async () => {
+    const root = await project();
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        dependencies: { "@unbrained/pm-cli": "<2027.1.1" },
+        devDependencies: { "@unbrained/pm-cli": "!=2028.1.1" },
+      }),
+    );
+    expect(discoverProjectRuntimeVersionPins(root)).toEqual([]);
   });
 
   it("keeps reads available, refuses stale writes, and records an explicit override", async () => {

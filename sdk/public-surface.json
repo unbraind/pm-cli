@@ -24480,6 +24480,7 @@
     "workspace_snapshot_name_reserved_fingerprint",
     "workspace_snapshot_not_found",
     "workspace_snapshot_permission_denied",
+    "workspace_snapshot_resource_exhausted",
     "workspace_snapshot_storage_exhausted",
     "wrong_item_type"
   ],

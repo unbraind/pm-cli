@@ -150,19 +150,6 @@ If a changelog routing rule appears incorrect, fix classifier behavior in the `p
 
 ## Local Release Parity Checklist
 
-Before the release-specific checks below, run the canonical registry-owned
-local preflight:
-
-```bash
-pnpm verify:preflight
-```
-
-This alias executes the ordered local gate selection declared in
-`scripts/release/gate-registry.json` and verifies the resulting receipt against
-that declaration. The same registry maps named PR, nightly, and release
-workflow gates; hosted-only entries must declare why no faithful local
-equivalent exists.
-
 1. Confirm the UTC calendar date. Do not use an ordinal diagnostic as a
    production target.
 
@@ -210,7 +197,19 @@ The build writes `dist/cli-bundle/bundle-manifest.json` atomically with SHA-256 
 4. Run the same release pipeline locally.
 
 Push the final implementation commit first, wait for DeepScan and CodeFactor to
-finish on that reviewed SHA, and run the mandatory local hosted-analysis proof:
+finish on that reviewed SHA, then run the canonical registry-owned preflight:
+
+```bash
+pnpm verify:preflight
+```
+
+The registry supplies the ordered executable plan, command arguments,
+environment, capture policy, and explicit skip policy. Its receipt distinguishes
+passed checks from declared skips. The same registry maps named PR, nightly,
+and release workflow gates; hosted-only entries must explain why no faithful
+local equivalent exists.
+
+The preflight includes the mandatory local hosted-analysis proof:
 
 ```bash
 pnpm quality:hosted-analysis

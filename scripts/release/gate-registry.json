@@ -3,38 +3,146 @@
   "local_preflight": {
     "command": "pnpm verify:preflight",
     "steps": [
-      { "id": "build", "gates": ["compilation"] },
-      { "id": "typecheck", "gates": ["compilation"] },
-      { "id": "docs-skills-gate", "gates": ["documentation"] },
+      {
+        "id": "build",
+        "gates": ["compilation"],
+        "executable": { "command": "pnpm", "args": ["build"] },
+        "skip_policy": "forbidden"
+      },
+      {
+        "id": "typecheck",
+        "gates": ["compilation"],
+        "executable": { "command": "pnpm", "args": ["typecheck"] },
+        "skip_policy": "forbidden"
+      },
+      {
+        "id": "docs-skills-gate",
+        "gates": ["documentation"],
+        "executable": {
+          "command": "node",
+          "args": ["scripts/release/docs-skills-gate.mjs"]
+        },
+        "skip_policy": "forbidden"
+      },
       {
         "id": "static-quality-gate",
-        "gates": ["static-quality", "tracker-context-quality"]
+        "gates": ["static-quality", "tracker-context-quality"],
+        "executable": { "command": "pnpm", "args": ["quality:static"] },
+        "skip_policy": "forbidden"
       },
-      { "id": "context-entitlement-gate", "gates": ["context-retrieval"] },
-      { "id": "coverage", "gates": ["test-coverage"] },
-      { "id": "version-policy", "gates": ["release-integrity"] },
-      { "id": "secret-scan", "gates": ["security"] },
-      { "id": "npx-smoke", "gates": ["package-consumer"] },
+      {
+        "id": "context-entitlement-gate",
+        "gates": ["context-retrieval"],
+        "executable": {
+          "command": "pnpm",
+          "args": ["quality:context-eval"]
+        },
+        "skip_policy": "forbidden"
+      },
+      {
+        "id": "coverage",
+        "gates": ["test-coverage"],
+        "executable": {
+          "command": "pnpm",
+          "args": ["test:coverage"],
+          "env": { "PM_RUN_TESTS_SKIP_BUILD": "1" }
+        },
+        "skip_policy": "forbidden"
+      },
+      {
+        "id": "version-policy",
+        "gates": ["release-integrity"],
+        "executable": { "command": "pnpm", "args": ["version:check"] },
+        "skip_policy": "forbidden"
+      },
+      {
+        "id": "secret-scan",
+        "gates": ["security"],
+        "executable": { "command": "pnpm", "args": ["security:scan"] },
+        "skip_policy": "forbidden"
+      },
+      {
+        "id": "npx-smoke",
+        "gates": ["package-consumer"],
+        "executable": { "command": "pnpm", "args": ["smoke:npx"] },
+        "skip_policy": "forbidden"
+      },
       {
         "id": "package-first-dogfood",
         "gates": ["package-consumer"],
+        "executable": {
+          "command": "pnpm",
+          "args": ["dogfood:package-first"]
+        },
+        "skip_policy": "optional",
         "optional_flag": "--skip-dogfood"
       },
-      { "id": "npm-pack-dry-run", "gates": ["package-consumer"] },
+      {
+        "id": "npm-pack-dry-run",
+        "gates": ["package-consumer"],
+        "executable": {
+          "command": "npm",
+          "args": ["pack", "--dry-run", "--silent"]
+        },
+        "skip_policy": "forbidden"
+      },
       {
         "id": "compatibility-check",
         "gates": ["compatibility"],
+        "executable": {
+          "command": "node",
+          "args": ["scripts/release/compatibility-check.mjs", "--json"],
+          "capture_json": true
+        },
+        "skip_policy": "optional",
         "optional_flag": "--skip-compatibility"
       },
       {
         "id": "sentry-telemetry-gate",
         "gates": ["release-integrity"],
+        "executable": {
+          "command": "node",
+          "args": [
+            "scripts/release/sentry-telemetry-gate.mjs",
+            "--json",
+            "--telemetry-mode",
+            "{{telemetry_mode}}",
+            "--sentry-window-days",
+            "{{sentry_window_days}}",
+            "--max-critical",
+            "{{max_sentry_critical}}",
+            "--max-high",
+            "{{max_sentry_high}}",
+            "--max-telemetry-error-rate",
+            "{{max_telemetry_error_rate}}",
+            "--max-telemetry-missing-error-rows",
+            "{{max_telemetry_missing_error_rows}}"
+          ],
+          "capture_json": true
+        },
+        "skip_policy": "optional",
         "optional_flag": "--skip-telemetry-sentry"
       },
-      { "id": "hosted-analysis-gate", "gates": ["static-quality"] },
+      {
+        "id": "hosted-analysis-gate",
+        "gates": ["static-quality"],
+        "executable": {
+          "command": "node",
+          "args": ["scripts/release/hosted-analysis-gate.mjs", "--json"],
+          "capture_json": true,
+          "env": { "GH_TOKEN": "{{release_policy_token}}" }
+        },
+        "skip_policy": "forbidden"
+      },
       {
         "id": "greptile-review",
         "gates": ["static-quality"],
+        "executable": {
+          "command": "node",
+          "args": ["scripts/release/greptile-review-gate.mjs", "--json"],
+          "capture_json": true
+        },
+        "skip_policy": "optional",
         "optional_flag": "--skip-greptile"
       }
     ],

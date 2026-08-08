@@ -40,7 +40,7 @@ const WORKSPACE_WRITER_LOCK_ID = "sdk-workspace-transaction";
 const SNAPSHOT_HOST_FAULT_CODES = {
   capacity: { code: "workspace_snapshot_storage_exhausted" },
   permission: { code: "workspace_snapshot_permission_denied" },
-  resource: { code: "workspace_snapshot_storage_exhausted" },
+  resource: { code: "workspace_snapshot_resource_exhausted" },
 } as const;
 
 /** Filesystem operations required by atomic snapshot publish and restore swaps. */

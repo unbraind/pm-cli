@@ -45,7 +45,14 @@ function registry() {
     version: 1,
     local_preflight: {
       command: "pnpm verify:preflight",
-      steps: [{ id: "quality", gates: ["quality"] }],
+      steps: [
+        {
+          id: "quality",
+          gates: ["quality"],
+          executable: { command: "pnpm", args: ["quality:static"] },
+          skip_policy: "forbidden",
+        },
+      ],
       hosted_only: [],
     },
     gates: [
@@ -171,6 +178,16 @@ describe("gate registry", () => {
     });
     await expect(
       validateGateRegistry(invalidStep, { repoRoot: root }),
+    ).resolves.toContain("local_preflight:step_invalid");
+
+    const invalidExecutable = registry();
+    invalidExecutable.local_preflight.steps[0].executable = {
+      command: "shell",
+      args: [],
+    };
+    invalidExecutable.local_preflight.steps[0].skip_policy = "optional";
+    await expect(
+      validateGateRegistry(invalidExecutable, { repoRoot: root }),
     ).resolves.toContain("local_preflight:step_invalid");
 
     const hostedOnly = registry();

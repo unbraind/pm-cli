@@ -1,12 +1,12 @@
 id: pm-ei6x66
-title: "Local and hosted verification are two independently maintained gate sets with no parity contract, so passing everything locally still says nothing about what CI will run"
+title: One governed verification plan now drives local preflight and maps hosted release gates
 description: "The local composite runs thirteen checks: build, typecheck, docs-skills, static-quality, coverage, version-policy, secret-scan, npx-smoke, package-first dogfood, pack dry run, compatibility, telemetry, hosted-analysis, and a review gate. The hosted gates job runs a different set, including checks the local composite never runs — tracker merge-safety, the required context-relevance evaluation, the search-eval harness, plugin smokes — alongside separate jobs for coverage sharding, Windows regression, code scanning, benchmarks, security, and docs. The two sets also diverge in the other direction, because the local composite runs review and telemetry gates that the pull-request pipeline does not. Neither set is derived from the other and nothing compares them, so the honest answer to what do I have to run before pushing is unknown to a contributor and to an agent. The consequence is not a missing gate but an unmeasured one: divergence grows silently, and every gate added to one side is a coin flip on whether it reaches the other."
 type: Task
 status: closed
 priority: 2
 tags[6]: ci,developer-experience,gates,governance,quality,verification
 created_at: "2026-07-26T10:47:54.428Z"
-updated_at: "2026-08-08T11:22:35.340Z"
+updated_at: "2026-08-08T11:48:12.666Z"
 closed_at: "2026-08-08T10:32:56.328Z"
 completed_at: "2026-08-08T10:32:56.328Z"
 author: "harness:claude-code"

@@ -8,8 +8,10 @@ import {
   formatPmCliErrorForDisplay,
   formatPmCliErrorForJson,
 } from "./error-guidance.js";
-import { assertProjectRuntimeCompatibility } from "../sdk/environment/project-runtime-compatibility.js";
-import { PmCliError } from "../sdk/runtime-primitives.js";
+import {
+  assertProjectRuntimeCompatibility,
+  PmCliError,
+} from "../sdk/environment/project-runtime-compatibility.js";
 
 /** Options for one early CLI compatibility check and deferred dispatch. */
 export interface RuntimeCompatibleCliOptions {
@@ -46,6 +48,7 @@ export async function runRuntimeCompatibleCli(
     const outputFormatIndex = options.argv.indexOf("--output-format");
     const jsonErrors =
       options.argv.includes("--json") ||
+      options.argv.includes("--output-format=json") ||
       (outputFormatIndex >= 0 &&
         options.argv[outputFormatIndex + 1] === "json");
     options.writeError(

@@ -177,6 +177,43 @@ async function validateClaim(claim, root, ids, violations) {
   }
 }
 
+/** Validate one registry-owned executable without permitting arbitrary programs. */
+function validLocalExecutable(executable) {
+  return (
+    typeof executable === "object" &&
+    executable !== null &&
+    ["node", "npm", "pnpm"].includes(executable.command) &&
+    Array.isArray(executable.args) &&
+    executable.args.length > 0 &&
+    executable.args.every(
+      (argument) =>
+        typeof argument === "string" &&
+        argument.length > 0 &&
+        !argument.match(/\{\{[^a-z0-9_]|[^a-z0-9_]\}\}/u),
+    ) &&
+    (executable.capture_json === undefined ||
+      typeof executable.capture_json === "boolean") &&
+    (executable.env === undefined ||
+      (typeof executable.env === "object" &&
+        executable.env !== null &&
+        !Array.isArray(executable.env) &&
+        Object.entries(executable.env).every(
+          ([key, value]) =>
+            /^[A-Z][A-Z0-9_]*$/u.test(key) && typeof value === "string",
+        )))
+  );
+}
+
+/** Validate whether one step forbids skips or names its sole explicit skip flag. */
+function validLocalSkipPolicy(step) {
+  return step?.skip_policy === "forbidden"
+      ? step.optional_flag === undefined
+      : step?.skip_policy === "optional" &&
+        typeof step.optional_flag === "string" &&
+        step.optional_flag.startsWith("--skip-");
+}
+
+/** Validate one ordered local-preflight step against gate and execution policy. */
 function validLocalPreflightStep(step, gateIds, stepIds) {
   return !(
     typeof step !== "object" ||
@@ -186,9 +223,8 @@ function validLocalPreflightStep(step, gateIds, stepIds) {
     !Array.isArray(step.gates) ||
     step.gates.length === 0 ||
     step.gates.some((gate) => !gateIds.has(gate)) ||
-    (step.optional_flag !== undefined &&
-      (typeof step.optional_flag !== "string" ||
-        !step.optional_flag.startsWith("--skip-")))
+    !validLocalExecutable(step.executable) ||
+    !validLocalSkipPolicy(step)
   );
 }
 

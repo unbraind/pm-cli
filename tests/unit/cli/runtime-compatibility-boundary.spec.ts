@@ -21,6 +21,7 @@ describe("CLI runtime compatibility boundary", () => {
   it.each([
     [["--json", "create"], true],
     [["--output-format", "json", "create"], true],
+    [["--output-format=json", "create"], true],
     [["create"], false],
   ] as const)("renders stale mutation recovery for %j", async (argv, json) => {
     const writeError = vi.fn();
@@ -66,6 +67,7 @@ describe("CLI runtime compatibility boundary", () => {
       }),
     ).resolves.toBeUndefined();
     expect(run).toHaveBeenCalledOnce();
+    expect(process.exitCode).toBeUndefined();
   });
 
   it("rethrows non-pm defects from deferred dispatch", async () => {

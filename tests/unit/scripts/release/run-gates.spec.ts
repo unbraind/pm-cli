@@ -6,7 +6,12 @@ const harness = createScriptHarness();
 
 interface GatePayload {
   ok: boolean;
-  checks: Array<{ name: string; ok: boolean; skipped?: boolean }>;
+  checks: Array<{
+    name: string;
+    status: "passed" | "skipped";
+    ok: boolean;
+    skipped?: boolean;
+  }>;
 }
 
 describe("scripts/release/run-gates", () => {
@@ -61,6 +66,11 @@ describe("scripts/release/run-gates", () => {
         (entry) =>
           entry.name === "package-first-dogfood" && entry.skipped === true,
       ),
+    ).toBe(true);
+    expect(
+      payload.checks
+        .filter((entry) => entry.skipped === true)
+        .every((entry) => entry.status === "skipped" && entry.ok === false),
     ).toBe(true);
     expect(
       payload.checks.some(
@@ -360,10 +370,10 @@ describe("scripts/release/run-gates", () => {
     errorSpy.mockRestore();
   });
 
-  it("fails when the executed receipt drifts from the registry", async () => {
+  it("fails closed when the executable registry has no step array", async () => {
     vi.doMock("node:fs", () => ({
       readFileSync: () =>
-        JSON.stringify({ local_preflight: { steps: [{ id: "missing" }] } }),
+        JSON.stringify({ local_preflight: { steps: null } }),
     }));
     vi.doMock("node:child_process", () => ({
       spawnSync: (_command: string, args: string[]) => ({
@@ -388,7 +398,38 @@ describe("scripts/release/run-gates", () => {
       harness.importModule("scripts/release/run-gates.mjs", "receiptDrift"),
     ).rejects.toThrow("EXIT:1");
     expect(String(errorSpy.mock.calls.at(-1)?.[0])).toContain(
-      "Local preflight drifted",
+      "Local preflight registry has no steps",
+    );
+    exitSpy.mockRestore();
+  });
+
+  it("fails closed when an executable references an undeclared variable", async () => {
+    vi.doMock("node:fs", () => ({
+      readFileSync: () =>
+        JSON.stringify({
+          local_preflight: {
+            steps: [
+              {
+                id: "unknown-variable",
+                skip_policy: "forbidden",
+                executable: {
+                  command: "node",
+                  args: ["{{unknown_variable}}"],
+                },
+              },
+            ],
+          },
+        }),
+    }));
+    vi.doMock("node:child_process", () => ({ spawnSync: vi.fn() }));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const exitSpy = harness.mockProcessExit();
+    process.argv = ["node", "scripts/release/run-gates.mjs"];
+    await expect(
+      harness.importModule("scripts/release/run-gates.mjs", "unknownVariable"),
+    ).rejects.toThrow("EXIT:1");
+    expect(String(errorSpy.mock.calls.at(-1)?.[0])).toContain(
+      "Unknown gate variable: unknown_variable",
     );
     exitSpy.mockRestore();
   });

@@ -41,14 +41,12 @@ not be relabeled as environment faults.
 Existing SDK surfaces can supply category-specific `codes` to preserve their
 published error vocabulary while still sharing classification, path redaction,
 and recovery guidance. Workspace snapshots use this compatibility path for
-their stable `workspace_snapshot_storage_exhausted` and
-`workspace_snapshot_permission_denied` codes.
+their stable storage, resource, and permission fault codes.
 
 ## CLI refusal ownership
 
-`pnpm quality:surface-replication` inventories every CLI-owned `PmCliError` as
-a queryable rule coordinate. Each occurrence inherits a named PM owner,
-adapter-layer disposition, rationale, and exact count from
-`scripts/release/surface-replication-sets.json`. New, moved, or removed rules
-fail closed until the ownership decision is reviewed, while cross-transport
-refusals declare SDK, CLI, and test parity members.
+CLI adapters preserve SDK error codes, exit semantics, and actionable recovery
+guidance when presenting refusals as human-readable or structured output.
+Host-only validation remains at the transport boundary, while rules shared by
+packages and commands live in public SDK primitives so callers receive the
+same refusal contract regardless of entrypoint.

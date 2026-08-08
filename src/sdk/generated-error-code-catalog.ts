@@ -3216,6 +3216,19 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     aliases: [],
   },
   {
+    code: "workspace_snapshot_resource_exhausted",
+    meaning: "Workspace snapshot resource exhausted condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/workspace-snapshot.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "workspace_snapshot_resource_exhausted",
+    aliases: [],
+  },
+  {
     code: "workspace_snapshot_storage_exhausted",
     meaning: "Workspace snapshot storage exhausted condition.",
     stability: "provisional",

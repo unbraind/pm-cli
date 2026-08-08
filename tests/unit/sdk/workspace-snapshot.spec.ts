@@ -583,6 +583,18 @@ describe("workspace snapshots", () => {
     expect(exhausted.context.nextSteps?.length).toBeGreaterThan(0);
     expect(exhausted.context.recovery?.suggested_retry).toBe("pm gc --json");
 
+    const resourceExhausted = await withSnapshotFilesystemGuard(
+      "create_object",
+      async () => {
+        throw Object.assign(new Error("EMFILE: too many open files"), {
+          code: "EMFILE",
+        });
+      },
+    ).catch((error: unknown) => error as PmCliError);
+    expect(resourceExhausted.code).toBe(
+      "workspace_snapshot_resource_exhausted",
+    );
+
     const denied = await withSnapshotFilesystemGuard(
       "create_object",
       async () => {
