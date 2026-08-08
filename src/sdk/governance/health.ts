@@ -96,7 +96,10 @@ import {
   auditMergeDriverConfiguration,
   findGitWorkspaceRoot,
 } from "../merge/install.js";
-import { listMergeReceipts } from "../merge/receipts.js";
+import {
+  listMergeReceipts,
+  partitionMergeReceipts,
+} from "../merge/receipts.js";
 
 const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
@@ -620,7 +623,13 @@ async function buildIntegrityCheck(
       ? null
       : await auditMergeDriverConfiguration(gitWorkspaceRoot);
   const pendingMergeReceipts =
-    gitWorkspaceRoot === null ? [] : await listMergeReceipts(gitWorkspaceRoot);
+    gitWorkspaceRoot === null
+      ? []
+      : await listMergeReceipts(gitWorkspaceRoot, { includeLossless: true });
+  const {
+    pendingDecisions: pendingMergeDecisions,
+    lossless: losslessMergeReceipts,
+  } = partitionMergeReceipts(pendingMergeReceipts);
   const mergeDriverInstallationMissing =
     mergeDriverAudit?.status === "missing" &&
     mergeDriverAudit.missing_keys.length === 5 &&
@@ -661,8 +670,8 @@ async function buildIntegrityCheck(
           `merge_driver_configuration_${mergeDriverInstallationMissing ? "missing" : "drift"}:${mergeDriverAudit.missing_keys.length + mergeDriverAudit.drifted_keys.length}`,
         ]
       : []),
-    ...(pendingMergeReceipts.length > 0
-      ? [`merge_decisions_unreviewed:${pendingMergeReceipts.length}`]
+    ...(pendingMergeDecisions.length > 0
+      ? [`merge_decisions_unreviewed:${pendingMergeDecisions.length}`]
       : []),
   ];
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) =>
@@ -691,7 +700,8 @@ async function buildIntegrityCheck(
               ? 0
               : mergeDriverAudit.missing_keys.length +
                 mergeDriverAudit.drifted_keys.length,
-          pending_merge_decisions: pendingMergeReceipts.length,
+          pending_merge_decisions: pendingMergeDecisions.length,
+          lossless_merge_receipts: losslessMergeReceipts.length,
         },
         item_unreadable: itemScan.unreadable,
         item_conflict_markers: itemScan.conflictMarkers,
@@ -715,7 +725,10 @@ async function buildIntegrityCheck(
                 required: requireMergeDrivers,
               },
         pending_merge_decision_items: [
-          ...new Set(pendingMergeReceipts.map((receipt) => receipt.item_id)),
+          ...new Set(pendingMergeDecisions.map((receipt) => receipt.item_id)),
+        ].sort((left, right) => left.localeCompare(right)),
+        lossless_merge_receipt_items: [
+          ...new Set(losslessMergeReceipts.map((receipt) => receipt.item_id)),
         ].sort((left, right) => left.localeCompare(right)),
       },
     },
@@ -1148,8 +1161,7 @@ async function buildExtensionCheck(
         ...(migrationStatus.summary.pending_count > 0
           ? {
               remediation_map: {
-                extension_migration_pending:
-                  "pm extension migrate --project",
+                extension_migration_pending: "pm extension migrate --project",
               },
             }
           : {}),

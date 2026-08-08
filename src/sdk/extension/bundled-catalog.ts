@@ -260,6 +260,7 @@ function buildBundledCatalogLinks(
 function buildBundledCatalogPackageEntry(
   manifest: Awaited<ReturnType<typeof readPmPackageManifest>>,
   bundledEntry: BundledPackageEntry,
+  aliases: string[],
   scope: ExtensionScope,
   installedBuiltinAliases: Set<string>,
   installedLocations: Set<string>,
@@ -277,10 +278,11 @@ function buildBundledCatalogPackageEntry(
   );
   return {
     alias: bundledEntry.alias,
+    aliases,
     bundled: true,
     available: true,
     installed:
-      installedBuiltinAliases.has(bundledEntry.alias) ||
+      aliases.some((alias) => installedBuiltinAliases.has(alias)) ||
       installedLocations.has(path.resolve(bundledEntry.package_root)),
     install_target: bundledEntry.alias,
     install_command: `pm install ${bundledEntry.alias} ${installScopeFlag}`,
@@ -345,12 +347,24 @@ export async function buildBundledPackageCatalog(
   );
   const packages: Array<Record<string, unknown>> = [];
 
-  for (const bundledEntry of await collectBundledPackageEntries()) {
+  const bundledEntriesByRoot = new Map<string, BundledPackageEntry[]>();
+  for (const entry of await collectBundledPackageEntries()) {
+    const packageRoot = path.resolve(entry.package_root);
+    const groupedEntries = bundledEntriesByRoot.get(packageRoot) ?? [];
+    groupedEntries.push(entry);
+    bundledEntriesByRoot.set(packageRoot, groupedEntries);
+  }
+  for (const bundledEntries of bundledEntriesByRoot.values()) {
+    const bundledEntry = bundledEntries[0];
+    const aliases = bundledEntries
+      .map((entry) => entry.alias)
+      .sort((left, right) => left.localeCompare(right));
     const manifest = await readPmPackageManifest(bundledEntry.package_root);
     packages.push(
       buildBundledCatalogPackageEntry(
         manifest,
         bundledEntry,
+        aliases,
         scope,
         installedBuiltinAliases,
         installedLocations,
@@ -375,6 +389,7 @@ export async function buildBundledPackageCatalog(
 
 const PACKAGE_CATALOG_FIELD_KEYS = new Set([
   "alias",
+  "aliases",
   "bundled",
   "available",
   "installed",

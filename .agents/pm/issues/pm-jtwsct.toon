@@ -2,11 +2,13 @@ id: pm-jtwsct
 title: "GH-920: health conflates lossless merge receipts with discarded-value decisions"
 description: "health counts every pending merge receipt as a blocking merge decision even when the field-aware merge preserved both agents' changes, training agents to clear the same signal that protects against genuine data loss."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:39.644Z"
-updated_at: "2026-08-07T08:47:22.284Z"
+updated_at: "2026-08-08T17:41:08.981Z"
+closed_at: "2026-08-08T17:41:08.555Z"
+completed_at: "2026-08-08T17:41:08.555Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: Health reports lossless reconciliation receipts separately from decisions that discard a competing value; severity and recovery guidance are derived from the receipt semantics rather than filename or authoring path; paired merge fixtures and fresh-clone validation prove both classes without weakening history checks
@@ -14,8 +16,9 @@ parent: pm-doxj
 risk: high
 confidence: high
 severity: high
+resolution: fixed
 expected_result: "Strict health blocks on discarded-value decisions, reports lossless receipts separately, and names discarded fields so the signal is actionable."
-actual_result: Lossless and lossy receipts both increment pending_merge_decisions and fail strict health with no classification in the health envelope.
+actual_result: Health partitions merge receipts correctly and its no-provider regression proof now verifies the integrity check returns the expected ok status.
 affected_version: 2026.8.5
 component: merge health and receipt classification
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -23,7 +26,27 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-ysqb6n,related,"2026-08-07T08:33:39.644Z","harness:codex","cli:create:dep",detected
   pm-g5sx,discovered_from,"2026-08-07T08:34:28.760Z","harness:codex","cli:update:dep",detected
   pm-1j5j21,related,"2026-08-07T08:47:19.689Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-07T08:33:39.644Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/920. Duplicate check searched all 2,351 items and every status for lossless merge receipts,pending decisions,strict health,discarded fields,and GH-920; no canonical issue existed."
   "2026-08-07T08:47:19.689Z","harness:codex","Governance repair: retained the companion lineage to pm-1j5j21 as related, without asserting the blocks spelling that pm-jkbqt8 proves is currently invisible to readiness and governed by a non-growth ratchet."
+  "2026-08-08T16:46:58.515Z","harness:codex","Verification evidence (2026-08-08): full release pipeline reached the pre-commit hosted-review boundary after all local gates passed. Exact coverage: 460 files, 7072 tests, statements 50283/50283, branches 36738/36738, functions 10330/10330, lines 48684/48684. Static quality/docstrings, docs/skills, SDK surface, package boundary/parity, token/context/retrieval/tracker/security/version, packed npx (13 packages), and 88-command temporary package-first dogfood all passed. Manual packed external acceptance also passed all-status duplicates, 13 unique package rows with aliases, SDK direction-independent merge, package-manage output resolution, merge install, and health classification. The remaining greptile gate refusal is expected before a reviewable commit: no committed code changes to review against main."
+  "2026-08-08T17:27:23.254Z","harness:codex","Review feedback: CodeRabbit correctly noted the health vector-boundary test proves the integrity check exists but not that its contract is healthy. Reopened the canonical health-classification item to assert the expected ok status."
+  "2026-08-08T17:41:05.315Z","harness:codex","Review fix evidence: the no-provider health boundary now asserts the integrity check is present and status=ok, preserving both the execution boundary and health contract. Linked health tests pass; full suite is exact 100/100/100/100."
+learnings[1]{created_at,author,text}:
+  "2026-08-08T16:49:47.440Z","harness:codex",Operational health must preserve clean merge provenance without converting every successful merge receipt into a blocking decision.
+files[5]{path,scope,note}:
+  src/sdk/governance/health.ts,project,health decision and provenance counts
+  src/sdk/governance/validate.ts,project,validation decision and provenance counts
+  src/sdk/merge/receipts.ts,project,lossless receipt classification primitive
+  tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Acceptance coverage for lossless versus lossy receipt health
+  tests/unit/sdk/merge-receipt-classification.spec.ts,project,Unit coverage for shared receipt classification
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts tests/unit/sdk/merge-receipt-classification.spec.ts tests/unit/sdk/merge-receipts.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-vector-boundary.spec.ts,project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msklxibg-wg7w13,test,passed,"2026-08-08T16:47:44.672Z","2026-08-08T16:47:54.364Z","2026-08-08T16:47:54.364Z",1,0,0
+  test-local-mskntl2r-2o71xv,test,passed,"2026-08-08T17:40:32.654Z","2026-08-08T17:40:50.547Z","2026-08-08T17:40:50.547Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,receipt classification and severity
+close_reason: Health classification and integrity status contract verified after CodeRabbit review.
 body: ""

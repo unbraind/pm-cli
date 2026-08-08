@@ -378,7 +378,9 @@ try {
   assert(installAll?.details?.installed_all === true, "install all did not report installed_all=true");
   const packageCatalog = run("package catalog", ["package", "catalog", "--project"]);
   assert(packageCatalog?.details?.total >= 8, "package catalog did not list all bundled first-party packages");
-  const packageAliases = new Set((packageCatalog?.details?.packages ?? []).map((entry) => entry.alias));
+  const packageAliases = new Set(
+    (packageCatalog?.details?.packages ?? []).flatMap((entry) => entry.aliases ?? [entry.alias]),
+  );
   for (const alias of [
     "beads",
     "calendar",

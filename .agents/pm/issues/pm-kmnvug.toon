@@ -1,0 +1,36 @@
+id: pm-kmnvug
+title: Surface replication gate activates unrelated sets through shared required members
+description: "Changing a shared documentation or test member activates every replication set that requires it, even when none of that set's explicit trigger files changed. This forces unrelated source churn and defeats the distinction between triggers and required changed members."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-08-08T16:08:23.450Z"
+updated_at: "2026-08-08T16:50:20.983Z"
+closed_at: "2026-08-08T16:50:09.771Z"
+completed_at: "2026-08-08T16:50:09.771Z"
+author: "harness:codex"
+estimated_minutes: 2
+acceptance_criteria: Only declared trigger files activate a replication set;Once activated every required changed member is still enforced;Regression test proves shared non-trigger members do not activate unrelated sets
+parent: pm-doxj
+resolution: fixed
+expected_result: "Only explicitly declared trigger files activate a replication set; after activation, every required member remains mandatory and shared non-trigger files cannot activate unrelated sets."
+actual_result: "The surface-replication gate now activates a contract set only through explicit trigger files; once active it still enforces every required member, preventing unrelated shared members from creating false activation failures."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0xmajx,implements,"2026-08-08T16:12:24.563Z","harness:codex","cli:update:dep",detected
+  pm-7rrqsk,related,"2026-08-08T16:12:24.563Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-08T16:08:23.450Z","harness:codex","Duplicate check: searched all statuses for surface replication required member trigger activation shared member; no canonical item describes this false activation regression. Found while updating coupled read-output and health contracts in the 2026-08-08 SDK/CLI tranche."
+  "2026-08-08T16:47:00.333Z","harness:codex","Verification evidence (2026-08-08): full release pipeline reached the pre-commit hosted-review boundary after all local gates passed. Exact coverage: 460 files, 7072 tests, statements 50283/50283, branches 36738/36738, functions 10330/10330, lines 48684/48684. Static quality/docstrings, docs/skills, SDK surface, package boundary/parity, token/context/retrieval/tracker/security/version, packed npx (13 packages), and 88-command temporary package-first dogfood all passed. Manual packed external acceptance also passed all-status duplicates, 13 unique package rows with aliases, SDK direction-independent merge, package-manage output resolution, merge install, and health classification. The remaining greptile gate refusal is expected before a reviewable commit: no committed code changes to review against main."
+learnings[1]{created_at,author,text}:
+  "2026-08-08T16:49:51.157Z","harness:codex",A cross-surface gate needs separate activation triggers and required members; treating shared required files as triggers couples unrelated change sets and creates false failures.
+files[1]{path,scope,note}:
+  scripts/release/surface-replication-gate.mjs,project,Fix replication-set activation to honor declared triggers
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/surface-replication-gate.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msklyjwk-fcrl3p,test,passed,"2026-08-08T16:48:35.642Z","2026-08-08T16:48:43.076Z","2026-08-08T16:48:43.076Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY.md,project,Documents coupled read and health integrity contracts exercising gate trigger semantics
+close_reason: Separated replication-gate triggers from required members and proved false activation cannot recur.
+body: ""

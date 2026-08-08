@@ -3632,13 +3632,14 @@ describe("extension command runtime", () => {
       const beforeInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
       expect(beforeInstall.action).toBe("catalog");
       expect(beforeInstall.details).toMatchObject({
-        total: 15,
+        total: 13,
         scope: "project",
         installable_resource_kinds: ["extensions"],
         metadata_only_resource_kinds: ["docs", "examples", "assets", "prompts"],
         packages: [
           {
             alias: "audit",
+            aliases: ["audit", "governance-audit"],
             available: true,
             installed: false,
             package_name: "@unbrained/pm-governance-audit",
@@ -3686,22 +3687,13 @@ describe("extension command runtime", () => {
           },
           {
             alias: "digital-twin",
+            aliases: ["digital-twin", "twin"],
             available: true,
             installed: false,
             package_name: "@unbrained/pm-digital-twin",
             catalog: {
               display_name: "Digital Twin SDK Exemplar",
               category: "sdk",
-            },
-          },
-          {
-            alias: "governance-audit",
-            available: true,
-            installed: false,
-            package_name: "@unbrained/pm-governance-audit",
-            catalog: {
-              display_name: "Governance Audit",
-              category: "governance",
             },
           },
           {
@@ -3775,16 +3767,6 @@ describe("extension command runtime", () => {
             },
           },
           {
-            alias: "twin",
-            available: true,
-            installed: false,
-            package_name: "@unbrained/pm-digital-twin",
-            catalog: {
-              display_name: "Digital Twin SDK Exemplar",
-              category: "sdk",
-            },
-          },
-          {
             alias: "vcs-exemplar",
             available: true,
             installed: false,
@@ -3837,14 +3819,14 @@ describe("extension command runtime", () => {
       const packages =
         (
           afterInstall.details as {
-            packages?: Array<{ alias?: string; installed?: boolean }>;
+            packages?: Array<{ alias?: string; aliases?: string[]; installed?: boolean }>;
           }
         ).packages ?? [];
       expect(packages.find((entry) => entry.alias === "todos")?.installed).toBe(true);
       expect(packages.find((entry) => entry.alias === "beads")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "calendar")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "command-kit")?.installed).toBe(false);
-      expect(packages.find((entry) => entry.alias === "governance-audit")?.installed).toBe(false);
+      expect(packages.find((entry) => entry.aliases?.includes("governance-audit"))?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "guide-shell")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "lifecycle-hooks")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "linked-test-adapters")?.installed).toBe(false);

@@ -47,9 +47,12 @@ describe("health vector provider boundary", () => {
       try {
         const result = await runHealth(
           { path: context.pmPath },
-          { skipIntegrity: true, skipDrift: true },
+          { skipDrift: true },
         );
         expect(requests).toBe(0);
+        expect(
+          result.checks.find((check) => check.name === "integrity"),
+        ).toMatchObject({ name: "integrity", status: "ok" });
         expect(
           result.checks.find((check) => check.name === "vectorization")
             ?.details,

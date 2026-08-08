@@ -923,7 +923,10 @@ function nextActionsFor(planId: string, plan: PlanResultPlan): string[] {
   }
   if (
     plan.steps_summary.completed === plan.steps_summary.total &&
-    plan.steps_summary.total > 0
+    plan.steps_summary.total > 0 &&
+    !isTerminalPlanMode(plan.mode) &&
+    plan.status !== "closed" &&
+    plan.status !== "canceled"
   ) {
     tips.push(`pm close ${planId} "plan complete"`);
   }

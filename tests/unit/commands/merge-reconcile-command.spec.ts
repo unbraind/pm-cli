@@ -2,7 +2,10 @@ import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import type { MergeReconcileResult } from "../../../src/sdk/merge/reconcile.js";
+import {
+  runMergeReconcile,
+  type MergeReconcileResult,
+} from "../../../src/sdk/merge/reconcile.js";
 import { writeMergeReceipt } from "../../../src/sdk/merge/receipts.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -268,10 +271,38 @@ describe("merge reconcile command", () => {
         },
       });
 
-      const reconciled = context.runCli(["merge", "reconcile", "--json"], {
+      const originalCwd = process.cwd();
+      process.chdir(context.tempRoot);
+      try {
+        await expect(
+          runMergeReconcile({ dryRun: false }, { path: context.pmPath }),
+        ).rejects.toMatchObject({
+          exitCode: 4,
+          context: {
+            code: "merge_reconcile_discards_require_acceptance",
+            nextSteps: [expect.stringContaining(receipt!.id)],
+          },
+        });
+      } finally {
+        process.chdir(originalCwd);
+      }
+
+      const refused = context.runCli(["merge", "reconcile", "--json"], {
         expectJson: true,
         cwd: context.tempRoot,
       });
+      expect(refused.code).toBe(4);
+      expect(`${refused.stdout}\n${refused.stderr}`).toContain(
+        "merge_reconcile_discards_require_acceptance",
+      );
+
+      const reconciled = context.runCli(
+        ["merge", "reconcile", "--force", "--json"],
+        {
+          expectJson: true,
+          cwd: context.tempRoot,
+        },
+      );
       expect(
         reconciled.code,
         `${reconciled.stdout}\n${reconciled.stderr}`,

@@ -88,7 +88,10 @@ import {
   findGitWorkspaceRoot,
   resolveProjectMergeTypeFolders,
 } from "../merge/install.js";
-import { listMergeReceipts } from "../merge/receipts.js";
+import {
+  listMergeReceipts,
+  partitionMergeReceipts,
+} from "../merge/receipts.js";
 import { scanStorageIntegrity } from "./storage-integrity.js";
 import { scanTrackedRuntimeCache } from "./tracked-runtime-cache.js";
 import { scanHistoryAuthorAttribution } from "../author-attribution.js";
@@ -1613,11 +1616,11 @@ function buildLifecycleDependencyGraph(
   );
   return new Map(
     sortedItems.map((item) => {
-    const edges = new Set<string>();
-    const blockedBy = toMeaningfulString(item.blocked_by);
-    if (blockedBy && activeItemIds.has(blockedBy)) {
-      edges.add(blockedBy);
-    }
+      const edges = new Set<string>();
+      const blockedBy = toMeaningfulString(item.blocked_by);
+      if (blockedBy && activeItemIds.has(blockedBy)) {
+        edges.add(blockedBy);
+      }
       (item.dependencies ?? [])
         .filter((dependency) => {
           const dependencyKind = toMeaningfulString(dependency.kind);
@@ -1632,7 +1635,7 @@ function buildLifecycleDependencyGraph(
             dependencyId !== undefined && activeItemIds.has(dependencyId),
         )
         .forEach((dependencyId) => edges.add(dependencyId));
-    const definitionOfReady = toMeaningfulString(item.definition_of_ready);
+      const definitionOfReady = toMeaningfulString(item.definition_of_ready);
       extractItemIds(definitionOfReady ?? "", idPrefix)
         .filter((referencedId) => activeItemIds.has(referencedId))
         .forEach((referencedId) => edges.add(referencedId));
@@ -2419,26 +2422,26 @@ async function collectLinkedPathScanState(
     })),
   ]);
   for (const { item, artifact, link_kind } of linkedArtifacts) {
-        if (artifact.scope !== "project") {
-          continue;
-        }
-        if (isRemoteLinkedArtifactReference(artifact.path)) {
-          state.remoteLinkedPaths.add(artifact.path.trim());
-          continue;
-        }
-        const normalizedPath = normalizeRelativePath(artifact.path);
-        if (normalizedPath.length === 0) {
-          continue;
-        }
-        state.linkedProjectPaths.add(normalizedPath);
-        if (await linkedArtifactIsMissing(workspaceRoot, artifact.path)) {
-          state.missingLinkedPaths.push(normalizedPath);
-          state.staleLinkRows.push({
-            item_id: item.id,
-            path: normalizedPath,
-            link_kind,
-          });
-        }
+    if (artifact.scope !== "project") {
+      continue;
+    }
+    if (isRemoteLinkedArtifactReference(artifact.path)) {
+      state.remoteLinkedPaths.add(artifact.path.trim());
+      continue;
+    }
+    const normalizedPath = normalizeRelativePath(artifact.path);
+    if (normalizedPath.length === 0) {
+      continue;
+    }
+    state.linkedProjectPaths.add(normalizedPath);
+    if (await linkedArtifactIsMissing(workspaceRoot, artifact.path)) {
+      state.missingLinkedPaths.push(normalizedPath);
+      state.staleLinkRows.push({
+        item_id: item.id,
+        path: normalizedPath,
+        link_kind,
+      });
+    }
   }
   return state;
 }
@@ -2937,33 +2940,33 @@ function buildCommandReferencesCheck(
     (item.tests ?? []).map((linkedTest) => ({ item, linkedTest })),
   );
   for (const { item, linkedTest } of linkedTests) {
-      if (
-        typeof linkedTest.command !== "string" ||
-        linkedTest.command.trim().length === 0
-      ) {
-        continue;
+    if (
+      typeof linkedTest.command !== "string" ||
+      linkedTest.command.trim().length === 0
+    ) {
+      continue;
+    }
+    linkedCommandsScanned += 1;
+    const referencedIds = extractReferencedPmItemIdsFromCommand(
+      linkedTest.command,
+      idPrefix,
+    );
+    if (referencedIds.length === 0) {
+      continue;
+    }
+    referencedPmIdCount += referencedIds.length;
+    for (const referencedId of referencedIds) {
+      referencedPmIds.add(referencedId);
+      if (!knownIds.has(referencedId.toLowerCase())) {
+        staleReferenceRows.push(
+          summarizeCommandReferenceRow(
+            item.id,
+            referencedId,
+            linkedTest.command,
+          ),
+        );
       }
-      linkedCommandsScanned += 1;
-      const referencedIds = extractReferencedPmItemIdsFromCommand(
-        linkedTest.command,
-        idPrefix,
-      );
-      if (referencedIds.length === 0) {
-        continue;
-      }
-      referencedPmIdCount += referencedIds.length;
-      for (const referencedId of referencedIds) {
-        referencedPmIds.add(referencedId);
-        if (!knownIds.has(referencedId.toLowerCase())) {
-          staleReferenceRows.push(
-            summarizeCommandReferenceRow(
-              item.id,
-              referencedId,
-              linkedTest.command,
-            ),
-          );
-        }
-      }
+    }
   }
 
   const uniqueStaleReferenceRows = [...new Set(staleReferenceRows)].sort(
@@ -3136,15 +3139,19 @@ async function applyValidateFixes(
   const failed: Array<{ fix: ValidateFixRecord; error: unknown }> = [];
   const pruneBatches = new Map<string, ValidateFixRecord[]>();
 
-  for (const fix of applicable.filter((candidate) => pruneBatchKey(candidate) === null)) {
-      try {
-        await applyValidateFix(fix, global, services);
-        applied.push(fix);
-      } catch (error) {
-        failed.push({ fix, error });
-      }
+  for (const fix of applicable.filter(
+    (candidate) => pruneBatchKey(candidate) === null,
+  )) {
+    try {
+      await applyValidateFix(fix, global, services);
+      applied.push(fix);
+    } catch (error) {
+      failed.push({ fix, error });
+    }
   }
-  for (const fix of applicable.filter((candidate) => pruneBatchKey(candidate) !== null)) {
+  for (const fix of applicable.filter(
+    (candidate) => pruneBatchKey(candidate) !== null,
+  )) {
     const batchKey = pruneBatchKey(fix)!;
     const existing = pruneBatches.get(batchKey);
     if (existing) {
@@ -3310,10 +3317,14 @@ async function buildStorageIntegrityCheck(
   const pendingMergeReceipts =
     gitWorkspaceRoot === null
       ? []
-      : await listMergeReceipts(gitWorkspaceRoot);
-  if (pendingMergeReceipts.length > 0) {
+      : await listMergeReceipts(gitWorkspaceRoot, { includeLossless: true });
+  const {
+    pendingDecisions: pendingMergeDecisions,
+    lossless: losslessMergeReceipts,
+  } = partitionMergeReceipts(pendingMergeReceipts);
+  if (pendingMergeDecisions.length > 0) {
     warnings.push(
-      `validate_merge_decisions_unreviewed:${pendingMergeReceipts.length}`,
+      `validate_merge_decisions_unreviewed:${pendingMergeDecisions.length}`,
     );
   }
   return {
@@ -3327,9 +3338,13 @@ async function buildStorageIntegrityCheck(
         ...scan,
         merge_fence: fenceAudit,
         merge_driver_configuration: mergeDriverAudit,
-        pending_merge_decision_count: pendingMergeReceipts.length,
+        pending_merge_decision_count: pendingMergeDecisions.length,
         pending_merge_decision_items: [
-          ...new Set(pendingMergeReceipts.map((receipt) => receipt.item_id)),
+          ...new Set(pendingMergeDecisions.map((receipt) => receipt.item_id)),
+        ].sort((left, right) => left.localeCompare(right)),
+        lossless_merge_receipt_count: losslessMergeReceipts.length,
+        lossless_merge_receipt_items: [
+          ...new Set(losslessMergeReceipts.map((receipt) => receipt.item_id)),
         ].sort((left, right) => left.localeCompare(right)),
         tracked_runtime_cache: {
           tracker_relative_root: trackedRuntimeCache.tracker_relative_root,

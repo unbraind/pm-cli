@@ -189,6 +189,7 @@ Use these defaults unless the task requires otherwise:
 - `pm validate --check-resolution --check-history-drift` before closing broad work.
 - `pm history-redact <id> --dry-run` before rewriting sensitive history payloads, then rerun without `--dry-run` once scope is confirmed.
 - `pm history-repair <id> --dry-run` when `pm health` or `pm validate --check-history-drift` report drifted streams; it re-anchors the hash chain and reconciles with the on-disk item without touching item content. Rerun without `--dry-run` to apply.
+- `pm merge reconcile --dry-run --json` after a branch merge that touched tracker data. Review every discarded-value receipt before applying; a lossy reconciliation requires the explicit `--force` acceptance flag. `history-repair` alone does not settle merge receipts.
 - `pm schema list` and `pm schema show <Type>` before creating custom-domain work; they show built-in, persisted custom, and extension-provided item types without reading schema files by hand.
 - `pm schema add-type <Name>` when `pm create`/`pm update` reject a project-specific type as invalid; it registers the type in `.agents/pm/schema/types.json` so `pm create <Name> "..."` works. Built-in types are reserved; the upsert is idempotent. `pm schema remove-type <Name>` removes a custom type (warns, non-blocking, if items still use it).
 - `pm schema add-status <id> --role <role>` / `pm schema remove-status <id>` manage custom lifecycle statuses in `.agents/pm/schema/statuses.json`; roles come from the runtime status-role vocabulary, the upsert is idempotent, and built-in default statuses cannot be removed. `pm schema list` now reports statuses (builtin vs custom) alongside types.
@@ -204,7 +205,7 @@ Use these defaults unless the task requires otherwise:
 Concurrent agents work on ordinary Git branches/worktrees; tracker artifacts need the semantic merge contract from [Merge Safety](MERGE_SAFETY.md). The short loop:
 
 - After a fresh clone or new worktree, run `pm merge install` once so the field-aware merge drivers back the committed `.gitattributes` fence.
-- After every merge that touches `.agents/pm`, run `pm validate --check-storage-integrity` and `pm history --verify --strict-exit`; follow the remediation output (`pm history-repair` wiring included).
+- After every merge that touches `.agents/pm`, run `pm merge reconcile --dry-run --json`, review the receipt classification, then apply `pm merge reconcile`. Add `--force` only after explicitly accepting or re-applying every discarded scalar value. Finish with `pm validate --check-storage-integrity` and `pm history --verify --strict-exit`.
 - Repositories fanning out many branches between merges should raise id entropy: `pm config project set ids_token_length 6`.
 - Use `--add-ac`/`--remove-ac` (not `--ac`) so concurrent acceptance-criteria edits merge instead of clobbering.
 

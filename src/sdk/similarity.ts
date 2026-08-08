@@ -7,6 +7,8 @@
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
+import { normalizeStatusInput } from "../core/item/status.js";
+import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { listAllItemMetadataLight } from "../core/store/item-store.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
@@ -132,6 +134,11 @@ export interface DuplicateClustersResult {
   threshold: number;
   /** Retrieval path used for this whole-workspace sweep. */
   source: "metadata_scan";
+  /** Effective lifecycle filter; null means the complete all-status corpus. */
+  filters: {
+    statuses: string[] | null;
+    since: string | null;
+  };
   /** Work performed after the single metadata read. */
   cost: {
     /** Items retained after filters. */
@@ -224,29 +231,64 @@ function validateDuplicateClusterOptions(
 async function loadPreparedDuplicateItems(
   options: FindDuplicateClustersOptions,
   since: Date | undefined,
-): Promise<PreparedDuplicateItem[]> {
+): Promise<{
+  items: PreparedDuplicateItem[];
+  statuses: string[] | undefined;
+}> {
   const pmRoot = resolvePmRoot(options.cwd ?? process.cwd(), options.pmRoot);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings);
-  const allowedStatuses = options.statuses
-    ? new Set(options.statuses.map((status) => status.trim()).filter(Boolean))
+  const requestedStatuses = options.statuses
+    ?.map((status) => status.trim().toLowerCase())
+    .filter(Boolean);
+  if (options.statuses !== undefined && requestedStatuses?.length === 0) {
+    throw new PmCliError(
+      "Duplicate cluster statuses must include at least one lifecycle status or all.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const normalizedStatuses = requestedStatuses?.map((status) => {
+    if (status === "all") return status;
+    const normalized = normalizeStatusInput(status, statusRegistry);
+    if (!normalized) {
+      throw new PmCliError(
+        `Unknown duplicate-cluster status "${status}". Allowed: all, ${statusRegistry.definitions.map((entry) => entry.id).join(", ")}.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    return normalized;
+  });
+  const hasAll = normalizedStatuses?.includes("all") === true;
+  if (hasAll && normalizedStatuses?.some((status) => status !== "all")) {
+    throw new PmCliError(
+      'The "all" status cannot be combined with other statuses.',
+      EXIT_CODE.USAGE,
+    );
+  }
+  const effectiveStatuses = hasAll ? undefined : normalizedStatuses;
+  const allowedStatuses = effectiveStatuses
+    ? new Set(effectiveStatuses)
     : undefined;
-  return (
-    await listAllItemMetadataLight(
-      pmRoot,
-      settings.item_format,
-      typeRegistry.type_to_folder,
-      undefined,
-      settings.schema,
+  return {
+    items: (
+      await listAllItemMetadataLight(
+        pmRoot,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+        undefined,
+        settings.schema,
+      )
     )
-  )
-    .filter(
-      (item) =>
-        (!allowedStatuses || allowedStatuses.has(item.status)) &&
-        (!since || new Date(item.created_at).getTime() >= since.getTime()),
-    )
-    .sort((left, right) => left.id.localeCompare(right.id))
-    .map((item) => ({ item, prepared: prepareSimilarityText(item.title) }));
+      .filter(
+        (item) =>
+          (!allowedStatuses || allowedStatuses.has(item.status)) &&
+          (!since || new Date(item.created_at).getTime() >= since.getTime()),
+      )
+      .sort((left, right) => left.id.localeCompare(right.id))
+      .map((item) => ({ item, prepared: prepareSimilarityText(item.title) })),
+    statuses: effectiveStatuses,
+  };
 }
 
 function collectDuplicateCandidatePairs(
@@ -478,7 +520,7 @@ export async function findDuplicateClusters(
     limit: undefined,
   });
   const { limit, since } = validateDuplicateClusterOptions(options);
-  const items = await loadPreparedDuplicateItems(options, since);
+  const { items, statuses } = await loadPreparedDuplicateItems(options, since);
   const candidates = collectDuplicateCandidatePairs(items);
   const union = createDuplicateUnionFind(items.length);
   const matches = scoreDuplicateCandidates(items, candidates, threshold, union);
@@ -488,6 +530,10 @@ export async function findDuplicateClusters(
     count: clusters.length,
     threshold,
     source: "metadata_scan",
+    filters: {
+      statuses: statuses ?? null,
+      since: options.since ?? null,
+    },
     cost: {
       item_count: items.length,
       candidate_pairs: candidates.size,

@@ -48,12 +48,34 @@ describe("duplicates command integration", () => {
         },
       });
 
+      const explicitAllStatuses = context.runCli(
+        [
+          "duplicates",
+          "--json",
+          "--status",
+          "all",
+          "--threshold",
+          "1",
+          "--limit",
+          "5",
+        ],
+        { expectJson: true },
+      );
+      expect(explicitAllStatuses.code).toBe(0);
+      expect(explicitAllStatuses.json).toMatchObject({
+        count: 1,
+        filters: { statuses: null },
+        cost: {
+          item_count: allStatuses.json?.cost?.item_count,
+        },
+      });
+
       const filtered = context.runCli(
         [
           "duplicates",
           "--json",
           "--status",
-          "open,,closed",
+          " OPEN ,, CLOSED ",
           "--threshold",
           "1",
           "--since",
@@ -64,7 +86,35 @@ describe("duplicates command integration", () => {
         { expectJson: true },
       );
       expect(filtered.code).toBe(0);
-      expect(filtered.json).toMatchObject({ count: 1 });
+      expect(filtered.json).toMatchObject({
+        count: 1,
+        filters: { statuses: ["open", "closed"] },
+      });
+
+      const mixedAll = context.runCli(
+        ["duplicates", "--json", "--status", "all,open"],
+        { expectJson: true },
+      );
+      expect(mixedAll.code).toBe(2);
+      expect(mixedAll.stderr).toContain(
+        "cannot be combined with other statuses",
+      );
+
+      const mixedUnknown = context.runCli(
+        ["duplicates", "--json", "--status", "all,not-a-runtime-status"],
+        { expectJson: true },
+      );
+      expect(mixedUnknown.code).toBe(2);
+      expect(mixedUnknown.stderr).toContain("not-a-runtime-status");
+
+      const emptyStatuses = context.runCli(
+        ["duplicates", "--json", "--status", ","],
+        { expectJson: true },
+      );
+      expect(emptyStatuses.code).toBe(2);
+      expect(emptyStatuses.stderr).toContain(
+        "must include at least one lifecycle status or all",
+      );
 
       const invalid = context.runCli(
         ["duplicates", "--json", "--threshold", "2"],

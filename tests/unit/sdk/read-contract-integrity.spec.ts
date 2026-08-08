@@ -9,9 +9,26 @@ import {
   resolveUnknownAuthorAcknowledgmentSelector,
 } from "../../../src/sdk/author-attribution.js";
 import { _testOnlyHealthCommand } from "../../../src/sdk/governance/health.js";
-import { applyReadOutputDimensions } from "../../../src/sdk/read-output-contracts.js";
+import {
+  applyReadOutputDimensions,
+  PM_READ_OUTPUT_SURFACE_CONTRACTS,
+} from "../../../src/sdk/read-output-contracts.js";
 
 describe("SDK read contract integrity", () => {
+  it("declares package manage through the shared read-output registry", () => {
+    expect(
+      PM_READ_OUTPUT_SURFACE_CONTRACTS.find(
+        (contract) => contract.command === "package-manage",
+      ),
+    ).toMatchObject({
+      command: "package-manage",
+      dimensions: {
+        include: { canonical_option: "--output-include", applicable: true },
+        encoding: { canonical_option: "--output-format", applicable: true },
+      },
+    });
+  });
+
   it("projects the primary get entity with the same bare-field grammar as collections", () => {
     const projected = applyReadOutputDimensions(
       "get",

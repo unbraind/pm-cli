@@ -229,6 +229,18 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     summary:
       "Clone-local tracker runtime artifacts are committed. Run the exact tracked_runtime_cache.remediation_command from the integrity check, commit the index-only removals, and keep the managed .gitignore fence.",
   },
+  {
+    code: "merge_decisions_unreviewed",
+    command: "pm merge reconcile --dry-run",
+    summary:
+      "Review the pending merge receipts, re-apply any intended discarded values, then run pm merge reconcile; lossy receipts require explicit --force acceptance.",
+  },
+  {
+    code: "validate_merge_decisions_unreviewed",
+    command: "pm merge reconcile --dry-run",
+    summary:
+      "Review the pending merge receipts before reconciliation; history-repair alone does not settle them, and lossy receipts require explicit --force acceptance.",
+  },
   // --- pm health: history_drift ---
   // `pm health` rewrites these commands to `pm history-repair --all` in the
   // per-check remediation_map when more than one stream is drifted.

@@ -8,6 +8,8 @@
 // pulling structured context (subcommand, referenced item ids, runner) out of a
 // normalized command string. Kept in core so SDK governance and CLI test
 // execution share one dependency-direction-safe parser.
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 const PM_SUBCOMMANDS_WITH_ITEM_REFERENCE = new Set([
   "get",
@@ -285,16 +287,17 @@ export function splitNormalizedCommandSegments(
 /** Extract pm CLI arguments from one normalized shell-command segment. */
 export function extractPmInvocationArgsFromSegment(
   segment: string,
+  cwd = process.cwd(),
 ): string[] | null {
   const tokens = stripLeadingEnvAssignments(
     segment.split(" ").filter((token) => token.length > 0),
   );
   if (tokens.length === 0) return null;
   const [executable, ...args] = tokens;
-  if (isPmExecutableToken(executable) || isPmCliScriptToken(executable)) {
+  if (isPmExecutableToken(executable) || isPmCliScriptToken(executable, cwd)) {
     return args;
   }
-  if (executable === "node" && args[0] && isPmCliScriptToken(args[0])) {
+  if (executable === "node" && args[0] && isPmCliScriptToken(args[0], cwd)) {
     return args.slice(1);
   }
   const invocation =
@@ -436,12 +439,30 @@ export function isPmCliPackageToken(token: string): boolean {
 }
 
 /** Implements check whether pm cli script token for the public runtime surface of this module. */
-export function isPmCliScriptToken(token: string): boolean {
-  return (
-    token === "dist/cli.js" ||
-    token === "./dist/cli.js" ||
-    token.endsWith("/dist/cli.js")
-  );
+export function isPmCliScriptToken(
+  token: string,
+  cwd = process.cwd(),
+): boolean {
+  const normalized = token.replaceAll("\\", "/");
+  if (
+    normalized !== "dist/cli.js" &&
+    normalized !== "./dist/cli.js" &&
+    !normalized.endsWith("/dist/cli.js")
+  ) {
+    return false;
+  }
+  const scriptPath = path.resolve(cwd, token);
+  try {
+    const packageJson = JSON.parse(
+      readFileSync(
+        path.join(path.dirname(path.dirname(scriptPath)), "package.json"),
+        "utf8",
+      ),
+    ) as { name?: unknown };
+    return packageJson.name === "@unbrained/pm-cli";
+  } catch {
+    return false;
+  }
 }
 
 /** Implements parse npx command for the public runtime surface of this module. */

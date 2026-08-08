@@ -16,7 +16,8 @@ vi.mock("../../../src/sdk/history-repair.js", () => ({
 vi.mock("../../../src/sdk/governance/validate.js", () => ({
   runValidate: mocks.runValidate,
 }));
-vi.mock("../../../src/sdk/merge/receipts.js", () => ({
+vi.mock("../../../src/sdk/merge/receipts.js", async (importOriginal) => ({
+  ...(await importOriginal()),
   listMergeReceipts: mocks.listMergeReceipts,
   markMergeReceiptReconciled: mocks.markMergeReceiptReconciled,
   summarizeMergeReceipt: (receipt: { id: string; item_id: string }) => ({

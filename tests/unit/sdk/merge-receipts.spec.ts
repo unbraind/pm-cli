@@ -62,7 +62,7 @@ describe("clone-local merge decision receipts", () => {
     });
     const doubleQuotedReceipt = await writeMergeReceipt({
       cwd: workspace,
-      itemPath: "\".agents/pm/tasks/pm-double-quoted.toon\"",
+      itemPath: '".agents/pm/tasks/pm-double-quoted.toon"',
       preferred: "ours",
       fieldsFromTheirs: [],
       unionFields: [],
@@ -152,6 +152,7 @@ describe("clone-local merge decision receipts", () => {
       item_path: "tasks/pm-none.toon",
       item_id: "pm-none",
       preferred: "ours",
+      conflict_resolution: "preferred_side",
       fields_from_theirs: [],
       union_fields: [],
       decisions: [],
@@ -171,6 +172,25 @@ describe("clone-local merge decision receipts", () => {
       { cwd: workspace, encoding: "utf8" },
     ).trim();
     await mkdir(receiptDirectory, { recursive: true });
+    await writeFile(
+      path.join(receiptDirectory, "legacy.json"),
+      JSON.stringify({
+        version: 1,
+        id: "legacy",
+        item_path: ".agents/pm/tasks/pm-legacy.toon",
+        item_id: "pm-legacy",
+        preferred: "ours",
+        fields_from_theirs: [],
+        union_fields: [],
+        decisions: [],
+        state: "pending",
+        created_at: "2026-07-27T00:00:00.000Z",
+      }),
+      "utf8",
+    );
+    expect(await listMergeReceipts(workspace)).toMatchObject([
+      { id: "legacy", conflict_resolution: "preferred_side" },
+    ]);
     await rm(receiptDirectory, { recursive: true });
     await writeFile(
       path.join(workspace, ".git", "pm-merge-receipts"),
