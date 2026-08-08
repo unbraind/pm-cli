@@ -220,11 +220,17 @@ describe("project runtime compatibility", () => {
 
   it("enforces the packaged CLI boundary with machine-readable recovery", async () => {
     const root = await project();
+    const cliPath = path.resolve("dist/cli.js");
+    const version = spawnSync(process.execPath, [cliPath, "--version"], {
+      encoding: "utf8",
+    });
+    expect(version.status).toBe(0);
+    const executingVersion = version.stdout.trim();
+    expect(executingVersion).toMatch(/^\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?$/);
     await writeFile(
       path.join(root, "package.json"),
-      JSON.stringify({ devDependencies: { "@unbrained/pm-cli": "2026.8.9" } }),
+      JSON.stringify({ devDependencies: { "@unbrained/pm-cli": "2099.1.1" } }),
     );
-    const cliPath = path.resolve("dist/cli.js");
     const refused = spawnSync(
       process.execPath,
       [cliPath, "--json", "create", "Task", "stale runtime"],
@@ -243,7 +249,9 @@ describe("project runtime compatibility", () => {
     expect(help.status).toBe(0);
     expect(help.stdout).toContain("Create a new project management item");
     expect(help.stderr).toContain("project_runtime_stale_read");
-    expect(help.stderr).toContain("Running 2026.8.7; project pin 2026.8.9");
+    expect(help.stderr).toContain(
+      `Running ${executingVersion}; project pin 2099.1.1`,
+    );
   });
 
   it("ignores unreadable and unrelated manifests", async () => {

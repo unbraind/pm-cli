@@ -1,0 +1,44 @@
+id: pm-7ipajv
+title: Release candidate acceptance hard-codes the pre-bump CLI version and blocks the daily cut
+description: "The current-main Auto Release pipeline synchronizes package.json to the date-version candidate before running coverage. The packaged runtime-compatibility acceptance test asserts a literal prior CLI version in stderr, so correct candidate behavior fails the release gate after version synchronization."
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: acceptance,"area:release","area:sdk",ci,regression
+created_at: "2026-08-08T13:13:00.263Z"
+updated_at: "2026-08-08T13:30:47.375Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#311a8aed9ab7c477f6e67245"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: "The packaged test obtains the executing CLI version rather than embedding a date version; focused and exact 100/100/100/100 coverage gates pass; exact-head PR checks and reviews pass; one v2026.8.8 tag/package is published and verified through npm, npx, and bunx; the failed run and recovery are recorded on the release-health lineage"
+goal: project management = context management
+objective: Restore candidate-version-independent release acceptance without weakening the runtime warning contract
+value: Daily release gates validate behavior across version synchronization instead of encoding yesterday's package metadata
+why_now: The first post-merge release is blocked and no 2026.8.8 artifact exists
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: high
+environment: GitHub Actions Auto Release run 31258567364 on merged main 589b0d217
+repro_steps: Run the release pipeline after candidate version synchronization; coverage fails in tests/unit/sdk/project-runtime-compatibility.spec.ts because stderr reports Running 2026.8.8 while the assertion expects Running 2026.8.7.
+expected_result: Packaged acceptance derives the executing CLI version and remains valid before and after the date-version candidate bump; the guarded release completes exactly once.
+actual_result: "Auto Release run 31258567364 failed with one assertion after 7,061 passing tests; no tag or package was published."
+affected_version: 2026.8.8
+component: packaged SDK/CLI runtime compatibility acceptance
+regression: true
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1eted6,discovered_from,"2026-08-08T13:13:00.263Z","harness:codex","cli:create:dep",detected
+  pm-7zs0,verifies,"2026-08-08T13:13:00.263Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-08T13:13:00.263Z","harness:codex","Duplicate check: searched all statuses for packaged runtime compatibility, hard-coded CLI version, release candidate, and Auto Release. The permanent pm-7zs0 reminder owns recurring verification, pm-e70zh5 owns reliability-rate measurement, and closed pm-1eted6 owns the delivered feature; none owns this concrete candidate-version test regression. Source: https://github.com/unbraind/pm-cli/actions/runs/31258567364"
+  "2026-08-08T13:14:38.560Z","harness:codex","Implementation evidence: packaged acceptance now reads the executing dist CLI version, validates its date-version shape, pins the isolated project to 2099.1.1, and asserts the exact dynamic warning. Focused suite passes 65/65; build, typecheck, lint, and diff checks passed."
+  "2026-08-08T13:19:53.454Z","harness:codex","Exact local gate evidence: repository coverage passes 453 files and 7,062 tests at 50,234/50,234 statements, 36,694/36,694 branches, 10,317/10,317 functions, and 48,635/48,635 lines. This is the same post-version-sync gate stage that failed in Auto Release run 31258567364."
+  "2026-08-08T13:30:47.375Z","harness:codex","Exact-head PR evidence for #938 at 6c869387794a76c0d5afd6dcc21fe42b54ef17f1: every hosted check passed, including aggregate 100% coverage, four coverage shards, static/smoke/typecheck/compat gates, Linux/macOS/Windows runtime, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, CodeFactor, DeepScan, Codecov, and CodSpeed. CodeRabbit completed after one cooldown retry and reported no actionable comments; Sourcery review quota and Cubic were unavailable. Fresh inventory had zero review threads. Bot comments/review were individually reacted to and acknowledged."
+files[1]{path,scope,note}:
+  tests/unit/sdk/project-runtime-compatibility.spec.ts,project,Candidate-version-independent packaged acceptance
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/project-runtime-compatibility.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mskebt74-182nwm,test,passed,"2026-08-08T13:14:56.528Z","2026-08-08T13:15:04.720Z","2026-08-08T13:15:04.720Z",1,0,0
+body: ""
