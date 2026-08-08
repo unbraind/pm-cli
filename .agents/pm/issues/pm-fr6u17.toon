@@ -1,0 +1,31 @@
+id: pm-fr6u17
+title: "GH-937: package list exposes alias rows as packages and overstates the catalog total"
+description: "pm package list emits one row per resolvable alias while naming the collection and details.total as packages. Packages with multiple aliases therefore appear twice, inflate the catalog count, and invite agents to repeat installs."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:packages","area:sdk",contracts,counting
+created_at: "2026-08-08T14:06:01.280Z"
+updated_at: "2026-08-08T14:06:01.280Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: "Each package is represented once with a deterministic aliases collection, or the row kind and counts explicitly distinguish aliases from packages; SDK, CLI, JSON, TOON, and human outputs agree; agents can iterate packages without duplicate installs; temporary-workspace acceptance and exact coverage prove the contract"
+goal: project management = context management
+objective: Make package discovery semantically truthful and safe for agent iteration
+value: Package authors retain flexible aliases while consumers receive one unambiguous catalog cardinality
+why_now: GH-937 demonstrated generated consumers already repeat the inflated catalog count
+parent: pm-usfg
+risk: medium
+confidence: high
+severity: medium
+environment: pm CLI 2026.8.5 and current first-party package registry
+repro_steps: Initialize a temporary workspace and run pm package list --json; compare entries.length and distinct package_name count. The current catalog returns 15 rows for 13 packages because governance-audit and digital-twin each have two aliases.
+expected_result: "The package collection and total represent unique packages while preserving all resolvable aliases, or the contract explicitly names alias rows and separately reports alias_count and package_count."
+actual_result: The response reports details.total=15 and returns duplicate package rows for a 13-package catalog without disclosing alias indexing.
+component: package catalog SDK and CLI projection
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-59gj,related,"2026-08-08T14:06:01.280Z","harness:codex","cli:create:dep",detected
+  pm-x6jf,discovered_from,"2026-08-08T14:06:01.280Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-08T14:06:01.280Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/937. Duplicate check searched all statuses for alias-indexed package rows, duplicated packages, catalog totals, and package-list count semantics. Closed pm-59gj and pm-x6jf own the package/SDK foundations but not this projection defect; no canonical issue existed."
+body: ""

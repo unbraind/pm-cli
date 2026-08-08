@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Release candidate acceptance hard-codes the pre-bump CLI version and blocks the daily cut ([pm-7ipajv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7ipajv.toon))
+
 ## 2026.8.8 - 2026-08-08
 
 ### Added
