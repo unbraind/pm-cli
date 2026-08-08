@@ -78,6 +78,7 @@ Use `--with-packages` for one-step agent setup when bundled package commands sho
 pm package                     # bare command defaults to --explore (list installed)
 pm install '*' --project
 pm package catalog --project
+pm package manage --project --output-format json
 pm install npm:@scope/pm-package --project
 pm package describe --project   # by-name surface map of every loaded package
 pm package describe my-package --markdown --output docs/my-package-reference.md
@@ -90,6 +91,11 @@ pm upgrade --cli-only --repair
 ```
 
 `pm install` and `pm package` are the preferred package-first workflow. `pm package` and `pm extension` bare invocations default to `--explore` so agents can list installed packages without remembering an action flag. `pm install '*'`, shell-expanded `pm install *`, and `pm install all` install bundled first-party packages. `pm extension` remains as a compatibility command for direct extension lifecycle operations.
+`pm package catalog` emits one row per package, with every resolvable bundled
+alias preserved in `aliases`; totals therefore measure packages rather than
+alias-index entries. `pm package manage` participates in the universal read
+output contract, so `--output-include`, `--output-limit`, `--output-budget`, and
+`--output-format` behave like the same controls on other SDK-backed reads.
 Install output includes a light `verification` summary with target tracker root, activation state, registered commands/actions/item types, and an `ok|degraded` health verdict. Runtime activation failure sets the command result and process exit status to failure; inspect `activation_diagnostics` and `command_discovery.next_steps` for the exact recovery path.
 Bare install names use bundled aliases before installed npm packages. Every
 install result reports `source_resolution`; when both candidates exist it marks
@@ -113,6 +119,7 @@ pm list-open --type Task --priority 1 --limit 20
 pm list-in-progress --limit 20
 pm aggregate --group-by parent,type --status open
 pm aggregate --group-by parent,type --completion --include-unparented
+pm duplicates --status all --threshold 0.8
 ```
 
 Use `pm next` when the only question is "what should I work on now?" It computes dependency-aware readiness, keeps dangling dependency ids blocked until repaired, and combines lifecycle-blocked plus graph-blocked work in the companion queue. The `recommended` projection is excluded from the `ready` tail; every actionable row carries its one-based `rank`, and the tail preserves the exact recommendation order. Foreign-owned in-progress work is summarized under `held_by_others`. Human-gated `Decision` records remain visible under `decision_needed` but are excluded from agent recommendations by default.
@@ -126,6 +133,10 @@ pm next --ready-only --limit 3 --json   # tightest agent-loop projection
 ```
 
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
+Use `duplicates --status all` for a true whole-history duplicate check. The
+result echoes `filters.statuses: null` for the unrestricted corpus; named or
+custom statuses are normalized through the runtime status registry and an
+unknown status fails instead of returning a false-clean result.
 Use `pm get <id>` to read a single item by ID — the single-item read primitive used throughout the agent loop. It accepts `--fields <list>` and `--depth brief|standard|deep|full` for token-minimal projections, and `--tree`/`--tree-depth <n>` to include descendants. Standard/deep reads expose a normalized `schedule` facet (`deadline`, `start_at`, `end_at`, `location`, reminders, and events) when scheduling metadata exists. Container-oriented built-ins (Epic, Feature, Milestone, and Plan) plus custom types automatically expose type-agnostic child counts and continuation metadata. Standard depth keeps that rollup counts-only; `--depth deep|full` or an explicit `--fields id,children` request adds the deterministic bounded child sample. Built-in leaf reads avoid a workspace scan unless children are explicitly requested. `pm get <id> --json` returns the `body` inside the `item` object (`.item.body`); see [Full results, totals, and bodies](#full-results-totals-and-bodies). To duplicate an existing item as a starting point, `pm copy <id> --title "New title"` clones it into a fresh id with lifecycle fields reset.
 
 Add `--at <version|ISO-timestamp>` for a verified point-in-time read. It replays the same hash-checked history kernel used by restore but never acquires a lock, writes the item, or appends history. The result always includes `reconstructed: true`, `as_of_version`, and `as_of_timestamp`. Future/out-of-range targets fail with structured `valid_range` metadata. `--at` cannot be combined with `--tree`; workspace-wide historical graph projections require a future indexed primitive.
@@ -891,12 +902,19 @@ one-command reconciliation gate:
 ```bash
 pm merge reconcile --dry-run --json
 pm merge reconcile --message "Reconcile branch histories" --json
+# Only after reviewing every discarded-value receipt:
+pm merge reconcile --force --message "Accept reviewed merge decisions" --json
 ```
 
 The command scans every history stream, delegates repairs to the audited
 `history-repair --all` engine, then runs the history-drift and storage-integrity
 validation checks. Dry-run leaves drift intact and reports it in `validation`;
-apply exits nonzero if any stream fails or either invariant stays red. No Git
+apply exits nonzero if any stream fails or either invariant stays red. Lossless
+receipts remain visible in `pm merge report` but do not count as discarded-value
+decisions. When a receipt contains a discarded scalar value, apply refuses with
+`merge_reconcile_discards_require_acceptance` until the coordinator reviews or
+re-applies the value and passes `--force`. `pm history-repair` is the narrower
+drift-only tool and never substitutes for receipt reconciliation. No Git
 hook is installed automatically—teams may call this command from an explicit
 post-merge hook after opting into that policy.
 

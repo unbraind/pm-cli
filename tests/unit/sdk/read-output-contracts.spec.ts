@@ -33,7 +33,7 @@ describe("read output contracts", () => {
       "cost",
       "encoding",
     ]);
-    expect(PM_READ_OUTPUT_SURFACE_CONTRACTS).toHaveLength(19);
+    expect(PM_READ_OUTPUT_SURFACE_CONTRACTS).toHaveLength(20);
     expect(PM_READ_OUTPUT_OPTION_FLAGS).toEqual([
       "--output-include",
       "--output-limit",

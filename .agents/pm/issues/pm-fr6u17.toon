@@ -2,11 +2,13 @@ id: pm-fr6u17
 title: "GH-937: package list exposes alias rows as packages and overstates the catalog total"
 description: "pm package list emits one row per resolvable alias while naming the collection and details.total as packages. Packages with multiple aliases therefore appear twice, inflate the catalog count, and invite agents to repeat installs."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:packages","area:sdk",contracts,counting
 created_at: "2026-08-08T14:06:01.280Z"
-updated_at: "2026-08-08T14:06:01.280Z"
+updated_at: "2026-08-08T16:50:09.189Z"
+closed_at: "2026-08-08T16:50:08.756Z"
+completed_at: "2026-08-08T16:50:08.756Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Each package is represented once with a deterministic aliases collection, or the row kind and counts explicitly distinguish aliases from packages; SDK, CLI, JSON, TOON, and human outputs agree; agents can iterate packages without duplicate installs; temporary-workspace acceptance and exact coverage prove the contract"
@@ -20,12 +22,29 @@ confidence: high
 severity: medium
 environment: pm CLI 2026.8.5 and current first-party package registry
 repro_steps: Initialize a temporary workspace and run pm package list --json; compare entries.length and distinct package_name count. The current catalog returns 15 rows for 13 packages because governance-audit and digital-twin each have two aliases.
+resolution: fixed
 expected_result: "The package collection and total represent unique packages while preserving all resolvable aliases, or the contract explicitly names alias rows and separately reports alias_count and package_count."
-actual_result: The response reports details.total=15 and returns duplicate package rows for a 13-package catalog without disclosing alias indexing.
+actual_result: "The bundled package catalog now emits one deterministic row per package root, preserves every resolvable alias in aliases, computes installation across aliases, and the package-first acceptance consumer validates the grouped contract."
 component: package catalog SDK and CLI projection
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-59gj,related,"2026-08-08T14:06:01.280Z","harness:codex","cli:create:dep",detected
   pm-x6jf,discovered_from,"2026-08-08T14:06:01.280Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-08T14:06:01.280Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/937. Duplicate check searched all statuses for alias-indexed package rows, duplicated packages, catalog totals, and package-list count semantics. Closed pm-59gj and pm-x6jf own the package/SDK foundations but not this projection defect; no canonical issue existed."
+  "2026-08-08T16:46:59.893Z","harness:codex","Verification evidence (2026-08-08): full release pipeline reached the pre-commit hosted-review boundary after all local gates passed. Exact coverage: 460 files, 7072 tests, statements 50283/50283, branches 36738/36738, functions 10330/10330, lines 48684/48684. Static quality/docstrings, docs/skills, SDK surface, package boundary/parity, token/context/retrieval/tracker/security/version, packed npx (13 packages), and 88-command temporary package-first dogfood all passed. Manual packed external acceptance also passed all-status duplicates, 13 unique package rows with aliases, SDK direction-independent merge, package-manage output resolution, merge install, and health classification. The remaining greptile gate refusal is expected before a reviewable commit: no committed code changes to review against main."
+learnings[1]{created_at,author,text}:
+  "2026-08-08T16:49:50.252Z","harness:codex","Catalog cardinality should describe installable packages, while aliases remain resolution metadata; duplicating rows per alias corrupts package counts and agent context."
+files[4]{path,scope,note}:
+  scripts/dogfood-package-first.mjs,project,Package-first acceptance now consumes grouped package aliases
+  src/sdk/extension/bundled-catalog.ts,project,package-root catalog grouping with alias preservation
+  tests/integration/package-catalog-cardinality.integration.spec.ts,project,Acceptance coverage for one row per package and alias preservation
+  tests/unit/scripts/dogfood-package-first.spec.ts,project,Acceptance fixture proves one row per package with alias arrays
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/package-catalog-cardinality.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/scripts/dogfood-package-first.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msklyds1-ekmv9d,test,passed,"2026-08-08T16:48:20.548Z","2026-08-08T16:48:35.137Z","2026-08-08T16:48:35.137Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,catalog cardinality contract
+close_reason: Made package catalog cardinality package-based with deterministic alias preservation and dogfood proof.
 body: ""

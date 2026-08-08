@@ -7,6 +7,8 @@
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
+import { normalizeStatusInput } from "../core/item/status.js";
+import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { listAllItemMetadataLight } from "../core/store/item-store.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
@@ -132,6 +134,11 @@ export interface DuplicateClustersResult {
   threshold: number;
   /** Retrieval path used for this whole-workspace sweep. */
   source: "metadata_scan";
+  /** Effective lifecycle filter; null means the complete all-status corpus. */
+  filters: {
+    statuses: string[] | null;
+    since: string | null;
+  };
   /** Work performed after the single metadata read. */
   cost: {
     /** Items retained after filters. */
@@ -228,8 +235,24 @@ async function loadPreparedDuplicateItems(
   const pmRoot = resolvePmRoot(options.cwd ?? process.cwd(), options.pmRoot);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings);
-  const allowedStatuses = options.statuses
-    ? new Set(options.statuses.map((status) => status.trim()).filter(Boolean))
+  const requestedStatuses = options.statuses
+    ?.map((status) => status.trim().toLowerCase())
+    .filter(Boolean);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const normalizedStatuses = requestedStatuses?.includes("all")
+    ? undefined
+    : requestedStatuses?.map((status) => {
+        const normalized = normalizeStatusInput(status, statusRegistry);
+        if (!normalized) {
+          throw new PmCliError(
+            `Unknown duplicate-cluster status "${status}". Allowed: all, ${statusRegistry.definitions.map((entry) => entry.id).join(", ")}.`,
+            EXIT_CODE.USAGE,
+          );
+        }
+        return normalized;
+      });
+  const allowedStatuses = normalizedStatuses
+    ? new Set(normalizedStatuses)
     : undefined;
   return (
     await listAllItemMetadataLight(
@@ -488,6 +511,16 @@ export async function findDuplicateClusters(
     count: clusters.length,
     threshold,
     source: "metadata_scan",
+    filters: {
+      statuses:
+        options.statuses?.some(
+          (status) => status.trim().toLowerCase() === "all",
+        ) === true
+          ? null
+          : (options.statuses?.map((status) => status.trim()).filter(Boolean) ??
+            null),
+      since: options.since ?? null,
+    },
     cost: {
       item_count: items.length,
       candidate_pairs: candidates.size,

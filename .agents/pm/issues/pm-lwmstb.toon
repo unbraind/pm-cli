@@ -2,24 +2,46 @@ id: pm-lwmstb
 title: "Post-merge guidance names history-repair, which clears drift but never settles the merge receipt, so every merged item leaves a permanent merge_decisions_unreviewed warning"
 description: "Reproduced end to end in a sandbox repo with two agent branches editing the same item. The field-aware merge itself is excellent: status from theirs, priority from ours, tags unioned, both comments preserved, zero conflict markers. The problem is entirely in what an agent is told to do next.\n\nAfter the merge the driver prints: 'The merged history chain was re-anchored. Run \"pm validate --check-history-drift\" and \"pm history-repair --all\" after the merge to reconcile item state with merged history.' (src/sdk/merge/driver.ts:280). The same command is named at src/sdk/merge/install.ts:702, wired into the health remediation map at src/sdk/governance/health.ts:2694, and documented in docs/AGENT_GUIDE.md:215 and docs/COMMANDS.md:830. Not one of those five sites mentions pm merge reconcile.\n\nFollowing that guidance verbatim produces:\n\n  pm history-repair --all      -> totals.repaired: 1\n  pm validate --check-history-drift -> ok: true, has_warnings: false, drifted_items_count: 0\n  pm health --check-only       -> warnings: [merge_decisions_unreviewed:1]     <-- still there\n  pm validate                  -> warnings: [validate_merge_decisions_unreviewed:1]\n  pm merge report              -> receipt state: \"pending\"\n\nOnly pm merge reconcile settles the receipt; after it, health is clean. So the two repair paths are not equivalent and the guidance names the one that cannot finish the job. history-repair re-anchors the chain, which is why the drift check goes green and an agent reasonably concludes the merge is fully reconciled - the strongest available signal says so.\n\nThe cost is unbounded and accrues exactly where the project most wants to be trustworthy. Each merged item leaves one permanent pending receipt, so a team of agents merging branches accumulates warnings forever, on every pm health and pm validate, with no natural point at which anyone clears them. Warning noise of that shape trains agents to ignore the warning channel, which is where genuine merge corruption would also surface. pm-ysqb6n (GH-770) closed by making pending receipts visible to validation and CI; that visibility is what makes this leak permanent rather than silent, so the two are complementary rather than duplicates.\n\nFix direction, in order of preference: (a) make history-repair settle receipts for streams it re-anchors, or refuse and redirect when a pending receipt covers the stream; (b) correct the remediation text at all five sites to name pm merge reconcile as the post-merge entry point, with history-repair as the narrower drift-only tool; (c) have pm merge reconcile be what the driver, install hint, and health remediation map all point at. Relates to pm-ei6x66 (no git hooks are installed, so nothing runs reconcile automatically) - reconcile's own guidance says 'No Git hook is installed automatically; invoke this command from an explicit post-merge hook only when your repository policy opts in.'"
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:merge",diagnostics,multi-agent,remediation
 created_at: "2026-07-28T10:29:04.048Z"
-updated_at: "2026-08-02T21:11:34.671Z"
+updated_at: "2026-08-08T16:50:20.530Z"
+closed_at: "2026-08-08T16:50:04.545Z"
+completed_at: "2026-08-08T16:50:04.545Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: Following the remediation text the merge driver and pm health emit returns the workspace to zero warnings; no path clears history drift while leaving a receipt pending
 parent: pm-dj98
 risk: medium
 confidence: high
+resolution: fixed
+expected_result: "Post-merge guidance directs agents to pm merge reconcile, distinguishes drift repair from receipt settlement, and leaves lossless audit evidence non-blocking while refusing lossy application without deliberate confirmation."
+actual_result: "Merge reconciliation, installation guidance, and diagnostics now point at pm merge reconcile --dry-run; reconciliation audits all receipts, rejects lossless receipt application without force, and preserves legacy receipt compatibility."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-9j2r3b,related,"2026-07-28T10:31:19.920Z","harness:claude-code","cli:update:dep",detected
   pm-ei6x66,related,"2026-07-28T10:31:19.920Z","harness:claude-code","cli:update:dep",detected
   pm-g5sx,related,"2026-07-28T10:31:19.920Z","harness:claude-code","cli:update:dep",detected
   pm-ysqb6n,discovered_from,"2026-07-28T10:31:19.920Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-02T21:11:34.671Z","harness:claude-code","Receipt scope evidence (2026-08-02). The merge receipt is not only unsettled, it is the sole record of what a merge destroyed: for a scalar conflict it carries retained_hash and discarded_hash and no values, so once the driver stdout is gone there is no way to recover or even read the losing value. Two clones merging the same branch pair in opposite directions produce opposite receipts, both validate clean afterwards, and nothing joins the two. See pm-dlx7v7."
-learnings[1]{created_at,author,text}:
+  "2026-08-08T16:46:58.106Z","harness:codex","Verification evidence (2026-08-08): full release pipeline reached the pre-commit hosted-review boundary after all local gates passed. Exact coverage: 460 files, 7072 tests, statements 50283/50283, branches 36738/36738, functions 10330/10330, lines 48684/48684. Static quality/docstrings, docs/skills, SDK surface, package boundary/parity, token/context/retrieval/tracker/security/version, packed npx (13 packages), and 88-command temporary package-first dogfood all passed. Manual packed external acceptance also passed all-status duplicates, 13 unique package rows with aliases, SDK direction-independent merge, package-manage output resolution, merge install, and health classification. The remaining greptile gate refusal is expected before a reviewable commit: no committed code changes to review against main."
+learnings[2]{created_at,author,text}:
   "2026-07-28T10:34:43.096Z","harness:claude-code","Remediation text is part of the product's contract with agents, and it can be wrong in a way tests never catch: every assertion here passes, because each individual command does what its own tests say. The defect only exists in the composition — follow the printed guidance to the letter, then check whether the system reports itself clean. It did not.\n\nWorth generalizing into a habit: after any operation that prints \"run X next\", run X and then re-run the full diagnostic. The gap between \"the remediation succeeded\" and \"the workspace is clean\" is where this class lives, and drift-clean-but-receipt-pending is invisible unless both are checked."
+  "2026-08-08T16:49:46.462Z","harness:codex","Merge receipts are evidence, not blanket repair instructions; remediation must distinguish audit-only lossless receipts from streams that need a deliberate lossy decision."
+files[5]{path,scope,note}:
+  src/core/diagnostics/remediation.ts,project,health and validate remediation mapping
+  src/sdk/merge/driver.ts,project,post-merge reconcile guidance
+  src/sdk/merge/install.ts,project,installed contract guidance
+  src/sdk/merge/reconcile.ts,project,explicit lossy acceptance boundary
+  tests/unit/sdk/merge-reconcile.spec.ts,project,SDK merge reconcile mock parity for shared receipt classification
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/merge-reconcile-command.spec.ts tests/integration/remediation-registry.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msklxaiu-cjfuyn,test,passed,"2026-08-08T16:47:32.808Z","2026-08-08T16:47:44.262Z","2026-08-08T16:47:44.262Z",1,0,0
+docs[3]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,agent post-merge workflow
+  docs/COMMANDS.md,project,reconciliation command contract
+  docs/MERGE_SAFETY.md,project,merge safety gate
+close_reason: Corrected merge remediation and reconciliation guidance with receipt-aware safety and compatibility proof.
 body: ""

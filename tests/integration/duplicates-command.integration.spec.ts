@@ -48,6 +48,27 @@ describe("duplicates command integration", () => {
         },
       });
 
+      const explicitAllStatuses = context.runCli(
+        [
+          "duplicates",
+          "--json",
+          "--status",
+          "all",
+          "--threshold",
+          "1",
+          "--limit",
+          "5",
+        ],
+        { expectJson: true },
+      );
+      expect(explicitAllStatuses.code).toBe(0);
+      expect(explicitAllStatuses.json).toMatchObject({
+        count: 1,
+        cost: {
+          item_count: allStatuses.json?.cost?.item_count,
+        },
+      });
+
       const filtered = context.runCli(
         [
           "duplicates",

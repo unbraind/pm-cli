@@ -63,13 +63,47 @@ describe("tracked runtime cache governance", () => {
         preferred: "ours",
         fieldsFromTheirs: [],
         unionFields: [],
-        decisions: [],
+        decisions: [
+          {
+            field: "title",
+            base: "base",
+            ours: "zeta retained",
+            theirs: "zeta discarded",
+            retained: "zeta retained",
+            discarded: "zeta discarded",
+          },
+        ],
       });
       await writeMergeReceipt({
         cwd: context.tempRoot,
         itemPath: ".agents/pm/tasks/pm-alpha.toon",
         preferred: "ours",
         fieldsFromTheirs: [],
+        unionFields: [],
+        decisions: [],
+      });
+      await writeMergeReceipt({
+        cwd: context.tempRoot,
+        itemPath: ".agents/pm/tasks/pm-beta.toon",
+        preferred: "ours",
+        fieldsFromTheirs: [],
+        unionFields: [],
+        decisions: [
+          {
+            field: "title",
+            base: "base",
+            ours: "beta retained",
+            theirs: "beta discarded",
+            retained: "beta retained",
+            discarded: "beta discarded",
+          },
+        ],
+      });
+      await writeMergeReceipt({
+        cwd: context.tempRoot,
+        itemPath: ".agents/pm/tasks/pm-gamma.toon",
+        preferred: "ours",
+        fieldsFromTheirs: ["status"],
         unionFields: [],
         decisions: [],
       });
@@ -100,7 +134,8 @@ describe("tracked runtime cache governance", () => {
         details: {
           counts: { tracked_runtime_cache_files: 5 },
           merge_driver_configuration: { status: "missing" },
-          pending_merge_decision_items: ["pm-alpha", "pm-zeta"],
+          pending_merge_decision_items: ["pm-beta", "pm-zeta"],
+          lossless_merge_receipt_items: ["pm-alpha", "pm-gamma"],
           tracked_runtime_cache: {
             tracked_path_count: 5,
             tracked_paths: expect.arrayContaining(relativePaths),
@@ -130,7 +165,10 @@ describe("tracked runtime cache governance", () => {
             tracked_paths: expect.arrayContaining(relativePaths),
             remediation_command: scan.remediation_command,
           },
-          fix_hints: ["git rm --cached -r -- <tracked-runtime-directories>"],
+          fix_hints: [
+            "git rm --cached -r -- <tracked-runtime-directories>",
+            "pm merge reconcile --dry-run",
+          ],
         },
       });
     });

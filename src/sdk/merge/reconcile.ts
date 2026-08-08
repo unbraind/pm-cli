@@ -5,6 +5,8 @@
  * item-history stream, then verifies history and storage integrity in one call.
  */
 import type { GlobalOptions } from "../../core/shared/command-types.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { PmCliError } from "../../core/shared/errors.js";
 import {
   runHistoryRepair,
   runHistoryRepairAll,
@@ -14,6 +16,7 @@ import { runValidate, type ValidateResult } from "../governance/validate.js";
 import {
   listMergeReceipts,
   markMergeReceiptReconciled,
+  partitionMergeReceipts,
   summarizeMergeReceipt,
   type MergeDecisionReceiptSummary,
 } from "./receipts.js";
@@ -67,7 +70,31 @@ export async function runMergeReconcile(
   global: GlobalOptions,
 ): Promise<MergeReconcileResult> {
   const dryRun = options.dryRun === true;
-  const pendingReceipts = await listMergeReceipts(process.cwd());
+  const pendingReceipts = await listMergeReceipts(process.cwd(), {
+    includeLossless: true,
+  });
+  const { pendingDecisions: discardedReceipts } =
+    partitionMergeReceipts(pendingReceipts);
+  if (!dryRun && options.force !== true && discardedReceipts.length > 0) {
+    throw new PmCliError(
+      `Merge reconciliation would accept ${discardedReceipts.length} receipt(s) containing discarded scalar values. Review pm merge report and rerun with --force only after deciding which values to retain or re-apply.`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "merge_reconcile_discards_require_acceptance",
+        required:
+          "Explicitly review every discarded field before accepting reconciliation.",
+        nextSteps: discardedReceipts.map(
+          (receipt) =>
+            `Review receipt ${receipt.id} for ${receipt.item_id}: ${receipt.decisions
+              .map((decision) => decision.field)
+              .join(", ")}.`,
+        ),
+        recovery: {
+          suggested_retry: "pm merge reconcile --dry-run",
+        },
+      },
+    );
+  }
   const receiptsByItem = pendingReceipts.reduce<
     Record<string, typeof pendingReceipts>
   >((groups, receipt) => {

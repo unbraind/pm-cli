@@ -2,11 +2,13 @@ id: pm-ltlcsw
 title: "GH-924: closed completed plans still recommend pm close"
 description: "plan show emits a stale pm close next action after a plan is already closed with all steps complete, making machine-readable guidance recommend a redundant mutation."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-08-07T08:33:38.061Z"
-updated_at: "2026-08-07T08:47:21.216Z"
+updated_at: "2026-08-08T16:50:08.260Z"
+closed_at: "2026-08-08T16:50:07.752Z"
+completed_at: "2026-08-08T16:50:07.752Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "A closed item whose recorded plan is complete never recommends pm close; the recommendation distinguishes active, blocked, canceled, and completed terminal states; regression tests cover closed plans with and without legacy close metadata and preserve compact omission receipts"
@@ -14,13 +16,25 @@ parent: pm-doxj
 risk: medium
 confidence: high
 severity: medium
+resolution: fixed
 expected_result: Closed plans omit terminal close guidance and expose only valid state-aware next actions.
-actual_result: "A closed, 100-percent-complete plan still returns pm close in next_actions."
+actual_result: Completed terminal Plans no longer recommend a redundant close command; active Plans retain actionable lifecycle guidance and the integration contract covers the closed state.
 affected_version: 2026.8.6
 component: plan projection and next actions
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-je50,related,"2026-08-07T08:33:38.061Z","harness:codex","cli:create:dep",detected
   pm-je50,discovered_from,"2026-08-07T08:34:27.173Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-07T08:33:38.061Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/924. Duplicate check searched all 2,351 items and every status for closed plan next_actions,completed plan pm close,plan show,and GH-924; no canonical issue existed."
+  "2026-08-08T16:46:59.410Z","harness:codex","Verification evidence (2026-08-08): full release pipeline reached the pre-commit hosted-review boundary after all local gates passed. Exact coverage: 460 files, 7072 tests, statements 50283/50283, branches 36738/36738, functions 10330/10330, lines 48684/48684. Static quality/docstrings, docs/skills, SDK surface, package boundary/parity, token/context/retrieval/tracker/security/version, packed npx (13 packages), and 88-command temporary package-first dogfood all passed. Manual packed external acceptance also passed all-status duplicates, 13 unique package rows with aliases, SDK direction-independent merge, package-manage output resolution, merge install, and health classification. The remaining greptile gate refusal is expected before a reviewable commit: no committed code changes to review against main."
+learnings[1]{created_at,author,text}:
+  "2026-08-08T16:49:49.309Z","harness:codex","Agent guidance must be lifecycle-aware: suggesting an already-satisfied terminal action wastes context and erodes trust in next-step receipts."
+files[2]{path,scope,note}:
+  src/sdk/lifecycle/plan.ts,project,terminal-aware plan next actions
+  tests/integration/plan-terminal-guidance.integration.spec.ts,project,Acceptance coverage for terminal Plan guidance
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/plan-terminal-guidance.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mskly20x-z291bs,test,passed,"2026-08-08T16:48:11.218Z","2026-08-08T16:48:19.905Z","2026-08-08T16:48:19.905Z",1,0,0
+close_reason: Removed redundant terminal Plan close guidance with lifecycle integration proof.
 body: ""

@@ -69,7 +69,7 @@ export interface MergeDriverResult {
   artifact: MergeDriverArtifact;
   /** Path the merged content was written to. */
   output_path: string;
-  /** Side unresolvable conflicts were resolved toward. */
+  /** Invocation-side preference retained for non-item artifact compatibility. */
   preferred: MergePreferredSide;
   /** Unresolvable conflict labels: metadata field names (item), dotted key paths (json). Empty for history merges. */
   conflicts: string[];
@@ -95,6 +95,7 @@ export interface MergeDriverResult {
   item?: {
     fields_from_theirs: string[];
     union_fields: string[];
+    conflict_resolution: "stable_value_order";
   };
   /** JSON-merge key accounting; present only for the json artifact. */
   json?: {
@@ -234,18 +235,21 @@ export async function runMergeDriver(
         getActiveExtensionRegistrations(),
       ),
       preferred,
+      conflictResolution: "stable_value_order",
     });
     merged = itemMerge.merged;
     conflicts.push(...itemMerge.conflict_fields);
     result.item = {
       fields_from_theirs: itemMerge.fields_from_theirs,
       union_fields: itemMerge.union_fields,
+      conflict_resolution: "stable_value_order",
     };
     if (options.itemPath !== undefined) {
       receiptInput = {
         cwd: process.cwd(),
         itemPath: options.itemPath,
         preferred,
+        conflictResolution: "stable_value_order",
         fieldsFromTheirs: itemMerge.fields_from_theirs,
         unionFields: itemMerge.union_fields,
         decisions: itemMerge.conflict_decisions,
@@ -276,12 +280,12 @@ export async function runMergeDriver(
         ? 'Run "pm merge report" to inspect clone-local merge evidence.'
         : `Run "pm merge report" and correlate receipt ${result.receipt.receipt_id} with item ${result.receipt.item_id}; clone-local discarded values are never copied into this result.`;
     guidance.push(
-      `Both branches changed ${conflicts.join(", ")}; the ${preferred} value was kept. ${receiptGuidance} Review the merged file, re-apply the losing change if needed, then "git add" it.`,
+      `Both branches changed ${conflicts.join(", ")}; the item driver kept the direction-independent stable value. ${receiptGuidance} Review the merged file, re-apply the discarded change if needed, then "git add" it.`,
     );
   }
   if (artifact === "history" && result.history?.reanchored) {
     guidance.push(
-      'The merged history chain was re-anchored. Run "pm validate --check-history-drift" and "pm history-repair --all" after the merge to reconcile item state with merged history.',
+      'The merged history chain was re-anchored. Run "pm merge reconcile --dry-run" to inspect the complete post-merge repair, then "pm merge reconcile" to apply it; use --force only after explicitly accepting reported discards.',
     );
   }
   return {

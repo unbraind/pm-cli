@@ -109,6 +109,31 @@ describe("surface replication gate", () => {
     ]);
   });
 
+  it("does not activate a set when only a shared non-trigger member changes", async () => {
+    const root = await fixtureRoot();
+    await writeFile(
+      path.join(root, "src/sdk/a.ts"),
+      "sharedContract\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(root, "src/cli/b.ts"),
+      "sharedContract\n",
+      "utf8",
+    );
+    const config = declaration();
+    config.sets[0]!.triggers = ["src/sdk/a.ts"];
+
+    const report = await validateSurfaceReplication(config, {
+      repoRoot: root,
+      changedFiles: ["src/cli/b.ts"],
+      today: "2026-08-08",
+    });
+
+    expect(report.ok).toBe(true);
+    expect(report.active_sets).toEqual([]);
+  });
+
   it("fails when an annotation trigger changes without the tool parameter table", async () => {
     const config = JSON.parse(
       await readFile(

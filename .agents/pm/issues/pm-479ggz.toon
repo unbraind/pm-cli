@@ -2,11 +2,13 @@ id: pm-479ggz
 title: "GH-925: package manage diagnostics reject universal read-output controls"
 description: "The read-only package manage diagnostic path is classified as a mutation and refuses universal JSON, lean, projection, and budget controls, forcing agents to parse an unbounded human envelope."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:37.258Z"
-updated_at: "2026-08-07T08:47:20.726Z"
+updated_at: "2026-08-08T16:50:03.934Z"
+closed_at: "2026-08-08T16:50:03.490Z"
+completed_at: "2026-08-08T16:50:03.490Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "package manage and its diagnostics accept the universal read controls advertised by the runtime contract, or reject unsupported controls before execution with a precise recovery receipt; CLI and SDK contract parity tests cover token budgets, context sessions, fields, cursors, and output formats; a temporary-project acceptance test proves the installed extension path"
@@ -14,15 +16,29 @@ parent: pm-tnud
 risk: medium
 confidence: high
 severity: medium
+resolution: fixed
 expected_result: Read-only package manage diagnostics accept the universal read-output contract; any mutation is exposed through a separate explicit action.
-actual_result: package manage succeeds only without universal output controls and rejects output-format JSON or lean shaping as mutation-scoped.
+actual_result: "The shared read-output registry now owns package-manage actions and both CLI and SDK spellings, so output capabilities and projections resolve from one canonical contract."
 affected_version: 2026.8.6
 component: package lifecycle and universal read output
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-hid9g1,related,"2026-08-07T08:33:37.258Z","harness:codex","cli:create:dep",detected
   pm-x6jf,related,"2026-08-07T08:33:37.258Z","harness:codex","cli:create:dep",detected
   pm-hid9g1,discovered_from,"2026-08-07T08:34:26.431Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-07T08:33:37.258Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/925. Duplicate check searched all 2,351 items and every status for package manage,read-only diagnostics,universal output controls,output-format,and GH-925; no canonical issue existed."
   "2026-08-07T08:47:18.992Z","harness:codex","Governance repair: removed the redundant blocks edge to its scalar parent pm-tnud. Parent lineage remains authoritative and avoids increasing the active blocks asymmetry population tracked by pm-jkbqt8."
+  "2026-08-08T16:46:57.644Z","harness:codex","Verification evidence (2026-08-08): full release pipeline reached the pre-commit hosted-review boundary after all local gates passed. Exact coverage: 460 files, 7072 tests, statements 50283/50283, branches 36738/36738, functions 10330/10330, lines 48684/48684. Static quality/docstrings, docs/skills, SDK surface, package boundary/parity, token/context/retrieval/tracker/security/version, packed npx (13 packages), and 88-command temporary package-first dogfood all passed. Manual packed external acceptance also passed all-status duplicates, 13 unique package rows with aliases, SDK direction-independent merge, package-manage output resolution, merge install, and health classification. The remaining greptile gate refusal is expected before a reviewable commit: no committed code changes to review against main."
+learnings[1]{created_at,author,text}:
+  "2026-08-08T16:49:45.414Z","harness:codex",Package-provided read surfaces must join the same canonical output registry as core commands or transport and projection claims drift.
+files[2]{path,scope,note}:
+  src/sdk/read-output-contracts.ts,project,universal package-manage read surface
+  tests/unit/sdk/read-output-package-manage.spec.ts,project,Package manage read-output contract coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-package-manage.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msklx1d7-7xybzc,test,passed,"2026-08-08T16:47:25.332Z","2026-08-08T16:47:32.395Z","2026-08-08T16:47:32.395Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,package manage output controls
+close_reason: Registered package-manage read actions in the canonical CLI/SDK output contract with parity proof.
 body: ""
