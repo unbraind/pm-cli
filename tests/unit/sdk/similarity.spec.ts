@@ -142,6 +142,12 @@ describe("SDK item similarity governance", () => {
           statuses: ["all", "open"],
         }),
       ).rejects.toThrow(/cannot be combined with other statuses/);
+      await expect(
+        findDuplicateClusters({
+          pmRoot: context.pmPath,
+          statuses: ["", "  "],
+        }),
+      ).rejects.toThrow(/must include at least one lifecycle status or all/);
 
       await expect(
         findDuplicateClusters({

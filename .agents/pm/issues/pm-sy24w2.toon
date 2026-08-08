@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-07T19:42:18.033Z"
-updated_at: "2026-08-08T17:41:06.932Z"
-closed_at: "2026-08-08T17:41:06.450Z"
-completed_at: "2026-08-08T17:41:06.450Z"
+updated_at: "2026-08-08T17:56:19.408Z"
+closed_at: "2026-08-08T17:56:18.923Z"
+completed_at: "2026-08-08T17:56:18.923Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Core duplicates treats --status all as explicit no restriction with candidate-count parity to an omitted filter; configured status validation still rejects unknown values; structured cost and filter receipts expose the effective selection; CLI SDK contracts docs and negative tests prevent another false-clean zero-scan regression.
@@ -20,18 +20,20 @@ environment: @unbrained/pm-cli 2026.8.7 with project extensions enabled or disab
 repro_steps: Compare pm duplicates --status all --threshold 0.82 --limit 100 with the same command omitting --status; the former reports cost.item_count=0 while the latter reports the full tracker count.
 resolution: fixed
 expected_result: Explicit all-status duplicate scans inspect the same complete lifecycle corpus as the unfiltered command and cannot silently degrade to zero candidates.
-actual_result: "Duplicate analysis validates concrete statuses before applying the all sentinel, rejects mixed sentinel filters, and reports the exact canonical runtime statuses used by the scan."
+actual_result: "Duplicate analysis rejects empty effective filters, validates concrete statuses before the all sentinel, rejects mixed sentinel filters, and reports the exact canonical runtime statuses used by the scan."
 customer_impact: Agents receive an exit-0 false-clean duplicate audit and can create duplicate work despite following the required all-status workflow.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-i02t,verifies,"2026-08-07T19:42:18.033Z","harness:codex","cli:create:dep",detected
   pm-mp49,discovered_from,"2026-08-07T19:42:18.033Z","harness:codex","cli:create:dep",detected
   pm-n7rr,implements,"2026-08-07T19:42:18.033Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-07T19:42:18.033Z","harness:codex","Duplicate check 2026-08-07: searched all PM statuses for GH-930, duplicates status all, unknown status, and zero-item duplicate scans. Closed pm-mp49 fixed the package-owned dedupe-audit rejection path and pm-i02t covers list/search all-status semantics; neither covers the core duplicates false-clean acceptance regression, so this distinct item preserves those typed relationships."
   "2026-08-07T19:42:58.576Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/930; backlink comment: https://github.com/unbraind/pm-cli/issues/930#issuecomment-5221326386."
   "2026-08-08T16:46:57.238Z","harness:codex","Verification evidence (2026-08-08): full release pipeline reached the pre-commit hosted-review boundary after all local gates passed. Exact coverage: 460 files, 7072 tests, statements 50283/50283, branches 36738/36738, functions 10330/10330, lines 48684/48684. Static quality/docstrings, docs/skills, SDK surface, package boundary/parity, token/context/retrieval/tracker/security/version, packed npx (13 packages), and 88-command temporary package-first dogfood all passed. Manual packed external acceptance also passed all-status duplicates, 13 unique package rows with aliases, SDK direction-independent merge, package-manage output resolution, merge install, and health classification. The remaining greptile gate refusal is expected before a reviewable commit: no committed code changes to review against main."
   "2026-08-08T17:27:20.425Z","harness:codex","Review feedback: CodeRabbit found two valid contract gaps: mixed all plus concrete statuses bypass validation, and filters.statuses reports raw rather than canonical runtime statuses. Reopened the canonical GH-930 item for one shared normalization fix and regression proof."
   "2026-08-08T17:41:03.455Z","harness:codex","Review fix evidence: one normalization path now validates every concrete status, refuses mixed all-plus-concrete filters, applies canonical runtime values, and returns those exact values in filters.statuses. Direct SDK plus CLI integration tests pass; full suite is 460 files / 7,072 tests at exact 100/100/100/100."
+  "2026-08-08T17:49:20.962Z","harness:codex","Review feedback: fresh thread inventory found CodeRabbit's valid empty-effective-filter finding. An explicitly provided comma/blank status list normalizes to an empty array and currently returns a false-clean zero-item scan. Reopened the canonical GH-930 item to reject it as usage and cover SDK plus CLI paths."
+  "2026-08-08T17:56:17.947Z","harness:codex","Final review fix evidence: explicit blank/comma status lists now fail with a usage error instead of creating a false-clean empty scan. Direct SDK and CLI negative tests pass; complete static gates pass; 460 files / 7,072 tests retain exact 100/100/100/100 coverage (50,290 statements, 36,746 branches, 10,329 functions, 48,689 lines)."
 learnings[1]{created_at,author,text}:
   "2026-08-08T16:49:44.529Z","harness:codex",All-status duplicate searches need an explicit unrestricted semantic plus a returned filter receipt so agents can trust that closed historical lineage was included.
 files[1]{path,scope,note}:
@@ -39,10 +41,11 @@ files[1]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/duplicates-command.integration.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/similarity.spec.ts tests/integration/duplicates-command.integration.spec.ts,project,300
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msklwvlt-hqr99p,test,passed,"2026-08-08T16:47:13.845Z","2026-08-08T16:47:24.929Z","2026-08-08T16:47:24.929Z",1,0,0
   test-local-msknsv4f-ywucdn,test,passed,"2026-08-08T17:39:57.147Z","2026-08-08T17:40:16.911Z","2026-08-08T17:40:16.911Z",2,0,0
+  test-local-mskodgbu-vpyasj,test,passed,"2026-08-08T17:55:58.599Z","2026-08-08T17:56:17.514Z","2026-08-08T17:56:17.514Z",2,0,0
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,all-status duplicate contract
-close_reason: Canonical duplicate status application and receipt contract verified after CodeRabbit review.
+close_reason: All explicit duplicate-status inputs now fail closed or report the exact applied canonical filter.
 body: ""

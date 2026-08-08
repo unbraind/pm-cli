@@ -241,6 +241,12 @@ async function loadPreparedDuplicateItems(
   const requestedStatuses = options.statuses
     ?.map((status) => status.trim().toLowerCase())
     .filter(Boolean);
+  if (options.statuses !== undefined && requestedStatuses?.length === 0) {
+    throw new PmCliError(
+      "Duplicate cluster statuses must include at least one lifecycle status or all.",
+      EXIT_CODE.USAGE,
+    );
+  }
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const normalizedStatuses = requestedStatuses?.map((status) => {
     if (status === "all") return status;

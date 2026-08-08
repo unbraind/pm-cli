@@ -107,6 +107,15 @@ describe("duplicates command integration", () => {
       expect(mixedUnknown.code).toBe(2);
       expect(mixedUnknown.stderr).toContain("not-a-runtime-status");
 
+      const emptyStatuses = context.runCli(
+        ["duplicates", "--json", "--status", ","],
+        { expectJson: true },
+      );
+      expect(emptyStatuses.code).toBe(2);
+      expect(emptyStatuses.stderr).toContain(
+        "must include at least one lifecycle status or all",
+      );
+
       const invalid = context.runCli(
         ["duplicates", "--json", "--threshold", "2"],
         { expectJson: true },

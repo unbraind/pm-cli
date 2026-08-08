@@ -4,9 +4,9 @@
 
 ### Fixed
 
+- GH-930: duplicates --status all silently scans zero items ([pm-sy24w2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sy24w2.toon))
 - GH-920: health conflates lossless merge receipts with discarded-value decisions ([pm-jtwsct](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jtwsct.toon))
 - GH-937: package list exposes alias rows as packages and overstates the catalog total ([pm-fr6u17](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fr6u17.toon))
-- GH-930: duplicates --status all silently scans zero items ([pm-sy24w2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sy24w2.toon))
 - Post-merge guidance names history-repair, which clears drift but never settles the merge receipt, so every merged item leaves a permanent merge_decisions_unreviewed warning ([pm-lwmstb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lwmstb.toon))
 - GH-925: package manage diagnostics reject universal read-output controls ([pm-479ggz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-479ggz.toon))
 - Surface replication gate activates unrelated sets through shared required members ([pm-kmnvug](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kmnvug.toon))
