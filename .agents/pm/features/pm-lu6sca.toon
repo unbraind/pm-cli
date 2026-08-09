@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:sdk",identity,instrument-integrity,observability,provenance
 created_at: "2026-08-03T06:22:12.243Z"
-updated_at: "2026-08-09T00:09:13.766Z"
+updated_at: "2026-08-09T00:20:23.262Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "For each declared provenance dimension the runtime distinguishes: resolved, harness-declares-unavailable, resolver-attempted-and-failed, and no-resolver-declared; The failure category records a bounded reason code, never a path or any environment value; pm health surfaces a warning when a declared resolver has a non-zero attempt count and a zero success count in the current workspace; The distinction is observable without reading history: a single bounded command answers 'is my identity provenance working here'; Recording the category costs no additional probe: it is derived from the attempt the runtime already makes"
@@ -24,12 +24,13 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-htbetn,related,"2026-08-03T06:23:55.524Z","harness:claude-code","cli:update:dep",detected
   pm-rtn5h6,related,"2026-08-03T06:23:55.524Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,implements,"2026-08-03T06:23:55.524Z","harness:claude-code","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-03T11:09:27.269Z","harness:codex","Estimate basis 2026-08-03: 360 minutes covers resolver outcome algebra, bounded reason codes, immutable recording, health projection, zero-success warning logic, and negative controls."
   "2026-08-08T22:13:20.575Z","harness:codex","Implementation start 2026-08-09: active in the coupled context-provenance tranche with pm-3zgh2c, pm-eq9dlw, pm-lu6sca, pm-b1w8vr, and pm-h75tjh. Scope is SDK-first provenance inference and resolver outcomes, typed role domains, stable entity read-back projections, and epoch-aware release classification; all other open items remain unclaimed."
   "2026-08-08T22:32:58.636Z","harness:codex","Design evidence: resolver attempts are counted only when the resolver input exists. Missing AI_AGENT or session identifiers are harness_unavailable; a supplied valid resolver input that yields no value is resolver_failed. pm health scans at most 10,000 immutable events, tolerates malformed streams owned by integrity diagnostics, and emits advisory zero-success warnings."
   "2026-08-08T23:34:23.599Z","harness:codex","Tranche pause: resolver failure versus harness-unavailable outcomes and zero-success health warning landed, but the public outcome domain still needs an explicit no-resolver-declared state before this feature meets all four acceptance categories."
   "2026-08-09T00:09:13.766Z","harness:codex","Broad tranche evidence: resolver attempts now distinguish resolved, failed, harness-unavailable, and probes-disabled outcomes; attempted failures are persisted privacy-safely and aggregated by health. The complete 7086-test 100/100/100/100 gate passes. Item remains open and unclaimed because the explicit no-resolver-declared outcome remains to be implemented."
+  "2026-08-09T00:20:23.262Z","harness:codex","Delivery handoff: broad SDK/CLI tranche committed at 5b36abc75 and opened as GitHub PR #944 (https://github.com/unbraind/pm-cli/pull/944). Exact local evidence includes 7,086 tests across 461 files at 100/100/100/100 coverage, package/compatibility/npx/dogfood/manual acceptance, tracker/changelog/SDK/static-quality gates, and zero current dependency or GitHub security alerts. Review and exact-head CI evidence will be appended after the hosted loop."
 files[5]{path,scope,note}:
   src/core/history/history.ts,project,Persist resolver outcome evidence
   src/sdk/governance/health.ts,project,Expose zero-success resolver diagnostics through pm health
