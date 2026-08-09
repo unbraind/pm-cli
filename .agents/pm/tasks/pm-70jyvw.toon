@@ -1,0 +1,28 @@
+id: pm-70jyvw
+title: "The measurement ratchet floors only aggregate graph totals, so converting typed semantic edges to untyped ones passes every declaration"
+description: "The measurement ratchet gained a floor polarity so a deliberately authored structure cannot be destroyed silently, but only the aggregate node and edge totals were declared as floors. Aggregate totals cannot see a kind conversion: rewriting typed implements rows as untyped related rows leaves the edge count identical, leaves every ceiling in the document unmoved, and flattens the outcome ladder into an untyped mesh. The three semantic kinds that carry structural meaning were therefore unguarded in the one direction that matters for them. implements is the kind the strategic reachability invariant traverses to resolve an active item to an outcome milestone. discovered_from is the only reconstruction of how the record learned what it knows, written overwhelmingly onto terminal holders where no active-scoped check looks. verifies is the sole structural trace of the recurring gate-versus-product filing split. Shipped as three floor declarations in the same pass that measured them."
+type: Task
+status: closed
+priority: 2
+tags[3]: "area:governance","area:graph",ci
+created_at: "2026-08-09T20:10:19.080Z"
+updated_at: "2026-08-09T20:10:40.460Z"
+closed_at: "2026-08-09T20:10:33.799Z"
+completed_at: "2026-08-09T20:10:33.799Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "implements, discovered_from and verifies each carry a floor declaration in the tracker measurement document, measured on the day they are filed; Each declaration carries a note stating why the aggregate edge floor cannot protect that kind, so a future reader can tell whether lowering it is legitimate; The gate passes with the new declarations enforced and the enforced count rises accordingly"
+parent: pm-96h7
+risk: low
+confidence: 95
+resolution: "Added dependency-kind floors for implements (2305), discovered_from (438) and verifies (233) to scripts/release/tracker-measurements.json, each with a note stating why the aggregate edge floor cannot protect that kind. Gate rose from 26 to 29 enforced declarations, 3 held past a finished owner, 0 retired; all three report within_floor at observed equal to floor. Data-only change, no new code path, existing dual negative control covers the floor polarity."
+expected_result: A mass conversion of typed semantic edges to untyped related rows fails CI instead of passing as edge-count-neutral.
+actual_result: "Gate run on the working tree reports: 29 enforced, 3 held past a finished owner, 0 retired, over a commit view of 6117 committable files, exit 0. The three new declarations report reason within_floor with observed equal to floor (2305, 438, 233)."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-96h7,related,"2026-08-09T20:10:19.080Z","harness:claude-code","cli:create:dep",detected
+  pm-bzmeaa,verifies,"2026-08-09T20:10:19.080Z","harness:claude-code","cli:create:dep",detected
+  pm-d31nkb,related,"2026-08-09T20:10:19.080Z","harness:claude-code","cli:create:dep",detected
+  pm-g4k74y,discovered_from,"2026-08-09T20:10:19.080Z","harness:claude-code","cli:create:dep",detected
+  pm-o0sqz5,implements,"2026-08-09T20:10:19.080Z","harness:claude-code","cli:create:dep",detected
+close_reason: Declared floors for the three semantic edge kinds so a kind conversion can no longer pass as edge-count-neutral.
+body: ""

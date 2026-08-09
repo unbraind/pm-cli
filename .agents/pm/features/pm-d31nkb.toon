@@ -1,0 +1,24 @@
+id: pm-d31nkb
+title: "Enforcement mechanisms that condition on record state declare it nowhere, so a mutation cannot report which guarantees its change would falsify"
+description: "Horizon AK requires the inverse of a writer-side effects declaration. A mutating verb cannot enumerate what its change affects, because the affected mechanisms live outside the program and are authored after the verb ships. The reference incident proves the gap costs real guarantees: closing an item revoked a corpus-wide enforcement bound, pm wrote nothing when it happened, and the revocation was performed later by a separate program reading the item status. A sandbox measurement over eighteen mutating invocations with full before-and-after hashing confirms a writer-side field would not have caught it: every item-scoped mutating verb writes exactly two remote paths, both derived caches, uniform across content and lifecycle verbs. This item inverts the direction. Dependents declare the record predicate they rely on, as versioned repository data outliving any reader, and a mutation is answerable before it commits for which declared predicates its change would falsify. Known silent couplings to seed the registry: the measurement ratchet keyed on owner status, changelog eligibility keyed on closure, the release gate keyed on a rolling window of unresolved issues, the scheduler keyed on edge kind, and context recency keyed on updated_at. Duplicate check: searched predicate, subscriber, declared-bound-owner and side-effect phrasings across all statuses. pm-e1vkee declares a predicate vocabulary for scoring workspace state under the agent-environment programme and is the vocabulary this should reuse rather than reinvent, not an overlap. No open or closed item owns mutation-time enforcement impact."
+type: Feature
+status: open
+priority: 1
+tags[4]: agent-ux,"area:contracts","area:governance",enforcement
+created_at: "2026-08-09T20:06:23.140Z"
+updated_at: "2026-08-09T20:06:23.140Z"
+author: "harness:claude-code"
+estimated_minutes: 2400
+acceptance_criteria: "A declared predicate registry is versioned repository data, where each row names the record property relied upon, the mechanism relying on it, an owner, and a disposition, and is readable without running the mechanism that declared it; A mutation can be evaluated against the registry before it commits and reports which declared predicates its change would falsify, with the answer computed by joining the change against the registry rather than authored per verb; The registry degenerates safely: an empty registry constrains no mutation, which is exactly current behaviour, so the mechanism ships before any predicate is declared and grows one subscriber at a time; A predicate carries a lifetime and a retirement receipt on the same terms a declared bound does, and the safe default when the field is absent is survival rather than release; The predicate vocabulary is shared with the verdict contract rather than duplicated, with the only difference being who consumes the result; A negative control proves CI fails when a mechanism reads a record property it never declared, and the five known silent couplings named in the description are seeded as registry rows"
+parent: pm-33cw
+risk: high
+confidence: 70
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5z9plz,discovered_from,"2026-08-09T20:06:23.140Z","harness:claude-code","cli:create:dep",detected
+  pm-9yfo,related,"2026-08-09T20:06:23.140Z","harness:claude-code","cli:create:dep",detected
+  pm-e1vkee,related,"2026-08-09T20:06:23.140Z","harness:claude-code","cli:create:dep",detected
+  pm-g4k74y,related,"2026-08-09T20:06:23.140Z","harness:claude-code","cli:create:dep",detected
+  pm-n7rr,related,"2026-08-09T20:06:23.140Z","harness:claude-code","cli:create:dep",detected
+  pm-o0sqz5,implements,"2026-08-09T20:06:23.140Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-08-09T20:06:23.140Z","harness:claude-code","cli:create:dep",detected
+body: ""

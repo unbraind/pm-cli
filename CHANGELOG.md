@@ -22,6 +22,10 @@
 - GH-942: expose the lightweight all-item metadata reader through the public SDK ([pm-yrj7qr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yrj7qr.toon))
 - GH-941: pm read omits notes without declaring their omission and invites duplicate writes ([pm-swfelk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-swfelk.toon))
 
+### Other
+
+- The measurement ratchet floors only aggregate graph totals, so converting typed semantic edges to untyped ones passes every declaration ([pm-70jyvw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-70jyvw.toon))
+
 ## 2026.8.9 - 2026-08-09
 
 ### Fixed
