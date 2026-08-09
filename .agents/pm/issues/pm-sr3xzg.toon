@@ -1,0 +1,26 @@
+id: pm-sr3xzg
+title: The two slowest governance commands load every item body while twenty other SDK modules use the light read path
+description: "Measured on 2026-08-09 against the repository's own tracker: 2384 items, 2398 history streams, 46136 history entries, 270 MB under .agents/pm of which 56 MB is history.\n\nWall-clock, warm, via node dist/cli.js:\n  pm --version              ~95 ms\n  pm list-open --limit 20   ~566 ms\n  pm get <id>               ~650-975 ms\n  pm context --limit 10     ~1119-2131 ms\n  pm stats                  ~1387 ms\n  pm validate               ~7698 ms\n  pm health --check-only    ~8796 ms\n\nA --cpu-prof run of pm health --check-only totals 7981 ms. The largest single block is 1434 ms of idle, which is file I/O waiting on the per-item and per-stream reads, followed by 512 ms of garbage collection. The largest identifiable CPU cluster is TOON decoding inside the @toon-format/toon dependency: parseDelimitedValues, findUnquotedChar (two frames), walkFieldGroup, yieldObjectFromFields, decodeDocument and trimSpaces together account for roughly 730 ms of self time. The storage format is chosen for line-oriented git mergeability, which is correct, but every whole-corpus command pays a full text parse of that format with no compiled read-side index.\n\nThe avoidable part is narrower than the format. src/core/store/item-store.ts exports three readers of increasing cost: listAllItemMetadataLight, listAllItemMetadata and listAllItemMetadataWithBody. Roughly twenty SDK modules already take a light or cached path, including query/list, query/get, query/activity, graph/run, stats, schema, schema-migration, history-compact and lifecycle/create. The two heaviest commands are precisely the two that do not: src/sdk/governance/validate.ts line 3654 calls listAllItemMetadataWithBody unconditionally, with no field pruning and no light branch, and src/sdk/governance/health.ts lines 2512-2520 chooses between listAllItemMetadata and listAllItemMetadataWithBody but never reaches for the light reader.\n\nThis confirms rather than discovers the direction recorded on 2026-08-07: concurrency was proved sound and the residual scale risk was predicted to be on the read side. The prediction now has a profile behind it. At 2384 items the cost is an eight-second command; the scale-out target on this epic is 100k to 1M items, where the same unconditioned full-body load is three orders of magnitude of body text that neither command reads more than a few fields of."
+type: Issue
+status: open
+priority: 1
+tags[6]: "area:sdk",context-management,governance,performance,read-path,scale
+created_at: "2026-08-09T06:02:56.025Z"
+updated_at: "2026-08-09T06:07:13.998Z"
+author: "harness:claude-code"
+acceptance_criteria: "validate and health select their reader from the fields they actually project, not unconditionally; A benchmark asserts a wall-clock ceiling for validate and health against a fixture corpus and fails when the ceiling is crossed; Whole-corpus commands avoid re-decoding item body text for fields available from the light metadata path"
+parent: pm-9rxu
+risk: high
+confidence: high
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-33cw,related,"2026-08-09T06:02:56.025Z","harness:claude-code","cli:create:dep",detected
+  pm-9rxu,implements,"2026-08-09T06:02:56.025Z","harness:claude-code","cli:create:dep",detected
+  pm-yrj7qr,related,"2026-08-09T06:02:56.025Z","harness:claude-code","cli:create:dep",detected
+  pm-4k6b,related,"2026-08-09T06:06:48.550Z","harness:claude-code","cli:update:dep",detected
+  pm-doxj,related,"2026-08-09T06:06:48.550Z","harness:claude-code","cli:update:dep",detected
+  pm-o2kc,related,"2026-08-09T06:06:48.550Z","harness:claude-code","cli:update:dep",detected
+files[3]{path,scope,note}:
+  src/core/store/item-store.ts,project,"Defines listAllItemMetadataLight at line 282,the reader both governance commands decline"
+  src/sdk/governance/health.ts,project,"Lines 2512-2520 choose between metadata and withBody,never the light reader"
+  src/sdk/governance/validate.ts,project,Line 3654 calls listAllItemMetadataWithBody unconditionally with no light branch
+body: ""

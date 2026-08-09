@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-08-09T00:15:13.406Z"
-updated_at: "2026-08-09T00:29:21.059Z"
+updated_at: "2026-08-09T06:05:31.296Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: "A documented public SDK primitive exposes the lightweight all-item metadata read without importing CLI or private core modules; top-level, narrow subpath, PmClient, and runtime action contracts have intentional parity; return types and omission semantics distinguish intentionally unavailable fields; import-cost, token, package-boundary, surface-snapshot, and complete coverage gates pass; a package-authoring example proves use from a compiled external consumer"
@@ -15,6 +15,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-te6elw,discovered_from,"2026-08-09T00:15:13.406Z","harness:codex","cli:create:dep",detected
   pm-xpumg4,related,"2026-08-09T00:15:13.406Z","harness:codex","cli:create:dep",detected
   pm-xzhz,related,"2026-08-09T00:15:13.406Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-09T00:15:13.406Z","harness:codex","Duplicate check: searched all statuses for listAllItemMetadataLight, cheap list, and SDK surface. The SDK-first epic and completed completeness/boundary items are adjacent lineage, but no item owns promotion of this exact lightweight reader reported in GH-942."
+  "2026-08-09T06:05:31.296Z","harness:claude-code","Evidence sharpening the GH-942 framing, measured 2026-08-09 at host 2026.8.9.\n\nThe issue describes listAllItemMetadataLight as unexported. The stronger statement is that it is already declared as public and is not exported. It appears in sdk/public-surface.json at line 6049, which is the file that declares the SDK's public surface, while src/sdk/index.ts does not export it. Its only importers are internal: src/sdk/history-compact.ts, src/sdk/schema.ts (five call sites) and src/sdk/schema-migration.ts.\n\nSo the gap is not an omission from a list — it is a disagreement between two declarations of the same surface. An author who consults the declared public surface finds the symbol, and an author who consults the entrypoint cannot import it. Whichever one is authoritative, the other is currently lying, and no gate compares them.\n\nThis is the same producer/consumer parity shape recorded on pm-doxj at horizon AG: the surface has a declaration with no export behind it. Adding the export closes the issue; adding a gate that fails when public-surface.json names a symbol the entrypoint does not export closes the class.\n\nRelated measurement from the same pass: pm-sr3xzg records that the light reader is also the one src/sdk/governance/validate.ts line 3654 declines to use, loading every item body unconditionally instead."
 body: ""

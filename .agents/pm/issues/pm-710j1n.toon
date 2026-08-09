@@ -1,0 +1,27 @@
+id: pm-710j1n
+title: External package compatibility is asserted with unbounded peer ranges and verified by a harness no workflow runs
+description: "Measured on 2026-08-09 against host @unbrained/pm-cli 2026.8.9.\n\nEighteen packages carry keywords:pm-package on the public registry. Their published versions span three release dates: pm-changelog, pm-github, pm-jira, pm-slack, pm-slack-standup, pm-gantt-chart, pm-beads and pm-todos sit at 2026.8.7; pm-graph, pm-ops, pm-brief, pm-presets, pm-starter and pm-ts-starter at 2026.8.8; only pm-csv, pm-context and pm-linear at 2026.8.9.\n\nEvery one of those packages declares its host compatibility as an open-ended lower bound with no upper bound: pm-todos and pm-gantt-chart say '>=2026.7.29', pm-changelog and pm-csv say '>=2026.8.3', pm-graph and pm-context say '>=2026.8.7'. A '>=' range with no ceiling is a compatibility assertion about host versions that did not exist when the assertion was published. No evidence can support it and no gate can refute it, because the surface it claims to work against is not yet written. This is the same shape as the epoch problem recorded at horizon AH on pm-doxj: a declaration outlives the contract surface that gave it meaning, and immutability of the published artifact makes the stale cohort unrepairable.\n\nThree packages also carry a hard runtime dependency on the host in addition to, or instead of, a peer range: pm-brief declares no peer at all and a dependency of '^2026.8.7'; pm-slack-standup declares peer '>=2026.7.29' and dependency '^2026.8.6'; pm-beads declares peer '>=2026.8.3' and dependency '^2026.8.6'. A caret range on a date-based version floats to the end of the calendar year, so those resolve to any 2026.x.y host. More importantly, docs/EXTENSIONS.md states that every copied extension receives a local node_modules/@unbrained/pm-cli link to the exact running host; a hard dependency installs a second host copy inside the extension and can shadow that link, so the extension may execute against a different runtime than the CLI that invoked it.\n\nThe only mechanism that validates any of this is scripts/smoke-external-packages.mjs. It appears in package.json as the 'smoke:external-packages' script and in no workflow under .github/workflows, so it never runs in CI. Its discovery default is also '--limit 10' against a registry that currently returns eighteen matches, so even a manual run silently covers a bit over half the ecosystem and reports ok on the subset it happened to select."
+type: Issue
+status: open
+priority: 1
+tags[6]: "area:sdk",ci,contracts,ecosystem,epoch,packages
+created_at: "2026-08-09T06:02:30.265Z"
+updated_at: "2026-08-09T06:07:11.623Z"
+author: "harness:claude-code"
+acceptance_criteria: "Published ecosystem packages declare a bounded host-compatibility range whose upper bound names a real released version; A workflow runs the external-package smoke harness against the current host on a schedule and on release; The harness fails, rather than reports ok, when discovery truncates the ecosystem below its full published size; No published pm package carries a hard runtime dependency on the host that can shadow the injected host link"
+parent: pm-ugqx
+risk: high
+confidence: high
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-quzx,related,"2026-08-09T06:02:30.265Z","harness:claude-code","cli:create:dep",detected
+  pm-ugqx,implements,"2026-08-09T06:02:30.265Z","harness:claude-code","cli:create:dep",detected
+  pm-1w0d,related,"2026-08-09T06:06:47.763Z","harness:claude-code","cli:update:dep",detected
+  pm-b84irw,related,"2026-08-09T06:06:47.763Z","harness:claude-code","cli:update:dep",detected
+  pm-csuce0,discovered_from,"2026-08-09T06:06:47.763Z","harness:claude-code","cli:update:dep",detected
+  pm-doxj,related,"2026-08-09T06:06:47.763Z","harness:claude-code","cli:update:dep",detected
+files[2]{path,scope,note}:
+  package.json,project,"smoke:external-packages script exists here and in no workflow"
+  scripts/smoke-external-packages.mjs,project,Only ecosystem validator; discovery defaults to --limit 10 and no workflow invokes it
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Documents the exact-host node_modules link that a hard host dependency can shadow
+body: ""

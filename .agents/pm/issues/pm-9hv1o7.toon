@@ -1,0 +1,25 @@
+id: pm-9hv1o7
+title: "The docs tree grows one file per shipped contract, so 39 of 51 documents are stubs and the SDK's story is split across twelve files"
+description: "docs/ holds 51 markdown files totalling 12503 lines. 39 of them are under 200 lines. Twelve carry an SDK_ prefix, and docs/README.md links 39 of the 51.\n\nThe distribution is the finding. Median document size is small because the tree has been growing by one file per shipped contract rather than by topic. The SDK context story alone is spread over five documents that a reader must hold together to answer a single question:\n\n  docs/SDK_CONTEXT_COORDINATION.md          147 lines\n  docs/SDK_CONTEXT_INTEGRITY.md              81 lines\n  docs/SDK_CONTEXT_INTEGRITY_PRIMITIVES.md  169 lines\n  docs/SDK_CONTEXT_TRUTH_CONTRACTS.md        62 lines\n  docs/SELF_DESCRIBING_CONTEXT_CONTRACTS.md 114 lines\n\nThree of those five have near-identical titles. Nothing in the names tells a reader which one answers which question, so the cheapest strategy for an agent that needs the context contract is to read all five, which is 573 lines to answer what one document should. Alongside them sit docs/SDK_PRIMITIVE_INVENTORY.md at 56 lines and docs/SDK_RUNTIME_BOUNDARIES.md at 58, against docs/SDK.md at 3290.\n\nThis works directly against the progressive-disclosure contract AGENTS.md opens with. That contract promises a small entrypoint that expands only into the documents matching the task. It holds for the seven rows in the AGENTS.md table and stops holding immediately below them, because the next level down is a flat directory of 51 similarly-named files with no ordering principle a reader can apply without opening them.\n\nThe naming convention is the mechanism that failed. A file named for the contract it documents is discoverable only by someone who already knows the contract's name — which is the population that does not need to find it. A file named for the question it answers is discoverable by the population that does.\n\nThis is adjacent to but distinct from pm-s4y3z4: that item covers documents unreachable from the link graph, and every document here is reachable. The defect is granularity and naming, not reachability. A document can be linked, current, accurate, and still cost a reader more than it saves."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:docs",docs,organization,progressive-disclosure
+created_at: "2026-08-09T06:05:01.657Z"
+updated_at: "2026-08-09T06:07:25.635Z"
+author: "harness:claude-code"
+acceptance_criteria: The SDK context contract is answerable from one document rather than five near-identically-named ones; Documents are named for the question they answer rather than the contract that produced them; docs/README.md orders the tree by task so a reader can choose without opening candidates
+parent: pm-u9d0
+risk: medium
+confidence: high
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-n7rr,related,"2026-08-09T06:05:01.657Z","harness:claude-code","cli:create:dep",detected
+  pm-s4y3z4,related,"2026-08-09T06:05:01.657Z","harness:claude-code","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-09T06:05:01.657Z","harness:claude-code","cli:create:dep",detected
+  pm-doxj,related,"2026-08-09T06:06:51.354Z","harness:claude-code","cli:update:dep",detected
+  pm-p99b,discovered_from,"2026-08-09T06:06:51.354Z","harness:claude-code","cli:update:dep",detected
+  pm-usfg,related,"2026-08-09T06:06:51.354Z","harness:claude-code","cli:update:dep",detected
+docs[2]{path,scope,note}:
+  AGENTS.md,project,Declares the progressive-disclosure contract that stops holding one level down
+  docs/README.md,project,Links 39 of 51 documents with no task ordering below the AGENTS.md table
+body: ""
