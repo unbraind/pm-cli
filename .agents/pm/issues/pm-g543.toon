@@ -2,18 +2,35 @@ id: pm-g543
 title: "GH-490: unknown-command suggester ranks substring hits over synonyms/edit distance — pm log suggests 'extension catalog'"
 description: Improve unknown-command ranking so edit distance and semantic synonyms beat misleading substring matches and recovery hints point to the intended command.
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,cli,errors,gh-issue
 created_at: "2026-07-10T10:32:36.607Z"
-updated_at: "2026-07-26T05:56:31.591Z"
+updated_at: "2026-08-09T22:09:47.301Z"
+closed_at: "2026-08-09T22:09:46.564Z"
+completed_at: "2026-08-09T22:09:46.564Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: pm log suggests history/comments/notes ahead of catalog commands; suggester ranks synonym table then edit distance then substring; unit tests cover top-10 verb synonyms; unknown-command JSON contract shape unchanged
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-gdi7,related,"2026-07-10T10:32:36.607Z",null,null
-  pm-mpbb,implements,"2026-07-26T05:56:31.386Z",null,null
+resolution: Added reusable synonym-aware command ranking with edit-distance fallback and substring ordering last.
+expected_result: "pm log prioritizes history, comments, and notes without changing the error contract."
+actual_result: Manual CLI acceptance and regression tests confirm the intended ranking and stable structured output.
+dependencies[2]{id,kind,created_at}:
+  pm-gdi7,related,"2026-07-10T10:32:36.607Z"
+  pm-mpbb,implements,"2026-07-26T05:56:31.386Z"
+comments[1]{created_at,author,text}:
+  "2026-08-09T22:09:45.263Z","harness:codex","Evidence: the public SDK semantic suggester ranks explicit agent verb synonyms and edit distance ahead of substring matches; pm log now suggests history/comments/notes instead of catalog commands. Unit, integration, and full coverage pass."
+learnings[1]{created_at,author,text}:
+  "2026-08-09T22:09:45.896Z","harness:codex",Substring command matching is actively misleading for agent vocabulary; explicit semantic aliases should rank before lexical proximity.
+files[2]{path,scope,note}:
+  src/cli/commander-usage.ts,project,Runtime suggestion integration
+  src/sdk/agent/command-suggestions.ts,project,Semantic command ranking primitive
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-command-primitives.spec.ts tests/integration/sdk-agent-command-contracts.integration.spec.ts,project,240,Semantic synonym ranking
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Semantic unknown-command ranking
+close_reason: Semantic unknown-command ranking is implemented and verified.
 body: "## Source\nGitHub issue #490 (version 2026.7.9).\n\n## Reproduction\n```bash\npm log some-id \"a note\"\n# Error: Unknown command log\n# Next steps: Did you mean: extension catalog, package catalog?\n```\n\n## Problem\nThe suggester ranks by substring containment (\"log\" ⊂ \"cataLOG\"), so both catalog subcommands outrank the commands an agent actually means — `history`, `comments`, `notes`. An agent following the hint is misdirected to the extension catalog instead of the item-history surface.\n\n## Proposed ranking\n1. Alias/synonym table for the top verbs agents guess (log→history/comments/notes, ls→list, rm→delete, …)\n2. Edit distance on the command token\n3. Substring hits last\n\nEven a small hardcoded synonym table removes most misdirection. The rest of the unknown-command error contract (structured JSON, recovery bundle, exit 2) is good — only the ranking misleads.\n\n## Why it matters for agents\nStateless agents guess verbs constantly; suggestion quality determines whether recovery costs one retry or a full `pm --help` roundtrip (96 lines) plus re-orientation. Related: pm-gdi7 covers the unknown-OPTION flag-suggestion gap; this covers unknown-COMMAND ranking."

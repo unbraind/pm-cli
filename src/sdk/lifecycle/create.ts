@@ -139,6 +139,7 @@ import {
   normalizeDependencySourceKind,
 } from "../dependency-provenance.js";
 import { resolveCanonicalRelationshipKind } from "../relationships.js";
+import { supportsCreateExplicitEmpty } from "../agent/create-option-policy.js";
 import {
   parseEventEntries,
   parseReminderEntries,
@@ -164,6 +165,7 @@ import {
   RISK_VALUES,
   SCOPE_VALUES,
 } from "../../types/index.js";
+import type { RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
 
 /** Documents the create command options payload exchanged by command, SDK, and package integrations. */
 export interface CreateCommandOptions
@@ -982,8 +984,9 @@ function assertNoStrictRequiredOptionClears(
   if (createMode !== "strict") {
     return;
   }
-  const strictRequiredClears = requiredOptions.filter((required) =>
-    clearOptionKeys.has(required),
+  const strictRequiredClears = requiredOptions.filter(
+    (required) =>
+      clearOptionKeys.has(required) && !supportsCreateExplicitEmpty(required),
   );
   if (strictRequiredClears.length === 0) {
     return;
@@ -1153,6 +1156,12 @@ function requireCreateOptionByType(
   // required check is relaxed; the disabled check above keeps using hasOptionValue.
   const satisfiesRequiredOption = (optionKey: string): boolean => {
     if (optionKey === "status" && typeDefinition.default_status !== undefined) {
+      return true;
+    }
+    if (
+      clearOptionKeys.has(optionKey) &&
+      supportsCreateExplicitEmpty(optionKey)
+    ) {
       return true;
     }
     return hasCreateOptionValue(optionLookup, optionKey);
@@ -2219,6 +2228,7 @@ function assertNoMissingRequiredCreateOptions(params: {
   openStatus: string;
   type: string;
   createMode: ReturnType<typeof resolveEffectiveCreateMode>;
+  missingRequiredRuntimeFields: RuntimeFieldDefinitionResolved[];
 }): void {
   const {
     combinedMissingFlags,
@@ -2228,16 +2238,38 @@ function assertNoMissingRequiredCreateOptions(params: {
     openStatus,
     type,
     createMode,
+    missingRequiredRuntimeFields,
   } = params;
   if (combinedMissingFlags.length === 0) {
     return;
   }
-  const nextValidExample = buildTypeSpecificCreateExample(
-    typeDefinition,
-    missingRequiredCreateFlags,
-    missingRequiredTypeOptionKeys,
-    openStatus,
-  );
+  const runtimeFieldSyntax = missingRequiredRuntimeFields.map((field) => {
+    const placeholder =
+      field.type === "boolean"
+        ? "<true|false>"
+        : field.type === "array"
+          ? "<json-array>"
+          : field.type === "object"
+            ? "<json-object>"
+            : field.type === "number"
+              ? "<number>"
+              : field.type === "string_array" || field.repeatable
+                ? "<value>"
+                : "<string>";
+    return {
+      example: `--${field.cli_flag} ${placeholder}`,
+      description: `--${field.cli_flag} maps to ${field.metadata_key} (${field.type}${field.repeatable ? ", repeatable" : ""})`,
+    };
+  });
+  const nextValidExample = [
+    buildTypeSpecificCreateExample(
+      typeDefinition,
+      missingRequiredCreateFlags,
+      missingRequiredTypeOptionKeys,
+      openStatus,
+    ),
+    ...runtimeFieldSyntax.map((field) => field.example),
+  ].join(" ");
   const nextSteps = [
     `Run "pm create --help --type ${type}" for type-aware required option guidance.`,
   ];
@@ -2257,6 +2289,11 @@ function assertNoMissingRequiredCreateOptions(params: {
         'For minimal scheduling inputs, try "--schedule-preset lightweight".',
       );
     }
+  }
+  if (runtimeFieldSyntax.length > 0) {
+    nextSteps.push(
+      `Required custom field formats: ${runtimeFieldSyntax.map((field) => field.description).join("; ")}.`,
+    );
   }
   const errorMessage =
     combinedMissingFlags.length === 1
@@ -2669,6 +2706,12 @@ export async function runCreate(
     runtimeFieldRegistry,
     type,
   );
+  const missingRequiredRuntimeFlagSet = new Set(
+    runtimeCreateFieldValues.missing_required_flags,
+  );
+  const missingRequiredRuntimeFields = runtimeFieldRegistry.definitions.filter(
+    (field) => missingRequiredRuntimeFlagSet.has(`--${field.cli_flag}`),
+  );
   assertNoCreateFieldUnsetConflicts(
     registeredItemFieldValues,
     runtimeCreateFieldValues,
@@ -2697,6 +2740,7 @@ export async function runCreate(
     openStatus: statusRegistry.open_status,
     type,
     createMode,
+    missingRequiredRuntimeFields,
   });
   assertNoInvalidTypeOptions(
     validatedTypeOptions.errors,
@@ -3110,6 +3154,9 @@ export async function runCreate(
   });
 
   const outputItem = structuredClone(itemMetadata);
+  if (createMode === "strict" && explicitUnsets.has("dependencies")) {
+    outputItem.dependencies = [];
+  }
 
   // GH-216: nudge agents toward the underutilized in_progress state instead of
   // jumping open -> closed. Only surfaces for workable types created in the open

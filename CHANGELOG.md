@@ -4,10 +4,18 @@
 
 ### Added
 
+- GH-472: create error for missing required custom fields lists the field names ([pm-4bzq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4bzq.toon))
 - A declared provenance resolver that fails at runtime is recorded identically to a dimension the harness cannot supply, so a broken probe is invisible until someone reads the source ([pm-lu6sca](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-lu6sca.toon))
 
 ### Fixed
 
+- GH-490: unknown-command suggester ranks substring hits over synonyms/edit distance — pm log suggests 'extension catalog' ([pm-g543](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g543.toon))
+- GH-515: pm test --add reorders linked tests — --only-last can execute a non-newest command ([pm-x2vx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x2vx.toon))
+- GH-441: type-aware create help mislabels applicable flags as required (ignores create-mode) ([pm-qmjx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qmjx.toon))
+- GH-519: close recovery bundle suggests --validate-close "<value\>" for an enum flag and hides the real resolution-fields blocker ([pm-ulqu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ulqu.toon))
+- GH-950: item-addressing commands reject a consistent --id alias and misroute recovery ([pm-mkinft](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mkinft.toon))
+- GH-951: required-field policy can force fabricated relationship edges ([pm-st7wgu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-st7wgu.toon))
+- GH-953: close recovery suggested_retry is not executable and drops supplied flags ([pm-p316vn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p316vn.toon))
 - A sandboxed fixture records provenance from the host harness environment, so the suite is green on CI and deterministically red for any agent running it locally ([pm-xgah3a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xgah3a.toon))
 - The session-role dimension is wired to a boolean child-session flag, so every nested claude-code invocation records the role literally as "1" and fleet analytics will group real work under a meaningless label ([pm-eq9dlw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eq9dlw.toon))
 - GH-921/GH-922: merge-decision receipts are not durable in fresh-clone CI ([pm-1j5j21](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1j5j21.toon))

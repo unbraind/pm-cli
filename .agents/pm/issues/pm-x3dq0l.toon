@@ -1,0 +1,29 @@
+id: pm-x3dq0l
+title: "GH-954: fail-fast dependency target validation with explicit forward-reference intent"
+description: Reject unresolved dependency targets during create/update unless the caller explicitly opts into a forward reference; keep graph truth and repair semantics discoverable.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-09T22:12:19.846Z"
+updated_at: "2026-08-09T22:16:19.907Z"
+author: "harness:codex"
+estimated_minutes: 360
+acceptance_criteria: Create and update reject unresolved dependency ids by default; an explicit allow-unresolved contract records intentional forward references; help SDK contracts MCP and completions expose additive replacement removal and forward-reference semantics; structured recovery names search dep-remove replace-deps and clear-deps; tests cover create update bulk and transaction paths
+goal: project management = context management
+objective: Make dependency writes referentially truthful by default
+value: Agents receive immediate recovery instead of silently corrupting the graph
+why_now: GitHub #954 demonstrates that the accepted-forward-reference decision in pm-ol5v remains unsafe and combines with strict relationship policy
+parent: pm-mpbb
+risk: medium
+confidence: high
+severity: high
+expected_result: Unresolved dependency writes require explicit intent
+actual_result: Current create and update silently persist unresolved ids
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-96h7,implements,"2026-08-09T22:12:19.846Z","harness:codex","cli:create:dep",detected
+  pm-ol5v,discovered_from,"2026-08-09T22:12:19.846Z","harness:codex","cli:create:dep",detected
+  pm-st7wgu,related,"2026-08-09T22:12:19.846Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-09T22:12:19.846Z","harness:codex","Duplicate-check evidence: searched every status for nonexistent dependency, dangling edge, mutation-time validation, and GH-954. Closed pm-ol5v intentionally accepted forward references while adding downstream diagnostics; #954 requests a new fail-fast default with an explicit escape hatch, so this is follow-on work rather than a duplicate."
+body: ""

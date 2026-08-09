@@ -2953,13 +2953,14 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
   runtimeExtensionDiscoverySnapshotCache = null;
   activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
   resetActiveExtensionRuntimeState();
-  const bootstrapInvocation = normalizeBootstrapInvocation(rawArgv);
-  const invocationArgv = bootstrapInvocation.argv;
-  const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
-  const isBareInvocation = invocationArgv.length === 0;
+  let invocationArgv = [...rawArgv];
   let restorePmAuthor: (() => void) | undefined;
   let restorePagerPolicy: (() => void) | undefined;
   try {
+    const bootstrapInvocation = normalizeBootstrapInvocation(rawArgv);
+    invocationArgv = bootstrapInvocation.argv;
+    const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
+    const isBareInvocation = invocationArgv.length === 0;
     const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
     if (bootstrapGlobal.authorMissingValue) {
       throw new PmCliError("--author requires a non-empty value.", EXIT_CODE.USAGE, {

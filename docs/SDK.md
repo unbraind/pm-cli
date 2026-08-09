@@ -35,6 +35,14 @@ ownership are tracked by [pm-ig5cfe](../.agents/pm/issues/pm-ig5cfe.toon),
 [pm-495lkc](../.agents/pm/issues/pm-495lkc.toon), and
 [pm-miy5k6](../.agents/pm/issues/pm-miy5k6.toon).
 
+Shared item addressing, lossless recovery, explicit-empty create policy,
+semantic command discovery, and append-stable linked tests are tracked by
+[pm-mkinft](../.agents/pm/issues/pm-mkinft.toon),
+[pm-p316vn](../.agents/pm/issues/pm-p316vn.toon),
+[pm-st7wgu](../.agents/pm/issues/pm-st7wgu.toon),
+[pm-g543](../.agents/pm/issues/pm-g543.toon), and
+[pm-x2vx](../.agents/pm/issues/pm-x2vx.toon).
+
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
 ## Install
@@ -309,6 +317,7 @@ Command/action contract exports:
 - Execution and diagnostics engines: `runTest`, `runLinkedTests`, `runTestAll`, `runStartBackgroundRun`, `runTestRunsList`, `runTestRunsStatus`, `runTestRunsLogs`, `runTestRunsStop`, `runTestRunsResume`, `runTestRunsWorker`, `runEval`, `runTelemetry`, and `runStats`. Their CLI modules are compatibility re-exports of SDK-owned implementations.
 - Execution and diagnostics contracts: `TestCommandOptions` / `TestResult` / `TestRunResult`, `TestAllCommandOptions` / `TestAllResult`, `StartBackgroundRunCommandOptions` / `StartBackgroundRunResult`, `TestRuns*CommandOptions`, `EvalOptions` / `EvalResult`, `TelemetryCommandOptions` / `TelemetrySubcommand`, and `StatsCommandOptions` / `StatsResult`.
 - Linked-test authoring primitives: `parseLinkedTestJsonEntries`, the `parseLinkedTest*` field parsers, `LINKED_TEST_PM_CONTEXT_MODE_VALUES`, `LINKED_TEST_PROTECTED_ENV_KEYS`, `classifyLinkedTestFailure`, `countFailureCategories`, and `summarizeContextPreflight` let custom hosts validate, execute, classify, and report linked tests without duplicating CLI policy.
+- Agent command primitives: `normalizeItemAddressInvocation` and `supportsItemIdAlias` project one item-id grammar across CLI adapters; `renderMissingOptionRetry` and `resolveMissingOptionPlaceholder` preserve attempted argv while deriving enum, boolean, and scalar recovery arity from flag contracts; `rankCommandPaths` and `scoreCommandPathMatch` provide deterministic synonym/edit-distance/substring ranking; `resolveCreateExplicitEmptyFlag` and `supportsCreateExplicitEmpty` model a considered-but-empty strict repeatable input without inventing metadata or graph edges.
 - Typed plan workflow primitives on `PmClient`: `plan`, `planCreate`, `planShow`, `planAddStep`, `planUpdateStep`, `planCompleteStep`, `planBlockStep`, `planReorderStep`, `planRemoveStep`, `planLink`, `planUnlink`, `planDecision`, `planDiscovery`, `planValidation`, `planResume`, `planApprove`, and `planMaterialize`
 - Plan contracts: `PlanSubcommand`, `PlanCommandOptions`, `PlanCommandResult`, `PlanResultPlan`, `PlanStepSummary`, `PlanShowDepth`, and `PlanTemplateName`
 - Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, `packageMigrate`, and `upgrade`; one-shot `extensionMigrate` and `packageMigrate` helpers mirror those lifecycle actions.
@@ -3258,9 +3267,14 @@ For SDK and automation consumers, the key runtime change is the optional `recove
 - `suggested_retry`
 
 Treat `recovery.suggested_retry` as the first-choice deterministic replay
-command when present. It is emitted only from structured recovery metadata or
-flags declared on the invoked command; prose that merely mentions another flag
-is not interpreted as a missing input.
+command when present. Generic missing-option retries preserve every original
+argv token, append only absent real flags, and derive placeholders from the
+declared flag domain (`<off|warn|strict>` for enum values and no placeholder for
+booleans). It is emitted only from structured recovery metadata or flags
+declared on the invoked command; prose that merely mentions another flag is not
+interpreted as a missing input. Strict close validation reports missing
+resolution fields first and suggests a targeted `pm update` before retrying the
+original close invocation.
 
 ## Authoring Pattern
 

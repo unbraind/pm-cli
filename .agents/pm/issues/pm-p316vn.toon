@@ -1,0 +1,46 @@
+id: pm-p316vn
+title: "GH-953: close recovery suggested_retry is not executable and drops supplied flags"
+description: Render recovery retries from the original argv and declared flag contracts so close preserves supplied named options and appends only truthful missing flags.
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk",contracts,gh-953,recovery
+created_at: "2026-08-09T20:27:11.624Z"
+updated_at: "2026-08-09T22:09:07.473Z"
+closed_at: "2026-08-09T22:09:06.921Z"
+completed_at: "2026-08-09T22:09:06.921Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: A close recovery retry preserves all supplied named options and values; missing flags are appended as real flag tokens using declared value domains; rendered retries are shell-safe and executable after replacing placeholders; regression tests cover reason author enum boolean and quoted values; the shared SDK primitive is reusable by every CLI command
+goal: project management = context management
+objective: Make machine-readable recovery commands lossless and executable
+value: Agents can recover in one turn without reconstructing the invocation
+why_now: A current external report proves the recovery contract corrupts both supplied and missing arguments
+parent: pm-mpbb
+risk: medium
+confidence: high
+severity: high
+resolution: Rebuilt recovery retries from original argv plus typed flag contracts.
+expected_result: Suggested retries preserve supplied arguments and append executable missing options.
+actual_result: Manual acceptance and regression tests execute the corrected strict-close retry successfully.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6y58,discovered_from,"2026-08-09T20:27:11.624Z","harness:codex","cli:create:dep",detected
+  pm-9qcr,discovered_from,"2026-08-09T20:27:11.624Z","harness:codex","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-08-09T20:27:11.624Z","harness:codex","cli:create:dep",detected
+  pm-ulqu,related,"2026-08-09T21:31:36.719Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-09T20:27:11.624Z","harness:codex","Duplicate-check evidence: searched every status for GH-953, suggested retry parse failures, dropped caller flags, recovery domains, and wrong-command retries. Existing items cover boolean/enum arity and older recovery routing, not lossless argv reconstruction."
+  "2026-08-09T22:09:05.722Z","harness:codex","Evidence: implemented reusable SDK recovery rendering from original argv and declared contracts; close preserves named flags, emits valid placeholders, and focused plus full-suite coverage passes. Manual strict-close retry was copied, placeholders replaced, and executed successfully."
+learnings[1]{created_at,author,text}:
+  "2026-08-09T22:09:06.298Z","harness:codex",Recovery strings must distinguish human-readable missing-field labels from executable option tokens; original argv is the lossless source of truth.
+files[4]{path,scope,note}:
+  src/cli/commander-usage.ts,project,Runtime recovery and semantic guidance adapter
+  src/sdk/agent/command-recovery.ts,project,Lossless contract-driven retry primitive
+  src/sdk/cli-contracts/flag-contracts.ts,project,Declared enum and item-address flag domains
+  tests/unit/sdk/agent-command-primitives.spec.ts,project,SDK recovery and semantic suggestion unit coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-command-primitives.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240,Recovery contract and runtime integration
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Recovery primitive contract
+close_reason: Lossless executable recovery is implemented and verified.
+body: "GitHub #953 reports that the shared missing-required-option recovery path turns supplied close options into bare positional values, interpolates display labels as quoted arguments, and drops author context. Duplicate check across all 2,395 statuses found only roadmap ledgers plus pm-ulqu (enum domains), pm-6y58/pm-9qcr (boolean arity), and closed pm-5uclvd (wrong-command recovery); none owns lossless argv reconstruction."

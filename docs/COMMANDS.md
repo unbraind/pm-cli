@@ -2,7 +2,7 @@
 
 This is a task-oriented command guide. For exact flags, use runtime help because extensions and settings can change the active surface:
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-qd3woa](../.agents/pm/issues/pm-qd3woa.toon), [pm-ypuc39](../.agents/pm/issues/pm-ypuc39.toon), [pm-tz2ikr](../.agents/pm/issues/pm-tz2ikr.toon), and the schema-migration recovery contract [pm-s79kel](../.agents/pm/issues/pm-s79kel.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-qd3woa](../.agents/pm/issues/pm-qd3woa.toon), [pm-ypuc39](../.agents/pm/issues/pm-ypuc39.toon), [pm-tz2ikr](../.agents/pm/issues/pm-tz2ikr.toon), the schema-migration recovery contract [pm-s79kel](../.agents/pm/issues/pm-s79kel.toon), and the SDK-first agent grammar tranche [pm-p316vn](../.agents/pm/issues/pm-p316vn.toon), [pm-st7wgu](../.agents/pm/issues/pm-st7wgu.toon), [pm-mkinft](../.agents/pm/issues/pm-mkinft.toon), [pm-ulqu](../.agents/pm/issues/pm-ulqu.toon), [pm-qmjx](../.agents/pm/issues/pm-qmjx.toon), [pm-4bzq](../.agents/pm/features/pm-4bzq.toon), [pm-x2vx](../.agents/pm/issues/pm-x2vx.toon), and [pm-g543](../.agents/pm/issues/pm-g543.toon).
 
 ```bash
 pm <command> --help
@@ -358,7 +358,9 @@ pm close-many --rollback close-many-20260604-abc123   # restore the batch
 
 `close-many` skips already-terminal matches by default (pass `--force` to re-close), accepts `--completed-at <timestamp>` to preserve one shared actual-completion time across the batch, reports a per-item plan (`close`/`skip`, plus `active_child_ids` for parents that would be orphaned) under `--dry-run`, and writes a checkpoint by default (`--no-checkpoint` to disable). Checkpoints for both commands live under `.agents/pm/checkpoints/<command>/` and are restored with `--rollback <checkpoint-id>`.
 
-When a flag is rejected with `Unknown option`, the error guidance now suggests the nearest supported flag (including abbreviations like `--desc` → `--description`) and notes when the flag is valid on a different command (for example `--type` on `test-all` points to `create`/`list`).
+When a flag is rejected with `Unknown option`, the error guidance now suggests the nearest supported flag (including abbreviations like `--desc` → `--description`) and notes when the flag is valid on a different command (for example `--type` on `test-all` points to `create`/`list`). Unknown-command guidance ranks agent verb synonyms first, bounded edit distance second, and substring matches last; `pm log` therefore points to `history`, `comments`, and `notes`, never a `catalog` command.
+
+Commands addressed to one item retain their canonical positional form and also accept `--id <item-id>` consistently. For example, `pm get --id pm-a1`, `pm comments --id pm-a1 --add "..."`, and `pm test --id pm-a1 --run` are equivalent to their positional forms. Supplying both forms is a usage error. Command-scoped `pm contracts --flags-only`, completion, and help expose the same alias.
 
 ## Create and Update
 
@@ -379,6 +381,7 @@ pm create "Fix login bug" --type Issue --priority high
 `pm create` defaults `--type` to `settings.governance.create_default_type` (falling back to `Task`).
 Set it with `pm config project set governance-create-default-type <Type>` (must resolve to a known item type).
 Pass `--create-mode strict` to require an explicit `--type` flag for governance-controlled flows.
+Type-aware help reports requirements for the selected mode and lists stricter requirements separately. A strict required repeatable collection can be deliberately empty: for example, `--clear-deps` satisfies a required dependency consideration while writing no relationship edge and recording `explicit_unset=dependencies` in history. Required runtime-schema fields are named with their metadata key and expected input format in structured recovery.
 `pm update --status` can be constrained per item type via `schema.type_workflows` plus
 `pm config project set governance-workflow-enforcement <off|warn|strict>` (see CONFIGURATION.md → Per-Type Workflows).
 Priority accepts either `0..4` or the equivalent names `critical`, `high`, `medium`, `low`, and `minimal`.
@@ -747,7 +750,7 @@ pm test <id> --run --only-last
 pm test-all --status in_progress --progress
 ```
 
-Linked test commands should be sandbox-safe. Prefer `node scripts/run-tests.mjs ...` for repo-local test suites; normal package-manager scripts such as `pnpm test` and `npm run test` are accepted because linked-test execution injects temporary `PM_PATH` and `PM_GLOBAL_PATH`. Direct runner binaries such as `vitest` or `node --test` still need the wrapper or explicit inline sandbox env. The two-token form `--add command "npm test -- parser"` (and `--add path "..."` / `--remove command "..."`) is accepted when the value is quoted into a single shell argument; it is normalized to `--add command=...` before parsing. Use `--add-json` when command strings contain commas, nested quotes, shell variables, or `--` separators that are awkward to preserve through CSV-style `--add` parsing. `--match`, `--only-index`, and `--only-last` select which linked tests execute without mutating the stored linked-test list.
+Linked test commands should be sandbox-safe. Prefer `node scripts/run-tests.mjs ...` for repo-local test suites; normal package-manager scripts such as `pnpm test` and `npm run test` are accepted because linked-test execution injects temporary `PM_PATH` and `PM_GLOBAL_PATH`. Direct runner binaries such as `vitest` or `node --test` still need the wrapper or explicit inline sandbox env. The two-token form `--add command "npm test -- parser"` (and `--add path "..."` / `--remove command "..."`) is accepted when the value is quoted into a single shell argument; it is normalized to `--add command=...` before parsing. Use `--add-json` when command strings contain commas, nested quotes, shell variables, or `--` separators that are awkward to preserve through CSV-style `--add` parsing. Linked tests retain append order; consequently `--only-last` always selects the most recently added stored test. `--match`, `--only-index`, and `--only-last` select which linked tests execute without mutating the stored linked-test list.
 
 Strict linked-test guards:
 

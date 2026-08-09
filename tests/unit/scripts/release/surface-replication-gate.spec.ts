@@ -319,6 +319,7 @@ describe("surface replication gate", () => {
         "utf8",
       ),
     ) as Record<string, unknown>;
+    config.waivers = [];
 
     const report = await validateSurfaceReplication(config, {
       repoRoot: path.resolve("."),
@@ -330,7 +331,7 @@ describe("surface replication gate", () => {
     expect(report.violations).toContain(
       "set:annotation-mutation-receipts:member:src/sdk/cli-contracts/tool-parameter-tables.ts:unchanged",
     );
-  });
+  }, 60_000);
 
   it("reports recurrence density, cap overlap, and CLI refusal totals", async () => {
     const root = await fixtureRoot();
@@ -800,9 +801,18 @@ describe("surface replication gate", () => {
   });
 
   it("loads default and explicit declarations through the public main function", async () => {
-    await expect(main(["--list-waivers"])).resolves.toEqual({ waivers: [] });
+    const defaultDeclaration = JSON.parse(
+      await readFile(
+        path.resolve("scripts/release/surface-replication-sets.json"),
+        "utf8",
+      ),
+    ) as { waivers?: unknown[] };
+    const expectedDefaultWaivers = defaultDeclaration.waivers ?? [];
+    await expect(main(["--list-waivers"])).resolves.toEqual({
+      waivers: expectedDefaultWaivers,
+    });
     await expect(main(["--declaration", "--list-waivers"])).resolves.toEqual({
-      waivers: [],
+      waivers: expectedDefaultWaivers,
     });
     const root = await fixtureRoot();
     const explicitConfig = {

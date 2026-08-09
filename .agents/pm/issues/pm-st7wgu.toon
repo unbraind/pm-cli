@@ -1,0 +1,46 @@
+id: pm-st7wgu
+title: "GH-951: required-field policy can force fabricated relationship edges"
+description: Separate relational deliberation from value presence so strict creation policy can require an explicit no-dependency assertion without inventing graph data.
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:cli","area:graph","area:sdk",context-management,gh-951,governance
+created_at: "2026-08-09T20:27:15.103Z"
+updated_at: "2026-08-09T22:09:09.709Z"
+closed_at: "2026-08-09T22:09:09.083Z"
+completed_at: "2026-08-09T22:09:09.083Z"
+author: "harness:codex"
+estimated_minutes: 420
+acceptance_criteria: The public SDK models required relational inputs as considered states distinct from present values; CLI accepts an explicit no-dependency assertion without writing a dependency edge; the assertion is auditable in the mutation receipt/history; empty-workspace and nonempty-workspace behavior is deterministic; create help contracts MCP schemas completions and docs expose the same semantics; regression tests prove no fabricated edge and strict-policy satisfaction
+goal: project management = context management
+objective: Make strict context policy truthful and satisfiable
+value: Agents can prove they considered graph context without polluting the relationship graph
+why_now: The current gate directly incentivizes fabricated dependencies
+parent: pm-mpbb
+risk: medium
+confidence: high
+severity: high
+resolution: Added explicit empty repeatable-field intent without persisting fabricated dependencies.
+expected_result: Strict create policy accepts a deliberate no-dependency assertion and writes no edge.
+actual_result: "Integration acceptance proves policy satisfaction, auditable intent, and an empty dependency set."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4020c5,discovered_from,"2026-08-09T20:27:15.103Z","harness:codex","cli:create:dep",detected
+  pm-96h7,implements,"2026-08-09T20:27:15.103Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-09T20:27:15.103Z","harness:codex","cli:create:dep",detected
+  pm-4bzq,related,"2026-08-09T21:31:42.343Z","harness:codex","cli:update:dep",detected
+  pm-qmjx,related,"2026-08-09T21:31:42.343Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-09T20:27:15.103Z","harness:codex","Duplicate-check evidence: searched all 2,395 items for required-field policy, mandatory dep, invented dependency, relational consideration, and first-item creation. Adjacent items govern create help and dependency syntax, but none provides an explicit truthful none assertion."
+  "2026-08-09T22:09:07.929Z","harness:codex","Evidence: added an SDK explicit-empty policy primitive and --clear-deps create intent; strict policy accepts the deliberate empty relationship state while persistence and history contain no fabricated edge. Integration and full coverage pass."
+learnings[1]{created_at,author,text}:
+  "2026-08-09T22:09:08.464Z","harness:codex","Presence and deliberation are different states: strict governance can require that relationships were considered without requiring false graph data."
+files[3]{path,scope,note}:
+  src/cli/help-json-payload.ts,project,Mode-aware policy help
+  src/sdk/agent/create-option-policy.ts,project,Explicit-empty create policy primitive
+  src/sdk/lifecycle/create.ts,project,Strict considered-empty enforcement and audit receipt
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk-agent-command-contracts.integration.spec.ts,project,240,Strict explicit-empty acceptance
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Explicit no-dependency assertion
+close_reason: Truthful considered-empty relationship policy is implemented and verified.
+body: GitHub #951 shows that a workspace may require --dep even for the first or genuinely independent item. Every-status duplicate search found relationship validation and create-policy work but no item covering an explicit considered-none assertion or satisfiability of relational required fields. This must preserve graph truth instead of weakening strict policy.

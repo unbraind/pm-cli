@@ -643,6 +643,10 @@ describe("built-in todos extension import/export", () => {
       ]);
       expect(item.tests).toEqual([
         {
+          command: "pnpm test",
+          scope: "project",
+        },
+        {
           command: "pnpm typecheck",
           path: "tests/unit/example.spec.ts",
           scope: "global",
@@ -665,10 +669,6 @@ describe("built-in todos extension import/export", () => {
             count: 2,
           },
           note: "test note",
-        },
-        {
-          command: "pnpm test",
-          scope: "project",
         },
       ]);
       expect((result.json as { item: { body: string } }).item.body).toBe("metadata body");

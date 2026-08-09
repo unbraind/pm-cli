@@ -1033,7 +1033,7 @@ function normalizeTestRunSummary(
 
 function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
   if (!Array.isArray(values) || values.length === 0) return undefined;
-  return [...values].map(normalizeLinkedTest).sort(compareLinkedTests);
+  return values.map(normalizeLinkedTest);
 }
 
 function normalizeTrimmedStringList(
@@ -1145,58 +1145,6 @@ function normalizeLinkedTest(value: LinkedTest): LinkedTest {
   };
   deleteUndefinedFields(test as unknown as Record<string, unknown>);
   return test;
-}
-
-function compareLinkedTests(a: LinkedTest, b: LinkedTest): number {
-  return firstNonZeroComparison([
-    a.scope.localeCompare(b.scope),
-    compareOptionalStrings(a.path, b.path),
-    compareOptionalStrings(a.command, b.command),
-    compareOptionalNumbers(a.timeout_seconds, b.timeout_seconds),
-    compareOptionalStrings(a.pm_context_mode, b.pm_context_mode),
-    Number(Boolean(a.shared_host_safe)) - Number(Boolean(b.shared_host_safe)),
-    compareJsonValues(a.env_clear, b.env_clear, []),
-    compareJsonValues(a.env_set, b.env_set, {}),
-    compareJsonValues(a.assert_stdout_contains, b.assert_stdout_contains, []),
-    compareJsonValues(a.assert_stdout_regex, b.assert_stdout_regex, []),
-    compareJsonValues(a.assert_stderr_contains, b.assert_stderr_contains, []),
-    compareJsonValues(a.assert_stderr_regex, b.assert_stderr_regex, []),
-    compareOptionalNumbers(
-      a.assert_stdout_min_lines,
-      b.assert_stdout_min_lines,
-    ),
-    compareJsonValues(
-      a.assert_json_field_equals,
-      b.assert_json_field_equals,
-      {},
-    ),
-    compareJsonValues(a.assert_json_field_gte, b.assert_json_field_gte, {}),
-    compareOptionalStrings(a.note, b.note),
-  ]);
-}
-
-function compareOptionalStrings(
-  left: string | undefined,
-  right: string | undefined,
-): number {
-  return (left ?? "").localeCompare(right ?? "");
-}
-
-function compareOptionalNumbers(
-  left: number | undefined,
-  right: number | undefined,
-): number {
-  return (left ?? 0) - (right ?? 0);
-}
-
-function compareJsonValues(
-  left: unknown,
-  right: unknown,
-  fallback: unknown,
-): number {
-  return JSON.stringify(left ?? fallback).localeCompare(
-    JSON.stringify(right ?? fallback),
-  );
 }
 
 function sortDocs(values: LinkedDoc[] | undefined): LinkedDoc[] | undefined {

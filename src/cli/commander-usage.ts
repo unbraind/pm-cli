@@ -43,6 +43,8 @@ import {
 } from "./argv-utils.js";
 import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js";
 import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
+import { rankCommandPaths } from "../sdk/agent/command-suggestions.js";
+import { renderMissingOptionRetry } from "../sdk/agent/command-recovery.js";
 
 /** Supported values accepted by the builtin type help contract. */
 export const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
@@ -546,12 +548,20 @@ function resolveUnknownCommandCandidates(params: {
   primaryToken: string;
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>;
 }): string[] {
+  const semanticCandidates = rankCommandPaths(
+    params.commandPaths,
+    params.primaryToken,
+  );
   const rankedCandidates = scoreRuntimeCommandCandidates(params);
   const installedPackageCandidates = collectInstalledPackageCommandPathHints(
     params.primaryToken,
     params.extensionDescriptors,
   ).filter((commandPath) => params.commandPaths.includes(commandPath));
-  return dedupeStrings([...rankedCandidates, ...installedPackageCandidates]);
+  return dedupeStrings([
+    ...semanticCandidates,
+    ...rankedCandidates,
+    ...installedPackageCandidates,
+  ]);
 }
 
 function resolveUnknownCommandFallbacks(commandPaths: string[]): string[] {
@@ -790,18 +800,13 @@ function resolveSuggestedRetryForMissingOption(
   if (!requiredOptionToken?.startsWith("--")) {
     return undefined;
   }
-  const hasFlag = invocationArgv.some(
-    (token) =>
-      token === requiredOptionToken ||
-      token.startsWith(`${requiredOptionToken}=`),
-  );
-  return hasFlag
-    ? undefined
-    : renderAttemptedCommand([
-        ...invocationArgv,
-        requiredOptionToken,
-        "<value>",
-      ]);
+  const commandName = parseBootstrapCommandName(invocationArgv);
+  if (!commandName) {
+    return undefined;
+  }
+  return renderMissingOptionRetry(invocationArgv, commandName, [
+    requiredOptionToken,
+  ]);
 }
 
 /** Implements resolve commander usage context for the public runtime surface of this module. */

@@ -10,6 +10,9 @@ import {
 } from "./cli-contracts.js";
 export { EXECUTABLE_COMMAND_ALIASES };
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
+import { normalizeItemAddressInvocation } from "./agent/item-addressing.js";
 
 const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>([
   "--pm-path",
@@ -415,6 +418,7 @@ type BootstrapNormalizationReason =
   | "executable_alias"
   | "legacy_extension_action"
   | "command_alias"
+  | "item_id_alias"
   | "flag_alias"
   | "flag_typo"
   | "bare_key_value"
@@ -1131,11 +1135,26 @@ export function normalizeBootstrapInvocation(
     });
   }
   const aliasNormalized = rewriteCommandAlias(legacyNormalized, trace);
-  const commandName = parseBootstrapCommandName(aliasNormalized);
-  const commandPathName = parseBootstrapCommandPathName(aliasNormalized);
+  const itemAddress = normalizeItemAddressInvocation(aliasNormalized);
+  if (itemAddress.conflict) {
+    throw new PmCliError(
+      "Provide the item id either positionally or with --id, not both.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (itemAddress.changed) {
+    trace.push({
+      from: `--id ${itemAddress.itemId}`,
+      to: [itemAddress.itemId!],
+      reason: "item_id_alias",
+      confidence: "high",
+    });
+  }
+  const commandName = parseBootstrapCommandName(itemAddress.argv);
+  const commandPathName = parseBootstrapCommandPathName(itemAddress.argv);
   const lookup = buildFlagLookup(commandPathName ?? commandName);
   const normalizedArgv = normalizeBootstrapTokens(
-    aliasNormalized,
+    itemAddress.argv,
     lookup,
     commandName,
     trace,
