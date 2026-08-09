@@ -14,12 +14,12 @@
     },
     {
       "id": "returning-agent",
-      "max_estimated_tokens": 383
+      "max_estimated_tokens": 597
     },
     {
       "id": "failing-command",
       "max_estimated_tokens": 197
     }
   ],
-  "composite_max_estimated_tokens": 2437
+  "composite_max_estimated_tokens": 2651
 }

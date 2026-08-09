@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-09T00:15:31.183Z"
-updated_at: "2026-08-09T09:54:51.947Z"
+updated_at: "2026-08-09T10:27:54.611Z"
 closed_at: "2026-08-09T08:05:34.643Z"
 completed_at: "2026-08-09T08:05:34.643Z"
 author: "harness:codex"
@@ -22,12 +22,13 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-b1w8vr,related,"2026-08-09T00:15:31.183Z","harness:codex","cli:create:dep",detected
   pm-p258tx,related,"2026-08-09T00:15:31.183Z","harness:codex","cli:create:dep",detected
   pm-9hv1o7,verifies,"2026-08-09T07:29:49.342Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-09T00:15:31.183Z","harness:codex","Duplicate check: searched all statuses for read, notes, omission_receipt, and duplicate writes. pm-0k19l7, pm-p258tx, pm-3esl28, and pm-b1w8vr are completed adjacent projection work; none owns the pm read receipt mismatch reported in GH-941."
   "2026-08-09T07:13:21.819Z","harness:codex","Calibration evidence: expanding get omission truth from three top-level groups to thirteen restorable body, collection, and section groups adds a constant 515 bytes / 129 measured tokens to the standard get receipt; the approved calibration preserves the same 20k session budget and remains below its ceiling."
   "2026-08-09T08:05:18.202Z","harness:codex","Final evidence: linked output-projection tests pass; clean tarball consumer default get returned a property-aware receipt with 11 genuinely omitted groups while preserving included linked and claim_state sections; full repository coverage is exact 100/100/100/100."
   "2026-08-09T09:24:01.215Z","harness:codex","PR #947 review hardening: get projection completeness now tests own-property presence, so an explicitly present undefined field is distinguished from an omitted field. The focused regression covers this shape, and the calibrated output-contract documentation now matches the generated 2-item and 2,243-item measurements."
   "2026-08-09T09:54:51.947Z","harness:codex","Delivery review: https://github.com/unbraind/pm-cli/pull/947 carries this item's implementation, tests, documentation, generated contracts, and hosted review corrections on branch feat/sdk-context-read-remediation-replication."
+  "2026-08-09T10:27:54.611Z","harness:codex","Hosted-gate calibration evidence: the exact seeded returning-agent get now emits 2,388 bytes / 597 estimated tokens because the completed GH-941 contract adds truthful restorable omission groups. The other three independently measured scenarios remain byte-for-byte at 626, 1,231, and 197 tokens. Refreshed the published baseline through pnpm quality:agent-task-token:update, then the normal gate and its executable million-token negative control passed; composite 2,651 remains far below the 20k session budget."
 files[3]{path,scope,note}:
   scripts/release/context-intent-calibration.json,project,Approved constant-size omission receipt overhead
   src/sdk/output-projection.ts,project,Declare every omitted get collection and section
@@ -36,7 +37,8 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mslicjld-0efw29,test,passed,"2026-08-09T07:55:14.536Z","2026-08-09T07:55:23.569Z","2026-08-09T07:55:23.569Z",1,0,0
-docs[2]{path,scope,note}:
+docs[3]{path,scope,note}:
+  docs/agent-task-token-baseline.json,project,Reviewed returning-agent ceiling for truthful get omission receipt
   docs/READ_OUTPUT_CONTRACTS.md,project,Calibrated omission receipt token and byte totals
   docs/SDK_CONTEXT_INTEGRITY.md,project,Read omission recovery contract
 close_reason: Implemented truthful property-aware get omission receipts and verified source plus packaged behavior
