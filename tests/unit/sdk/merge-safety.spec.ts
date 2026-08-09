@@ -34,6 +34,8 @@ import {
   resolveMergeInstallContext,
   runMergeDriver,
   runMergeInstall,
+  PM_GITATTRIBUTES_V2_END,
+  PM_GITATTRIBUTES_V2_START,
 } from "../../../src/sdk/index.js";
 import type { ItemDocument } from "../../../src/types/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -790,7 +792,7 @@ describe("public merge-safety SDK primitives", () => {
         await runMergeInstall({}, { path: context.pmPath });
         expect(
           await readFile(path.join(context.tempRoot, ".gitattributes"), "utf8"),
-        ).toContain("# pm-cli:merge-drivers:start");
+        ).toContain(PM_GITATTRIBUTES_V2_START);
         expect(
           (await runMergeInstall({}, { path: context.pmPath })).gitattributes
             .changed,
@@ -806,7 +808,7 @@ describe("public merge-safety SDK primitives", () => {
           "utf8",
         );
         expect(
-          repairedAttributes.match(/# pm-cli:merge-drivers:start/g),
+          repairedAttributes.match(/# pm-cli:merge-drivers:v2:start/g),
         ).toHaveLength(1);
         expect(repairedAttributes).toContain("*.bin binary");
 
@@ -1300,7 +1302,7 @@ describe("public merge-safety SDK primitives", () => {
         );
         await writeFile(
           installedAttributesPath,
-          installedAttributes.replace("# pm-cli:merge-drivers:end", ""),
+          installedAttributes.replace(PM_GITATTRIBUTES_V2_END, ""),
           "utf8",
         );
         const truncatedAudit = await auditMergeAttributeFence(context.pmPath, [
@@ -1327,8 +1329,8 @@ describe("public merge-safety SDK primitives", () => {
         await writeFile(
           attributesPath,
           current.replace(
-            "# pm-cli:merge-drivers:start",
-            '# pm-cli:merge-drivers:start\n".agents/pm/ghosts/*.toon" merge=pm-item-toon',
+            PM_GITATTRIBUTES_V2_START,
+            `${PM_GITATTRIBUTES_V2_START}\n".agents/pm/ghosts/*.toon" merge=pm-item-toon`,
           ),
           "utf8",
         );
@@ -1388,8 +1390,7 @@ describe("public merge-safety SDK primitives", () => {
       );
       const previousSourcePmPath = process.env.PM_SOURCE_PM_PATH;
       const previousSourceWorkspaceRoot = process.env.PM_SOURCE_WORKSPACE_ROOT;
-      const previousSourceContextAccess =
-        process.env.PM_SOURCE_CONTEXT_ACCESS;
+      const previousSourceContextAccess = process.env.PM_SOURCE_CONTEXT_ACCESS;
       const previousSourceWriteOverride =
         process.env.PM_ALLOW_SOURCE_CONTEXT_WRITES;
       process.env.PM_SOURCE_PM_PATH = context.pmPath;

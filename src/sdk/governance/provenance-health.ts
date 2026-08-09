@@ -20,10 +20,24 @@ export interface ProvenanceResolverHealthOutcome {
   successes: number;
 }
 
+/** Aggregate for legacy provenance values that violate the bounded domain. */
+export interface ProvenanceValueHealthFinding {
+  /** Detected harness namespace. */
+  harness: string;
+  /** Provenance dimension containing the invalid value. */
+  dimension: string;
+  /** Privacy-safe invalid-value class. */
+  kind: "boolean" | "single_digit";
+  /** Events containing this invalid value class. */
+  count: number;
+}
+
 /** Bounded provenance health result suitable for `pm health` adapters. */
 export interface ProvenanceResolverHealthScan {
   /** Stable resolver outcome aggregates. */
   outcomes: ProvenanceResolverHealthOutcome[];
+  /** Aggregated invalid legacy values without retaining the values themselves. */
+  invalid_values: ProvenanceValueHealthFinding[];
   /** Advisory warnings for attempted resolvers with no success. */
   warnings: string[];
   /** Number of nonblank history events inspected. */
@@ -33,6 +47,27 @@ export interface ProvenanceResolverHealthScan {
 }
 
 const DEFAULT_PROVENANCE_HISTORY_BYTE_LIMIT = 8_388_608;
+const ATTEMPTED_PROVENANCE_OUTCOME_STATUSES = new Set(["resolved", "failed"]);
+const INVALID_PROVENANCE_VALUE_CLASSIFIERS: ReadonlyArray<{
+  kind: ProvenanceValueHealthFinding["kind"];
+  matches: (value: unknown) => boolean;
+}> = [
+  {
+    kind: "boolean",
+    matches: (value) =>
+      typeof value === "boolean" ||
+      (typeof value === "string" && /^(?:true|false)$/iu.test(value.trim())),
+  },
+  {
+    kind: "single_digit",
+    matches: (value) =>
+      (typeof value === "number" &&
+        Number.isInteger(value) &&
+        value >= 0 &&
+        value <= 9) ||
+      (typeof value === "string" && /^\d$/u.test(value.trim())),
+  },
+];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -95,20 +130,43 @@ function parseHistoryEntry(line: string): Record<string, unknown> | null {
 function collectResolverOutcomes(
   entry: Record<string, unknown>,
   aggregates: Map<string, ProvenanceResolverHealthOutcome>,
+  invalidValues: Map<string, ProvenanceValueHealthFinding>,
 ): void {
+  const harness =
+    typeof entry.agent_harness === "string" ? entry.agent_harness : undefined;
+  if (harness === undefined) return;
+  const provenance = isRecord(entry.agent_provenance)
+    ? entry.agent_provenance
+    : {};
+  Object.entries(provenance).forEach(([dimension, observation]) => {
+    if (!isRecord(observation)) return;
+    const kind = INVALID_PROVENANCE_VALUE_CLASSIFIERS.find((classifier) =>
+      classifier.matches(observation.value),
+    )?.kind;
+    if (!kind) return;
+    const key = `${harness}\0${dimension}\0${kind}`;
+    const aggregate = invalidValues.get(key) ?? {
+      harness,
+      dimension,
+      kind,
+      count: 0,
+    };
+    aggregate.count += 1;
+    invalidValues.set(key, aggregate);
+  });
   if (!isRecord(entry.context)) return;
   const outcomes = entry.context.agent_provenance_outcomes;
-  if (!isRecord(outcomes) || typeof entry.agent_harness !== "string") return;
-  for (const [dimension, rawOutcome] of Object.entries(outcomes)) {
+  if (!isRecord(outcomes)) return;
+  Object.entries(outcomes).forEach(([dimension, rawOutcome]) => {
     if (!isRecord(rawOutcome) || typeof rawOutcome.resolver !== "string") {
-      continue;
+      return;
     }
-    if (rawOutcome.status !== "resolved" && rawOutcome.status !== "failed") {
-      continue;
+    if (!ATTEMPTED_PROVENANCE_OUTCOME_STATUSES.has(String(rawOutcome.status))) {
+      return;
     }
-    const key = `${entry.agent_harness}\0${dimension}\0${rawOutcome.resolver}`;
+    const key = `${harness}\0${dimension}\0${rawOutcome.resolver}`;
     const aggregate = aggregates.get(key) ?? {
-      harness: entry.agent_harness,
+      harness,
       dimension,
       resolver: rawOutcome.resolver,
       attempts: 0,
@@ -117,12 +175,13 @@ function collectResolverOutcomes(
     aggregate.attempts += 1;
     if (rawOutcome.status === "resolved") aggregate.successes += 1;
     aggregates.set(key, aggregate);
-  }
+  });
 }
 
 function collectHistoryContent(
   content: string,
   aggregates: Map<string, ProvenanceResolverHealthOutcome>,
+  invalidValues: Map<string, ProvenanceValueHealthFinding>,
   eventLimit: number,
   initialEventsRead: number,
 ): { eventsRead: number; truncated: boolean } {
@@ -132,7 +191,7 @@ function collectHistoryContent(
     if (eventsRead >= eventLimit) return { eventsRead, truncated: true };
     eventsRead += 1;
     const entry = parseHistoryEntry(line);
-    if (entry) collectResolverOutcomes(entry, aggregates);
+    if (entry) collectResolverOutcomes(entry, aggregates, invalidValues);
   }
   return { eventsRead, truncated: false };
 }
@@ -143,6 +202,7 @@ export async function scanProvenanceResolverHealth(
   eventLimit = 10_000,
 ): Promise<ProvenanceResolverHealthScan> {
   const aggregates = new Map<string, ProvenanceResolverHealthOutcome>();
+  const invalidValues = new Map<string, ProvenanceValueHealthFinding>();
   let eventsRead = 0;
   let bytesRead = 0;
   let truncated = false;
@@ -157,6 +217,7 @@ export async function scanProvenanceResolverHealth(
     const collected = collectHistoryContent(
       history.content,
       aggregates,
+      invalidValues,
       eventLimit,
       eventsRead,
     );
@@ -176,16 +237,31 @@ export async function scanProvenanceResolverHealth(
       left.dimension.localeCompare(right.dimension) ||
       left.resolver.localeCompare(right.resolver),
   );
+  const invalidValueFindings = [...invalidValues.values()].sort(
+    (left, right) =>
+      left.harness.localeCompare(right.harness) ||
+      left.dimension.localeCompare(right.dimension) ||
+      left.kind.localeCompare(right.kind),
+  );
   return {
     outcomes,
+    invalid_values: invalidValueFindings,
     warnings: truncated
       ? []
-      : outcomes
-          .filter((outcome) => outcome.attempts > 0 && outcome.successes === 0)
-          .map(
-            (outcome) =>
-              `provenance_resolver_zero_success:${outcome.harness}:${outcome.dimension}:${outcome.resolver}:${String(outcome.attempts)}`,
+      : [
+          ...outcomes
+            .filter(
+              (outcome) => outcome.attempts > 0 && outcome.successes === 0,
+            )
+            .map(
+              (outcome) =>
+                `provenance_resolver_zero_success:${outcome.harness}:${outcome.dimension}:${outcome.resolver}:${String(outcome.attempts)}`,
+            ),
+          ...invalidValueFindings.map(
+            (finding) =>
+              `provenance_value_domain_invalid:${finding.harness}:${finding.dimension}:${finding.kind}:${String(finding.count)}`,
           ),
+        ],
     events_read: eventsRead,
     truncated,
   };

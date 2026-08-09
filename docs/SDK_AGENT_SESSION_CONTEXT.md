@@ -95,14 +95,15 @@ host declarations retain precedence over this inference.
 `diagnoseAgentIdentity()` is the additive diagnostic companion to
 `detectAgentIdentity()`. It returns the same privacy-safe identity plus a
 `provenance_outcomes` row for every built-in dimension. Each row is
-`resolved`, `unavailable`, or `failed`, carries rule version `v1`, and may name
+`resolved`, `unavailable`, `not_configured`, or `failed`, carries rule version `v1`, and may name
 the bounded built-in resolver. It never contains environment values, session
 paths, prompts, or file contents.
 
 New mutation history records failed resolver outcomes under
 `context.agent_provenance_outcomes`; ordinary unavailable dimensions retain
 the compact legacy-compatible null projection. A resolver is only counted as
-attempted when its required input exists. Consequently `pm health` can report
+attempted when its required input belongs to the detected harness; a foreign
+host's shared `AI_AGENT` value is not Codex input. Consequently `pm health` can report
 `provenance_resolver_zero_success:<harness>:<dimension>:<resolver>:<attempts>`
 without confusing an unavailable harness signal with a failed resolver. The
 warning is advisory and the storage check includes the bounded attempt and

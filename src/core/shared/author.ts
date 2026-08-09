@@ -68,7 +68,7 @@ export type AgentProvenanceAbsenceReason =
 /** Machine-readable resolution outcome for one provenance dimension. */
 export interface AgentProvenanceOutcome {
   /** Whether the dimension resolved without retaining private source material. */
-  status: "resolved" | "unavailable" | "failed";
+  status: "resolved" | "unavailable" | "not_configured" | "failed";
   /** Stable bounded reason for absent or rejected values. */
   reason?: AgentProvenanceAbsenceReason;
   /** Resolver name when a bounded local resolver was attempted. */
@@ -477,7 +477,10 @@ function normalizeProvenanceValue(
   value: string | undefined,
 ): string | undefined {
   if (dimension !== "role" || value === undefined) return value;
-  const normalized = value.trim().toLowerCase().replaceAll(/[_\s]+/gu, "-");
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[_\s]+/gu, "-");
   return AGENT_ROLE_VALUES.has(normalized) ? normalized : undefined;
 }
 
@@ -568,12 +571,32 @@ function resolveProvenanceProbe(
   }
   if (resolver === "ai_agent_version") {
     const value = nonBlank(env.AI_AGENT);
-    if (!value) return undefined;
+    if (
+      !value ||
+      !descriptor ||
+      !literalSignalMatches(value, descriptor.harness)
+    ) {
+      return undefined;
+    }
     const match =
       /(?:^|[@/\s])v?(\d+\.\d+(?:\.\d+)?(?:[-+][A-Za-z0-9.-]+)?)$/u.exec(value);
     return match?.[1]?.slice(0, 256);
   }
   return undefined;
+}
+
+function provenanceResolverHasInput(
+  resolver: AgentProvenanceResolver,
+  descriptor: NormalizedHarnessSignalDescriptor,
+  env: Readonly<Record<string, string | undefined>>,
+): boolean {
+  if (resolver === "ai_agent_version") {
+    const value = nonBlank(env.AI_AGENT);
+    return (
+      value !== undefined && literalSignalMatches(value, descriptor.harness)
+    );
+  }
+  return nonBlank(env.CLAUDE_CODE_SESSION_ID) !== undefined;
 }
 
 function effectiveHarnessDetectionSignals(
@@ -895,10 +918,11 @@ function resolveProvenanceOutcome(
     };
   }
   if (resolver) {
-    const resolverHasInput =
-      resolver === "ai_agent_version"
-        ? nonBlank(env.AI_AGENT) !== undefined
-        : nonBlank(env.CLAUDE_CODE_SESSION_ID) !== undefined;
+    const resolverHasInput = provenanceResolverHasInput(
+      resolver,
+      descriptor,
+      env,
+    );
     const status = resolverHasInput && probesEnabled ? "failed" : "unavailable";
     const reason = !resolverHasInput
       ? "harness_unavailable"
@@ -908,7 +932,9 @@ function resolveProvenanceOutcome(
     return { status, reason, resolver, rule_version: "v1" };
   }
   return {
-    status: "unavailable",
+    status: descriptor?.provenance_unavailable_dimensions.includes(dimension)
+      ? "unavailable"
+      : "not_configured",
     reason: descriptor?.provenance_unavailable_dimensions.includes(dimension)
       ? "harness_unavailable"
       : "resolver_not_configured",
@@ -944,10 +970,7 @@ export function diagnoseAgentIdentity(
   const invalidRoleValue = [
     env.PM_AGENT_ROLE,
     sessionContext.provenance?.role,
-    firstEnvironmentValue(
-      env,
-      descriptor?.provenance_environment_keys.role,
-    ),
+    firstEnvironmentValue(env, descriptor?.provenance_environment_keys.role),
     effectiveSignals.client_info?.provenance?.role,
     effectiveSignals.provenance?.role,
     provenanceFlagValue(effectiveSignals.argv ?? [], "role"),

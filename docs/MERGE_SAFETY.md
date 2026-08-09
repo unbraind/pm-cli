@@ -65,11 +65,13 @@ When both sides change the same item scalar differently, the driver writes the s
 
 The driver result's `guidance` always points unresolved conflicts to `pm merge report`. When a clone-local receipt exists, guidance includes its privacy-safe receipt and item ids for exact correlation; discarded values remain confined to the local receipt and never appear in generic logs or tracker history. Tracked by [pm-fbrz7p](../.agents/pm/issues/pm-fbrz7p.toon).
 
-For item conflicts, the driver also writes a clone-local receipt below the Git
-directory. It contains retained and discarded values so recovery does not
-depend on a reflog. Raw values never enter public tracker history:
-reconciliation records field names and value hashes, while the explicit local
-report is the only command that shows recoverable values:
+For item conflicts, the driver writes a clone-local receipt below the Git
+directory and a durable privacy-safe sidecar below `merge-receipts/` in the
+tracker. The local receipt contains retained and discarded values so recovery
+does not depend on a reflog. The tracked sidecar contains only field names and
+value hashes, so fresh clones and CI can still fail closed on an unreviewed
+decision without publishing either value. When both copies exist the SDK
+deduplicates them and prefers the locally recoverable copy:
 
 ```bash
 pm merge report

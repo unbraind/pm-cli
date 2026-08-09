@@ -34,6 +34,10 @@ const execFileAsync = promisify(execFile);
 export const PM_GITATTRIBUTES_START = "# pm-cli:merge-drivers:start";
 /** Closing marker for the pm-owned merge-driver `.gitattributes` block. */
 export const PM_GITATTRIBUTES_END = "# pm-cli:merge-drivers:end";
+/** Opening marker for the versioned fence that older releases leave untouched. */
+export const PM_GITATTRIBUTES_V2_START = "# pm-cli:merge-drivers:v2:start";
+/** Closing marker for the versioned fence that older releases leave untouched. */
+export const PM_GITATTRIBUTES_V2_END = "# pm-cli:merge-drivers:v2:end";
 
 const MERGE_FENCE_LOCK_ID = "merge-fence";
 
@@ -360,6 +364,18 @@ export function buildMergeAttributePatterns(
   return patterns;
 }
 
+function removeManagedBlock(
+  content: string,
+  startMarker: string,
+  endMarker: string,
+): string {
+  const start = content.indexOf(startMarker);
+  const end = content.indexOf(endMarker);
+  return start >= 0 && end > start
+    ? `${content.slice(0, start)}${content.slice(end + endMarker.length)}`
+    : content.replace(startMarker, "").replace(endMarker, "");
+}
+
 async function reconcileGitattributesBlock(
   workspaceRoot: string,
   patterns: string[],
@@ -377,18 +393,19 @@ async function reconcileGitattributesBlock(
     }
   }
   const block = [
-    PM_GITATTRIBUTES_START,
+    PM_GITATTRIBUTES_V2_START,
     ...patterns,
-    PM_GITATTRIBUTES_END,
+    PM_GITATTRIBUTES_V2_END,
   ].join("\n");
-  const start = current.indexOf(PM_GITATTRIBUTES_START);
-  const end = current.indexOf(PM_GITATTRIBUTES_END);
-  const withoutManagedBlock =
-    start >= 0 && end > start
-      ? `${current.slice(0, start)}${current.slice(end + PM_GITATTRIBUTES_END.length)}`
-      : current
-          .replace(PM_GITATTRIBUTES_START, "")
-          .replace(PM_GITATTRIBUTES_END, "");
+  const withoutManagedBlock = removeManagedBlock(
+    removeManagedBlock(
+      current,
+      PM_GITATTRIBUTES_V2_START,
+      PM_GITATTRIBUTES_V2_END,
+    ),
+    PM_GITATTRIBUTES_START,
+    PM_GITATTRIBUTES_END,
+  );
   const prefix = withoutManagedBlock.trimEnd();
   const next = `${prefix.length > 0 ? `${prefix}\n\n` : ""}${block}\n`;
   if (next === current) {
@@ -444,7 +461,10 @@ export async function auditMergeAttributeFence(
     const candidate = path.join(directory, ".gitattributes");
     try {
       const raw = await readFile(candidate, "utf8");
-      if (raw.includes(PM_GITATTRIBUTES_START)) {
+      if (
+        raw.includes(PM_GITATTRIBUTES_V2_START) ||
+        raw.includes(PM_GITATTRIBUTES_START)
+      ) {
         fenceDirectory = directory;
         fenceContent = raw;
         break;
@@ -467,12 +487,17 @@ export async function auditMergeAttributeFence(
     };
   }
   const fencePath = path.join(fenceDirectory, ".gitattributes");
-  const start = fenceContent.indexOf(PM_GITATTRIBUTES_START);
-  const end = fenceContent.indexOf(PM_GITATTRIBUTES_END);
+  const usesV2 = fenceContent.includes(PM_GITATTRIBUTES_V2_START);
+  const startMarker = usesV2
+    ? PM_GITATTRIBUTES_V2_START
+    : PM_GITATTRIBUTES_START;
+  const endMarker = usesV2 ? PM_GITATTRIBUTES_V2_END : PM_GITATTRIBUTES_END;
+  const start = fenceContent.indexOf(startMarker);
+  const end = fenceContent.indexOf(endMarker);
   const committed =
     end > start
       ? fenceContent
-          .slice(start + PM_GITATTRIBUTES_START.length, end)
+          .slice(start + startMarker.length, end)
           .split("\n")
           .map((line) => line.trim())
           .filter((line) => line.length > 0)
@@ -596,7 +621,10 @@ export async function refreshMergeAttributeFenceIfInstalled(
       }
       throw error;
     }
-    if (!current.includes(PM_GITATTRIBUTES_START)) {
+    if (
+      !current.includes(PM_GITATTRIBUTES_V2_START) &&
+      !current.includes(PM_GITATTRIBUTES_START)
+    ) {
       return { status: "not_installed", path: gitattributesPath };
     }
     // Re-read after acquiring the dedicated fence lock so every concurrent

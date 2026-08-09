@@ -72,7 +72,9 @@ The storage check also reads at most 10,000 local immutable events for bounded
 agent-provenance resolver outcomes. This scan performs no network or provider
 I/O, tolerates malformed streams already owned by integrity diagnostics, and
 reports an advisory warning only when a resolver was actually attempted but
-never succeeded.
+never succeeded. The same bounded pass classifies bare boolean and single-digit
+values across every recorded provenance dimension, publishes only aggregate
+harness/dimension/kind counts, and never echoes the historical value.
 
 ## Replication and refusal gate
 

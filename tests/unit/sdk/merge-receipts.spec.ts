@@ -109,6 +109,21 @@ describe("clone-local merge decision receipts", () => {
       ],
     });
     expect(JSON.stringify(summary)).not.toContain('"discarded"');
+    expect(
+      summarizeMergeReceipt({
+        ...receipt!,
+        decisions: [
+          {
+            field: "title",
+            base: null,
+            ours: null,
+            theirs: null,
+            retained: { pm_value_hash: "not-a-hash" },
+            discarded: null,
+          },
+        ],
+      }).decisions[0]?.retained_hash,
+    ).toMatch(/^[a-f0-9]{64}$/);
 
     await markMergeReceiptReconciled(workspace, receipt!);
     await markMergeReceiptReconciled(workspace, laterReceipt!);
@@ -202,6 +217,76 @@ describe("clone-local merge decision receipts", () => {
     expect(await runMergeReceiptReport({})).toMatchObject({
       ok: true,
       count: expect.any(Number),
+    });
+  });
+
+  it("carries privacy-safe decision evidence into a fresh clone", async () => {
+    const workspace = await mkdtemp(
+      path.join(os.tmpdir(), "pm-receipts-source-"),
+    );
+    const clone = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-clone-"));
+    workspaces.push(workspace, clone);
+    execFileSync("git", ["init", "-q"], { cwd: workspace });
+    execFileSync("git", ["config", "user.name", "PM Test"], { cwd: workspace });
+    execFileSync("git", ["config", "user.email", "pm-test@example.invalid"], {
+      cwd: workspace,
+    });
+    const pmRoot = path.join(workspace, ".agents", "pm");
+    await mkdir(path.join(pmRoot, "tasks"), { recursive: true });
+    await writeFile(path.join(pmRoot, "settings.json"), "{}\n");
+    const receipt = await writeMergeReceipt({
+      cwd: workspace,
+      itemPath: ".agents/pm/tasks/pm-durable.toon",
+      preferred: "ours",
+      fieldsFromTheirs: [],
+      unionFields: [],
+      decisions: [
+        {
+          field: "title",
+          base: "base-private",
+          ours: "ours-private",
+          theirs: "theirs-private",
+          retained: "ours-private",
+          discarded: "theirs-private",
+        },
+      ],
+    });
+    execFileSync("git", ["add", ".agents/pm"], { cwd: workspace });
+    execFileSync("git", ["commit", "-qm", "Track durable merge evidence"], {
+      cwd: workspace,
+    });
+    await rm(clone, { recursive: true, force: true });
+    execFileSync("git", ["clone", "-q", workspace, clone]);
+
+    const clonedReceipts = await listMergeReceipts(clone, {
+      pmRoot: path.join(clone, ".agents", "pm"),
+    });
+    expect(clonedReceipts).toHaveLength(1);
+    expect(clonedReceipts[0]).toMatchObject({
+      id: receipt?.id,
+      state: "pending",
+      value_availability: "hash_only",
+    });
+    const serialized = JSON.stringify(clonedReceipts[0]);
+    expect(serialized).not.toContain("private");
+    expect(summarizeMergeReceipt(clonedReceipts[0]!)).toEqual(
+      summarizeMergeReceipt(receipt!),
+    );
+    await markMergeReceiptReconciled(clone, clonedReceipts[0]!);
+    expect(
+      await listMergeReceipts(clone, {
+        pmRoot: path.join(clone, ".agents", "pm"),
+      }),
+    ).toEqual([]);
+    expect(
+      await listMergeReceipts(clone, {
+        includeReconciled: true,
+        pmRoot: path.join(clone, ".agents", "pm"),
+      }),
+    ).toMatchObject([{ state: "reconciled", value_availability: "hash_only" }]);
+    await markMergeReceiptReconciled(clone, {
+      ...clonedReceipts[0]!,
+      id: "durable-sidecar-missing",
     });
   });
 });

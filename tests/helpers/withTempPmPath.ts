@@ -166,9 +166,11 @@ export const TEMP_PM_ENV_KEYS = [
   "FORCE_COLOR",
 ] as const;
 
+const TEMP_HARNESS_ENV_KEYS = ["AI_AGENT"] as const;
+
 type TempPmEnvKey = (typeof TEMP_PM_ENV_KEYS)[number];
 type TempPmEnv = NodeJS.ProcessEnv & Record<TempPmEnvKey, string>;
-type TempPmEnvSnapshot = Record<TempPmEnvKey, string | undefined>;
+type TempPmEnvSnapshot = Record<string, string | undefined>;
 
 function shouldNormalizeLegacyCreateArgs(
   args: string[],
@@ -385,7 +387,7 @@ async function removeTempRoot(tempRoot: string): Promise<void> {
 }
 
 function buildTempPmEnv(tempRoot: string, pmPath: string): TempPmEnv {
-  return {
+  const env: TempPmEnv = {
     ...process.env,
     PM_PATH: pmPath,
     PM_GLOBAL_PATH: path.join(tempRoot, ".pm-cli-global"),
@@ -396,18 +398,20 @@ function buildTempPmEnv(tempRoot: string, pmPath: string): TempPmEnv {
     PM_DISABLE_OLLAMA_AUTO_DEFAULTS: "1",
     FORCE_COLOR: "0",
   };
+  for (const key of TEMP_HARNESS_ENV_KEYS) delete env[key];
+  return env;
 }
 
 function snapshotTempPmEnv(): TempPmEnvSnapshot {
   const snapshot = {} as TempPmEnvSnapshot;
-  for (const key of TEMP_PM_ENV_KEYS) {
+  for (const key of [...TEMP_PM_ENV_KEYS, ...TEMP_HARNESS_ENV_KEYS]) {
     snapshot[key] = process.env[key];
   }
   return snapshot;
 }
 
 export function applyTempPmEnv(env: NodeJS.ProcessEnv): void {
-  for (const key of TEMP_PM_ENV_KEYS) {
+  for (const key of [...TEMP_PM_ENV_KEYS, ...TEMP_HARNESS_ENV_KEYS]) {
     const value = env[key];
     if (value === undefined) {
       delete process.env[key];
@@ -418,7 +422,7 @@ export function applyTempPmEnv(env: NodeJS.ProcessEnv): void {
 }
 
 function restoreTempPmEnv(snapshot: TempPmEnvSnapshot): void {
-  for (const key of TEMP_PM_ENV_KEYS) {
+  for (const key of [...TEMP_PM_ENV_KEYS, ...TEMP_HARNESS_ENV_KEYS]) {
     const value = snapshot[key];
     if (value === undefined) {
       delete process.env[key];

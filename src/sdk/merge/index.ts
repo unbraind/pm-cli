@@ -44,6 +44,8 @@ export {
   findGitWorkspaceRoot,
   PM_GITATTRIBUTES_END,
   PM_GITATTRIBUTES_START,
+  PM_GITATTRIBUTES_V2_END,
+  PM_GITATTRIBUTES_V2_START,
   refreshMergeAttributeFenceIfInstalled,
   resolveMergeInstallContext,
   runMergeInstall,

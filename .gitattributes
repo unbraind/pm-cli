@@ -11,7 +11,7 @@
 # files, so this introduces no renormalization churn.
 * text=auto eol=lf
 
-# pm-cli:merge-drivers:start
+# pm-cli:merge-drivers:v2:start
 ".agents/pm/**/*.toon" merge=pm-item-toon
 ".agents/pm/**/*.md" merge=pm-item-markdown
 ".agents/pm/chores/*.toon" merge=pm-item-toon
@@ -44,4 +44,4 @@
 ".agents/pm/**/*.json" merge=pm-json
 ".agents/pm/extensions/**" -merge
 ".agents/pm/extensions/.managed-extensions.json" merge=pm-json
-# pm-cli:merge-drivers:end
+# pm-cli:merge-drivers:v2:end

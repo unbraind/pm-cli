@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1480,
+    "covered_symbols": 1483,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1481
+    "required_symbols": 1484
   },
   "breaking_acknowledgements": [
     {
@@ -154,6 +154,20 @@
       ],
       "package_version": "2026.8.9",
       "reason": "Additive PmClient lightweight metadata method and optional actionable context diagnostics change structural signatures without removing or narrowing existing SDK members."
+    },
+    {
+      "changes": [
+        "signature ./sdk:AgentProvenanceOutcome",
+        "signature ./sdk:listMergeReceipts",
+        "signature ./sdk:MergeDecisionReceipt",
+        "signature ./sdk:ProvenanceResolverHealthScan",
+        "signature ./sdk/core:AgentProvenanceOutcome",
+        "signature ./sdk/governance:ProvenanceResolverHealthScan",
+        "signature ./sdk/merge:listMergeReceipts",
+        "signature ./sdk/merge:MergeDecisionReceipt"
+      ],
+      "package_version": "2026.8.9",
+      "reason": "Intentional additive context-integrity contract: explicit not_configured provenance state, durable receipt availability, and optional tracker-root discovery"
     }
   ],
   "entrypoints": {
@@ -458,7 +472,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AgentProvenanceOutcome",
-          "signature": "export interface AgentProvenanceOutcome { status: \"resolved\" | \"unavailable\" | \"failed\"; reason?: AgentProvenanceAbsenceReason; resolver?: AgentProvenanceResolver; rule_version: \"v1\"; }"
+          "signature": "export interface AgentProvenanceOutcome { status: \"resolved\" | \"unavailable\" | \"not_configured\" | \"failed\"; reason?: AgentProvenanceAbsenceReason; resolver?: AgentProvenanceResolver; rule_version: \"v1\"; }"
         },
         {
           "classification": "supported",
@@ -6110,7 +6124,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "listMergeReceipts",
-          "signature": "(cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; }) => Promise<MergeDecisionReceipt[]> | calls: (cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; }) => Promise<MergeDecisionReceipt[]>"
+          "signature": "(cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; pmRoot?: string; }) => Promise<MergeDecisionReceipt[]> | calls: (cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; pmRoot?: string; }) => Promise<MergeDecisionReceipt[]>"
         },
         {
           "classification": "supported",
@@ -6368,7 +6382,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceipt",
-          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; preferred: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; }"
+          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; preferred: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; value_availability?: \"clone_local\" | \"hash_only\"; }"
         },
         {
           "classification": "supported",
@@ -7649,6 +7663,18 @@
           "signature": "\"# pm-cli:merge-drivers:start\""
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "PM_GITATTRIBUTES_V2_END",
+          "signature": "\"# pm-cli:merge-drivers:v2:end\""
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "PM_GITATTRIBUTES_V2_START",
+          "signature": "\"# pm-cli:merge-drivers:v2:start\""
+        },
+        {
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_GITIGNORE_END",
@@ -8804,7 +8830,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ProvenanceResolverHealthScan",
-          "signature": "export interface ProvenanceResolverHealthScan { outcomes: ProvenanceResolverHealthOutcome[]; warnings: string[]; events_read: number; truncated: boolean; }"
+          "signature": "export interface ProvenanceResolverHealthScan { outcomes: ProvenanceResolverHealthOutcome[]; invalid_values: ProvenanceValueHealthFinding[]; warnings: string[]; events_read: number; truncated: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ProvenanceValueHealthFinding",
+          "signature": "export interface ProvenanceValueHealthFinding { harness: string; dimension: string; kind: \"boolean\" | \"single_digit\"; count: number; }"
         },
         {
           "classification": "advanced_export",
@@ -16748,7 +16780,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AgentProvenanceOutcome",
-          "signature": "export interface AgentProvenanceOutcome { status: \"resolved\" | \"unavailable\" | \"failed\"; reason?: AgentProvenanceAbsenceReason; resolver?: AgentProvenanceResolver; rule_version: \"v1\"; }"
+          "signature": "export interface AgentProvenanceOutcome { status: \"resolved\" | \"unavailable\" | \"not_configured\" | \"failed\"; reason?: AgentProvenanceAbsenceReason; resolver?: AgentProvenanceResolver; rule_version: \"v1\"; }"
         },
         {
           "classification": "supported",
@@ -17996,7 +18028,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ProvenanceResolverHealthScan",
-          "signature": "export interface ProvenanceResolverHealthScan { outcomes: ProvenanceResolverHealthOutcome[]; warnings: string[]; events_read: number; truncated: boolean; }"
+          "signature": "export interface ProvenanceResolverHealthScan { outcomes: ProvenanceResolverHealthOutcome[]; invalid_values: ProvenanceValueHealthFinding[]; warnings: string[]; events_read: number; truncated: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ProvenanceValueHealthFinding",
+          "signature": "export interface ProvenanceValueHealthFinding { harness: string; dimension: string; kind: \"boolean\" | \"single_digit\"; count: number; }"
         },
         {
           "classification": "supported",
@@ -19610,7 +19648,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "listMergeReceipts",
-          "signature": "(cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; }) => Promise<MergeDecisionReceipt[]> | calls: (cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; }) => Promise<MergeDecisionReceipt[]>"
+          "signature": "(cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; pmRoot?: string; }) => Promise<MergeDecisionReceipt[]> | calls: (cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; pmRoot?: string; }) => Promise<MergeDecisionReceipt[]>"
         },
         {
           "classification": "supported",
@@ -19628,7 +19666,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeDecisionReceipt",
-          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; preferred: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; }"
+          "signature": "export interface MergeDecisionReceipt { version: 1; id: string; item_path: string; item_id: string; preferred: MergePreferredSide; conflict_resolution: \"preferred_side\" | \"stable_value_order\"; fields_from_theirs: string[]; union_fields: string[]; decisions: ItemMergeConflictDecision[]; state: \"pending\" | \"reconciled\"; created_at: string; reconciled_at?: string; value_availability?: \"clone_local\" | \"hash_only\"; }"
         },
         {
           "classification": "supported",
@@ -19749,6 +19787,18 @@
           "kind": "value",
           "name": "PM_GITATTRIBUTES_START",
           "signature": "\"# pm-cli:merge-drivers:start\""
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "PM_GITATTRIBUTES_V2_END",
+          "signature": "\"# pm-cli:merge-drivers:v2:end\""
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "PM_GITATTRIBUTES_V2_START",
+          "signature": "\"# pm-cli:merge-drivers:v2:start\""
         },
         {
           "classification": "supported",

@@ -38,8 +38,8 @@ import { readSettings } from "../../../src/core/store/settings.js";
 import { renderPmCommand } from "../../../src/sdk/command-line.js";
 import {
   buildMergeAttributePatterns,
-  PM_GITATTRIBUTES_END,
-  PM_GITATTRIBUTES_START,
+  PM_GITATTRIBUTES_V2_END,
+  PM_GITATTRIBUTES_V2_START,
 } from "../../../src/sdk/merge/install.js";
 import { getPmGitignoreBlock } from "../../../src/sdk/workspace.js";
 
@@ -378,12 +378,12 @@ describe("runInit", () => {
           ]),
         }),
       });
-      expect(await realpath(String(ancestorFailure.context?.requested_path))).toBe(
-        canonicalNestedRoot,
-      );
-      expect(await realpath(String(ancestorFailure.context?.resolved_path))).toBe(
-        canonicalPmRoot,
-      );
+      expect(
+        await realpath(String(ancestorFailure.context?.requested_path)),
+      ).toBe(canonicalNestedRoot);
+      expect(
+        await realpath(String(ancestorFailure.context?.resolved_path)),
+      ).toBe(canonicalPmRoot);
       expect(ancestorFailure.context?.suggested_path).toBe(
         path.join(
           String(ancestorFailure.context?.requested_path),
@@ -2165,7 +2165,7 @@ describe("runInit", () => {
       ).toBe(await realpath(path.join(workspace, ".gitattributes")));
       expect(
         await readFile(path.join(workspace, ".gitattributes"), "utf8"),
-      ).toContain("# pm-cli:merge-drivers:start");
+      ).toContain(PM_GITATTRIBUTES_V2_START);
       const historyDriver = execFileSync(
         "git",
         ["config", "--local", "--get", "merge.pm-history.driver"],
@@ -2205,14 +2205,14 @@ describe("runInit", () => {
       await writeFile(
         path.join(preFencedWorkspace, ".gitattributes"),
         `${[
-          PM_GITATTRIBUTES_START,
+          PM_GITATTRIBUTES_V2_START,
           ...buildMergeAttributePatterns(
             ".agents/pm",
             [...new Set(Object.values(TYPE_TO_FOLDER))].sort((left, right) =>
               left.localeCompare(right),
             ),
           ),
-          PM_GITATTRIBUTES_END,
+          PM_GITATTRIBUTES_V2_END,
         ].join("\n")}\n`,
         "utf8",
       );
