@@ -627,7 +627,10 @@ async function buildIntegrityCheck(
   const pendingMergeReceipts =
     gitWorkspaceRoot === null
       ? []
-      : await listMergeReceipts(gitWorkspaceRoot, { includeLossless: true });
+      : await listMergeReceipts(gitWorkspaceRoot, {
+          includeLossless: true,
+          pmRoot,
+        });
   const {
     pendingDecisions: pendingMergeDecisions,
     lossless: losslessMergeReceipts,
@@ -2610,6 +2613,12 @@ function buildStorageHealthCheck(
     attempts: number;
     successes: number;
   }>,
+  provenanceInvalidValues: Array<{
+    harness: string;
+    dimension: string;
+    kind: "boolean" | "single_digit";
+    count: number;
+  }>,
 ): HealthCheck {
   const unknownAuthorEventCount =
     resolveUnknownAuthorEventCount(authorAttribution);
@@ -2648,6 +2657,9 @@ function buildStorageHealthCheck(
         : {}),
       ...(provenanceResolverOutcomes.length > 0
         ? { provenance_resolver_outcomes: provenanceResolverOutcomes }
+        : {}),
+      ...(provenanceInvalidValues.length > 0
+        ? { provenance_invalid_values: provenanceInvalidValues }
         : {}),
       ...(historySummary.max_entries !== null
         ? {
@@ -2891,6 +2903,7 @@ export async function runHealth(
   );
   const provenanceResolverHealth = await scanProvenanceResolverHealth(pmRoot);
   const provenanceResolverOutcomes = provenanceResolverHealth.outcomes;
+  const provenanceInvalidValues = provenanceResolverHealth.invalid_values;
   const provenanceWarnings = provenanceResolverHealth.warnings;
   const locksCheck = await buildLocksCheck(pmRoot);
   const integrityCheck = skipPolicy.skipIntegrity
@@ -2931,6 +2944,7 @@ export async function runHealth(
       authorAttribution,
       staleInProgress.scan,
       provenanceResolverOutcomes,
+      provenanceInvalidValues,
     ),
     locksCheck.check,
     integrityCheck.check,

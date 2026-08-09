@@ -3318,7 +3318,10 @@ async function buildStorageIntegrityCheck(
   const pendingMergeReceipts =
     gitWorkspaceRoot === null
       ? []
-      : await listMergeReceipts(gitWorkspaceRoot, { includeLossless: true });
+      : await listMergeReceipts(gitWorkspaceRoot, {
+          includeLossless: true,
+          pmRoot,
+        });
   const {
     pendingDecisions: pendingMergeDecisions,
     lossless: losslessMergeReceipts,

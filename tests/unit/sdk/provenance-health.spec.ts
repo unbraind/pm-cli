@@ -20,6 +20,7 @@ describe("provenance resolver health", () => {
     tempRoots.push(root);
     await expect(scanProvenanceResolverHealth(root)).resolves.toEqual({
       outcomes: [],
+      invalid_values: [],
       warnings: [],
       events_read: 0,
       truncated: false,
@@ -36,9 +37,18 @@ describe("provenance resolver health", () => {
       "not-json",
       "null",
       JSON.stringify({ context: null }),
-      JSON.stringify({ context: { agent_provenance_outcomes: null } }),
+      JSON.stringify({
+        agent_harness: "legacy-host",
+        context: { agent_provenance_outcomes: null },
+      }),
       JSON.stringify({
         agent_harness: "claude-code",
+        agent_provenance: {
+          effort: { source: "legacy", value: "1" },
+          role: { source: "legacy", value: true },
+          topic: { source: "legacy", value: "delivery" },
+          version: { source: "legacy", value: 7 },
+        },
         context: {
           agent_provenance_outcomes: {
             ignored_null: null,
@@ -56,6 +66,9 @@ describe("provenance resolver health", () => {
       }),
       JSON.stringify({
         agent_harness: "claude-code",
+        agent_provenance: {
+          role: { source: "legacy", value: "1" },
+        },
         context: {
           agent_provenance_outcomes: {
             effort: {
@@ -154,6 +167,36 @@ describe("provenance resolver health", () => {
       ],
       warnings: [
         "provenance_resolver_zero_success:claude-code:version:claude_session_file:1",
+        "provenance_value_domain_invalid:claude-code:effort:single_digit:1",
+        "provenance_value_domain_invalid:claude-code:role:boolean:1",
+        "provenance_value_domain_invalid:claude-code:role:single_digit:1",
+        "provenance_value_domain_invalid:claude-code:version:single_digit:1",
+      ],
+      invalid_values: [
+        {
+          harness: "claude-code",
+          dimension: "effort",
+          kind: "single_digit",
+          count: 1,
+        },
+        {
+          harness: "claude-code",
+          dimension: "role",
+          kind: "boolean",
+          count: 1,
+        },
+        {
+          harness: "claude-code",
+          dimension: "role",
+          kind: "single_digit",
+          count: 1,
+        },
+        {
+          harness: "claude-code",
+          dimension: "version",
+          kind: "single_digit",
+          count: 1,
+        },
       ],
       events_read: entries.length,
       truncated: false,
@@ -202,20 +245,24 @@ describe("provenance resolver health", () => {
       `${failed}\n${"x".repeat(8_388_608)}`,
       "utf8",
     );
-    await expect(scanProvenanceResolverHealth(root, 10)).resolves.toMatchObject({
-      events_read: 1,
-      truncated: true,
-      warnings: [],
-    });
+    await expect(scanProvenanceResolverHealth(root, 10)).resolves.toMatchObject(
+      {
+        events_read: 1,
+        truncated: true,
+        warnings: [],
+      },
+    );
     await writeFile(
       path.join(history, "one.jsonl"),
       "x".repeat(8_388_609),
       "utf8",
     );
-    await expect(scanProvenanceResolverHealth(root, 10)).resolves.toMatchObject({
-      events_read: 0,
-      truncated: true,
-      warnings: [],
-    });
+    await expect(scanProvenanceResolverHealth(root, 10)).resolves.toMatchObject(
+      {
+        events_read: 0,
+        truncated: true,
+        warnings: [],
+      },
+    );
   });
 });

@@ -1,0 +1,48 @@
+id: pm-l56d0o
+title: "GH-948: version-skewed pm invocations silently rewrite the tracked merge fence during unrelated commands"
+description: "Current and supported older pm versions normalize the managed .gitattributes fence differently, and ordinary commands such as pm health invoke that write path. A read-only diagnostic can therefore dirty a tracked file, weaken extension merge protection, and create unrelated diffs solely from PATH or lockfile version skew. Duplicate evidence: all-status exact GH-948 and title searches returned no match; adjacent merge-guidance and gitattributes ownership items are distinct because they do not own cross-version idempotence or the read-only side-effect boundary."
+type: Issue
+status: closed
+priority: 1
+tags[7]: agent-ux,"area:merge","area:sdk",determinism,read-only,regression,version-skew
+created_at: "2026-08-09T14:32:29.084Z"
+updated_at: "2026-08-09T15:57:22.119Z"
+closed_at: "2026-08-09T15:57:21.544Z"
+completed_at: "2026-08-09T15:57:21.544Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "pm health and every read-only bootstrap path leave .gitattributes byte-identical; pm merge install is explicit, deterministic, and preserves compatible managed rules written by newer supported versions; SDK and CLI tests exercise older/newer fence fixtures and dirty-worktree assertions; manual temporary repositories prove health is read-only and explicit installation converges"
+parent: pm-dj98
+risk: high
+confidence: high
+reporter: GitHub GH-948
+severity: high
+environment: Node 26.5.0 Linux; @unbrained/pm-cli 2026.8.3 through 2026.8.9
+repro_steps: "Run npx @unbrained/pm-cli@2026.8.7 health and @2026.8.9 health against the same initialized tracker, restoring .gitattributes between runs; observe opposing tracked diffs."
+resolution: Replaced the legacy unversioned merge-driver fence with a v2 fence while preserving legacy public marker constants and added an integration proof that older clients leave the newer fence untouched.
+expected_result: Cross-version pm clients must not rewrite or silently downgrade merge-driver configuration they do not understand.
+actual_result: "Current clients migrate legacy fences to v2, recognize both generations for audit, and older-version refresh simulation preserves the v2 block byte-for-byte."
+affected_version: 2026.8.3-2026.8.9
+regression: true
+customer_impact: Agents and contributors accumulate unrelated tracked diffs and can accidentally weaken merge safety when local/global pm versions differ.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1j5j21,related,"2026-08-09T14:32:29.084Z","harness:codex","cli:create:dep",detected
+  pm-tu71,related,"2026-08-09T14:32:29.084Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-09T14:32:29.084Z","harness:codex","Duplicate check evidence: pm search GH-948 and exact title across status=all returned zero items; pm duplicates --status all was reviewed. GitHub source: https://github.com/unbraind/pm-cli/issues/948"
+  "2026-08-09T15:57:17.861Z","harness:codex","Evidence: focused linked tests passed; full suite passed 7,100/7,100 with exact 100/100/100/100 coverage; pnpm lint and pnpm quality:static passed; pm merge reconcile --dry-run reported zero drift and a healthy v2 fence. Packed manual acceptance in an isolated temporary Git project completed init/create/comment/get/health/validate/storage/history successfully."
+files[6]{path,scope,note}:
+  .gitattributes,project,Versioned merge-fence contract
+  src/sdk/merge/index.ts,project,Public marker exports
+  src/sdk/merge/install.ts,project,Legacy migration and v2 fence ownership
+  tests/integration/merge-fence-version-skew.integration.spec.ts,project,Cross-version mutation regression
+  tests/unit/commands/init-command.spec.ts,project,Fresh init and legacy migration coverage
+  tests/unit/sdk/merge-safety.spec.ts,project,Fence migration coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/merge-fence-version-skew.integration.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/commands/init-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mslxfuro-o8s13c,test,passed,"2026-08-09T14:57:16.155Z","2026-08-09T14:57:52.260Z","2026-08-09T14:57:52.260Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Version-skew fence contract
+close_reason: "Implemented and verified a versioned, backward-safe merge-driver fence with regression and cross-version integration coverage."
+body: ""

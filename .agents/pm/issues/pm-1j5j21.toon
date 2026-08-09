@@ -2,11 +2,13 @@ id: pm-1j5j21
 title: "GH-921/GH-922: merge-decision receipts are not durable in fresh-clone CI"
 description: "Pending merge-decision receipts live only in clone-local ignored state, so a fresh checkout cannot distinguish a lossy concurrent merge; history-repair can erase the last tracked drift signal and make discarded work pass strict health."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:38.852Z"
-updated_at: "2026-08-08T15:39:03.748Z"
+updated_at: "2026-08-09T15:58:32.674Z"
+closed_at: "2026-08-09T15:57:23.719Z"
+completed_at: "2026-08-09T15:57:23.719Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Merge-decision receipts required by validation survive a fresh clone and clean CI checkout without relying on ignored local files; the field-aware merge driver and health/validate surfaces agree on durable evidence; isolated two-branch merge tests cover both lossless and discarded-value decisions and keep history hash validation intact
@@ -14,8 +16,9 @@ parent: pm-doxj
 risk: critical
 confidence: high
 severity: critical
-expected_result: "Discarded-value provenance and acknowledgment are durable, pushed, and enforceable from a fresh clone before repair can make the workspace green."
-actual_result: "The merge-performing clone sees a pending decision, but a fresh clone loses it; after history-repair, strict health can pass a commit that discarded a peer edit."
+resolution: "Persisted privacy-safe hash-only merge decision receipt sidecars inside the project tracker while retaining raw values only in clone-local Git state; listing, health, validation, and reconciliation now merge both sources deterministically."
+expected_result: Merge decision evidence must survive a fresh clone without committing raw conflicting values or losing local reconciliation capability.
+actual_result: "Fresh clones retain stable hash-only decision evidence, original clones retain raw-value receipts, duplicate receipt identities prefer local detail, and reconciliation updates both stores."
 affected_version: 2026.8.6
 component: merge safety and durable history
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -23,7 +26,24 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-ysqb6n,related,"2026-08-07T08:33:38.852Z","harness:codex","cli:create:dep",detected
   pm-g5sx,discovered_from,"2026-08-07T08:34:27.916Z","harness:codex","cli:update:dep",detected
   pm-ysqb6n,supersedes,"2026-08-07T08:34:27.916Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-07T08:33:38.852Z","harness:codex","GitHub sources: https://github.com/unbraind/pm-cli/issues/921 and https://github.com/unbraind/pm-cli/issues/922. Duplicate check searched all 2,351 items and every status for clone-local/gitignored merge receipts,fresh-clone CI,discarded values,history-repair,and both GH numbers. The reports share one root contract and are intentionally consolidated; closed pm-ysqb6n is predecessor evidence,not an active duplicate."
   "2026-08-08T15:39:02.830Z","harness:codex","Investigation boundary (2026-08-08): this PR deliberately does not claim fresh-clone durability. The implemented receipt work classifies lossless versus discarded-value decisions and requires explicit acceptance, but raw recovery receipts remain clone-local and ignored. A durable privacy-safe pushed evidence design needs a separate tracked-record contract and fresh-clone lifecycle, so retaining this item as open avoids falsely closing GH-921/GH-922."
+  "2026-08-09T15:57:23.042Z","harness:codex","Evidence: linked receipt tests passed; full suite passed 7,100/7,100 with exact 100/100/100/100 coverage; static, lint, SDK surface, performance, history-drift, storage-integrity, and dry-run reconciliation gates passed. Manual packed-consumer acceptance also passed in an isolated project."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,SDK contract snapshot
+  src/sdk/governance/health.ts,project,Durable receipt discovery
+  src/sdk/governance/validate.ts,project,Durable receipt validation
+  src/sdk/merge/receipts.ts,project,Raw local plus durable hash-only receipt store
+  tests/unit/sdk/merge-receipts.spec.ts,project,Fresh-clone durability and privacy coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts,project,240
+  "pnpm changelog:pm:check",project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mslxgadt-0r0s2c,test,passed,"2026-08-09T14:57:53.136Z","2026-08-09T14:58:12.497Z","2026-08-09T14:58:12.497Z",1,0,0
+  test-local-mslxh5t9-thtgqo,test,passed,"2026-08-09T14:58:26.430Z","2026-08-09T14:58:53.229Z","2026-08-09T14:58:53.229Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Managed changelog entry for the coupled SDK integrity tranche
+  docs/MERGE_SAFETY.md,project,Durable receipt lifecycle
+close_reason: "Implemented clone-durable, privacy-safe merge decision receipts across SDK health, validate, and reconcile paths."
 body: ""

@@ -307,6 +307,19 @@ describe("agent runtime SDK primitives", () => {
         env: { CODEX_HOME: "/tmp/codex", AI_AGENT: "codex-development" },
       }).provenance,
     ).not.toHaveProperty("version");
+    expect(
+      diagnoseAgentIdentity({
+        env: {
+          CODEX_HOME: "/tmp/codex",
+          AI_AGENT: "claude-code_2-1-226_agent",
+        },
+      }).provenance_outcomes.version,
+    ).toEqual({
+      status: "unavailable",
+      reason: "harness_unavailable",
+      resolver: "ai_agent_version",
+      rule_version: "v1",
+    });
   });
 
   it("uses ambient signals by default and records extensible effort and role provenance", async () => {
@@ -415,6 +428,13 @@ describe("agent runtime SDK primitives", () => {
       status: "unavailable",
       reason: "probes_disabled",
       resolver: "claude_session_file",
+      rule_version: "v1",
+    });
+    expect(
+      diagnoseAgentIdentity({ env: {} }).provenance_outcomes.model,
+    ).toEqual({
+      status: "not_configured",
+      reason: "resolver_not_configured",
       rule_version: "v1",
     });
   });

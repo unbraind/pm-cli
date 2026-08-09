@@ -2,11 +2,13 @@ id: pm-lu6sca
 title: "A declared provenance resolver that fails at runtime is recorded identically to a dimension the harness cannot supply, so a broken probe is invisible until someone reads the source"
 description: "Established by measurement on 2026-08-03 and generalized from a confirmed instance.\n\nToday a provenance dimension resolves to exactly two observable states in the immutable record: a value, or null. Null is overloaded. It is the correct and permanent encoding for all of the following, which have nothing in common:\n\n- the harness genuinely publishes no such dimension (declared via provenance_unavailable_dimensions, an honest absence)\n- no resolver is declared for that dimension on that harness\n- a resolver is declared, ran, and failed - wrong path, unreadable file, unparsable content, revoked permission\n- probes are disabled by settings or PM_AGENT_PROBES\n\nThe confirmed instance: the claude_session_file model resolver computes a session path with an incomplete slug encoding, throws ENOENT, is swallowed by a bare catch, and writes null. The workspace where this happens is this repository. Every mutation it recorded looked exactly like a mutation from a harness that has no model to report. The condition was found by reading the resolver source and recomputing the path by hand, which is not a detection mechanism.\n\nWhy the existing instruments do not cover it. summarizeAgentModelProvenance can report per-harness coverage and can set an inert flag when a declared signal produced only unavailable values, but it reads the history corpus after the fact and it is not wired to anything - that gap has its own owner. Even fully wired, it would report 'coverage is zero' without being able to say whether the cause is an unavailable dimension or a broken probe, because the corpus does not carry that distinction. The distinction has to be recorded at write time; it cannot be recovered later from an immutable record that never held it.\n\nThis is the instrument-integrity pattern applied one level below where it has been applied before. Prior findings established that a gate which never fails is a hypothesis until you name the input that would fail it. The same argument applies to a resolver: a probe that can only be observed succeeding is a probe nobody can prove broken. The fix is not more probing - it is recording the outcome category of the attempt the runtime already makes.\n\nPrivacy boundary: the failure category must be a bounded reason code. Recording the path that failed to open would publish the operator's directory layout into an immutable stream, which the write-time mutation guard exists to prevent.\n\nScope is the outcome vocabulary and its surfacing. Fixing any individual resolver, and pointing the existing corpus analyzers at real data, are separate owners."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: "area:sdk",identity,instrument-integrity,observability,provenance
 created_at: "2026-08-03T06:22:12.243Z"
-updated_at: "2026-08-09T01:24:46.237Z"
+updated_at: "2026-08-09T15:57:26.460Z"
+closed_at: "2026-08-09T15:57:25.791Z"
+completed_at: "2026-08-09T15:57:25.791Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "For each declared provenance dimension the runtime distinguishes: resolved, harness-declares-unavailable, resolver-attempted-and-failed, and no-resolver-declared; The failure category records a bounded reason code, never a path or any environment value; pm health surfaces a warning when a declared resolver has a non-zero attempt count and a zero success count in the current workspace; The distinction is observable without reading history: a single bounded command answers 'is my identity provenance working here'; Recording the category costs no additional probe: it is derived from the attempt the runtime already makes"
@@ -16,6 +18,9 @@ why_now: "A model resolver shipped, failed on its first real workspace, and wrot
 parent: pm-5oj5
 risk: medium
 confidence: high
+resolution: "Extended provenance outcomes with an explicit not_configured state and resolver_not_configured reason, separating absent configuration from attempted resolver failure."
+expected_result: Callers must be able to distinguish no resolver configuration from a resolver that ran and failed.
+actual_result: "CLI and SDK provenance contracts now emit not_configured only when no resolver is declared, while resolved and failed remain attempted outcomes and the public surface snapshot records the additive contract."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-1wiugq,related,"2026-08-03T06:23:55.524Z","harness:claude-code","cli:update:dep",detected
   pm-9gvazz,discovered_from,"2026-08-03T06:23:55.524Z","harness:claude-code","cli:update:dep",detected
@@ -24,7 +29,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-htbetn,related,"2026-08-03T06:23:55.524Z","harness:claude-code","cli:update:dep",detected
   pm-rtn5h6,related,"2026-08-03T06:23:55.524Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,implements,"2026-08-03T06:23:55.524Z","harness:claude-code","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-03T11:09:27.269Z","harness:codex","Estimate basis 2026-08-03: 360 minutes covers resolver outcome algebra, bounded reason codes, immutable recording, health projection, zero-success warning logic, and negative controls."
   "2026-08-08T22:13:20.575Z","harness:codex","Implementation start 2026-08-09: active in the coupled context-provenance tranche with pm-3zgh2c, pm-eq9dlw, pm-lu6sca, pm-b1w8vr, and pm-h75tjh. Scope is SDK-first provenance inference and resolver outcomes, typed role domains, stable entity read-back projections, and epoch-aware release classification; all other open items remain unclaimed."
   "2026-08-08T22:32:58.636Z","harness:codex","Design evidence: resolver attempts are counted only when the resolver input exists. Missing AI_AGENT or session identifiers are harness_unavailable; a supplied valid resolver input that yields no value is resolver_failed. pm health scans at most 10,000 immutable events, tolerates malformed streams owned by integrity diagnostics, and emits advisory zero-success warnings."
@@ -33,7 +38,9 @@ comments[8]{created_at,author,text}:
   "2026-08-09T00:20:23.262Z","harness:codex","Delivery handoff: broad SDK/CLI tranche committed at 5b36abc75 and opened as GitHub PR #944 (https://github.com/unbraind/pm-cli/pull/944). Exact local evidence includes 7,086 tests across 461 files at 100/100/100/100 coverage, package/compatibility/npx/dogfood/manual acceptance, tracker/changelog/SDK/static-quality gates, and zero current dependency or GitHub security alerts. Review and exact-head CI evidence will be appended after the hosted loop."
   "2026-08-09T00:58:13.326Z","harness:codex","Review-loop evidence: provenance scanning now byte-bounds history before allocation, parses only complete lines, distinguishes exact event limits from truncation, suppresses zero-success warnings on incomplete samples, and records invalid explicit role values as invalid_value with argv precedence. Full sandboxed gate: 461 files, 7,089 tests, exact 100/100/100/100. Item remains open and unclaimed for its documented no-resolver-declared residual."
   "2026-08-09T01:24:46.237Z","harness:codex","PR #944 hosted evidence for the completed tranche portion: implementation commit b6678b8 passed all deterministic checks; CodeRabbit confirmed byte-bounded complete-event health semantics and invalid-value role outcomes. All 16 findings are addressed, replied to, and resolved. Item stays open and unclaimed for the documented no-resolver-declared residual."
-files[7]{path,scope,note}:
+  "2026-08-09T15:57:25.224Z","harness:codex","Evidence: focused agent-runtime and author-attribution tests passed after truthful overlapping-run failure receipts; the final uninterrupted full suite passed 7,100/7,100 with exact 100/100/100/100 coverage. SDK surface change was explicitly acknowledged and all static, lint, parity, token, and performance gates passed."
+files[8]{path,scope,note}:
+  sdk/public-surface.json,project,SDK outcome contract snapshot
   src/core/history/history.ts,project,Persist resolver outcome evidence
   src/core/shared/author.ts,project,Explicit provenance precedence and invalid role outcome classification
   src/sdk/governance/health.ts,project,Expose zero-success resolver diagnostics through pm health
@@ -41,10 +48,17 @@ files[7]{path,scope,note}:
   tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Invalid role provenance outcome regression
   tests/unit/sdk/health-vector-boundary.spec.ts,project,Prove resolver-health scanning preserves the no-provider-I/O boundary
   tests/unit/sdk/provenance-health.spec.ts,project,Resolver health failure and success coverage
-tests[2]{command,scope,timeout_seconds}:
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts,project,180
   node scripts/run-tests.mjs test -- tests/unit/sdk/provenance-health.spec.ts tests/unit/commands/health-command.spec.ts,project,240
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mslxq9rl-7v1vac,test,failed,"2026-08-09T14:58:13.100Z","2026-08-09T15:05:58.257Z","2026-08-09T15:05:58.257Z",2,1,0
+  test-local-mslxqatv-9o2sdd,test,failed,"2026-08-09T14:59:00.977Z","2026-08-09T15:05:59.635Z","2026-08-09T15:05:59.635Z",2,1,0
+  test-local-mslz1bft-xylosg,test,passed,"2026-08-09T15:42:22.863Z","2026-08-09T15:42:33.257Z","2026-08-09T15:42:33.257Z",1,0,0
+  test-local-mslz1rd7-8wwd82,test,passed,"2026-08-09T15:42:33.647Z","2026-08-09T15:42:53.899Z","2026-08-09T15:42:53.899Z",1,0,0
 docs[2]{path,scope,note}:
   docs/SDK_AGENT_SESSION_CONTEXT.md,project,Resolver outcome and health contract
   docs/SDK_CONTEXT_INTEGRITY.md,project,Local bounded provenance health boundary
+close_reason: Implemented and documented explicit configured-versus-attempted provenance outcome semantics across CLI and SDK.
 body: ""

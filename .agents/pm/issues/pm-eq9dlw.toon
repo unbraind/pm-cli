@@ -2,11 +2,13 @@ id: pm-eq9dlw
 title: "The session-role dimension is wired to a boolean child-session flag, so every nested claude-code invocation records the role literally as \"1\" and fleet analytics will group real work under a meaningless label"
 description: "Measured on 2026-08-03 against pm 2026.8.3.\n\nThe claude-code harness descriptor in src/core/shared/author.ts declares provenance_environment_keys.role = ['CLAUDE_CODE_CHILD_SESSION']. That variable is a boolean marker meaning 'this invocation is a nested session'; its value in a live session is the literal string '1'. The resolver treats any non-blank value as the role observation, so a fresh mutation on 2026-08-03 records agent_provenance.role = {value: '1', source: 'environment'}.\n\nThis reads as legitimate provenance. The source is 'environment', which is the same source category a genuinely declared role would carry, so no consumer can distinguish a real role from this artifact by inspecting the entry. Fleet attribution analytics group by role; a permanently immutable population of entries labelled role '1' is worse than a population labelled null, because null is honest about absence and '1' is not.\n\nThe wiring appears to be a category error introduced while closing the gap that role had no descriptor key on any harness. Filling the slot with the only role-adjacent variable the harness exports satisfies a coverage metric while defeating the purpose of the dimension. If the nested-session fact is worth recording it deserves its own dimension with its own name and a boolean value domain.\n\nRelated but distinct: whether a declared resolver that fails is distinguishable from a dimension a harness cannot supply is its own finding. This one is the inverse - a resolver that succeeds and records a value that means nothing.\n\nScope is the role dimension wiring and the general rule that a descriptor key must match the value domain of the dimension it feeds."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:sdk",data-quality,identity,provenance
 created_at: "2026-08-03T06:21:42.773Z"
-updated_at: "2026-08-09T01:24:45.768Z"
+updated_at: "2026-08-09T15:57:28.612Z"
+closed_at: "2026-08-09T15:57:28.024Z"
+completed_at: "2026-08-09T15:57:28.024Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "No provenance dimension is sourced from an environment key whose value domain is boolean or presence-only; Each descriptor key declares the dimension value domain it is expected to carry, and a value outside that domain is refused rather than recorded; The nested-session fact, if worth recording, is recorded in a dimension whose name says what it means rather than being smuggled into role; A corpus check reports zero provenance values that are bare booleans or single digits across all dimensions"
@@ -16,8 +18,9 @@ confidence: high
 severity: medium
 environment: "pm 2026.8.3, claude-code harness with CLAUDE_CODE_CHILD_SESSION=1, Linux"
 repro_steps: Run a pm mutation from a nested/child claude-code session and read agent_provenance.role on the newest history entry.
-expected_result: "role is either a descriptive session role the operator declared, or null when the harness publishes no role."
-actual_result: "role is {value: \"1\", source: \"environment\"}. The claude-code descriptor maps the role dimension to CLAUDE_CODE_CHILD_SESSION, which is a presence/boolean flag whose value is the string \"1\", not a role name."
+resolution: Added bounded corpus-wide provenance value-domain scanning to SDK health with privacy-safe harness/dimension/kind aggregates for boolean and single-digit legacy values.
+expected_result: Health diagnostics must find invalid provenance values across immutable history without leaking raw values or requiring unbounded reads.
+actual_result: "Health scans bounded bytes/events, emits aggregate invalid_values and stable warnings, covers malformed/truncated histories, and propagates the vector through the documented health contract."
 component: core/shared/author
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-1wiugq,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
@@ -27,7 +30,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-lu6sca,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
   pm-pj2isb,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
   pm-rbg1qo,discovered_from,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-03T11:09:27.894Z","harness:codex","Estimate basis 2026-08-03: 240 minutes covers value-domain declarations, invalid boolean rejection, a correctly named nested-session dimension, corpus check, and regression coverage."
   "2026-08-07T11:23:43.166Z","harness:claude-code","Confirmed still live at 2026.8.7 on 2026-08-07 with no identity flags passed. A create from Claude Code recorded author harness:claude-code with author_source detected, agent_model claude-opus-5 from probe, effort xhigh from environment, version 2.1.224 from probe — and role literally \"1\" from environment, with topic null. Model, effort and version capture are working end to end; role and topic remain the only two dimensions that do not carry meaning. Fleet analytics grouping on role today would bucket every nested session under the string \"1\"."
   "2026-08-08T08:10:41.851Z","harness:claude-code","Reproduced live on 2026-08-08 against pm-cli 2026.8.7, HEAD build. A create recorded this session carries agent_provenance role {value: \"1\", source: \"environment\"} alongside a correctly resolved model {claude-opus-5, probe}, effort {xhigh, environment} and version {2.1.226, probe}. So the dimension is not merely unpopulated: it is populated with the boolean child-session flag rendered as a string, which is worse than null because it types as a valid role and will group every nested claude-code invocation under one meaningless label in fleet analytics. Sibling dimension topic is null in the same record, which pm-3zgh2c owns. Evidence is the last history entry of pm-3lhth4."
@@ -36,10 +39,23 @@ comments[8]{created_at,author,text}:
   "2026-08-09T00:09:13.174Z","harness:codex","Broad tranche evidence: Claude boolean child-session data no longer becomes a role; the controlled role vocabulary plus argv review/implementation inference now pass the complete 7086-test 100/100/100/100 gate. Item remains open and unclaimed because its corpus-wide all-dimension bare-boolean and single-digit conformance criterion remains broader than this tranche."
   "2026-08-09T00:20:22.518Z","harness:codex","Delivery handoff: broad SDK/CLI tranche committed at 5b36abc75 and opened as GitHub PR #944 (https://github.com/unbraind/pm-cli/pull/944). Exact local evidence includes 7,086 tests across 461 files at 100/100/100/100 coverage, package/compatibility/npx/dogfood/manual acceptance, tracker/changelog/SDK/static-quality gates, and zero current dependency or GitHub security alerts. Review and exact-head CI evidence will be appended after the hosted loop."
   "2026-08-09T01:24:45.768Z","harness:codex","PR #944 hosted evidence for the completed tranche portion: implementation commit b6678b8 passed all deterministic checks; all 16 CodeRabbit findings are addressed, replied to, and resolved. Item stays open and unclaimed for its broader remaining role-contract acceptance."
-files[1]{path,scope,note}:
+  "2026-08-09T15:57:27.484Z","harness:codex","Evidence: all three linked tests passed; final full suite passed 7,100/7,100 with exact 100/100/100/100 coverage; lint, duplicate, docstring, surface-replication, SDK parity, token/context, and performance gates passed. Live repository health/storage/history checks remain structurally clean."
+files[6]{path,scope,note}:
   src/core/shared/author.ts,project,Remove boolean child-session flag from semantic role sources and enforce controlled roles
-tests[1]{command,scope,timeout_seconds}:
+  src/sdk/governance/health.ts,project,Invalid provenance health projection
+  src/sdk/governance/provenance-health.ts,project,Corpus-wide invalid provenance value aggregation
+  tests/integration/provenance-value-health.integration.spec.ts,project,End-to-end health projection for corpus conformance
+  tests/unit/sdk/health-vector-boundary.spec.ts,project,Provider-free invalid-value health projection coverage
+  tests/unit/sdk/provenance-health.spec.ts,project,All-dimension boolean and digit conformance coverage
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
-docs[1]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/provenance-health.spec.ts tests/integration/provenance-value-health.integration.spec.ts tests/unit/sdk/health-vector-boundary.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/unit/sdk/provenance-health.spec.ts tests/unit/sdk/health-vector-boundary.spec.ts,project,180
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mslxjta1-gxcakh,test,passed,"2026-08-09T14:59:41.020Z","2026-08-09T15:00:56.953Z","2026-08-09T15:00:56.953Z",2,0,0
+  test-local-mslz2df0-xetnmy,test,passed,"2026-08-09T15:42:54.392Z","2026-08-09T15:43:22.476Z","2026-08-09T15:43:22.476Z",3,0,0
+docs[2]{path,scope,note}:
   docs/SDK_AGENT_SESSION_CONTEXT.md,project,Controlled role vocabulary and boolean-signal boundary
+  docs/SDK_CONTEXT_INTEGRITY.md,project,Bounded privacy-safe corpus conformance contract
+close_reason: Implemented bounded privacy-safe corpus diagnostics for invalid historical provenance domains.
 body: ""

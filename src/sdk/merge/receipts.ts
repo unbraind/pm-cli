@@ -51,6 +51,8 @@ export interface MergeDecisionReceipt {
   created_at: string;
   /** Reconciliation timestamp, when consumed. */
   reconciled_at?: string;
+  /** Whether decision values are recoverable locally or represented by hashes only. */
+  value_availability?: "clone_local" | "hash_only";
 }
 
 /** Privacy-safe receipt summary suitable for committed history context. */
@@ -109,6 +111,25 @@ async function resolveReceiptDirectory(cwd: string): Promise<string | null> {
   }
 }
 
+async function resolveTrackerRootFromItemPath(
+  cwd: string,
+  itemPath: string,
+): Promise<string | null> {
+  let directory = path.dirname(path.resolve(cwd, itemPath));
+  for (let depth = 0; depth < 12; depth += 1) {
+    if (await pathExists(path.join(directory, "settings.json")))
+      return directory;
+    const parent = path.dirname(directory);
+    if (parent === directory) break;
+    directory = parent;
+  }
+  return null;
+}
+
+function durableReceiptDirectory(pmRoot: string): string {
+  return path.join(pmRoot, "merge-receipts");
+}
+
 function receiptFileName(id: string): string {
   return `${id}.json`;
 }
@@ -128,10 +149,29 @@ export function summarizeMergeReceipt(
     conflict_resolution: receipt.conflict_resolution,
     decisions: receipt.decisions.map((decision) => ({
       field: decision.field,
-      retained_hash: sha256Hex(stableStringify(decision.retained)),
-      discarded_hash: sha256Hex(stableStringify(decision.discarded)),
+      retained_hash:
+        isPrehashedValue(decision.retained) ??
+        sha256Hex(stableStringify(decision.retained)),
+      discarded_hash:
+        isPrehashedValue(decision.discarded) ??
+        sha256Hex(stableStringify(decision.discarded)),
     })),
   };
+}
+
+function isPrehashedValue(value: unknown): string | undefined {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value) ||
+    !("pm_value_hash" in value)
+  ) {
+    return undefined;
+  }
+  const hash = value.pm_value_hash;
+  return typeof hash === "string" && /^[a-f0-9]{64}$/u.test(hash)
+    ? hash
+    : undefined;
 }
 
 /** Persist one item-driver outcome in the clone-local Git directory. */
@@ -168,35 +208,55 @@ export async function writeMergeReceipt(params: {
     decisions: structuredClone(params.decisions),
     state: "pending",
     created_at: nowIso(),
+    value_availability: "clone_local",
   };
   await ensureDir(directory);
   await writeFileAtomic(
     path.join(directory, receiptFileName(receipt.id)),
     `${JSON.stringify(receipt, null, 2)}\n`,
   );
+  const trackerRoot = await resolveTrackerRootFromItemPath(
+    params.cwd,
+    receipt.item_path,
+  );
+  if (trackerRoot !== null) {
+    const durableDirectory = durableReceiptDirectory(trackerRoot);
+    const summary = summarizeMergeReceipt(receipt);
+    const durableReceipt: MergeDecisionReceipt = {
+      ...receipt,
+      decisions: summary.decisions.map((decision) => ({
+        field: decision.field,
+        base: null,
+        ours: null,
+        theirs: null,
+        retained: { pm_value_hash: decision.retained_hash },
+        discarded: { pm_value_hash: decision.discarded_hash },
+      })),
+      value_availability: "hash_only",
+    };
+    await ensureDir(durableDirectory);
+    await writeFileAtomic(
+      path.join(durableDirectory, receiptFileName(receipt.id)),
+      `${JSON.stringify(durableReceipt, null, 2)}\n`,
+    );
+  }
   return receipt;
 }
 
-/** Read clone-local receipts with explicit reconciled/lossless classification controls. */
-export async function listMergeReceipts(
-  cwd: string,
-  options: { includeReconciled?: boolean; includeLossless?: boolean } = {},
+async function readReceiptsFromDirectory(
+  directory: string,
+  options: { includeReconciled?: boolean; includeLossless?: boolean },
 ): Promise<MergeDecisionReceipt[]> {
-  const directory = await resolveReceiptDirectory(cwd);
-  if (directory === null || !(await pathExists(directory))) {
-    return [];
-  }
-  const receipts: MergeDecisionReceipt[] = [];
+  if (!(await pathExists(directory))) return [];
   let names: string[];
   try {
     names = await readdir(directory);
   } catch {
     return [];
   }
+  const receipts: MergeDecisionReceipt[] = [];
   for (const name of names.sort((left, right) => left.localeCompare(right))) {
-    if (!name.endsWith(".json")) {
-      continue;
-    }
+    if (!name.endsWith(".json")) continue;
     try {
       const parsed = JSON.parse(
         await readFile(path.join(directory, name), "utf8"),
@@ -209,17 +269,39 @@ export async function listMergeReceipts(
         normalizedReceipt.version === 1 &&
         (options.includeReconciled || normalizedReceipt.state === "pending") &&
         (options.includeLossless !== false ||
-          (Array.isArray(normalizedReceipt.decisions) &&
-            normalizedReceipt.decisions.length > 0))
+          normalizedReceipt.decisions.length > 0)
       ) {
         receipts.push(normalizedReceipt);
       }
     } catch {
-      // A damaged clone-local receipt is reported by merge report through the
-      // omitted count once a future schema version adds richer diagnostics.
+      // Malformed evidence remains an integrity concern for a future schema.
     }
   }
-  return receipts.sort((left, right) =>
+  return receipts;
+}
+
+/** Read clone-local receipts with explicit reconciled/lossless classification controls. */
+export async function listMergeReceipts(
+  cwd: string,
+  options: {
+    includeReconciled?: boolean;
+    includeLossless?: boolean;
+    pmRoot?: string;
+  } = {},
+): Promise<MergeDecisionReceipt[]> {
+  const directory = await resolveReceiptDirectory(cwd);
+  const local =
+    directory === null
+      ? []
+      : await readReceiptsFromDirectory(directory, options);
+  const trackerRoot = options.pmRoot ?? path.join(cwd, ".agents", "pm");
+  const durable = await readReceiptsFromDirectory(
+    durableReceiptDirectory(trackerRoot),
+    options,
+  );
+  const receipts = new Map(durable.map((receipt) => [receipt.id, receipt]));
+  for (const receipt of local) receipts.set(receipt.id, receipt);
+  return [...receipts.values()].sort((left, right) =>
     left.created_at.localeCompare(right.created_at),
   );
 }
@@ -259,6 +341,25 @@ export async function markMergeReceiptReconciled(
       2,
     )}\n`,
   );
+  const trackerRoot = await resolveTrackerRootFromItemPath(
+    cwd,
+    receipt.item_path,
+  );
+  if (trackerRoot !== null) {
+    const durablePath = path.join(
+      durableReceiptDirectory(trackerRoot),
+      receiptFileName(receipt.id),
+    );
+    if (await pathExists(durablePath)) {
+      const durable = JSON.parse(
+        await readFile(durablePath, "utf8"),
+      ) as MergeDecisionReceipt;
+      await writeFileAtomic(
+        durablePath,
+        `${JSON.stringify({ ...durable, state: "reconciled", reconciled_at: nowIso() }, null, 2)}\n`,
+      );
+    }
+  }
 }
 
 /** Report pending or historical clone-local merge decisions. */

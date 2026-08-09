@@ -2,8 +2,16 @@
 
 ## Unreleased
 
+### Added
+
+- A declared provenance resolver that fails at runtime is recorded identically to a dimension the harness cannot supply, so a broken probe is invisible until someone reads the source ([pm-lu6sca](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-lu6sca.toon))
+
 ### Fixed
 
+- A sandboxed fixture records provenance from the host harness environment, so the suite is green on CI and deterministically red for any agent running it locally ([pm-xgah3a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xgah3a.toon))
+- The session-role dimension is wired to a boolean child-session flag, so every nested claude-code invocation records the role literally as "1" and fleet analytics will group real work under a meaningless label ([pm-eq9dlw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eq9dlw.toon))
+- GH-921/GH-922: merge-decision receipts are not durable in fresh-clone CI ([pm-1j5j21](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1j5j21.toon))
+- GH-948: version-skewed pm invocations silently rewrite the tracked merge fence during unrelated commands ([pm-l56d0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l56d0o.toon))
 - A measurement ratchet bound stops enforcing the moment its owner reaches a terminal status, so every guarded population goes unbounded exactly when its fix ships ([pm-5z9plz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5z9plz.toon))
 - The docs tree grows one file per shipped contract, so 39 of 51 documents are stubs and the SDK's story is split across twelve files ([pm-9hv1o7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9hv1o7.toon))
 - The replication gate's input is a hand-written list of known replications, so it can regress what was found and never discover what was not ([pm-b84irw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b84irw.toon))

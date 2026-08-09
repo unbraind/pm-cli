@@ -62,9 +62,7 @@ describe("health vector provider boundary", () => {
           { skipDrift: true },
         );
         expect(requests).toBe(0);
-        const storage = result.checks.find(
-          (check) => check.name === "storage",
-        );
+        const storage = result.checks.find((check) => check.name === "storage");
         expect(storage).toBeDefined();
         expect(storage!.details).not.toHaveProperty(
           "provenance_resolver_outcomes",
@@ -199,6 +197,9 @@ describe("health vector provider boundary", () => {
         path.join(context.pmPath, "history", "pm-provenance.jsonl"),
         `${JSON.stringify({
           agent_harness: "claude-code",
+          agent_provenance: {
+            role: { source: "legacy", value: "true" },
+          },
           context: {
             agent_provenance_outcomes: {
               model: {
@@ -226,9 +227,20 @@ describe("health vector provider boundary", () => {
             successes: 0,
           },
         ],
+        provenance_invalid_values: [
+          {
+            harness: "claude-code",
+            dimension: "role",
+            kind: "boolean",
+            count: 1,
+          },
+        ],
       });
       expect(result.warnings).toContain(
         "provenance_resolver_zero_success:claude-code:model:claude_session_file:1",
+      );
+      expect(result.warnings).toContain(
+        "provenance_value_domain_invalid:claude-code:role:boolean:1",
       );
     });
   });
