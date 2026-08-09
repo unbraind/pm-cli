@@ -2,20 +2,40 @@ id: pm-yrj7qr
 title: "GH-942: expose the lightweight all-item metadata reader through the public SDK"
 description: "GitHub issue https://github.com/unbraind/pm-cli/issues/942 reports that listAllItemMetadataLight already powers the cheap CLI list path but is not exported through the public SDK, forcing package authors to choose heavier reads or private imports. Promote a typed, bounded public primitive with PmClient and narrow subpath parity."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-09T00:15:13.406Z"
-updated_at: "2026-08-09T06:05:31.296Z"
+updated_at: "2026-08-09T08:05:36.371Z"
+closed_at: "2026-08-09T08:05:35.741Z"
+completed_at: "2026-08-09T08:05:35.741Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: "A documented public SDK primitive exposes the lightweight all-item metadata read without importing CLI or private core modules; top-level, narrow subpath, PmClient, and runtime action contracts have intentional parity; return types and omission semantics distinguish intentionally unavailable fields; import-cost, token, package-boundary, surface-snapshot, and complete coverage gates pass; a package-authoring example proves use from a compiled external consumer"
 parent: pm-usfg
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+resolution: fixed
+expected_result: Packages can use the lightweight all-item metadata reader through stable public SDK surfaces
+actual_result: "Root SDK, sdk/runtime, and PmClient expose the host-aware lightweight reader with custom type-folder support"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-te6elw,discovered_from,"2026-08-09T00:15:13.406Z","harness:codex","cli:create:dep",detected
   pm-xpumg4,related,"2026-08-09T00:15:13.406Z","harness:codex","cli:create:dep",detected
   pm-xzhz,related,"2026-08-09T00:15:13.406Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-sr3xzg,verifies,"2026-08-09T07:29:46.549Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
   "2026-08-09T00:15:13.406Z","harness:codex","Duplicate check: searched all statuses for listAllItemMetadataLight, cheap list, and SDK surface. The SDK-first epic and completed completeness/boundary items are adjacent lineage, but no item owns promotion of this exact lightweight reader reported in GH-942."
   "2026-08-09T06:05:31.296Z","harness:claude-code","Evidence sharpening the GH-942 framing, measured 2026-08-09 at host 2026.8.9.\n\nThe issue describes listAllItemMetadataLight as unexported. The stronger statement is that it is already declared as public and is not exported. It appears in sdk/public-surface.json at line 6049, which is the file that declares the SDK's public surface, while src/sdk/index.ts does not export it. Its only importers are internal: src/sdk/history-compact.ts, src/sdk/schema.ts (five call sites) and src/sdk/schema-migration.ts.\n\nSo the gap is not an omission from a list — it is a disagreement between two declarations of the same surface. An author who consults the declared public surface finds the symbol, and an author who consults the entrypoint cannot import it. Whichever one is authoritative, the other is currently lying, and no gate compares them.\n\nThis is the same producer/consumer parity shape recorded on pm-doxj at horizon AG: the surface has a declaration with no export behind it. Adding the export closes the issue; adding a gate that fails when public-surface.json names a symbol the entrypoint does not export closes the class.\n\nRelated measurement from the same pass: pm-sr3xzg records that the light reader is also the one src/sdk/governance/validate.ts line 3654 declines to use, loading every item body unconditionally instead."
+  "2026-08-09T08:05:18.748Z","harness:codex","Final evidence: root/runtime/PmClient type and runtime tests pass; SDK surface snapshot and package-boundary parity pass; a clean npm-installed tarball returned exactly one scalar-only item through both PmClient.listAllItemMetadataLight and the runtime function."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,Intentional public SDK surface snapshot
+  src/sdk/query/light-metadata.ts,project,Host-bound workspace settings adapter for light metadata
+  src/sdk/runtime.ts,project,PmClient and runtime subpath light metadata primitive
+  tests/types/sdk-subpath-entrypoints.test-d.ts,project,Runtime subpath compile contract
+  tests/unit/sdk/sdk-context-primitives.spec.ts,project,Root function and client parity
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mslidcxu-4ffvi7,test,passed,"2026-08-09T07:55:48.917Z","2026-08-09T07:56:01.602Z","2026-08-09T07:56:01.602Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT.md,project,Task-oriented light-reader guidance
+close_reason: "Published the lightweight metadata primitive across root SDK, runtime subpath, and PmClient with typed packaged acceptance"
 body: ""

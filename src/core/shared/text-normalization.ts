@@ -17,8 +17,8 @@ export function tokenizeAlphaNumeric(value: string): string[] {
 
 /** Implements jaccard similarity for the public runtime surface of this module. */
 export function jaccardSimilarity(
-  leftTokens: string[],
-  rightTokens: string[],
+  leftTokens: readonly string[],
+  rightTokens: readonly string[],
 ): number {
   if (leftTokens.length === 0 && rightTokens.length === 0) {
     return 1;

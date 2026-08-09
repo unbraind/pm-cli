@@ -60,6 +60,140 @@ afterEach(async () => {
 });
 
 describe("surface replication gate", () => {
+  it("detects undeclared repeated rule bodies and enforces denominator floors", async () => {
+    const root = await fixtureRoot();
+    const repeated = `function normalizeRule(value: string): string {\n  const trimmed = value.trim();\n  const lowered = trimmed.toLowerCase();\n  return lowered.replaceAll("-", "_");\n}\n`;
+    await writeFile(
+      path.join(root, "src", "sdk", "a.ts"),
+      `${repeated}\n${repeated}`,
+      "utf8",
+    );
+    await writeFile(path.join(root, "src", "cli", "b.ts"), repeated, "utf8");
+    const config = {
+      ...declaration(),
+      sets: [],
+      replication_detection: {
+        minimum_statements: 3,
+        minimum_distinct_files: 2,
+        minimum_detected_cluster_count: 1,
+        minimum_declared_coverage_ratio: 1,
+      },
+    };
+
+    const report = await validateSurfaceReplication(config, {
+      repoRoot: root,
+      changedFiles: [],
+      today: "2026-08-09",
+    });
+
+    expect(report.replication_detection).toMatchObject({
+      detected_cluster_count: 1,
+      declared_cluster_count: 0,
+      declared_coverage_ratio: 0,
+    });
+    expect(report.violations).toContain(
+      "replication_detection:declared_coverage:0.0000:1.0000",
+    );
+
+    const validPolicy = config.replication_detection;
+    const invalidPolicies = [
+      null,
+      "invalid",
+      { ...validPolicy, minimum_statements: 1.5 },
+      { ...validPolicy, minimum_statements: 0 },
+      { ...validPolicy, minimum_distinct_files: 1.5 },
+      { ...validPolicy, minimum_distinct_files: 1 },
+      { ...validPolicy, minimum_detected_cluster_count: 1.5 },
+      { ...validPolicy, minimum_detected_cluster_count: -1 },
+      { ...validPolicy, minimum_declared_coverage_ratio: "1" },
+      { ...validPolicy, minimum_declared_coverage_ratio: -1 },
+      { ...validPolicy, minimum_declared_coverage_ratio: 1.1 },
+    ];
+    for (const replicationDetection of invalidPolicies) {
+      await expect(
+        validateSurfaceReplication(
+          { ...config, replication_detection: replicationDetection },
+          { repoRoot: root, changedFiles: [], today: "2026-08-09" },
+        ),
+      ).resolves.toMatchObject({
+        ok: false,
+        violations: ["replication_detection:invalid"],
+      });
+    }
+
+    await expect(
+      validateSurfaceReplication(
+        {
+          ...config,
+          replication_detection: {
+            ...validPolicy,
+            minimum_detected_cluster_count: 2,
+          },
+        },
+        { repoRoot: root, changedFiles: [], today: "2026-08-09" },
+      ),
+    ).resolves.toMatchObject({
+      ok: false,
+      violations: expect.arrayContaining([
+        "replication_detection:cluster_floor:1:2",
+      ]),
+    });
+
+    const declaredReport = await validateSurfaceReplication(
+      {
+        ...config,
+        sets: [
+          null,
+          {
+            id: "fixture-declaration-shapes",
+            owner: "pm-fixture",
+            triggers: ["never.ts"],
+            required_changed_members: ["src/sdk/a.ts"],
+            members: [
+              null,
+              { path: 7 },
+              { path: "src/sdk/a.ts" },
+              { path: "src/cli/b.ts" },
+            ],
+          },
+        ],
+        replication_detection: {
+          ...validPolicy,
+          minimum_declared_coverage_ratio: 1,
+        },
+      },
+      { repoRoot: root, changedFiles: [], today: "2026-08-09" },
+    );
+    expect(declaredReport.replication_detection).toMatchObject({
+      detected_cluster_count: 1,
+      declared_cluster_count: 1,
+      declared_coverage_ratio: 1,
+    });
+    expect(declaredReport.violations).toContain("set:invalid");
+
+    await expect(
+      validateSurfaceReplication(
+        {
+          ...config,
+          replication_detection: {
+            ...validPolicy,
+            minimum_distinct_files: 3,
+            minimum_detected_cluster_count: 0,
+            minimum_declared_coverage_ratio: 1,
+          },
+        },
+        { repoRoot: root, changedFiles: [], today: "2026-08-09" },
+      ),
+    ).resolves.toMatchObject({
+      ok: true,
+      replication_detection: {
+        detected_cluster_count: 0,
+        declared_cluster_count: 0,
+        declared_coverage_ratio: 1,
+      },
+    });
+  });
+
   it("fails when one changed side is not replicated", async () => {
     const root = await fixtureRoot();
     await writeFile(
@@ -626,23 +760,13 @@ describe("surface replication gate", () => {
     await expect(main(["--declaration", "--list-waivers"])).resolves.toEqual({
       waivers: [],
     });
-    await expect(
-      main(["--changed-files", "README.md, ,package.json"]),
-    ).resolves.toMatchObject({
-      ok: true,
-      changed_files: ["README.md", "package.json"],
-    });
-    await expect(main(["--changed-files"])).resolves.toMatchObject({
-      ok: true,
-    });
-
     const root = await fixtureRoot();
-    const defaultConfig = JSON.parse(
-      await readFile(
-        path.resolve("scripts/release/surface-replication-sets.json"),
-        "utf8",
-      ),
-    ) as Record<string, unknown>;
+    const explicitConfig = {
+      version: 1,
+      source_file_line_cap: 10,
+      sets: [],
+      cli_refusal_dispositions: [],
+    };
     const declarationPath = path.join(root, "declaration.json");
     const waiverlessDeclarationPath = path.join(root, "waiverless.json");
     await writeFile(
@@ -655,11 +779,27 @@ describe("surface replication gate", () => {
     ).resolves.toEqual({ waivers: [] });
     await writeFile(
       declarationPath,
-      `${JSON.stringify(defaultConfig)}\n`,
+      `${JSON.stringify(explicitConfig)}\n`,
       "utf8",
     );
     await expect(
-      main(["--declaration", declarationPath, "--changed-files", "README.md"]),
+      main(
+        [
+          "--declaration",
+          declarationPath,
+          "--changed-files",
+          "README.md, ,package.json",
+        ],
+        { repoRoot: root },
+      ),
+    ).resolves.toMatchObject({
+      ok: true,
+      changed_files: ["README.md", "package.json"],
+    });
+    await expect(
+      main(["--declaration", declarationPath, "--changed-files"], {
+        repoRoot: root,
+      }),
     ).resolves.toMatchObject({ ok: true });
 
     const gitDeclarationPath = path.join(root, "git-declaration.json");
@@ -690,7 +830,7 @@ describe("surface replication gate", () => {
 
     await writeFile(
       declarationPath,
-      `${JSON.stringify({ ...defaultConfig, version: 2 })}\n`,
+      `${JSON.stringify({ ...explicitConfig, version: 2 })}\n`,
       "utf8",
     );
     await expect(

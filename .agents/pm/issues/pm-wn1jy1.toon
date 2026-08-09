@@ -1,0 +1,39 @@
+id: pm-wn1jy1
+title: "GH-946: context signal-store staleness warning has no executable remediation contract"
+description: "GitHub issue https://github.com/unbraind/pm-cli/issues/946 reports that pm context emits context_signal_store_stale as a bare warning with no meaning, remediation map, or executable recovery. Define one SDK-owned warning/remediation contract shared by context, CLI, MCP, help, and contracts, and prove the suggested recovery clears the stale condition without requiring an optional command that is not installed."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"area:context",context-management,remediation,sdk
+created_at: "2026-08-09T06:38:34.088Z"
+updated_at: "2026-08-09T08:05:38.946Z"
+closed_at: "2026-08-09T08:05:38.246Z"
+completed_at: "2026-08-09T08:05:38.246Z"
+author: "harness:codex"
+estimated_minutes: 480
+acceptance_criteria: "context_signal_store_stale carries a human-readable meaning and one executable restore command in every structured context surface; the recovery is available in the base installation and demonstrably clears the warning in a sandbox workspace; CLI, SDK, MCP, help, contracts, token budgets, and exact coverage share one source of truth"
+parent: pm-4k6b
+risk: high
+confidence: high
+resolution: fixed
+expected_result: Context signal warnings explain their meaning and provide an executable recovery contract
+actual_result: "Invalid, stale, and write-failed signals carry stable warning_details with pm context recovery and expected effects; empty details remain omitted"
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6m3y,discovered_from,"2026-08-09T06:38:34.088Z","harness:codex","cli:create:dep",detected
+  pm-h3no,related,"2026-08-09T06:38:34.088Z","harness:codex","cli:create:dep",detected
+  pm-jwmszf,related,"2026-08-09T06:38:34.088Z","harness:codex","cli:create:dep",detected
+  pm-o3nr,related,"2026-08-09T06:38:34.088Z","harness:codex","cli:create:dep",detected
+  pm-9hv1o7,verifies,"2026-08-09T07:29:47.943Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-09T06:38:34.088Z","harness:codex","Duplicate check evidence: searched all 2,389 items across every status for GH-946,context_signal_store_stale,signal store stale,remediation hint,gc,reindex,and context warning. GH-527 and completed remediation/context lineages are adjacent but no PM item owns this exact missing context-warning recovery contract."
+  "2026-08-09T08:05:19.817Z","harness:codex","Final evidence: signal-store tests cover invalid, stale, and write-failed details; context calibration passes at 2 and 2243 items; clean packaged context omitted an empty warning_details field. GH-946 carries the canonical PM link."
+files[3]{path,scope,note}:
+  src/sdk/context-signal-store.ts,project,Warning meanings and executable recovery contracts
+  src/sdk/query/context.ts,project,Expose actionable signal-store diagnostics
+  tests/unit/sdk/context-signal-store.spec.ts,project,Stale rebuild and fresh-rerun proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-signal-store.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mslid2tg-xb9idr,test,passed,"2026-08-09T07:55:36.722Z","2026-08-09T07:55:48.484Z","2026-08-09T07:55:48.484Z",1,0,0
+close_reason: Added actionable context signal warning details and stable recovery contracts with bounded output
+body: ""

@@ -13,6 +13,7 @@ import {
   health,
   init,
   learnings,
+  listAllItemMetadataLight,
   notes,
   profile,
   profileApply,
@@ -206,6 +207,14 @@ describe("SDK context-management primitives", () => {
         author: "sdk-test",
       });
       expect(addedComment.comments.at(-1)?.text).toBe("SDK comment");
+      const clientLightItems = await client.listAllItemMetadataLight();
+      const functionLightItems = await listAllItemMetadataLight(context.pmPath);
+      expect(clientLightItems.map(({ id: itemId }) => itemId)).toEqual(
+        functionLightItems.map(({ id: itemId }) => itemId),
+      );
+      expect(clientLightItems.find(({ id: itemId }) => itemId === id)).not.toHaveProperty(
+        "comments",
+      );
       const listedComments = await comments(
         id,
         { limit: "5" },

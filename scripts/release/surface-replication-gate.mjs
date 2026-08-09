@@ -10,6 +10,7 @@ import { execFileSync } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 import { fail, parseFlags, repoRoot } from "./utils.mjs";
 
 const DEFAULT_DECLARATION_PATH = path.join(
@@ -87,6 +88,124 @@ async function collectTypeScriptFiles(directory) {
     }
   }
   return files;
+}
+
+function functionName(node, sourceFile) {
+  if (node.name === undefined) return null;
+  return node.name.getText(sourceFile).trim();
+}
+
+/** Detect repeated named rule bodies so declarations have a measured denominator. */
+export async function detectReplicatedRuleBodies(root, policy) {
+  const minimumStatements = policy.minimum_statements;
+  const clusters = new Map();
+  for (const absolute of await collectTypeScriptFiles(path.join(root, "src"))) {
+    const source = await readFile(absolute, "utf8");
+    const sourceFile = ts.createSourceFile(
+      absolute,
+      source,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS,
+    );
+    const visit = (node) => {
+      if (
+        node.body !== undefined &&
+        ts.isBlock(node.body) &&
+        node.body.statements.length >= minimumStatements
+      ) {
+        const name = functionName(node, sourceFile);
+        if (name !== null) {
+          const normalizedBody = node.body
+            .getText(sourceFile)
+            .replaceAll(/\s+/gu, " ")
+            .trim();
+          const key = `${name}\u0000${normalizedBody}`;
+          const entries = clusters.get(key) ?? [];
+          entries.push({
+            path: path.relative(root, absolute).replaceAll(path.sep, "/"),
+            name,
+            line: source.slice(0, node.getStart(sourceFile)).split(/\r?\n/u)
+              .length,
+          });
+          clusters.set(key, entries);
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+  }
+  return [...clusters.values()]
+    .filter(
+      (entries) =>
+        new Set(entries.map((entry) => entry.path)).size >=
+        policy.minimum_distinct_files,
+    )
+    .map((entries) => ({
+      name: entries[0].name,
+      occurrences: entries.sort((left, right) =>
+        left.path === right.path
+          ? left.line - right.line
+          : left.path.localeCompare(right.path),
+      ),
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function isReplicationDetectionPolicy(policy) {
+  if (typeof policy !== "object" || policy === null) return false;
+  return [
+    Number.isSafeInteger(policy.minimum_statements),
+    policy.minimum_statements > 0,
+    Number.isSafeInteger(policy.minimum_distinct_files),
+    policy.minimum_distinct_files >= 2,
+    Number.isSafeInteger(policy.minimum_detected_cluster_count),
+    policy.minimum_detected_cluster_count >= 0,
+    typeof policy.minimum_declared_coverage_ratio === "number",
+    policy.minimum_declared_coverage_ratio >= 0,
+    policy.minimum_declared_coverage_ratio <= 1,
+  ].every(Boolean);
+}
+
+async function replicationDenominator(config, root) {
+  const policy = config.replication_detection;
+  if (policy === undefined) return null;
+  if (!isReplicationDetectionPolicy(policy)) {
+    return { violations: ["replication_detection:invalid"] };
+  }
+  const clusters = await detectReplicatedRuleBodies(root, policy);
+  const declaredPaths = new Set(
+    config.sets.flatMap((set) =>
+      Array.isArray(set?.members)
+        ? set.members.flatMap((member) =>
+            typeof member?.path === "string" ? [member.path] : [],
+          )
+        : [],
+    ),
+  );
+  const declaredClusterCount = clusters.filter((cluster) =>
+    cluster.occurrences.every((entry) => declaredPaths.has(entry.path)),
+  ).length;
+  const coverageRatio =
+    clusters.length === 0 ? 1 : declaredClusterCount / clusters.length;
+  const violations = [];
+  if (clusters.length < policy.minimum_detected_cluster_count) {
+    violations.push(
+      `replication_detection:cluster_floor:${clusters.length}:${policy.minimum_detected_cluster_count}`,
+    );
+  }
+  if (coverageRatio < policy.minimum_declared_coverage_ratio) {
+    violations.push(
+      `replication_detection:declared_coverage:${coverageRatio.toFixed(4)}:${policy.minimum_declared_coverage_ratio.toFixed(4)}`,
+    );
+  }
+  return {
+    detected_cluster_count: clusters.length,
+    declared_cluster_count: declaredClusterCount,
+    declared_coverage_ratio: Number(coverageRatio.toFixed(4)),
+    clusters,
+    violations,
+  };
 }
 
 function validateMemberShape(member, label, violations) {
@@ -377,6 +496,8 @@ export async function validateSurfaceReplication(config, options = {}) {
   }
   const refusals = await refusalInventory(config, root);
   violations.push(...refusals.violations);
+  const denominator = await replicationDenominator(config, root);
+  violations.push(...(denominator?.violations ?? []));
   const reports = activeSets.reports;
   reports.sort(
     (left, right) =>
@@ -389,6 +510,7 @@ export async function validateSurfaceReplication(config, options = {}) {
     active_sets: reports,
     recurrence_size_candidates: reports,
     cli_owned_refusals: refusals,
+    replication_detection: denominator,
     applied_waivers: [
       ...new Map(
         appliedWaivers.map((waiver) => [

@@ -18,6 +18,12 @@ pm get pm-a1b2 --output-include item,claim_state
 
 An unknown selector is a usage refusal that lists the valid vocabulary. Selecting the complete `item` object together with an item field is also refused because the two selectors express conflicting projection depths. Every successful projection carries an `omission_receipt` with the exact selectors needed to restore withheld item fields or sections.
 
+Automatic receipts cover every heavy item collection (`comments`, `notes`,
+`learnings`, `files`, `tests`, `docs`, `reminders`, and `events`) plus `body`,
+`children`, `claim_state`, `linked`, and `schedule`. Empty included collections
+are distinguishable from omitted collections because inclusion is derived from
+property presence, not collection length.
+
 Standard and brief item reads expose the stable `collection_counts` selector;
 full reads retain those counts and normalize every supported collection key to
 an array. `--output-include item.collection_counts` therefore uses the same
@@ -49,13 +55,18 @@ pm history-author-acknowledge \
   --reason "Verified workspace provenance"
 ```
 
-The SDK exposes `resolveUnknownAuthorAcknowledgmentSelector` and `parseUnknownAuthorHistoryEventCoordinates` so packages never need a private copy of this grammar.
+The SDK exposes `resolveUnknownAuthorAcknowledgmentSelector` and `parseUnknownAuthorHistoryEventCoordinates` so packages never need a private copy of this grammar. Health and validate map actionable unknown-author warnings directly to this append-only acknowledgment command instead of sending callers through another diagnostic loop.
 
 ## Health provider boundary
 
 `pm health` is read-only by default and never refreshes embeddings merely because a semantic provider is configured. Provider I/O requires `--refresh-vectors`; `--skip-vectors` or `--no-refresh` records the explicit non-provider path. Provider requests remain bounded by the configured embedding timeout, and a failed refresh reports the responsible vector diagnostic plus the skip remediation.
 
 Storage integrity is evaluated independently of that provider boundary. Lossless merge receipts remain visible as provenance, while only receipts containing discarded scalar values produce `merge_decisions_unreviewed` guidance; neither classification enables vector refresh or remote provider I/O.
+
+Brief and summary check-only health projections use the scalar-only metadata
+reader. Validation uses collection-bearing metadata for evidence and
+relationship checks and materializes bodies only when strict history-drift
+verification is requested.
 
 The storage check also reads at most 10,000 local immutable events for bounded
 agent-provenance resolver outcomes. This scan performs no network or provider
@@ -70,7 +81,9 @@ never succeeded.
 - active set recurrence density;
 - the largest source member’s utilization of the mandatory file-size cap;
 - every remaining CLI-owned `PmCliError`, grouped by an explicit adapter-level disposition;
-- applied waivers, including their PM owner and expiry.
+- applied waivers, including their PM owner and expiry;
+- an AST-derived denominator of identical named rule bodies, declared coverage,
+  and a non-decreasing detected-cluster floor.
 
 Query waivers directly with:
 

@@ -7,6 +7,9 @@ import type {
   RuntimeSchemaSettings,
   TypeWorkflowDefinition,
 } from "../../types/index.js";
+import { normalizeStatusToken } from "./status-token.js";
+
+export { normalizeStatusToken } from "./status-token.js";
 
 /**
  * Per-type allowed-transition support (governance.workflow_enforcement).
@@ -58,16 +61,6 @@ export interface EvaluateTransitionResult {
   hasRule: boolean;
   /** Allowed [from, to] pairs for the matched type (normalized ids). Empty when the type is unrestricted. */
   allowedTransitions: [string, string][];
-}
-
-/** Normalize a status token the same way runtime-schema statuses are normalized. */
-export function normalizeStatusToken(value: unknown): string {
-  return typeof value === "string"
-    ? value
-        .trim()
-        .toLowerCase()
-        .replaceAll(/[\s-]+/g, "_")
-    : "";
 }
 
 function normalizeTypeName(value: unknown): string {

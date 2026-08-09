@@ -49,6 +49,13 @@ describe("shared remediation registry", () => {
       expect(resolveRemediation("telemetry_queue_high_retries:3")?.command).toBe("pm telemetry flush");
     });
 
+    it("routes health and validate unknown-author findings directly to the disposition command", () => {
+      const command =
+        'pm history-author-acknowledge --all-actionable --attributed-author "<principal>" --reviewer "<reviewer>" --reason "<evidence>"';
+      expect(resolveRemediation("history_unknown_author_events:2")?.command).toBe(command);
+      expect(resolveRemediation("validate_history_unknown_author_events:2")?.command).toBe(command);
+    });
+
     it("trims surrounding whitespace before matching", () => {
       expect(resolveRemediation("  history_drift_missing_stream:pm-abcd  ")?.code).toBe(
         "history_drift_missing_stream",

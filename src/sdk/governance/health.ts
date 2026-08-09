@@ -52,7 +52,7 @@ import {
   scanItemFormatVersions,
 } from "../../core/item/item-format-version.js";
 import {
-  listAllItemMetadata,
+  listAllItemMetadataLight,
   listAllItemMetadataWithBody,
 } from "../../core/store/item-store.js";
 import {
@@ -2509,7 +2509,7 @@ async function readHealthItems(params: {
   itemReadWarnings: string[];
 }): Promise<Array<ItemMetadata | ItemWithBody>> {
   if (params.skipPolicy.skipDrift && params.skipPolicy.skipVectors) {
-    return listAllItemMetadata(
+    return listAllItemMetadataLight(
       params.pmRoot,
       params.settings.item_format,
       params.typeRegistry.type_to_folder,

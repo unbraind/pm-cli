@@ -53,6 +53,8 @@ import {
 } from "../core/schema/runtime-schema.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
+import type { ItemMetadata } from "../types/index.js";
+import { listClientItemMetadataLight } from "./query/light-metadata.js";
 import {
   buildWorkspaceExtensionCommandContracts,
   buildWorkspaceFieldContracts,
@@ -436,6 +438,7 @@ export {
 } from "./similarity-scoring.js";
 export {
   listAllItemMetadata,
+  listAllItemMetadataLight,
   locateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
@@ -740,6 +743,11 @@ export class PmClient {
     options: Options = {} as Options,
   ): ReadPromise<ContextResult, Options> {
     return this.runTyped("context", { options });
+  }
+
+  /** Read every item through the scalar-only metadata cache without materializing heavy collections or bodies. */
+  listAllItemMetadataLight(): Promise<ItemMetadata[]> {
+    return listClientItemMetadataLight(this.defaults.path, this.defaults.cwd);
   }
 
   /** List items with the MCP/agent compact defaults. */

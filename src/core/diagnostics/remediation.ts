@@ -277,9 +277,17 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   {
     code: "history_unknown_author_events",
-    command: "pm validate --check-history-drift --fix-hints",
+    command:
+      'pm history-author-acknowledge --all-actionable --attributed-author "<principal>" --reviewer "<reviewer>" --reason "<evidence>"',
     summary:
-      "Historical mutations lack attributable authorship. Configure PM_AUTHOR, pass global --author, or set author_default so future audit events are attributable.",
+      "Review the actionable coordinates, then record an append-only attribution disposition for the complete current set.",
+  },
+  {
+    code: "validate_history_unknown_author_events",
+    command:
+      'pm history-author-acknowledge --all-actionable --attributed-author "<principal>" --reviewer "<reviewer>" --reason "<evidence>"',
+    summary:
+      "Review the actionable coordinates, then record an append-only attribution disposition for the complete current set.",
   },
   // --- pm health: locks ---
   {

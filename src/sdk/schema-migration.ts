@@ -33,6 +33,7 @@ import {
   parseStatusDefsFile,
   serializeStatusDefsFile,
 } from "../core/schema/status-defs-file.js";
+import { normalizeStatusToken } from "../core/schema/status-token.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import {
   listAllItemMetadataLight,
@@ -192,10 +193,6 @@ export function deriveSchemaEvolutionMigrationId(
 function normalizedRequest(
   request: SchemaEvolutionMigrationRequest,
 ): SchemaEvolutionMigrationRequest {
-  const normalizeToken = (value: string): string =>
-    requiredText(value, "source or target")
-      .toLowerCase()
-      .replaceAll(/[\s-]+/g, "_");
   const normalized =
     request.kind === "rename-type"
       ? {
@@ -206,16 +203,16 @@ function normalizedRequest(
       : request.kind === "rename-field"
         ? {
             kind: request.kind,
-            from: normalizeToken(request.from),
-            to: normalizeToken(request.to),
+            from: normalizeStatusToken(requiredText(request.from, "source")),
+            to: normalizeStatusToken(requiredText(request.to, "target")),
             ...(request.type === undefined
               ? {}
               : { type: requiredText(request.type, "type") }),
           }
         : {
             kind: request.kind,
-            from: normalizeToken(request.from),
-            to: normalizeToken(request.to),
+            from: normalizeStatusToken(requiredText(request.from, "source")),
+            to: normalizeStatusToken(requiredText(request.to, "target")),
           };
   if (normalized.from.toLowerCase() === normalized.to.toLowerCase()) {
     throw new TypeError("Schema migration source and target must differ");

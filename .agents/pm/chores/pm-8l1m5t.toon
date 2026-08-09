@@ -2,20 +2,34 @@ id: pm-8l1m5t
 title: Refresh compatible 2026-08-08 development dependencies
 description: "Update the compatible @types/node and ESLint patch releases found by the 2026-08-08 live dependency sweep. Keep npm-package-arg 14 and TypeScript 7 deferred under their existing compatibility owners; verify the complete quality, coverage, security, and packed-consumer gates."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: code-quality,dependencies,security
 created_at: "2026-08-08T09:58:16.116Z"
-updated_at: "2026-08-09T00:17:44.465Z"
+updated_at: "2026-08-09T08:05:53.523Z"
+closed_at: "2026-08-09T08:05:44.111Z"
+completed_at: "2026-08-09T08:05:44.111Z"
 author: "harness:codex"
 estimated_minutes: 45
 acceptance_criteria: @types/node and ESLint resolve to their current compatible releases; pnpm audit and GitHub dependency/secret/code scanning are triaged; Node typecheck lint full 100/100/100/100 coverage and packed npx/bunx consumers pass; incompatible majors remain linked to canonical open items without duplicate work
+resolution: completed
+expected_result: Compatible dependency updates land without bypassing supply-chain policy and every security and consumer gate passes
+actual_result: "ESLint 10.8.1 and Node types 26.2.0 resolve cleanly; audit and GitHub alerts are zero; source, coverage, package, npx, and dogfood checks pass"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-ksr40d,related,"2026-08-08T09:58:16.116Z","harness:codex","cli:create:dep",detected
   pm-qwoy,implements,"2026-08-08T09:58:16.116Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-08T09:58:16.116Z","harness:codex","Duplicate-check evidence: all-status exact-title search returned zero items; broader @types/node and ESLint searches found closed historical refreshes and canonical npm-package-arg 14 deferment pm-ksr40d, but no item owns the 2026-08-08 compatible patch pair. Live outdated: @types/node 26.1.2 -> 26.2.0, eslint 10.8.0 -> 10.8.1; TypeScript 7 remains a separate major."
   "2026-08-08T10:00:11.492Z","harness:codex","Dependency disposition: @types/node 26.2.0 and ESLint 10.8.1 were published only about 19 hours ago. pnpm correctly required new minimumReleaseAgeExclude bypasses to install them; those generated exceptions and the dependency changes were removed rather than weakening the supply-chain gate. npm-package-arg 14 remains owned by pm-ksr40d and incompatible with the published Node 22 floor. pnpm audit is zero. Resume this item after the three-day cooldown."
   "2026-08-08T15:40:17.587Z","harness:codex","2026-08-08 refresh evidence: pnpm outdated has no compatible wanted-version updates; only the separately tracked npm-package-arg 14 and TypeScript 7 majors remain. GitHub Dependabot, code-scanning, and secret-scanning open-alert APIs all returned empty arrays; pnpm audit is 0/0/0/0/0."
   "2026-08-09T00:17:44.465Z","harness:codex","Dependency sweep evidence (2026-08-09): npm outdated now reports compatible wanted updates @types/node 26.1.2 -> 26.2.0 and eslint 10.8.0 -> 10.8.1, published 2026-08-07T17:52:07Z and 2026-08-07T20:21:24Z respectively. Both remain inside this repository's 3-day minimumReleaseAge supply-chain window, so no bypass or temporary exclusion was added. esbuild 0.28.2 was published 2026-08-08T20:00:55Z and is outside the current exact wanted constraint; npm-package-arg 14 and TypeScript 7 remain separately tracked major migrations. pnpm audit reports zero info/low/moderate/high/critical vulnerabilities across 357 dependencies; GitHub Dependabot, code-scanning, and secret-scanning alert APIs were also empty. Leave this canonical item open and unclaimed until the compatible versions age through policy."
+  "2026-08-09T08:05:22.114Z","harness:codex","Final evidence: compatible eslint and Node type updates pass build, lint, static gates, 7092 tests at exact 100/100/100/100, package artifact and 88-command dogfood gates. pnpm audit and GitHub Dependabot/code/secret inventories are zero; incompatible majors remain on canonical open unclaimed items pm-do5b and pm-ksr40d."
+files[2]{path,scope,note}:
+  package.json,project,Compatible ESLint and Node type patch releases
+  pnpm-lock.yaml,project,Supply-chain-policy-resolved dependency graph
+tests[1]{command,scope,timeout_seconds}:
+  pnpm audit --json,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mslifeeh-pm1g5v,test,passed,"2026-08-09T07:56:12.338Z","2026-08-09T07:57:36.809Z","2026-08-09T07:57:36.809Z",1,0,0
+close_reason: Applied all compatible dependency updates and verified zero vulnerability inventories while preserving canonical major deferrals
 body: ""

@@ -470,6 +470,8 @@ export interface ContextResult {
   focus_fields?: string[];
   /** Value that configures or reports warnings for this contract. */
   warnings?: string[];
+  /** Actionable recovery contracts for context signal-store warnings. */
+  warning_details?: ContextSignalStoreReadResult["warning_details"];
   /** Value that configures or reports ranking for this contract. */
   ranking?: ContextRankingSummary;
   /** Token-budget selection and projection accounting for ranked focus rows. */
@@ -2493,6 +2495,7 @@ function buildContextSummaryExtras(
 function attachOptionalContextSections(
   result: ContextResult,
   sections: ContextOptionalSections,
+  warningDetails: ContextSignalStoreReadResult["warning_details"],
 ): void {
   if (sections.hierarchy) result.hierarchy = sections.hierarchy;
   if (sections.activity) result.activity = sections.activity;
@@ -2505,6 +2508,9 @@ function attachOptionalContextSections(
   if (sections.workload) result.workload = sections.workload;
   if (sections.staleness) result.staleness = sections.staleness;
   if (sections.tests) result.tests = sections.tests;
+  if (warningDetails !== undefined && warningDetails.length > 0) {
+    result.warning_details = warningDetails;
+  }
 }
 
 function applyContextFocusProjection(
@@ -2814,7 +2820,11 @@ export async function runContext(
   );
   Object.assign(result, await extensionHealthPromise);
 
-  attachOptionalContextSections(result, sections);
+  attachOptionalContextSections(
+    result,
+    sections,
+    focusGroups.featureStore.warning_details,
+  );
   applyContextTagProjection(result, options.noTags === true);
   if (options.explainRanking === true) {
     result.ranking = toContextRankingSummary(

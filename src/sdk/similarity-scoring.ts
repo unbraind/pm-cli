@@ -4,6 +4,9 @@
  * Dependency-light deterministic scoring shared by core governance and
  * extension packages without loading tracker query infrastructure.
  */
+import { jaccardSimilarity } from "../core/shared/text-normalization.js";
+
+export { jaccardSimilarity } from "../core/shared/text-normalization.js";
 const ISSUE_CODE_PATTERN = /\b[a-z][a-z0-9]*-\d+(?:-[a-z0-9]+)*\b/giu;
 
 /** Precomputed title signals reused by bounded batch similarity operations. */
@@ -50,22 +53,6 @@ export function prepareSimilarityText(value: string): PreparedSimilarityText {
       ),
     ],
   };
-}
-
-/** Measure set overlap between two token collections. */
-export function jaccardSimilarity(
-  leftTokens: readonly string[],
-  rightTokens: readonly string[],
-): number {
-  const left = new Set(leftTokens);
-  const right = new Set(rightTokens);
-  const union = new Set([...left, ...right]);
-  if (union.size === 0) return 1;
-  let intersection = 0;
-  for (const token of left) {
-    if (right.has(token)) intersection += 1;
-  }
-  return intersection / union.size;
 }
 
 /** Score two titles through the canonical exact, issue-code, and token signals. */

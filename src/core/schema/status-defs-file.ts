@@ -9,7 +9,9 @@ import type {
   RuntimeStatusRole,
 } from "../../types/index.js";
 import { DEFAULT_RUNTIME_STATUS_DEFINITIONS } from "./runtime-schema.js";
-import { evictOldestMemoEntries } from "../shared/memo.js";
+import { normalizeStatusToken } from "./status-token.js";
+
+export { normalizeStatusToken } from "./status-token.js";
 
 export type {
   RuntimeStatusDefinition,
@@ -29,17 +31,6 @@ export type {
  */
 
 const RUNTIME_STATUS_ROLE_SET = new Set<string>(RUNTIME_STATUS_ROLE_VALUES);
-
-/**
- * Memo for {@link normalizeStatusToken}. Status ranking inside sort comparators
- * normalizes the same handful of status strings O(n log n) times per corpus scan, and
- * the trim/lowercase/regex pipeline shows up in list/next/context profiles. The cap
- * bounds memory in long-lived hosts against unbounded arbitrary inputs; half-eviction keeps the
- * newest-inserted half when the cap is hit. Declared before
- * BUILTIN_STATUS_IDS, whose module-level initializer already normalizes tokens.
- */
-const STATUS_TOKEN_MEMO_MAX_ENTRIES = 2_000;
-const statusTokenMemo = new Map<string, string>();
 
 /** The 5 lifecycle status ids that ship as built-in defaults and may never be removed (their normalized ids match DEFAULT_RUNTIME_STATUS_DEFINITIONS: open/in_progress/blocked/closed/canceled). `draft` is also a default but the acceptance criteria enumerate the 5 terminal/active ids explicitly, so the guard derives the full set from the canonical defaults to stay in sync. */
 export const BUILTIN_STATUS_IDS: ReadonlySet<string> = new Set(
@@ -100,26 +91,6 @@ export interface RemoveStatusDefResult {
   removed: boolean;
   /** The removed definition, when one matched the requested id. */
   definition?: RuntimeStatusDefinition;
-}
-
-/** Normalizes a status token using the same rules as runtime-schema.ts: lowercase and collapse any run of whitespace/hyphens into a single underscore. */
-export function normalizeStatusToken(value: unknown): string {
-  if (typeof value !== "string") {
-    return "";
-  }
-  const memoized = statusTokenMemo.get(value);
-  if (memoized !== undefined) {
-    return memoized;
-  }
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replaceAll(/[\s-]+/g, "_");
-  if (statusTokenMemo.size >= STATUS_TOKEN_MEMO_MAX_ENTRIES) {
-    evictOldestMemoEntries(statusTokenMemo);
-  }
-  statusTokenMemo.set(value, normalized);
-  return normalized;
 }
 
 function dedupeTokens(values: Iterable<string>): string[] {

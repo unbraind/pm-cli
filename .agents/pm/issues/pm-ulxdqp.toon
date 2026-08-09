@@ -2,29 +2,46 @@ id: pm-ulxdqp
 title: The status-token normalization rule is replicated at five sites and the replication gate covers none of them
 description: "The rule that turns user-supplied status text into a canonical token is trim, then toLowerCase, then replaceAll(/[\\\\s-]+/g, '_'). It is written out independently at five sites:\n\n  src/core/schema/runtime-schema.ts line 184   (private normalizeStatusToken)\n  src/core/schema/type-workflows.ts line 69    (exported normalizeStatusToken)\n  src/core/schema/status-defs-file.ts line 117 (exported normalizeStatusToken, memoized with LRU eviction)\n  src/core/schema/fields-file.ts line 152\n  src/sdk/schema-migration.ts line 198\n\nThree of the five share the name normalizeStatusToken and two of those are exported from the same directory, so an importer resolves a different implementation depending on which module it reaches for. The agreement between them is documented rather than enforced: type-workflows.ts carries the comment 'Normalize a status token the same way runtime-schema statuses are normalized' and status-defs-file.ts carries 'Normalizes a status token using the same rules as runtime-schema.ts'. Both comments name a third file as the authority. A comment is not a gate. Nothing fails when one of the five is edited.\n\nThe rule is load-bearing. It decides whether the status an agent typed matches a status the workspace defines, and it runs on the schema-definition path, the type-workflow transition path, the field-definition path and the migration path. If any one copy drifts, 'In Progress' resolves to in_progress on some paths and not others, and the disagreement is invisible: each path individually behaves consistently with itself.\n\nA second, smaller instance of the same class sits across the core/SDK boundary. jaccardSimilarity is implemented twice, at src/core/shared/text-normalization.ts line 19 and src/sdk/similarity-scoring.ts line 56. The two are currently semantically equivalent, including on the empty-input edges. The public SDK exports the similarity-scoring copy through index.ts, runtime.ts, runtime-primitives.ts and similarity.ts, while CLI internals use the core copy. An extension author scoring duplicates with the SDK primitive and the CLI's own duplicate detection are therefore running two separately maintained functions that only a reader can tell are the same.\n\nThe project already owns a mechanism for exactly this class: scripts/release/surface-replication-sets.json, which fails the static quality gate when members of a declared set drift apart. It currently declares four sets — get-output-selector-contract, annotation-mutation-receipts, unknown-author-coordinate-contract and health-vector-refresh-boundary. None of the seven files above appears in any of them. The gate is real and passing; it simply was never told about the largest replication in the tree."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:schema",correctness,duplication,gates,replication
 created_at: "2026-08-09T06:03:22.278Z"
-updated_at: "2026-08-09T06:07:20.606Z"
+updated_at: "2026-08-09T08:05:41.312Z"
+closed_at: "2026-08-09T08:05:40.741Z"
+completed_at: "2026-08-09T08:05:40.741Z"
 author: "harness:claude-code"
+estimated_minutes: 480
 acceptance_criteria: "One canonical status-token normalizer exists and the other call sites import it rather than restate it; jaccardSimilarity has one implementation, and the SDK and CLI paths resolve to it; Any surviving intentional replication of these rules is declared in surface-replication-sets.json so drift fails the gate"
 parent: pm-8jdc
 risk: high
 confidence: high
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+resolution: fixed
+expected_result: Status normalization and Jaccard similarity each have one implementation across CLI and SDK
+actual_result: Five status-token sites import one bounded canonical normalizer and the SDK re-exports the core Jaccard implementation
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-7rrqsk,discovered_from,"2026-08-09T06:03:22.278Z","harness:claude-code","cli:create:dep",detected
   pm-8jdc,implements,"2026-08-09T06:03:22.278Z","harness:claude-code","cli:create:dep",detected
   pm-92if,related,"2026-08-09T06:03:22.278Z","harness:claude-code","cli:create:dep",detected
   pm-b84irw,related,"2026-08-09T06:06:49.373Z","harness:claude-code","cli:update:dep",detected
   pm-kmnvug,related,"2026-08-09T06:06:49.373Z","harness:claude-code","cli:update:dep",detected
   pm-usfg,related,"2026-08-09T06:06:49.373Z","harness:claude-code","cli:update:dep",detected
-files[7]{path,scope,note}:
+  pm-b84irw,verifies,"2026-08-09T07:29:45.147Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-09T07:29:52.014Z","harness:codex","Implementation evidence: five status-token rule copies now resolve to src/core/schema/status-token.ts, both Jaccard paths resolve to the canonical core function, and migration-boundary tests cover the fifth former copy."
+  "2026-08-09T08:05:20.666Z","harness:codex","Final evidence: linked normalization/similarity suites pass 140 tests; migration boundary coverage is included in the exact 7092-test 100/100/100/100 run; jscpd and the replication gate pass."
+files[9]{path,scope,note}:
   src/core/schema/fields-file.ts,project,Normalization rule copy 4 (line 152)
   src/core/schema/runtime-schema.ts,project,"Normalization rule copy 1 (line 184),named as authority by two other copies' comments"
   src/core/schema/status-defs-file.ts,project,"Normalization rule copy 3 (line 117),exported as normalizeStatusToken,memoized"
+  src/core/schema/status-token.ts,project,Canonical bounded status normalizer
   src/core/schema/type-workflows.ts,project,"Normalization rule copy 2 (line 69),exported as normalizeStatusToken"
   src/core/shared/text-normalization.ts,project,jaccardSimilarity copy used by CLI internals (line 19)
-  src/sdk/schema-migration.ts,project,Normalization rule copy 5 (line 198)
+  src/sdk/schema-migration.ts,project,Imports the canonical status-token normalizer instead of maintaining the fifth copy
   src/sdk/similarity-scoring.ts,project,jaccardSimilarity copy exported through the public SDK (line 56)
+  tests/unit/sdk/schema-migration.spec.ts,project,Proves canonical normalization through the migration boundary
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/status-normalization.spec.ts tests/unit/core/schema/item-types-file.spec.ts tests/unit/sdk/similarity.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mslibl4w-4uji7j,test,passed,"2026-08-09T07:54:25.725Z","2026-08-09T07:54:38.912Z","2026-08-09T07:54:38.912Z",1,0,0
+close_reason: Consolidated status and Jaccard normalization into canonical implementations with boundary coverage
 body: ""

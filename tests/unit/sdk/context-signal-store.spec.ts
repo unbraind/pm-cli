@@ -181,6 +181,20 @@ describe("context signal feature store", () => {
     expect(adapter.writes).toBe(1);
     const stale = await store.readOrRebuild([item("pm-a")], { ...options, sourceCursor: "cursor-2" });
     expect(stale).toMatchObject({ cache_status: "rebuilt", warnings: ["context_signal_store_stale"] });
+    expect(stale.warning_details).toEqual([
+      {
+        code: "context_signal_store_stale",
+        meaning: "The persisted context-signal snapshot did not match the authoritative cursor or item corpus and was rebuilt.",
+        recovery_command: "pm context",
+        recovery_effect: "Re-read context and confirm the rebuilt snapshot is now fresh.",
+      },
+    ]);
+    expect(
+      await store.readOrRebuild([item("pm-a")], {
+        ...options,
+        sourceCursor: "cursor-2",
+      }),
+    ).toMatchObject({ cache_status: "fresh", warnings: [], warning_details: [] });
     const changed = await store.readOrRebuild([item("pm-a"), item("pm-b")], { ...options, sourceCursor: "cursor-2" });
     expect(changed.warnings).toEqual(["context_signal_store_stale"]);
     const changedSource = await store.readOrRebuild([item("pm-a"), item("pm-b")], {
