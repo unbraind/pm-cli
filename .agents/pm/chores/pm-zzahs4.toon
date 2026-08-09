@@ -1,0 +1,44 @@
+id: pm-zzahs4
+title: Public changelog uses capability language for provenance outcomes
+description: Resolve PR #957 review feedback by keeping the generated changelog user-facing while preserving operational resolver diagnosis in the linked PM record.
+type: Chore
+status: closed
+priority: 2
+tags[5]: "area:docs","area:privacy","area:provenance","pr:957",review-followup
+created_at: "2026-08-09T23:11:47.579Z"
+updated_at: "2026-08-09T23:13:43.863Z"
+closed_at: "2026-08-09T23:13:02.204Z"
+completed_at: "2026-08-09T23:13:02.204Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: pm-lu6sca has a concise user-visible capability title; pm-changelog generation is unchanged on check and retains detailed diagnosis only in the linked record
+definition_of_ready: CodeRabbit identified the generated title as exposing internal harness and resolver implementation detail.
+value: Public release notes communicate behavior without private operational detail.
+impact: Keeps generated documentation within the repository privacy boundary.
+outcome: The generated entry describes provenance outcome semantics in user-visible language.
+why_now: PR #957 review is active.
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: Renamed the shipped provenance feature through pm so generated release notes use public capability language while the linked record retains the operational diagnosis.
+expected_result: The generated changelog describes provenance behavior without private harness or probe implementation detail.
+actual_result: pm-changelog 2026.8.7 generated 'Provenance records distinguish unavailable configuration from resolver failures' and its check is unchanged.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-lu6sca,discovered_from,"2026-08-09T23:11:47.579Z","harness:codex","cli:create:dep",detected
+  pm-szn67i,discovered_from,"2026-08-09T23:11:47.579Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,verifies,"2026-08-09T23:11:47.579Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-09T23:11:47.579Z","harness:codex","Duplicate check: searched all statuses for public changelog, private harness, resolver/probe, and user-visible provenance title. pm-lu6sca owns the shipped capability, but no item owns this review-driven public-title correction."
+  "2026-08-09T23:12:58.577Z","harness:codex","Evidence: pm-lu6sca was updated only through pm, preserving append-only history; pm-changelog 2026.8.7 regenerated the public entry from the user-visible title and check mode reports unchanged."
+  "2026-08-09T23:13:43.863Z","harness:codex","Verification correction: the first linked pnpm changelog check correctly failed because linked tests run against an isolated zero-item PM schema and therefore cannot reproduce the real 2,403-item generated file. Replaced it with a sandbox-safe positive/negative content assertion; that linked test passes. The authoritative real-tracker changelog check is run directly after regeneration."
+files[3]{path,scope,note}:
+  .agents/pm/features/pm-lu6sca.toon,project,User-visible shipped capability title
+  .agents/pm/history/pm-lu6sca.jsonl,project,Append-only title correction history
+  CHANGELOG.md,project,Generated public capability entry
+tests[1]{command,scope,timeout_seconds,note}:
+  "node -e \"const text=require(\\\"node:fs\\\").readFileSync(\\\"CHANGELOG.md\\\",\\\"utf8\\\"); if (!text.includes(\\\"Provenance records distinguish unavailable configuration from resolver failures\\\") || text.includes(\\\"A declared provenance resolver that fails at runtime\\\")) process.exit(1)\"",project,30,Public capability title and private-detail negative control
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msmf4jnd-jyxkml,test,failed,"2026-08-09T23:12:46.413Z","2026-08-09T23:12:57.721Z","2026-08-09T23:12:57.721Z",0,1,0
+  test-local-msmf5ixa-mj8k9a,test,passed,"2026-08-09T23:13:41.405Z","2026-08-09T23:13:43.438Z","2026-08-09T23:13:43.438Z",1,0,0
+close_reason: Generated public changelog now uses capability language and retains detailed diagnosis only in the linked PM record.
+body: ""

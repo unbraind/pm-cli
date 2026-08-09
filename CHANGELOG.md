@@ -5,7 +5,7 @@
 ### Added
 
 - GH-472: create error for missing required custom fields lists the field names ([pm-4bzq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4bzq.toon))
-- A declared provenance resolver that fails at runtime is recorded identically to a dimension the harness cannot supply, so a broken probe is invisible until someone reads the source ([pm-lu6sca](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-lu6sca.toon))
+- Provenance records distinguish unavailable configuration from resolver failures ([pm-lu6sca](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-lu6sca.toon))
 
 ### Fixed
 
@@ -33,6 +33,7 @@
 
 ### Other
 
+- Public changelog uses capability language for provenance outcomes ([pm-zzahs4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zzahs4.toon))
 - PR-957: make linked-test order acceptance deterministic under coverage shards ([pm-xg60q3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xg60q3.toon))
 - The measurement ratchet floors only aggregate graph totals, so converting typed semantic edges to untyped ones passes every declaration ([pm-70jyvw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-70jyvw.toon))
 
