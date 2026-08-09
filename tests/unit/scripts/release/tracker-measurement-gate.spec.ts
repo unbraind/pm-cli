@@ -17,6 +17,9 @@ interface GateModule {
   SELECTOR_SOURCES: readonly string[];
   EXHAUSTIVE_SELECTOR_SOURCES: readonly string[];
   TERMINAL_OWNER_STATUSES: readonly string[];
+  OWNER_TERMINAL_DISPOSITIONS: readonly string[];
+  DEFAULT_OWNER_TERMINAL_DISPOSITION: string;
+  resolveOwnerTerminalDisposition: (declaration: unknown) => string | null;
   HEALTH_STATUS_SEVERITY: Readonly<Record<string, number>>;
   measureDependencyKinds: (items: unknown) => Map<string, number>;
   measureDependencyContributors: (items: unknown, declarations: readonly unknown[]) => Map<string, unknown[]>;
@@ -460,17 +463,73 @@ describe("tracker measurement gate: evaluation", () => {
     expect(result.violations).toHaveLength(0);
   });
 
-  it("retires a ceiling whose owning item reached a terminal status", async () => {
+  it("holds a bound past a terminal owner by default, so closing or canceling never silences it", async () => {
     const { module } = await loadGate();
     for (const status of ["closed", "canceled"]) {
-      const result = module.evaluateDeclarations({
-        declarations: [DECLARATION],
+      const held = module.evaluateDeclarations({
+        declarations: [{ ...DECLARATION, ceiling: 0 }],
         measurements: measurements(),
         ownerStatuses: new Map([["pm-owner", status]]),
       });
-      expect(result.violations).toHaveLength(0);
-      expect(result.observations[0]).toMatchObject({ retired: true, reason: "retired_with_owner" });
+      expect(held.violations).toHaveLength(1);
+      expect(held.observations[0]).toMatchObject({
+        held: true,
+        retired: false,
+        owner_terminal: true,
+        reason: "ceiling_exceeded",
+      });
     }
+  });
+
+  it("retires a bound only when the declaration says so and records why", async () => {
+    const { module } = await loadGate();
+    const retired = module.evaluateDeclarations({
+      declarations: [
+        {
+          ...DECLARATION,
+          ceiling: 0,
+          on_owner_terminal: "retire",
+          retired_reason: "The alias can no longer be written, so the population is frozen.",
+        },
+      ],
+      measurements: measurements(),
+      ownerStatuses: new Map([["pm-owner", "closed"]]),
+    });
+    expect(retired.violations).toHaveLength(0);
+    expect(retired.observations[0]).toMatchObject({
+      retired: true,
+      held: false,
+      reason: "retired_with_owner",
+    });
+  });
+
+  it("refuses a retirement that records no reason, and a disposition outside the domain", async () => {
+    const { module } = await loadGate();
+    const unexplained = module.evaluateDeclarations({
+      declarations: [{ ...DECLARATION, on_owner_terminal: "retire", retired_reason: "  " }],
+      measurements: measurements(),
+      ownerStatuses: new Map([["pm-owner", "closed"]]),
+    });
+    expect(unexplained.violations[0]).toMatchObject({ reason: "retirement_reason_missing" });
+
+    const undeclared = module.evaluateDeclarations({
+      declarations: [{ ...DECLARATION, on_owner_terminal: "forget" }],
+      measurements: measurements(),
+      ownerStatuses: new Map([["pm-owner", "open"]]),
+    });
+    expect(undeclared.violations[0]).toMatchObject({
+      reason: "owner_terminal_disposition_not_declared",
+    });
+  });
+
+  it("resolves the owner-terminal disposition, defaulting to hold and rejecting unknown values", async () => {
+    const { module } = await loadGate();
+    expect(module.OWNER_TERMINAL_DISPOSITIONS).toEqual(["hold", "retire"]);
+    expect(module.resolveOwnerTerminalDisposition({})).toBe("hold");
+    expect(module.resolveOwnerTerminalDisposition({ on_owner_terminal: "retire" })).toBe("retire");
+    expect(module.resolveOwnerTerminalDisposition({ on_owner_terminal: "hold" })).toBe("hold");
+    expect(module.resolveOwnerTerminalDisposition({ on_owner_terminal: "" })).toBeNull();
+    expect(module.resolveOwnerTerminalDisposition(null)).toBe("hold");
   });
 
   it("fails a declaration whose owner is absent, whose selector is broken, or whose ceiling is not a count", async () => {
@@ -879,14 +938,14 @@ describe("tracker measurement gate: entrypoint", () => {
   const declarationsPath = "/repo/declarations.json";
   const document = { version: 1, declarations: [DECLARATION] };
 
-  it("passes and prints a receipt naming enforced and retired ceilings", async () => {
+  it("passes and prints a receipt naming enforced, held, and retired ceilings", async () => {
     const { module, stdout } = await loadGate({
       spawn: trackerSpawn(),
       files: { [declarationsPath]: JSON.stringify({ ...document, declarations: [{ ...DECLARATION, ceiling: 2 }] }) },
     });
     module.main(["--declarations", declarationsPath]);
     expect(stdoutText(stdout)).toContain(
-      "Tracker measurement ratchet passed (1 enforced, 0 retired, 3 items, commit view of 2 committable files)",
+      "Tracker measurement ratchet passed (1 enforced, 0 of them held past a finished owner, 0 retired, 3 items, commit view of 2 committable files)",
     );
   });
 
@@ -994,6 +1053,7 @@ describe("tracker measurement gate: entrypoint", () => {
             items: [
               { id: "ctl-0", status: "open", dependencies: [] },
               { id: "ctl-1", status: "open", dependencies: [{ id: "ctl-0", kind: "blocks" }] },
+              { id: "ctl-2", status: "closed", dependencies: [] },
             ],
           }),
           stderr: "",
@@ -1005,6 +1065,11 @@ describe("tracker measurement gate: entrypoint", () => {
     module.main(["--negative-control"]);
     expect(stdoutText(stdout)).toContain("Tracker measurement negative control passed");
     expect(stdoutText(stdout)).toContain("declared 0, observed 1");
+    // The lifetime controls are the point of the third and fourth declarations:
+    // a closed owner must not stop the comparison, and an unexplained
+    // retirement is itself a failure.
+    expect(stdoutText(stdout)).toContain("negative-control-held-past-closed-owner");
+    expect(stdoutText(stdout)).toContain("retirement_reason_missing");
     expect(rmSync).toHaveBeenCalledWith(expect.stringContaining("pm-tracker-ratchet-fixed"), {
       recursive: true,
       force: true,

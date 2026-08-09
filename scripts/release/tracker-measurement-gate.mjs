@@ -23,9 +23,15 @@
 // and `--dep-remove` deletes every row matching its selector, so a mass deletion
 // would have read as an improvement in every ceiling simultaneously.
 //
-// Bounds retire themselves: when the owning item reaches a terminal status its
-// declaration stops being enforced, so no bound outlives the property it guards
-// and honest work never needs a waiver to close.
+// Bounds outlive their owners by default. An owning item tracks remediation and
+// ends when the fix ships; the property it guards is a population over the
+// record and does not end with it, so a bound that retired on its owner's
+// terminal status released the ground at the exact moment a ratchet exists to
+// hold it (pm-5z9plz). A declaration therefore names an on_owner_terminal
+// disposition: hold, the default, keeps comparing after the owner finishes, and
+// retire stops comparing and must carry a retired_reason, so that dropping a
+// guard is a decision the document records rather than a side effect of closing
+// a ticket. Cancelling an item no longer silences its bound.
 //
 //   node scripts/release/tracker-measurement-gate.mjs                   # check (default)
 //   node scripts/release/tracker-measurement-gate.mjs --json            # machine-readable report
@@ -89,8 +95,44 @@ export const EXHAUSTIVE_SELECTOR_SOURCES = Object.freeze([
 /** Stable severity ordering used to ratchet `pm health` check statuses. */
 export const HEALTH_STATUS_SEVERITY = Object.freeze({ ok: 0, warn: 1, error: 2 });
 
-/** Owner statuses that retire a bound because the property it guards is finished. */
+/** Owner statuses that end the remediation a declaration was filed alongside. */
 export const TERMINAL_OWNER_STATUSES = Object.freeze(["closed", "canceled"]);
+
+/**
+ * What becomes of a bound when its owning item reaches a terminal status.
+ *
+ * The owning item and the guarded property have different lifetimes. An item
+ * tracks remediation and ends when the fix ships; the property is a population
+ * over the record and outlives it. Retiring on the owner's terminal status
+ * therefore released every bound at the exact moment a ratchet is supposed to
+ * start holding ground, and the two declarations that reached a terminal owner
+ * were the only ones in the document whose observed value had drifted away from
+ * what they declared (pm-5z9plz).
+ *
+ * `hold` keeps enforcing after the owner finishes, which is the ratchet's whole
+ * purpose and therefore the default. `retire` stops enforcing and must say why
+ * the property stopped mattering, so that dropping a guard is a recorded act
+ * rather than a side effect of closing a ticket.
+ */
+export const OWNER_TERMINAL_DISPOSITIONS = Object.freeze(["hold", "retire"]);
+
+/** Disposition applied when a declaration does not name one. */
+export const DEFAULT_OWNER_TERMINAL_DISPOSITION = "hold";
+
+/**
+ * Resolve a declaration's owner-terminal disposition.
+ *
+ * Returns `null` for a declared value outside the domain, which is a failure
+ * rather than a fallback: silently treating an unreadable disposition as the
+ * default is how a guard disappears without anyone deciding that it should.
+ */
+export function resolveOwnerTerminalDisposition(declaration) {
+  if (!Object.hasOwn(declaration ?? {}, "on_owner_terminal")) {
+    return DEFAULT_OWNER_TERMINAL_DISPOSITION;
+  }
+  const declared = declaration.on_owner_terminal;
+  return OWNER_TERMINAL_DISPOSITIONS.includes(declared) ? declared : null;
+}
 
 /**
  * Directions a declaration may be enforced in.
@@ -311,7 +353,26 @@ function resolveNonComparableObservation(base, ownerStatus, result) {
   if (result.error !== undefined) {
     return { ...base, observed: null, ok: false, reason: result.error };
   }
+  if (base.disposition === null) {
+    return {
+      ...base,
+      observed: result.observed,
+      ok: false,
+      reason: "owner_terminal_disposition_not_declared",
+    };
+  }
   if (base.retired) {
+    // Retiring is allowed, but only as something the document states. Without a
+    // recorded reason the file cannot distinguish a guard dropped because the
+    // hazard is gone from a guard dropped because the work stopped.
+    if (typeof base.retired_reason !== "string" || base.retired_reason.trim().length === 0) {
+      return {
+        ...base,
+        observed: result.observed,
+        ok: false,
+        reason: "retirement_reason_missing",
+      };
+    }
     return { ...base, observed: result.observed, ok: true, reason: "retired_with_owner" };
   }
   if (base.polarity === null) {
@@ -332,6 +393,8 @@ function resolveNonComparableObservation(base, ownerStatus, result) {
 function evaluateDeclaration(declaration, measurements, ownerStatuses, contributors) {
   const ownerStatus = ownerStatuses?.get?.(declaration?.owner);
   const bound = resolveDeclaredBound(declaration);
+  const disposition = resolveOwnerTerminalDisposition(declaration);
+  const ownerTerminal = TERMINAL_OWNER_STATUSES.includes(ownerStatus);
   const base = {
     id: declaration?.id,
     owner: declaration?.owner,
@@ -341,7 +404,13 @@ function evaluateDeclaration(declaration, measurements, ownerStatuses, contribut
     polarity: bound?.polarity ?? null,
     bound: bound?.value,
     owner_status: ownerStatus ?? null,
-    retired: TERMINAL_OWNER_STATUSES.includes(ownerStatus),
+    disposition,
+    owner_terminal: ownerTerminal,
+    // A held declaration keeps comparing after its owner finishes; only an
+    // explicitly retired one stops.
+    held: ownerTerminal && disposition === "hold",
+    retired: ownerTerminal && disposition === "retire",
+    retired_reason: declaration?.retired_reason,
   };
   const result = observeDeclaration(declaration, measurements);
   const nonComparable = resolveNonComparableObservation(base, ownerStatus, result);
@@ -681,9 +750,26 @@ export function runNegativeControl(flags) {
       "--dep",
       `id=${String(blocker.id)},kind=blocks`,
     ]);
-    // One control per polarity. The workspace holds exactly one blocks row, so a
-    // ceiling of zero must be exceeded and a floor of two must be undercut; a
-    // gate that can only prove one direction leaves the other unexercised.
+    // A finished owner, so the lifetime controls have a terminal status to run
+    // against. Its own dependency rows are irrelevant; only its status is read.
+    const finished = runCliJson(context, [
+      "create",
+      "--title",
+      "control finished owner",
+      "--type",
+      "Task",
+      "--status",
+      "closed",
+      "--close-reason",
+      "Seeded already finished so the lifetime controls have a terminal owner to evaluate against.",
+    ]);
+    // One control per polarity, plus one per lifetime failure. The workspace
+    // holds exactly one blocks row, so a ceiling of zero must be exceeded and a
+    // floor of two must be undercut; a gate that can only prove one direction
+    // leaves the other unexercised. The lifetime controls prove the two ways a
+    // bound may no longer quietly disappear: a held declaration keeps failing
+    // after its owner is closed, and an explicit retirement without a recorded
+    // reason is itself a failure.
     const declarations = [
       {
         id: "negative-control-ceiling",
@@ -697,17 +783,45 @@ export function runNegativeControl(flags) {
         selector: { source: "dependency_kind", kind: "blocks" },
         floor: 2,
       },
+      {
+        id: "negative-control-held-past-closed-owner",
+        owner: String(finished.id),
+        selector: { source: "dependency_kind", kind: "blocks" },
+        ceiling: 0,
+      },
+      {
+        id: "negative-control-retirement-without-reason",
+        owner: String(finished.id),
+        selector: { source: "dependency_kind", kind: "blocks" },
+        ceiling: 0,
+        on_owner_terminal: "retire",
+      },
     ];
     const { measurements, ownerStatuses } = measureTracker(context, declarations);
     const evaluation = evaluateDeclarations({ declarations, measurements, ownerStatuses });
     const reasons = new Set(evaluation.violations.map((violation) => violation.reason));
-    for (const expected of ["ceiling_exceeded", "floor_undercut"]) {
+    for (const expected of [
+      "ceiling_exceeded",
+      "floor_undercut",
+      "retirement_reason_missing",
+    ]) {
       if (!reasons.has(expected)) {
         fail(`Tracker measurement negative control did not report ${expected}.`);
       }
     }
+    // The held control shares its reason with the plain ceiling control, so it
+    // has to be identified by declaration rather than by reason: the point it
+    // proves is that a closed owner did not stop the comparison from running.
+    const heldViolation = evaluation.violations.find(
+      (violation) => violation.id === "negative-control-held-past-closed-owner",
+    );
+    if (heldViolation === undefined || heldViolation.owner_status !== "closed") {
+      fail(
+        "Tracker measurement negative control did not prove a held bound keeps failing after its owner closed.",
+      );
+    }
     process.stdout.write(
-      `Tracker measurement negative control passed both polarities:\n${evaluation.violations
+      `Tracker measurement negative control passed both polarities and both lifetime rules:\n${evaluation.violations
         .map((violation) => `- ${formatViolation(violation)}`)
         .join("\n")}\n`,
     );
@@ -774,14 +888,18 @@ export function main(argv = process.argv.slice(2)) {
     fail(
       `Tracker measurement ratchet failed (${scope}):\n${evaluation.violations.map((violation) => `- ${formatViolation(violation)}`).join("\n")}\n` +
         "A filed measurement is a ratchet. A ceiling means shrink the population; a floor means restore the property. " +
-          "Either way, re-declaring is not the remedy — move the owning item to a terminal status to retire the bound.",
+          "Closing or canceling the owning item is not the remedy and no longer silences the bound: a declaration holds " +
+          "after its owner finishes. Either move the number, or record the decision in the declaration — re-declare it " +
+          "deliberately with a note saying why the new value is correct, or set on_owner_terminal to retire and give a " +
+          "retired_reason naming why the property stopped mattering.",
     );
   }
 
   const enforced = evaluation.observations.filter((observation) => !observation.retired).length;
+  const held = evaluation.observations.filter((observation) => observation.held).length;
   if (!flagBool(flags, "json", false)) {
     process.stdout.write(
-      `Tracker measurement ratchet passed (${enforced} enforced, ${evaluation.observations.length - enforced} retired, ${item_count} items, ${scope}).\n`,
+      `Tracker measurement ratchet passed (${enforced} enforced, ${held} of them held past a finished owner, ${evaluation.observations.length - enforced} retired, ${item_count} items, ${scope}).\n`,
     );
   }
 }
