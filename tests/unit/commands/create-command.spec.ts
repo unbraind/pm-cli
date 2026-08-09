@@ -509,6 +509,33 @@ describe("runCreate", () => {
     });
   });
 
+  it("stores every built-in compatibility alias under its canonical kind", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-canonical-dependency-aliases",
+          dep: [
+            "id=a,kind=depends_on",
+            "id=b,kind=related_to",
+            "id=c,kind=child_of",
+            "id=d,kind=epic",
+            "id=e,kind=parent_child",
+            "id=f,kind=task",
+          ],
+        }),
+        { path: context.pmPath },
+      );
+      expect(result.item.dependencies?.map(({ kind }) => kind)).toEqual([
+        "blocked_by",
+        "related",
+        "parent",
+        "parent",
+        "child",
+        "child",
+      ]);
+    });
+  });
+
   it("rejects incomplete structured dependencies with missing kind", async () => {
     await withTempPmPath(async (context) => {
       await expect(

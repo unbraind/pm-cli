@@ -62,6 +62,9 @@ const READ_ONLY_ITEM_KEYS = new Set([
   "format_version",
   "path",
   "author",
+  "collection_counts",
+  "notes_count",
+  "tests_count",
 ]);
 const UPDATE_READ_ONLY_ITEM_KEYS = new Set([
   ...READ_ONLY_ITEM_KEYS,

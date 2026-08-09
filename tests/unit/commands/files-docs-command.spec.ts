@@ -888,7 +888,7 @@ describe("runFiles", () => {
 
       const fetched = context.runCli(["get", id, "--json", "--full"], { expectJson: true, cwd: projectRoot });
       expect(fetched.code).toBe(0);
-      expect((fetched.json as { item: { files?: unknown } }).item.files).toBeUndefined();
+      expect((fetched.json as { item: { files?: unknown } }).item.files).toEqual([]);
     });
   });
 

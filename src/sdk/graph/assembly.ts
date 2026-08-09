@@ -351,6 +351,33 @@ export interface WorkspaceRelationshipAssembly {
   dangling: DanglingDependencyReferenceSummary;
   /** Raw same-identity duplicated dependency rows found before graph dedup. */
   duplicateRows: DuplicateDependencyRow[];
+  /** Raw legacy alias rows grouped by accepted spelling before graph canonicalization. */
+  legacyAliasCounts: Record<string, number>;
+}
+
+/** Count raw dependency rows that use a registered compatibility alias instead of its canonical kind. */
+export function collectLegacyDependencyAliasCounts(
+  items: readonly DependencyReferenceHolder[],
+  registry: RelationshipKindRegistry = resolveWorkspaceRelationshipKindRegistry(),
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const item of items) {
+    for (const dependency of item.dependencies ?? []) {
+      if (typeof dependency !== "object" || dependency === null) continue;
+      const rawKind = (dependency as Partial<Dependency>).kind;
+      if (typeof rawKind !== "string") continue;
+      const normalized = rawKind.trim().toLowerCase().replaceAll("-", "_");
+      const definition = registry.resolve(rawKind);
+      if (definition && normalized !== definition.kind) {
+        counts[normalized] = (counts[normalized] ?? 0) + 1;
+      }
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(counts).sort(([left], [right]) =>
+      left.localeCompare(right),
+    ),
+  );
 }
 
 /**
@@ -450,5 +477,9 @@ export function assembleWorkspaceRelationshipGraph(
     missingIdSet: new Set(missingIds.map((id) => id.toLowerCase())),
     dangling,
     duplicateRows: collectDuplicateDependencyRows(safeItems, isTerminal),
+    legacyAliasCounts: collectLegacyDependencyAliasCounts(
+      safeItems,
+      relationshipRegistry,
+    ),
   };
 }

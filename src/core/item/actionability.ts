@@ -15,6 +15,13 @@ import type { ItemMetadata, ItemStatus } from "../../types/index.js";
 
 /** Dependency kind that marks "this item is blocked by the referenced item". */
 const BLOCKED_BY_DEPENDENCY_KIND = "blocked_by";
+/** Reverse dependency kind that marks "this item blocks the referenced item". */
+const BLOCKS_DEPENDENCY_KIND = "blocks";
+/** Built-in ordering kinds that must remain reachable by blocker resolution. */
+export const ACTIONABILITY_ORDERING_KINDS = Object.freeze([
+  BLOCKED_BY_DEPENDENCY_KIND,
+  BLOCKS_DEPENDENCY_KIND,
+]);
 /** Retired placeholder that explicitly means an item has no active blocker. */
 const NO_ACTIVE_BLOCKER_SENTINEL = "no-active-blocker";
 
@@ -34,21 +41,68 @@ export function collectBlockedByIds(
 ): string[] {
   const ids = new Set<string>();
   const scalar =
-    typeof item.blocked_by === "string" ? item.blocked_by.trim() : "";
-  if (scalar.length > 0 && scalar.toLowerCase() !== NO_ACTIVE_BLOCKER_SENTINEL) {
+    typeof item.blocked_by === "string" ? normalizeItemId(item.blocked_by) : "";
+  if (scalar.length > 0 && scalar !== NO_ACTIVE_BLOCKER_SENTINEL) {
     ids.add(scalar);
   }
   for (const dependency of item.dependencies ?? []) {
+    const dependencyId =
+      typeof dependency.id === "string" ? normalizeItemId(dependency.id) : "";
     if (
       dependency.kind === BLOCKED_BY_DEPENDENCY_KIND &&
-      typeof dependency.id === "string" &&
-      dependency.id.trim().length > 0 &&
-      dependency.id.trim().toLowerCase() !== NO_ACTIVE_BLOCKER_SENTINEL
+      dependencyId.length > 0 &&
+      dependencyId !== NO_ACTIVE_BLOCKER_SENTINEL
     ) {
-      ids.add(dependency.id.trim());
+      ids.add(dependencyId);
     }
   }
   return [...ids].sort((left, right) => left.localeCompare(right));
+}
+
+/** Build every forward and reverse blocker set in one corpus pass. */
+export function indexBlockedByIds(
+  corpus: readonly ItemMetadata[],
+): Map<string, string[]> {
+  const idsByItem = new Map<string, Set<string>>();
+  for (const item of corpus) {
+    const itemId = normalizeItemId(item.id);
+    if (itemId.length === 0) continue;
+    idsByItem.set(itemId, new Set(collectBlockedByIds(item)));
+  }
+  for (const candidate of corpus) {
+    const candidateId = normalizeItemId(candidate.id);
+    if (candidateId.length === 0) continue;
+    for (const dependency of candidate.dependencies ?? []) {
+      const targetId =
+        dependency.kind === BLOCKS_DEPENDENCY_KIND &&
+        typeof dependency.id === "string"
+          ? normalizeItemId(dependency.id)
+          : "";
+      if (targetId.length === 0 || targetId === NO_ACTIVE_BLOCKER_SENTINEL) {
+        continue;
+      }
+      const blockerIds = idsByItem.get(targetId) ?? new Set<string>();
+      blockerIds.add(candidateId);
+      idsByItem.set(targetId, blockerIds);
+    }
+  }
+  return new Map(
+    [...idsByItem].map(([itemId, blockerIds]) => [
+      itemId,
+      [...blockerIds].sort((left, right) => left.localeCompare(right)),
+    ]),
+  );
+}
+
+/** Collect blockers from both an item's forward declarations and corpus-level reverse `blocks` edges. */
+export function collectBlockedByIdsFromCorpus(
+  item: ItemMetadata,
+  corpus: readonly ItemMetadata[],
+): string[] {
+  const itemId = normalizeItemId(item.id);
+  return itemId.length > 0
+    ? (indexBlockedByIds(corpus).get(itemId) ?? collectBlockedByIds(item))
+    : collectBlockedByIds(item);
 }
 
 /** A blocker reference resolved against the corpus and annotated with its state. */
@@ -64,12 +118,22 @@ export interface ResolvedBlocker {
 }
 
 /** Resolves an item's declared blockers against a corpus index, annotating each with the blocker's title/status and whether it still gates work. Unknown ids remain unresolved: silently treating a typo as satisfied would dispatch work whose prerequisite was never completed. Terminal referenced items alone are resolved. */
-export function resolveItemBlockers(
+function resolveItemBlockersWithIndex(
   item: Pick<ItemMetadata, "blocked_by" | "dependencies">,
   itemsById: Map<string, ItemMetadata>,
   statusRegistry: RuntimeStatusRegistry,
+  blockerIdsByItem?: ReadonlyMap<string, readonly string[]>,
 ): ResolvedBlocker[] {
-  return collectBlockedByIds(item).map((id) => {
+  const itemWithId = item as Partial<ItemMetadata>;
+  const blockerIds =
+    typeof itemWithId.id === "string"
+      ? (blockerIdsByItem?.get(normalizeItemId(itemWithId.id)) ??
+        collectBlockedByIdsFromCorpus(
+          itemWithId as ItemMetadata,
+          [...itemsById.values()],
+        ))
+      : collectBlockedByIds(item);
+  return blockerIds.map((id) => {
     const blocker = itemsById.get(normalizeItemId(id));
     if (!blocker) {
       return { id, title: null, status: null, resolved: false };
@@ -81,6 +145,15 @@ export function resolveItemBlockers(
       resolved: isTerminalStatus(blocker.status, statusRegistry),
     };
   });
+}
+
+/** Resolves an item's blockers against a corpus index with reverse `blocks` support. */
+export function resolveItemBlockers(
+  item: Pick<ItemMetadata, "blocked_by" | "dependencies">,
+  itemsById: Map<string, ItemMetadata>,
+  statusRegistry: RuntimeStatusRegistry,
+): ResolvedBlocker[] {
+  return resolveItemBlockersWithIndex(item, itemsById, statusRegistry);
 }
 
 /**
@@ -101,6 +174,7 @@ export function collectDependencyBlockedIds(
   const itemsById = new Map<string, ItemMetadata>(
     corpus.map((item) => [normalizeItemId(item.id), item]),
   );
+  const blockerIdsByItem = indexBlockedByIds(corpus);
   // Same candidate gate as computeActionabilityReport: active statuses plus
   // lifecycle-blocked statuses, so the two surfaces classify identically.
   const candidateStatuses = new Set([
@@ -118,7 +192,12 @@ export function collectDependencyBlockedIds(
       statusRegistry.blocked_statuses.has(normalizedStatus);
     if (
       lifecycleBlocked ||
-      resolveItemBlockers(item, itemsById, statusRegistry).some(
+      resolveItemBlockersWithIndex(
+        item,
+        itemsById,
+        statusRegistry,
+        blockerIdsByItem,
+      ).some(
         (blocker) => !blocker.resolved,
       )
     ) {
@@ -190,10 +269,12 @@ function indexCorpus(corpus: ItemMetadata[]): {
   itemsById: Map<string, ItemMetadata>;
   childrenByParent: Map<string, ItemMetadata[]>;
   blockedByReverse: Map<string, string[]>;
+  blockerIdsByItem: Map<string, string[]>;
 } {
   const itemsById = new Map<string, ItemMetadata>();
   const childrenByParent = new Map<string, ItemMetadata[]>();
   const blockedByReverse = new Map<string, string[]>();
+  const blockerIdsByItem = indexBlockedByIds(corpus);
   for (const item of corpus) {
     // Index keys are normalized (lowercased) for case-insensitive resolution;
     // stored values keep the item's original-case id for display.
@@ -205,14 +286,14 @@ function indexCorpus(corpus: ItemMetadata[]): {
       siblings.push(item);
       childrenByParent.set(parentKey, siblings);
     }
-    for (const blockerId of collectBlockedByIds(item)) {
+    for (const blockerId of blockerIdsByItem.get(normalizeItemId(item.id))!) {
       const blockerKey = normalizeItemId(blockerId);
       const dependents = blockedByReverse.get(blockerKey) ?? [];
       dependents.push(item.id);
       blockedByReverse.set(blockerKey, dependents);
     }
   }
-  return { itemsById, childrenByParent, blockedByReverse };
+  return { itemsById, childrenByParent, blockedByReverse, blockerIdsByItem };
 }
 
 /**
@@ -231,7 +312,8 @@ export function computeActionabilityReport(
   corpus: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
 ): ActionabilityReport {
-  const { itemsById, childrenByParent, blockedByReverse } = indexCorpus(corpus);
+  const { itemsById, childrenByParent, blockedByReverse, blockerIdsByItem } =
+    indexCorpus(corpus);
   const activeStatuses = new Set([
     ...resolveActiveStatusSet(statusRegistry),
     ...statusRegistry.blocked_statuses,
@@ -259,10 +341,11 @@ export function computeActionabilityReport(
       containerCount += 1;
       continue;
     }
-    const openBlockers = resolveItemBlockers(
+    const openBlockers = resolveItemBlockersWithIndex(
       item,
       itemsById,
       statusRegistry,
+      blockerIdsByItem,
     ).filter((blocker) => !blocker.resolved);
     const unblocks = (blockedByReverse.get(normalizeItemId(item.id)) ?? [])
       .filter((dependentId) => nonTerminalIds.has(normalizeItemId(dependentId)))

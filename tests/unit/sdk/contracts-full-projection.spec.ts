@@ -19,5 +19,20 @@ describe("full contracts projection monotonicity", () => {
     expect(full.schema).toBeDefined();
     expect(full.command_flags).toBeDefined();
     expect(full.runtime_schema).toBeDefined();
+    expect(full.relationship_kind_contracts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          canonical: "blocked_by",
+          aliases: ["depends_on"],
+          inverse: "blocks",
+          ordering: true,
+        }),
+        expect.objectContaining({
+          canonical: "parent",
+          aliases: ["child_of", "epic"],
+          hierarchy: true,
+        }),
+      ]),
+    );
   });
 });

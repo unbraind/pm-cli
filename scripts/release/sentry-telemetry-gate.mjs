@@ -124,6 +124,8 @@ const EXPECTED_HANDLED_ERROR_CLASSES = new Set([
   "conflict",
 ]);
 
+const SENTRY_ERROR_CONTRACT_MIN_PRODUCER_VERSION = "2026.8.7";
+
 function readIssueTag(issue, key) {
   if (!issue || typeof issue !== "object") {
     return undefined;
@@ -194,17 +196,53 @@ function isExpectedHandledCliIssue(issue) {
   }
 }
 
+function readIssueProducerVersion(issue) {
+  const candidates = [
+    issue?.release,
+    issue?.lastRelease?.version,
+    readIssueTag(issue, "release"),
+    readIssueTag(issue, "pm.release"),
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string") continue;
+    const match = /(?:^|@|v)(\d{4}\.\d{1,2}\.\d{1,2})(?:$|[-+])/u.exec(
+      candidate.trim(),
+    );
+    if (match?.[1]) return match[1];
+  }
+  return null;
+}
+
+function isLegacyPreContractIssue(issue) {
+  const version = readIssueProducerVersion(issue);
+  if (version === null) return false;
+  const current = version.split(".").map(Number);
+  const minimum = SENTRY_ERROR_CONTRACT_MIN_PRODUCER_VERSION.split(".").map(
+    Number,
+  );
+  return current.some(
+    (part, index) =>
+      part < minimum[index] &&
+      current.slice(0, index).every((value, prior) => value === minimum[prior]),
+  );
+}
+
 function partitionSentryIssuesForGate(issues) {
   const relevant = [];
   const ignoredExpected = [];
+  const legacyPreContract = [];
   for (const issue of issues) {
     if (isExpectedHandledCliIssue(issue)) {
       ignoredExpected.push(issue);
       continue;
     }
+    if (isLegacyPreContractIssue(issue)) {
+      legacyPreContract.push(issue);
+      continue;
+    }
     relevant.push(issue);
   }
-  return { relevant, ignoredExpected };
+  return { relevant, ignoredExpected, legacyPreContract };
 }
 
 function redactedTokenCandidates() {
@@ -302,6 +340,7 @@ async function enrichSentryIssueWithLatestEvent(issue, org, token) {
       tags: event.tags ?? issue.tags,
       extra: event.extra ?? issue.extra,
       contexts: event.contexts ?? issue.contexts,
+      release: event.release ?? issue.release,
     };
   } catch {
     return issue;
@@ -344,7 +383,7 @@ function enrichSentryIssuesViaCli(issues, project, windowDays) {
         "--fresh",
         "--json",
         "--fields",
-        "tags,metadata",
+        "tags,metadata,release",
       ],
       { capture: true, allowFailure: true },
     );
@@ -364,6 +403,7 @@ function enrichSentryIssuesViaCli(issues, project, windowDays) {
         ...issue,
         tags: event.tags ?? issue.tags,
         metadata: event.metadata ?? issue.metadata,
+        release: event.release ?? issue.release,
       };
     } catch {
       return issue;
@@ -386,7 +426,7 @@ function fetchSentryIssuesViaCli(
       project,
       "--json",
       "--fields",
-      "shortId,title,level,priority,status,culprit,metadata,logger,isUnhandled",
+      "shortId,title,level,priority,status,culprit,metadata,logger,isUnhandled,lastRelease,firstRelease",
       "--query",
       query,
       "--limit",
@@ -663,6 +703,8 @@ function buildSentryTelemetryGateResult(params) {
       sentry: {
         max_critical: params.maxCritical,
         max_high: params.maxHigh,
+        minimum_contract_producer_version:
+          SENTRY_ERROR_CONTRACT_MIN_PRODUCER_VERSION,
       },
       telemetry: {
         mode: params.telemetryMode,
@@ -689,6 +731,20 @@ function buildSentryTelemetryGateResult(params) {
         .map((issue) => issue?.title)
         .filter((value) => typeof value === "string")
         .slice(0, 8),
+      blocking_reasons: params.sentryPartition.relevant
+        .map((issue) => ({
+          short_id: typeof issue?.shortId === "string" ? issue.shortId : null,
+          reason: needsSentryContractEnrichment(issue)
+            ? "missing_contract_tags"
+            : "unexpected_fault",
+        }))
+        .slice(0, 25),
+      legacy_pre_contract_total:
+        params.sentryPartition.legacyPreContract.length,
+      legacy_pre_contract_short_ids: params.sentryPartition.legacyPreContract
+        .map((issue) => issue?.shortId)
+        .filter((value) => typeof value === "string")
+        .slice(0, 25),
       ignored_noise_total: 0,
       ignored_noise_short_ids: [],
       ignored_expected_handled_total:

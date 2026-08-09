@@ -173,6 +173,7 @@ import {
   type PmCommandExitContract,
   type PmCommandExitOutcomeContract,
 } from "./command-exit-contracts.js";
+import { BUILTIN_RELATIONSHIP_KINDS } from "../relationship-kinds/contract.js";
 
 /** Documents the contracts command options payload exchanged by command, SDK, and package integrations. */
 export interface ContractsCommandOptions {
@@ -278,6 +279,14 @@ export interface ContractsResult {
     types: string[];
     fields_by_command: Record<string, string[]>;
   };
+  /** Canonical relationship ontology and accepted compatibility aliases. */
+  relationship_kind_contracts?: Array<{
+    canonical: string;
+    aliases: string[];
+    inverse?: string;
+    ordering: boolean;
+    hierarchy: boolean;
+  }>;
   /** Value that configures or reports extension contracts for this contract. */
   extension_contracts?: {
     capabilities: string[];
@@ -2671,6 +2680,22 @@ function attachRuntimeContractsResult(
     close_validation_modes: [...GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES],
     workflow_enforcement_modes: [...GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES],
   };
+  result.relationship_kind_contracts = [
+    ...BUILTIN_RELATIONSHIP_KINDS,
+    ...(runtime.runtimeProbe.registrations?.relationship_kinds ?? []).flatMap(
+      (registration) => registration.definitions,
+    ),
+  ]
+    .sort((left, right) => left.kind.localeCompare(right.kind))
+    .map((definition) => ({
+      canonical: definition.kind,
+      aliases: [...(definition.aliases ?? [])],
+      ...(definition.inverse === undefined
+        ? {}
+        : { inverse: definition.inverse }),
+      ordering: definition.ordering,
+      hierarchy: definition.hierarchy,
+    }));
 }
 
 function attachSchemaContractsResult(

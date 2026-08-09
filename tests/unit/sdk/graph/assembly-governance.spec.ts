@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   assembleWorkspaceRelationshipGraph,
+  collectLegacyDependencyAliasCounts,
   collectDanglingDependencyReferences,
   collectDuplicateDependencyRows,
   collectMissingDependencyTargetIds,
@@ -182,6 +183,27 @@ describe("workspace relationship graph assembly", () => {
     );
     expect(assembly.graph.nodes()).toContain("PM-MISSING");
     expect(assembly.missingIdSet).toEqual(new Set(["pm-missing"]));
+  });
+
+  it("discloses stored legacy aliases while keeping graph edges canonical", () => {
+    const assembly = assembleWorkspaceRelationshipGraph([
+      {
+        id: "pm-a",
+        title: "A",
+        status: "open",
+        dependencies: [
+          { id: "pm-b", kind: "related_to" },
+          { id: "pm-b", kind: "depends-on" },
+        ],
+      },
+      { id: "pm-b", title: "B", status: "open" },
+    ] as never);
+    expect(assembly.legacyAliasCounts).toEqual({ depends_on: 1, related_to: 1 });
+    expect(collectLegacyDependencyAliasCounts([])).toEqual({});
+    expect(assembly.graph.edges().map(({ kind }) => kind).sort()).toEqual([
+      "blocked_by",
+      "related",
+    ]);
   });
 });
 describe("relationship graph governance", () => {

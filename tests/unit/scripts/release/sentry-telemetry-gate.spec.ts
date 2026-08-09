@@ -418,6 +418,69 @@ describe("scripts/release/sentry-telemetry-gate: telemetry modes", () => {
     expect(logs.join("\n")).toContain("Sentry/telemetry gate passed");
   });
 
+  it("reports pre-contract producer events without letting them block the current gate", async () => {
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: buildSentryFetch([
+        {
+          shortId: "PM-LEGACY",
+          level: "error",
+          release: "@unbrained/pm-cli@2026.8.6",
+          title: "legacy producer without canonical tags",
+        },
+      ]),
+    });
+    expect(json.ok).toBe(true);
+    expect(json.thresholds.sentry.minimum_contract_producer_version).toBe(
+      "2026.8.7",
+    );
+    expect(json.sentry.legacy_pre_contract_total).toBe(1);
+    expect(json.sentry.legacy_pre_contract_short_ids).toEqual(["PM-LEGACY"]);
+    expect(json.sentry.blocking_short_ids).toEqual([]);
+  });
+
+  it("continues across malformed producer candidates before accepting a tagged legacy version", async () => {
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: buildSentryFetch([
+        {
+          shortId: "PM-LEGACY-TAG",
+          level: "error",
+          release: "not-a-version",
+          lastRelease: { version: "v2026.8.6+build.1" },
+          title: "legacy tagged producer",
+        },
+      ]),
+    });
+    expect(json.ok).toBe(true);
+    expect(json.sentry.legacy_pre_contract_short_ids).toEqual([
+      "PM-LEGACY-TAG",
+    ]);
+  });
+
+  it("keeps issues blocking when only their first release is pre-contract", async () => {
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: buildSentryFetch([
+        {
+          shortId: "PM-CURRENT-UNKNOWN",
+          level: "error",
+          firstRelease: { version: "2026.8.6" },
+          title: "current producer version unavailable",
+        },
+      ]),
+    });
+    expect(json.ok).toBe(false);
+    expect(json.sentry.legacy_pre_contract_short_ids).toEqual([]);
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-CURRENT-UNKNOWN"]);
+    expect(json.sentry.blocking_reasons).toEqual([
+      { short_id: "PM-CURRENT-UNKNOWN", reason: "missing_contract_tags" },
+    ]);
+  });
+
   it("classifies handled failures from the SDK error and exit contract independently of message prose", async () => {
     const { json } = await runSentryGate({
       argv: ["--json", "--telemetry-mode", "off", "--max-high", "2"],

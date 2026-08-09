@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- The release gate cannot classify Sentry events emitted before its own contract producer shipped, so a correct usage refusal from an older release blocks the daily cut for the whole rolling window and clears only by hand ([pm-h75tjh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h75tjh.toon))
+- Entity projections carry a collection key only when it is non-empty, so an absent key cannot be distinguished from an unprojected one and neither projection level is a superset of the other ([pm-b1w8vr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b1w8vr.toon))
+- Ordering recorded as blocks is invisible to actionability: the same prerequisite schedules differently depending on which endpoint wrote it ([pm-jkbqt8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jkbqt8.toon))
+- Dependency-kind lexicon: fifteen accepted spellings for roughly eight relations, canonicalized inconsistently at write time, so the stored graph vocabulary keeps fragmenting ([pm-4020c5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4020c5.toon))
 - GH-930: duplicates --status all silently scans zero items ([pm-sy24w2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sy24w2.toon))
 - GH-920: health conflates lossless merge receipts with discarded-value decisions ([pm-jtwsct](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jtwsct.toon))
 - GH-937: package list exposes alias rows as packages and overstates the catalog total ([pm-fr6u17](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fr6u17.toon))

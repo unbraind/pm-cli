@@ -1,6 +1,6 @@
 # SDK Context Integrity
 
-Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), and [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon).
+Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), and [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon).
 
 ## Agent Quick Context
 
@@ -17,6 +17,11 @@ pm get pm-a1b2 --output-include item,claim_state
 ```
 
 An unknown selector is a usage refusal that lists the valid vocabulary. Selecting the complete `item` object together with an item field is also refused because the two selectors express conflicting projection depths. Every successful projection carries an `omission_receipt` with the exact selectors needed to restore withheld item fields or sections.
+
+Standard and brief item reads expose the stable `collection_counts` selector;
+full reads retain those counts and normalize every supported collection key to
+an array. `--output-include item.collection_counts` therefore uses the same
+selector grammar and omission receipts as any other SDK-owned item field.
 
 The same SDK-owned read-output registry now declares `package manage` as a first-class read surface. Package authors can resolve either `package manage` or `package-manage` to its canonical contract and discover the universal include, amount, cost, and encoding dimensions without copying CLI knowledge.
 
@@ -51,6 +56,12 @@ The SDK exposes `resolveUnknownAuthorAcknowledgmentSelector` and `parseUnknownAu
 `pm health` is read-only by default and never refreshes embeddings merely because a semantic provider is configured. Provider I/O requires `--refresh-vectors`; `--skip-vectors` or `--no-refresh` records the explicit non-provider path. Provider requests remain bounded by the configured embedding timeout, and a failed refresh reports the responsible vector diagnostic plus the skip remediation.
 
 Storage integrity is evaluated independently of that provider boundary. Lossless merge receipts remain visible as provenance, while only receipts containing discarded scalar values produce `merge_decisions_unreviewed` guidance; neither classification enables vector refresh or remote provider I/O.
+
+The storage check also reads at most 10,000 local immutable events for bounded
+agent-provenance resolver outcomes. This scan performs no network or provider
+I/O, tolerates malformed streams already owned by integrity diagnostics, and
+reports an advisory warning only when a resolver was actually attempted but
+never succeeded.
 
 ## Replication and refusal gate
 

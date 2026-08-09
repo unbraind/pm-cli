@@ -8,9 +8,12 @@
  * effects.
  */
 export {
+  ACTIONABILITY_ORDERING_KINDS,
   collectBlockedByIds,
+  collectBlockedByIdsFromCorpus,
   collectDependencyBlockedIds,
   computeActionabilityReport,
+  indexBlockedByIds,
   resolveItemBlockers,
   type ActionabilityReport,
   type ActionableEntry,

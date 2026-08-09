@@ -81,6 +81,7 @@ import type {
   PmSettings,
 } from "../../types/index.js";
 import { readManagedExtensionState } from "../extension.js";
+import { scanProvenanceResolverHealth } from "./provenance-health.js";
 import { applyStoredExtensionMigrationState } from "../extension/migrations.js";
 import {
   buildCapabilityContractMetadata,
@@ -262,6 +263,7 @@ function isAdvisoryHealthWarning(
     warning.startsWith("telemetry_") ||
     warning.startsWith("history_stream_over_compact_threshold:") ||
     warning.startsWith("stale_in_progress_items:") ||
+    warning.startsWith("provenance_resolver_zero_success:") ||
     (!requireMergeDrivers &&
       warning.startsWith("merge_driver_configuration_missing:"))
   );
@@ -2601,6 +2603,13 @@ function buildStorageHealthCheck(
   historySummary: HistoryStreamSummary,
   authorAttribution: HistoryAuthorAttributionScan,
   staleInProgress: StaleInProgressScan,
+  provenanceResolverOutcomes: Array<{
+    harness: string;
+    dimension: string;
+    resolver: string;
+    attempts: number;
+    successes: number;
+  }>,
 ): HealthCheck {
   const unknownAuthorEventCount =
     resolveUnknownAuthorEventCount(authorAttribution);
@@ -2637,6 +2646,9 @@ function buildStorageHealthCheck(
       ...(hasStaleInProgressItems
         ? { stale_in_progress: staleInProgress }
         : {}),
+      ...(provenanceResolverOutcomes.length > 0
+        ? { provenance_resolver_outcomes: provenanceResolverOutcomes }
+        : {}),
       ...(historySummary.max_entries !== null
         ? {
             compact_policy: {
@@ -2672,6 +2684,7 @@ function collectHealthWarnings(params: {
   historySummary: HistoryStreamSummary;
   authorAttributionWarnings: string[];
   staleInProgressWarnings: string[];
+  provenanceWarnings: string[];
   locksCheck: HealthCheckResult;
   integrityCheck: HealthCheckResult;
   historyDriftCheck: HealthCheckResult;
@@ -2690,6 +2703,7 @@ function collectHealthWarnings(params: {
     ...params.historySummary.warnings,
     ...params.authorAttributionWarnings,
     ...params.staleInProgressWarnings,
+    ...params.provenanceWarnings,
     ...params.locksCheck.warnings,
     ...params.integrityCheck.warnings,
     ...params.historyDriftCheck.warnings,
@@ -2717,6 +2731,7 @@ function buildHealthRemediationSources(params: {
   historySummary: HistoryStreamSummary;
   authorAttributionWarnings: string[];
   staleInProgressWarnings: string[];
+  provenanceWarnings: string[];
   locksCheck: HealthCheckResult;
   integrityCheck: HealthCheckResult;
   historyDriftCheck: HealthCheckResult;
@@ -2736,6 +2751,7 @@ function buildHealthRemediationSources(params: {
       ),
       ...params.authorAttributionWarnings,
       ...params.staleInProgressWarnings,
+      ...params.provenanceWarnings,
     ],
     locks: params.locksCheck.warnings,
     integrity: params.integrityCheck.warnings,
@@ -2873,6 +2889,9 @@ export async function runHealth(
       threshold_hours: settings.mutation_guard.stale_in_progress_hours,
     }),
   );
+  const provenanceResolverHealth = await scanProvenanceResolverHealth(pmRoot);
+  const provenanceResolverOutcomes = provenanceResolverHealth.outcomes;
+  const provenanceWarnings = provenanceResolverHealth.warnings;
   const locksCheck = await buildLocksCheck(pmRoot);
   const integrityCheck = skipPolicy.skipIntegrity
     ? buildSkippedHealthCheck("integrity")
@@ -2911,6 +2930,7 @@ export async function runHealth(
       historySummary,
       authorAttribution,
       staleInProgress.scan,
+      provenanceResolverOutcomes,
     ),
     locksCheck.check,
     integrityCheck.check,
@@ -2929,6 +2949,7 @@ export async function runHealth(
     historySummary,
     authorAttributionWarnings,
     staleInProgressWarnings: staleInProgress.warnings,
+    provenanceWarnings,
     locksCheck,
     integrityCheck,
     historyDriftCheck,
@@ -2945,6 +2966,7 @@ export async function runHealth(
       historySummary,
       authorAttributionWarnings,
       staleInProgressWarnings: staleInProgress.warnings,
+      provenanceWarnings,
       locksCheck,
       integrityCheck,
       historyDriftCheck,

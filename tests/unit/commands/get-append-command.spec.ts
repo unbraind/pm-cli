@@ -200,6 +200,12 @@ describe("runGet and runAppend", () => {
       expect(defaultRead.item.notes).toBeUndefined();
       expect(defaultRead.item.notes_count).toBe(1);
       expect(defaultRead.item.tests_count).toBe(1);
+      expect(defaultRead.item.collection_counts).toMatchObject({
+        comments: 1,
+        notes: 1,
+        files: 1,
+        tests: 1,
+      });
       expect(defaultRead.linked.files).toHaveLength(1);
       expect(defaultRead.item.body).toBe("depth body");
 
@@ -210,8 +216,10 @@ describe("runGet and runAppend", () => {
       );
       expect(explicitFull.item.comments).toBeDefined();
       expect(explicitFull.item.notes).toBeDefined();
-      expect(explicitFull.item.notes_count).toBeUndefined();
-      expect(explicitFull.item.tests_count).toBeUndefined();
+      expect(explicitFull.item.notes_count).toBe(1);
+      expect(explicitFull.item.tests_count).toBe(1);
+      expect(explicitFull.item.learnings).toEqual([]);
+      expect(explicitFull.item.events).toEqual([]);
       expect(explicitFull.linked.files).toHaveLength(1);
       expect(explicitFull.item.body).toBe("depth body");
 
@@ -222,8 +230,8 @@ describe("runGet and runAppend", () => {
       );
       expect(depthFullAlias.item.comments).toBeDefined();
       expect(depthFullAlias.item.notes).toBeDefined();
-      expect(depthFullAlias.item.notes_count).toBeUndefined();
-      expect(depthFullAlias.item.tests_count).toBeUndefined();
+      expect(depthFullAlias.item.notes_count).toBe(1);
+      expect(depthFullAlias.item.tests_count).toBe(1);
       expect(depthFullAlias.linked.files).toHaveLength(1);
       expect(depthFullAlias.item.body).toBe("depth body");
 

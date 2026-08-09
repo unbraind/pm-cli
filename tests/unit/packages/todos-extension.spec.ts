@@ -679,11 +679,11 @@ describe("built-in todos extension import/export", () => {
       expect(invalidLinkedArrays.code).toBe(0);
       const invalidLinkedArraysItem = (invalidLinkedArrays.json as { item: Record<string, unknown> }).item;
       expect("dependencies" in invalidLinkedArraysItem).toBe(false);
-      expect("comments" in invalidLinkedArraysItem).toBe(false);
-      expect("notes" in invalidLinkedArraysItem).toBe(false);
-      expect("learnings" in invalidLinkedArraysItem).toBe(false);
-      expect("files" in invalidLinkedArraysItem).toBe(false);
-      expect("docs" in invalidLinkedArraysItem).toBe(false);
+      expect(invalidLinkedArraysItem.comments).toEqual([]);
+      expect(invalidLinkedArraysItem.notes).toEqual([]);
+      expect(invalidLinkedArraysItem.learnings).toEqual([]);
+      expect(invalidLinkedArraysItem.files).toEqual([]);
+      expect(invalidLinkedArraysItem.docs).toEqual([]);
       expect(invalidLinkedArraysItem.tests).toEqual([
         {
           command: "pnpm lint",

@@ -12,6 +12,7 @@ import {
 import { createHistoryEntry } from "../../../src/core/history/history.js";
 import {
   detectAgentIdentity,
+  diagnoseAgentIdentity,
   detectHarnessIdentity,
   registerHarnessSignalDescriptors,
   resolveAuthor,
@@ -340,13 +341,113 @@ describe("agent runtime SDK primitives", () => {
       detectAgentIdentity({
         env: {
           PM_AGENT_EFFORT: "xhigh",
-          PM_AGENT_ROLE: "implementation-lead",
+          PM_AGENT_ROLE: "reviewer",
         },
       }),
     ).toEqual({
       provenance: {
         effort: { source: "override", value: "xhigh" },
-        role: { source: "override", value: "implementation-lead" },
+        role: { source: "override", value: "reviewer" },
+      },
+    });
+  });
+
+  it("rejects boolean role signals and reports bounded resolver outcomes", () => {
+    const diagnosed = diagnoseAgentIdentity({
+      env: {
+        CLAUDECODE: "1",
+        CLAUDE_CODE_CHILD_SESSION: "1",
+        CLAUDE_CODE_SESSION_ID: "missing-session",
+      },
+      cwd: "/tmp/pm-provenance-outcome",
+      home_dir: "/tmp/pm-provenance-outcome-home",
+      argv: ["pm", "update", "pm-contract123"],
+    });
+    expect(diagnosed.provenance?.role).toEqual({
+      source: "argv",
+      value: "implementer",
+    });
+    expect(diagnosed.provenance?.topic).toEqual({
+      source: "argv",
+      value: "pm-contract123",
+    });
+    expect(diagnosed.provenance_outcomes.model).toEqual({
+      status: "failed",
+      reason: "resolver_failed",
+      resolver: "claude_session_file",
+      rule_version: "v1",
+    });
+    expect(JSON.stringify(diagnosed)).not.toContain("CHILD_SESSION");
+  });
+
+  it("diagnoses unavailable resolvers and controlled argv roles without ambient environment input", () => {
+    const diagnosed = diagnoseAgentIdentity({
+      argv: ["claude-code", "review", "pm-review123"],
+    });
+    expect(diagnosed.provenance?.role).toEqual({
+      source: "argv",
+      value: "reviewer",
+    });
+    expect(diagnosed.provenance_outcomes.model).toEqual({
+      status: "unavailable",
+      reason: "harness_unavailable",
+      resolver: "claude_session_file",
+      rule_version: "v1",
+    });
+    const invalidRole = diagnoseAgentIdentity({
+      env: { CLAUDECODE: "1", PM_AGENT_ROLE: "true" },
+    });
+    expect(invalidRole.provenance?.role).toBeNull();
+    expect(invalidRole.provenance_outcomes.role).toEqual({
+      status: "unavailable",
+      reason: "invalid_value",
+      rule_version: "v1",
+    });
+    expect(
+      diagnoseAgentIdentity({
+        env: {
+          CLAUDECODE: "1",
+          CLAUDE_CODE_SESSION_ID: "probe-disabled-session",
+        },
+        probes_enabled: false,
+      }).provenance_outcomes.model,
+    ).toEqual({
+      status: "unavailable",
+      reason: "probes_disabled",
+      resolver: "claude_session_file",
+      rule_version: "v1",
+    });
+  });
+
+  it("records only attempted resolver failures in immutable history context", () => {
+    const historyEntry = runWithHarnessDetectionSignals(
+      {
+        env: {
+          CLAUDECODE: "1",
+          CLAUDE_CODE_SESSION_ID: "missing-history-session",
+        },
+        cwd: "/tmp/pm-history-provenance-outcome",
+        home_dir: "/tmp/pm-history-provenance-outcome-home",
+      },
+      () =>
+        createHistoryEntry({
+          nowIso: "2026-08-09T00:00:00.000Z",
+          author: "harness:claude-code",
+          op: "test",
+          before: EMPTY_CANONICAL_DOCUMENT,
+          after: EMPTY_CANONICAL_DOCUMENT,
+          context: { command: "test" },
+        }),
+    );
+    expect(historyEntry.context).toMatchObject({
+      command: "test",
+      agent_provenance_outcomes: {
+        model: {
+          status: "failed",
+          reason: "resolver_failed",
+          resolver: "claude_session_file",
+          rule_version: "v1",
+        },
       },
     });
   });

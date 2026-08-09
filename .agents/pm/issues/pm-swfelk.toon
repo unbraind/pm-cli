@@ -1,0 +1,21 @@
+id: pm-swfelk
+title: "GH-941: pm read omits notes without declaring their omission and invites duplicate writes"
+description: "GitHub issue https://github.com/unbraind/pm-cli/issues/941 reports that the default pm read projection withholds notes while its omission_receipt does not declare that field group. Agents therefore cannot distinguish withheld notes from an empty collection and may append duplicates. Align the read projection, stable collection counts, selectors, and restoration guidance."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-09T00:15:31.183Z"
+updated_at: "2026-08-09T00:29:21.686Z"
+author: "harness:codex"
+estimated_minutes: 480
+acceptance_criteria: "Every pm read projection either includes notes or declares the notes field group in omission_receipt with one executable restoration selector; empty, populated, truncated, and explicitly selected notes are distinguishable without guessing; CLI, SDK, MCP, JSON, TOON, and session-aware reads share the same contract; a negative control fails if any withheld collection is absent from the receipt; token calibration and exact 100/100/100/100 coverage pass"
+parent: pm-mpbb
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0k19l7,discovered_from,"2026-08-09T00:15:31.183Z","harness:codex","cli:create:dep",detected
+  pm-3esl28,related,"2026-08-09T00:15:31.183Z","harness:codex","cli:create:dep",detected
+  pm-b1w8vr,related,"2026-08-09T00:15:31.183Z","harness:codex","cli:create:dep",detected
+  pm-p258tx,related,"2026-08-09T00:15:31.183Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-09T00:15:31.183Z","harness:codex","Duplicate check: searched all statuses for read, notes, omission_receipt, and duplicate writes. pm-0k19l7, pm-p258tx, pm-3esl28, and pm-b1w8vr are completed adjacent projection work; none owns the pm read receipt mismatch reported in GH-941."
+body: ""

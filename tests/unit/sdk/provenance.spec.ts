@@ -50,7 +50,7 @@ describe("agent provenance SDK analysis", () => {
       },
       {
         dimension: "role",
-        harnesses: ["claude-code", "codex"],
+        harnesses: ["codex"],
         covered: true,
       },
       {

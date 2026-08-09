@@ -2,26 +2,56 @@ id: pm-b1w8vr
 title: "Entity projections carry a collection key only when it is non-empty, so an absent key cannot be distinguished from an unprojected one and neither projection level is a superset of the other"
 description: "An entity projection includes a collection key only when that collection is non-empty, so an absent key is ambiguous between \"this collection is empty\" and \"this projection does not carry this collection\". Nothing in the envelope resolves the ambiguity, and the two projection levels are not ordered by containment, so an agent cannot pick one and parse it stably.\n\nMeasured live on 2026-08-08 against three items. Default pm get --json on a freshly created item carries notes_count and tests_count but no comments key and no files key, while pm comments and pm files on the same item return one comment and two linked files. Adding --full adds comments and files and simultaneously removes notes_count and tests_count, so neither level is a superset of the other. Across items the --full key set varies with content rather than with schema: one item yields comments and files, another yields comments, learnings, notes, tests and test_runs, a third yields comments, docs, files, tests and test_runs. No fixed jq expression is valid across items, and a consumer that selects a collection key must first discover whether the key exists.\n\nThe realized agent failure, reproduced first-hand while filing pm-h75tjh in this pass: after pm files --add and pm comments --add both reported success, reading the item back through the default projection and selecting the collection lengths returned zero for both. That reads exactly like a silently failed write. Confirming the writes required two further command invocations, one per collection. This is the read-back half of the ergonomics complaint: the tool cannot be used to verify its own mutations without knowing, out of band, which projection carries which field.\n\nA second instance of the same vocabulary problem sits on the same path. The write flag is --linked-file, the command noun is files, and the read key is files, so the name an agent writes with is not the name it reads back with.\n\nCost. Every verified mutation costs at least one extra invocation per collection touched, on a prescribed finish that already spans several invocations, and the extra call is pure overhead against a projection that could have carried the field."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-08T21:59:26.373Z"
-updated_at: "2026-08-08T22:02:24.052Z"
+updated_at: "2026-08-09T01:24:44.244Z"
+closed_at: "2026-08-08T23:34:15.801Z"
+completed_at: "2026-08-08T23:34:15.801Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Every entity projection level declares a stable key set: a collection the level carries is always present, empty collections render as empty, so an absent key means not carried and never means empty; The full projection is a proper superset of the default projection, proven by a test that diffs key sets over an item populated in every collection and an item populated in none; Every collection a mutation can write is readable from at least one documented entity projection, and the write flag, command noun and read key share one spelling; A negative control fails when a collection is added to the item model without a corresponding projection contract entry"
 parent: pm-mpbb
 risk: medium
 confidence: high
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Stable collection-count and full projection contract
+expected_result: "Absent means unprojected, empty means carried with no entries, and full is a tested structural superset"
+actual_result: All eight collection counts are stable; deep/full emit empty arrays; structured JSON round-trips derived fields safely; 25 linked integration/unit tests pass
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-1wujzi,related_to,"2026-08-08T21:59:26.373Z","harness:claude-code","cli:create:dep",detected
   pm-cyrfjq,related_to,"2026-08-08T21:59:26.373Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-08-08T21:59:26.373Z","harness:claude-code","cli:create:dep",detected
   pm-sb0tns,discovered_from,"2026-08-08T21:59:26.373Z","harness:claude-code","cli:create:dep",detected
   pm-9rgaal,implements,"2026-08-08T22:02:23.469Z","harness:claude-code","cli:update:dep",detected
   pm-n7rr,related_to,"2026-08-08T22:02:23.469Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-1wujzi,blocks,"2026-08-08T22:50:11.479Z","harness:codex","cli:update:dep",detected
+  pm-cyrfjq,discovered_from,"2026-08-08T22:50:11.479Z","harness:codex","cli:update:dep",detected
+  pm-n7rr,implements,"2026-08-08T22:50:11.479Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
   "2026-08-08T21:59:39.907Z","harness:claude-code","Duplicate check before filing: searched projection omits collection, read back after write, absent key empty, get projection full superset, verify mutation landed. Nearest owners are all closed and cover different halves: pm-sb0tns (no common row contract across read surfaces, cited as discovered_from), pm-cyrfjq (mode-paired envelopes zero-fill the inactive collection, the inverse convention) and pm-v8gfi7 (provenance unreadable because the only projection carrying it drops other fields). Open sibling pm-1wujzi owns claim_state being absent from every list projection including full. None owns content-conditional key presence on entity projections or the non-containment of the two levels. Reproduced first-hand in this pass while verifying writes on pm-h75tjh."
-files[1]{path,scope,note}:
+  "2026-08-08T22:13:22.561Z","harness:codex","Implementation start 2026-08-09: active in the coupled context-provenance tranche with pm-3zgh2c, pm-eq9dlw, pm-lu6sca, pm-b1w8vr, and pm-h75tjh. Scope is SDK-first provenance inference and resolver outcomes, typed role domains, stable entity read-back projections, and epoch-aware release classification; all other open items remain unclaimed."
+  "2026-08-08T22:45:42.902Z","harness:codex","Measurement evidence: stable eight-key collection_counts adds 113 bytes / 28 estimated tokens to standard get in both calibration tiers. Session orientation remains inside the unchanged 20,000-token ceiling (3,691/20,000 for two items; 10,027/20,000 for 106 items). Full projection is now a standard superset and derived count fields are ignored during --stdin-json round trips."
+  "2026-08-09T00:09:11.628Z","harness:codex","Final verification: the complete sandboxed coverage gate passed 461/461 files and 7086/7086 tests at exact 100/100/100/100, including stable collection counts, full structural supersets, selector integrity, deterministic runtime output, and structured-mutation round trips."
+  "2026-08-09T00:20:20.756Z","harness:codex","Delivery handoff: broad SDK/CLI tranche committed at 5b36abc75 and opened as GitHub PR #944 (https://github.com/unbraind/pm-cli/pull/944). Exact local evidence includes 7,086 tests across 461 files at 100/100/100/100 coverage, package/compatibility/npx/dogfood/manual acceptance, tracker/changelog/SDK/static-quality gates, and zero current dependency or GitHub security alerts. Review and exact-head CI evidence will be appended after the hosted loop."
+  "2026-08-09T00:31:43.188Z","harness:codex","Hosted CI follow-up: the stable collection_counts projection intentionally adds 47 estimated tokens to the returning-agent get --for inspect acceptance scenario (336 -> 383; 1,531 pre-accounting bytes). Refreshed docs/agent-task-token-baseline.json from the executable 101-item isolated fixture, then proved both the exact positive gate and the seeded +1,000,000-token negative control. No threshold or negative-control behavior was weakened."
+  "2026-08-09T00:58:13.803Z","harness:codex","Review-loop evidence: strengthened read-contract acceptance with non-zero collection counts and explicit withholding assertions. The full sandboxed gate passes 461 files and 7,089 tests at exact 100/100/100/100; token calibration remains executable and fail-closed."
+  "2026-08-09T01:24:44.244Z","harness:codex","PR #944 review closeout: implementation commit b6678b8 passed all exact-head hosted deterministic checks; CodeRabbit confirmed the projection test hardening and all 16 total findings addressed. Every thread is resolved and individually acknowledged. Local release dry-run repeated 7,089 tests at exact 100/100/100/100 and packed npx acceptance."
+files[6]{path,scope,note}:
+  docs/agent-task-token-baseline.json,project,Executable returning-agent token baseline refreshed for stable collection_counts
+  scripts/release/context-intent-calibration.json,project,Reviewed token-cost baseline for stable collection counts
   src/sdk/query/get.ts,project,entity projection assembly; default level emits notes_count and tests_count while omitting comments/files/docs/learnings entirely
+  src/sdk/read-output-contracts.ts,project,Declare stable derived get selectors in universal output projection
+  src/sdk/structured-mutations.ts,project,Ignore derived projection fields during full-envelope mutation round trips
+  tests/unit/sdk/read-contract-integrity.spec.ts,project,Cross-contract acceptance for collection_counts selector
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/commands/get-append-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msl0fdvt-ns7rex,test,passed,"2026-08-08T23:33:10.430Z","2026-08-08T23:33:43.049Z","2026-08-08T23:33:43.049Z",2,0,0
+docs[2]{path,scope,note}:
+  docs/ITEM_READ_PROJECTIONS.md,project,CLI and SDK projection contract
+  docs/SDK_CONTEXT_INTEGRITY.md,project,Universal selector and stable collection projection guidance
+close_reason: "Completed stable collection projections, structural superset guarantees, read-contract negative controls, and write round-trip compatibility."
 body: ""
