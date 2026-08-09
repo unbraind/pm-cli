@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-08-09T00:15:13.406Z"
-updated_at: "2026-08-09T00:15:13.406Z"
+updated_at: "2026-08-09T00:29:21.059Z"
 author: "harness:codex"
+estimated_minutes: 480
 acceptance_criteria: "A documented public SDK primitive exposes the lightweight all-item metadata read without importing CLI or private core modules; top-level, narrow subpath, PmClient, and runtime action contracts have intentional parity; return types and omission semantics distinguish intentionally unavailable fields; import-cost, token, package-boundary, surface-snapshot, and complete coverage gates pass; a package-authoring example proves use from a compiled external consumer"
 parent: pm-usfg
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:

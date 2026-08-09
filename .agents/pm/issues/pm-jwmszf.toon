@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-08-09T00:14:59.496Z"
-updated_at: "2026-08-09T00:14:59.496Z"
+updated_at: "2026-08-09T00:29:20.496Z"
 author: "harness:codex"
+estimated_minutes: 480
 acceptance_criteria: "Unknown-author health diagnostics name an executable remediation that resolves the reported actionable set; validate --fix-hints either emits the same recovery or is no longer advertised for this warning; CLI, SDK, MCP, help, and contracts agree on the recovery path; regression tests cover actionable, legacy-only, empty, and partial-disposition cases; token-bounded output retains the remediation without private event data"
 parent: pm-5oj5
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:

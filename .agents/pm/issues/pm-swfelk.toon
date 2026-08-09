@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-08-09T00:15:31.183Z"
-updated_at: "2026-08-09T00:15:31.183Z"
+updated_at: "2026-08-09T00:29:21.686Z"
 author: "harness:codex"
+estimated_minutes: 480
 acceptance_criteria: "Every pm read projection either includes notes or declares the notes field group in omission_receipt with one executable restoration selector; empty, populated, truncated, and explicitly selected notes are distinguishable without guessing; CLI, SDK, MCP, JSON, TOON, and session-aware reads share the same contract; a negative control fails if any withheld collection is absent from the receipt; token calibration and exact 100/100/100/100 coverage pass"
 parent: pm-mpbb
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
