@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:sdk",identity,instrument-integrity,observability,provenance
 created_at: "2026-08-03T06:22:12.243Z"
-updated_at: "2026-08-09T15:57:26.460Z"
+updated_at: "2026-08-09T16:01:17.030Z"
 closed_at: "2026-08-09T15:57:25.791Z"
 completed_at: "2026-08-09T15:57:25.791Z"
 author: "harness:claude-code"
@@ -29,7 +29,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-htbetn,related,"2026-08-03T06:23:55.524Z","harness:claude-code","cli:update:dep",detected
   pm-rtn5h6,related,"2026-08-03T06:23:55.524Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,implements,"2026-08-03T06:23:55.524Z","harness:claude-code","cli:update:dep",detected
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-08-03T11:09:27.269Z","harness:codex","Estimate basis 2026-08-03: 360 minutes covers resolver outcome algebra, bounded reason codes, immutable recording, health projection, zero-success warning logic, and negative controls."
   "2026-08-08T22:13:20.575Z","harness:codex","Implementation start 2026-08-09: active in the coupled context-provenance tranche with pm-3zgh2c, pm-eq9dlw, pm-lu6sca, pm-b1w8vr, and pm-h75tjh. Scope is SDK-first provenance inference and resolver outcomes, typed role domains, stable entity read-back projections, and epoch-aware release classification; all other open items remain unclaimed."
   "2026-08-08T22:32:58.636Z","harness:codex","Design evidence: resolver attempts are counted only when the resolver input exists. Missing AI_AGENT or session identifiers are harness_unavailable; a supplied valid resolver input that yields no value is resolver_failed. pm health scans at most 10,000 immutable events, tolerates malformed streams owned by integrity diagnostics, and emits advisory zero-success warnings."
@@ -39,6 +39,7 @@ comments[9]{created_at,author,text}:
   "2026-08-09T00:58:13.326Z","harness:codex","Review-loop evidence: provenance scanning now byte-bounds history before allocation, parses only complete lines, distinguishes exact event limits from truncation, suppresses zero-success warnings on incomplete samples, and records invalid explicit role values as invalid_value with argv precedence. Full sandboxed gate: 461 files, 7,089 tests, exact 100/100/100/100. Item remains open and unclaimed for its documented no-resolver-declared residual."
   "2026-08-09T01:24:46.237Z","harness:codex","PR #944 hosted evidence for the completed tranche portion: implementation commit b6678b8 passed all deterministic checks; CodeRabbit confirmed byte-bounded complete-event health semantics and invalid-value role outcomes. All 16 findings are addressed, replied to, and resolved. Item stays open and unclaimed for the documented no-resolver-declared residual."
   "2026-08-09T15:57:25.224Z","harness:codex","Evidence: focused agent-runtime and author-attribution tests passed after truthful overlapping-run failure receipts; the final uninterrupted full suite passed 7,100/7,100 with exact 100/100/100/100 coverage. SDK surface change was explicitly acknowledged and all static, lint, parity, token, and performance gates passed."
+  "2026-08-09T16:01:17.030Z","harness:codex","Delivery: implementation committed at bd333f788 and opened as GitHub PR #952: https://github.com/unbraind/pm-cli/pull/952. Hosted exact-head checks and review feedback will be recorded on this item after the review loop."
 files[8]{path,scope,note}:
   sdk/public-surface.json,project,SDK outcome contract snapshot
   src/core/history/history.ts,project,Persist resolver outcome evidence
