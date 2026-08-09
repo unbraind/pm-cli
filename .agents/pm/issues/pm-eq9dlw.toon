@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:sdk",data-quality,identity,provenance
 created_at: "2026-08-03T06:21:42.773Z"
-updated_at: "2026-08-09T16:01:17.488Z"
+updated_at: "2026-08-09T16:09:43.297Z"
 closed_at: "2026-08-09T15:57:28.024Z"
 completed_at: "2026-08-09T15:57:28.024Z"
 author: "harness:claude-code"
@@ -30,7 +30,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-lu6sca,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
   pm-pj2isb,related,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
   pm-rbg1qo,discovered_from,"2026-08-03T06:23:40.264Z","harness:claude-code","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-08-03T11:09:27.894Z","harness:codex","Estimate basis 2026-08-03: 240 minutes covers value-domain declarations, invalid boolean rejection, a correctly named nested-session dimension, corpus check, and regression coverage."
   "2026-08-07T11:23:43.166Z","harness:claude-code","Confirmed still live at 2026.8.7 on 2026-08-07 with no identity flags passed. A create from Claude Code recorded author harness:claude-code with author_source detected, agent_model claude-opus-5 from probe, effort xhigh from environment, version 2.1.224 from probe — and role literally \"1\" from environment, with topic null. Model, effort and version capture are working end to end; role and topic remain the only two dimensions that do not carry meaning. Fleet analytics grouping on role today would bucket every nested session under the string \"1\"."
   "2026-08-08T08:10:41.851Z","harness:claude-code","Reproduced live on 2026-08-08 against pm-cli 2026.8.7, HEAD build. A create recorded this session carries agent_provenance role {value: \"1\", source: \"environment\"} alongside a correctly resolved model {claude-opus-5, probe}, effort {xhigh, environment} and version {2.1.226, probe}. So the dimension is not merely unpopulated: it is populated with the boolean child-session flag rendered as a string, which is worse than null because it types as a valid role and will group every nested claude-code invocation under one meaningless label in fleet analytics. Sibling dimension topic is null in the same record, which pm-3zgh2c owns. Evidence is the last history entry of pm-3lhth4."
@@ -41,6 +41,7 @@ comments[10]{created_at,author,text}:
   "2026-08-09T01:24:45.768Z","harness:codex","PR #944 hosted evidence for the completed tranche portion: implementation commit b6678b8 passed all deterministic checks; all 16 CodeRabbit findings are addressed, replied to, and resolved. Item stays open and unclaimed for its broader remaining role-contract acceptance."
   "2026-08-09T15:57:27.484Z","harness:codex","Evidence: all three linked tests passed; final full suite passed 7,100/7,100 with exact 100/100/100/100 coverage; lint, duplicate, docstring, surface-replication, SDK parity, token/context, and performance gates passed. Live repository health/storage/history checks remain structurally clean."
   "2026-08-09T16:01:17.487Z","harness:codex","Delivery: implementation committed at bd333f788 and opened as GitHub PR #952: https://github.com/unbraind/pm-cli/pull/952. Hosted exact-head checks and review feedback will be recorded on this item after the review loop."
+  "2026-08-09T16:09:43.297Z","harness:codex","PR #952 first hosted pass at exact head 77fb234d4: every required GitHub runner completed successfully, including four coverage shards, static/compat/smoke/typecheck gates, Node 22/24 and macOS/Windows runtimes, CodeQL, Trivy, TruffleHog, Semgrep, ShellCheck, PSScriptAnalyzer, actionlint, CodeFactor, DeepScan, Hound, CodSpeed, and Codecov patch. Thread-aware inventory found zero review threads. CodeRabbit and Sourcery were quota-limited and supplied no code findings; Cubic completed neutral with no findings; no Greptile check/comment surface was emitted. Every bot comment/review was individually reacted to and acknowledged at its GitHub artifact."
 files[6]{path,scope,note}:
   src/core/shared/author.ts,project,Remove boolean child-session flag from semantic role sources and enforce controlled roles
   src/sdk/governance/health.ts,project,Invalid provenance health projection
