@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1476,
+    "covered_symbols": 1477,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1477
+    "required_symbols": 1478
   },
   "breaking_acknowledgements": [
     {
@@ -5364,6 +5364,12 @@
           "kind": "interface",
           "name": "ImprovementTrend",
           "signature": "export interface ImprovementTrend { metric: string; direction: ImprovementDirection; baseline: ImprovementObservation; latest: ImprovementObservation; delta: number; improved: boolean; sample_count: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "indexBlockedByIds",
+          "signature": "(corpus: readonly ItemMetadata[]) => Map<string, string[]> | calls: (corpus: readonly ItemMetadata[]) => Map<string, string[]>"
         },
         {
           "classification": "supported",
@@ -18810,6 +18816,12 @@
           "kind": "function",
           "name": "hierarchyDescendants",
           "signature": "(graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]> | calls: (graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "indexBlockedByIds",
+          "signature": "(corpus: readonly ItemMetadata[]) => Map<string, string[]> | calls: (corpus: readonly ItemMetadata[]) => Map<string, string[]>"
         },
         {
           "classification": "supported",

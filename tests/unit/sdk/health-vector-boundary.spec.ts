@@ -52,9 +52,13 @@ describe("health vector provider boundary", () => {
           { skipDrift: true },
         );
         expect(requests).toBe(0);
-        expect(
-          result.checks.find((check) => check.name === "storage")?.details,
-        ).not.toHaveProperty("provenance_resolver_outcomes");
+        const storage = result.checks.find(
+          (check) => check.name === "storage",
+        );
+        expect(storage).toBeDefined();
+        expect(storage!.details).not.toHaveProperty(
+          "provenance_resolver_outcomes",
+        );
         expect(
           result.checks.find((check) => check.name === "integrity"),
         ).toMatchObject({ name: "integrity", status: "ok" });

@@ -13,6 +13,7 @@ export {
   collectBlockedByIdsFromCorpus,
   collectDependencyBlockedIds,
   computeActionabilityReport,
+  indexBlockedByIds,
   resolveItemBlockers,
   type ActionabilityReport,
   type ActionableEntry,

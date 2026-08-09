@@ -26,6 +26,8 @@ describe("relationship kind registry", () => {
       "Unknown relationship kind",
     );
     expect(resolveCanonicalRelationshipKind("unknown")).toBeUndefined();
+    expect(resolveCanonicalRelationshipKind(undefined)).toBeUndefined();
+    expect(resolveCanonicalRelationshipKind(42)).toBeUndefined();
     expect(registry.require("parent").hierarchyDirection).toBe("target_parent");
     expect(registry.require("child").hierarchyDirection).toBe("source_parent");
     expect(registry.resolve(null)).toBeUndefined();

@@ -74,27 +74,28 @@ describe("SDK read contract integrity", () => {
       expect.arrayContaining([{ name: "item" }]),
     );
 
-    expect(
-      applyReadOutputDimensions(
-        "get",
-        { outputInclude: "item.title,item.collection_counts" },
-        {
-          item: {
-            id: "pm-1",
-            title: "One",
-            body: "retained",
-            collection_counts: { comments: 0, notes: 0, tests: 0 },
-          },
-          children: [],
-          claim_state: { claimed: false },
+    const projectedCounts = applyReadOutputDimensions(
+      "get",
+      { outputInclude: "item.title,item.collection_counts" },
+      {
+        item: {
+          id: "pm-1",
+          title: "One",
+          body: "retained",
+          collection_counts: { comments: 2, notes: 3, tests: 1 },
         },
-      ),
-    ).toMatchObject({
+        children: [],
+        claim_state: { claimed: false },
+      },
+    );
+    expect(projectedCounts).toMatchObject({
       item: {
         title: "One",
-        collection_counts: { comments: 0, notes: 0, tests: 0 },
+        collection_counts: { comments: 2, notes: 3, tests: 1 },
       },
     });
+    expect(projectedCounts).not.toHaveProperty("item.body");
+    expect(projectedCounts).not.toHaveProperty("item.id");
 
     expect(
       applyReadOutputDimensions(

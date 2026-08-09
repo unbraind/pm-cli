@@ -5,6 +5,7 @@ import {
   collectBlockedByIdsFromCorpus,
   collectDependencyBlockedIds,
   computeActionabilityReport,
+  indexBlockedByIds,
   resolveItemBlockers,
 } from "../../../../src/core/item/actionability.js";
 import { resolveRuntimeStatusRegistry } from "../../../../src/core/schema/runtime-schema.js";
@@ -90,6 +91,19 @@ describe("collectBlockedByIds", () => {
     expect(collectBlockedByIdsFromCorpus(target, [target, blocker])).toEqual([
       "pm-blocker",
     ]);
+  });
+
+  it("normalizes and deduplicates reverse blocker ids in one corpus index", () => {
+    const target = item({ id: "PM-TARGET" });
+    const blocker = item({
+      id: " PM-BLOCKER ",
+      dependencies: [blocksDep("pm-target"), blocksDep("PM-TARGET")],
+    });
+    const blank = item({ id: "   ", dependencies: [blocksDep("pm-target")] });
+    expect(indexBlockedByIds([target, blocker, blank]).get("pm-target")).toEqual([
+      "pm-blocker",
+    ]);
+    expect(indexBlockedByIds([blocker]).get("pm-target")).toEqual(["pm-blocker"]);
   });
 
   it("does not scan reverse edges for a blank legacy item id", () => {
@@ -214,7 +228,7 @@ describe("computeActionabilityReport", () => {
     expect(report.ready.map((entry) => entry.item.id).sort()).toEqual(["pm-BLK", "pm-CHILD"]);
     // pm-DEP is blocked by pm-BLK even though it references it as "PM-blk".
     expect(report.blocked.map((entry) => entry.item.id)).toEqual(["pm-DEP"]);
-    expect(report.blocked[0].open_blockers[0].id).toBe("PM-blk");
+    expect(report.blocked[0].open_blockers[0].id).toBe("pm-blk");
     expect(report.ready.find((entry) => entry.item.id === "pm-BLK")?.unblocks).toEqual(["pm-DEP"]);
   });
 

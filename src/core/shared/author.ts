@@ -417,6 +417,8 @@ function provenanceFromArgv(
   argv: readonly string[],
   dimension: string,
 ): string | undefined {
+  const flaggedValue = provenanceFlagValue(argv, dimension);
+  if (flaggedValue !== undefined) return flaggedValue;
   if (dimension === "topic") {
     return argv
       .slice(0, 16)
@@ -435,6 +437,13 @@ function provenanceFromArgv(
     if (command === "review") return "reviewer";
     if (command) return "implementer";
   }
+  return undefined;
+}
+
+function provenanceFlagValue(
+  argv: readonly string[],
+  dimension: string,
+): string | undefined {
   const acceptedFlags =
     dimension === "model"
       ? ["--model", "--agent-model"]
@@ -868,12 +877,20 @@ function resolveProvenanceOutcome(
   descriptor: NormalizedHarnessSignalDescriptor | undefined,
   env: Readonly<Record<string, string | undefined>>,
   probesEnabled: boolean,
+  invalidValue: boolean,
 ): AgentProvenanceOutcome {
   const resolver = descriptor?.provenance_resolvers[dimension];
   if (identity.provenance?.[dimension]) {
     return {
       status: "resolved",
       ...(resolver ? { resolver } : {}),
+      rule_version: "v1",
+    };
+  }
+  if (invalidValue) {
+    return {
+      status: "unavailable",
+      reason: "invalid_value",
       rule_version: "v1",
     };
   }
@@ -920,6 +937,27 @@ export function diagnoseAgentIdentity(
     !["0", "false", "off"].includes(
       nonBlank(env.PM_AGENT_PROBES)?.toLowerCase() ?? "",
     );
+  const sessionContext = resolveAgentSessionContextFromSignals(
+    effectiveSignals,
+    env,
+  );
+  const invalidRoleValue = [
+    env.PM_AGENT_ROLE,
+    sessionContext.provenance?.role,
+    firstEnvironmentValue(
+      env,
+      descriptor?.provenance_environment_keys.role,
+    ),
+    effectiveSignals.client_info?.provenance?.role,
+    effectiveSignals.provenance?.role,
+    provenanceFlagValue(effectiveSignals.argv ?? [], "role"),
+  ].some((candidate) => {
+    const value = nonBlank(candidate)?.slice(0, 256);
+    return (
+      value !== undefined &&
+      normalizeProvenanceValue("role", value) === undefined
+    );
+  });
   const outcomes = Object.fromEntries(
     AGENT_PROVENANCE_DIMENSIONS.map((dimension) => [
       dimension,
@@ -929,6 +967,7 @@ export function diagnoseAgentIdentity(
         descriptor,
         env,
         probesEnabled,
+        dimension === "role" && invalidRoleValue,
       ),
     ]),
   );

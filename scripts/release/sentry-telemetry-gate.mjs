@@ -200,7 +200,6 @@ function readIssueProducerVersion(issue) {
   const candidates = [
     issue?.release,
     issue?.lastRelease?.version,
-    issue?.firstRelease?.version,
     readIssueTag(issue, "release"),
     readIssueTag(issue, "pm.release"),
   ];

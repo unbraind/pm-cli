@@ -161,6 +161,7 @@ describe("provenance resolver health", () => {
     expect(await scanProvenanceResolverHealth(root, 1)).toMatchObject({
       events_read: 1,
       truncated: true,
+      warnings: [],
     });
     await writeFile(
       path.join(history, "zz-after-limit.jsonl"),
@@ -170,6 +171,51 @@ describe("provenance resolver health", () => {
     expect(await scanProvenanceResolverHealth(root, 1)).toMatchObject({
       events_read: 1,
       truncated: true,
+      warnings: [],
+    });
+  });
+
+  it("distinguishes an exact event boundary and bounds bytes before reading", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-provenance-bounds-"));
+    tempRoots.push(root);
+    const history = path.join(root, "history");
+    await mkdir(history);
+    const failed = JSON.stringify({
+      agent_harness: "claude-code",
+      context: {
+        agent_provenance_outcomes: {
+          model: { status: "failed", resolver: "claude_session_file" },
+        },
+      },
+    });
+    await writeFile(path.join(history, "one.jsonl"), `${failed}\n`, "utf8");
+
+    await expect(scanProvenanceResolverHealth(root, 1)).resolves.toMatchObject({
+      events_read: 1,
+      truncated: false,
+      warnings: [
+        "provenance_resolver_zero_success:claude-code:model:claude_session_file:1",
+      ],
+    });
+    await writeFile(
+      path.join(history, "one.jsonl"),
+      `${failed}\n${"x".repeat(8_388_608)}`,
+      "utf8",
+    );
+    await expect(scanProvenanceResolverHealth(root, 10)).resolves.toMatchObject({
+      events_read: 1,
+      truncated: true,
+      warnings: [],
+    });
+    await writeFile(
+      path.join(history, "one.jsonl"),
+      "x".repeat(8_388_609),
+      "utf8",
+    );
+    await expect(scanProvenanceResolverHealth(root, 10)).resolves.toMatchObject({
+      events_read: 0,
+      truncated: true,
+      warnings: [],
     });
   });
 });

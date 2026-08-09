@@ -394,11 +394,15 @@ describe("agent runtime SDK primitives", () => {
       resolver: "claude_session_file",
       rule_version: "v1",
     });
-    expect(
-      diagnoseAgentIdentity({
-        env: { CLAUDECODE: "1", PM_AGENT_ROLE: "true" },
-      }).provenance?.role,
-    ).toBeNull();
+    const invalidRole = diagnoseAgentIdentity({
+      env: { CLAUDECODE: "1", PM_AGENT_ROLE: "true" },
+    });
+    expect(invalidRole.provenance?.role).toBeNull();
+    expect(invalidRole.provenance_outcomes.role).toEqual({
+      status: "unavailable",
+      reason: "invalid_value",
+      rule_version: "v1",
+    });
     expect(
       diagnoseAgentIdentity({
         env: {

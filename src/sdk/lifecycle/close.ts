@@ -28,7 +28,7 @@ import {
 } from "../runtime-primitives.js";
 import {
   collectBlockedByIds,
-  collectBlockedByIdsFromCorpus,
+  indexBlockedByIds,
 } from "../actionability.js";
 import {
   applyTerminalOrderingPolicy,
@@ -298,18 +298,22 @@ function findAutoUnblockCandidates(
   closedId: string,
   statusRegistry: RuntimeStatusRegistry,
 ): AutoUnblockCandidate[] {
-  const itemsById = new Map(items.map((item) => [item.id, item]));
+  const itemsById = new Map(
+    items.map((item) => [item.id.trim().toLowerCase(), item]),
+  );
+  const blockerIdsByItem = indexBlockedByIds(items);
+  const normalizedClosedId = closedId.trim().toLowerCase();
   const blockedStatuses = statusRegistry.blocked_statuses;
   return items
     .filter((item) => blockedStatuses.has(item.status))
     .map((item) => ({
       item,
-      blockerIds: collectBlockedByIdsFromCorpus(item, items),
+      blockerIds: blockerIdsByItem.get(item.id.trim().toLowerCase())!,
     }))
-    .filter(({ blockerIds }) => blockerIds.includes(closedId))
+    .filter(({ blockerIds }) => blockerIds.includes(normalizedClosedId))
     .filter(({ blockerIds }) =>
       blockerIds.every((blockerId) => {
-        if (blockerId === closedId) {
+        if (blockerId === normalizedClosedId) {
           return true;
         }
         const blocker = itemsById.get(blockerId);
@@ -347,7 +351,7 @@ async function autoUnblockResolvedDependents(
           const dependencies = document.metadata.dependencies ?? [];
           /* c8 ignore stop */
           const remainingDependencies = dependencies.filter((dependency) => {
-            const dependencyId = dependency.id.trim();
+            const dependencyId = dependency.id.trim().toLowerCase();
             return (
               dependency.kind !== "blocked_by" ||
               !candidate.blocker_ids.includes(dependencyId)

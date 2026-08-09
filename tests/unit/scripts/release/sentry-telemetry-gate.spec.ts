@@ -460,6 +460,27 @@ describe("scripts/release/sentry-telemetry-gate: telemetry modes", () => {
     ]);
   });
 
+  it("keeps issues blocking when only their first release is pre-contract", async () => {
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: buildSentryFetch([
+        {
+          shortId: "PM-CURRENT-UNKNOWN",
+          level: "error",
+          firstRelease: { version: "2026.8.6" },
+          title: "current producer version unavailable",
+        },
+      ]),
+    });
+    expect(json.ok).toBe(false);
+    expect(json.sentry.legacy_pre_contract_short_ids).toEqual([]);
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-CURRENT-UNKNOWN"]);
+    expect(json.sentry.blocking_reasons).toEqual([
+      { short_id: "PM-CURRENT-UNKNOWN", reason: "missing_contract_tags" },
+    ]);
+  });
+
   it("classifies handled failures from the SDK error and exit contract independently of message prose", async () => {
     const { json } = await runSentryGate({
       argv: ["--json", "--telemetry-mode", "off", "--max-high", "2"],
