@@ -13,10 +13,6 @@
 - GH-942: expose the lightweight all-item metadata reader through the public SDK ([pm-yrj7qr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yrj7qr.toon))
 - GH-941: pm read omits notes without declaring their omission and invites duplicate writes ([pm-swfelk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-swfelk.toon))
 
-### Security
-
-- Refresh compatible 2026-08-08 development dependencies ([pm-8l1m5t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8l1m5t.toon))
-
 ## 2026.8.9 - 2026-08-09
 
 ### Fixed

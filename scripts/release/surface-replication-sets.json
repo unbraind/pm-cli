@@ -5,16 +5,37 @@
     "minimum_statements": 3,
     "minimum_distinct_files": 2,
     "minimum_detected_cluster_count": 5,
-    "minimum_declared_coverage_ratio": 0
+    "minimum_declared_coverage_ratio": 0.4
   },
   "sets": [
+    {
+      "id": "database-sync-test-seam",
+      "owner": "pm-b84irw",
+      "description": "Keep the explicit DatabaseSync replacement seam aligned across the two persisted SQLite indexes.",
+      "triggers": [
+        "src/core/history/event-index.ts",
+        "src/core/store/item-metadata-query-index.ts"
+      ],
+      "required_changed_members": [
+        "src/core/history/event-index.ts",
+        "src/core/store/item-metadata-query-index.ts"
+      ],
+      "members": [
+        {
+          "path": "src/core/history/event-index.ts",
+          "contains_all": ["resolveDatabaseSync", "setDatabaseSync"]
+        },
+        {
+          "path": "src/core/store/item-metadata-query-index.ts",
+          "contains_all": ["resolveDatabaseSync", "setDatabaseSync"]
+        }
+      ]
+    },
     {
       "id": "get-output-selector-contract",
       "owner": "pm-0k19l7",
       "description": "Keep get field and section projection aligned across the SDK implementation, public documentation, and acceptance evidence.",
-      "triggers": [
-        "src/sdk/read-output-contracts.ts"
-      ],
+      "triggers": ["src/sdk/read-output-contracts.ts"],
       "required_changed_members": [
         "src/sdk/read-output-contracts.ts",
         "tests/unit/sdk/read-contract-integrity.spec.ts",
@@ -184,9 +205,7 @@
       "id": "health-vector-refresh-boundary",
       "owner": "pm-tu71",
       "description": "Keep health read-only by default and prove provider I/O is explicit, bounded, and skippable.",
-      "triggers": [
-        "src/sdk/governance/health.ts"
-      ],
+      "triggers": ["src/sdk/governance/health.ts"],
       "required_changed_members": [
         "src/sdk/governance/health.ts",
         "tests/unit/sdk/health-vector-boundary.spec.ts",

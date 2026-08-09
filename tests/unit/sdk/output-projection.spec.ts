@@ -206,6 +206,14 @@ describe("output projection omission contracts", () => {
     expect(completeGet.omission_receipt).toMatchObject({
       has_omissions: false,
     });
+    const explicitlyUndefinedGet = attachOutputOmissionReceipt("get", {
+      item: { id: "pm-1", comments: undefined },
+    }) as Record<string, unknown>;
+    expect(explicitlyUndefinedGet.omission_receipt).toMatchObject({
+      omitted_field_groups: expect.not.arrayContaining([
+        { name: "comments", restore_with: "--fields comments" },
+      ]),
+    });
 
     for (const command of ["list-open", "search"]) {
       const projected = attachOutputOmissionReceipt(command, {

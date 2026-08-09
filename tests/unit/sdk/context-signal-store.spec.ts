@@ -59,7 +59,11 @@ class MemoryAdapter implements ContextSignalStoreAdapter {
 }
 
 afterEach(async () => {
-  await Promise.all(tempRoots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    tempRoots
+      .splice(0)
+      .map((root) => fs.rm(root, { recursive: true, force: true })),
+  );
 });
 
 describe("context signal feature store", () => {
@@ -90,47 +94,66 @@ describe("context signal feature store", () => {
     expect(snapshot.items[0]?.signals).not.toHaveProperty("claim_focus");
     expect(snapshot.items[0]?.signals).not.toHaveProperty("author_affinity");
     expect(snapshot.items[0]?.signals).not.toHaveProperty("usage_affinity");
-    expect(snapshot.items[0]?.signals).not.toHaveProperty("semantic_similarity");
+    expect(snapshot.items[0]?.signals).not.toHaveProperty(
+      "semantic_similarity",
+    );
     expect(Object.isFrozen(snapshot)).toBe(true);
-    expect(() => buildContextSignalSnapshot([], {
-      statusRegistry,
-      now,
-      source: "scan_fallback",
-      sourceCursor: " ",
-    })).toThrow("source cursor");
-    expect(() => buildContextSignalSnapshot([], {
-      statusRegistry,
-      now,
-      source: "scan_fallback",
-      sourceCursor: null as unknown as string,
-    })).toThrow("source cursor");
-    expect(() => buildContextSignalSnapshot([], {
-      statusRegistry,
-      now: "invalid",
-      source: "scan_fallback",
-      sourceCursor: "cursor",
-    })).toThrow("valid timestamp");
-    expect(() => buildContextSignalSnapshot([item("pm-a")], {
-      statusRegistry,
-      now,
-      source: "derived_index",
-      sourceCursor: "cursor",
-      activityDensity: { "pm-a": 2 },
-    })).toThrow("finite number from 0 to 1");
-    expect(() => buildContextSignalSnapshot([], {
-      statusRegistry,
-      now,
-      source: "invalid" as never,
-      sourceCursor: "cursor",
-    })).toThrow("source must be derived_index or scan_fallback");
-    expect(buildContextSignalSnapshot([
-      item("pm-invalid-dependency", { dependencies: [{ id: " " }] as never }),
-    ], {
-      statusRegistry,
-      now,
-      source: "scan_fallback",
-      sourceCursor: "cursor",
-    }).items[0]?.signals.graph_proximity).toBe(0);
+    expect(() =>
+      buildContextSignalSnapshot([], {
+        statusRegistry,
+        now,
+        source: "scan_fallback",
+        sourceCursor: " ",
+      }),
+    ).toThrow("source cursor");
+    expect(() =>
+      buildContextSignalSnapshot([], {
+        statusRegistry,
+        now,
+        source: "scan_fallback",
+        sourceCursor: null as unknown as string,
+      }),
+    ).toThrow("source cursor");
+    expect(() =>
+      buildContextSignalSnapshot([], {
+        statusRegistry,
+        now: "invalid",
+        source: "scan_fallback",
+        sourceCursor: "cursor",
+      }),
+    ).toThrow("valid timestamp");
+    expect(() =>
+      buildContextSignalSnapshot([item("pm-a")], {
+        statusRegistry,
+        now,
+        source: "derived_index",
+        sourceCursor: "cursor",
+        activityDensity: { "pm-a": 2 },
+      }),
+    ).toThrow("finite number from 0 to 1");
+    expect(() =>
+      buildContextSignalSnapshot([], {
+        statusRegistry,
+        now,
+        source: "invalid" as never,
+        sourceCursor: "cursor",
+      }),
+    ).toThrow("source must be derived_index or scan_fallback");
+    expect(
+      buildContextSignalSnapshot(
+        [
+          item("pm-invalid-dependency", {
+            dependencies: [{ id: " " }] as never,
+          }),
+        ],
+        {
+          statusRegistry,
+          now,
+          source: "scan_fallback",
+          sourceCursor: "cursor",
+        },
+      ).items[0]?.signals.graph_proximity,
+    ).toBe(0);
   });
 
   it("strictly validates serialized versions, rows, identities, timestamps, sources, and signals", () => {
@@ -140,13 +163,15 @@ describe("context signal feature store", () => {
       source: "scan_fallback",
       sourceCursor: "cursor",
     });
-    expect(parseContextSignalSnapshot({
-      ...structuredClone(valid),
-      items: [
-        { id: "pm-b", signals: {} },
-        { id: "pm-a", signals: {} },
-      ],
-    })?.items.map(({ id }) => id)).toEqual(["pm-a", "pm-b"]);
+    expect(
+      parseContextSignalSnapshot({
+        ...structuredClone(valid),
+        items: [
+          { id: "pm-b", signals: {} },
+          { id: "pm-a", signals: {} },
+        ],
+      })?.items.map(({ id }) => id),
+    ).toEqual(["pm-a", "pm-b"]);
     const invalidValues: unknown[] = [
       null,
       { ...valid, format_version: 99 },
@@ -161,7 +186,13 @@ describe("context signal feature store", () => {
       { ...valid, items: [{ id: "pm-a", signals: [] }] },
       { ...valid, items: [{ id: "pm-a", signals: { recency: 2 } }] },
       { ...valid, items: [{ id: "pm-a", signals: { unknown: 0.5 } }] },
-      { ...valid, items: [{ id: "pm-a", signals: {} }, { id: "pm-a", signals: {} }] },
+      {
+        ...valid,
+        items: [
+          { id: "pm-a", signals: {} },
+          { id: "pm-a", signals: {} },
+        ],
+      },
     ];
     for (const value of invalidValues) {
       expect(parseContextSignalSnapshot(value)).toBeNull();
@@ -171,22 +202,38 @@ describe("context signal feature store", () => {
   it("reuses fresh rows and rebuilds absent, stale, changed-corpus, and unreadable snapshots", async () => {
     const adapter = new MemoryAdapter();
     const store = new ContextSignalStore(adapter);
-    const options = { statusRegistry, now, source: "derived_index" as const, sourceCursor: "cursor-1" };
+    const options = {
+      statusRegistry,
+      now,
+      source: "derived_index" as const,
+      sourceCursor: "cursor-1",
+    };
     const first = await store.readOrRebuild([item("pm-a")], options);
     expect(first).toMatchObject({ cache_status: "rebuilt", warnings: [] });
     expect(adapter.writes).toBe(1);
-    const fresh = await store.readOrRebuild([item("pm-a", { title: "authoritative object" })], options);
+    const fresh = await store.readOrRebuild(
+      [item("pm-a", { title: "authoritative object" })],
+      options,
+    );
     expect(fresh.cache_status).toBe("fresh");
     expect(fresh.candidates[0]?.item.title).toBe("authoritative object");
     expect(adapter.writes).toBe(1);
-    const stale = await store.readOrRebuild([item("pm-a")], { ...options, sourceCursor: "cursor-2" });
-    expect(stale).toMatchObject({ cache_status: "rebuilt", warnings: ["context_signal_store_stale"] });
+    const stale = await store.readOrRebuild([item("pm-a")], {
+      ...options,
+      sourceCursor: "cursor-2",
+    });
+    expect(stale).toMatchObject({
+      cache_status: "rebuilt",
+      warnings: ["context_signal_store_stale"],
+    });
     expect(stale.warning_details).toEqual([
       {
         code: "context_signal_store_stale",
-        meaning: "The persisted context-signal snapshot did not match the authoritative cursor or item corpus and was rebuilt.",
+        meaning:
+          "The persisted context-signal snapshot did not match the authoritative cursor or item corpus and was rebuilt.",
         recovery_command: "pm context",
-        recovery_effect: "Re-read context and confirm the rebuilt snapshot is now fresh.",
+        recovery_effect:
+          "Re-read context and confirm the rebuilt snapshot is now fresh.",
       },
     ]);
     expect(
@@ -194,14 +241,25 @@ describe("context signal feature store", () => {
         ...options,
         sourceCursor: "cursor-2",
       }),
-    ).toMatchObject({ cache_status: "fresh", warnings: [], warning_details: [] });
-    const changed = await store.readOrRebuild([item("pm-a"), item("pm-b")], { ...options, sourceCursor: "cursor-2" });
-    expect(changed.warnings).toEqual(["context_signal_store_stale"]);
-    const changedSource = await store.readOrRebuild([item("pm-a"), item("pm-b")], {
+    ).toMatchObject({
+      cache_status: "fresh",
+      warnings: [],
+      warning_details: [],
+    });
+    expect(adapter.writes).toBe(2);
+    const changed = await store.readOrRebuild([item("pm-a"), item("pm-b")], {
       ...options,
-      source: "scan_fallback",
       sourceCursor: "cursor-2",
     });
+    expect(changed.warnings).toEqual(["context_signal_store_stale"]);
+    const changedSource = await store.readOrRebuild(
+      [item("pm-a"), item("pm-b")],
+      {
+        ...options,
+        source: "scan_fallback",
+        sourceCursor: "cursor-2",
+      },
+    );
     expect(changedSource.warnings).toEqual(["context_signal_store_stale"]);
     adapter.value = { corrupt: true };
     const malformed = await store.readOrRebuild([item("pm-a")], options);
@@ -215,11 +273,15 @@ describe("context signal feature store", () => {
     const writeDegraded = await store.readOrRebuild([item("pm-a")], options);
     expect(writeDegraded.cache_status).toBe("rebuilt");
     expect(writeDegraded.candidates[0]?.id).toBe("pm-a");
-    expect(writeDegraded.warnings).toEqual(["context_signal_store_write_failed"]);
+    expect(writeDegraded.warnings).toEqual([
+      "context_signal_store_write_failed",
+    ]);
   });
 
   it("persists snapshots atomically through the JSON file adapter and reports corrupt JSON", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-context-signals-"));
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-context-signals-"),
+    );
     tempRoots.push(root);
     const filePath = path.join(root, "runtime", "context-signals.json");
     const adapter = new JsonFileContextSignalStoreAdapter(filePath);
@@ -231,16 +293,28 @@ describe("context signal feature store", () => {
       sourceCursor: "cursor",
     });
     await adapter.write(snapshot);
-    expect(parseContextSignalSnapshot(await adapter.read())).toMatchObject({ source_cursor: "cursor" });
-    expect((await fs.readdir(path.dirname(filePath))).filter((name) => name.endsWith(".tmp"))).toEqual([]);
+    expect(parseContextSignalSnapshot(await adapter.read())).toMatchObject({
+      source_cursor: "cursor",
+    });
+    expect(
+      (await fs.readdir(path.dirname(filePath))).filter((name) =>
+        name.endsWith(".tmp"),
+      ),
+    ).toEqual([]);
     await fs.writeFile(filePath, "{broken", "utf8");
     await expect(adapter.read()).rejects.toBeInstanceOf(SyntaxError);
-    expect(() => new JsonFileContextSignalStoreAdapter(" ")).toThrow("path must be non-empty");
-    expect(() => new JsonFileContextSignalStoreAdapter(null as unknown as string)).toThrow("path must be non-empty");
+    expect(() => new JsonFileContextSignalStoreAdapter(" ")).toThrow(
+      "path must be non-empty",
+    );
+    expect(
+      () => new JsonFileContextSignalStoreAdapter(null as unknown as string),
+    ).toThrow("path must be non-empty");
   });
 
   it("reuses cursor-bound workspace signals while refreshing caller-dependent overlays", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-context-workspace-signals-"));
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-context-workspace-signals-"),
+    );
     tempRoots.push(root);
     const items = [
       item("pm-parent", { comments: [{ text: "context" }] as never }),
@@ -265,23 +339,37 @@ describe("context signal feature store", () => {
 
     expect(first.cache_status).toBe("rebuilt");
     expect(second.cache_status).toBe("fresh");
-    expect(first.candidates.find(({ id }) => id === "pm-child")?.signals).toMatchObject({
+    expect(
+      first.candidates.find(({ id }) => id === "pm-child")?.signals,
+    ).toMatchObject({
       graph_proximity: 1,
       author_affinity: 1,
     });
-    expect(second.candidates.find(({ id }) => id === "pm-child")?.signals?.author_affinity).toBe(0);
-    expect(second.snapshot.items.find(({ id }) => id === "pm-child")?.signals).not.toHaveProperty("author_affinity");
+    expect(
+      second.candidates.find(({ id }) => id === "pm-child")?.signals
+        ?.author_affinity,
+    ).toBe(0);
+    expect(
+      second.snapshot.items.find(({ id }) => id === "pm-child")?.signals,
+    ).not.toHaveProperty("author_affinity");
   });
 
   it("selects automatic derived-index provenance and deterministic scan fallback", async () => {
-    const indexedRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-context-indexed-signals-"));
-    const fallbackRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-context-fallback-signals-"));
+    const indexedRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-context-indexed-signals-"),
+    );
+    const fallbackRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-context-fallback-signals-"),
+    );
     tempRoots.push(indexedRoot, fallbackRoot);
     const indexedItem = item("pm-indexed");
     await fs.mkdir(path.join(indexedRoot, "tasks"), { recursive: true });
     await fs.writeFile(
       path.join(indexedRoot, "tasks", "pm-indexed.toon"),
-      serializeItemDocument({ metadata: indexedItem, body: "" }, { format: "toon" }),
+      serializeItemDocument(
+        { metadata: indexedItem, body: "" },
+        { format: "toon" },
+      ),
       "utf8",
     );
     await listAllDocumentCandidatesCached(
@@ -317,19 +405,25 @@ describe("context signal feature store", () => {
     expect(fallback.snapshot).toMatchObject({ source: "scan_fallback" });
     expect(fallback.snapshot.source_cursor).toMatch(/^scan:[a-f0-9]{64}$/u);
     await expect(
-      fs.stat(path.join(fallbackRoot, "runtime", "context-signals-fallback.json")),
+      fs.stat(
+        path.join(fallbackRoot, "runtime", "context-signals-fallback.json"),
+      ),
     ).resolves.toBeDefined();
-    await expect(readWorkspaceContextSignals([], {
-      pmRoot: fallbackRoot,
-      statusRegistry,
-      now,
-      sourceCursor: "cursor-without-source",
-    })).rejects.toThrow("must be provided together");
-    await expect(readWorkspaceContextSignals([], {
-      pmRoot: fallbackRoot,
-      statusRegistry,
-      now,
-      storeKey: "../outside",
-    })).rejects.toThrow("filesystem-safe identifier");
+    await expect(
+      readWorkspaceContextSignals([], {
+        pmRoot: fallbackRoot,
+        statusRegistry,
+        now,
+        sourceCursor: "cursor-without-source",
+      }),
+    ).rejects.toThrow("must be provided together");
+    await expect(
+      readWorkspaceContextSignals([], {
+        pmRoot: fallbackRoot,
+        statusRegistry,
+        now,
+        storeKey: "../outside",
+      }),
+    ).rejects.toThrow("filesystem-safe identifier");
   });
 });

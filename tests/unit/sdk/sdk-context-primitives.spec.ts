@@ -212,9 +212,16 @@ describe("SDK context-management primitives", () => {
       expect(clientLightItems.map(({ id: itemId }) => itemId)).toEqual(
         functionLightItems.map(({ id: itemId }) => itemId),
       );
-      expect(clientLightItems.find(({ id: itemId }) => itemId === id)).not.toHaveProperty(
-        "comments",
+      const clientLightItem = clientLightItems.find(
+        ({ id: itemId }) => itemId === id,
       );
+      const functionLightItem = functionLightItems.find(
+        ({ id: itemId }) => itemId === id,
+      );
+      expect(clientLightItem).toBeDefined();
+      expect(functionLightItem).toBeDefined();
+      expect(clientLightItem).not.toHaveProperty("comments");
+      expect(functionLightItem).not.toHaveProperty("comments");
       const listedComments = await comments(
         id,
         { limit: "5" },

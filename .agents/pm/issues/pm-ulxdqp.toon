@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:schema",correctness,duplication,gates,replication
 created_at: "2026-08-09T06:03:22.278Z"
-updated_at: "2026-08-09T08:05:41.312Z"
+updated_at: "2026-08-09T09:54:52.428Z"
 closed_at: "2026-08-09T08:05:40.741Z"
 completed_at: "2026-08-09T08:05:40.741Z"
 author: "harness:claude-code"
@@ -26,9 +26,10 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-kmnvug,related,"2026-08-09T06:06:49.373Z","harness:claude-code","cli:update:dep",detected
   pm-usfg,related,"2026-08-09T06:06:49.373Z","harness:claude-code","cli:update:dep",detected
   pm-b84irw,verifies,"2026-08-09T07:29:45.147Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-09T07:29:52.014Z","harness:codex","Implementation evidence: five status-token rule copies now resolve to src/core/schema/status-token.ts, both Jaccard paths resolve to the canonical core function, and migration-boundary tests cover the fifth former copy."
   "2026-08-09T08:05:20.666Z","harness:codex","Final evidence: linked normalization/similarity suites pass 140 tests; migration boundary coverage is included in the exact 7092-test 100/100/100/100 run; jscpd and the replication gate pass."
+  "2026-08-09T09:54:52.428Z","harness:codex","Delivery review: https://github.com/unbraind/pm-cli/pull/947 carries this item's implementation, tests, documentation, generated contracts, and hosted review corrections on branch feat/sdk-context-read-remediation-replication."
 files[9]{path,scope,note}:
   src/core/schema/fields-file.ts,project,Normalization rule copy 4 (line 152)
   src/core/schema/runtime-schema.ts,project,"Normalization rule copy 1 (line 184),named as authority by two other copies' comments"

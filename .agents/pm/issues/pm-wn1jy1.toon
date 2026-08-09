@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:context",context-management,remediation,sdk
 created_at: "2026-08-09T06:38:34.088Z"
-updated_at: "2026-08-09T08:05:38.946Z"
+updated_at: "2026-08-09T10:00:18.869Z"
 closed_at: "2026-08-09T08:05:38.246Z"
 completed_at: "2026-08-09T08:05:38.246Z"
 author: "harness:codex"
@@ -24,12 +24,18 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-jwmszf,related,"2026-08-09T06:38:34.088Z","harness:codex","cli:create:dep",detected
   pm-o3nr,related,"2026-08-09T06:38:34.088Z","harness:codex","cli:create:dep",detected
   pm-9hv1o7,verifies,"2026-08-09T07:29:47.943Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-09T06:38:34.088Z","harness:codex","Duplicate check evidence: searched all 2,389 items across every status for GH-946,context_signal_store_stale,signal store stale,remediation hint,gc,reindex,and context warning. GH-527 and completed remediation/context lineages are adjacent but no PM item owns this exact missing context-warning recovery contract."
   "2026-08-09T08:05:19.817Z","harness:codex","Final evidence: signal-store tests cover invalid, stale, and write-failed details; context calibration passes at 2 and 2243 items; clean packaged context omitted an empty warning_details field. GH-946 carries the canonical PM link."
-files[3]{path,scope,note}:
+  "2026-08-09T08:58:27.968Z","harness:codex","Hosted static-gate finding: contracts:check correctly rejected the initial PR head because the generated error-code catalog omitted the three new context-signal warning codes. Regenerated the catalog through pnpm contracts:errors:update and retained the generator-owned output."
+  "2026-08-09T09:24:02.426Z","harness:codex","PR #947 review hardening: removed the duplicate validate_history_unknown_author_events registry row, added a registry-wide unique-code invariant, regenerated the error-code catalog and contracts snapshot, and proved that a fresh context-signal reread performs no additional persistence write."
+  "2026-08-09T09:54:52.868Z","harness:codex","Delivery review: https://github.com/unbraind/pm-cli/pull/947 carries this item's implementation, tests, documentation, generated contracts, and hosted review corrections on branch feat/sdk-context-read-remediation-replication."
+  "2026-08-09T10:00:18.869Z","harness:codex","Final exact-head verification: contracts snapshot, generated error-code catalog, agent capability surfaces, SDK public surface, package artifact, secret scan, and focused remediation/context suites all pass."
+files[5]{path,scope,note}:
   src/sdk/context-signal-store.ts,project,Warning meanings and executable recovery contracts
+  src/sdk/generated-error-code-catalog.ts,project,Generated CLI/SDK error vocabulary now includes the three context-signal recovery codes
   src/sdk/query/context.ts,project,Expose actionable signal-store diagnostics
+  tests/fixtures/contracts/full.json,project,Generated contracts snapshot advertises the remediation codes across runtime command surfaces
   tests/unit/sdk/context-signal-store.spec.ts,project,Stale rebuild and fresh-rerun proof
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/context-signal-store.spec.ts,project,240

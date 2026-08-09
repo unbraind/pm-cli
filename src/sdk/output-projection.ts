@@ -431,17 +431,24 @@ function resolveGetReceipt(
     "reminders",
     "events",
   ];
-  const resultGroups = ["body", "children", "claim_state", "linked", "schedule"];
-  const groups = ["body", ...itemGroups, ...resultGroups.slice(1)].map((name) => ({
-    name,
-    restore_with: `--fields ${name}`,
-  }));
+  const resultGroups = [
+    "body",
+    "children",
+    "claim_state",
+    "linked",
+    "schedule",
+  ];
+  const groups = ["body", ...itemGroups, ...resultGroups.slice(1)].map(
+    (name) => ({
+      name,
+      restore_with: `--fields ${name}`,
+    }),
+  );
   return createOutputOmissionReceipt(
     groups,
     new Set(
       groups.flatMap(({ name }) =>
-        (itemGroups.includes(name) ? item[name] : result[name]) ===
-        undefined
+        !Object.hasOwn(itemGroups.includes(name) ? item : result, name)
           ? []
           : [name],
       ),
