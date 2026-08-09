@@ -3017,22 +3017,32 @@ describe("runUpdate", () => {
     });
   });
 
-  it("accepts depends_on as an input alias for blocked_by (pm-fl0c #4)", async () => {
+  it("stores every built-in compatibility alias under its canonical kind", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-depends-on-alias");
       const result = await runUpdate(
         id,
         {
-          dep: ["id=pm-zzzz,kind=depends_on"],
+          dep: [
+            "id=pm-a,kind=depends_on",
+            "id=pm-b,kind=related_to",
+            "id=pm-c,kind=child_of",
+            "id=pm-d,kind=epic",
+            "id=pm-e,kind=parent_child",
+            "id=pm-f,kind=task",
+          ],
         },
         { path: context.pmPath },
       );
       const dependencies = (result.item as { dependencies?: Array<{ kind: string; id: string }> }).dependencies ?? [];
-      expect(dependencies).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: "pm-zzzz", kind: "blocked_by" }),
-        ]),
-      );
+      expect(dependencies.map(({ kind }) => kind)).toEqual([
+        "blocked_by",
+        "related",
+        "parent",
+        "parent",
+        "child",
+        "child",
+      ]);
     });
   });
 

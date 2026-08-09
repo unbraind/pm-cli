@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  ACTIONABILITY_ORDERING_KINDS,
   collectBlockedByIds,
+  collectBlockedByIdsFromCorpus,
   collectDependencyBlockedIds,
   computeActionabilityReport,
   resolveItemBlockers,
 } from "../../../../src/core/item/actionability.js";
 import { resolveRuntimeStatusRegistry } from "../../../../src/core/schema/runtime-schema.js";
+import { createRelationshipKindRegistry } from "../../../../src/sdk/relationships.js";
 import type { Dependency, ItemMetadata, ItemType } from "../../../../src/types/index.js";
 
 const registry = resolveRuntimeStatusRegistry(undefined);
@@ -41,7 +44,20 @@ function blockedByDep(id: string): Dependency {
   return { id, kind: "blocked_by", created_at: "2026-06-24T00:00:00.000Z" };
 }
 
+function blocksDep(id: string): Dependency {
+  return { id, kind: "blocks", created_at: "2026-06-24T00:00:00.000Z" };
+}
+
 describe("collectBlockedByIds", () => {
+  it("keeps every built-in ordering kind reachable by blocker resolution", () => {
+    expect(
+      createRelationshipKindRegistry()
+        .list()
+        .filter(({ ordering }) => ordering)
+        .map(({ kind }) => kind)
+        .sort(),
+    ).toEqual([...ACTIONABILITY_ORDERING_KINDS].sort());
+  });
   it("merges the scalar blocked_by and blocked_by dependencies, skipping other kinds and blank ids", () => {
     const ids = collectBlockedByIds({
       blocked_by: " pm-b ",
@@ -65,6 +81,22 @@ describe("collectBlockedByIds", () => {
         blocked_by: " NO-ACTIVE-BLOCKER ",
         dependencies: [blockedByDep("no-active-blocker")],
       }),
+    ).toEqual([]);
+  });
+
+  it("resolves incoming blocks edges as blockers of the referenced item", () => {
+    const target = item({ id: "pm-target" });
+    const blocker = item({ id: "pm-blocker", dependencies: [blocksDep("PM-TARGET")] });
+    expect(collectBlockedByIdsFromCorpus(target, [target, blocker])).toEqual([
+      "pm-blocker",
+    ]);
+  });
+
+  it("does not scan reverse edges for a blank legacy item id", () => {
+    expect(
+      collectBlockedByIdsFromCorpus(item({ id: "   " }), [
+        item({ id: "pm-blocker", dependencies: [blocksDep("   ")] }),
+      ]),
     ).toEqual([]);
   });
 });
@@ -117,6 +149,18 @@ describe("collectDependencyBlockedIds", () => {
   it("does not classify an active item with only a retired blocker sentinel as blocked", () => {
     const sentinel = item({ id: "pm-sentinel", blocked_by: "no-active-blocker" });
     expect([...collectDependencyBlockedIds([sentinel], registry)]).toEqual([]);
+  });
+
+  it("gives reverse blocks edges the same readiness semantics as blocked_by", () => {
+    const blocker = item({ id: "pm-blocker", dependencies: [blocksDep("pm-target")] });
+    const target = item({ id: "pm-target" });
+    const corpus = [blocker, target];
+    expect([...collectDependencyBlockedIds(corpus, registry)]).toEqual(["pm-target"]);
+    const report = computeActionabilityReport(corpus, corpus, registry);
+    expect(report.ready.find((entry) => entry.item.id === "pm-blocker")?.unblocks).toEqual([
+      "pm-target",
+    ]);
+    expect(report.blocked[0]?.open_blockers.map(({ id }) => id)).toEqual(["pm-blocker"]);
   });
 });
 

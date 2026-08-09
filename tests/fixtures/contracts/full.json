@@ -28139,6 +28139,82 @@
       ]
     }
   ],
+  "relationship_kind_contracts": [
+    {
+      "aliases": [
+        "depends_on"
+      ],
+      "canonical": "blocked_by",
+      "hierarchy": false,
+      "inverse": "blocks",
+      "ordering": true
+    },
+    {
+      "aliases": [],
+      "canonical": "blocks",
+      "hierarchy": false,
+      "inverse": "blocked_by",
+      "ordering": true
+    },
+    {
+      "aliases": [
+        "parent_child",
+        "task"
+      ],
+      "canonical": "child",
+      "hierarchy": true,
+      "inverse": "parent",
+      "ordering": false
+    },
+    {
+      "aliases": [],
+      "canonical": "discovered_from",
+      "hierarchy": false,
+      "ordering": false
+    },
+    {
+      "aliases": [],
+      "canonical": "implements",
+      "hierarchy": false,
+      "ordering": false
+    },
+    {
+      "aliases": [],
+      "canonical": "incident_from",
+      "hierarchy": false,
+      "ordering": false
+    },
+    {
+      "aliases": [
+        "child_of",
+        "epic"
+      ],
+      "canonical": "parent",
+      "hierarchy": true,
+      "inverse": "child",
+      "ordering": false
+    },
+    {
+      "aliases": [
+        "related_to"
+      ],
+      "canonical": "related",
+      "hierarchy": false,
+      "ordering": false
+    },
+    {
+      "aliases": [],
+      "canonical": "supersedes",
+      "hierarchy": false,
+      "ordering": false
+    },
+    {
+      "aliases": [],
+      "canonical": "verifies",
+      "hierarchy": false,
+      "ordering": false
+    }
+  ],
   "row_contract": {
     "command": "contracts",
     "fields": "unsupported",

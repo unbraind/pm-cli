@@ -1,0 +1,19 @@
+id: pm-jwmszf
+title: "GH-943: health remediation points at validate while actionable unknown-author recovery remains undiscoverable"
+description: "GitHub issue https://github.com/unbraind/pm-cli/issues/943 reports that pm health emits a remediation_map route to pm validate --fix-hints for unknown-author events, but validate emits no actionable hint and the working history-author-acknowledge --all-actionable recovery is never named. Preserve one machine-executable remediation path across health, validate, contracts, CLI, and SDK."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-09T00:14:59.496Z"
+updated_at: "2026-08-09T00:14:59.496Z"
+author: "harness:codex"
+acceptance_criteria: "Unknown-author health diagnostics name an executable remediation that resolves the reported actionable set; validate --fix-hints either emits the same recovery or is no longer advertised for this warning; CLI, SDK, MCP, help, and contracts agree on the recovery path; regression tests cover actionable, legacy-only, empty, and partial-disposition cases; token-bounded output retains the remediation without private event data"
+parent: pm-5oj5
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1bmeta,discovered_from,"2026-08-09T00:14:59.496Z","harness:codex","cli:create:dep",detected
+  pm-h90s,related,"2026-08-09T00:14:59.496Z","harness:codex","cli:create:dep",detected
+  pm-zqpnte,related,"2026-08-09T00:14:59.496Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-09T00:14:59.496Z","harness:codex","Duplicate check: searched all statuses for remediation_map, history-author-acknowledge, all-actionable, and unknown-author. pm-1bmeta, pm-zqpnte, and pm-h90s are completed adjacent lineage, but none owns the contradictory current remediation path reported in GH-943."
+body: ""

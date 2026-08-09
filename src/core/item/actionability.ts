@@ -15,6 +15,13 @@ import type { ItemMetadata, ItemStatus } from "../../types/index.js";
 
 /** Dependency kind that marks "this item is blocked by the referenced item". */
 const BLOCKED_BY_DEPENDENCY_KIND = "blocked_by";
+/** Reverse dependency kind that marks "this item blocks the referenced item". */
+const BLOCKS_DEPENDENCY_KIND = "blocks";
+/** Built-in ordering kinds that must remain reachable by blocker resolution. */
+export const ACTIONABILITY_ORDERING_KINDS = Object.freeze([
+  BLOCKED_BY_DEPENDENCY_KIND,
+  BLOCKS_DEPENDENCY_KIND,
+]);
 /** Retired placeholder that explicitly means an item has no active blocker. */
 const NO_ACTIVE_BLOCKER_SENTINEL = "no-active-blocker";
 
@@ -51,6 +58,30 @@ export function collectBlockedByIds(
   return [...ids].sort((left, right) => left.localeCompare(right));
 }
 
+/** Collect blockers from both an item's forward declarations and corpus-level reverse `blocks` edges. */
+export function collectBlockedByIdsFromCorpus(
+  item: ItemMetadata,
+  corpus: readonly ItemMetadata[],
+): string[] {
+  const ids = new Set(collectBlockedByIds(item));
+  if (item.id.trim().length > 0) {
+    const itemId = normalizeItemId(item.id);
+    for (const candidate of corpus) {
+      if (
+        candidate.dependencies?.some(
+          (dependency) =>
+            dependency.kind === BLOCKS_DEPENDENCY_KIND &&
+            typeof dependency.id === "string" &&
+            normalizeItemId(dependency.id) === itemId,
+        )
+      ) {
+        ids.add(candidate.id.trim());
+      }
+    }
+  }
+  return [...ids].sort((left, right) => left.localeCompare(right));
+}
+
 /** A blocker reference resolved against the corpus and annotated with its state. */
 export interface ResolvedBlocker {
   /** Stable identifier used to reference this record across commands and storage. */
@@ -69,7 +100,15 @@ export function resolveItemBlockers(
   itemsById: Map<string, ItemMetadata>,
   statusRegistry: RuntimeStatusRegistry,
 ): ResolvedBlocker[] {
-  return collectBlockedByIds(item).map((id) => {
+  const itemWithId = item as Partial<ItemMetadata>;
+  const blockerIds =
+    typeof itemWithId.id === "string"
+      ? collectBlockedByIdsFromCorpus(
+          itemWithId as ItemMetadata,
+          [...itemsById.values()],
+        )
+      : collectBlockedByIds(item);
+  return blockerIds.map((id) => {
     const blocker = itemsById.get(normalizeItemId(id));
     if (!blocker) {
       return { id, title: null, status: null, resolved: false };
@@ -205,7 +244,7 @@ function indexCorpus(corpus: ItemMetadata[]): {
       siblings.push(item);
       childrenByParent.set(parentKey, siblings);
     }
-    for (const blockerId of collectBlockedByIds(item)) {
+    for (const blockerId of collectBlockedByIdsFromCorpus(item, corpus)) {
       const blockerKey = normalizeItemId(blockerId);
       const dependents = blockedByReverse.get(blockerKey) ?? [];
       dependents.push(item.id);

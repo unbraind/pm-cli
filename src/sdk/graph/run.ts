@@ -304,6 +304,8 @@ export interface GraphAuditResult {
   affected_subjects_by_code: Record<string, number>;
   /** Structural coverage metrics computed during the audit. */
   profile: RelationshipAuditReport["profile"];
+  /** Stored legacy relationship aliases grouped by spelling; canonical graph counts remain in profile. */
+  legacy_alias_counts?: Record<string, number>;
   /** Ordered findings with bounded evidence samples; absent with summary. */
   findings?: RelationshipAuditReport["findings"];
   /** Signed change since the persisted census baseline; absent when no baseline exists. */
@@ -904,6 +906,7 @@ function runGraphAudit(
     affected_subjects_by_severity: affectedBySeverity,
     affected_subjects_by_code: affectedByCode,
     profile: report.profile,
+    legacy_alias_counts: invocation.assembly.legacyAliasCounts,
     ...(invocation.summary ? {} : { findings: report.findings }),
   };
 }

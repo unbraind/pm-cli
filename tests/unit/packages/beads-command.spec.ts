@@ -359,7 +359,7 @@ describe("runBeadsImport", () => {
 
       const pathOnly = context.runCli(["get", "pm-b5", "--full", "--json"], { expectJson: true });
       expect(pathOnly.code).toBe(0);
-      expect((pathOnly.json as { item: { tests?: unknown } }).item.tests).toBeUndefined();
+      expect((pathOnly.json as { item: { tests?: unknown } }).item.tests).toEqual([]);
     });
   });
 
@@ -583,7 +583,7 @@ describe("runBeadsImport", () => {
           source_kind: "unexpected-kind",
         },
       ]);
-      expect(epicJson.item.comments).toBeUndefined();
+      expect(epicJson.item.comments).toEqual([]);
       expect(epicJson.item.notes).toEqual([
         {
           created_at: epicJson.item.created_at,

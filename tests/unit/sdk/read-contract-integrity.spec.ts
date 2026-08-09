@@ -77,15 +77,23 @@ describe("SDK read contract integrity", () => {
     expect(
       applyReadOutputDimensions(
         "get",
-        { outputInclude: "item.title" },
+        { outputInclude: "item.title,item.collection_counts" },
         {
-          item: { id: "pm-1", title: "One", body: "retained" },
+          item: {
+            id: "pm-1",
+            title: "One",
+            body: "retained",
+            collection_counts: { comments: 0, notes: 0, tests: 0 },
+          },
           children: [],
           claim_state: { claimed: false },
         },
       ),
     ).toMatchObject({
-      item: { title: "One" },
+      item: {
+        title: "One",
+        collection_counts: { comments: 0, notes: 0, tests: 0 },
+      },
     });
 
     expect(

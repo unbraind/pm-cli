@@ -713,6 +713,12 @@ const ENVELOPE_KEYS = new Set([
   "truncated",
 ]);
 
+const GET_STABLE_DERIVED_ITEM_SELECTORS = [
+  "collection_counts",
+  "notes_count",
+  "tests_count",
+] as const;
+
 function projectRecordFields(
   value: Record<string, unknown>,
   selectors: readonly string[],
@@ -730,9 +736,14 @@ function getProjectionVocabulary(result: Record<string, unknown>): {
   valid: string[];
 } {
   const item = isRecord(result.item) ? result.item : {};
-  const itemFields = Object.keys(item).sort((left, right) =>
-    left.localeCompare(right),
-  );
+  const itemFields = [
+    ...new Set([
+      ...Object.keys(item),
+      ...GET_STABLE_DERIVED_ITEM_SELECTORS.filter((key) =>
+        Object.hasOwn(item, key),
+      ),
+    ]),
+  ].sort((left, right) => left.localeCompare(right));
   const sections = Object.keys(result)
     .filter(
       (key) =>

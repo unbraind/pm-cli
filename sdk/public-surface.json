@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1464,
+    "covered_symbols": 1476,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1465
+    "required_symbols": 1477
   },
   "breaking_acknowledgements": [
     {
@@ -116,6 +116,29 @@
       ],
       "package_version": "2026.8.8",
       "reason": "Truthful merge receipts, duplicate filters, and package read-output contracts"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContractsResult",
+        "signature ./sdk:DepsResult",
+        "signature ./sdk:GraphAuditResult",
+        "signature ./sdk:WorkspaceRelationshipAssembly",
+        "signature ./sdk/core:DepsResult",
+        "signature ./sdk/graph:GraphAuditResult",
+        "signature ./sdk/graph:WorkspaceRelationshipAssembly",
+        "signature ./sdk/runtime:ContractsResult",
+        "signature ./sdk/runtime:DepsResult"
+      ],
+      "package_version": "2026.8.8",
+      "reason": "Additive optional SDK result diagnostics and relationship ontology projections; established fields and function inputs remain compatible"
+    },
+    {
+      "changes": [
+        "signature ./sdk:WorkspaceRelationshipAssembly",
+        "signature ./sdk/graph:WorkspaceRelationshipAssembly"
+      ],
+      "package_version": "2026.8.8",
+      "reason": "Make the newly introduced legacyAliasCounts assembly field total so all public consumers receive a stable empty object instead of an impossible undefined state"
     }
   ],
   "entrypoints": {
@@ -235,6 +258,12 @@
           "kind": "function",
           "name": "acquireLock",
           "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number) => Promise<() => Promise<void>>"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "ACTIONABILITY_ORDERING_KINDS",
+          "signature": "readonly string[]"
         },
         {
           "classification": "supported",
@@ -388,6 +417,12 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "AgentProvenanceAbsenceReason",
+          "signature": "export type AgentProvenanceAbsenceReason = \"harness_unavailable\" | \"resolver_failed\" | \"resolver_not_configured\" | \"probes_disabled\" | \"invalid_value\";"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "AgentProvenanceDescriptorCoverage",
           "signature": "export interface AgentProvenanceDescriptorCoverage { dimension: string; harnesses: string[]; covered: boolean; }"
@@ -403,6 +438,12 @@
           "kind": "interface",
           "name": "AgentProvenanceObservation",
           "signature": "export interface AgentProvenanceObservation { value: string; source: AgentModelSource; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentProvenanceOutcome",
+          "signature": "export interface AgentProvenanceOutcome { status: \"resolved\" | \"unavailable\" | \"failed\"; reason?: AgentProvenanceAbsenceReason; resolver?: AgentProvenanceResolver; rule_version: \"v1\"; }"
         },
         {
           "classification": "supported",
@@ -1245,6 +1286,12 @@
           "signature": "Record<\"agile\" | \"ops\" | \"research\", ProjectProfileDefinition>"
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "BUILTIN_RELATIONSHIP_KINDS",
+          "signature": "readonly RelationshipKindDefinition[]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "type",
           "name": "BuiltinCorpusShapeName",
@@ -1351,6 +1398,12 @@
           "kind": "function",
           "name": "canonicalizeCommandOptionKey",
           "signature": "(command: CommandOptionPolicyCommand, rawOption: string) => string | undefined | calls: (command: CommandOptionPolicyCommand, rawOption: string) => string | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "canonicalizeRelationshipKind",
+          "signature": "(kind: string) => string | calls: (kind: string) => string"
         },
         {
           "classification": "supported",
@@ -1561,6 +1614,12 @@
           "kind": "function",
           "name": "collectBlockedByIds",
           "signature": "(item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\">) => string[] | calls: (item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\">) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "collectBlockedByIdsFromCorpus",
+          "signature": "(item: ItemMetadata, corpus: readonly ItemMetadata[]) => string[] | calls: (item: ItemMetadata, corpus: readonly ItemMetadata[]) => string[]"
         },
         {
           "classification": "supported",
@@ -2328,7 +2387,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; relationship_kind_contracts?: Array<{ canonical: string; aliases: string[]; inverse?: string; ordering: boolean; hierarchy: boolean; }>; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
         },
         {
           "classification": "supported",
@@ -2994,7 +3053,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DepsResult",
-          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
+          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; legacy_alias_counts?: Record<string, number>; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
         },
         {
           "classification": "advanced_export",
@@ -3097,6 +3156,18 @@
           "kind": "function",
           "name": "detectRelationshipCommunities",
           "signature": "(graph: RelationshipGraph, options?: GraphCommunityOptions) => RelationshipQueryResult<RelationshipCommunityAnalysis> | calls: (graph: RelationshipGraph, options?: GraphCommunityOptions) => RelationshipQueryResult<RelationshipCommunityAnalysis>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "diagnoseAgentIdentity",
+          "signature": "(signals?: HarnessDetectionSignals) => DiagnosedAgentIdentity | calls: (signals?: HarnessDetectionSignals) => DiagnosedAgentIdentity"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DiagnosedAgentIdentity",
+          "signature": "export interface DiagnosedAgentIdentity extends DetectedAgentIdentity { provenance_outcomes: Readonly<Record<string, AgentProvenanceOutcome>>; }"
         },
         {
           "classification": "supported",
@@ -4626,7 +4697,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphAuditResult",
-          "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: RelationshipAuditReport[\"profile\"]; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: RelationshipAuditReport[\"profile\"]; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -8691,6 +8762,18 @@
           "signature": "export interface ProvenanceCoverageAnalytics { descriptors: AgentProvenanceDescriptorCoverage[]; observations: AgentProvenanceDimensionCoverage[]; inert: Array<{ harness: string; dimension: string; explicit_samples: number; }>; undeclared: string[]; warnings: string[]; window: HistoryAnalyticsWindowReceipt; }"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ProvenanceResolverHealthOutcome",
+          "signature": "export interface ProvenanceResolverHealthOutcome { harness: string; dimension: string; resolver: string; attempts: number; successes: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ProvenanceResolverHealthScan",
+          "signature": "export interface ProvenanceResolverHealthScan { outcomes: ProvenanceResolverHealthOutcome[]; warnings: string[]; events_read: number; truncated: boolean; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "pruneCompileCacheGenerations",
@@ -9967,6 +10050,12 @@
           "kind": "function",
           "name": "resolveCanonicalPmErrorCodeContract",
           "signature": "(code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract | calls: (code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveCanonicalRelationshipKind",
+          "signature": "(kind: unknown) => string | undefined | calls: (kind: unknown) => string | undefined"
         },
         {
           "classification": "advanced_export",
@@ -11341,6 +11430,12 @@
           "kind": "function",
           "name": "scanMutationSecrets",
           "signature": "(payload: unknown) => SecretGuardFinding[] | calls: (payload: unknown) => SecretGuardFinding[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "scanProvenanceResolverHealth",
+          "signature": "(pmRoot: string, eventLimit?: number) => Promise<ProvenanceResolverHealthScan> | calls: (pmRoot: string, eventLimit?: number) => Promise<ProvenanceResolverHealthScan>"
         },
         {
           "classification": "supported",
@@ -13368,7 +13463,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceRelationshipAssembly",
-          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; }"
+          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; legacyAliasCounts: Record<string, number>; }"
         },
         {
           "classification": "supported",
@@ -16594,6 +16689,12 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "AgentProvenanceAbsenceReason",
+          "signature": "export type AgentProvenanceAbsenceReason = \"harness_unavailable\" | \"resolver_failed\" | \"resolver_not_configured\" | \"probes_disabled\" | \"invalid_value\";"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "AgentProvenanceDescriptorCoverage",
           "signature": "export interface AgentProvenanceDescriptorCoverage { dimension: string; harnesses: string[]; covered: boolean; }"
@@ -16609,6 +16710,12 @@
           "kind": "interface",
           "name": "AgentProvenanceObservation",
           "signature": "export interface AgentProvenanceObservation { value: string; source: AgentModelSource; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentProvenanceOutcome",
+          "signature": "export interface AgentProvenanceOutcome { status: \"resolved\" | \"unavailable\" | \"failed\"; reason?: AgentProvenanceAbsenceReason; resolver?: AgentProvenanceResolver; rule_version: \"v1\"; }"
         },
         {
           "classification": "supported",
@@ -16890,7 +16997,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DepsResult",
-          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
+          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; legacy_alias_counts?: Record<string, number>; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
         },
         {
           "classification": "supported",
@@ -16909,6 +17016,18 @@
           "kind": "function",
           "name": "detectHarnessIdentity",
           "signature": "(signals?: HarnessDetectionSignals) => string | undefined | calls: (signals?: HarnessDetectionSignals) => string | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "diagnoseAgentIdentity",
+          "signature": "(signals?: HarnessDetectionSignals) => DiagnosedAgentIdentity | calls: (signals?: HarnessDetectionSignals) => DiagnosedAgentIdentity"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DiagnosedAgentIdentity",
+          "signature": "export interface DiagnosedAgentIdentity extends DetectedAgentIdentity { provenance_outcomes: Readonly<Record<string, AgentProvenanceOutcome>>; }"
         },
         {
           "classification": "supported",
@@ -17837,6 +17956,18 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ProvenanceResolverHealthOutcome",
+          "signature": "export interface ProvenanceResolverHealthOutcome { harness: string; dimension: string; resolver: string; attempts: number; successes: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ProvenanceResolverHealthScan",
+          "signature": "export interface ProvenanceResolverHealthScan { outcomes: ProvenanceResolverHealthOutcome[]; warnings: string[]; events_read: number; truncated: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ReindexOptions",
           "signature": "export interface ReindexOptions { mode?: string; progress?: boolean; full?: boolean; }"
         },
@@ -17905,6 +18036,12 @@
           "kind": "function",
           "name": "scanMutationSecrets",
           "signature": "(payload: unknown) => SecretGuardFinding[] | calls: (payload: unknown) => SecretGuardFinding[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "scanProvenanceResolverHealth",
+          "signature": "(pmRoot: string, eventLimit?: number) => Promise<ProvenanceResolverHealthScan> | calls: (pmRoot: string, eventLimit?: number) => Promise<ProvenanceResolverHealthScan>"
         },
         {
           "classification": "supported",
@@ -18106,6 +18243,12 @@
       "symbols": [
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "ACTIONABILITY_ORDERING_KINDS",
+          "signature": "readonly string[]"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "ActionabilityReport",
           "signature": "export interface ActionabilityReport { ready: ActionableEntry[]; blocked: ActionableEntry[]; active_count: number; container_count: number; }"
@@ -18178,6 +18321,18 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "BUILTIN_RELATIONSHIP_KINDS",
+          "signature": "readonly RelationshipKindDefinition[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "canonicalizeRelationshipKind",
+          "signature": "(kind: string) => string | calls: (kind: string) => string"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "clearDurableGraphCache",
           "signature": "(pmRoot: string) => Promise<void> | calls: (pmRoot: string) => Promise<void>"
@@ -18187,6 +18342,12 @@
           "kind": "function",
           "name": "collectBlockedByIds",
           "signature": "(item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\">) => string[] | calls: (item: Pick<ItemMetadata, \"blocked_by\" | \"dependencies\">) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "collectBlockedByIdsFromCorpus",
+          "signature": "(item: ItemMetadata, corpus: readonly ItemMetadata[]) => string[] | calls: (item: ItemMetadata, corpus: readonly ItemMetadata[]) => string[]"
         },
         {
           "classification": "supported",
@@ -18438,7 +18599,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphAuditResult",
-          "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: RelationshipAuditReport[\"profile\"]; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: RelationshipAuditReport[\"profile\"]; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -19246,6 +19407,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "resolveCanonicalRelationshipKind",
+          "signature": "(kind: unknown) => string | undefined | calls: (kind: unknown) => string | undefined"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "ResolvedBlocker",
           "signature": "export interface ResolvedBlocker { id: string; title: string | null; status: ItemStatus | null; resolved: boolean; }"
@@ -19308,7 +19475,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceRelationshipAssembly",
-          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; }"
+          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; legacyAliasCounts: Record<string, number>; }"
         },
         {
           "classification": "supported",
@@ -21444,7 +21611,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; relationship_kind_contracts?: Array<{ canonical: string; aliases: string[]; inverse?: string; ordering: boolean; hierarchy: boolean; }>; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
         },
         {
           "classification": "supported",
@@ -21558,7 +21725,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DepsResult",
-          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
+          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; legacy_alias_counts?: Record<string, number>; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
         },
         {
           "classification": "supported",

@@ -71,6 +71,17 @@ type GetItemProjection = Partial<ItemMetadata> & {
   notes_count?: number;
   /** Number of linked tests omitted by a token-bounded projection. */
   tests_count?: number;
+  /** Stable cardinalities for every collection mutation surface. */
+  collection_counts?: Readonly<{
+    comments: number;
+    notes: number;
+    learnings: number;
+    files: number;
+    tests: number;
+    docs: number;
+    reminders: number;
+    events: number;
+  }>;
 };
 
 /** Documents the get result payload exchanged by command, SDK, and package integrations. */
@@ -121,6 +132,28 @@ const BUILTIN_ITEM_TYPES = new Set(
 );
 
 type GetDepth = (typeof GET_DEPTH_VALUES)[number];
+
+function itemCollectionCounts(item: ItemMetadata): NonNullable<
+  GetItemProjection["collection_counts"]
+> {
+  const lengths = Object.fromEntries(
+    [
+      "comments",
+      "notes",
+      "learnings",
+      "files",
+      "tests",
+      "docs",
+      "reminders",
+      "events",
+    ].map((key) => [
+      key,
+      (item[key as keyof ItemMetadata] as readonly unknown[] | undefined)
+        ?.length ?? 0,
+    ]),
+  );
+  return lengths as NonNullable<GetItemProjection["collection_counts"]>;
+}
 
 /** Decide whether a normal read should pay for a workspace-wide child projection. */
 function shouldAutoIncludeGetChildren(itemType: string): boolean {
@@ -197,8 +230,22 @@ function projectItemForDepth(
   item: ItemMetadata,
   depth: GetDepth,
 ): GetItemProjection {
+  const collectionCounts = itemCollectionCounts(item);
   if (depth === "deep") {
-    return item;
+    return {
+      ...item,
+      comments: item.comments ?? [],
+      notes: item.notes ?? [],
+      learnings: item.learnings ?? [],
+      files: item.files ?? [],
+      tests: item.tests ?? [],
+      docs: item.docs ?? [],
+      reminders: item.reminders ?? [],
+      events: item.events ?? [],
+      notes_count: collectionCounts.notes,
+      tests_count: collectionCounts.tests,
+      collection_counts: collectionCounts,
+    };
   }
   const {
     comments: _comments,
@@ -215,6 +262,7 @@ function projectItemForDepth(
     ...projected,
     notes_count: item.notes?.length ?? 0,
     tests_count: item.tests?.length ?? 0,
+    collection_counts: collectionCounts,
   };
 }
 
@@ -251,6 +299,7 @@ function validateGetFields(
     ...runtimeMetadataKeys,
     "notes_count",
     "tests_count",
+    "collection_counts",
   ]);
   const allowedRootFields = new Set([
     "body",
@@ -312,6 +361,7 @@ function projectItemForFields(
   const omittedCounts = {
     notes_count: item.notes?.length ?? 0,
     tests_count: item.tests?.length ?? 0,
+    collection_counts: itemCollectionCounts(item),
   };
   const projected: Record<string, unknown> = {};
   for (const field of fields) {

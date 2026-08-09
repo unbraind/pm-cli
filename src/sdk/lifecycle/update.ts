@@ -91,6 +91,7 @@ import {
   normalizeDependencySeedId,
   normalizeDependencySourceKind,
 } from "../dependency-provenance.js";
+import { resolveCanonicalRelationshipKind } from "../relationships.js";
 import { collectNewOrderingCycleWarnings } from "../graph/mutation-advisory.js";
 import type {
   Comment,
@@ -757,28 +758,12 @@ function looksLikeStructuredDependencyEntry(raw: string): boolean {
   return looksLikeGenericKeyValueEntry(raw);
 }
 
-// pm-fl0c #4 (2026-05-28): `pm plan` accepts `depends_on` as a link kind
-// (`PLAN_STEP_LINK_KIND_VALUES`) but `pm update --dep kind=depends_on` rejected
-// it because `DEPENDENCY_KIND_VALUES` only lists `blocked_by`. The two terms
-// are semantically identical from this side ("X depends on Y" === "X blocked
-// by Y"), so we normalize input here rather than expanding the persisted enum
-// — the stored kind stays canonical (`blocked_by`) and downstream consumers
-// (closing logic, dependency graphs, blockers views) keep working unchanged.
-const DEPENDENCY_KIND_INPUT_ALIASES: Readonly<Record<string, string>> = {
-  "blocked-by": "blocked_by",
-  depends_on: "blocked_by",
-  "depends-on": "blocked_by",
-};
-
 function normalizeDependencyKindInput(
   raw: string | undefined,
 ): string | undefined {
-  if (typeof raw !== "string") {
-    return raw;
-  }
-  const trimmed = raw.trim();
-  const alias = DEPENDENCY_KIND_INPUT_ALIASES[trimmed.toLowerCase()];
-  return alias ?? trimmed;
+  return typeof raw === "string"
+    ? (resolveCanonicalRelationshipKind(raw) ?? raw.trim())
+    : raw;
 }
 
 function parseDependencyAdditions(

@@ -138,6 +138,7 @@ import {
   normalizeDependencySeedId,
   normalizeDependencySourceKind,
 } from "../dependency-provenance.js";
+import { resolveCanonicalRelationshipKind } from "../relationships.js";
 import {
   parseEventEntries,
   parseReminderEntries,
@@ -477,20 +478,12 @@ function parseDependencies(
   return { values, explicitEmpty: false };
 }
 
-const DEPENDENCY_KIND_INPUT_ALIASES: Readonly<Record<string, string>> = {
-  "blocked-by": "blocked_by",
-  depends_on: "blocked_by",
-  "depends-on": "blocked_by",
-};
-
 function normalizeDependencyKindInput(
   raw: string | undefined,
 ): string | undefined {
-  if (typeof raw !== "string") {
-    return raw;
-  }
-  const alias = DEPENDENCY_KIND_INPUT_ALIASES[raw.toLowerCase()];
-  return alias ?? raw;
+  return typeof raw === "string"
+    ? (resolveCanonicalRelationshipKind(raw) ?? raw.trim())
+    : raw;
 }
 
 function looksLikeStructuredEntry(

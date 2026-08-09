@@ -1,0 +1,19 @@
+id: pm-yrj7qr
+title: "GH-942: expose the lightweight all-item metadata reader through the public SDK"
+description: "GitHub issue https://github.com/unbraind/pm-cli/issues/942 reports that listAllItemMetadataLight already powers the cheap CLI list path but is not exported through the public SDK, forcing package authors to choose heavier reads or private imports. Promote a typed, bounded public primitive with PmClient and narrow subpath parity."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-09T00:15:13.406Z"
+updated_at: "2026-08-09T00:15:13.406Z"
+author: "harness:codex"
+acceptance_criteria: "A documented public SDK primitive exposes the lightweight all-item metadata read without importing CLI or private core modules; top-level, narrow subpath, PmClient, and runtime action contracts have intentional parity; return types and omission semantics distinguish intentionally unavailable fields; import-cost, token, package-boundary, surface-snapshot, and complete coverage gates pass; a package-authoring example proves use from a compiled external consumer"
+parent: pm-usfg
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-te6elw,discovered_from,"2026-08-09T00:15:13.406Z","harness:codex","cli:create:dep",detected
+  pm-xpumg4,related,"2026-08-09T00:15:13.406Z","harness:codex","cli:create:dep",detected
+  pm-xzhz,related,"2026-08-09T00:15:13.406Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-09T00:15:13.406Z","harness:codex","Duplicate check: searched all statuses for listAllItemMetadataLight, cheap list, and SDK surface. The SDK-first epic and completed completeness/boundary items are adjacent lineage, but no item owns promotion of this exact lightweight reader reported in GH-942."
+body: ""

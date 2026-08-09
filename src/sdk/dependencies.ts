@@ -180,6 +180,8 @@ export interface DepsResult {
   edge_count: number;
   /** Counting convention used by edge_count. */
   edge_basis: "deduplicated_directed";
+  /** Stored legacy relationship aliases grouped by spelling across the workspace. */
+  legacy_alias_counts?: Record<string, number>;
   /**
    * Number of missing entries represented by this result.
    *
@@ -228,7 +230,10 @@ export interface DepsResult {
   projection: OutputProjectionDeclaration;
 }
 
-type UnprojectedDepsResult = Omit<DepsResult, "projection">;
+type UnprojectedDepsResult = Omit<
+  DepsResult,
+  "projection" | "legacy_alias_counts"
+>;
 
 function parseFormat(raw: string | undefined): DepsFormat {
   const candidate = raw?.trim().toLowerCase() ?? "tree";
@@ -1197,6 +1202,7 @@ function buildTreeOrGraphDepsResult(
 function attachDepsProjection(
   result: UnprojectedDepsResult,
   summaryOnly: boolean,
+  legacyAliasCounts: Record<string, number> = {},
 ): DepsResult {
   const group = {
     name:
@@ -1209,6 +1215,7 @@ function attachDepsProjection(
   };
   return {
     ...result,
+    legacy_alias_counts: legacyAliasCounts,
     projection: {
       mode: summaryOnly ? "summary" : "full",
       declared_field_groups: [group],
@@ -1315,6 +1322,7 @@ export async function runDeps(
         outputFormat: global.json === true ? "json" : "toon",
       }),
       summaryOnly,
+      lookup.assembly.legacyAliasCounts,
     );
   }
 
@@ -1326,6 +1334,13 @@ export async function runDeps(
         ...countDependencyGraph(id, index, maxDepth),
       },
       true,
+      Object.fromEntries(
+        Object.entries(
+          assembleWorkspaceRelationshipGraph(items, (status) =>
+            isTerminalStatus(status, statusRegistry),
+          ).legacyAliasCounts,
+        ),
+      ),
     );
   }
 
@@ -1340,5 +1355,12 @@ export async function runDeps(
       global.json === true ? "json" : "toon",
     ),
     false,
+    Object.fromEntries(
+      Object.entries(
+        assembleWorkspaceRelationshipGraph(items, (status) =>
+          isTerminalStatus(status, statusRegistry),
+        ).legacyAliasCounts,
+      ),
+    ),
   );
 }

@@ -251,6 +251,7 @@ export {
 } from "../core/session/session-state.js";
 export {
   readAuthorEnvironment,
+  diagnoseAgentIdentity,
   resolveAuthor,
   resolveClaimPrincipal,
   runWithHarnessDetectionSignals,

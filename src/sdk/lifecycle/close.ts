@@ -26,7 +26,10 @@ import {
   shouldCompletePlanOnClose,
   getActiveExtensionRegistrations,
 } from "../runtime-primitives.js";
-import { collectBlockedByIds } from "../actionability.js";
+import {
+  collectBlockedByIds,
+  collectBlockedByIdsFromCorpus,
+} from "../actionability.js";
 import {
   applyTerminalOrderingPolicy,
   requireTerminalReason,
@@ -299,7 +302,10 @@ function findAutoUnblockCandidates(
   const blockedStatuses = statusRegistry.blocked_statuses;
   return items
     .filter((item) => blockedStatuses.has(item.status))
-    .map((item) => ({ item, blockerIds: collectBlockedByIds(item) }))
+    .map((item) => ({
+      item,
+      blockerIds: collectBlockedByIdsFromCorpus(item, items),
+    }))
     .filter(({ blockerIds }) => blockerIds.includes(closedId))
     .filter(({ blockerIds }) =>
       blockerIds.every((blockerId) => {

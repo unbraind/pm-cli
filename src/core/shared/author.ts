@@ -57,6 +57,26 @@ export type AgentProvenance = Readonly<
   Record<string, AgentProvenanceObservation | null>
 >;
 
+/** Bounded reason explaining why one declared provenance dimension was absent. */
+export type AgentProvenanceAbsenceReason =
+  | "harness_unavailable"
+  | "resolver_failed"
+  | "resolver_not_configured"
+  | "probes_disabled"
+  | "invalid_value";
+
+/** Machine-readable resolution outcome for one provenance dimension. */
+export interface AgentProvenanceOutcome {
+  /** Whether the dimension resolved without retaining private source material. */
+  status: "resolved" | "unavailable" | "failed";
+  /** Stable bounded reason for absent or rejected values. */
+  reason?: AgentProvenanceAbsenceReason;
+  /** Resolver name when a bounded local resolver was attempted. */
+  resolver?: AgentProvenanceResolver;
+  /** Stable inference contract version used by downstream analytics. */
+  rule_version: "v1";
+}
+
 /** Privacy-bounded MCP client metadata that can participate in agent detection. */
 export interface AgentClientInfo {
   /** Client or harness name reported during protocol initialization. */
@@ -119,6 +139,12 @@ export interface DetectedAgentIdentity {
   episode?: AgentEpisodeIdentity;
 }
 
+/** Agent identity plus explicit outcomes for every built-in provenance dimension. */
+export interface DiagnosedAgentIdentity extends DetectedAgentIdentity {
+  /** Resolution outcomes that distinguish absence from resolver failure. */
+  provenance_outcomes: Readonly<Record<string, AgentProvenanceOutcome>>;
+}
+
 /** Public, privacy-safe identity resolution result shared by CLI and SDK hosts. */
 export interface ResolvedAuthorIdentity extends DetectedAgentIdentity {
   /** Stable author value written to mutation history. */
@@ -172,13 +198,12 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
       session_environment_keys: ["CLAUDE_CODE_SESSION_ID"],
       provenance_environment_keys: {
         effort: ["CLAUDE_EFFORT"],
-        role: ["CLAUDE_CODE_CHILD_SESSION"],
       },
       provenance_resolvers: {
         model: "claude_session_file",
         version: "claude_session_file",
       },
-      provenance_unavailable_dimensions: ["topic"],
+      provenance_unavailable_dimensions: ["role", "topic"],
       argv_markers: ["claude", "claude-code"],
       client_names: ["claude", "claude-code", "claude code"],
     },
@@ -392,6 +417,24 @@ function provenanceFromArgv(
   argv: readonly string[],
   dimension: string,
 ): string | undefined {
+  if (dimension === "topic") {
+    return argv
+      .slice(0, 16)
+      .map((token) => token.trim())
+      .find((token) => /^pm-[a-z0-9][a-z0-9-]{2,63}$/u.test(token));
+  }
+  if (dimension === "role") {
+    const command = argv
+      .slice(0, 8)
+      .map((token) => token.trim().toLowerCase())
+      .find((token) =>
+        ["claim", "create", "update", "close", "release", "review"].includes(
+          token,
+        ),
+      );
+    if (command === "review") return "reviewer";
+    if (command) return "implementer";
+  }
   const acceptedFlags =
     dimension === "model"
       ? ["--model", "--agent-model"]
@@ -408,6 +451,25 @@ function provenanceFromArgv(
     }
   }
   return undefined;
+}
+
+const AGENT_ROLE_VALUES = new Set([
+  "implementation",
+  "implementer",
+  "investigator",
+  "orchestrator",
+  "planner",
+  "release-operator",
+  "reviewer",
+]);
+
+function normalizeProvenanceValue(
+  dimension: string,
+  value: string | undefined,
+): string | undefined {
+  if (dimension !== "role" || value === undefined) return value;
+  const normalized = value.trim().toLowerCase().replaceAll(/[_\s]+/gu, "-");
+  return AGENT_ROLE_VALUES.has(normalized) ? normalized : undefined;
 }
 
 function boundedProvenanceValue(
@@ -556,7 +618,10 @@ function resolveAgentProvenanceObservation(
   let overrideValue: string | undefined;
   let argvValue: string | undefined;
   if (hostResolvedDimensions.has(dimension)) {
-    overrideValue = nonBlank(env[overrideKey])?.slice(0, 256);
+    overrideValue = normalizeProvenanceValue(
+      dimension,
+      nonBlank(env[overrideKey])?.slice(0, 256),
+    );
     argvValue = provenanceFromArgv(signals.argv ?? [], dimension);
   }
   const environmentKeysByDimension: Readonly<
@@ -572,10 +637,19 @@ function resolveAgentProvenanceObservation(
   const values = [
     overrideValue,
     boundedProvenanceValue(sessionContext?.provenance, dimension),
-    firstEnvironmentValue(env, environmentKeysByDimension[dimension]),
-    boundedProvenanceValue(clientProvenance, dimension),
-    boundedProvenanceValue(signals.provenance, dimension),
-    argvValue,
+    normalizeProvenanceValue(
+      dimension,
+      firstEnvironmentValue(env, environmentKeysByDimension[dimension]),
+    ),
+    normalizeProvenanceValue(
+      dimension,
+      boundedProvenanceValue(clientProvenance, dimension),
+    ),
+    normalizeProvenanceValue(
+      dimension,
+      boundedProvenanceValue(signals.provenance, dimension),
+    ),
+    normalizeProvenanceValue(dimension, argvValue),
     resolveProvenanceProbe(dimension, signals, env, descriptor),
   ];
   const sources: readonly AgentModelSource[] = [
@@ -786,6 +860,79 @@ export function detectAgentIdentity(
   return Object.fromEntries(
     entries.filter((entry) => entry[1] !== undefined),
   ) as DetectedAgentIdentity & { provenance?: AgentProvenance };
+}
+
+function resolveProvenanceOutcome(
+  dimension: string,
+  identity: DetectedAgentIdentity,
+  descriptor: NormalizedHarnessSignalDescriptor | undefined,
+  env: Readonly<Record<string, string | undefined>>,
+  probesEnabled: boolean,
+): AgentProvenanceOutcome {
+  const resolver = descriptor?.provenance_resolvers[dimension];
+  if (identity.provenance?.[dimension]) {
+    return {
+      status: "resolved",
+      ...(resolver ? { resolver } : {}),
+      rule_version: "v1",
+    };
+  }
+  if (resolver) {
+    const resolverHasInput =
+      resolver === "ai_agent_version"
+        ? nonBlank(env.AI_AGENT) !== undefined
+        : nonBlank(env.CLAUDE_CODE_SESSION_ID) !== undefined;
+    const status = resolverHasInput && probesEnabled ? "failed" : "unavailable";
+    const reason = !resolverHasInput
+      ? "harness_unavailable"
+      : probesEnabled
+        ? "resolver_failed"
+        : "probes_disabled";
+    return { status, reason, resolver, rule_version: "v1" };
+  }
+  return {
+    status: "unavailable",
+    reason: descriptor?.provenance_unavailable_dimensions.includes(dimension)
+      ? "harness_unavailable"
+      : "resolver_not_configured",
+    rule_version: "v1",
+  };
+}
+
+/**
+ * Diagnose provenance without exposing environment values, paths, or probe data.
+ *
+ * This additive SDK contract keeps legacy `detectAgentIdentity` projections
+ * stable while giving health checks and history writers explicit absence states.
+ */
+export function diagnoseAgentIdentity(
+  signals?: HarnessDetectionSignals,
+): DiagnosedAgentIdentity {
+  const effectiveSignals = effectiveHarnessDetectionSignals(signals);
+  const identity = detectAgentIdentity(effectiveSignals);
+  const descriptor = currentHarnessSignalDescriptors(
+    effectiveSignals.descriptors,
+  ).find((candidate) => candidate.harness === identity.harness);
+  const env = effectiveSignals.env ?? {};
+  const probesEnabled =
+    effectiveSignals.probes_enabled !== false &&
+    workspaceHarnessSignalsStorage.getStore()?.probesEnabled !== false &&
+    !["0", "false", "off"].includes(
+      nonBlank(env.PM_AGENT_PROBES)?.toLowerCase() ?? "",
+    );
+  const outcomes = Object.fromEntries(
+    AGENT_PROVENANCE_DIMENSIONS.map((dimension) => [
+      dimension,
+      resolveProvenanceOutcome(
+        dimension,
+        identity,
+        descriptor,
+        env,
+        probesEnabled,
+      ),
+    ]),
+  );
+  return { ...identity, provenance_outcomes: outcomes };
 }
 
 /** Reads the invocation-wide author override through the canonical environment seam. */

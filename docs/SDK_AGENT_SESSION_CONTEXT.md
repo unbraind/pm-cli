@@ -2,7 +2,10 @@
 
 Tracker references: [pm-9wbiye](../.agents/pm/issues/pm-9wbiye.toon),
 [pm-rbg1qo](../.agents/pm/issues/pm-rbg1qo.toon), and
-[pm-oqo9l2](../.agents/pm/features/pm-oqo9l2.toon).
+[pm-oqo9l2](../.agents/pm/features/pm-oqo9l2.toon),
+[pm-3zgh2c](../.agents/pm/features/pm-3zgh2c.toon),
+[pm-eq9dlw](../.agents/pm/issues/pm-eq9dlw.toon), and
+[pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon).
 
 Project management is context management. The public SDK therefore carries a
 session's purpose and episode boundary through the same immutable history that
@@ -59,7 +62,7 @@ import { spawn } from "node:child_process";
 import { agentSessionEnvironment } from "@unbrained/pm-cli/sdk";
 
 const session = {
-  provenance: { role: "grader", topic: "package acceptance" },
+  provenance: { role: "release-operator", topic: "package acceptance" },
   episode: { id: "package-acceptance", label: "Package acceptance" },
 };
 
@@ -74,6 +77,36 @@ The environment contract is `PM_AGENT_SESSION_ROLE`,
 `PM_AGENT_EPISODE_LABEL`, and `PM_AGENT_EPISODE_PARENT_ID`. These are session
 context keys, distinct from intentional per-observation overrides such as
 `PM_AGENT_MODEL`.
+
+Roles use the controlled values `implementer`, `implementation`,
+`investigator`, `orchestrator`, `planner`, `release-operator`, and `reviewer`.
+Case, spaces, and underscores normalize to lowercase hyphenated values. Other
+values are ignored instead of polluting analytics. Presence-only harness flags,
+including `CLAUDE_CODE_CHILD_SESSION=1`, are detection evidence and are never
+persisted as semantic roles.
+
+For ordinary CLI mutations, the detector can infer an `implementer` or
+`reviewer` role from the bounded command verb and a topic from an explicit
+`pm-...` item argument. Explicit overrides, session declarations, and trusted
+host declarations retain precedence over this inference.
+
+## Diagnose missing provenance
+
+`diagnoseAgentIdentity()` is the additive diagnostic companion to
+`detectAgentIdentity()`. It returns the same privacy-safe identity plus a
+`provenance_outcomes` row for every built-in dimension. Each row is
+`resolved`, `unavailable`, or `failed`, carries rule version `v1`, and may name
+the bounded built-in resolver. It never contains environment values, session
+paths, prompts, or file contents.
+
+New mutation history records failed resolver outcomes under
+`context.agent_provenance_outcomes`; ordinary unavailable dimensions retain
+the compact legacy-compatible null projection. A resolver is only counted as
+attempted when its required input exists. Consequently `pm health` can report
+`provenance_resolver_zero_success:<harness>:<dimension>:<resolver>:<attempts>`
+without confusing an unavailable harness signal with a failed resolver. The
+warning is advisory and the storage check includes the bounded attempt and
+success counters for diagnosis.
 
 ## Cross an MCP boundary
 

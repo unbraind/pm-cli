@@ -5,9 +5,11 @@ import {
   RelationshipGraph,
   RelationshipKindRegistry,
   assertRelationshipEdgeAllowed,
+  canonicalizeRelationshipKind,
   createRelationshipKindRegistry,
   dependencyToRelationship,
   isOrderingRelationshipKind,
+  resolveCanonicalRelationshipKind,
 } from "../../../src/sdk/relationships.js";
 
 describe("relationship kind registry", () => {
@@ -15,6 +17,15 @@ describe("relationship kind registry", () => {
     const registry = createRelationshipKindRegistry();
     expect(registry.resolve("related-to")?.kind).toBe("related");
     expect(registry.resolve("depends_on")?.kind).toBe("blocked_by");
+    expect(
+      ["depends-on", "related_to", "child-of", "epic", "parent-child", "task"].map(
+        canonicalizeRelationshipKind,
+      ),
+    ).toEqual(["blocked_by", "related", "parent", "parent", "child", "child"]);
+    expect(() => canonicalizeRelationshipKind("unknown")).toThrow(
+      "Unknown relationship kind",
+    );
+    expect(resolveCanonicalRelationshipKind("unknown")).toBeUndefined();
     expect(registry.require("parent").hierarchyDirection).toBe("target_parent");
     expect(registry.require("child").hierarchyDirection).toBe("source_parent");
     expect(registry.resolve(null)).toBeUndefined();

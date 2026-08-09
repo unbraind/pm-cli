@@ -4,6 +4,8 @@
  * Exercises health against an abort-aware provider that never produces a
  * response, proving both the default no-I/O path and explicit timeout bound.
  */
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -50,6 +52,9 @@ describe("health vector provider boundary", () => {
           { skipDrift: true },
         );
         expect(requests).toBe(0);
+        expect(
+          result.checks.find((check) => check.name === "storage")?.details,
+        ).not.toHaveProperty("provenance_resolver_outcomes");
         expect(
           result.checks.find((check) => check.name === "integrity"),
         ).toMatchObject({ name: "integrity", status: "ok" });
@@ -171,6 +176,46 @@ describe("health vector provider boundary", () => {
       } finally {
         globalThis.fetch = originalFetch;
       }
+    });
+  });
+
+  it("surfaces bounded provenance resolver attempts in storage health", async () => {
+    await withTempPmPath(async (context) => {
+      await writeFile(
+        path.join(context.pmPath, "history", "pm-provenance.jsonl"),
+        `${JSON.stringify({
+          agent_harness: "claude-code",
+          context: {
+            agent_provenance_outcomes: {
+              model: {
+                status: "failed",
+                resolver: "claude_session_file",
+              },
+            },
+          },
+        })}\n`,
+        "utf8",
+      );
+      const result = await runHealth(
+        { path: context.pmPath },
+        { skipIntegrity: true, skipDrift: true },
+      );
+      expect(
+        result.checks.find((check) => check.name === "storage")?.details,
+      ).toMatchObject({
+        provenance_resolver_outcomes: [
+          {
+            harness: "claude-code",
+            dimension: "model",
+            resolver: "claude_session_file",
+            attempts: 1,
+            successes: 0,
+          },
+        ],
+      });
+      expect(result.warnings).toContain(
+        "provenance_resolver_zero_success:claude-code:model:claude_session_file:1",
+      );
     });
   });
 });

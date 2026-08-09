@@ -16,6 +16,7 @@ import {
 } from "../shared/serialization.js";
 import { nowIso } from "../shared/time.js";
 import {
+  diagnoseAgentIdentity,
   resolveHistoryAgentIdentity,
   resolveHistoryAuthorSource,
   type AuthorSource,
@@ -186,6 +187,20 @@ export function createHistoryEntry(params: {
   ) as HistoryPatchOp[];
   const patch = normalizeHistoryPatchOps(beforePatchCanonical, rawPatch);
   const agentIdentity = resolveHistoryAgentIdentity(params.author);
+  const provenanceOutcomes = agentIdentity.harness
+    ? Object.fromEntries(
+        Object.entries(diagnoseAgentIdentity().provenance_outcomes).filter(
+          ([, outcome]) => outcome.status === "failed",
+        ),
+      )
+    : undefined;
+  const context =
+    provenanceOutcomes === undefined || Object.keys(provenanceOutcomes).length === 0
+      ? params.context
+      : {
+          ...params.context,
+          agent_provenance_outcomes: provenanceOutcomes,
+        };
 
   return {
     ts: params.nowIso,
@@ -211,7 +226,7 @@ export function createHistoryEntry(params: {
     before_hash: sha256Hex(stableStringify(beforeHashCanonical)),
     after_hash: sha256Hex(stableStringify(afterHashCanonical)),
     message: params.message === undefined ? undefined : params.message,
-    ...(params.context === undefined ? {} : { context: params.context }),
+    ...(context === undefined ? {} : { context }),
   };
 }
 
