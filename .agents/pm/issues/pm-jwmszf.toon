@@ -2,19 +2,34 @@ id: pm-jwmszf
 title: "GH-943: health remediation points at validate while actionable unknown-author recovery remains undiscoverable"
 description: "GitHub issue https://github.com/unbraind/pm-cli/issues/943 reports that pm health emits a remediation_map route to pm validate --fix-hints for unknown-author events, but validate emits no actionable hint and the working history-author-acknowledge --all-actionable recovery is never named. Preserve one machine-executable remediation path across health, validate, contracts, CLI, and SDK."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-09T00:14:59.496Z"
-updated_at: "2026-08-09T00:29:20.496Z"
+updated_at: "2026-08-09T08:05:37.638Z"
+closed_at: "2026-08-09T08:05:37.062Z"
+completed_at: "2026-08-09T08:05:37.062Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: "Unknown-author health diagnostics name an executable remediation that resolves the reported actionable set; validate --fix-hints either emits the same recovery or is no longer advertised for this warning; CLI, SDK, MCP, help, and contracts agree on the recovery path; regression tests cover actionable, legacy-only, empty, and partial-disposition cases; token-bounded output retains the remediation without private event data"
 parent: pm-5oj5
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+resolution: fixed
+expected_result: Unknown-author findings name the actionable append-only disposition command
+actual_result: "Health and validate remediation registry entries now emit history-author-acknowledge --all-actionable with principal, reviewer, and evidence placeholders"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-1bmeta,discovered_from,"2026-08-09T00:14:59.496Z","harness:codex","cli:create:dep",detected
   pm-h90s,related,"2026-08-09T00:14:59.496Z","harness:codex","cli:create:dep",detected
   pm-zqpnte,related,"2026-08-09T00:14:59.496Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-wn1jy1,related,"2026-08-09T07:29:48.605Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
   "2026-08-09T00:14:59.496Z","harness:codex","Duplicate check: searched all statuses for remediation_map, history-author-acknowledge, all-actionable, and unknown-author. pm-1bmeta, pm-zqpnte, and pm-h90s are completed adjacent lineage, but none owns the contradictory current remediation path reported in GH-943."
+  "2026-08-09T08:05:19.326Z","harness:codex","Final evidence: remediation registry and attribution tests pass; full coverage is exact; live Sentry 14-day reliability reports critical=0 high=0 and access_ok=true."
+files[2]{path,scope,note}:
+  src/core/diagnostics/remediation.ts,project,Direct unknown-author disposition commands
+  tests/integration/remediation-registry.spec.ts,project,Health and validate remediation parity
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/remediation-registry.spec.ts tests/unit/sdk/author-attribution.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mslictee-oqy6s9,test,passed,"2026-08-09T07:55:24.032Z","2026-08-09T07:55:36.278Z","2026-08-09T07:55:36.278Z",1,0,0
+close_reason: Replaced indirect unknown-author advice with copy-ready append-only acknowledgment remediation
 body: ""

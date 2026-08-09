@@ -35,7 +35,6 @@ import {
   effectiveItemFormatVersion,
   scanItemFormatVersions,
 } from "../../core/item/item-format-version.js";
-import { listAllItemMetadataWithBody } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import {
@@ -102,6 +101,10 @@ import {
 import { runDocs } from "../docs.js";
 import { runFiles } from "../files.js";
 import { extractReferencedPmItemIdsFromCommand } from "../test/linked-command-detection.js";
+import {
+  readValidateItems,
+  type ValidateItem,
+} from "./validate-item-reader.js";
 
 type ValidateCheckName =
   | "metadata"
@@ -116,9 +119,7 @@ type ValidateCheckName =
 type ValidateStatus = "ok" | "warn" | "error";
 type ValidateDependencyCycleSeverity = "off" | "warn" | "error";
 type ValidateFileScanMode = "default" | "tracked-all" | "tracked-all-strict";
-type ItemWithBody = Awaited<
-  ReturnType<typeof listAllItemMetadataWithBody>
->[number];
+type ItemWithBody = ValidateItem;
 type FileCandidateSource =
   | "default-curated"
   | "tracked-git"
@@ -3650,15 +3651,15 @@ export async function runValidate(
     settings,
     getActiveExtensionRegistrations(),
   );
-  const itemReadWarnings: string[] = [];
-  const items = await listAllItemMetadataWithBody(
-    pmRoot,
-    settings.item_format,
-    typeRegistry.type_to_folder,
-    itemReadWarnings,
-    settings.schema,
-  );
   const requestedChecks = resolveRequestedChecks(options);
+  const itemReadWarnings: string[] = [];
+  const items = await readValidateItems({
+    includeBody: requestedChecks.has("history_drift"),
+    pmRoot,
+    settings,
+    typeToFolder: typeRegistry.type_to_folder,
+    warnings: itemReadWarnings,
+  });
   if (requestedChecks.has("history_drift")) {
     const authorAttribution = await scanHistoryAuthorAttribution(pmRoot);
     if (authorAttribution.actionable_unknown_event_count > 0) {

@@ -4,7 +4,7 @@
  * Exercises health against an abort-aware provider that never produces a
  * response, proving both the default no-I/O path and explicit timeout bound.
  */
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTestItemId } from "../../helpers/itemFactory.js";
@@ -28,6 +28,16 @@ describe("health vector provider boundary", () => {
     } else {
       process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = initialDisableAutoDefaults;
     }
+  });
+
+  it("keeps fast health projections on the scalar-only metadata reader", async () => {
+    const source = await readFile(
+      path.resolve("src/sdk/governance/health.ts"),
+      "utf8",
+    );
+    expect(source).toMatch(
+      /skipDrift && params\.skipPolicy\.skipVectors[\s\S]+return listAllItemMetadataLight\(/u,
+    );
   });
 
   it("never contacts a configured embedding provider by default", async () => {

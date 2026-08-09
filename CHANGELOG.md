@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The docs tree grows one file per shipped contract, so 39 of 51 documents are stubs and the SDK's story is split across twelve files ([pm-9hv1o7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9hv1o7.toon))
+- The replication gate's input is a hand-written list of known replications, so it can regress what was found and never discover what was not ([pm-b84irw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b84irw.toon))
+- The status-token normalization rule is replicated at five sites and the replication gate covers none of them ([pm-ulxdqp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ulxdqp.toon))
+- The two slowest governance commands load every item body while twenty other SDK modules use the light read path ([pm-sr3xzg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sr3xzg.toon))
+- GH-946: context signal-store staleness warning has no executable remediation contract ([pm-wn1jy1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wn1jy1.toon))
+- GH-943: health remediation points at validate while actionable unknown-author recovery remains undiscoverable ([pm-jwmszf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jwmszf.toon))
+- GH-942: expose the lightweight all-item metadata reader through the public SDK ([pm-yrj7qr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yrj7qr.toon))
+- GH-941: pm read omits notes without declaring their omission and invites duplicate writes ([pm-swfelk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-swfelk.toon))
+
+### Security
+
+- Refresh compatible 2026-08-08 development dependencies ([pm-8l1m5t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8l1m5t.toon))
+
 ## 2026.8.9 - 2026-08-09
 
 ### Fixed

@@ -31,6 +31,7 @@ import type {
   RuntimeWorkflowDefinition,
   TypeWorkflowDefinition,
 } from "../../types/index.js";
+import { normalizeStatusToken } from "./status-token.js";
 
 export type { RuntimeFieldCommand } from "../../types/index.js";
 
@@ -174,15 +175,6 @@ function normalizeStringList(values: string[] | undefined): string[] {
         .filter((value) => value.length > 0),
     ),
   ].sort((left, right) => left.localeCompare(right));
-}
-
-function normalizeStatusToken(value: unknown): string {
-  return typeof value === "string"
-    ? value
-        .trim()
-        .toLowerCase()
-        .replaceAll(/[\s-]+/g, "_")
-    : "";
 }
 
 function normalizeStatusId(value: unknown): string | undefined {

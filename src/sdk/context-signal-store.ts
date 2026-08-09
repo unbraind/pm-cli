@@ -87,7 +87,54 @@ export interface ContextSignalStoreReadResult {
   cache_status: "fresh" | "rebuilt";
   /** Non-fatal recovery diagnostics. */
   warnings: readonly string[];
+  /** Actionable meanings and executable recovery commands for every warning. */
+  warning_details?: readonly ContextSignalStoreWarningDetail[];
 }
+
+/** Stable recovery contract for one context signal-store warning. */
+export interface ContextSignalStoreWarningDetail {
+  /** Machine-readable warning code also present in `warnings`. */
+  code:
+    | "context_signal_store_invalid"
+    | "context_signal_store_stale"
+    | "context_signal_store_write_failed";
+  /** Bounded explanation of the observed derived-state condition. */
+  meaning: string;
+  /** Safe executable command that retries or confirms recovery. */
+  recovery_command: "pm context";
+  /** Expected observable effect of the recovery command. */
+  recovery_effect: string;
+}
+
+/** Canonical actionable contracts shared by CLI, SDK, MCP, and package hosts. */
+export const CONTEXT_SIGNAL_STORE_WARNING_DETAILS = {
+  context_signal_store_invalid: {
+    code: "context_signal_store_invalid",
+    meaning:
+      "The persisted context-signal snapshot was unreadable or invalid and was rebuilt from authoritative items.",
+    recovery_command: "pm context",
+    recovery_effect:
+      "Re-read context and confirm the rebuilt snapshot can be loaded without the warning.",
+  },
+  context_signal_store_stale: {
+    code: "context_signal_store_stale",
+    meaning:
+      "The persisted context-signal snapshot did not match the authoritative cursor or item corpus and was rebuilt.",
+    recovery_command: "pm context",
+    recovery_effect:
+      "Re-read context and confirm the rebuilt snapshot is now fresh.",
+  },
+  context_signal_store_write_failed: {
+    code: "context_signal_store_write_failed",
+    meaning:
+      "Context signals were rebuilt in memory, but the derived snapshot could not be persisted.",
+    recovery_command: "pm context",
+    recovery_effect:
+      "Retry the derived snapshot write and confirm the warning clears after storage access is restored.",
+  },
+} as const satisfies Readonly<
+  Record<ContextSignalStoreWarningDetail["code"], ContextSignalStoreWarningDetail>
+>;
 
 /** Workspace-bound feature-store options used by CLI, MCP, and SDK readers. */
 export interface ReadWorkspaceContextSignalsOptions
@@ -356,6 +403,12 @@ export class ContextSignalStore {
       })),
       cache_status: fresh ? "fresh" : "rebuilt",
       warnings,
+      warning_details: warnings.map(
+        (warning) =>
+          CONTEXT_SIGNAL_STORE_WARNING_DETAILS[
+            warning as ContextSignalStoreWarningDetail["code"]
+          ],
+      ),
     };
   }
 }

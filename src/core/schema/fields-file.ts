@@ -13,6 +13,9 @@ import type {
   RuntimeFieldType,
 } from "../../types/index.js";
 import { ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
+import { normalizeStatusToken as normalizeFieldKey } from "./status-token.js";
+
+export { normalizeStatusToken as normalizeFieldKey } from "./status-token.js";
 
 export type {
   RuntimeFieldCommand,
@@ -141,16 +144,6 @@ export interface RemoveFieldResult {
   removed: boolean;
   /** The removed definition, when one matched the requested key. */
   definition?: RuntimeFieldDefinition;
-}
-
-/** Normalizes a field key using the same rule as runtime-schema.ts: lowercase and collapse any run of whitespace/hyphens into a single underscore. */
-export function normalizeFieldKey(value: unknown): string {
-  return typeof value === "string"
-    ? value
-        .trim()
-        .toLowerCase()
-        .replaceAll(/[\s-]+/g, "_")
-    : "";
 }
 
 /** Normalizes a CLI flag token: strip a leading `--`, lowercase, and collapse whitespace/underscore runs to a single hyphen (matches normalizeCliToken in runtime-schema.ts). */

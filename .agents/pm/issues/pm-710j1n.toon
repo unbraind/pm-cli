@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags[6]: "area:sdk",ci,contracts,ecosystem,epoch,packages
 created_at: "2026-08-09T06:02:30.265Z"
-updated_at: "2026-08-09T06:07:11.623Z"
+updated_at: "2026-08-09T06:38:31.246Z"
 author: "harness:claude-code"
+estimated_minutes: 720
 acceptance_criteria: "Published ecosystem packages declare a bounded host-compatibility range whose upper bound names a real released version; A workflow runs the external-package smoke harness against the current host on a schedule and on release; The harness fails, rather than reports ok, when discovery truncates the ecosystem below its full published size; No published pm package carries a hard runtime dependency on the host that can shadow the injected host link"
 parent: pm-ugqx
 risk: high

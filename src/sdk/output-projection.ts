@@ -420,14 +420,31 @@ function resolveGetReceipt(
   result: Record<string, unknown>,
 ): OutputOmissionReceipt | undefined {
   if (!isRecord(result.item)) return undefined;
-  const groups = ["children", "claim_state", "linked"].map((name) => ({
+  const item = result.item;
+  const itemGroups = [
+    "comments",
+    "notes",
+    "learnings",
+    "files",
+    "tests",
+    "docs",
+    "reminders",
+    "events",
+  ];
+  const resultGroups = ["body", "children", "claim_state", "linked", "schedule"];
+  const groups = ["body", ...itemGroups, ...resultGroups.slice(1)].map((name) => ({
     name,
     restore_with: `--fields ${name}`,
   }));
   return createOutputOmissionReceipt(
     groups,
     new Set(
-      groups.flatMap(({ name }) => (result[name] === undefined ? [] : [name])),
+      groups.flatMap(({ name }) =>
+        (itemGroups.includes(name) ? item[name] : result[name]) ===
+        undefined
+          ? []
+          : [name],
+      ),
     ),
   );
 }

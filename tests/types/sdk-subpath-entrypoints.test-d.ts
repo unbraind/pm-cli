@@ -13,6 +13,7 @@ import {
   type PmToolAction,
 } from "@unbrained/pm-cli/sdk/contracts";
 import { PmClient, type ItemDocument } from "@unbrained/pm-cli/sdk/core";
+import { listAllItemMetadataLight } from "@unbrained/pm-cli/sdk/runtime";
 import {
   runValidate,
   type ValidateResult,
@@ -34,6 +35,8 @@ const receipt: PmMutationReceipt = parseMutationReceipt(
 );
 const capability: ExtensionCapability = "commands";
 const client = new PmClient({ noExtensions: true });
+const lightMetadata = client.listAllItemMetadataLight();
+const lightMetadataPrimitive = listAllItemMetadataLight("/tmp/.agents/pm");
 const extension = defineExtension({ activate: () => undefined });
 const flagDefinition: FlagDefinition = {
   long: "--output",
@@ -73,6 +76,8 @@ void action;
 void receipt;
 void capability;
 void client;
+void lightMetadata;
+void lightMetadataPrimitive;
 void extension;
 void flagDefinition;
 void schemaFieldDefinition;

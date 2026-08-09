@@ -15,10 +15,10 @@
           "degradation": "bounded_sections"
         },
         "get": {
-          "delivered_bytes": 1715,
+          "delivered_bytes": 2230,
           "delivered_rows": 0,
           "declared_tokens": 3200,
-          "measured_tokens": 429,
+          "measured_tokens": 558,
           "degradation": "standard_item"
         },
         "list": {
@@ -46,11 +46,11 @@
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 3691,
-        "remaining_tokens": 16309,
+        "spent_tokens": 3820,
+        "remaining_tokens": 16180,
         "seen_item_count": 2,
         "suppressed_repeat_count": 3,
-        "delivered_bytes": 14759
+        "delivered_bytes": 15274
       }
     },
     {
@@ -64,10 +64,10 @@
           "degradation": "bounded_sections"
         },
         "get": {
-          "delivered_bytes": 1770,
+          "delivered_bytes": 2285,
           "delivered_rows": 0,
           "declared_tokens": 3200,
-          "measured_tokens": 443,
+          "measured_tokens": 572,
           "degradation": "standard_item"
         },
         "list": {
@@ -95,11 +95,11 @@
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 10027,
-        "remaining_tokens": 9973,
+        "spent_tokens": 10156,
+        "remaining_tokens": 9844,
         "seen_item_count": 106,
         "suppressed_repeat_count": 7,
-        "delivered_bytes": 40099
+        "delivered_bytes": 40614
       },
       "cursor_walks": {
         "list": {

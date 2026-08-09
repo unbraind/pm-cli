@@ -167,18 +167,41 @@ describe("output projection omission contracts", () => {
       item: { id: "pm-1" },
     }) as Record<string, unknown>;
     expect(briefGet.omission_receipt).toMatchObject({
-      omitted_field_group_count: 3,
+      omitted_field_group_count: 13,
       omitted_field_groups: [
+        { name: "body", restore_with: "--fields body" },
+        { name: "comments", restore_with: "--fields comments" },
+        { name: "notes", restore_with: "--fields notes" },
+        { name: "learnings", restore_with: "--fields learnings" },
+        { name: "files", restore_with: "--fields files" },
+        { name: "tests", restore_with: "--fields tests" },
+        { name: "docs", restore_with: "--fields docs" },
+        { name: "reminders", restore_with: "--fields reminders" },
+        { name: "events", restore_with: "--fields events" },
         { name: "children", restore_with: "--fields children" },
         { name: "claim_state", restore_with: "--fields claim_state" },
         { name: "linked", restore_with: "--fields linked" },
+        { name: "schedule", restore_with: "--fields schedule" },
       ],
     });
     const completeGet = attachOutputOmissionReceipt("get", {
-      item: { id: "pm-1" },
+      body: "",
+      item: {
+        id: "pm-1",
+        body: "",
+        comments: [],
+        notes: [],
+        learnings: [],
+        files: [],
+        tests: [],
+        docs: [],
+        reminders: [],
+        events: [],
+      },
       children: [],
       claim_state: { claimed: false },
       linked: {},
+      schedule: {},
     }) as Record<string, unknown>;
     expect(completeGet.omission_receipt).toMatchObject({
       has_omissions: false,
