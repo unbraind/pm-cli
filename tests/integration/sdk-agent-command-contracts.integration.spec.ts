@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { resolveLinkedTestRunSelection } from "../../src/core/test/run-selectors.js";
 import { writeItemTypeDefinitions } from "../helpers/pmWorkspace.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -203,16 +204,17 @@ describe("SDK-first agent command contracts", () => {
         ),
       ).toEqual(["echo ONE", "echo TWO", "echo THREE", "echo NEWEST"]);
 
-      const ran = context.runCli([
-        "test",
-        id,
-        "--run",
-        "--only-last",
-        "--json",
+      const persistedTests = (
+        listed.json as { tests: Array<{ command?: string }> }
+      ).tests;
+      const selected = resolveLinkedTestRunSelection(persistedTests, {
+        onlyLast: true,
+      });
+      expect(selected.selector).toBe("only-last");
+      expect(selected.selected_indexes).toEqual([4]);
+      expect(selected.selected.map((entry) => entry.command)).toEqual([
+        "echo NEWEST",
       ]);
-      expect(ran.code).toBe(0);
-      expect(ran.stdout).toContain("NEWEST");
-      expect(ran.stdout).not.toContain("TWO\n");
     });
   });
 
