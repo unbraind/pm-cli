@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-09T00:14:59.496Z"
-updated_at: "2026-08-09T08:05:37.638Z"
+updated_at: "2026-08-09T09:54:51.054Z"
 closed_at: "2026-08-09T08:05:37.062Z"
 completed_at: "2026-08-09T08:05:37.062Z"
 author: "harness:codex"
@@ -21,9 +21,10 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-h90s,related,"2026-08-09T00:14:59.496Z","harness:codex","cli:create:dep",detected
   pm-zqpnte,related,"2026-08-09T00:14:59.496Z","harness:codex","cli:create:dep",detected
   pm-wn1jy1,related,"2026-08-09T07:29:48.605Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-09T00:14:59.496Z","harness:codex","Duplicate check: searched all statuses for remediation_map, history-author-acknowledge, all-actionable, and unknown-author. pm-1bmeta, pm-zqpnte, and pm-h90s are completed adjacent lineage, but none owns the contradictory current remediation path reported in GH-943."
   "2026-08-09T08:05:19.326Z","harness:codex","Final evidence: remediation registry and attribution tests pass; full coverage is exact; live Sentry 14-day reliability reports critical=0 high=0 and access_ok=true."
+  "2026-08-09T09:54:51.054Z","harness:codex","Delivery review: https://github.com/unbraind/pm-cli/pull/947 carries this item's implementation, tests, documentation, generated contracts, and hosted review corrections on branch feat/sdk-context-read-remediation-replication."
 files[2]{path,scope,note}:
   src/core/diagnostics/remediation.ts,project,Direct unknown-author disposition commands
   tests/integration/remediation-registry.spec.ts,project,Health and validate remediation parity

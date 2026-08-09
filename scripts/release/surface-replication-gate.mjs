@@ -19,6 +19,10 @@ const DEFAULT_DECLARATION_PATH = path.join(
   "release",
   "surface-replication-sets.json",
 );
+const AST_PRINTER = ts.createPrinter({
+  newLine: ts.NewLineKind.LineFeed,
+  removeComments: true,
+});
 
 function gitLines(args, root) {
   return execFileSync("git", args, {
@@ -116,8 +120,11 @@ export async function detectReplicatedRuleBodies(root, policy) {
       ) {
         const name = functionName(node, sourceFile);
         if (name !== null) {
-          const normalizedBody = node.body
-            .getText(sourceFile)
+          const normalizedBody = AST_PRINTER.printNode(
+            ts.EmitHint.Unspecified,
+            node.body,
+            sourceFile,
+          )
             .replaceAll(/\s+/gu, " ")
             .trim();
           const key = `${name}\u0000${normalizedBody}`;
@@ -174,17 +181,20 @@ async function replicationDenominator(config, root) {
     return { violations: ["replication_detection:invalid"] };
   }
   const clusters = await detectReplicatedRuleBodies(root, policy);
-  const declaredPaths = new Set(
-    config.sets.flatMap((set) =>
-      Array.isArray(set?.members)
-        ? set.members.flatMap((member) =>
-            typeof member?.path === "string" ? [member.path] : [],
-          )
-        : [],
-    ),
+  const declaredSets = config.sets.map(
+    (set) =>
+      new Set(
+        Array.isArray(set?.members)
+          ? set.members.flatMap((member) =>
+              typeof member?.path === "string" ? [member.path] : [],
+            )
+          : [],
+      ),
   );
   const declaredClusterCount = clusters.filter((cluster) =>
-    cluster.occurrences.every((entry) => declaredPaths.has(entry.path)),
+    declaredSets.some((declaredPaths) =>
+      cluster.occurrences.every((entry) => declaredPaths.has(entry.path)),
+    ),
   ).length;
   const coverageRatio =
     clusters.length === 0 ? 1 : declaredClusterCount / clusters.length;

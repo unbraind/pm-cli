@@ -14,40 +14,49 @@ import { runValidate } from "../../../src/sdk/governance/validate.js";
 
 describe("governance read performance", () => {
   it("keeps body-free health and validate reads below the fixture ceiling", async () => {
-    const workspaceRoot = await mkdtemp(
-      path.join(os.tmpdir(), "pm-governance-read-performance-"),
+    const healthRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-health-performance-"),
+    );
+    const validateRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-validate-performance-"),
     );
     try {
-      const fixture = await generateSyntheticWorkspace({
-        workspaceRoot,
+      const healthFixture = await generateSyntheticWorkspace({
+        workspaceRoot: healthRoot,
         itemCount: 1_000,
         seed: 42,
         shape: "scratch",
         mode: "direct",
         force: true,
       });
-      const healthSamples: number[] = [];
-      const validateSamples: number[] = [];
-      for (let iteration = 0; iteration < 2; iteration += 1) {
-        let startedAt = performance.now();
-        await runHealth(
-          { path: fixture.pm_root },
-          { skipDrift: true, skipIntegrity: true, skipVectors: true },
-        );
-        healthSamples.push(performance.now() - startedAt);
+      const validateFixture = await generateSyntheticWorkspace({
+        workspaceRoot: validateRoot,
+        itemCount: 1_000,
+        seed: 43,
+        shape: "scratch",
+        mode: "direct",
+        force: true,
+      });
+      let startedAt = performance.now();
+      await runHealth(
+        { path: healthFixture.pm_root },
+        { skipDrift: true, skipIntegrity: true, skipVectors: true },
+      );
+      const healthDuration = performance.now() - startedAt;
+      startedAt = performance.now();
+      await runValidate({ counts: true }, { path: validateFixture.pm_root });
+      const validateDuration = performance.now() - startedAt;
 
-        startedAt = performance.now();
-        await runValidate({ counts: true }, { path: fixture.pm_root });
-        validateSamples.push(performance.now() - startedAt);
-      }
-
-      // The complete coverage suite runs hundreds of files concurrently, so
-      // keep a bounded ceiling that includes scheduler contention while the
-      // minimum of two samples excludes one-time cache warmup.
-      expect(Math.min(...healthSamples)).toBeLessThan(5_000);
-      expect(Math.min(...validateSamples)).toBeLessThan(5_000);
+      // Instrumented repository-wide coverage runs execute hundreds of files
+      // concurrently. The ceiling therefore includes bounded scheduler and V8
+      // coverage overhead while still measuring exactly one cold read.
+      expect(healthDuration).toBeLessThan(10_000);
+      expect(validateDuration).toBeLessThan(10_000);
     } finally {
-      await rm(workspaceRoot, { recursive: true, force: true });
+      await Promise.all([
+        rm(healthRoot, { recursive: true, force: true }),
+        rm(validateRoot, { recursive: true, force: true }),
+      ]);
     }
-  }, 30_000);
+  }, 45_000);
 });

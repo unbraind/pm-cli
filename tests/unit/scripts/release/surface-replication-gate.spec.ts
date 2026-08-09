@@ -62,13 +62,18 @@ afterEach(async () => {
 describe("surface replication gate", () => {
   it("detects undeclared repeated rule bodies and enforces denominator floors", async () => {
     const root = await fixtureRoot();
-    const repeated = `function normalizeRule(value: string): string {\n  const trimmed = value.trim();\n  const lowered = trimmed.toLowerCase();\n  return lowered.replaceAll("-", "_");\n}\n`;
+    const repeated = `function normalizeRule(value: string): string {\n  // SDK spelling.\n  const trimmed = value.trim();\n  const lowered = trimmed.toLowerCase();\n  return lowered.replaceAll("-", "_");\n}\n`;
+    const repeatedWithDifferentComment = `function normalizeRule(value: string): string {\n  // CLI spelling must not change the semantic cluster key.\n  const trimmed = value.trim();\n  const lowered = trimmed.toLowerCase();\n  return lowered.replaceAll("-", "_");\n}\n`;
     await writeFile(
       path.join(root, "src", "sdk", "a.ts"),
       `${repeated}\n${repeated}`,
       "utf8",
     );
-    await writeFile(path.join(root, "src", "cli", "b.ts"), repeated, "utf8");
+    await writeFile(
+      path.join(root, "src", "cli", "b.ts"),
+      repeatedWithDifferentComment,
+      "utf8",
+    );
     const config = {
       ...declaration(),
       sets: [],
@@ -170,6 +175,45 @@ describe("surface replication gate", () => {
       declared_coverage_ratio: 1,
     });
     expect(declaredReport.violations).toContain("set:invalid");
+
+    const splitDeclarationReport = await validateSurfaceReplication(
+      {
+        ...config,
+        sets: [
+          {
+            id: "sdk-only",
+            owner: "pm-fixture",
+            triggers: ["never.ts"],
+            required_changed_members: ["src/sdk/a.ts"],
+            members: [
+              { path: "src/sdk/a.ts", contains_all: ["normalizeRule"] },
+            ],
+          },
+          {
+            id: "cli-only",
+            owner: "pm-fixture",
+            triggers: ["never.ts"],
+            required_changed_members: ["src/cli/b.ts"],
+            members: [
+              { path: "src/cli/b.ts", contains_all: ["normalizeRule"] },
+            ],
+          },
+        ],
+        replication_detection: {
+          ...validPolicy,
+          minimum_declared_coverage_ratio: 1,
+        },
+      },
+      { repoRoot: root, changedFiles: [], today: "2026-08-09" },
+    );
+    expect(splitDeclarationReport.replication_detection).toMatchObject({
+      detected_cluster_count: 1,
+      declared_cluster_count: 0,
+      declared_coverage_ratio: 0,
+    });
+    expect(splitDeclarationReport.violations).toContain(
+      "replication_detection:declared_coverage:0.0000:1.0000",
+    );
 
     await expect(
       validateSurfaceReplication(

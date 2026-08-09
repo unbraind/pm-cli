@@ -482,12 +482,6 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     summary:
       "Re-anchor the history chains of the items with a broken history chain.",
   },
-  {
-    code: "validate_history_unknown_author_events",
-    command: "pm config project set author_default <stable-agent-id>",
-    summary:
-      "Historical mutations lack attributable authorship. Set a stable default or use invocation-wide --author for future events; existing audit history remains append-only.",
-  },
   // --- pm validate: command_references ---
   {
     code: "validate_command_references_stale_pm_ids",

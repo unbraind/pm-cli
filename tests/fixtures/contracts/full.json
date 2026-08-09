@@ -13923,6 +13923,54 @@
     },
     {
       "aliases": [],
+      "canonical_code": "context_signal_store_invalid",
+      "class": "usage",
+      "code": "context_signal_store_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Context signal store invalid condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/context-signal-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "context_signal_store_stale",
+      "class": "generic_failure",
+      "code": "context_signal_store_stale",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Context signal store stale condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/context-signal-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "context_signal_store_write_failed",
+      "class": "generic_failure",
+      "code": "context_signal_store_write_failed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Context signal store write failed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/context-signal-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "context_takes_no_item_argument",
       "class": "generic_failure",
       "code": "context_takes_no_item_argument",

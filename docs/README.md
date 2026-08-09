@@ -77,7 +77,7 @@ pm guide release --json
 | `quickstart`              | [Quickstart](QUICKSTART.md), [Command Reference](COMMANDS.md)                                       |
 | `commands`                | [Command Reference](COMMANDS.md), [Configuration](CONFIGURATION.md)                                 |
 | `workflows`               | [Agent Guide](AGENT_GUIDE.md), [Testing](TESTING.md)                                                |
-| `sdk`                     | [SDK](SDK.md), [Architecture](ARCHITECTURE.md)                                                      |
+| `sdk`                     | [SDK](SDK.md), [SDK context contracts](SDK_CONTEXT.md), [Architecture](ARCHITECTURE.md)             |
 | `extensions`, `packages`  | [Packages and Extensions](EXTENSIONS.md), [starter extension](examples/starter-extension/README.md) |
 | `skills`                  | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/*`                                               |
 | `harnesses`               | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/HARNESS_COMPATIBILITY.md`                        |

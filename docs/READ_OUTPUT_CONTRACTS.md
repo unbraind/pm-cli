@@ -60,8 +60,8 @@ also fixes the expected unique-fact shape:
 
 | Tracker tier | Group spend / budget | Seen items | Suppressed repeats | Delivered bytes |
 | ------------ | -------------------- | ---------- | ------------------ | --------------- |
-| 2 items      | 3,663 / 20,000       | 2          | 3                  | 14,646          |
-| 2,243 items  | 9,999 / 20,000       | 106        | 7                  | 39,985          |
+| 2 items      | 3,820 / 20,000       | 2          | 3                  | 15,274          |
+| 2,243 items  | 10,156 / 20,000      | 106        | 7                  | 40,614          |
 
 These are deterministic synthetic-corpus measurements from
 `scripts/release/context-intent-calibration.json`; they contain no hosted
