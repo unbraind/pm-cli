@@ -1102,4 +1102,39 @@ describe("tracker measurement gate: entrypoint", () => {
       force: true,
     });
   });
+
+  it("fails the negative control when the held bound was not proved against a closed owner", async () => {
+    // Both lifetime reasons still fire, because a canceled owner is terminal
+    // too — so the only thing separating this from a passing control is that the
+    // held bound was never demonstrated against a *closed* owner specifically.
+    const created: string[] = [];
+    const spawn: SpawnHandler = (_command, args) => {
+      const argv = args.join(" ");
+      if (argv.includes("create")) {
+        const id = `ctl-${String(created.length)}`;
+        created.push(id);
+        return { status: 0, stdout: JSON.stringify({ id }), stderr: "" };
+      }
+      if (argv.includes("list")) {
+        return {
+          status: 0,
+          stdout: JSON.stringify({
+            items: [
+              { id: "ctl-0", status: "open", dependencies: [] },
+              { id: "ctl-1", status: "open", dependencies: [{ id: "ctl-0", kind: "blocks" }] },
+              { id: "ctl-2", status: "canceled", dependencies: [] },
+            ],
+          }),
+          stderr: "",
+        };
+      }
+      return { status: 0, stdout: "{}", stderr: "" };
+    };
+    const { module, exit, stderr } = await loadGate({ spawn });
+    expect(() => module.runNegativeControl(new Map())).toThrow("EXIT:1");
+    expect(errorText(stderr)).toContain(
+      "did not prove a held bound keeps failing after its owner closed",
+    );
+    expect(exit).toHaveBeenCalledWith(1);
+  });
 });

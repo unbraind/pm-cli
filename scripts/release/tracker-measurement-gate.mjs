@@ -389,13 +389,19 @@ function resolveNonComparableObservation(base, ownerStatus, result) {
   return null;
 }
 
-/** Evaluate one declaration against its measured count and owning lifecycle state. */
-function evaluateDeclaration(declaration, measurements, ownerStatuses, contributors) {
-  const ownerStatus = ownerStatuses?.get?.(declaration?.owner);
+/**
+ * Build the invariant half of an observation: everything derivable from the
+ * declaration and its owner's status, before any measurement is compared.
+ *
+ * Split out from `evaluateDeclaration` to keep that function under the
+ * complexity cap. Optional chaining counts toward the cap, and a declaration is
+ * read defensively field by field because it comes from a hand-edited document.
+ */
+function resolveObservationBase(declaration, ownerStatus) {
   const bound = resolveDeclaredBound(declaration);
   const disposition = resolveOwnerTerminalDisposition(declaration);
   const ownerTerminal = TERMINAL_OWNER_STATUSES.includes(ownerStatus);
-  const base = {
+  return {
     id: declaration?.id,
     owner: declaration?.owner,
     selector: formatSelector(declaration?.selector),
@@ -412,6 +418,12 @@ function evaluateDeclaration(declaration, measurements, ownerStatuses, contribut
     retired: ownerTerminal && disposition === "retire",
     retired_reason: declaration?.retired_reason,
   };
+}
+
+/** Evaluate one declaration against its measured count and owning lifecycle state. */
+function evaluateDeclaration(declaration, measurements, ownerStatuses, contributors) {
+  const ownerStatus = ownerStatuses?.get?.(declaration?.owner);
+  const base = resolveObservationBase(declaration, ownerStatus);
   const result = observeDeclaration(declaration, measurements);
   const nonComparable = resolveNonComparableObservation(base, ownerStatus, result);
   if (nonComparable !== null) {
