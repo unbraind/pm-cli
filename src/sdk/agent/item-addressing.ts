@@ -102,6 +102,22 @@ function readNamedItemId(argv: string[]): {
   return null;
 }
 
+/** Resolve the positional-id slot for direct and declared nested commands. */
+function resolveItemAddressIndex(
+  argv: string[],
+  commandIndex: number,
+  commandName: string,
+): number | undefined {
+  const declaredSubcommand = ITEM_ID_ALIAS_SUBCOMMANDS.get(commandName);
+  if (declaredSubcommand === undefined) return commandIndex + 1;
+  const usesDeclaredSubcommand =
+    argv[commandIndex + 1]?.toLowerCase() === declaredSubcommand;
+  if (!usesDeclaredSubcommand && !ITEM_ID_ALIAS_COMMANDS.has(commandName)) {
+    return undefined;
+  }
+  return commandIndex + (usesDeclaredSubcommand ? 2 : 1);
+}
+
 /**
  * Normalize `pm <command> --id <value>` to the command's positional id form.
  * The transformation is lossless for every other argument and reports a
@@ -120,12 +136,14 @@ export function normalizeItemAddressInvocation(
   if (!named || !named.value?.trim()) {
     return { argv: [...argv], changed: false, conflict: false };
   }
-  const declaredSubcommand = ITEM_ID_ALIAS_SUBCOMMANDS.get(commandName!);
-  const addressIndex =
-    declaredSubcommand !== undefined &&
-    argv[commandIndex! + 1]?.toLowerCase() === declaredSubcommand
-      ? commandIndex! + 2
-      : commandIndex! + 1;
+  const addressIndex = resolveItemAddressIndex(
+    argv,
+    commandIndex!,
+    commandName!,
+  );
+  if (addressIndex === undefined) {
+    return { argv: [...argv], changed: false, conflict: false };
+  }
   const positional = argv[addressIndex];
   const hasPositional =
     typeof positional === "string" &&
@@ -144,13 +162,11 @@ export function normalizeItemAddressInvocation(
     ...argv.slice(named.index + named.consumed),
   ];
   const normalizedCommandIndex = findCommandIndex(withoutNamed)!;
-  const normalizedSubcommand = ITEM_ID_ALIAS_SUBCOMMANDS.get(commandName!);
-  const normalizedAddressIndex =
-    normalizedSubcommand !== undefined &&
-    withoutNamed[normalizedCommandIndex + 1]?.toLowerCase() ===
-      normalizedSubcommand
-      ? normalizedCommandIndex + 2
-      : normalizedCommandIndex + 1;
+  const normalizedAddressIndex = resolveItemAddressIndex(
+    withoutNamed,
+    normalizedCommandIndex,
+    commandName!,
+  )!;
   withoutNamed.splice(normalizedAddressIndex, 0, named.value);
   return {
     argv: withoutNamed,

@@ -1078,7 +1078,7 @@ describe("runClose", () => {
         context: {
           recovery: {
             suggested_retry: expect.stringMatching(
-              /^pm update \S+ --resolution "<value>" --expected-result "<value>" --actual-result "<value>"$/,
+              /^pm --pm-path \S+ update \S+ --resolution "<value>" --expected-result "<value>" --actual-result "<value>"$/,
             ),
           },
         },

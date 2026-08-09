@@ -68,6 +68,28 @@ describe("agent command SDK primitives", () => {
       "--transaction-id",
       "tx-1",
     ]);
+    expect(normalizeItemAddressInvocation(["item", "--id", "pm-a1"])).toEqual(
+      {
+        argv: ["item", "--id", "pm-a1"],
+        changed: false,
+        conflict: false,
+      },
+    );
+    expect(
+      normalizeItemAddressInvocation(["item", "show", "--id", "pm-a1"]),
+    ).toEqual({
+      argv: ["item", "show", "--id", "pm-a1"],
+      changed: false,
+      conflict: false,
+    });
+    expect(
+      normalizeItemAddressInvocation(["files", "--id", "pm-a1"]),
+    ).toEqual({
+      argv: ["files", "pm-a1"],
+      changed: true,
+      conflict: false,
+      itemId: "pm-a1",
+    });
     expect(
       normalizeItemAddressInvocation([
         "files",
@@ -112,6 +134,15 @@ describe("agent command SDK primitives", () => {
       ),
     ).toBe(
       'pm close pm-a1 --reason done --author codex --validate-close "<off|warn|strict>"',
+    );
+    expect(
+      renderMissingOptionRetry(
+        ["close", "pm-a1", "--", "--force", "operand"],
+        "close",
+        ["--force", "--validate-close"],
+      ),
+    ).toBe(
+      'pm close pm-a1 --force --validate-close "<off|warn|strict>" -- --force operand',
     );
   });
 

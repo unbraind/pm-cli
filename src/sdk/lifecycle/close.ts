@@ -77,6 +77,7 @@ interface AutoUnblockCandidate {
 type CloseInlineFieldKey = "resolution" | "expected_result" | "actual_result";
 
 interface CloseMutationContext {
+  pmRoot: string;
   statusRegistry: RuntimeStatusRegistry;
   force: boolean | undefined;
   options: CloseOperationOptions;
@@ -449,6 +450,7 @@ function collectCloseValidationWarnings(
   metadata: ItemMetadata,
   validateCloseMode: ValidateCloseMode,
   activeChildIds: string[],
+  pmRoot: string,
 ): string[] {
   const warnings: string[] = [];
   if (validateCloseMode !== "off") {
@@ -460,6 +462,8 @@ function collectCloseValidationWarnings(
           (field) => `--${field.key.replaceAll("_", "-")}`,
         );
         const updateTokens = [
+          "--pm-path",
+          pmRoot,
           "update",
           metadata.id,
           ...missingFlags.flatMap((flag) => [flag, "<value>"]),
@@ -546,6 +550,7 @@ function mutateCloseMetadata(
     metadata,
     context.validateCloseMode,
     context.activeChildIds,
+    context.pmRoot,
   );
   metadata.status = context.statusRegistry.close_status;
   metadata.closed_at = context.closedAt;
@@ -709,6 +714,7 @@ export async function closeItem(
     force: options.force,
     mutate(document) {
       return mutateCloseMetadata(document.metadata, {
+        pmRoot,
         statusRegistry,
         force: options.force,
         options,

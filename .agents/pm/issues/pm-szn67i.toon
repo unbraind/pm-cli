@@ -1,0 +1,60 @@
+id: pm-szn67i
+title: "Review hardening: terminator-safe recovery, exact nested aliases, and tracker-scoped close retries"
+description: "Resolve the coupled CodeRabbit findings on the broad SDK agent command contract PR: missing-option recovery must preserve argv terminator semantics, item addressing must expose --id only for the declared item complete subcommand, and strict-close recovery must retain the explicitly selected tracker path."
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk","pr:957",recovery,review-followup
+created_at: "2026-08-09T22:41:16.367Z"
+updated_at: "2026-08-09T23:09:02.855Z"
+closed_at: "2026-08-09T23:09:02.373Z"
+completed_at: "2026-08-09T23:09:02.373Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Recovery inserts missing flags before argv terminator and preserves trailing operands; Only item complete accepts the nested --id compatibility alias; Strict-close recovery preserves selected --pm-path/--path tracker scope; Focused regression tests and exact-head quality gates pass
+definition_of_ready: Three concrete review findings reproduced against PR #957 and no all-status duplicate found.
+value: Keep public SDK recovery primitives trustworthy for agent automation.
+impact: Prevents incorrect retries and cross-workspace mutation risk.
+outcome: All three review findings resolved through SDK-first behavior with regression coverage.
+why_now: PR #957 review is active and must reach a clean exact head before merge.
+parent: pm-usfg
+risk: high
+confidence: high
+severity: high
+environment: PR #957 exact head 5e19c578b
+repro_steps: Review renderMissingOptionRetry with argv containing --; normalize item --id without complete; trigger strict close with a tracker selected outside cwd.
+resolution: "Missing options are inserted before argv terminators, nested-only item aliases require the declared subcommand while dual-mode files remains compatible, and strict-close recovery renders an absolute canonical --pm-path."
+expected_result: "Generated retry commands remain executable against the intended command and tracker, and nested aliases only apply to declared subcommands."
+actual_result: "Focused 84-test tranche and full 7,110-test suite pass; coverage is 100/100/100/100; lint, duplication, docstrings, static quality, tracker measurements, and temporary cross-cwd acceptance pass."
+component: SDK agent primitives and lifecycle recovery
+regression: true
+customer_impact: Agents can receive a retry that changes parse semantics or mutates the wrong project tracker.
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-mkinft,discovered_from,"2026-08-09T22:41:16.367Z","harness:codex","cli:create:dep",detected
+  pm-p316vn,discovered_from,"2026-08-09T22:41:16.367Z","harness:codex","cli:create:dep",detected
+  pm-ulqu,discovered_from,"2026-08-09T22:41:16.367Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-09T22:41:16.367Z","harness:codex","cli:create:dep",detected
+  pm-wo8,verifies,"2026-08-09T22:41:16.367Z","harness:codex","cli:create:dep",detected
+  pm-xg60q3,related,"2026-08-09T22:41:16.367Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-09T22:41:16.367Z","harness:codex","Duplicate check: searched all 2,397 items and fully read the only detector candidate pm-xg60q3. That closed chore owns a coverage-shard timing repair in a different integration test; this item owns three newly reported production recovery/address defects, so explicit duplicate override is justified. Canonical implementation lineage remains pm-p316vn, pm-mkinft, pm-ulqu, and pm-usfg."
+  "2026-08-09T22:48:45.901Z","harness:codex","Coverage evidence: the first repo-wide run executed 7,110 tests and found one integration regression in files --id. Root cause: the initial nested-subcommand guard treated files (which is both a direct item command and a discover namespace) like item (which is nested-only). No product mutation escaped; correcting the SDK capability distinction before rerun."
+  "2026-08-09T22:57:43.146Z","harness:codex","Quality-gate evidence: lint exposed complexity added by representing direct+nested command capability inline, so the grammar decision is now isolated in a documented resolver used for both pre- and post-normalization indices. Tracker measurement also caught the PR-957 title prefix as a third duplicate issue-code group; the item title now describes the defect class while PR provenance remains in tags/environment/comments."
+  "2026-08-09T23:09:01.449Z","harness:codex","Final evidence: manual /tmp acceptance proved strict-close recovery from an unrelated cwd retained the selected tracker and executed to a successful strict close. Focused SDK/CLI tests pass 84/84. The final repository coverage run passes 7,110/7,110 with statements 50,794/50,794, branches 37,162/37,162, functions 10,435/10,435, and lines 49,146/49,146. pnpm lint and quality:static pass, including zero clones, 100% docstrings, SDK surface, transport floors, token/context gates, and tracker measurement ratchets."
+notes[1]{created_at,author,text}:
+  "2026-08-09T22:41:16.367Z","harness:codex",Scope is deliberately one coupled review-hardening tranche because all three defects concern executable recovery/address contracts exposed through the new public SDK surface.
+learnings[2]{created_at,author,text}:
+  "2026-08-09T22:41:16.367Z","harness:codex",Review follow-ups that alter public command construction require both token-vector tests and a manual invocation from a workspace different from the selected tracker.
+  "2026-08-09T23:09:01.830Z","harness:codex","Capability tables must distinguish commands that are direct-only, nested-only, or dual-mode; sharing a subcommand map alone is insufficient. Recovery commands should carry the resolved absolute tracker root, not rely on the caller remaining in the same workspace."
+files[5]{path,scope,note}:
+  src/sdk/agent/command-recovery.ts,project,Terminator-safe missing-option recovery
+  src/sdk/agent/item-addressing.ts,project,Exact nested item-address alias contract
+  src/sdk/lifecycle/close.ts,project,Tracker-scoped strict-close recovery
+  tests/unit/commands/close-command.spec.ts,project,Selected-tracker strict-close regression
+  tests/unit/sdk/agent-command-primitives.spec.ts,project,Recovery and nested alias regressions
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-command-primitives.spec.ts tests/unit/commands/close-command.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msme2f3s-kc6j4f,test,passed,"2026-08-09T22:43:03.223Z","2026-08-09T22:43:18.904Z","2026-08-09T22:43:18.904Z",1,0,0
+close_reason: Resolved all three actionable PR #957 review findings with SDK-first regression coverage and full quality evidence.
+body: ""

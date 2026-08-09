@@ -30,24 +30,29 @@ export function resolveMissingOptionPlaceholder(
   return `<${contract.value_name ?? "value"}>`;
 }
 
-/** Preserve an attempted argv vector and append each missing option once. */
+/** Preserve an attempted argv vector and insert each missing option before `--`. */
 export function renderMissingOptionRetry(
   invocationArgv: string[],
   commandName: string,
   missingLabels: string[],
 ): string | undefined {
   const retry = [...invocationArgv];
+  const terminatorIndex = retry.indexOf("--");
+  let insertionIndex = terminatorIndex < 0 ? retry.length : terminatorIndex;
   for (const label of missingLabels) {
     const flag = normalizeMissingFlag(label);
     if (
       !flag ||
-      retry.some((token) => token === flag || token.startsWith(`${flag}=`))
+      retry
+        .slice(0, insertionIndex)
+        .some((token) => token === flag || token.startsWith(`${flag}=`))
     ) {
       continue;
     }
-    retry.push(flag);
     const placeholder = resolveMissingOptionPlaceholder(commandName, flag);
-    if (placeholder) retry.push(placeholder);
+    const recoveredOption = placeholder ? [flag, placeholder] : [flag];
+    retry.splice(insertionIndex, 0, ...recoveredOption);
+    insertionIndex += recoveredOption.length;
   }
   return retry.length === invocationArgv.length
     ? undefined

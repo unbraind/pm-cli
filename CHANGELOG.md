@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- Review hardening: terminator-safe recovery, exact nested aliases, and tracker-scoped close retries ([pm-szn67i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-szn67i.toon))
 - GH-490: unknown-command suggester ranks substring hits over synonyms/edit distance — pm log suggests 'extension catalog' ([pm-g543](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g543.toon))
 - GH-515: pm test --add reorders linked tests — --only-last can execute a non-newest command ([pm-x2vx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x2vx.toon))
 - GH-441: type-aware create help mislabels applicable flags as required (ignores create-mode) ([pm-qmjx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qmjx.toon))
