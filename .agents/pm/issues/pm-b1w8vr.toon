@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-08T21:59:26.373Z"
-updated_at: "2026-08-09T00:58:13.803Z"
+updated_at: "2026-08-09T01:24:44.244Z"
 closed_at: "2026-08-08T23:34:15.801Z"
 completed_at: "2026-08-08T23:34:15.801Z"
 author: "harness:claude-code"
@@ -28,7 +28,7 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-1wujzi,blocks,"2026-08-08T22:50:11.479Z","harness:codex","cli:update:dep",detected
   pm-cyrfjq,discovered_from,"2026-08-08T22:50:11.479Z","harness:codex","cli:update:dep",detected
   pm-n7rr,implements,"2026-08-08T22:50:11.479Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-08T21:59:39.907Z","harness:claude-code","Duplicate check before filing: searched projection omits collection, read back after write, absent key empty, get projection full superset, verify mutation landed. Nearest owners are all closed and cover different halves: pm-sb0tns (no common row contract across read surfaces, cited as discovered_from), pm-cyrfjq (mode-paired envelopes zero-fill the inactive collection, the inverse convention) and pm-v8gfi7 (provenance unreadable because the only projection carrying it drops other fields). Open sibling pm-1wujzi owns claim_state being absent from every list projection including full. None owns content-conditional key presence on entity projections or the non-containment of the two levels. Reproduced first-hand in this pass while verifying writes on pm-h75tjh."
   "2026-08-08T22:13:22.561Z","harness:codex","Implementation start 2026-08-09: active in the coupled context-provenance tranche with pm-3zgh2c, pm-eq9dlw, pm-lu6sca, pm-b1w8vr, and pm-h75tjh. Scope is SDK-first provenance inference and resolver outcomes, typed role domains, stable entity read-back projections, and epoch-aware release classification; all other open items remain unclaimed."
   "2026-08-08T22:45:42.902Z","harness:codex","Measurement evidence: stable eight-key collection_counts adds 113 bytes / 28 estimated tokens to standard get in both calibration tiers. Session orientation remains inside the unchanged 20,000-token ceiling (3,691/20,000 for two items; 10,027/20,000 for 106 items). Full projection is now a standard superset and derived count fields are ignored during --stdin-json round trips."
@@ -36,6 +36,7 @@ comments[7]{created_at,author,text}:
   "2026-08-09T00:20:20.756Z","harness:codex","Delivery handoff: broad SDK/CLI tranche committed at 5b36abc75 and opened as GitHub PR #944 (https://github.com/unbraind/pm-cli/pull/944). Exact local evidence includes 7,086 tests across 461 files at 100/100/100/100 coverage, package/compatibility/npx/dogfood/manual acceptance, tracker/changelog/SDK/static-quality gates, and zero current dependency or GitHub security alerts. Review and exact-head CI evidence will be appended after the hosted loop."
   "2026-08-09T00:31:43.188Z","harness:codex","Hosted CI follow-up: the stable collection_counts projection intentionally adds 47 estimated tokens to the returning-agent get --for inspect acceptance scenario (336 -> 383; 1,531 pre-accounting bytes). Refreshed docs/agent-task-token-baseline.json from the executable 101-item isolated fixture, then proved both the exact positive gate and the seeded +1,000,000-token negative control. No threshold or negative-control behavior was weakened."
   "2026-08-09T00:58:13.803Z","harness:codex","Review-loop evidence: strengthened read-contract acceptance with non-zero collection counts and explicit withholding assertions. The full sandboxed gate passes 461 files and 7,089 tests at exact 100/100/100/100; token calibration remains executable and fail-closed."
+  "2026-08-09T01:24:44.244Z","harness:codex","PR #944 review closeout: implementation commit b6678b8 passed all exact-head hosted deterministic checks; CodeRabbit confirmed the projection test hardening and all 16 total findings addressed. Every thread is resolved and individually acknowledged. Local release dry-run repeated 7,089 tests at exact 100/100/100/100 and packed npx acceptance."
 files[6]{path,scope,note}:
   docs/agent-task-token-baseline.json,project,Executable returning-agent token baseline refreshed for stable collection_counts
   scripts/release/context-intent-calibration.json,project,Reviewed token-cost baseline for stable collection counts
