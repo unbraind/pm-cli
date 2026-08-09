@@ -66,6 +66,7 @@ export function indexBlockedByIds(
   const idsByItem = new Map<string, Set<string>>();
   for (const item of corpus) {
     const itemId = normalizeItemId(item.id);
+    if (itemId.length === 0) continue;
     idsByItem.set(itemId, new Set(collectBlockedByIds(item)));
   }
   for (const candidate of corpus) {

@@ -100,9 +100,9 @@ describe("collectBlockedByIds", () => {
       dependencies: [blocksDep("pm-target"), blocksDep("PM-TARGET")],
     });
     const blank = item({ id: "   ", dependencies: [blocksDep("pm-target")] });
-    expect(indexBlockedByIds([target, blocker, blank]).get("pm-target")).toEqual([
-      "pm-blocker",
-    ]);
+    const index = indexBlockedByIds([target, blocker, blank]);
+    expect(index.get("pm-target")).toEqual(["pm-blocker"]);
+    expect(index.has("")).toBe(false);
     expect(indexBlockedByIds([blocker]).get("pm-target")).toEqual(["pm-blocker"]);
   });
 
