@@ -26,6 +26,7 @@ describe("lossless mutation contracts", () => {
         runCreate(
           createTask("dangling create", {
             dep: [
+              "id=missing-create-m,kind=related",
               "id=missing-create-z,kind=related",
               "id=missing-create-a,kind=related",
             ],
@@ -36,7 +37,11 @@ describe("lossless mutation contracts", () => {
         exitCode: EXIT_CODE.NOT_FOUND,
         context: {
           code: "dependency_target_not_found",
-          unresolved_targets: ["pm-missing-create-a", "pm-missing-create-z"],
+          unresolved_targets: [
+            "pm-missing-create-a",
+            "pm-missing-create-m",
+            "pm-missing-create-z",
+          ],
         },
       });
 

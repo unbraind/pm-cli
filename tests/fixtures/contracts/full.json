@@ -13682,7 +13682,8 @@
       "class": "usage",
       "code": "acceptance_criteria_mutation_conflict",
       "emitting_commands": [
-        "update"
+        "update",
+        "update-many"
       ],
       "exit_code": 2,
       "meaning": "Acceptance criteria mutation conflict condition.",
@@ -19794,7 +19795,7 @@
         "additionalProperties": true,
         "properties": {
           "acceptanceCriteria": {
-            "description": "Complete acceptance-criteria replacement text. Use removeAc plus addAc together for an atomic one-entry repair that preserves unrelated criteria.",
+            "description": "Complete acceptance-criteria text supplied while creating or replacing an item field.",
             "type": "string"
           },
           "actualResult": {
@@ -23894,7 +23895,7 @@
         "additionalProperties": true,
         "properties": {
           "acceptanceCriteria": {
-            "description": "Complete acceptance-criteria replacement text. Use removeAc plus addAc together for an atomic one-entry repair that preserves unrelated criteria.",
+            "description": "Complete acceptance-criteria text supplied while creating or replacing an item field.",
             "type": "string"
           },
           "actualResult": {
@@ -31880,7 +31881,7 @@
         "additionalProperties": false,
         "properties": {
           "acceptanceCriteria": {
-            "description": "Complete acceptance-criteria replacement text. Use removeAc plus addAc together for an atomic one-entry repair that preserves unrelated criteria.",
+            "description": "Complete acceptance-criteria text supplied while creating or replacing an item field.",
             "type": "string"
           },
           "action": {
@@ -46824,7 +46825,7 @@
         "additionalProperties": false,
         "properties": {
           "acceptanceCriteria": {
-            "description": "Complete acceptance-criteria replacement text. Use removeAc plus addAc together for an atomic one-entry repair that preserves unrelated criteria.",
+            "description": "Complete acceptance-criteria text supplied while creating or replacing an item field.",
             "type": "string"
           },
           "action": {

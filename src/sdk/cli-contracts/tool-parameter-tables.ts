@@ -1193,7 +1193,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   acceptanceCriteria: {
     description:
-      "Complete acceptance-criteria replacement text. Use removeAc plus addAc together for an atomic one-entry repair that preserves unrelated criteria.",
+      "Complete acceptance-criteria text supplied while creating or replacing an item field.",
   },
   author: {
     description:
@@ -1985,6 +1985,18 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     Record<string, { description: string; examples?: unknown[] }>
   >
 > = {
+  update: {
+    acceptanceCriteria: {
+      description:
+        "Complete acceptance-criteria replacement text. Use removeAc plus addAc together for an atomic one-entry repair that preserves unrelated criteria.",
+    },
+  },
+  "update-many": {
+    acceptanceCriteria: {
+      description:
+        "Complete acceptance-criteria replacement text. Use removeAc plus addAc together for an atomic one-entry repair that preserves unrelated criteria.",
+    },
+  },
   stats: {
     since: {
       description:

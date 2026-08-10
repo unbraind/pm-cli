@@ -19,6 +19,7 @@ export interface TestItemFactoryOverrides {
   assignee?: string;
   parent?: string;
   dep?: string;
+  allowUnresolvedDeps?: boolean;
   comment?: string;
   note?: string;
   learning?: string;
@@ -73,7 +74,10 @@ function appendOptionalCreateArg(args: string[], flag: string, value: string | u
 }
 
 function buildCreateTestItemArgs(overrides: TestItemFactoryOverrides): string[] {
-  const args = ["create", "--json", "--allow-unresolved-deps", "--title", overrides.title];
+  const args = ["create", "--json", "--title", overrides.title];
+  if (overrides.allowUnresolvedDeps === true) {
+    args.push("--allow-unresolved-deps");
+  }
   for (const field of TEST_ITEM_CREATE_FIELDS) {
     args.push(field.flag, resolveCreateFieldValue(field, overrides));
   }

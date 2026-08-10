@@ -16,7 +16,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/update.ts"],
-    emitting_commands: ["update"],
+    emitting_commands: ["update", "update-many"],
     canonical_code: "acceptance_criteria_mutation_conflict",
     aliases: [],
   },

@@ -256,8 +256,16 @@ describe("workspace snapshots", () => {
         0.03,
       );
       try {
-        heartbeat.start();
-        await new Promise((resolve) => setTimeout(resolve, 80));
+        const lockPath = getLockPath(pmPath, "sdk-workspace-transaction");
+        const lock = JSON.parse(await readFile(lockPath, "utf8")) as Record<
+          string,
+          unknown
+        >;
+        await writeFile(
+          lockPath,
+          `${JSON.stringify({ ...lock, created_at: "2000-01-01T00:00:00.000Z" }, null, 2)}\n`,
+          "utf8",
+        );
         await heartbeat.refreshNow();
         await expect(
           acquireLock(

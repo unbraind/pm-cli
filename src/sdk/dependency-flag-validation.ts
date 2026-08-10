@@ -89,7 +89,7 @@ export async function assertDependencyTargetsResolvable(params: {
   const targets = resolutions
     .filter(({ located }) => located === null)
     .map(({ target }) => target)
-    .sort((left, right) => left.localeCompare(right));
+    .sort((left, right) => (left < right ? -1 : 1));
   if (targets.length === 0) {
     return [];
   }

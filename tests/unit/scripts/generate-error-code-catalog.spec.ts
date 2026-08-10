@@ -100,6 +100,22 @@ describe("generate error code catalog", () => {
       "utf8",
     );
     expect(shared).toContain('emitting_commands: ["*", "create"]');
+    await mkdir(path.join(root, "src", "sdk", "lifecycle"), {
+      recursive: true,
+    });
+    await writeFile(
+      path.join(root, "src", "sdk", "lifecycle", "update.ts"),
+      'const conflict = { code: "acceptance_criteria_mutation_conflict" };',
+      "utf8",
+    );
+    await main(root, []);
+    const withBulkCaller = await readFile(
+      path.join(root, "src", "sdk", "generated-error-code-catalog.ts"),
+      "utf8",
+    );
+    expect(withBulkCaller).toMatch(
+      /code: "acceptance_criteria_mutation_conflict",[\s\S]*?emitting_commands: \["update", "update-many"\]/u,
+    );
     const stabilityLedger = JSON.parse(
       await readFile(
         path.join(root, "scripts", "error-code-stability.json"),

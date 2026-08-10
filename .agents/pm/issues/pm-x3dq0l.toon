@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-09T22:12:19.846Z"
-updated_at: "2026-08-10T08:36:14.115Z"
+updated_at: "2026-08-10T08:53:29.092Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f40a3612ddfb4cf32376b325"
 author: "harness:codex"
@@ -26,19 +26,24 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-96h7,implements,"2026-08-09T22:12:19.846Z","harness:codex","cli:create:dep",detected
   pm-ol5v,discovered_from,"2026-08-09T22:12:19.846Z","harness:codex","cli:create:dep",detected
   pm-st7wgu,related,"2026-08-09T22:12:19.846Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-09T22:12:19.846Z","harness:codex","Duplicate-check evidence: searched every status for nonexistent dependency, dangling edge, mutation-time validation, and GH-954. Closed pm-ol5v intentionally accepted forward references while adding downstream diagnostics; #954 requests a new fail-fast default with an explicit escape hatch, so this is follow-on work rather than a duplicate."
   "2026-08-10T08:26:22.351Z","harness:codex","Implementation evidence: local dependency targets now fail before mutation unless they resolve; external/global targets bypass local lookup; --allow-unresolved-deps emits deterministic warning receipts across create, update, update-many, CLI contracts, and MCP schemas. Focused lossless contract tests and the final full suite (468 files, 7141 tests) pass; clean-directory CLI acceptance covered existing, missing, opt-in, and external targets."
   "2026-08-10T08:36:14.115Z","harness:codex","Hosted static-gate feedback: contracts:check caught three new error catalog entries missing from the aggregate full fixture after later tracker/package integration. Regenerated the canonical snapshot with pnpm contracts:update; this is generated parity, not a hand edit."
-files[8]{path,scope,note}:
+  "2026-08-10T08:46:00.074Z","harness:codex","CodeRabbit feedback implemented: unresolved target ordering now uses locale-independent code-unit comparison; the shared test factory opts into dangling targets only through an explicit override; the sole intentional missing search dependency declares that override. This restores default validation coverage instead of weakening all factory consumers."
+  "2026-08-10T08:53:29.092Z","harness:codex","Review-fix verification: focused lossless/catalog/snapshot/search suite passed 71/71; repository coverage passed 468 files and 7141 tests at exactly 100% statements (50923), branches (37237), functions (10456), and lines (49265). Locale-independent ordering and conditional fixture opt-in are fully covered."
+files[11]{path,scope,note}:
   src/sdk/cli-contracts/commander-mutation-options.ts,project,CLI escape-hatch contract
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Action-scoped dependency and criteria tool metadata
   src/sdk/cli-contracts/tool-schema.ts,project,MCP mutation schema
   src/sdk/dependency-flag-validation.ts,project,fail-fast local target resolution primitive
   src/sdk/lifecycle/create.ts,project,create dependency enforcement
   src/sdk/lifecycle/update-many.ts,project,bulk preview/apply parity
   src/sdk/lifecycle/update.ts,project,update dependency enforcement
   tests/fixtures/contracts/full.json,project,Generated exact CLI and SDK contract snapshot
+  tests/helpers/itemFactory.ts,project,Default-validation test factory contract
   tests/unit/commands/lossless-mutation-contracts.spec.ts,project,cross-surface regression coverage
+  tests/unit/core/search/search-cache.spec.ts,project,Explicit dangling-edge fixture opt-in
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/lossless-mutation-contracts.spec.ts,project,240
 docs[3]{path,scope,note}:

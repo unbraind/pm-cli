@@ -874,8 +874,8 @@ export async function restoreWorkspaceSnapshotWithRecovery(
       DEFAULT_ATOMIC_OPERATIONS,
       async () => {
         heartbeat.start();
-        await heartbeat.refreshNow();
         heartbeatStopped = false;
+        await heartbeat.refreshNow();
       },
     );
     await heartbeat.stop();
