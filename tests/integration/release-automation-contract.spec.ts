@@ -430,6 +430,9 @@ describe("release automation contract", () => {
     expect(pipelineSource).toContain("replace");
     expect(pipelineSource).toContain("--release-version");
     expect(pipelineSource).toContain("--all-release-tags");
+    expect(pipelineSource).toMatch(
+      /"--status",\s*"closed",\s*"--exclude-tag",\s*"changelog-exclude",\s*"--item-url-base"/u,
+    );
     expect(pipelineSource).toContain(
       "ensureGeneratedReleaseSectionHasContent(params.targetVersion, generatedChangelogPath)",
     );
@@ -452,7 +455,107 @@ describe("release automation contract", () => {
       path.join(repoRoot, ".github/workflows/release.yml"),
       "utf8",
     );
+    expect(workflow).toContain(
+      '[ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${RECOVERY_SOURCE_MODE}" = "tag" ]',
+    );
+    expect(workflow).toContain("pnpm changelog:pm");
     expect(workflow).toContain("pnpm changelog:pm:check");
+    expect(workflow).toContain("Exact-tag changelog recovery changed unexpected tracked paths");
+    expect(workflow).toContain("':(exclude)CHANGELOG.md'");
+    expect(workflow).toContain(
+      "':(exclude).agents/pm/extensions/.managed-extensions.json'",
+    );
+  });
+
+  it("executes exact-tag changelog recovery with a tracked-path mutation guard", async () => {
+    const workflow = await readFile(
+      path.join(repoRoot, ".github/workflows/release.yml"),
+      "utf8",
+    );
+    const changelogStep = workflow.match(
+      / {6}- name: Verify generated pm changelog\n {8}run: \|\n([\s\S]*?)(?=\n {6}- name:)/u,
+    )?.[1];
+    expect(changelogStep).toBeDefined();
+    const changelogScript = changelogStep
+      ?.split("\n")
+      .map((line) => line.slice(10))
+      .join("\n");
+    expect(changelogScript).toBeDefined();
+
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-release-changelog-recovery-"),
+    );
+    try {
+      const invocationLog = path.join(tempRoot, "invocations.log");
+      await writeFile(
+        path.join(tempRoot, "pnpm"),
+        `#!/usr/bin/env bash
+printf 'pnpm %s\\n' "$*" >> "\${INVOCATION_LOG}"
+`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "git"),
+        `#!/usr/bin/env bash
+printf 'git %s\\n' "$*" >> "\${INVOCATION_LOG}"
+printf '%s' "\${UNEXPECTED_PATHS}"
+`,
+        "utf8",
+      );
+      await chmod(path.join(tempRoot, "pnpm"), 0o755);
+      await chmod(path.join(tempRoot, "git"), 0o755);
+
+      const runScenario = (overrides: NodeJS.ProcessEnv) =>
+        spawnSync(
+          "bash",
+          ["-c", prependFakeBinForBash(changelogScript ?? "")],
+          {
+            cwd: repoRoot,
+            encoding: "utf8",
+            env: {
+              ...process.env,
+              FAKE_BIN: tempRoot,
+              INVOCATION_LOG: invocationLog,
+              UNEXPECTED_PATHS: "",
+              GITHUB_EVENT_NAME: "workflow_dispatch",
+              RECOVERY_SOURCE_MODE: "tag",
+              ...overrides,
+            },
+          },
+        );
+
+      await writeFile(invocationLog, "", "utf8");
+      const recovery = runScenario({});
+      expect(recovery.status).toBe(0);
+      expect(await readFile(invocationLog, "utf8")).toContain(
+        "pnpm changelog:pm",
+      );
+      expect(recovery.stdout).toContain(
+        "regenerated the package changelog with the tagged checkout's canonical policy",
+      );
+
+      await writeFile(invocationLog, "", "utf8");
+      const unexpectedMutation = runScenario({
+        UNEXPECTED_PATHS: "package.json\n",
+      });
+      expect(unexpectedMutation.status).toBe(1);
+      expect(unexpectedMutation.stderr).toContain(
+        "changed unexpected tracked paths",
+      );
+      expect(unexpectedMutation.stderr).toContain("package.json");
+
+      await writeFile(invocationLog, "", "utf8");
+      const ordinaryTagPush = runScenario({
+        GITHUB_EVENT_NAME: "push",
+        RECOVERY_SOURCE_MODE: "tag",
+      });
+      expect(ordinaryTagPush.status).toBe(0);
+      expect(await readFile(invocationLog, "utf8")).toBe(
+        "pnpm changelog:pm:check\n",
+      );
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it("keeps CI changelog checks on a tag-aware checkout", async () => {

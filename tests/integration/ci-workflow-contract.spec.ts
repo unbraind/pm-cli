@@ -539,7 +539,10 @@ describe("GitHub workflow contract", () => {
       "run: pnpm typecheck",
       "run: pnpm test:coverage",
       "run: pnpm quality:static",
-      "run: pnpm changelog:pm:check",
+      "name: Verify generated pm changelog",
+      "pnpm changelog:pm:check",
+      "pnpm changelog:pm",
+      "Exact-tag changelog recovery changed unexpected tracked paths",
       "run: node scripts/release/compatibility-check.mjs --json",
       "node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --sentry-window-days 14 --max-critical 0 --max-high 0",
       "name: Upload Sentry sourcemaps",
@@ -597,7 +600,7 @@ describe("GitHub workflow contract", () => {
       ),
     ).toBeLessThan(releaseWorkflow.indexOf("run: pnpm quality:static"));
     expect(
-      releaseWorkflow.indexOf("run: pnpm changelog:pm:check"),
+      releaseWorkflow.indexOf("pnpm changelog:pm:check"),
     ).toBeLessThan(releaseWorkflow.indexOf("run: pnpm quality:static"));
     expect(
       releaseWorkflow.match(

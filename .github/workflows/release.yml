@@ -157,7 +157,21 @@ jobs:
         run: pnpm test:coverage
 
       - name: Verify generated pm changelog
-        run: pnpm changelog:pm:check
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${RECOVERY_SOURCE_MODE}" = "tag" ]; then
+            pnpm changelog:pm
+            unexpected_paths="$(git diff --name-only -- . \
+              ':(exclude)CHANGELOG.md' \
+              ':(exclude).agents/pm/extensions/.managed-extensions.json')"
+            if [ -n "${unexpected_paths}" ]; then
+              echo "Exact-tag changelog recovery changed unexpected tracked paths:" >&2
+              printf '%s\n' "${unexpected_paths}" >&2
+              exit 1
+            fi
+            echo "Exact-tag recovery regenerated the package changelog with the tagged checkout's canonical policy."
+          else
+            pnpm changelog:pm:check
+          fi
 
       - name: Static quality gate
         run: pnpm quality:static
