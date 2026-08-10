@@ -33,8 +33,6 @@
 
 ### Other
 
-- Public changelog uses capability language for provenance outcomes ([pm-zzahs4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zzahs4.toon))
-- PR-957: make linked-test order acceptance deterministic under coverage shards ([pm-xg60q3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xg60q3.toon))
 - The measurement ratchet floors only aggregate graph totals, so converting typed semantic edges to untyped ones passes every declaration ([pm-70jyvw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-70jyvw.toon))
 
 ## 2026.8.9 - 2026-08-09

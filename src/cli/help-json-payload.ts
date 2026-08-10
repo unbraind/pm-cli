@@ -520,7 +520,9 @@ function appendStrictCreatePolicyHelpLines(
   strictRequired: string[],
 ): void {
   const progressive = new Set(progressiveRequired);
-  const strictOnly = strictRequired.filter((option) => !progressive.has(option));
+  const strictOnly = strictRequired.filter(
+    (option) => !progressive.has(option),
+  );
   const toFlags = (options: string[]): string =>
     options.length > 0
       ? options
@@ -562,15 +564,18 @@ function buildCreateUpdatePolicyHelpText(
     ].join("\n");
   }
 
-  const createModeTokenIndex = argv.findIndex(
+  const argumentTerminatorIndex = argv.indexOf("--");
+  const optionArgv =
+    argumentTerminatorIndex < 0 ? argv : argv.slice(0, argumentTerminatorIndex);
+  const createModeTokenIndex = optionArgv.findIndex(
     (token) => token === "--create-mode" || token.startsWith("--create-mode="),
   );
   const createModeToken =
     createModeTokenIndex < 0
       ? undefined
-      : argv[createModeTokenIndex]?.startsWith("--create-mode=")
-        ? argv[createModeTokenIndex]?.slice("--create-mode=".length)
-        : argv[createModeTokenIndex + 1];
+      : optionArgv[createModeTokenIndex]?.startsWith("--create-mode=")
+        ? optionArgv[createModeTokenIndex]?.slice("--create-mode=".length)
+        : optionArgv[createModeTokenIndex + 1];
   const strictCreateMode =
     commandName === "create" && createModeToken?.toLowerCase() === "strict";
   const requiredSets = buildCreatePolicyRequiredSets(

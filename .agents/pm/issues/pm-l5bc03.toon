@@ -1,0 +1,48 @@
+id: pm-l5bc03
+title: "Exact-head review hardening: terminator-safe create mode, complete item ID conflict parsing, and public changelog integrity"
+description: "Resolve all four actionable findings from the exact-head CodeRabbit review at 55404c0b7 in one feedback-round hardening tranche: stop create-mode option parsing at the argument terminator, reject every ambiguous item identifier form, remove internal process notes from the public generated changelog through canonical PM metadata, and preserve honest generator-gate evidence."
+type: Issue
+status: closed
+priority: 1
+tags[7]: "area:cli","area:release","area:sdk",changelog-exclude,pr-957,regression,review-hardening
+created_at: "2026-08-09T23:34:03.288Z"
+updated_at: "2026-08-10T00:09:11.056Z"
+closed_at: "2026-08-10T00:08:51.080Z"
+completed_at: "2026-08-10T00:08:51.080Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Create-mode help policy ignores operands after -- while preserving both supported option forms before it; Item addressing rejects duplicate named IDs and positional-plus-named IDs regardless of intervening flags; Generated public changelog contains user-facing capability changes only and pm-changelog verification passes; Focused, full, coverage, static, and manual acceptance gates pass before closure"
+parent: pm-usfg
+resolution: Made create-mode help parsing terminator-aware; made item-address normalization consume the declared flag schema and reject multiple or mixed IDs; established canonical changelog exclusion for internal PM records.
+expected_result: "Every item-addressed invocation resolves one unambiguous ID through declared flag arity, create-mode policy stops at --, and generated public notes exclude internal review records."
+actual_result: "Focused 9/9, full suite, and exact 50,815/37,177/10,437/49,165 coverage counts pass; strict quality gates and isolated manual acceptance pass."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-szn67i,discovered_from,"2026-08-09T23:34:48.092Z","harness:codex","cli:update:dep",detected
+  pm-xg60q3,related,"2026-08-09T23:34:48.092Z","harness:codex","cli:update:dep",detected
+  pm-zzahs4,discovered_from,"2026-08-09T23:34:48.092Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-09T23:34:03.288Z","harness:codex","Duplicate governance identified pm-xg60q3,but that closed item is only the prior coverage-shard ordering repair. This item is intentionally distinct because it tracks four new exact-head findings in different parser/changelog surfaces; all-status search found no canonical item for this finding set."
+  "2026-08-10T00:08:49.700Z","harness:codex","Final evidence: focused parser/acceptance tests pass 9/9; full repository suite passes; exact coverage passes at statements 50,815/50,815, branches 37,177/37,177, functions 10,437/10,437, lines 49,165/49,165. ESLint has zero warnings, jscpd has zero clones, and quality:static passes all docstring, SDK boundary, replication, token/context, tracker-ratchet, import-cost, and transport-floor gates. In a fresh isolated tracker, normal --id reads succeeded, flag-interleaved positional-plus-named IDs and duplicate named IDs failed before execution, an operand --create-mode strict stayed progressive, and a real pre-terminator strict option stayed strict. pm-changelog 2026.8.7 check is unchanged with both internal entries excluded and user-facing capability entries retained."
+learnings[2]{created_at,author,text}:
+  "2026-08-10T00:08:50.099Z","harness:codex",Argument normalization must parse option arity from the same command flag contracts as Commander; fixed-position scans cannot distinguish option values from item operands once flags are interleaved.
+  "2026-08-10T00:08:50.548Z","harness:codex","Public changelog exclusion is an invocation policy as well as item metadata: the generator's --exclude-tag contract must be present in both generate and check scripts."
+files[6]{path,scope,note}:
+  CHANGELOG.md,project,Generated public changelog exclusion verification
+  package.json,project,Canonical changelog exclusion policy for internal PM items
+  src/cli/help-json-payload.ts,project,Terminator-safe create-mode help parsing
+  src/sdk/agent/item-addressing.ts,project,Schema-aware complete item ID conflict parsing
+  tests/integration/sdk-agent-command-contracts.integration.spec.ts,project,Argument terminator help regression
+  tests/unit/sdk/agent-command-primitives.spec.ts,project,Duplicate and flag-interleaved ID regressions
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-command-primitives.spec.ts tests/integration/sdk-agent-command-contracts.integration.spec.ts,project,240,Focused parser and acceptance regressions
+  "node -e \"const fs=require(\\\"node:fs\\\");const pkg=require(\\\"./package.json\\\");const text=fs.readFileSync(\\\"CHANGELOG.md\\\",\\\"utf8\\\");if(!pkg.scripts[\\\"changelog:pm\\\"].includes(\\\"--exclude-tag changelog-exclude\\\")||!pkg.scripts[\\\"changelog:pm:check\\\"].includes(\\\"--exclude-tag changelog-exclude\\\")||text.includes(\\\"Public changelog uses capability language\\\")||text.includes(\\\"PR-957: make linked-test order\\\")||!text.includes(\\\"GH-515: pm test --add reorders linked tests\\\"))process.exit(1)\"",project,30,Public changelog policy with negative and positive controls
+  node scripts/run-tests.mjs test,project,900,Full repository regression suite
+  node scripts/run-tests.mjs coverage,project,1200,Exact 100/100/100/100 source coverage
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msmg3j2w-cfvzdq,test,passed,"2026-08-09T23:39:59.031Z","2026-08-09T23:40:09.944Z","2026-08-09T23:40:09.944Z",2,0,0
+  test-local-msmg7zgm-javua7,test,passed,"2026-08-09T23:40:23.333Z","2026-08-09T23:43:37.798Z","2026-08-09T23:43:37.798Z",1,0,0
+  test-local-msmgdr8u-ba53er,test,failed,"2026-08-09T23:43:45.747Z","2026-08-09T23:48:07.086Z","2026-08-09T23:48:07.086Z",0,1,0
+  test-local-msmgmjcz-9fn7xl,test,failed,"2026-08-09T23:50:38.827Z","2026-08-09T23:54:56.771Z","2026-08-09T23:54:56.771Z",0,1,0
+  test-local-msmgt9em-hab3bo,test,passed,"2026-08-09T23:55:56.248Z","2026-08-10T00:00:10.462Z","2026-08-10T00:00:10.462Z",1,0,0
+close_reason: "All exact-head findings resolved with schema-aware parsers, public changelog policy, full coverage, strict gates, and manual acceptance evidence."
+body: ""

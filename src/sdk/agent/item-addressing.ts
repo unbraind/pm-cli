@@ -5,6 +5,10 @@
  * their canonical positional id while accepting `--id` as a compatibility
  * spelling, so integrations no longer need a per-command addressing table.
  */
+import {
+  type CliFlagContract,
+  resolveSubcommandFlagContractsForCommand,
+} from "../cli-contracts.js";
 
 const ITEM_ID_ALIAS_COMMANDS = new Set([
   "append",
@@ -61,6 +65,12 @@ export interface ItemAddressInvocationResult {
   itemId?: string;
 }
 
+interface NamedItemId {
+  index: number;
+  consumed: number;
+  value?: string;
+}
+
 /** Return whether a command participates in the shared item-id alias contract. */
 export function supportsItemIdAlias(commandName: string | undefined): boolean {
   const normalized = commandName?.trim().toLowerCase() ?? "";
@@ -84,24 +94,6 @@ function findCommandIndex(argv: string[]): number | undefined {
   return undefined;
 }
 
-function readNamedItemId(argv: string[]): {
-  index: number;
-  consumed: number;
-  value?: string;
-} | null {
-  for (let index = 0; index < argv.length; index += 1) {
-    const token = argv[index];
-    if (token === "--") return null;
-    if (token === "--id") {
-      return { index, consumed: 2, value: argv[index + 1] };
-    }
-    if (token.startsWith("--id=")) {
-      return { index, consumed: 1, value: token.slice("--id=".length) };
-    }
-  }
-  return null;
-}
-
 /** Resolve the positional-id slot for direct and declared nested commands. */
 function resolveItemAddressIndex(
   argv: string[],
@@ -118,6 +110,64 @@ function resolveItemAddressIndex(
   return commandIndex + (usesDeclaredSubcommand ? 2 : 1);
 }
 
+function buildFlagContractMap(
+  commandPath: string,
+): Map<string, CliFlagContract> {
+  const contractsByFlag = new Map<string, CliFlagContract>();
+  for (const contract of resolveSubcommandFlagContractsForCommand(
+    commandPath,
+  )) {
+    for (const flag of [
+      contract.flag,
+      contract.short,
+      ...(contract.aliases ?? []),
+    ]) {
+      if (flag) contractsByFlag.set(flag, contract);
+    }
+  }
+  return contractsByFlag;
+}
+
+function collectNamedItemIds(argv: string[]): NamedItemId[] {
+  const namedIds: NamedItemId[] = [];
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (token === "--") break;
+    if (token === "--id") {
+      namedIds.push({ index, consumed: 2, value: argv[index + 1] });
+      index += 1;
+    } else if (token.startsWith("--id=")) {
+      namedIds.push({
+        index,
+        consumed: 1,
+        value: token.slice("--id=".length),
+      });
+    }
+  }
+  return namedIds;
+}
+
+function hasPositionalItemIdBeforeNamed(
+  argv: string[],
+  addressIndex: number,
+  namedIndex: number,
+  contractsByFlag: ReadonlyMap<string, CliFlagContract>,
+): boolean {
+  for (let index = addressIndex; index < namedIndex; index += 1) {
+    const token = argv[index];
+    if (!token.startsWith("-")) return true;
+    const separatorIndex = token.indexOf("=");
+    const flag = separatorIndex < 0 ? token : token.slice(0, separatorIndex);
+    if (
+      separatorIndex < 0 &&
+      contractsByFlag.get(flag)?.value_name !== undefined
+    ) {
+      index += 1;
+    }
+  }
+  return false;
+}
+
 /**
  * Normalize `pm <command> --id <value>` to the command's positional id form.
  * The transformation is lossless for every other argument and reports a
@@ -132,7 +182,14 @@ export function normalizeItemAddressInvocation(
   if (!supportsItemIdAlias(commandName)) {
     return { argv: [...argv], changed: false, conflict: false };
   }
-  const named = readNamedItemId(argv);
+  const commandPath =
+    ITEM_ID_ALIAS_SUBCOMMANDS.get(commandName!) ===
+    argv[commandIndex! + 1]?.toLowerCase()
+      ? `${commandName} ${argv[commandIndex! + 1]?.toLowerCase()}`
+      : commandName!;
+  const contractsByFlag = buildFlagContractMap(commandPath);
+  const namedIds = collectNamedItemIds(argv);
+  const named = namedIds[0];
   if (!named || !named.value?.trim()) {
     return { argv: [...argv], changed: false, conflict: false };
   }
@@ -144,12 +201,15 @@ export function normalizeItemAddressInvocation(
   if (addressIndex === undefined) {
     return { argv: [...argv], changed: false, conflict: false };
   }
-  const positional = argv[addressIndex];
-  const hasPositional =
-    typeof positional === "string" &&
-    positional !== "--" &&
-    !positional.startsWith("-");
-  if (hasPositional) {
+  if (
+    namedIds.length > 1 ||
+    hasPositionalItemIdBeforeNamed(
+      argv,
+      addressIndex,
+      named.index,
+      contractsByFlag,
+    )
+  ) {
     return {
       argv: [...argv],
       changed: false,

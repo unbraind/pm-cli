@@ -4,9 +4,9 @@ description: Replace a nested child-process timing assertion with persisted-orde
 type: Chore
 status: closed
 priority: 1
-tags: []
+tags[1]: changelog-exclude
 created_at: "2026-08-09T22:30:49.833Z"
-updated_at: "2026-08-09T22:32:40.886Z"
+updated_at: "2026-08-09T23:37:53.206Z"
 closed_at: "2026-08-09T22:32:40.346Z"
 completed_at: "2026-08-09T22:32:40.346Z"
 author: "harness:codex"

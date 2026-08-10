@@ -242,6 +242,21 @@ describe("SDK-first agent command contracts", () => {
         "explicit empty assertion: --clear-deps",
       );
 
+      const operandHelp = context.runCli([
+        "create",
+        "--type",
+        "ContextualIssue",
+        "--help",
+        "--",
+        "--create-mode",
+        "strict",
+      ]);
+      expect(operandHelp.code).toBe(0);
+      expect(operandHelp.stdout).toContain("required: --title, --type");
+      expect(operandHelp.stdout).not.toContain(
+        "required: --title, --type, --dep",
+      );
+
       const strictCreated = context.runCli(
         [
           "create",
