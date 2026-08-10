@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-08-08T10:32:53.063Z"
+updated_at: "2026-08-10T00:19:43.045Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
@@ -21,8 +21,9 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-qxo5iu,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-rtn5h6,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-08T10:32:51.895Z","harness:codex","Partial tranche evidence 2026-08-08: added the public path-redacted host errno classifier/translator/async boundary for EACCES, EDQUOT, EMFILE, ENFILE, ENOMEM, ENOSPC, EPERM, and EROFS; snapshot create/restore now consume it while preserving published snapshot error codes. Generated catalog, negative controls, 22/22 linked tests, security scan, and exact full coverage pass. Acceptance is not complete: the remaining awaited filesystem sites still need routing or explicit waivers and a CI recurrence gate. Returning this item to open and releasing the claim rather than claiming whole-repo completion."
+  "2026-08-10T00:19:43.045Z","harness:codex","Live reliability evidence 2026-08-10: the 14-day release gate reports critical=0 and high=1 for Sentry group PM-CLI-2X, an unexpected ENOTDIR open fault. This is another member of the untyped host-filesystem family owned by this item; no duplicate item was created. The active SDK/CLI PR does not claim to complete this item's remaining all-call-site routing and recurrence-gate acceptance criteria, so the item remains open and unclaimed. No paths, payloads, or private endpoint data are retained here."
 files[7]{path,scope,note}:
   sdk/public-surface.json,project,Reviewed additive SDK surface snapshot
   src/sdk/environment/host-environment-errors.ts,project,Shared path-redacted host errno classifier translator and async boundary
