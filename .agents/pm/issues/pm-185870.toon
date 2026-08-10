@@ -2,11 +2,13 @@ id: pm-185870
 title: "Subcommand-token error contract: one unknown-subcommand code with nearest-match recovery across every subcommand family"
 description: "The same agent mistake — a wrong positional subcommand token — is reported under four different structured error codes with three different recovery payloads, and never with a nearest-match suggestion, even though the allowed set is known at the failure site. Reproduced on 2026.7.25 with --json: 'pm schema add-typ Foo' returns code unknown_subcommand (allowed set in detail, title truncated mid-list with an ellipsis); 'pm graph analyz' returns invalid_argument_value; 'pm plan sttus' returns command_failed, a generic execution-failure code for a pure input error; and the space-separated form the help text invites, 'pm schema add type Foo', returns invalid_command_usage carrying commander's raw text 'too many arguments for schema. Expected 2 arguments but got 3: add, type, Foo' with no allowed set and no hint that the real token is add-type. The schema help renders its subcommands as 'add/remove type/status/field', which reads as two positional words but is actually the hyphenated tokens add-type/add-status/add-field/remove-type/remove-field. None of the four emits a suggested_retry despite edit distance 1 from a known-good token. Duplicate check: searched unknown subcommand/suggested_retry/did-you-mean/positional all-status. pm-g543 (GH-490) owns unknown top-level COMMAND suggester ranking; pm-gdi7 owns unknown OPTION suggestions; pm-ulqu owns value-domain rendering inside suggested_retry for enum flags; pm-bu1m (closed) covered unknown-command help probes; pm-r2kd (closed) covered pm templates falling back to list. No item covers positional subcommand tokens, their code inconsistency, or the space-versus-hyphen spelling trap."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",contracts,errors,recovery
 created_at: "2026-07-25T07:10:54.548Z"
-updated_at: "2026-07-25T07:12:48.042Z"
+updated_at: "2026-08-10T19:16:36.565Z"
+closed_at: "2026-08-10T19:16:36.071Z"
+completed_at: "2026-08-10T19:16:36.071Z"
 author: unknown
 estimated_minutes: 240
 acceptance_criteria: "Every subcommand family (schema, plan, graph, history, package, merge, config, profile and any package-registered family) fails an unknown positional token through one shared helper that emits the single code unknown_subcommand with a stable envelope; the envelope always carries the complete allowed set untruncated and a suggested_retry with the nearest-match token when edit distance is within threshold; the hyphen-versus-space spelling trap resolves — 'pm schema add type X' either succeeds as add-type or fails with unknown_subcommand naming add-type, never with a raw commander arity message; help text for these families renders the literal tokens rather than slash-compressed shorthand; a contract test asserts code and envelope parity across all families so a new family cannot regress it; existing exit codes stay 2 and no command spelling is removed"
@@ -19,16 +21,75 @@ risk: low
 confidence: high
 severity: medium
 repro_steps: pm schema add-typ Foo --json; pm graph analyz --json; pm plan sttus --json; pm schema add type Foo --json — compare .code and .suggested_retry across the four
+resolution: completed
 expected_result: "A wrong subcommand token always returns code unknown_subcommand with the full allowed set and a nearest-match suggested_retry, in every command family"
-actual_result: "Four codes for the same mistake (unknown_subcommand, invalid_argument_value, command_failed, invalid_command_usage), one truncated allowed set, one raw commander arity message with no allowed set, and no suggested_retry anywhere"
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-1kxs,implements,"2026-07-25T07:11:57.844Z",null,null
-  pm-g543,related,"2026-07-25T07:11:57.844Z",null,null
-  pm-gdi7,related,"2026-07-25T07:11:57.844Z",null,null
-  pm-j82fd3,verifies,"2026-07-25T07:11:57.844Z",null,null
-  pm-ulqu,related,"2026-07-25T07:11:57.844Z",null,null
-  pm-wt43zj,related,"2026-07-25T07:11:57.844Z",null,null
-comments[2]{created_at,author,text}:
+actual_result: "All migrated command families now emit shared unknown_subcommand recovery with complete sorted allowed_values, safe nearest-match or explicit suggested_retry, compatibility aliasing, and packed CLI/SDK verification."
+dependencies[7]:
+  - id: pm-1kxs
+    kind: implements
+    created_at: "2026-07-25T07:11:57.844Z"
+  - id: pm-g543
+    kind: related
+    created_at: "2026-07-25T07:11:57.844Z"
+  - id: pm-gdi7
+    kind: related
+    created_at: "2026-07-25T07:11:57.844Z"
+  - id: pm-j82fd3
+    kind: verifies
+    created_at: "2026-07-25T07:11:57.844Z"
+  - id: pm-ulqu
+    kind: related
+    created_at: "2026-07-25T07:11:57.844Z"
+  - id: pm-wt43zj
+    kind: related
+    created_at: "2026-07-25T07:11:57.844Z"
+  - id: pm-elmpav
+    kind: verifies
+    created_at: "2026-08-10T16:45:12.278Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[7]{created_at,author,text}:
   "2026-07-25T07:12:47.062Z","harness:claude-code","Duplicate-check evidence (all-status pm search over unknown subcommand, suggested_retry, did-you-mean, positional, recovery): matched closed pm-8nyc, pm-r2kd, pm-bu1m, pm-zwl7 and open pm-g543, pm-gdi7, pm-ulqu, pm-mpbb. pm-g543 is top-level command ranking, pm-gdi7 is unknown-option suggestion, pm-ulqu is enum value-domain rendering inside an existing suggested_retry, pm-r2kd was a single command silently falling back to list. None covers positional subcommand tokens across families. Filed as a child of pm-mpbb."
   "2026-07-25T07:12:48.039Z","harness:claude-code","Reproduction on 2026.7.25, exact --json .code values: pm schema add-typ Foo -> unknown_subcommand (detail carries the full 15-token allowed set; title truncates it mid-list with an ellipsis). pm graph analyz -> invalid_argument_value (allowed set present in detail). pm plan sttus -> command_failed (allowed set present in detail; the code says execution failure for what is an input error). pm schema add type Foo -> invalid_command_usage with detail 'error: too many arguments for schema. Expected 2 arguments but got 3: add, type, Foo' and no allowed set at all. None of the four returns suggested_retry, although each mistake is edit distance 1 (or a pure hyphenation difference) from a valid token and the allowed set is available at the failure site. The space-form trap is invited by pm schema --help, which renders the subcommand list as 'add/remove type/status/field' rather than the literal tokens add-type, add-status, add-field, remove-type, remove-field."
+  "2026-08-10T18:09:14.581Z","harness:codex","Implementation evidence: introduced the public SDK createUnknownSubcommandError primitive and migrated plan, merge, schema, profile, telemetry, workspace snapshot, graph, config, package/extension lifecycle, and bundled templates refusal families. Contracts expose sorted complete allowed_values, stable unknown_subcommand/reason, safe nearest retries, compatibility aliasing for unknown_lifecycle_action, and public SDK packaging. Verification: exact 100% coverage across 7,187 tests plus packed npm/npx/bun/bunx CLI and SDK-import acceptance in a fresh temporary project."
+  "2026-08-10T18:41:17.375Z","harness:codex","Review feedback: DeepScan PR #968 identified the now-unused original subcommand parameter on assertKnownPlanSubcommand after normalization moved into the shared recovery contract. Removing it and its call-site argument; no behavior change."
+  "2026-08-10T18:42:02.406Z","harness:codex","Review resolution: removed the unused pre-normalization subcommand parameter and call argument. Focused plan lifecycle, CLI guidance, and SDK recovery tests passed; ESLint and build passed."
+  "2026-08-10T18:50:16.661Z","harness:codex","Review wave: accepted CodeRabbit findings for parser-scoped schema recovery, whitespace-only dispatcher safety, short-token retry thresholds, public-surface acknowledgement integrity, and terminal outcome projection."
+  "2026-08-10T19:16:34.508Z","harness:codex","Final review evidence: all CodeRabbit findings were implemented and acknowledged inline. Bootstrap-position parsing, centralized blank-token normalization, safe short-token distance, and public-surface acknowledgement integrity are covered. Full gate: 475 files / 7,188 tests, exact 100/100/100/100; lint, zero duplication, 100% docstrings, contracts, docs, secrets, audit, and package artifact passed. Fresh packed npm/npx/Bun/bunx acceptance passed in /tmp/pm-cli-review-acceptance.Aa34y4."
+learnings[1]{created_at,author,text}:
+  "2026-08-10T18:09:26.804Z","harness:codex",A universal refusal primitive should carry the complete sorted vocabulary and add a retry only when similarity or the caller provides a safe replacement; installed-package acceptance guards the public bundle barrel.
+files[22]{path,scope,note}:
+  packages/pm-templates/extensions/templates/index.ts,project,package-registered family exemplar
+  scripts/release/surface-replication-sets.json,project,CLI refusal inventory reflects SDK ownership migration
+  sdk/public-surface.json,project,public primitive and optional contract snapshot
+  src/cli/commander-usage.ts,project,split-schema and complete cross-command recovery
+  src/cli/main.ts,project,Preserve complete allowed-values recovery in final CLI JSON output
+  src/cli/register-mutation.ts,project,CLI plan merge schema profile migration
+  src/cli/register-operations.ts,project,CLI telemetry workspace migration
+  src/sdk/agent/subcommand-recovery.ts,project,shared unknown-subcommand refusal primitive
+  src/sdk/cli-bootstrap.ts,project,authoritative bootstrap command position shared with schema recovery
+  src/sdk/config.ts,project,config action refusal migration
+  src/sdk/extension.ts,project,package and extension lifecycle compatibility alias migration
+  src/sdk/graph/run.ts,project,graph positional refusal migration
+  src/sdk/lifecycle/plan.ts,project,SDK plan migration
+  src/sdk/runtime-extended-actions.ts,project,SDK merge and workspace migration
+  src/sdk/runtime.ts,project,MCP schema and profile migration
+  src/sdk/telemetry.ts,project,SDK telemetry migration
+  tests/fixtures/contracts/full.json,project,runtime contract snapshot
+  tests/integration/workspace-snapshot-cli.integration.spec.ts,project,blank workspace action CLI regression
+  tests/unit/cli/bootstrap-args.spec.ts,project,global-option command-position regression
+  tests/unit/cli/subcommand-recovery-guidance.spec.ts,project,cross-family CLI guidance regression coverage
+  tests/unit/commands/register-commands.spec.ts,project,blank merge token CLI regression
+  tests/unit/sdk/subcommand-recovery.spec.ts,project,shared SDK primitive unit coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/subcommand-recovery.spec.ts tests/integration/refusal-reachability.integration.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts,project,240
+  CI=1 node scripts/run-tests.mjs coverage,project,600
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msnhra0v-mh55rb,test,passed,"2026-08-10T17:14:14.984Z","2026-08-10T17:14:23.743Z","2026-08-10T17:14:23.743Z",1,0,0
+  test-local-msnhrl2y-rkl6df,test,passed,"2026-08-10T17:14:27.706Z","2026-08-10T17:14:38.074Z","2026-08-10T17:14:38.074Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/SDK_RUNTIME_BOUNDARIES.md,project,unified positional refusal boundary
+  docs/SDK.md,project,public primitive reference
+close_reason: "Shared SDK refusal primitive and all targeted CLI/SDK/package families deliver stable unknown_subcommand recovery, safe retries, complete vocabularies, parser-aware schema guidance, and blank-token handling; exact coverage and packed acceptance passed."
 body: ""

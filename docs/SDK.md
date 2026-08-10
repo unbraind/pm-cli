@@ -317,7 +317,8 @@ Command/action contract exports:
 - Execution and diagnostics engines: `runTest`, `runLinkedTests`, `runTestAll`, `runStartBackgroundRun`, `runTestRunsList`, `runTestRunsStatus`, `runTestRunsLogs`, `runTestRunsStop`, `runTestRunsResume`, `runTestRunsWorker`, `runEval`, `runTelemetry`, and `runStats`. Their CLI modules are compatibility re-exports of SDK-owned implementations.
 - Execution and diagnostics contracts: `TestCommandOptions` / `TestResult` / `TestRunResult`, `TestAllCommandOptions` / `TestAllResult`, `StartBackgroundRunCommandOptions` / `StartBackgroundRunResult`, `TestRuns*CommandOptions`, `EvalOptions` / `EvalResult`, `TelemetryCommandOptions` / `TelemetrySubcommand`, and `StatsCommandOptions` / `StatsResult`.
 - Linked-test authoring primitives: `parseLinkedTestJsonEntries`, the `parseLinkedTest*` field parsers, `LINKED_TEST_PM_CONTEXT_MODE_VALUES`, `LINKED_TEST_PROTECTED_ENV_KEYS`, `classifyLinkedTestFailure`, `countFailureCategories`, and `summarizeContextPreflight` let custom hosts validate, execute, classify, and report linked tests without duplicating CLI policy.
-- Agent command primitives: `normalizeItemAddressInvocation` and `supportsItemIdAlias` project one item-id grammar across CLI adapters; `renderMissingOptionRetry` and `resolveMissingOptionPlaceholder` preserve attempted argv while deriving enum, boolean, and scalar recovery arity from flag contracts; `rankCommandPaths` and `scoreCommandPathMatch` provide deterministic synonym/edit-distance/substring ranking; `resolveCreateExplicitEmptyFlag` and `supportsCreateExplicitEmpty` model a considered-but-empty strict repeatable input without inventing metadata or graph edges.
+- Agent command primitives: `normalizeItemAddressInvocation` and `supportsItemIdAlias` project one item-id grammar across CLI adapters; `renderMissingOptionRetry` and `resolveMissingOptionPlaceholder` preserve attempted argv while deriving enum, boolean, and scalar recovery arity from flag contracts; `createUnknownSubcommandError` provides one typed positional refusal with complete allowed values and deterministic nearest retry; `rankCommandPaths` and `scoreCommandPathMatch` provide deterministic synonym/edit-distance/substring ranking; `resolveCreateExplicitEmptyFlag` and `supportsCreateExplicitEmpty` model a considered-but-empty strict repeatable input without inventing metadata or graph edges.
+- Refusal reachability primitives: generated `PmErrorCodeContract.owned_states` declarations bind stable codes to concrete states, probe ids, entrypoints, and exit classes; `verifyPmRefusalReachability` compares those declarations with real CLI, SDK, MCP, or package observations and fails closed for missing, duplicate, wrong-entrypoint, mismatched, or undeclared probes.
 - Typed plan workflow primitives on `PmClient`: `plan`, `planCreate`, `planShow`, `planAddStep`, `planUpdateStep`, `planCompleteStep`, `planBlockStep`, `planReorderStep`, `planRemoveStep`, `planLink`, `planUnlink`, `planDecision`, `planDiscovery`, `planValidation`, `planResume`, `planApprove`, and `planMaterialize`
 - Plan contracts: `PlanSubcommand`, `PlanCommandOptions`, `PlanCommandResult`, `PlanResultPlan`, `PlanStepSummary`, `PlanShowDepth`, and `PlanTemplateName`
 - Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, `packageMigrate`, and `upgrade`; one-shot `extensionMigrate` and `packageMigrate` helpers mirror those lifecycle actions.
@@ -3274,6 +3275,10 @@ For SDK and automation consumers, the key runtime change is the optional `recove
 - `normalized_args`
 - `provided_fields`
 - `missing`
+- `allowed_values`
+- `candidate_commands`
+- `candidate_commands_total`
+- `candidate_commands_truncated`
 - `suggested_retry`
 
 Treat `recovery.suggested_retry` as the first-choice deterministic replay
@@ -3286,6 +3291,12 @@ declared on the invoked command; prose that merely mentions another flag is not
 interpreted as a missing input. Strict close validation reports missing
 resolution fields first and suggests a targeted `pm update` before retrying the
 original close invocation.
+
+Unknown-option envelopes rank command paths that accept the rejected flag by
+shared vocabulary and include explicit total/truncation metadata. They are
+contract-discovery hints, not permission to change the requested operation.
+Unknown positional subcommands expose the complete `allowed_values` vocabulary
+and use `suggested_retry` only when a deterministic nearby value exists.
 
 ## Authoring Pattern
 

@@ -97,6 +97,16 @@ export interface CommanderGuidanceContext {
   unknownOptionSuggestions?: string[];
   /** Value that configures or reports unknown option other commands for this contract. */
   unknownOptionOtherCommands?: string[];
+  /** Complete number of commands accepting the unknown option. */
+  unknownOptionOtherCommandsTotal?: number;
+  /** Whether the structured command candidates reached their own ceiling. */
+  unknownOptionOtherCommandsTruncated?: boolean;
+  /** Command family whose positional subcommand was split into invalid tokens. */
+  unknownSubcommandPath?: string;
+  /** Rejected positional subcommand token or token sequence. */
+  unknownSubcommandToken?: string;
+  /** Complete declared subcommand vocabulary for the command family. */
+  unknownSubcommandAllowedValues?: string[];
   /** Value that configures or reports suggested retry command for this contract. */
   suggestedRetryCommand?: string;
   /** Installed extensions whose activation failed for this invocation. */
@@ -261,7 +271,9 @@ function assignRecoveryStringArray(
     | "provided_fields"
     | "missing"
     | "missing_required_fields"
-    | "suggested_flags",
+    | "suggested_flags"
+    | "allowed_values"
+    | "candidate_commands",
   value: unknown,
 ): void {
   const values = normalizeStringArray(value);
@@ -306,6 +318,26 @@ function normalizeRecoveryPayload(
     "suggested_flags",
     payload.suggested_flags,
   );
+  assignRecoveryStringArray(
+    normalized,
+    "allowed_values",
+    payload.allowed_values,
+  );
+  assignRecoveryStringArray(
+    normalized,
+    "candidate_commands",
+    payload.candidate_commands,
+  );
+  if (
+    typeof payload.candidate_commands_total === "number" &&
+    Number.isSafeInteger(payload.candidate_commands_total) &&
+    payload.candidate_commands_total >= 0
+  ) {
+    normalized.candidate_commands_total = payload.candidate_commands_total;
+  }
+  if (payload.candidate_commands_truncated === true) {
+    normalized.candidate_commands_truncated = true;
+  }
   assignRecoveryString(normalized, "suggested_retry", payload.suggested_retry);
   if (
     typeof payload.retry_after_ms === "number" &&
@@ -387,6 +419,26 @@ function renderRecoveryBundle(
     normalized.suggested_flags,
     ", ",
   );
+  appendRecoveryListLine(
+    lines,
+    "allowed_values",
+    normalized.allowed_values,
+    ", ",
+  );
+  appendRecoveryListLine(
+    lines,
+    "candidate_commands",
+    normalized.candidate_commands,
+    ", ",
+  );
+  if (typeof normalized.candidate_commands_total === "number") {
+    lines.push(
+      `  candidate_commands_total: ${String(normalized.candidate_commands_total)}`,
+    );
+  }
+  if (normalized.candidate_commands_truncated === true) {
+    lines.push("  candidate_commands_truncated: true");
+  }
   appendRecoveryTextLine(lines, "suggested_retry", normalized.suggested_retry);
   if (typeof normalized.retry_after_ms === "number") {
     lines.push(`  retry_after_ms: ${normalized.retry_after_ms}`);
@@ -772,9 +824,7 @@ function buildLockConflictGuidance(
       required:
         "Wait for lock release, or use --force where supported if lock is stale and safe to override.",
       why: "Locking protects item files from concurrent write races.",
-      examples: [
-        "pm update pm-a1b2 --status in_progress --force",
-      ],
+      examples: ["pm update pm-a1b2 --status in_progress --force"],
     }),
     rawMessage,
     context,
@@ -1208,9 +1258,11 @@ function buildUnknownOptionGuidance(
   if (!unknownOption) {
     return null;
   }
+  const guidanceContext = context ?? {};
   const optionName = unknownOption[1];
-  const suggestions = normalizeOptionFlags(context?.unknownOptionSuggestions);
-  const retryCommand = context?.suggestedRetryCommand;
+  const suggestions =
+    normalizeOptionFlags(guidanceContext.unknownOptionSuggestions) ?? [];
+  const retryCommand = guidanceContext.suggestedRetryCommand;
   if (
     commandName === "update" &&
     (optionName === "--file" || optionName === "--doc")
@@ -1221,27 +1273,32 @@ function buildUnknownOptionGuidance(
       suggestions,
     );
   }
-  const otherCommands = normalizeContextList(
-    context?.unknownOptionOtherCommands,
-  );
+  const otherCommands =
+    normalizeContextList(guidanceContext.unknownOptionOtherCommands) ?? [];
+  const candidateTotal =
+    guidanceContext.unknownOptionOtherCommandsTotal ??
+    otherCommands.length;
+  const proseCommands = otherCommands.slice(0, 3);
+  const proseRemainder = candidateTotal - proseCommands.length;
+  let proseRemainderText = "";
+  if (proseRemainder > 0) {
+    proseRemainderText = ` and ${String(proseRemainder)} more command path(s)`;
+  }
   const nextSteps = [
     "Run command help to confirm the exact option contracts for this command path.",
-    ...(suggestions && suggestions.length > 0
-      ? [`Nearest supported options: ${suggestions.join(", ")}`]
-      : []),
-    ...(otherCommands && otherCommands.length > 0
-      ? [
-          `${optionName} is a valid option on: ${otherCommands.join(", ")}. If you meant one of those, run that command instead.`,
-        ]
-      : []),
-    ...(retryCommand
-      ? [`Replay with suggested correction: ${retryCommand}`]
-      : []),
-  ];
-  const examples = [
-    ...(retryCommand ? [retryCommand] : []),
-    `pm ${commandName ?? "<command>"} --help`,
-  ];
+    suggestions.length
+      ? `Nearest supported options: ${suggestions.join(", ")}`
+      : undefined,
+    proseCommands.length
+      ? `${optionName} is accepted by ${proseCommands.join(", ")}${proseRemainderText}. Inspect those command contracts only if you intended a different operation.`
+      : undefined,
+    retryCommand
+      ? `Replay with suggested correction: ${retryCommand}`
+      : undefined,
+  ].filter((entry): entry is string => typeof entry === "string");
+  const examples = [retryCommand, `pm ${commandName ?? "<command>"} --help`].filter(
+    (entry): entry is string => typeof entry === "string",
+  );
   return makeGuidanceMessage({
     code: "unknown_option",
     title: `Unknown option ${optionName}`,
@@ -1252,7 +1309,11 @@ function buildUnknownOptionGuidance(
     examples,
     nextSteps,
     recovery: buildCommanderRecoveryPayload(context, {
-      suggested_flags: suggestions,
+      suggested_flags: suggestions.length > 0 ? suggestions : undefined,
+      candidate_commands: otherCommands,
+      candidate_commands_total: candidateTotal || undefined,
+      candidate_commands_truncated:
+        guidanceContext.unknownOptionOtherCommandsTruncated,
     }),
   });
 }
@@ -1301,9 +1362,7 @@ function buildUnknownCommandGuidance(
     "Verify spelling and active extensions, then rerun.",
   ];
   const failedExtensionNames = new Set(
-    context?.failedExtensions?.map((entry) =>
-      entry.name.trim().toLowerCase(),
-    ),
+    context?.failedExtensions?.map((entry) => entry.name.trim().toLowerCase()),
   );
   const hintedExtensionName = packageHint?.packageName
     .replace(/^@unbrained\/pm-/, "")
@@ -1329,6 +1388,36 @@ function buildUnknownCommandGuidance(
     examples: baseExamples,
     nextSteps: baseNextSteps,
     recovery: buildCommanderRecoveryPayload(context),
+  });
+}
+
+function buildUnknownSubcommandGuidance(
+  context: CommanderGuidanceContext | undefined,
+): GuidanceMessage | null {
+  const commandPath = context?.unknownSubcommandPath?.trim();
+  const token = context?.unknownSubcommandToken?.trim();
+  const allowed = normalizeContextList(context?.unknownSubcommandAllowedValues);
+  if (!commandPath || !token || !allowed) {
+    return null;
+  }
+  const retryCommand = context?.suggestedRetryCommand;
+  return makeGuidanceMessage({
+    code: "unknown_subcommand",
+    title: `Unknown ${commandPath} subcommand ${token}`,
+    happened: `The positional token sequence "${token}" is not a declared ${commandPath} subcommand.`,
+    required: `Use one of: ${allowed.join(", ")}.`,
+    why: "Subcommands are single positional tokens; multi-word action names use hyphens.",
+    examples: [
+      ...(retryCommand ? [retryCommand] : []),
+      `pm ${commandPath} --help`,
+    ],
+    nextSteps: retryCommand
+      ? [`Retry with the declared hyphenated action: ${retryCommand}`]
+      : ["Choose one value from recovery.allowed_values."],
+    recovery: buildCommanderRecoveryPayload(context, {
+      allowed_values: allowed,
+      suggested_retry: retryCommand,
+    }),
   });
 }
 
@@ -1467,11 +1556,8 @@ function buildCommanderErrorGuidance(
     buildMissingRequiredArgumentGuidance(message, commandName, context) ??
     buildUnknownOptionGuidance(message, commandName, context) ??
     buildUnknownCommandGuidance(message, context) ??
-    buildLinkedTestValueNotQuotedGuidance(
-      message,
-      commandName,
-      context,
-    ) ??
+    buildUnknownSubcommandGuidance(context) ??
+    buildLinkedTestValueNotQuotedGuidance(message, commandName, context) ??
     buildContextItemArgumentGuidance(message, commandName, context);
   if (guidance) {
     return guidance;

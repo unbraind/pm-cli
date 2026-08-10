@@ -56,6 +56,7 @@ import type {
   MutationMetadataCommandOptions,
   SharedLinkedResourceOptions,
 } from "./mutation-command-options.js";
+import { createUnknownSubcommandError } from "../agent/subcommand-recovery.js";
 
 /** Public contract for plan subcommands, shared by SDK and presentation-layer consumers. */
 export const PLAN_SUBCOMMANDS = [
@@ -2419,10 +2420,11 @@ const PLAN_DISPATCHERS: Record<PlanSubcommand, PlanDispatcher> = {
 function resolvePlanDispatcher(subcommand: PlanSubcommand): PlanDispatcher {
   const dispatcher = PLAN_DISPATCHERS[subcommand];
   if (!dispatcher) {
-    throw new PmCliError(
-      `Unknown pm plan subcommand "${subcommand}"`,
-      EXIT_CODE.USAGE,
-    );
+    throw createUnknownSubcommandError({
+      command_path: "plan",
+      token: subcommand,
+      allowed: PLAN_SUBCOMMANDS,
+    });
   }
   return dispatcher;
 }

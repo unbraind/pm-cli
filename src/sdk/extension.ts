@@ -24,6 +24,7 @@ import { nowIso } from "../core/shared/time.js";
 import { resolveGlobalPmRoot, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings, writeSettings } from "../core/store/settings.js";
 import { quoteCommandArg, renderPmCommand } from "./command-line.js";
+import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
 import { ensureTypeFolderScaffold } from "./schema.js";
 import type { PmSettings } from "../types/index.js";
 // Cohesive helper groups now live in ./extension/* sibling modules. They are
@@ -831,26 +832,22 @@ const buildUnknownLifecycleActionError = (
     );
   }
   const command = `pm ${noun} ${suggestion.flag}`;
-  return new PmCliError(
-    `Unknown ${noun} lifecycle action "${target}". Did you mean "${suggestion.flag}"?`,
-    EXIT_CODE.USAGE,
-    {
-      code: "unknown_lifecycle_action",
-      required: `Use one of: ${LIFECYCLE_ACTION_FLAG_HINT}.`,
-      examples: [command, `pm ${noun} --help`],
-      recovery: {
-        attempted_command: `pm ${noun} ${target}`,
-        suggested_retry: command,
-        fallback_candidates: [
-          {
-            source: "lifecycle_action",
-            command,
-            reason: `nearest lifecycle action for "${target}"`,
-          },
-        ],
+  return createUnknownSubcommandError({
+    command_path: noun,
+    display_name: `${noun} lifecycle`,
+    token_kind: "action",
+    token: target,
+    allowed: Object.keys(IMPLICIT_EXTENSION_ACTIONS),
+    retry_command: command,
+    message_suffix: `. Did you mean "${suggestion.flag}"?`,
+    fallback_candidates: [
+      {
+        source: "lifecycle_action",
+        command,
+        reason: `nearest lifecycle action for "${target}"`,
       },
-    },
-  );
+    ],
+  });
 };
 
 // Maps each boolean action flag to the lifecycle action it selects. `scaffold`

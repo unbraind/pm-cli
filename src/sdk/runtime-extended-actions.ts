@@ -6,6 +6,7 @@
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { runEval, type EvalOptions } from "./eval.js";
 import { runMergeDriver } from "./merge/driver.js";
@@ -146,11 +147,12 @@ export function runRuntimeMergeAction(
       context.global,
     );
   }
-  throw new PmCliError(
-    `Unknown merge subcommand "${subcommand}".`,
-    EXIT_CODE.USAGE,
-    { code: "unknown_subcommand" },
-  );
+  throw createUnknownSubcommandError({
+    command_path: "merge",
+    token: subcommand,
+    allowed: ["install", "reconcile", "report", "driver"],
+    display_name: "merge",
+  });
 }
 
 /** Dispatch guarded workspace snapshot operations. */
@@ -160,11 +162,12 @@ export function runRuntimeWorkspaceAction(
   const input = mergedInput(context);
   const subcommand = requiredString(input, "subcommand");
   if (subcommand !== "snapshot") {
-    throw new PmCliError(
-      `Unknown workspace subcommand "${subcommand}".`,
-      EXIT_CODE.USAGE,
-      { code: "unknown_subcommand" },
-    );
+    throw createUnknownSubcommandError({
+    command_path: "workspace",
+    token: subcommand,
+    allowed: ["snapshot"],
+    display_name: "workspace",
+    });
   }
   const snapshotAction =
     readRuntimeString(input, "snapshotAction") ??
@@ -197,11 +200,13 @@ export function runRuntimeWorkspaceAction(
           lockWaitMs: parseRuntimeInteger(input.lockWaitMs, "lockWaitMs"),
         });
   }
-  throw new PmCliError(
-    `Unknown workspace snapshot action "${snapshotAction}".`,
-    EXIT_CODE.USAGE,
-    { code: "unknown_subcommand" },
-  );
+  throw createUnknownSubcommandError({
+    command_path: "workspace snapshot",
+    token: snapshotAction,
+    allowed: ["create", "list", "inspect", "restore", "delete"],
+    display_name: "workspace snapshot",
+    token_kind: "action",
+  });
 }
 
 /** Dispatch meeting, event, and reminder shortcuts through SDK-owned creation. */

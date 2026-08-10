@@ -9,6 +9,7 @@ import {
   setActiveCommandResult,
   EXIT_CODE,
   PmCliError,
+  createUnknownSubcommandError,
   resolveAuthor,
   resolvePmRoot,
   readSettings,
@@ -72,20 +73,16 @@ function resolveTelemetrySubcommand(
       : "status";
   }
   if (normalizedSubcommand !== undefined && normalizedSubcommand.length > 0) {
-    throw new PmCliError(
-      `Unknown pm telemetry path "${namespaceOrSubcommand} ${subcommand}". Use "pm telemetry ${namespaceOrSubcommand}" or legacy alias "pm telemetry local-analytics ${normalizedSubcommand}".`,
-      EXIT_CODE.USAGE,
-      {
-        code: "unknown_subcommand",
-        examples: [
-          "pm telemetry status",
-          "pm telemetry flush",
-          "pm telemetry stats --limit 10",
-          "pm telemetry clear",
-          "pm telemetry local-analytics status --json",
-        ],
-      },
-    );
+    throw createUnknownSubcommandError({
+      command_path: "telemetry",
+      token: `${namespaceOrSubcommand} ${subcommand}`,
+      allowed: ["status", "flush", "stats", "clear", "local-analytics"],
+      token_kind: "path",
+      examples: [
+        "pm telemetry stats --limit 10",
+        "pm telemetry local-analytics status --json",
+      ],
+    });
   }
   return normalizedNamespace;
 }
@@ -550,18 +547,17 @@ async function runWorkspaceSnapshotAction(
       normalizedAction,
     )
   ) {
-    throw new PmCliError(
-      `Unknown workspace snapshot action "${action}". Use create, list, inspect, restore, or delete.`,
-      EXIT_CODE.USAGE,
-      {
-        code: "unknown_subcommand",
-        examples: [
-          "pm workspace snapshot create before-migration",
-          "pm workspace snapshot list",
-          "pm workspace snapshot restore before-migration",
-        ],
-      },
-    );
+    throw createUnknownSubcommandError({
+      command_path: "workspace snapshot",
+      token: action,
+      allowed: ["create", "list", "inspect", "restore", "delete"],
+      display_name: "workspace snapshot",
+      token_kind: "action",
+      examples: [
+        "pm workspace snapshot create before-migration",
+        "pm workspace snapshot restore before-migration",
+      ],
+    });
   }
   if (normalizedAction === "list") {
     printResult(await listWorkspaceSnapshots(pmRoot), globalOptions);

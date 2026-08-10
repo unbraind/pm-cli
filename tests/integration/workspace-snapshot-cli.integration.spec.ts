@@ -146,6 +146,18 @@ describe("workspace snapshot CLI integration", () => {
       expect(unknownWithoutTarget.stderr).toContain(
         "Unknown workspace snapshot action",
       );
+
+      const whitespace = await context.runCliInProcess([
+        "workspace",
+        "snapshot",
+        "   ",
+        "--json",
+      ]);
+      expect(whitespace.code).toBe(2);
+      expect(JSON.parse(whitespace.stderr)).toMatchObject({
+        code: "unknown_subcommand",
+        recovery: { attempted_command: 'pm workspace snapshot "<empty>"' },
+      });
     });
   });
 });

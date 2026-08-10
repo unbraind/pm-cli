@@ -213,23 +213,23 @@ describe("extension command runtime", () => {
       extensionCommandTestOnly.resolveAction("install", {
         vocabulary: "extension",
       }),
-    ).toThrow('Unknown extension lifecycle action "install". Did you mean "--install"?');
+    ).toThrow('Unknown extension lifecycle action "install"');
     expect(() =>
       extensionCommandTestOnly.resolveAction("descirbe", {
         vocabulary: "extension",
       }),
-    ).toThrow('Unknown extension lifecycle action "descirbe". Did you mean "--describe"?');
+    ).toThrow('Unknown extension lifecycle action "descirbe"');
     expect(() =>
       extensionCommandTestOnly.resolveAction("insta", {
         vocabulary: "package",
       }),
-    ).toThrow('Unknown package lifecycle action "insta". Did you mean "--install"?');
-    expect(() => extensionCommandTestOnly.resolveAction("lis", { vocabulary: "package" })).toThrow('Unknown package lifecycle action "lis". Did you mean "--explore"?');
+    ).toThrow('Unknown package lifecycle action "insta"');
+    expect(() => extensionCommandTestOnly.resolveAction("lis", { vocabulary: "package" })).toThrow('Unknown package lifecycle action "lis"');
     expect(() =>
       extensionCommandTestOnly.resolveAction("unistall", {
         vocabulary: "extension",
       }),
-    ).toThrow('Unknown extension lifecycle action "unistall". Did you mean "--uninstall"?');
+    ).toThrow('Unknown extension lifecycle action "unistall"');
 
     let unknownPackageActionError: unknown;
     try {
@@ -241,8 +241,9 @@ describe("extension command runtime", () => {
     }
     expect(unknownPackageActionError).toMatchObject({
       context: {
-        code: "unknown_lifecycle_action",
+        code: "unknown_subcommand",
         recovery: {
+          allowed_values: expect.arrayContaining(["catalog", "explore"]),
           suggested_retry: "pm package --catalog",
           fallback_candidates: [
             {

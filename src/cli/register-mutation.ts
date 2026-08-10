@@ -10,6 +10,7 @@ import {
   EXIT_CODE,
   splitCommaList,
   PmCliError,
+  createUnknownSubcommandError,
 } from "../sdk/runtime-primitives.js";
 import {
   CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
@@ -1086,7 +1087,6 @@ function normalizePlanAliases(
 }
 
 function assertKnownPlanSubcommand(
-  subcommand: string | undefined,
   normalized: string,
   allowed: readonly string[],
 ): void {
@@ -1111,11 +1111,16 @@ function assertKnownPlanSubcommand(
     normalized === "list" || normalized === "ls"
       ? ["pm list --type Plan", "pm list-all --type Plan"]
       : undefined;
-  throw new PmCliError(
-    `Unknown pm plan subcommand "${subcommand}". Allowed: ${allowed.join(", ")}`,
-    EXIT_CODE.USAGE,
-    examples ? { code: "unknown_subcommand", examples } : undefined,
-  );
+  throw createUnknownSubcommandError({
+    command_path: "plan",
+    token: normalized,
+    allowed,
+    examples,
+    retry_command:
+      normalized === "list" || normalized === "ls"
+        ? "pm list --type Plan"
+        : undefined,
+  });
 }
 
 function parsePlanReorderTo(
@@ -1149,7 +1154,7 @@ async function runPlanAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
-  assertKnownPlanSubcommand(subcommand, normalizedSubcommand, PLAN_SUBCOMMANDS);
+  assertKnownPlanSubcommand(normalizedSubcommand, PLAN_SUBCOMMANDS);
   const planOptions = normalizePlanAliases(options);
   const reorderTo = parsePlanReorderTo(normalizedSubcommand, reorderToken);
   const planId =
@@ -1317,10 +1322,12 @@ async function runMergeAction(
       );
       break;
     default:
-      throw new PmCliError(
-        `Unknown merge subcommand "${subcommand}". Supported subcommands: install, reconcile, report, driver.`,
-        EXIT_CODE.USAGE,
-      );
+      throw createUnknownSubcommandError({
+        command_path: "merge",
+        token: subcommand,
+        allowed: ["install", "reconcile", "report", "driver"],
+        display_name: "merge",
+      });
   }
   if (globalOptions.profile) {
     printError(`profile:command=merge took_ms=${Date.now() - startedAt}`);
@@ -1438,11 +1445,11 @@ async function runSchemaAction(
       normalizedSubcommand as (typeof SCHEMA_SUBCOMMANDS)[number],
     )
   ) {
-    throw new PmCliError(
-      `Unknown pm schema subcommand "${subcommand}". Allowed: ${SCHEMA_SUBCOMMANDS.join(", ")}`,
-      EXIT_CODE.USAGE,
-      { code: "unknown_subcommand" },
-    );
+    throw createUnknownSubcommandError({
+      command_path: "schema",
+      token: normalizedSubcommand,
+      allowed: SCHEMA_SUBCOMMANDS,
+    });
   }
   const result = await dispatchSchemaSubcommand(schemaModule, {
     normalizedSubcommand,
@@ -1730,11 +1737,11 @@ async function runProfileAction(
       normalizedSubcommand as (typeof PROFILE_SUBCOMMANDS)[number],
     )
   ) {
-    throw new PmCliError(
-      `Unknown pm profile subcommand "${subcommand}". Allowed: ${PROFILE_SUBCOMMANDS.join(", ")}`,
-      EXIT_CODE.USAGE,
-      { code: "unknown_subcommand" },
-    );
+    throw createUnknownSubcommandError({
+      command_path: "profile",
+      token: normalizedSubcommand,
+      allowed: PROFILE_SUBCOMMANDS,
+    });
   }
   const result = await dispatchProfileSubcommand(
     profileModule,

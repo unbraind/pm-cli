@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   _testOnly,
   applyBootstrapPagerPolicy,
+  findBootstrapCommandTokenIndex,
   parseBootstrapGlobalOptions,
   stripGlobalBootstrapTokens,
   parseBootstrapHelpRequest,
@@ -305,6 +306,14 @@ describe("parseBootstrapCommandName", () => {
       "search",
     );
     expect(parseBootstrapCommandName(["create"])).toBe("create");
+    expect(
+      findBootstrapCommandTokenIndex([
+        "--pm-path",
+        "schema",
+        "schema",
+        "add-type",
+      ]),
+    ).toBe(2);
   });
 
   it("returns undefined when no command token is found", () => {

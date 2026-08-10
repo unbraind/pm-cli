@@ -379,6 +379,10 @@ function projectExistingRecoveryOptionalFields(existingRecovery: PmCliErrorRecov
     "recovery_mode",
     "missing_required_fields",
     "suggested_flags",
+    "allowed_values",
+    "candidate_commands",
+    "candidate_commands_total",
+    "candidate_commands_truncated",
     "fallback_candidates",
     "next_best_command",
   ];

@@ -8,6 +8,7 @@ import type {
   ExtensionApi,
   GlobalOptions,
 } from "@unbrained/pm-cli/sdk";
+import { createUnknownSubcommandError } from "@unbrained/pm-cli/sdk";
 import {
   runTemplatesList as runTemplatesListPackage,
   runTemplatesSave as runTemplatesSavePackage,
@@ -53,9 +54,14 @@ function assertListInvocation(
 ): void {
   const unexpectedSubcommand = args.find((arg) => arg.trim().length > 0);
   if (unexpectedSubcommand) {
-    throw new Error(
-      `Unknown pm templates subcommand "${unexpectedSubcommand}". Allowed: list, save, show. Apply a saved template with pm create <type> <title> --template <name>.`,
-    );
+    throw createUnknownSubcommandError({
+      command_path: "templates",
+      token: unexpectedSubcommand,
+      allowed: ["list", "save", "show"],
+      message_suffix:
+        ". Apply a saved template with pm create <type> <title> --template <name>.",
+      examples: ["pm create <type> <title> --template <name>"],
+    });
   }
   const unexpectedOptions = optionKeys(options);
   if (unexpectedOptions.length > 0) {

@@ -18,6 +18,20 @@ describe("error code catalog", () => {
       emitting_commands: ["help"],
       canonical_code: "unknown_command",
       aliases: ["unknown_subcommand"],
+      owned_states: [
+        {
+          state: "command_token_is_unknown",
+          probe_id: "unknown-command",
+          entrypoints: ["help"],
+          expected_exit_class: "usage",
+        },
+        {
+          state: "command_token_is_blank",
+          probe_id: "blank-command",
+          entrypoints: ["help"],
+          expected_exit_class: "usage",
+        },
+      ],
     },
     {
       code: "unknown_subcommand",
@@ -81,6 +95,7 @@ describe("error code catalog", () => {
     expect(defaults[0]).toMatchObject({
       canonical_code: "default_contract",
       aliases: [],
+      owned_states: [],
     });
     expect(
       resolveCanonicalPmErrorCodeContract("default_contract", [
@@ -119,9 +134,31 @@ describe("error code catalog", () => {
       { ...catalog[0]!, class: "conflict" as const },
       { ...catalog[0]!, canonical_code: "missing" },
       { ...catalog[0]!, aliases: ["missing"] },
+      {
+        ...catalog[0]!,
+        owned_states: [
+          {
+            state: "Bad State",
+            probe_id: "bad-state",
+            entrypoints: ["help"],
+            expected_exit_class: "usage" as const,
+          },
+        ],
+      },
+      {
+        ...catalog[0]!,
+        owned_states: [
+          {
+            state: "command_token_is_unknown",
+            probe_id: "unknown-command",
+            entrypoints: ["help"],
+            expected_exit_class: "conflict" as const,
+          },
+        ],
+      },
     ]) {
       expect(() => definePmErrorCodeCatalog([invalid])).toThrow(
-        "Invalid pm error code contract",
+        /Invalid pm (error code contract|refusal state)/u,
       );
     }
     expect(() => resolvePmErrorCodeContract("missing", catalog)).toThrow(

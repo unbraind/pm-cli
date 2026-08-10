@@ -13,6 +13,7 @@ import { nowIso } from "../core/shared/time.js";
 import { resolveGlobalPmRoot } from "../core/store/paths.js";
 import { readSettings, writeSettings } from "../core/store/settings.js";
 import { flushTelemetryQueueNow } from "../core/telemetry/runtime.js";
+import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
 
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join(
   "runtime",
@@ -360,19 +361,17 @@ const normalizeTelemetrySubcommand = (
   }
   // `value` is always a defined string here: an undefined subcommand normalizes
   // to "status" above (a valid value) and never reaches this throw.
-  throw new PmCliError(
-    `Unknown pm telemetry subcommand "${value}". Allowed: ${TELEMETRY_SUBCOMMANDS.join(", ")}`,
-    EXIT_CODE.USAGE,
-    {
-      code: "unknown_subcommand",
-      examples: [
-        "pm telemetry status",
-        "pm telemetry flush",
-        "pm telemetry stats --limit 10",
-        "pm telemetry clear",
-      ],
-    },
-  );
+  throw createUnknownSubcommandError({
+    command_path: "telemetry",
+    token: value?.trim() || "<empty>",
+    allowed: TELEMETRY_SUBCOMMANDS,
+    examples: [
+      "pm telemetry status",
+      "pm telemetry flush",
+      "pm telemetry stats --limit 10",
+      "pm telemetry clear",
+    ],
+  });
 };
 
 /** Throws the stable usage diagnostic for invalid telemetry stats windows. */

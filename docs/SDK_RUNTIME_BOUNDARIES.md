@@ -2,7 +2,11 @@
 
 Tracker: [pm-1eted6](../.agents/pm/issues/pm-1eted6.toon),
 [pm-3lhth4](../.agents/pm/issues/pm-3lhth4.toon), and
-[pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon).
+[pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon). Refusal reachability and
+recovery completeness are tracked by
+[pm-elmpav](../.agents/pm/features/pm-elmpav.toon),
+[pm-185870](../.agents/pm/issues/pm-185870.toon), and
+[pm-yqe0mo](../.agents/pm/issues/pm-yqe0mo.toon).
 
 These SDK primitives keep host and project-runtime policy consistent across the
 bundled CLI, packages, and automation without requiring consumers to reproduce
@@ -56,3 +60,34 @@ guidance when presenting refusals as human-readable or structured output.
 Host-only validation remains at the transport boundary, while rules shared by
 packages and commands live in public SDK primitives so callers receive the
 same refusal contract regardless of entrypoint.
+
+`createUnknownSubcommandError` is the shared constructor for positional command
+families. It emits `unknown_subcommand` with the stable
+`unknown_positional_token` reason, a complete sorted `allowed_values` set, the
+attempted command, and a nearest copy-pasteable retry when edit distance gives
+an unambiguous candidate. CLI, direct SDK dispatch, MCP, and package hosts use
+the same primitive. The CLI also recognizes split schema actions such as
+`schema add type Name` and recommends the declared `schema add-type Name`
+form instead of collapsing the failure into a generic arity error.
+Core graph, config, plan, schema, profile, merge, telemetry, workspace, and
+package/extension lifecycle dispatchers use this contract. The bundled
+templates package demonstrates the same primitive for package-registered
+families; custom packages can import it from the public SDK instead of
+inventing a private refusal envelope. The former `unknown_lifecycle_action`
+catalog name remains a compatibility alias of `unknown_subcommand`.
+
+`PmErrorCodeContract.owned_states` declares concrete refusal states, their
+probe ids, reachable entrypoints, and expected exit classes. The generated
+catalog joins those declarations to the discovered error-code inventory.
+Package and test harnesses can pass real-entrypoint observations to
+`verifyPmRefusalReachability`; missing probes, wrong codes, wrong exit classes,
+and undeclared observations fail closed. This makes an error code's existence
+and its runtime reachability independently testable.
+
+Unknown-option recovery separates human and machine budgets. Human guidance
+shows the first three ranked command paths plus an explicit remainder count.
+The structured envelope returns up to twelve ranked paths alongside
+`candidate_commands_total` and `candidate_commands_truncated`, ordered by
+shared option vocabulary and then command path. Consumers must inspect another
+command contract before changing operations; candidate discovery is not an
+instruction to run a different command.
