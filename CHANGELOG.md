@@ -10,8 +10,8 @@
 
 ### Fixed
 
-- Subcommand-token error contract: one unknown-subcommand code with nearest-match recovery across every subcommand family ([pm-185870](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-185870.toon))
 - Unknown-option recovery names three of six commands that accept the flag, capped silently and in arbitrary order, so the hint excludes the right answer while reading as exhaustive ([pm-yqe0mo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yqe0mo.toon))
+- Subcommand-token error contract: one unknown-subcommand code with nearest-match recovery across every subcommand family ([pm-185870](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-185870.toon))
 - pm get cannot report linked files, tests, or docs in any projection, so the one command an agent uses to rebuild an item's context silently reports them as absent ([pm-tld20c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tld20c.toon))
 
 ## 2026.8.10 - 2026-08-10

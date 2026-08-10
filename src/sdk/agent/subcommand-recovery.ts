@@ -47,7 +47,7 @@ function nearestSubcommand(
 ): string | undefined {
   const normalized = token.trim().toLowerCase();
   if (normalized.length === 0) return undefined;
-  const maxDistance = Math.max(2, Math.floor(normalized.length / 3));
+  const maxDistance = Math.floor(normalized.length / 3);
   return allowed
     .map((candidate) => ({
       candidate,
@@ -79,7 +79,8 @@ export function createUnknownSubcommandError(
   options: UnknownSubcommandErrorOptions,
 ): PmCliError {
   const commandPath = options.command_path.trim().replaceAll(/\s+/gu, " ");
-  const token = options.token.trim();
+  const normalizedToken = options.token.trim();
+  const token = normalizedToken.length === 0 ? "<empty>" : normalizedToken;
   const allowed = [...new Set(options.allowed.map((value) => value.trim()))]
     .filter(Boolean)
     .sort((left, right) => left.localeCompare(right));

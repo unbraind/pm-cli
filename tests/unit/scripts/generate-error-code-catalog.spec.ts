@@ -316,6 +316,25 @@ describe("generate error code catalog", () => {
       JSON.stringify({
         schema_version: 1,
         codes: {
+          unknown_fixture: [
+            {
+              state: "fixture_state",
+              probe_id: "fixture-state",
+              entrypoints: [],
+              expected_exit_class: "usage",
+            },
+          ],
+        },
+      }),
+    );
+    await expect(main(root, [])).rejects.toThrow(
+      "Invalid error-code reachability ledger",
+    );
+    await writeFile(
+      reachabilityPath,
+      JSON.stringify({
+        schema_version: 1,
+        codes: {
           missing_code: [
             {
               state: "missing_state",

@@ -39,6 +39,7 @@ describe("refusal reachability", () => {
       verifyPmRefusalReachability(catalog, [
         {
           probe_id: "schema-unknown-subcommand",
+          entrypoint: "schema",
           code: "unknown_subcommand",
           exit_class: "usage",
         },
@@ -57,18 +58,26 @@ describe("refusal reachability", () => {
     ).toMatchObject({ ok: true, declared_probe_count: 0 });
   });
 
-  it("fails closed for missing, mistyped, and undeclared observations", () => {
+  it("fails closed for missing, mistyped, duplicated, and undeclared observations", () => {
     expect(verifyPmRefusalReachability(catalog, []).findings).toContainEqual(
       expect.objectContaining({ kind: "missing_probe" }),
     );
     const report = verifyPmRefusalReachability(catalog, [
       {
         probe_id: "schema-unknown-subcommand",
+        entrypoint: "graph",
         code: "unclassified_runtime_error",
         exit_class: "generic_failure",
       },
       {
         probe_id: "orphan-probe",
+        entrypoint: "schema",
+        code: "unknown_subcommand",
+        exit_class: "usage",
+      },
+      {
+        probe_id: "schema-unknown-subcommand",
+        entrypoint: "schema",
         code: "unknown_subcommand",
         exit_class: "usage",
       },
@@ -76,6 +85,8 @@ describe("refusal reachability", () => {
     expect(report.ok).toBe(false);
     expect(report.findings.map(({ kind }) => kind)).toEqual([
       "undeclared_probe",
+      "duplicate_probe",
+      "wrong_entrypoint",
       "wrong_error_code",
       "wrong_exit_class",
     ]);

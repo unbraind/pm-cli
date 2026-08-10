@@ -277,7 +277,9 @@ export function parseBootstrapHelpRequest(
  * for command-position scanning shared by {@link parseBootstrapCommandName} and the
  * command-alias rewrite so their precedence rules can never drift apart.
  */
-function findCommandTokenIndex(argv: string[]): number | undefined {
+export function findBootstrapCommandTokenIndex(
+  argv: string[],
+): number | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (token === "--") {
@@ -306,7 +308,7 @@ function findCommandTokenIndex(argv: string[]): number | undefined {
 
 /** Implements parse bootstrap command name for the public runtime surface of this module. */
 export function parseBootstrapCommandName(argv: string[]): string | undefined {
-  const index = findCommandTokenIndex(argv);
+  const index = findBootstrapCommandTokenIndex(argv);
   return index === undefined ? undefined : argv[index].trim().toLowerCase();
 }
 
@@ -385,7 +387,7 @@ const EXTENSION_ACTION_SYNTAX_TOKENS = new Set<ExtensionSubcommandAction>([
 
 /** Implements normalize legacy extension action syntax for the public runtime surface of this module. */
 export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
-  const extensionIndex = findCommandTokenIndex(argv);
+  const extensionIndex = findBootstrapCommandTokenIndex(argv);
   if (extensionIndex === undefined || argv[extensionIndex] !== "extension") {
     return [...argv];
   }
@@ -436,7 +438,7 @@ function stripLeadingExecutableAlias(
   argv: string[],
   trace: BootstrapNormalizationEvent[],
 ): string[] {
-  const index = findCommandTokenIndex(argv);
+  const index = findBootstrapCommandTokenIndex(argv);
   if (index === undefined) {
     return argv;
   }
@@ -464,7 +466,7 @@ function rewriteCommandAlias(
   argv: string[],
   trace: BootstrapNormalizationEvent[],
 ): string[] {
-  const index = findCommandTokenIndex(argv);
+  const index = findBootstrapCommandTokenIndex(argv);
   if (index === undefined) {
     return argv;
   }

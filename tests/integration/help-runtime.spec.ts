@@ -357,9 +357,17 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(result.code).toBe(2);
       const envelope = parseJsonErrorEnvelope(result.stderr);
       expect(envelope.recovery).toMatchObject({
-        candidate_commands: expect.arrayContaining(["docs", "files", "test"]),
-        candidate_commands_total: expect.any(Number),
+        candidate_commands: [
+          "comments",
+          "docs",
+          "files",
+          "learnings",
+          "notes",
+          "test",
+        ],
+        candidate_commands_total: 6,
       });
+      expect(envelope.recovery?.candidate_commands_truncated).toBeUndefined();
       expect(envelope.next_steps?.join("\n")).toContain("more command path(s)");
       expect(envelope.next_steps?.join("\n")).not.toContain(
         "run that command instead",

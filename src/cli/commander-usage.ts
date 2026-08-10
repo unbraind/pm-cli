@@ -31,6 +31,7 @@ import { normalizeHelpCommandPath } from "./help-content.js";
 import { getCommandPath } from "./registration-helpers.js";
 import {
   EXECUTABLE_COMMAND_ALIASES,
+  findBootstrapCommandTokenIndex,
   normalizeBootstrapInvocation,
   parseBootstrapHelpRequest,
   parseBootstrapGlobalOptions,
@@ -846,10 +847,10 @@ function resolveSplitSchemaSubcommand(
   if (!/too many arguments/i.test(message)) {
     return undefined;
   }
-  const schemaIndex = invocationArgv.indexOf("schema");
-  if (schemaIndex < 0) {
+  if (parseBootstrapCommandName(invocationArgv) !== "schema") {
     return undefined;
   }
+  const schemaIndex = findBootstrapCommandTokenIndex(invocationArgv)!;
   const verb = invocationArgv[schemaIndex + 1]?.trim().toLowerCase();
   const noun = invocationArgv[schemaIndex + 2]?.trim().toLowerCase();
   if (!verb || !noun) {

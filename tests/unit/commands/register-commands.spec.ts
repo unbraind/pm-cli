@@ -1674,6 +1674,14 @@ describe("operation command actions", () => {
     await expect(runCli("merge", "unknown")).rejects.toThrow(
       /Unknown merge subcommand/,
     );
+    await expect(runCli("merge", "   ")).rejects.toMatchObject({
+      code: "unknown_subcommand",
+      context: {
+        recovery: expect.objectContaining({
+          attempted_command: 'pm merge "<empty>"',
+        }),
+      },
+    });
   });
 
   it("maps expanded operation option booleans and string payloads", async () => {

@@ -220,21 +220,22 @@
         "signature ./sdk:PmRefusalReachabilityFinding"
       ],
       "package_version": "2026.8.10",
-      "reason": "Intentional compatible public contract expansion: optional recovery and owned-state fields plus new refusal primitives; existing consumers require no changes."
+      "reason": "Refusal-verifier findings are typed report members rather than emitted CLI error codes; the finding union models executable reachability mismatches without polluting the runtime error-code catalog."
     },
     {
       "changes": [
         "signature ./sdk:UnknownSubcommandErrorOptions"
       ],
       "package_version": "2026.8.10",
-      "reason": "Intentional compatible public contract expansion: optional recovery and owned-state fields plus configurable refusal display labels; existing consumers require no changes."
+      "reason": "Intentional compatible public contract expansion adds configurable refusal display labels and preserves stable alias migration: unknown_lifecycle_action resolves canonically to unknown_subcommand while retaining its catalog identity."
     },
     {
       "changes": [
-        "signature ./sdk:UnknownSubcommandErrorOptions"
+        "signature ./sdk:PmRefusalProbeObservation",
+        "signature ./sdk:PmRefusalReachabilityFinding"
       ],
       "package_version": "2026.8.10",
-      "reason": "Intentional compatible public contract expansion and stable alias migration: unknown_lifecycle_action now resolves canonically to unknown_subcommand while retaining its catalog identity."
+      "reason": "Intentional verifier contract hardening: observations now identify the exercised entrypoint and findings distinguish duplicate probes and wrong entrypoints so conformance cannot pass with the wrong transport path."
     }
   ],
   "entrypoints": {
@@ -8483,13 +8484,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmRefusalProbeObservation",
-          "signature": "export interface PmRefusalProbeObservation { probe_id: string; code: string; exit_class: PmErrorCodeClass; }"
+          "signature": "export interface PmRefusalProbeObservation { probe_id: string; entrypoint: string; code: string; exit_class: PmErrorCodeClass; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmRefusalReachabilityFinding",
-          "signature": "export interface PmRefusalReachabilityFinding { kind: \"missing_probe\" | \"wrong_error_code\" | \"wrong_exit_class\" | \"undeclared_probe\"; probe_id: string; detail: string; }"
+          "signature": "export interface PmRefusalReachabilityFinding { kind: \"duplicate_probe\" | \"missing_probe\" | \"wrong_entrypoint\" | \"wrong_error_code\" | \"wrong_exit_class\" | \"undeclared_probe\"; probe_id: string; detail: string; }"
         },
         {
           "classification": "advanced_export",

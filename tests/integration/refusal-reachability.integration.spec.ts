@@ -13,49 +13,79 @@ describe("real-entrypoint refusal reachability", () => {
     await withTempPmPath(async (context) => {
       const invalidRoot = path.join(context.tempRoot, "tracker-root-file");
       await writeFile(invalidRoot, "not a directory", "utf8");
-      const probes = new Map<string, () => { code: number; stderr: string }>([
+      const probes = new Map<
+        string,
+        {
+          entrypoint: string;
+          run: () => { code: number; stderr: string };
+        }
+      >([
         [
           "tracker-root-regular-file",
-          () => context.runCli(["--pm-path", invalidRoot, "list", "--json"]),
+          {
+            entrypoint: "list",
+            run: () =>
+              context.runCli(["--pm-path", invalidRoot, "list", "--json"]),
+          },
         ],
         [
           "cross-command-unknown-option",
-          () => context.runCli(["deps", "--add", "related:pm-x", "--json"]),
+          {
+            entrypoint: "deps",
+            run: () =>
+              context.runCli(["deps", "--add", "related:pm-x", "--json"]),
+          },
         ],
         [
           "schema-unknown-subcommand",
-          () => context.runCli(["schema", "add-typ", "Example", "--json"]),
+          {
+            entrypoint: "schema",
+            run: () =>
+              context.runCli(["schema", "add-typ", "Example", "--json"]),
+          },
         ],
         [
           "graph-unknown-subcommand",
-          () => context.runCli(["graph", "analyz", "--json"]),
+          {
+            entrypoint: "graph",
+            run: () => context.runCli(["graph", "analyz", "--json"]),
+          },
         ],
         [
           "config-unknown-action",
-          () => context.runCli(["config", "project", "delete", "--json"]),
+          {
+            entrypoint: "config",
+            run: () =>
+              context.runCli(["config", "project", "delete", "--json"]),
+          },
         ],
         [
           "package-unknown-action",
-          () => context.runCli(["package", "insta", "--json"]),
+          {
+            entrypoint: "package",
+            run: () => context.runCli(["package", "insta", "--json"]),
+          },
         ],
       ]);
       const observations: PmRefusalProbeObservation[] = [];
       for (const contract of PM_ERROR_CODE_CATALOG) {
         for (const state of contract.owned_states ?? []) {
-          const run = probes.get(state.probe_id);
-          expect(run, `missing probe driver ${state.probe_id}`).toBeDefined();
-          const result = run!();
+          const probe = probes.get(state.probe_id);
+          expect(probe, `missing probe driver ${state.probe_id}`).toBeDefined();
+          const result = probe!.run();
           const envelope = JSON.parse(result.stderr) as {
             code: string;
             exit_code: number;
           };
+          expect(result.code).toBe(envelope.exit_code);
           observations.push({
             probe_id: state.probe_id,
+            entrypoint: probe!.entrypoint,
             code: envelope.code,
             exit_class:
-              envelope.exit_code === 2
+              result.code === 2
                 ? "usage"
-                : envelope.exit_code === 3
+                : result.code === 3
                   ? "not_found"
                   : "generic_failure",
           });

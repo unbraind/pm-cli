@@ -66,8 +66,25 @@ describe("unknown subcommand recovery", () => {
     );
   });
 
+  it("normalizes whitespace-only positional tokens into a typed refusal", () => {
+    const error = createUnknownSubcommandError({
+      command_path: "merge",
+      token: "   ",
+      allowed: ["install", "report"],
+    });
+    expect(error).toMatchObject({
+      code: "unknown_subcommand",
+      context: {
+        recovery: {
+          attempted_command: 'pm merge "<empty>"',
+        },
+      },
+    });
+  });
+
   it("covers empty and equal-distance nearest-match decisions", () => {
     expect(_testOnly.nearestSubcommand(" ", ["list"])).toBeUndefined();
+    expect(_testOnly.nearestSubcommand("ls", ["rm"])).toBeUndefined();
     expect(_testOnly.nearestSubcommand("cat", ["car", "bat"])).toBe("bat");
   });
 });

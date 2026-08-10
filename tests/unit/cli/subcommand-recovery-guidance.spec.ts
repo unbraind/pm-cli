@@ -11,15 +11,7 @@ afterEach(() => {
 
 describe("Commander positional subcommand recovery", () => {
   it("recognizes split schema actions and preserves every trailing token", async () => {
-    process.argv = [
-      "node",
-      "pm",
-      "schema",
-      "add",
-      "type",
-      "Example",
-      "--json",
-    ];
+    process.argv = ["node", "pm", "schema", "add", "type", "Example", "--json"];
     const context = await resolveCommanderUsageContext(
       { message: "error: too many arguments" },
       new Command().name("pm"),
@@ -50,6 +42,7 @@ describe("Commander positional subcommand recovery", () => {
   it("leaves unrelated arity failures on the generic path", async () => {
     const cases = [
       ["list", "extra"],
+      ["--pm-path", "schema", "list", "schema", "add", "type"],
       ["schema", "add"],
       ["schema", "add", "unknown"],
     ];

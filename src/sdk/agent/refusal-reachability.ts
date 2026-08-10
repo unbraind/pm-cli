@@ -13,6 +13,8 @@ import type {
 export interface PmRefusalProbeObservation {
   /** Stable probe identifier from the owning error-code contract. */
   probe_id: string;
+  /** Public command entrypoint exercised by the probe. */
+  entrypoint: string;
   /** Machine-readable code observed at the transport boundary. */
   code: string;
   /** Semantic exit class observed at the transport boundary. */
@@ -23,7 +25,9 @@ export interface PmRefusalProbeObservation {
 export interface PmRefusalReachabilityFinding {
   /** Stable finding kind for automation. */
   kind:
+    | "duplicate_probe"
     | "missing_probe"
+    | "wrong_entrypoint"
     | "wrong_error_code"
     | "wrong_exit_class"
     | "undeclared_probe";
@@ -53,13 +57,22 @@ export function verifyPmRefusalReachability(
   const declarations = catalog.flatMap((contract) =>
     (contract.owned_states ?? []).map((state) => ({ contract, state })),
   );
-  const observationsByProbe = new Map(
-    observations.map((observation) => [observation.probe_id, observation]),
-  );
+  const findings: PmRefusalReachabilityFinding[] = [];
+  const observationsByProbe = new Map<string, PmRefusalProbeObservation>();
+  for (const observation of observations) {
+    if (observationsByProbe.has(observation.probe_id)) {
+      findings.push({
+        kind: "duplicate_probe",
+        probe_id: observation.probe_id,
+        detail: `Observation ${observation.probe_id} was supplied more than once.`,
+      });
+      continue;
+    }
+    observationsByProbe.set(observation.probe_id, observation);
+  }
   const declaredProbeIds = new Set(
     declarations.map(({ state }) => state.probe_id),
   );
-  const findings: PmRefusalReachabilityFinding[] = [];
   for (const { contract, state } of declarations) {
     const observation = observationsByProbe.get(state.probe_id);
     if (!observation) {
@@ -82,6 +95,13 @@ export function verifyPmRefusalReachability(
         kind: "wrong_exit_class",
         probe_id: state.probe_id,
         detail: `Expected ${state.expected_exit_class}; observed ${observation.exit_class}.`,
+      });
+    }
+    if (!state.entrypoints.includes(observation.entrypoint)) {
+      findings.push({
+        kind: "wrong_entrypoint",
+        probe_id: state.probe_id,
+        detail: `Expected one of ${state.entrypoints.join(", ")}; observed ${observation.entrypoint}.`,
       });
     }
   }
