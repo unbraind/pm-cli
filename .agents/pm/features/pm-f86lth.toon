@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: "area:sdk",context,evidence,governance,graph,traceability
 created_at: "2026-07-25T06:19:09.470Z"
-updated_at: "2026-08-10T14:43:25.303Z"
+updated_at: "2026-08-10T15:03:02.380Z"
 closed_at: "2026-08-10T14:32:11.360Z"
 completed_at: "2026-08-10T14:32:11.360Z"
 author: unknown
@@ -58,7 +58,7 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[24]{created_at,author,text}:
+comments[25]{created_at,author,text}:
   "2026-07-29T16:56:44.090Z","harness:claude-code","Traceability coverage measured at build 2026.7.29, and it is complete.\n\nEvery source, test and documentation file in the repository is referenced by at least one tracker item: 400 of 400 src TypeScript files, 390 of 390 test spec files, 42 of 42 docs markdown files. Zero unreferenced files in any of the three sets. 1,137 distinct repository paths appear across item files.\n\nMethod and its honest limit. The census matches any occurrence of a repository path inside an item's stored document, which includes formal linked-file and linked-doc entries as well as paths named in descriptions, comments and notes. It therefore proves reachability - for any file, some item explains why it exists - but not that every file carries a structured link on the item that owns it. The forward direction this item inverts is the stronger claim; this measurement bounds the reverse direction at 100 percent and tells the eventual gate what its baseline is.\n\nCompanion number for the linked-path health check: validate reports 179 missing linked paths against this same corpus, all of which are moved or deleted historical paths on terminal holders, partitioned under pm-zw9188.\n"
   "2026-08-02T06:50:32.361Z","harness:codex","GitHub intake: #861 requests the typed indexed linked-file reverse lookup that forms the first complete delivery surface of this canonical traceability feature: https://github.com/unbraind/pm-cli/issues/861. The broader acceptance remains path/line attribution, rationale, decision path, bounded incremental indexing, CLI/SDK/MCP parity, and no fabricated relationships."
   "2026-08-02T07:13:24.050Z","harness:codex","Implementation evidence: added a cursor-bound reverse linked-file SQLite projection with rebuild and incremental mutation updates; public CLI, PmClient, one-shot SDK, and MCP lookup surfaces; bounded pagination and explicit index/source-scan completeness receipts; generated contracts; focused documentation and regression coverage."
@@ -83,6 +83,7 @@ comments[24]{created_at,author,text}:
   "2026-08-10T14:37:37.244Z","harness:codex","Packaged closeout: package artifact gate passed @unbrained/pm-cli 2026.8.10 with 1,343 files and no forbidden sourcemaps; packed npx smoke passed across all 13 packages; package-first dogfood executed 88 commands successfully. Changelog generation via current pm-changelog 2026.8.7 is idempotent and includes this feature under Unreleased."
   "2026-08-10T14:39:49.712Z","harness:codex","Delivery evidence: commit 23c24b111 is published in GitHub PR #965 (https://github.com/unbraind/pm-cli/pull/965), with the canonical item linked directly in the PR description. Hosted exact-head checks, review inventory, merge, and post-merge release/telemetry proof will be appended separately."
   "2026-08-10T14:43:25.303Z","harness:codex","Hosted CI correction: PR #965 Gates (static) identified the generated full contract snapshot as stale at the files lookup flag surface. Regenerated tests/fixtures/contracts/full.json with explain, lines, decisionDepth, and schema v4.5.0; pnpm contracts:check now passes locally."
+  "2026-08-10T15:03:02.380Z","harness:codex","Hosted exact-head evidence for PR #965: head 41add6caba2ce3c43aa2f457fcedccdc1fc33641 passed the complete deterministic matrix, including additive contract/static gates, all runtime smokes, four coverage shards plus aggregate exact-100 gate, Codecov patch, CodeQL, Semgrep, security analyzers, Windows regression, and CodSpeed with 11 unchanged benchmarks. Final review inventory found zero threads and no actionable findings; every bot surface was reacted to and dispositioned. Greptile was silent and CodeRabbit/Sourcery review execution was rate-limited, so no unavailable provider was treated as approval."
 learnings[1]{created_at,author,text}:
   "2026-08-10T14:30:45.600Z","harness:codex","Transport parity must compare semantic receipts, not only matching item counts: the CLI and PmClient both returned total=1 while the typed SDK path had silently lost lineRange and therefore Git attribution. A real Git-backed acceptance assertion on line_range, mapped_commit_count, and contribution_lines caught the loss; canonical structured options and flat MCP flags now converge before the shared runner."
 files[25]{path,scope,note}:
