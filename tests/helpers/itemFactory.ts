@@ -73,7 +73,7 @@ function appendOptionalCreateArg(args: string[], flag: string, value: string | u
 }
 
 function buildCreateTestItemArgs(overrides: TestItemFactoryOverrides): string[] {
-  const args = ["create", "--json", "--title", overrides.title];
+  const args = ["create", "--json", "--allow-unresolved-deps", "--title", overrides.title];
   for (const field of TEST_ITEM_CREATE_FIELDS) {
     args.push(field.flag, resolveCreateFieldValue(field, overrides));
   }

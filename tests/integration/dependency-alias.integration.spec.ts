@@ -29,6 +29,7 @@ describe("dependency CLI aliases", () => {
           "update",
           id,
           "--json",
+          "--allow-unresolved-deps",
           "--dep",
           "type=blocked-by,id=dep-blocker,created_at=2026-03-02T12:00:00.000Z",
           "--author",
@@ -39,7 +40,13 @@ describe("dependency CLI aliases", () => {
         { expectJson: true },
       );
       expect(updated.code).toBe(0);
-      expect((updated.json as { item: { dependencies?: Array<Record<string, unknown>> } }).item.dependencies).toEqual([
+      expect(
+        (
+          updated.json as {
+            item: { dependencies?: Array<Record<string, unknown>> };
+          }
+        ).item.dependencies,
+      ).toEqual([
         {
           id: "pm-dep-blocker",
           kind: "blocked_by",

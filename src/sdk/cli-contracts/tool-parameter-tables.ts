@@ -169,6 +169,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   },
   idOnly: { type: "boolean" },
   allowMissingParent: { type: "boolean" },
+  allowUnresolvedDeps: { type: "boolean" },
   allowDuplicate: { type: "boolean" },
   duplicateOf: { type: "string" },
   configAction: { type: "string", enum: ["get", "set", "list", "export"] },
@@ -1040,6 +1041,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Explicitly proceed when strict similarity governance finds likely duplicate items.",
   },
+  allowUnresolvedDeps: {
+    description:
+      "Permit unresolved local dependency targets while returning dependency_target_unresolved warning receipts. Cross-workspace references should use source_kind=external instead.",
+    examples: [true],
+  },
   requiredTypes: {
     description:
       "Restrict a custom field's requirement to specific item types (schema add-field).",
@@ -1150,7 +1156,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   removeAc: {
     description:
-      "Acceptance criteria removed individually by exact text match (one criterion per entry).",
+      "Acceptance criteria removed individually by exact text match; the mutation fails atomically if any selector is unmatched (one criterion per entry).",
     examples: [["superseded manual QA step"]],
   },
   removeTags: {
@@ -1186,7 +1192,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     examples: [60, "120"],
   },
   acceptanceCriteria: {
-    description: "Acceptance criteria text.",
+    description:
+      "Complete acceptance-criteria replacement text. Use removeAc plus addAc together for an atomic one-entry repair that preserves unrelated criteria.",
   },
   author: {
     description:

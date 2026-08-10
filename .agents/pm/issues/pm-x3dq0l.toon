@@ -2,11 +2,13 @@ id: pm-x3dq0l
 title: "GH-954: fail-fast dependency target validation with explicit forward-reference intent"
 description: Reject unresolved dependency targets during create/update unless the caller explicitly opts into a forward reference; keep graph truth and repair semantics discoverable.
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-09T22:12:19.846Z"
-updated_at: "2026-08-09T22:16:19.907Z"
+updated_at: "2026-08-10T08:26:22.351Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#f40a3612ddfb4cf32376b325"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: Create and update reject unresolved dependency ids by default; an explicit allow-unresolved contract records intentional forward references; help SDK contracts MCP and completions expose additive replacement removal and forward-reference semantics; structured recovery names search dep-remove replace-deps and clear-deps; tests cover create update bulk and transaction paths
@@ -24,6 +26,21 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-96h7,implements,"2026-08-09T22:12:19.846Z","harness:codex","cli:create:dep",detected
   pm-ol5v,discovered_from,"2026-08-09T22:12:19.846Z","harness:codex","cli:create:dep",detected
   pm-st7wgu,related,"2026-08-09T22:12:19.846Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-09T22:12:19.846Z","harness:codex","Duplicate-check evidence: searched every status for nonexistent dependency, dangling edge, mutation-time validation, and GH-954. Closed pm-ol5v intentionally accepted forward references while adding downstream diagnostics; #954 requests a new fail-fast default with an explicit escape hatch, so this is follow-on work rather than a duplicate."
+  "2026-08-10T08:26:22.351Z","harness:codex","Implementation evidence: local dependency targets now fail before mutation unless they resolve; external/global targets bypass local lookup; --allow-unresolved-deps emits deterministic warning receipts across create, update, update-many, CLI contracts, and MCP schemas. Focused lossless contract tests and the final full suite (468 files, 7141 tests) pass; clean-directory CLI acceptance covered existing, missing, opt-in, and external targets."
+files[7]{path,scope,note}:
+  src/sdk/cli-contracts/commander-mutation-options.ts,project,CLI escape-hatch contract
+  src/sdk/cli-contracts/tool-schema.ts,project,MCP mutation schema
+  src/sdk/dependency-flag-validation.ts,project,fail-fast local target resolution primitive
+  src/sdk/lifecycle/create.ts,project,create dependency enforcement
+  src/sdk/lifecycle/update-many.ts,project,bulk preview/apply parity
+  src/sdk/lifecycle/update.ts,project,update dependency enforcement
+  tests/unit/commands/lossless-mutation-contracts.spec.ts,project,cross-surface regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lossless-mutation-contracts.spec.ts,project,240
+docs[3]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,agent-safe dependency workflow
+  docs/COMMANDS.md,project,operator dependency semantics
+  docs/SDK.md,project,typed SDK dependency contract
 body: ""

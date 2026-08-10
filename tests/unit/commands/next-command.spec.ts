@@ -50,7 +50,9 @@ function createItem(
   if (options.parent) args.push("--parent", options.parent);
   if (options.deadline) args.push("--deadline", options.deadline);
   if (options.blockedBy) args.push("--blocked-by", options.blockedBy);
-  if (options.dep) args.push("--dep", options.dep);
+  if (options.dep) {
+    args.push("--allow-unresolved-deps", "--dep", options.dep);
+  }
   const created = context.runCli(args, { expectJson: true });
   expect(created.code).toBe(0);
   return (created.json as { item: { id: string } }).item.id;

@@ -50,7 +50,9 @@ Repeated singular/plural list flags accumulate, so `--tag a --tag b` is equivale
 
 `--tags` REPLACES the whole tag list. To edit tags without restating the full set, prefer `--add-tags <value>` (adds without replacing) and `--remove-tags <value>` (prunes) on `create`/`update`/`update-many` (both repeatable; CSV or JSON-array). `--remove-tags` is `update`/`update-many` only. Also note `--expected`/`--actual` are short aliases for `--expected-result`/`--actual-result` on these commands, matching `pm close`.
 
-`--acceptance-criteria`/`--ac` likewise REPLACES the whole criteria value. Prefer `--add-ac <text>` (appends one criterion; deduped on exact text) and `--remove-ac <text>` (removes one criterion by exact text; unmatched selectors surface a `remove_ac_unmatched` warning) on `update`/`update-many` so concurrent branch edits with disjoint additions merge instead of clobbering. Acceptance criteria use semicolons as storage boundaries, so one criterion cannot itself contain a semicolon.
+`--acceptance-criteria`/`--ac` likewise explicitly REPLACES the whole criteria value and cannot be combined with `--add-ac` or `--remove-ac`. Prefer `--add-ac <text>` (appends one criterion; deduped on exact text) and `--remove-ac <text>` (removes one criterion by exact text) on `update`/`update-many` so concurrent branch edits with disjoint additions merge instead of clobbering. Every removal must match or the complete mutation fails atomically with structured unmatched-selector recovery. Acceptance criteria use semicolons as storage boundaries, so one criterion cannot itself contain a semicolon.
+
+Local dependency targets supplied to `create`, `update`, or `update-many` must already exist. Mark cross-workspace targets with `source_kind=external`; reserve `--allow-unresolved-deps` for deliberate staged imports and retain its structured warning as evidence.
 
 ```bash
 pm update <item-id> --add-tags urgent,backend   # keep existing tags, add two

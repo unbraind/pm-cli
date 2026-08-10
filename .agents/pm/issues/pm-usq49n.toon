@@ -1,0 +1,38 @@
+id: pm-usq49n
+title: "GH-959 recurrence: snapshot restore planning races lease-expiry fixture cleanup"
+description: "Make workspace snapshot restore planning and its lease-renewal failure path deterministic, failure-atomic, and free of orphaned async work when the source changes during a long restore."
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-08-10T07:04:11.182Z"
+updated_at: "2026-08-10T08:26:23.807Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#f40a3612ddfb4cf32376b325"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: "The hosted failure is reproducible under a deterministic synchronization primitive rather than wall-clock timing; Lease loss rejects before root activation and removes failed staging without an unhandled rejection; Manifest planning observes a stable source snapshot or returns a typed source-changed refusal; Focused repeated tests, full coverage, and Auto Release gates pass"
+goal: project management = context management
+objective: Eliminate the workspace snapshot race that blocked the daily release
+value: Snapshot recovery remains safe under concurrency and the release gate cannot fail nondeterministically
+why_now: "Auto Release run 31361402293 failed 1 of 7,135 tests with an unexpected resolved restore plus an unhandled ENOENT rejection in workspace-snapshot.spec.ts"
+parent: pm-o2kc
+risk: critical
+confidence: high
+severity: high
+expected_result: Lease-loss simulation deterministically rejects before activation and all async work is awaited or canceled
+actual_result: "The restore sometimes resolves, the fixture cleanup races an orphaned manifest read, and coverage reports an unhandled ENOENT rejection"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7zs0,related,"2026-08-10T07:04:11.182Z","harness:codex","cli:create:dep",detected
+  pm-e70zh5,related,"2026-08-10T07:04:11.182Z","harness:codex","cli:create:dep",detected
+  pm-ifuysd,discovered_from,"2026-08-10T07:04:11.182Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-10T07:04:11.182Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-10T07:04:11.182Z","harness:codex","Duplicate-check evidence: searched all statuses for workspace snapshot lease staging ENOENT,heartbeat races,Auto Release failure,and GH-959. Closed pm-ifuysd fixed the activation heartbeat rename race; run 31361402293 exposes a distinct recurrence in planning/test synchronization after that fix,so this item records the new failure rather than reopening or duplicating the closed resolution."
+  "2026-08-10T08:26:23.807Z","harness:codex","Implementation evidence: snapshot restore acquires and immediately renews its lease before planning, serializes heartbeat renewal, exposes explicit refresh, and preserves the first renewal failure. The recurrence test now uses deterministic lease contention instead of wall-clock mass-file timing. Clean-directory create/preview/restore and all 7141 tests pass."
+files[2]{path,scope,note}:
+  src/sdk/workspace-snapshot.ts,project,serialized immediate lease renewal primitive
+  tests/unit/sdk/workspace-snapshot.spec.ts,project,deterministic contention and cleanup regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts,project,240
+body: ""

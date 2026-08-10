@@ -41,6 +41,7 @@ import {
   readSettings,
   resolveAuthor,
 } from "../runtime-primitives.js";
+import { assertDependencyTargetsResolvable } from "../dependency-flag-validation.js";
 import type { ItemStatus, PmSettings } from "../../types/index.js";
 import { parseStatusFilterCsv } from "../../core/item/status-filter.js";
 import { hasListFilters } from "../query/list-filter-shared.js";
@@ -51,7 +52,12 @@ import {
   type ListedItem,
 } from "../query/list.js";
 import { runRestore } from "./restore.js";
-import { runUpdate, type UpdateCommandOptions } from "./update.js";
+import {
+  assertUpdateMutationOptionCombinations,
+  parseDependencyAdditions,
+  runUpdate,
+  type UpdateCommandOptions,
+} from "./update.js";
 import {
   derivePmBulkMutationEffect,
   type PmCommandEffectReceipt,
@@ -66,6 +72,7 @@ const NON_MUTATION_UPDATE_OPTION_KEYS = new Set<PropertyKey>([
   "force",
   "ownershipMetadataBypass",
   "ownershipDependencyBypass",
+  "allowUnresolvedDeps",
 ]);
 
 const UPDATE_MANY_MUTATION_FLAG_GUIDANCE = [
@@ -597,28 +604,30 @@ const buildTagMutationPlan = (
 const buildAcceptanceCriteriaMutationPlan = (
   row: Record<string, unknown>,
   update: UpdateCommandOptions,
-): { change?: PlannedChange; warnings: string[] } => {
+): PlannedChange | undefined => {
   const before = row.acceptance_criteria;
-  const base =
-    update.acceptanceCriteria === undefined
-      ? before
-      : String(update.acceptanceCriteria).trim();
   const mutation = applyAcceptanceCriteriaMutations(
-    splitAcceptanceCriteria(base),
+    splitAcceptanceCriteria(before),
     update.addAc,
     update.removeAc,
   );
-  const warnings = mutation.unmatchedRemovals.map(
-    (criterion) => `remove_ac_unmatched:${criterion}`,
-  );
-  const after = mutation.criteria.join("; ");
-  if (areValuesEqual(before, after) || (before === undefined && after === "")) {
-    return { warnings };
+  if (mutation.unmatchedRemovals.length > 0) {
+    throw new PmCliError(
+      `Acceptance criteria removal did not match: ${mutation.unmatchedRemovals.join(", ")}`,
+      EXIT_CODE.NOT_FOUND,
+      {
+        code: "acceptance_criteria_remove_unmatched",
+        reason: "exact_match_not_found",
+        field: "acceptance_criteria",
+        unmatched: mutation.unmatchedRemovals,
+      },
+    );
   }
-  return {
-    change: { field: "acceptance_criteria", before, after },
-    warnings,
-  };
+  const after = mutation.criteria.join("; ");
+  if (areValuesEqual(typeof before === "string" ? before : "", after)) {
+    return undefined;
+  }
+  return { field: "acceptance_criteria", before, after };
 };
 
 /** Adds changed scalar options to a planned item diff. */
@@ -685,7 +694,6 @@ const buildPlannedItemDiff = (
 ): PlannedItemDiff => {
   const row = toItemRecord(item);
   const changes: PlannedChange[] = [];
-  const warnings: string[] = [];
   const tagPlan = buildTagMutationPlan(row, update);
   if (tagPlan) {
     changes.push(tagPlan);
@@ -695,15 +703,13 @@ const buildPlannedItemDiff = (
     updateArrayValueCount(update.addAc) > 0 ||
     updateArrayValueCount(update.removeAc) > 0
   ) {
-    const composed = buildAcceptanceCriteriaMutationPlan(row, update);
-    const withoutAc = changes.filter(
-      (change) => change.field !== "acceptance_criteria",
+    const acceptanceCriteriaChange = buildAcceptanceCriteriaMutationPlan(
+      row,
+      update,
     );
-    changes.splice(0, changes.length, ...withoutAc);
-    if (composed.change !== undefined) {
-      changes.push(composed.change);
+    if (acceptanceCriteriaChange !== undefined) {
+      changes.push(acceptanceCriteriaChange);
     }
-    warnings.push(...composed.warnings);
   }
   changes.push(...buildCollectionMutationPlans(row, update));
   appendRuntimeFieldMutationPlans(changes, row, update, runtimeFieldRegistry);
@@ -712,7 +718,6 @@ const buildPlannedItemDiff = (
   return {
     id: item.id,
     changes,
-    ...(warnings.length > 0 ? { warnings } : {}),
   };
 };
 
@@ -1021,11 +1026,9 @@ const buildUpdateManyPlan = async (params: {
   global: GlobalOptions;
   runtime: UpdateManyRuntimeContext;
   updateSummary: Record<string, unknown>;
+  dependencyWarnings: string[];
 }): Promise<UpdateManyPlan> => {
-  normalizeStatusFilter(
-    params.options.status,
-    params.runtime.statusRegistry,
-  );
+  normalizeStatusFilter(params.options.status, params.runtime.statusRegistry);
   const listed = await runList(
     undefined,
     {
@@ -1039,13 +1042,19 @@ const buildUpdateManyPlan = async (params: {
     },
     params.global,
   );
-  const planned = listed.items.map((item) =>
-    buildPlannedItemDiff(
+  const planned = listed.items.map((item) => {
+    const diff = buildPlannedItemDiff(
       item,
       params.runtime.runtimeFieldRegistry,
       params.options.update,
-    ),
-  );
+    );
+    return params.dependencyWarnings.length === 0
+      ? diff
+      : {
+          ...diff,
+          warnings: [...params.dependencyWarnings],
+        };
+  });
   const existenceItems =
     params.options.list?.ids == null
       ? []
@@ -1107,7 +1116,6 @@ const buildUpdateManyNoopResult = (plan: UpdateManyPlan): UpdateManyResult => ({
   rows: plan.planned.map((row) => ({
     id: row.id,
     status: "skipped" as const,
-    ...(row.warnings ? { warnings: row.warnings } : {}),
   })),
   ids: [],
   ...buildUnmatchedIdFields(plan),
@@ -1125,17 +1133,14 @@ const applyUpdateManyRows = async (params: {
   const updatedIds: string[] = [];
   const updateMessage =
     params.options.update.message ?? `update-many apply ${params.checkpointId}`;
-  const plannedById = new Map(params.plans.map((row) => [row.id, row]));
   const actionableById = new Set(
     params.plans.filter((row) => row.changes.length > 0).map((row) => row.id),
   );
   for (const item of params.items) {
     if (!actionableById.has(item.id)) {
-      const warnings = plannedById.get(item.id)?.warnings;
       rows.push({
         id: item.id,
         status: "skipped",
-        ...(warnings ? { warnings } : {}),
       });
       continue;
     }
@@ -1265,11 +1270,29 @@ export const runUpdateMany = async (
     runtime.statusRegistry,
     runtime.pmRoot,
   );
+  assertUpdateMutationOptionCombinations(options.update);
+  const dependencyWarnings = await assertDependencyTargetsResolvable({
+    pmRoot: runtime.pmRoot,
+    dependencies: parseDependencyAdditions(
+      options.update.dep,
+      runtime.settings.id_prefix,
+      nowIso(),
+      resolveAuthor(options.update.author, runtime.settings.author_default),
+    ).additions,
+    idPrefix: runtime.settings.id_prefix,
+    itemFormat: runtime.settings.item_format,
+    typeToFolder: resolveItemTypeRegistry(
+      runtime.settings,
+      getActiveExtensionRegistrations(),
+    ).type_to_folder,
+    allowUnresolved: options.update.allowUnresolvedDeps,
+  });
   const plan = await buildUpdateManyPlan({
     options,
     global,
     runtime,
     updateSummary,
+    dependencyWarnings,
   });
   return options.dryRun === true
     ? buildUpdateManyDryRunResult(plan)

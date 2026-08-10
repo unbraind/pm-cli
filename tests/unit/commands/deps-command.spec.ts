@@ -22,10 +22,7 @@ import {
 } from "../../helpers/withTempPmPath.js";
 
 /** Render the disclosed dependency envelope used by CLI and SDK consumers. */
-function formatDepsOutput(
-  result: unknown,
-  format: "json" | "toon",
-): string {
+function formatDepsOutput(result: unknown, format: "json" | "toon"): string {
   return formatBuiltInOutput(
     attachOutputOmissionReceipt("deps", result),
     format,
@@ -40,6 +37,7 @@ function createTask(
   const args = [
     "create",
     "--json",
+    "--allow-unresolved-deps",
     "--title",
     title,
     "--description",

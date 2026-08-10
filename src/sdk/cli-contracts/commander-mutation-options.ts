@@ -257,6 +257,13 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
         "Allow creating with an unresolved parent reference and emit a validation warning",
     },
     {
+      target: "allowUnresolvedDeps",
+      keys: ["allowUnresolvedDeps", "allow_unresolved_deps"],
+      option: "--allow-unresolved-deps",
+      description:
+        "Allow unresolved local dependency targets and emit explicit warning receipts",
+    },
+    {
       target: "reviewer",
       keys: ["reviewer"],
       option: "--reviewer <value>",
@@ -664,7 +671,7 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       keys: ["acceptanceCriteria", "acceptance_criteria", "ac"],
       option: "--acceptance-criteria <value>",
       description:
-        "Set acceptance criteria (repeatable; values join with '; ')",
+        "Replace the complete acceptance-criteria list (repeatable values join with '; '); use --remove-ac plus --add-ac for one-entry repair",
       repeatable: true,
       aliasOptions: [
         {
@@ -693,7 +700,7 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       keys: ["removeAc", "remove_ac"],
       option: "--remove-ac <value>",
       description:
-        "Remove one semicolon-free acceptance criterion by exact text match (repeatable)",
+        "Remove one semicolon-free acceptance criterion by exact text match; fails if any selector is unmatched (repeatable)",
       repeatable: true,
       aliasOptions: [
         { option: "--remove_ac <value>", description: "Alias for --remove-ac" },
@@ -792,6 +799,13 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       option: "--allow-missing-parent",
       description:
         "Allow updating to an unresolved parent reference and emit a validation warning",
+    },
+    {
+      target: "allowUnresolvedDeps",
+      keys: ["allowUnresolvedDeps", "allow_unresolved_deps"],
+      option: "--allow-unresolved-deps",
+      description:
+        "Allow unresolved local dependency targets and emit explicit warning receipts",
     },
     {
       target: "completedAt",

@@ -1040,7 +1040,10 @@ describe("runUpdate", () => {
 
       // --blocked-by here targets a non-existent item, so the scalar is still
       // recorded but the kyd6 reconciler surfaces the unresolved-blocker warning.
-      expect(result.warnings).toEqual(["blocked_by_unresolved:pm-blocking-next"]);
+      expect(result.warnings).toEqual([
+        "blocked_by_unresolved:pm-blocking-next",
+        "acceptance_criteria_replaced:1:1",
+      ]);
       expect(result.changed_fields).toEqual(
         expect.arrayContaining(["title", "description", "body", "status", "priority", "type", "tags", ...OPTIONAL_UPDATE_CHANGED_FIELDS]),
       );
@@ -1629,6 +1632,7 @@ describe("runUpdate", () => {
       const added = await runUpdate(
         id,
         {
+          allowUnresolvedDeps: true,
           dep: [
             "id=dep-alpha,kind=blocks,author=dep-owner,created_at=2026-03-01T00:00:00.000Z",
             "id=dep-alpha,kind=blocks,author=duplicate-owner,created_at=2026-03-03T00:00:00.000Z",
@@ -1722,6 +1726,7 @@ describe("runUpdate", () => {
       await runUpdate(
         id,
         {
+          allowUnresolvedDeps: true,
           dep: ["id=dep-clear,kind=blocks,created_at=2026-03-01T00:00:00.000Z"],
           message: "seed one dependency before clear",
         },
@@ -1748,6 +1753,7 @@ describe("runUpdate", () => {
       await runUpdate(
         id,
         {
+          allowUnresolvedDeps: true,
           tags: "alpha,beta",
           deadline: "2026-03-15T00:00:00.000Z",
           dep: ["id=dep-seed,kind=blocks,created_at=2026-03-01T00:00:00.000Z"],
@@ -1798,6 +1804,7 @@ describe("runUpdate", () => {
       await runUpdate(
         id,
         {
+          allowUnresolvedDeps: true,
           dep: [
             "id=dep-alpha,kind=blocks,created_at=2026-03-01T00:00:00.000Z",
             "id=dep-beta,kind=related,created_at=2026-03-02T00:00:00.000Z",
@@ -1811,6 +1818,7 @@ describe("runUpdate", () => {
         id,
         {
           replaceDeps: true,
+          allowUnresolvedDeps: true,
           dep: ["id=dep-gamma,kind=related,created_at=2026-03-03T00:00:00.000Z"],
           message: "replace dependencies atomically",
         },
@@ -2715,6 +2723,7 @@ describe("runUpdate", () => {
         id,
         {
           ownershipDependencyBypass: true,
+          allowUnresolvedDeps: true,
           dep: ["id=dep-audit,kind=related,author=audit-owner,created_at=2026-03-01T00:00:00.000Z"],
           message: "audit dependency add",
         },
@@ -2771,6 +2780,7 @@ describe("runUpdate", () => {
         id,
         {
           ownershipDependencyBypass: true,
+          allowUnresolvedDeps: true,
           dep: ["id=dep-audit,kind=related"],
           doc: ["path=docs/COMMANDS.md,scope=project,note=audit doc"],
           message: "attempt doc append in dep-audit mode",
@@ -2868,18 +2878,19 @@ describe("runUpdate", () => {
       expect(duplicate.item.updated_at).toBe(added.item.updated_at);
       expect(await readFile(historyPath, "utf8")).toBe(historyAfterAddition);
 
-      const unmatchedOnly = await runUpdate(
-        id,
-        { removeAc: ["never existed"], message: "unmatched criterion" },
-        { path: context.pmPath },
-      );
-      expect(unmatchedOnly.changed_fields).not.toContain(
-        "acceptance_criteria",
-      );
-      expect(unmatchedOnly.warnings).toContain(
-        "remove_ac_unmatched:never existed",
-      );
-      expect(unmatchedOnly.item.updated_at).toBe(added.item.updated_at);
+      await expect(
+        runUpdate(
+          id,
+          { removeAc: ["never existed"], message: "unmatched criterion" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        context: {
+          code: "acceptance_criteria_remove_unmatched",
+          unmatched: ["never existed"],
+        },
+      });
       expect(await readFile(historyPath, "utf8")).toBe(historyAfterAddition);
 
       await expect(
@@ -2893,36 +2904,59 @@ describe("runUpdate", () => {
         context: { code: "acceptance_criteria_semicolon_forbidden" },
       });
 
+      await expect(
+        runUpdate(
+          id,
+          {
+            removeAc: ["second criterion", "never existed"],
+            message: "reject partial criterion removal",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        context: {
+          code: "acceptance_criteria_remove_unmatched",
+          unmatched: ["never existed"],
+        },
+      });
+      expect(await readFile(historyPath, "utf8")).toBe(historyAfterAddition);
+
       const removed = await runUpdate(
         id,
-        {
-          removeAc: ["second criterion", "never existed"],
-          message: "prune criterion",
-        },
+        { removeAc: ["second criterion"], message: "prune criterion" },
         { path: context.pmPath },
       );
       expect(removed.item.acceptance_criteria).toBe(
         "first criterion; third criterion",
       );
-      expect(removed.warnings).toContain("remove_ac_unmatched:never existed");
 
-      const composed = await runUpdate(
+      await expect(
+        runUpdate(
+          id,
+          {
+            acceptanceCriteria: "replaced base",
+            addAc: ["ambiguous addition"],
+            message: "reject ambiguous replacement",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: { code: "acceptance_criteria_mutation_conflict" },
+      });
+
+      const replaced = await runUpdate(
         id,
         {
-          acceptanceCriteria: "replaced base",
-          addAc: ["composed addition"],
-          message: "replace then append",
+          acceptanceCriteria: "replaced base; composed addition",
+          message: "replace criteria explicitly",
         },
         { path: context.pmPath },
       );
-      expect(composed.item.acceptance_criteria).toBe(
-        "replaced base; composed addition",
+      expect(replaced.warnings).toContain(
+        "acceptance_criteria_replaced:2:2",
       );
-      expect(
-        composed.changed_fields.filter(
-          (field) => field === "acceptance_criteria",
-        ),
-      ).toHaveLength(1);
 
       const cliUpdate = context.runCli(
         [
@@ -3023,6 +3057,7 @@ describe("runUpdate", () => {
       const result = await runUpdate(
         id,
         {
+          allowUnresolvedDeps: true,
           dep: [
             "id=pm-a,kind=depends_on",
             "id=pm-b,kind=related_to",

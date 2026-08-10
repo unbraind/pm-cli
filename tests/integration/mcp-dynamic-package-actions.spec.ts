@@ -502,6 +502,7 @@ describe("MCP dynamic package actions", () => {
         "Create MCP compact target",
         "--dep",
         "id=pm-seed-related,kind=related,author=seed-author,created_at=now",
+        "--allow-unresolved-deps",
         "--comment",
         "author=seed-author,created_at=now,text=seed comment",
         "--note",

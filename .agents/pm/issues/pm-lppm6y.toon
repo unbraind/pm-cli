@@ -2,11 +2,13 @@ id: pm-lppm6y
 title: "GH-956: lossless acceptance-criteria replacement and unmatched-removal failure contract"
 description: Prevent a composed remove-and-replace update from silently discarding unrelated acceptance criteria; make destructive and unmatched list mutations explicit and machine-actionable.
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-09T22:12:37.531Z"
-updated_at: "2026-08-09T22:16:20.387Z"
+updated_at: "2026-08-10T08:26:22.857Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#f40a3612ddfb4cf32376b325"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: Unmatched removal fails or requires an explicit allow-noop contract; replacing nonempty acceptance criteria is explicitly named and reports discarded entries; one-entry repair has an atomic operation that preserves unrelated criteria; CLI SDK MCP bulk transaction help and completions share semantics; tests cover delimiter normalization composed flags warnings exits and history atomicity
@@ -24,6 +26,19 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-inn5y5,related,"2026-08-09T22:12:37.531Z","harness:codex","cli:create:dep",detected
   pm-mpbb,implements,"2026-08-09T22:12:37.531Z","harness:codex","cli:create:dep",detected
   pm-xh82,discovered_from,"2026-08-09T22:12:37.531Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-09T22:12:37.531Z","harness:codex","Duplicate-check evidence: searched every status for GH-956, remove-ac unmatched behavior, replace-only --ac, and acceptance-criteria loss. Closed pm-xh82 deliberately added exact-match warnings and replace-then-add composition; #956 proves the remaining destructive combination, while pm-inn5y5 concerns branch merge storage, so this is distinct follow-on work."
+  "2026-08-10T08:26:22.857Z","harness:codex","Implementation evidence: acceptance-criteria replacement is mutually exclusive with additive selectors; every unmatched removal returns structured NOT_FOUND before persistence; remove+add repairs are atomic; replacement emits count receipts; update-many dry-run and apply share validation. Focused tests, clean-directory failure-atomic acceptance, and the full 7141-test suite pass."
+files[5]{path,scope,note}:
+  src/core/shared/errors.ts,project,structured unmatched selector recovery
+  src/sdk/cli-contracts/tool-schema.ts,project,mutually exclusive MCP options
+  src/sdk/lifecycle/update-many.ts,project,bulk criteria preview parity
+  src/sdk/lifecycle/update.ts,project,failure-atomic criteria mutation
+  tests/unit/commands/lossless-mutation-contracts.spec.ts,project,lossless criteria regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lossless-mutation-contracts.spec.ts,project,240
+docs[3]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,concurrent criteria guidance
+  docs/COMMANDS.md,project,lossless criteria CLI semantics
+  docs/SDK.md,project,typed SDK criteria contract
 body: ""

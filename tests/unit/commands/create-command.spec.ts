@@ -33,7 +33,8 @@ function baseCreateOptions(overrides: Partial<CreateCommandOptions> = {}): Creat
     author: "seed-author",
     message: "create seed message",
     assignee: "seed-assignee",
-    dep: ["id=a1b2,kind=related,author=dep-author,created_at=2026-01-01T00:00:00.000Z"],
+    allowUnresolvedDeps: true,
+    dep: ["id=pm-a1b2,kind=related,author=dep-author,created_at=2026-01-01T00:00:00.000Z,source_kind=external"],
     comment: ["author=comment-author,text=seed comment"],
     note: ["author=note-author,text=seed note"],
     learning: ["author=learning-author,text=seed learning"],
@@ -223,6 +224,7 @@ describe("runCreate", () => {
         title: "gh258-seed",
         type: "Task",
         author: "seed-author",
+        allowUnresolvedDeps: true,
         ...overrides,
       });
       const cases: Array<[Partial<CreateCommandOptions>, string]> = [
@@ -984,7 +986,7 @@ describe("runCreate", () => {
           kind: "related",
           author: "dep-author",
           created_at: "2026-01-01T00:00:00.000Z",
-          source_kind: "cli:create:dep",
+          source_kind: "global",
           author_source: "asserted",
         },
       ]);
