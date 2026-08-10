@@ -2,22 +2,44 @@ id: pm-lyfu7b
 title: "pm assert: a bound over a measurement carrying polarity, scope, lifetime, enforcement level, and a required negative control, so every guarantee states which direction it can fail in"
 description: "An assertion binds a measurement to a declared bound. Polarity is ceiling, floor, equals, zero, monotone_nondecreasing, monotone_nonincreasing, or subset_of, and exactly one is declared per assertion. Scope names the population the bound speaks for — active only, all statuses, or a filter expression — because a bound that is silently active-scoped always passes for the newest structural layer, which is how a governance improvement became indistinguishable from a relevance regression. Lifetime names what happens when the owning item reaches a terminal status: hold keeps comparing, retire stops and must record why the property stopped mattering. Enforcement level is block, warn, or observe, so a project adopts a bound by first watching it. A negative control is mandatory and must prove failure in every direction the polarity admits, which for a floor means both an undercut and a spurious pass. The owner is a typed relationship to the pm item that owns the property, not a string, so assertions participate in the graph and an item's blast radius includes the guarantees that depend on it. Tightening is automatic and monotone; loosening is refused unless a linked Decision item authorises it, which is what makes a repair and an erosion structurally different acts rather than the same hand edit."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[5]: "area:sdk",assurance,configurability,enforcement,measurement-ratchet
 created_at: "2026-08-10T20:55:45.036Z"
-updated_at: "2026-08-10T20:55:45.036Z"
+updated_at: "2026-08-10T23:02:40.056Z"
+closed_at: "2026-08-10T23:01:19.620Z"
+completed_at: "2026-08-10T23:01:19.620Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "An assertion declares exactly one polarity, is refused when it declares none or several, and names its measurement by id; Scope is explicit and a bound that would silently cover only active items must say so, with the population size reported alongside the observed value; Lifetime defaults to hold, retire requires a recorded reason, and an out-of-domain lifetime fails rather than falling back to the default; Automatic tightening is monotone in the good direction; any loosening is refused unless a Decision item is linked, and the refusal names the missing decision; Each assertion carries a negative control that fails in every direction its polarity admits, and an assertion whose control has never failed is reported as unproven"
 parent: pm-1jzupz
 risk: medium
 confidence: 80
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+resolution: fixed
+expected_result: "Every project guarantee declares one failure direction, population, lifetime, enforcement mode, owner, and proven negative control; weakening requires an auditable Decision."
+actual_result: "Assertions enforce the complete contract through shared SDK and CLI paths, report population and bound evidence, and reject unauthorized relaxation."
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jzupz,implements,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
   pm-5z9plz,discovered_from,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
   pm-9gzr4r,related,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
   pm-g4k74y,discovered_from,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
   pm-rtn5h6,related,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
+  pm-2lex4r,blocked_by,"2026-08-10T21:22:50.593Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-10T21:22:55.185Z","harness:codex","Start evidence 2026-08-10: reused canonical assertion item after all-status duplicate search. This tranche implements assertion declaration validation and evaluation on the measurement substrate, including mandatory proven controls and explicit lifecycle/enforcement semantics."
+  "2026-08-10T23:01:03.730Z","harness:codex","Completion evidence 2026-08-11: assertions now require exactly one polarity, explicit all/active/filter scope, hold-or-reasoned-retire lifetime, enforcement level, owner linkage, and a proven negative control. Evaluation reports population and observed/bound data; monotone tightening is automatic, while weakening is refused unless a live linked Decision authorizes it. Unit and action tests passed inside the 7,201-test exact-coverage run and the packed CLI acceptance exercised a passing assertion end to end."
+learnings[1]{created_at,author,text}:
+  "2026-08-10T23:01:04.318Z","harness:codex","A weakening authorization must be resolved against the live workspace item graph, not accepted as a caller string; this keeps a Decision auditable and prevents transport-specific policy bypasses."
+files[3]{path,scope,note}:
+  src/sdk/governance/assurance-action.ts,project,shared assertion registry transport
+  src/sdk/governance/assurance.ts,project,assertion polarity scope lifetime and loosening authorization
+  tests/unit/sdk/assurance.spec.ts,project,"Assertion lifecycle,scope,negative-control,and decision-authorization coverage"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-action.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msnt2w1z-njvahs,test,passed,"2026-08-10T22:31:11.452Z","2026-08-10T22:31:21.287Z","2026-08-10T22:31:21.287Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/ASSURANCE.md,project,public assurance contracts and workflows
+close_reason: "Delivered typed assertion polarities, explicit populations and lifetimes, enforcement levels, required negative controls, owner relationships, Decision-authorized weakening, docs, packed acceptance, and exact coverage."
 body: ""

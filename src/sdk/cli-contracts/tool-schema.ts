@@ -127,6 +127,7 @@ const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<
   append: ["fullChangedFields"],
   "update-many": ["fullChangedFields"],
   "close-many": ["fullChangedFields"],
+  assurance: ["fullChangedFields", "idOnly"],
 };
 
 /** Create-compatible metadata parameters reused by Plan materialization and CLI registration. */
@@ -1206,6 +1207,31 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "full",
       ],
     },
+    assurance: {
+      required: ["subcommand"],
+      optional: [
+        "kind",
+        "id",
+        "definition",
+        "trigger",
+        "treeId",
+        "gate",
+        "dryRun",
+        "author",
+        "message",
+      ],
+      conditionalRequired: [
+        { property: "subcommand", value: "list", required: ["kind"] },
+        { property: "subcommand", value: "show", required: ["kind", "id"] },
+        {
+          property: "subcommand",
+          value: "put",
+          required: ["kind", "id", "definition"],
+        },
+        { property: "subcommand", value: "remove", required: ["kind", "id"] },
+        { property: "subcommand", value: "run", required: ["id", "trigger"] },
+      ],
+    },
     gc: { optional: ["dryRun", "gcScope"] },
     contracts: {
       optional: [
@@ -1641,7 +1667,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and the contract tests all bind to one constant instead of re-typing the `"4.0.2"` literal (pm-r9sz). Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.5.0" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.6.0" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the
@@ -1651,7 +1677,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA_MAJOR =
   PM_TOOL_PARAMETERS_SCHEMA_VERSION.split(".")[0];
 
 /** Version of the provider-compatible flat tool-parameters schema (`PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`). Tracked separately from the strict schema because the flat projection evolves independently. */
-export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.2.0" as const;
+export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.3.0" as const;
 
 /** Public contract for pm tool parameters schema, shared by SDK and presentation-layer consumers. */
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> =

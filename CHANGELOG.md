@@ -4,6 +4,10 @@
 
 ### Added
 
+- Assurance verdicts are appended to the immutable record, so what was enforced when, and who relaxed a bound, is replayable and provable rather than reconstructed from CI logs ([pm-91xeam](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-91xeam.toon))
+- pm gate: named assertion bundles bound to lifecycle triggers, returning one structured verdict document instead of prose, so local and hosted enforcement run identical semantics ([pm-wn6wot](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-wn6wot.toon))
+- pm assert: a bound over a measurement carrying polarity, scope, lifetime, enforcement level, and a required negative control, so every guarantee states which direction it can fail in ([pm-lyfu7b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-lyfu7b.toon))
+- pm measure: a named population over the workspace declared as data, with a composable source vocabulary and derived arithmetic so a bound can be denominated in the unit it actually means ([pm-2lex4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2lex4r.toon))
 - Refusal reachability: every error code declares the states it owns, and an entrypoint-level probe proves each state is still reachable as that typed code rather than as an untyped fault ([pm-elmpav](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-elmpav.toon))
 - Source-to-item traceability: derive which tracked work produced any given file or line, so an agent can ask why this code exists and get an evidence-backed answer ([pm-f86lth](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-f86lth.toon))
 - Automatic semantic session attribution: infer bounded topic and role from claimed work and harness context without per-call identity flags ([pm-3zgh2c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3zgh2c.toon))
@@ -13,6 +17,10 @@
 - Unknown-option recovery names three of six commands that accept the flag, capped silently and in arbitrary order, so the hint excludes the right answer while reading as exhaustive ([pm-yqe0mo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yqe0mo.toon))
 - Subcommand-token error contract: one unknown-subcommand code with nearest-match recovery across every subcommand family ([pm-185870](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-185870.toon))
 - pm get cannot report linked files, tests, or docs in any projection, so the one command an agent uses to rebuild an item's context silently reports them as absent ([pm-tld20c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tld20c.toon))
+
+### Security
+
+- Refresh compatible 2026-08-08 development dependencies ([pm-8l1m5t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8l1m5t.toon))
 
 ## 2026.8.10 - 2026-08-10
 

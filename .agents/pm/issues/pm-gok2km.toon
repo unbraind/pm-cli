@@ -1,0 +1,29 @@
+id: pm-gok2km
+title: "GH-969: brief item reads can exceed standard output because omission receipts bill empty fields"
+description: The brief get/show projection can emit more bytes than standard because full restore hints are added for empty or default-valued fields that were cheaper to render. Preserve omission honesty while making depth cost monotone and agent-predictable.
+type: Issue
+status: open
+priority: 1
+tags[4]: agent-ux,context-efficiency,output-contracts,token-budget
+created_at: "2026-08-10T22:59:19.233Z"
+updated_at: "2026-08-10T23:08:11.446Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Brief output never exceeds standard output for the same item and format; Empty or default-valued omissions do not incur a larger receipt than the value they replace; Property and integration tests cover monotone brief standard deep and full projection costs without hiding material omissions
+parent: pm-5t33or
+reporter: GitHub issue #969
+severity: medium
+environment: pm 2026.8.10 CLI get/show depth projections
+repro_steps: "Create a small item with comments and notes, then compare byte counts for show --depth brief, standard, deep, and full."
+expected_result: Projection depth is monotone in emitted cost while every material omission remains discoverable.
+actual_result: Brief measured 1400 bytes versus 1313 bytes for standard because restore hints cost more than empty body and unclaimed state.
+affected_version: 2026.8.10
+component: CLI output projections
+regression: false
+customer_impact: Agents cannot trust the low-context depth control and spend more context while requesting less.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4k6b,related,"2026-08-10T22:59:19.233Z","harness:codex","cli:create:dep",detected
+  pm-p258tx,discovered_from,"2026-08-10T22:59:19.233Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-10T22:59:19.233Z","harness:codex","Duplicate-check evidence 2026-08-11: all-status search found the shipped omission-receipt primitive pm-p258tx and token-budget parent pm-5t33or, but no item covering the GH-969 monotonicity inversion. Canonical source: https://github.com/unbraind/pm-cli/issues/969."
+body: ""

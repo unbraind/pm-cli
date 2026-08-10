@@ -2,21 +2,43 @@ id: pm-91xeam
 title: "Assurance verdicts are appended to the immutable record, so what was enforced when, and who relaxed a bound, is replayable and provable rather than reconstructed from CI logs"
 description: "Every gate evaluation appends a verdict entry to the history stream: the gate id, the commit or tree it judged, each assertion's observed value and bound, the verdict, the compute cost, and the detected harness and model that ran it. Three things follow that are impossible today. First, the enforcement history becomes queryable with the tools that already exist — pm history, pm activity, pm graph — so questions like when did this bound start holding, how often has it blocked, and which items were open when it last failed are answered from the record instead of from expiring CI logs. Second, a bound's own change history is provable: the entry that loosened a number sits in an append-only chain next to the Decision item that authorised it, so an erosion cannot be quietly backdated. Third, a verdict is a first-class node, so it can be linked to the items it judged and the defect it caught, which closes the loop the recursive-self-improvement epic needs: a measurement moves, an item is filed, a bound lands, and the record can prove the number moved because the before and after verdicts are both in it. CI log retention is finite and the record is not, so this is also the only durable answer to what this project's quality actually was on a given day."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[5]: "area:sdk",assurance,history,immutability,provenance
 created_at: "2026-08-10T20:56:29.731Z"
-updated_at: "2026-08-10T20:56:29.731Z"
+updated_at: "2026-08-10T23:02:41.060Z"
+closed_at: "2026-08-10T23:01:20.920Z"
+completed_at: "2026-08-10T23:01:20.920Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "Every gate evaluation appends a verdict entry to the immutable history and the entry verifies as part of the hash chain; A verdict entry records the judged commit or tree, per-assertion observed and declared values, the verdict, compute cost, and detected harness and model provenance without any identity flag being passed; Loosening a bound is recorded as its own entry linked to the authorising Decision item, and the pair is discoverable by graph traversal from either side; Verdict history is queryable through existing read surfaces to answer when a bound started holding, how often it blocked, and what was open when it last failed; Verdict entries survive history-compact and remain addressable after checkpointing, so enforcement history is not silently truncated"
 parent: pm-1jzupz
 risk: medium
 confidence: 75
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+resolution: fixed
+expected_result: "Every persisted gate verdict is replayable and queryable after CI logs expire, with the judged revision, assertion evidence, compute cost, and detected provenance."
+actual_result: Assurance runs append verified workspace-history records and bounded fresh-process queries recover their structured evidence; dry runs leave no record.
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jzupz,implements,"2026-08-10T20:56:29.731Z","harness:claude-code","cli:create:dep",detected
   pm-9rgaal,implements,"2026-08-10T20:56:29.731Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-08-10T20:56:29.731Z","harness:claude-code","cli:create:dep",detected
   pm-o0sqz5,implements,"2026-08-10T20:56:29.731Z","harness:claude-code","cli:create:dep",detected
   pm-o2kc,related,"2026-08-10T20:56:29.731Z","harness:claude-code","cli:create:dep",detected
+  pm-wn6wot,blocked_by,"2026-08-10T21:22:57.937Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-10T21:22:58.543Z","harness:codex","Start evidence 2026-08-10: reused canonical verdict item after all-status duplicate search. This tranche appends structured gate evaluations to the verified _workspace history stream and exposes queryable receipts without caller-supplied identity."
+  "2026-08-10T23:01:06.034Z","harness:codex","Completion evidence 2026-08-11: persisted gate evaluations append structured assurance_verdict records to the verified workspace history stream with gate, trigger, judged tree or commit, per-assertion values, verdict, compute cost, and detected provenance. The SDK exposes bounded durable verdict queries, dry runs do not append, and integration acceptance proved a persisted verdict remains queryable in a fresh process. History verification and the full exact-coverage suite passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-10T23:01:06.703Z","harness:codex","Workspace-level assurance evidence belongs in the same verified append-only substrate as item history but under a dedicated workspace stream, so durable non-item records gain replay integrity without inventing synthetic work items."
+files[3]{path,scope,note}:
+  src/sdk/governance/assurance.ts,project,append-only verdict persistence and query
+  src/sdk/runtime-primitives.ts,project,public verified history reader
+  tests/integration/assurance-cli.integration.spec.ts,project,Durable verdict append and query acceptance coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/integration/assurance-cli.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msnt3hbk-4ltcxc,test,passed,"2026-08-10T22:31:35.836Z","2026-08-10T22:31:48.847Z","2026-08-10T22:31:48.847Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/ASSURANCE.md,project,public assurance contracts and workflows
+close_reason: "Delivered immutable workspace assurance verdict records with per-assertion evidence, cost and provenance, verified replay, bounded queries, dry-run isolation, fresh-process acceptance, docs, and exact coverage."
 body: ""

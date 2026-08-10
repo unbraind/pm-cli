@@ -99,6 +99,7 @@ export type { PmContextIntentContract } from "./context-intent-contracts.js";
 export type { PmErrorCodeContract } from "./error-code-catalog.js";
 export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
 import { runActivity } from "./query/activity.js";
+import { runAssuranceDispatch, type AssuranceActionInput, type AssuranceActionResult } from "./governance/assurance-action.js";
 import {
   runAggregate,
   type AggregateOptions,
@@ -1149,6 +1150,11 @@ export class PmClient {
   /** Run tracker cache/runtime garbage collection. */
   gc(options: GcCommandOptions = {}): Promise<GcResult> {
     return this.runTyped("gc", { options });
+  }
+
+  /** Declare, inspect, or evaluate a project assurance contract. */
+  assurance(input: AssuranceActionInput): Promise<AssuranceActionResult> {
+    return this.runTyped("assurance", { options: { ...input, subcommand: input.action } });
   }
 
   /** Redact sensitive values while preserving an audited, verified history chain. */
@@ -3738,6 +3744,7 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
       runUpdate: (id, options, global) => runUpdate(id, options, global),
     }),
   health: runMcpHealthAction,
+  assurance: (ctx) => runAssuranceDispatch(ctx.args, ctx.options, ctx.global),
   contracts: (ctx) => runContracts(ctx.options, ctx.global),
   config: runMcpConfigAction,
   activity: runMcpActivityAction,

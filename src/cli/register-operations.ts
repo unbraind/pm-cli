@@ -57,6 +57,7 @@ import {
   printResult,
   readOptionString,
 } from "./registration-helpers.js";
+import { registerAssuranceCommand } from "./register-assurance.js";
 
 function resolveTelemetrySubcommand(
   namespaceOrSubcommand: string | undefined,
@@ -891,6 +892,7 @@ function addLinkedTestExecutionOptions(command: Command): Command {
 
 /** Implements register operation commands for the public runtime surface of this module. */
 export function registerOperationCommands(program: Command): void {
+  registerAssuranceCommand(program);
   const testCommand = program
     .command("test")
     .argument("<id>", "Item id")

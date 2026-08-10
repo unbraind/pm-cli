@@ -340,6 +340,7 @@ export {
   ACTIVITY_FLAG_CONTRACTS,
   ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
   AGGREGATE_FLAG_CONTRACTS,
+  ASSURANCE_FLAG_CONTRACTS,
   APPEND_FLAG_CONTRACTS,
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
   CALENDAR_FLAG_CONTRACTS,
@@ -527,6 +528,9 @@ export type {
   ToolOptionFlagContract,
 } from "./cli-contracts.js";
 export * from "./compose.js";
+export * from "./governance/assurance.js";
+export * from "./governance/assurance-action.js";
+export * from "./governance/assurance-runtime.js";
 export * from "./compile-cache.js";
 export * from "./environment/project-runtime-compatibility.js";
 export * from "./environment/source-context.js";

@@ -2,21 +2,43 @@ id: pm-2lex4r
 title: "pm measure: a named population over the workspace declared as data, with a composable source vocabulary and derived arithmetic so a bound can be denominated in the unit it actually means"
 description: "A measurement is a named, saved, declarative query over the workspace that resolves to a number or a labelled set of numbers. Sources compose: items (a filter expression over status/type/tags/priority/fields/dates), dependency_kind (typed edge counts), graph (any numeric field of any analytic — analyze, redundancy, articulation, centrality, communities, dominators, slack), validate and health (warning and check populations), history (counts over the immutable stream: ops, authors, provenance fields, inter-arrival recurrence), links (linked file/test/doc presence and staleness), and provider (contributed by an extension). The decisive addition is derived: an arithmetic expression over other measurements, evaluated by the SDK. Denomination is the difference between a bound that can be satisfied by a repair and one that cannot. A floor over total graph edges forbids removing a transitively implied edge, because the total falls; a floor over total-minus-redundant is neutral to that exact repair and still breaches on the removal of a load-bearing edge. Today that distinction requires editing a number by hand, which makes a cleanup byte-indistinguishable from an erosion in the resulting diff. With derived measurements the unit carries the intent, so the enforcement mechanism can tell the two apart without a privileged act. Measurements are addressable by id from every read surface, so an agent composes them with grep and jq, and every measurement reports the cost it incurred to compute."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[5]: "area:sdk",assurance,configurability,measurement,query
 created_at: "2026-08-10T20:55:41.413Z"
-updated_at: "2026-08-10T20:55:41.413Z"
+updated_at: "2026-08-10T23:02:39.632Z"
+closed_at: "2026-08-10T23:01:19.007Z"
+completed_at: "2026-08-10T23:01:19.007Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "A measurement is created, listed, read, updated and removed through pm commands, persisted as workspace data, and recorded in the immutable history like any other mutation; The source vocabulary covers items, dependency_kind, graph analytics, validate, health, history, links, and extension-contributed providers, and each source declares its own key schema so a declaration naming a removed field fails loudly instead of reading as zero; derived measurements evaluate arithmetic over other measurements, with cycle detection, so denomination is expressible without code; Every evaluation reports its own compute cost and honours an explicit bound on it, so a measurement remains affordable at a million items; Measurement results are addressable in json and toon and stable enough to pipe into jq, with the selector documented in the row contract"
 parent: pm-1jzupz
 risk: medium
 confidence: 80
+resolution: fixed
+expected_result: A project can declare affordable measurements over every canonical workspace signal and compose derived units without custom command code.
+actual_result: "The SDK and core assurance command persist, evaluate, bound, and expose all required source kinds plus derived arithmetic with strict cycle and value failures."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jzupz,implements,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
   pm-7ob5,related,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
   pm-96h7,related,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
   pm-9gzr4r,related,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
   pm-o87av6,implements,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-10T21:22:49.577Z","harness:codex","Start evidence 2026-08-10: all-status duplicate search found the canonical assurance family pm-1jzupz and its direct children; this item remains canonical for stored measurement declarations and source evaluation. Active tranche implements SDK-first persistence, derived arithmetic, built-in source adapters, cost receipts, CLI access, docs, and tests."
+  "2026-08-10T23:01:02.643Z","harness:codex","Completion evidence 2026-08-11: shipped a persisted SDK-first measurement registry with item, dependency-kind, graph, validate, health, history, links, provider, and derived arithmetic sources; strict declaration validation, cycle/non-numeric/divide-by-zero failures, and per-evaluation cost receipts with caller ceilings. Focused linked tests passed, packed CLI manual acceptance persisted and queried a real measurement in an isolated project, and the repo-wide release pipeline reached exact 100/100/100/100 coverage with 7,201 passing tests."
+learnings[1]{created_at,author,text}:
+  "2026-08-10T23:01:03.175Z","harness:codex","Measurement affordability is part of the data contract: built-in and contributed adapters must return cost with value, while derived measurements aggregate child cost and fail cycles or invalid arithmetic explicitly."
+files[4]{path,scope,note}:
+  src/sdk/governance/assurance-runtime.ts,project,authoritative workspace measurement adapters
+  src/sdk/governance/assurance.ts,project,measurement vocabulary evaluation and cost receipts
+  tests/unit/sdk/assurance-runtime.spec.ts,project,Live workspace adapter coverage for built-in and contributed measurement sources
+  tests/unit/sdk/assurance.spec.ts,project,Unit coverage for composable measurements and arithmetic semantics
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-runtime.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msnt2o42-4fhiv4,test,passed,"2026-08-10T22:30:57.666Z","2026-08-10T22:31:10.994Z","2026-08-10T22:31:10.994Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/ASSURANCE.md,project,public assurance contracts and workflows
+close_reason: "Delivered persisted composable measurement declarations, all required source adapters, derived arithmetic, cost bounds, strict failures, public SDK/CLI contracts, docs, packed acceptance, and exact coverage."
 body: ""

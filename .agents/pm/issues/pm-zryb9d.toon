@@ -1,0 +1,30 @@
+id: pm-zryb9d
+title: "GH-971: health preflight collision diagnostics ignore declared command ownership"
+description: "The runtime honors ScopedPreflightOverrideDefinition command ownership, but health collision analysis compares every registered preflight as global. Make diagnostics use the same effective ownership semantics so disjoint scoped preflights do not form an unresolvable warning clique."
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:sdk",extensions,health,ownership,preflight
+created_at: "2026-08-10T22:59:56.197Z"
+updated_at: "2026-08-10T23:08:12.534Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Two scoped preflight overrides collide only when their normalized command sets intersect; An unscoped override collides with every scoped or unscoped override because it is global; Health and runtime dispatch consume one shared ownership contract with fleet and negative-control coverage
+parent: pm-ugqx
+reporter: GitHub issue #971
+severity: high
+environment: pm 2026.8.10 with multiple installed extensions registering scoped preflight overrides
+repro_steps: Install extensions with disjoint preflight command declarations and run pm health --full; observe a complete pairwise collision clique.
+expected_result: Health reports only preflight registrations that can contend for the same command.
+actual_result: Seven preflight extensions produce 21 pairwise warnings even when command ownership is disjoint.
+affected_version: 2026.8.10
+component: Extension SDK health diagnostics
+regression: true
+customer_impact: Strict fleet health fails on valid extension composition and trains package authors to ignore ownership diagnostics.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6mjxgq,related,"2026-08-10T22:59:56.197Z","harness:codex","cli:create:dep",detected
+  pm-fk84,related,"2026-08-10T22:59:56.197Z","harness:codex","cli:create:dep",detected
+  pm-miy5k6,discovered_from,"2026-08-10T22:59:56.197Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-10T22:59:56.197Z","harness:codex","Duplicate-check evidence 2026-08-11: all-status search found the closed GH-907 ownership implementation pm-miy5k6 and renderer collision lineage pm-6mjxgq, but no item owns the GH-971 health/runtime parity regression. Canonical source: https://github.com/unbraind/pm-cli/issues/971."
+body: ""
