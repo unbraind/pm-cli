@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-10T07:03:54.985Z"
-updated_at: "2026-08-10T08:26:23.374Z"
+updated_at: "2026-08-10T08:36:14.999Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f40a3612ddfb4cf32376b325"
 author: "harness:codex"
@@ -27,9 +27,10 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-frk8,discovered_from,"2026-08-10T07:03:54.985Z","harness:codex","cli:create:dep",detected
   pm-lppm6y,related,"2026-08-10T07:03:54.985Z","harness:codex","cli:create:dep",detected
   pm-x3dq0l,related,"2026-08-10T07:03:54.985Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-10T07:03:54.985Z","harness:codex","Duplicate-check evidence: searched all 2,409 items across every status for GH-960,diagnostic note JSON error stream,type coercion notices,and structured error envelopes. Closed pm-frk8 owns the original structured-error platform and open pm-cha95z owns broad diagnostic budgeting; neither owns transport-safe structured notices,so this is a distinct regression item linked to both."
   "2026-08-10T08:26:23.374Z","harness:codex","Implementation evidence: legacy Bug input is normalized to Issue with structured type_coercion:Bug:Issue mutation warnings, never unstructured diagnostic stdout. Clean-directory JSON success and strict-mode failure envelopes both parse, generated error catalog/contracts are refreshed, and all 7141 tests pass."
+  "2026-08-10T08:36:14.999Z","harness:codex","Hosted static-gate feedback disposition: aggregate contracts now include dependency/criteria structured error catalog entries after pnpm contracts:update; JSON diagnostic behavior remains unchanged and fully covered."
 files[3]{path,scope,note}:
   src/sdk/generated-error-code-catalog.ts,project,generated structured error catalog
   src/sdk/lifecycle/create.ts,project,structured type coercion warnings

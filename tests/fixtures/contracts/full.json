@@ -13678,6 +13678,40 @@
   "error_codes": [
     {
       "aliases": [],
+      "canonical_code": "acceptance_criteria_mutation_conflict",
+      "class": "usage",
+      "code": "acceptance_criteria_mutation_conflict",
+      "emitting_commands": [
+        "update"
+      ],
+      "exit_code": 2,
+      "meaning": "Acceptance criteria mutation conflict condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/update.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "acceptance_criteria_remove_unmatched",
+      "class": "not_found",
+      "code": "acceptance_criteria_remove_unmatched",
+      "emitting_commands": [
+        "update",
+        "update-many"
+      ],
+      "exit_code": 3,
+      "meaning": "Acceptance criteria remove unmatched condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/update-many.ts",
+        "sdk/lifecycle/update.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "acceptance_criteria_semicolon_forbidden",
       "class": "usage",
       "code": "acceptance_criteria_semicolon_forbidden",
@@ -14189,6 +14223,22 @@
         "sdk/dependency-flag-validation.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "dependency_target_not_found",
+      "class": "not_found",
+      "code": "dependency_target_not_found",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 3,
+      "meaning": "Dependency target not found condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/dependency-flag-validation.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],

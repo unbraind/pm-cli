@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-09T22:12:37.531Z"
-updated_at: "2026-08-10T08:26:22.857Z"
+updated_at: "2026-08-10T08:36:14.542Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f40a3612ddfb4cf32376b325"
 author: "harness:codex"
@@ -26,9 +26,10 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-inn5y5,related,"2026-08-09T22:12:37.531Z","harness:codex","cli:create:dep",detected
   pm-mpbb,implements,"2026-08-09T22:12:37.531Z","harness:codex","cli:create:dep",detected
   pm-xh82,discovered_from,"2026-08-09T22:12:37.531Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-09T22:12:37.531Z","harness:codex","Duplicate-check evidence: searched every status for GH-956, remove-ac unmatched behavior, replace-only --ac, and acceptance-criteria loss. Closed pm-xh82 deliberately added exact-match warnings and replace-then-add composition; #956 proves the remaining destructive combination, while pm-inn5y5 concerns branch merge storage, so this is distinct follow-on work."
   "2026-08-10T08:26:22.857Z","harness:codex","Implementation evidence: acceptance-criteria replacement is mutually exclusive with additive selectors; every unmatched removal returns structured NOT_FOUND before persistence; remove+add repairs are atomic; replacement emits count receipts; update-many dry-run and apply share validation. Focused tests, clean-directory failure-atomic acceptance, and the full 7141-test suite pass."
+  "2026-08-10T08:36:14.542Z","harness:codex","Hosted static-gate feedback disposition: regenerated the aggregate contract fixture so acceptance_criteria_mutation_conflict and acceptance_criteria_remove_unmatched are visible in canonical CLI contracts."
 files[5]{path,scope,note}:
   src/core/shared/errors.ts,project,structured unmatched selector recovery
   src/sdk/cli-contracts/tool-schema.ts,project,mutually exclusive MCP options
