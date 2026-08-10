@@ -1,0 +1,29 @@
+id: pm-1jzupz
+title: "Assurance primitives: measurements, invariants, and gates become declarative pm data evaluated by the SDK, so a project's quality contract is configuration instead of bespoke scripts"
+description: "Every quality property this project enforces is expressed as a hand-written .mjs script that shells out to pm. 16 files match *gate*.mjs and carry 6,500 LOC; 55 scripts total carry 16,184 LOC; 20 of them drive the pm CLI as a subprocess to recompute properties over .agents/pm that the SDK already holds in memory. The gate inventory itself is derived by regex over human-written GitHub workflow step names, so a gate's identity is its title in prose and renaming a step silently changes the inventory. None of this is available to any other project: a team adopting pm inherits the item model and inherits none of the assurance model, and an agent cannot add, retune, or scope a bound without writing Node. Declaring a measurable property over the record, comparing it to a filed number, and recording the verdict IS project management under this project's own philosophy, so it belongs in the SDK as a primitive with a CLI surface and a data-declared registry. The primitive set is measure (name a population), assert (bound it), gate (bundle bounds behind a lifecycle trigger), and a verdict record appended to the immutable history. Every part is data an agent can author with pm commands and jq, extended by provider plugins so a coverage percentage, a benchmark millisecond, an eval score, an RL episode reward, or a registry dist-tag are all measurable and enforceable on the same terms as an item count."
+type: Feature
+status: open
+priority: 1
+tags[7]: "area:governance","area:sdk",assurance,configurability,enforcement,measurement-ratchet,universal
+created_at: "2026-08-10T20:55:05.456Z"
+updated_at: "2026-08-10T20:58:39.520Z"
+author: "harness:claude-code"
+estimated_minutes: 2400
+acceptance_criteria: "The full assurance model is declarable as workspace data through pm commands, with no repository code required to add, retune, scope, or retire a bound; The SDK exposes the primitives so the CLI, MCP, and any embedding host evaluate identical semantics, and the CLI adds no assurance logic of its own; This repository dogfoods the result: every bespoke gate script is either retired onto the primitives or carries a recorded disposition explaining why it cannot be; A gate's identity is a declared id in the registry, never a workflow step title, and the inventory is derived from the registry rather than from prose pattern-matching; Presets make the model usable on a new project in one command for at least software-delivery, research, agent-environment, and operations shapes"
+parent: pm-33cw
+risk: medium
+confidence: 80
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+  pm-33cw,implements,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
+  pm-4vz6mz,related,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
+  pm-8jdc,implements,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
+  pm-9gzr4r,related,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
+  pm-klxax7,related,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
+  pm-kpftft,discovered_from,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
+  pm-mj42og,related,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
+  pm-o0sqz5,implements,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
+  pm-t4d7nz,implements,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-10T20:58:39.520Z","harness:claude-code","Measured surface at filing time (2026-08-10): 55 .mjs files under scripts/ totalling 16,184 lines; 16 files match *gate*.mjs totalling 6,500 lines; 20 scripts invoke the pm CLI as a subprocess to recompute properties over .agents/pm. scripts/release/tracker-measurement-gate.mjs alone is 929 lines and holds 30 declarations across 5 hard-coded selector sources (dependency_kind, validate_warning, graph_profile, graph_finding, health_check) — none of which can address any population the graph ANALYTICS compute, so redundancy_count, articulation_count, bridge_count and community_count are computable and unbounded. A prototype adding a sixth source was written and reverted during this session precisely because the capability belongs in the SDK, not in a script: the same 80 lines of selector plumbing would have to be rewritten by every project that adopts pm."
+body: ""

@@ -1,0 +1,22 @@
+id: pm-m7bb7r
+title: "Assurance presets and self-derivation: a new workspace acquires a working quality contract in one command, seeded from its own record rather than from a generic template"
+description: "A primitive nobody configures is a primitive nobody uses. Two mechanisms make adoption cheap. Presets ship declaration bundles for recognisable project shapes — software delivery, research, agent-environment and evaluation, operations and incident response — each a small set of measurements and assertions that are meaningful on day one and are plain data the adopter can read, diff, and edit. Self-derivation is the stronger half: pm already holds the record, so it can propose the contract. Given a workspace it measures the populations that exist, finds the ones that are already clean or already stable, and offers those as candidate bounds at observe level with the observed value as the proposed number. That inverts the adoption cost — instead of an author inventing thresholds, the record proposes the thresholds it can already meet, and the author decides which to promote to warn and then to block. Because every proposal carries the population size and the scope it was computed over, a proposal that would only ever cover active items says so before it is accepted, which is the failure mode that made an earlier structural bound pass trivially. Presets and proposals are both ordinary declarations after acceptance, with no privileged status and no separate code path."
+type: Feature
+status: open
+priority: 2
+tags[5]: "area:sdk",assurance,configurability,onboarding,universal
+created_at: "2026-08-10T20:57:59.663Z"
+updated_at: "2026-08-10T20:57:59.663Z"
+author: "harness:claude-code"
+estimated_minutes: 540
+acceptance_criteria: "A preset bundle is applied in one command, is plain readable declaration data afterwards, and carries no privileged behaviour; Presets exist for at least software delivery, research, agent-environment and evaluation, and operations shapes; Self-derivation proposes candidate bounds from the observed record at observe level, each carrying its population size and scope, and never promotes a bound without an explicit act; A proposal whose scope would cover only active items declares that fact before acceptance; Promotion from observe to warn to block is a recorded transition, so the strength of a project's contract over time is readable from the record"
+parent: pm-1jzupz
+risk: medium
+confidence: 75
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,implements,"2026-08-10T20:57:59.663Z","harness:claude-code","cli:create:dep",detected
+  pm-8jdc,implements,"2026-08-10T20:57:59.663Z","harness:claude-code","cli:create:dep",detected
+  pm-h6b73t,related,"2026-08-10T20:57:59.663Z","harness:claude-code","cli:create:dep",detected
+  pm-lyfu7b,blocked_by,"2026-08-10T20:57:59.663Z","harness:claude-code","cli:create:dep",detected
+  pm-t4d7nz,implements,"2026-08-10T20:57:59.663Z","harness:claude-code","cli:create:dep",detected
+body: ""

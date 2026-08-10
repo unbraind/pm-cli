@@ -1,0 +1,22 @@
+id: pm-2lex4r
+title: "pm measure: a named population over the workspace declared as data, with a composable source vocabulary and derived arithmetic so a bound can be denominated in the unit it actually means"
+description: "A measurement is a named, saved, declarative query over the workspace that resolves to a number or a labelled set of numbers. Sources compose: items (a filter expression over status/type/tags/priority/fields/dates), dependency_kind (typed edge counts), graph (any numeric field of any analytic — analyze, redundancy, articulation, centrality, communities, dominators, slack), validate and health (warning and check populations), history (counts over the immutable stream: ops, authors, provenance fields, inter-arrival recurrence), links (linked file/test/doc presence and staleness), and provider (contributed by an extension). The decisive addition is derived: an arithmetic expression over other measurements, evaluated by the SDK. Denomination is the difference between a bound that can be satisfied by a repair and one that cannot. A floor over total graph edges forbids removing a transitively implied edge, because the total falls; a floor over total-minus-redundant is neutral to that exact repair and still breaches on the removal of a load-bearing edge. Today that distinction requires editing a number by hand, which makes a cleanup byte-indistinguishable from an erosion in the resulting diff. With derived measurements the unit carries the intent, so the enforcement mechanism can tell the two apart without a privileged act. Measurements are addressable by id from every read surface, so an agent composes them with grep and jq, and every measurement reports the cost it incurred to compute."
+type: Feature
+status: open
+priority: 1
+tags[5]: "area:sdk",assurance,configurability,measurement,query
+created_at: "2026-08-10T20:55:41.413Z"
+updated_at: "2026-08-10T20:55:41.413Z"
+author: "harness:claude-code"
+estimated_minutes: 600
+acceptance_criteria: "A measurement is created, listed, read, updated and removed through pm commands, persisted as workspace data, and recorded in the immutable history like any other mutation; The source vocabulary covers items, dependency_kind, graph analytics, validate, health, history, links, and extension-contributed providers, and each source declares its own key schema so a declaration naming a removed field fails loudly instead of reading as zero; derived measurements evaluate arithmetic over other measurements, with cycle detection, so denomination is expressible without code; Every evaluation reports its own compute cost and honours an explicit bound on it, so a measurement remains affordable at a million items; Measurement results are addressable in json and toon and stable enough to pipe into jq, with the selector documented in the row contract"
+parent: pm-1jzupz
+risk: medium
+confidence: 80
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,implements,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
+  pm-7ob5,related,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
+  pm-96h7,related,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
+  pm-9gzr4r,related,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
+  pm-o87av6,implements,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
+body: ""

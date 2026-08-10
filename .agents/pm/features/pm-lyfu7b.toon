@@ -1,0 +1,23 @@
+id: pm-lyfu7b
+title: "pm assert: a bound over a measurement carrying polarity, scope, lifetime, enforcement level, and a required negative control, so every guarantee states which direction it can fail in"
+description: "An assertion binds a measurement to a declared bound. Polarity is ceiling, floor, equals, zero, monotone_nondecreasing, monotone_nonincreasing, or subset_of, and exactly one is declared per assertion. Scope names the population the bound speaks for — active only, all statuses, or a filter expression — because a bound that is silently active-scoped always passes for the newest structural layer, which is how a governance improvement became indistinguishable from a relevance regression. Lifetime names what happens when the owning item reaches a terminal status: hold keeps comparing, retire stops and must record why the property stopped mattering. Enforcement level is block, warn, or observe, so a project adopts a bound by first watching it. A negative control is mandatory and must prove failure in every direction the polarity admits, which for a floor means both an undercut and a spurious pass. The owner is a typed relationship to the pm item that owns the property, not a string, so assertions participate in the graph and an item's blast radius includes the guarantees that depend on it. Tightening is automatic and monotone; loosening is refused unless a linked Decision item authorises it, which is what makes a repair and an erosion structurally different acts rather than the same hand edit."
+type: Feature
+status: open
+priority: 1
+tags[5]: "area:sdk",assurance,configurability,enforcement,measurement-ratchet
+created_at: "2026-08-10T20:55:45.036Z"
+updated_at: "2026-08-10T20:55:45.036Z"
+author: "harness:claude-code"
+estimated_minutes: 720
+acceptance_criteria: "An assertion declares exactly one polarity, is refused when it declares none or several, and names its measurement by id; Scope is explicit and a bound that would silently cover only active items must say so, with the population size reported alongside the observed value; Lifetime defaults to hold, retire requires a recorded reason, and an out-of-domain lifetime fails rather than falling back to the default; Automatic tightening is monotone in the good direction; any loosening is refused unless a Decision item is linked, and the refusal names the missing decision; Each assertion carries a negative control that fails in every direction its polarity admits, and an assertion whose control has never failed is reported as unproven"
+parent: pm-1jzupz
+risk: medium
+confidence: 80
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,implements,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
+  pm-5z9plz,discovered_from,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
+  pm-9gzr4r,related,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
+  pm-g4k74y,discovered_from,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
+  pm-rtn5h6,related,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -1,0 +1,22 @@
+id: pm-4ok4ex
+title: "Retire the bespoke gate scripts onto the assurance primitives, with a recorded per-script disposition so 6,500 lines of external enforcement either moves into the product or says why it cannot"
+description: "This repository is the first and hardest adopter. 16 files matching *gate*.mjs carry 6,500 LOC and 20 scripts drive the pm CLI as a subprocess. Each one is a candidate for a declaration, and the ones that are not are the interesting cases: a gate that verifies a published npm artifact or drives a real installation is exercising the world rather than measuring the record, and it should stay a script that reports a provider measurement rather than pretend to be one. The output of this work is a ledger with one row per script: migrated (with the declaration ids that replaced it), reduced to a provider, or retained with a reason. Migration is only complete when the retained set is smaller than the migrated set and every retained script's reason names something the record genuinely cannot answer. Doing this in this repository is what proves the primitives are sufficient rather than merely plausible, and it is also the fastest way to find out which parts of the vocabulary are missing, because every script that resists migration is naming a gap. Sequence after the primitives land; each migration lands with the negative control the assertion requires, so the migrated bound is proven to be able to fail before the script it replaces is deleted."
+type: Task
+status: open
+priority: 2
+tags[5]: "area:ci",assurance,dogfood,migration,simplification
+created_at: "2026-08-10T20:57:25.885Z"
+updated_at: "2026-08-10T20:57:25.885Z"
+author: "harness:claude-code"
+estimated_minutes: 900
+acceptance_criteria: "A ledger records every gate script with a disposition of migrated, reduced to provider, or retained with a reason naming what the record cannot answer; Every migrated bound lands with a proven negative control before the script it replaces is removed; The migrated set is larger than the retained set, and total gate LOC outside the product falls measurably; The release pipeline runs the native gates and the retained scripts through one declared inventory rather than two parallel mechanisms"
+parent: pm-1jzupz
+risk: medium
+confidence: 70
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,implements,"2026-08-10T20:57:25.885Z","harness:claude-code","cli:create:dep",detected
+  pm-lyfu7b,blocked_by,"2026-08-10T20:57:25.885Z","harness:claude-code","cli:create:dep",detected
+  pm-n7rr,related,"2026-08-10T20:57:25.885Z","harness:claude-code","cli:create:dep",detected
+  pm-u9d0,related,"2026-08-10T20:57:25.885Z","harness:claude-code","cli:create:dep",detected
+  pm-wn6wot,blocked_by,"2026-08-10T20:57:25.885Z","harness:claude-code","cli:create:dep",detected
+body: ""

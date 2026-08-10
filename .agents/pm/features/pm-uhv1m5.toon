@@ -1,0 +1,23 @@
+id: pm-uhv1m5
+title: "Measurement provider API: extensions contribute measurement sources, so a coverage percentage, a benchmark millisecond, an eval score, an RL episode reward, or a registry dist-tag is bounded on the same terms as an item count"
+description: "The assurance model is only universal if the set of measurable things is open. A provider is an extension-contributed measurement source registered through the existing activate(api) surface: it declares an id, a key schema, a cost class, and a resolver that returns numbers. Nothing about the bound, the gate, the verdict, or the history changes when a provider is added, which is what makes one mechanism serve unrelated project shapes. A software project registers coverage, lint findings, bundle bytes, and a published dist-tag. A research project registers experiment counts and reproduction success. An agent-environment registers episode reward, success rate, steps to completion, and regression against a frozen baseline, which is what turns pm into a substrate where a training or evaluation run's quality bar is declared next to the tasks it scores. An operations project registers incident recurrence and repair latency. Providers must be sandbox-safe, must declare whether they reach the network, and must be refusable, so a workspace can pin which providers a gate is allowed to read and a hosted run cannot silently gain a new dependency. Cost classes let a gate refuse an expensive provider on a pre-commit trigger while allowing it in a scheduled one."
+type: Feature
+status: open
+priority: 1
+tags[6]: "area:extensions","area:sdk",assurance,configurability,rl,universal
+created_at: "2026-08-10T20:57:22.397Z"
+updated_at: "2026-08-10T20:57:22.397Z"
+author: "harness:claude-code"
+estimated_minutes: 660
+acceptance_criteria: "A provider registers through the documented extension activation surface and needs no change to bound, gate, verdict, or history semantics to become enforceable; Each provider declares its key schema, cost class, and whether it reaches the network, and a gate can refuse providers by cost class or capability per trigger; Provider resolution is sandbox-safe and never reads or writes the real workspace during tests; Worked provider examples ship for at least a code-quality metric, an evaluation or reward metric, and an external registry or service metric; A workspace can pin the allowed provider set so a hosted run cannot silently acquire a new external dependency"
+parent: pm-1jzupz
+risk: medium
+confidence: 75
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,implements,"2026-08-10T20:57:22.397Z","harness:claude-code","cli:create:dep",detected
+  pm-8jdc,implements,"2026-08-10T20:57:22.397Z","harness:claude-code","cli:create:dep",detected
+  pm-e1vkee,related,"2026-08-10T20:57:22.397Z","harness:claude-code","cli:create:dep",detected
+  pm-klxax7,implements,"2026-08-10T20:57:22.397Z","harness:claude-code","cli:create:dep",detected
+  pm-nfrhf0,related,"2026-08-10T20:57:22.397Z","harness:claude-code","cli:create:dep",detected
+  pm-ugqx,related,"2026-08-10T20:57:22.397Z","harness:claude-code","cli:create:dep",detected
+body: ""

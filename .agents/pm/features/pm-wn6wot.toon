@@ -1,0 +1,24 @@
+id: pm-wn6wot
+title: "pm gate: named assertion bundles bound to lifecycle triggers, returning one structured verdict document instead of prose, so local and hosted enforcement run identical semantics"
+description: "A gate is a named, declared bundle of assertions attached to lifecycle triggers: pre-commit, pre-push, pre-merge, ci, pre-release, post-release, scheduled, on-claim, on-close. Evaluating one returns a single structured verdict document — per assertion the measurement id, scope, population size, observed value, declared bound, distance, enforcement level, and the contributors that moved it — plus one overall verdict and one exit code. It never returns prose, because a consumer that must pattern-match a message to learn what happened is a consumer that breaks when the message improves, and this project has already been blocked for fourteen consecutive days by exactly that coupling. The same declaration drives the local run and the hosted run, which removes the class where a gate passes on a maintainer's machine and fails on the identical commit in CI. Gates compose and can be listed, explained, and dry-run, so an agent can ask which bounds would block a commit before making it, and can ask why a bound blocked without reading a log. Because triggers include on-claim and on-close, assurance stops being a release-time activity: a project can require that closing an item satisfies bounds about that item's own evidence."
+type: Feature
+status: open
+priority: 1
+tags[5]: "area:ci","area:sdk",assurance,configurability,enforcement
+created_at: "2026-08-10T20:56:25.997Z"
+updated_at: "2026-08-10T20:58:39.011Z"
+author: "harness:claude-code"
+estimated_minutes: 720
+acceptance_criteria: "A gate is declared as data, names its assertions and triggers, and is evaluated identically by the SDK from the CLI, from MCP, and from a hosted runner; The verdict is a structured document with no prose classification anywhere in the decision path, and every consumer reads declared fields rather than matching messages; A dry-run answers which bounds would block a candidate change before it is made, including the distance to each bound; The same declaration produces the same verdict for the same commit whether run locally or hosted, and a difference between the two is itself a reportable failure; Gate inventory is derived from the registry, never by pattern-matching workflow step names, and a gate missing from the registry is a failure rather than an omission"
+parent: pm-1jzupz
+risk: medium
+confidence: 80
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,implements,"2026-08-10T20:56:25.997Z","harness:claude-code","cli:create:dep",detected
+  pm-dqtzva,discovered_from,"2026-08-10T20:56:25.997Z","harness:claude-code","cli:create:dep",detected
+  pm-fr4dg8,related,"2026-08-10T20:56:25.997Z","harness:claude-code","cli:create:dep",detected
+  pm-x63izf,related,"2026-08-10T20:56:25.997Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-08-10T20:56:25.997Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-10T20:58:39.011Z","harness:claude-code","Evidence for the registry-not-prose acceptance criterion: scripts/release/gate-registry.mjs discovers the gate inventory by regex over GitHub workflow step NAMES — GATE_STEP_PATTERN matches /\\b(build|typecheck|test|gates?|check|scan|analysis|benchmark|verify|dogfood|release pipeline|enforce|coverage|quality)\\b/i and NON_GATE_STEP_PATTERN excludes steps beginning setup|install|checkout|download|upload|restore|record|resolve|alert|create github release. A gate's identity is therefore its human-written title, so renaming a step silently changes the inventory and adding a gate whose step name avoids the vocabulary makes it invisible to its own ownership registry. Same failure shape as pm-dqtzva (release gate classifying production errors by message prose) on a different surface: enforcement reading prose rather than a declared contract."
+body: ""
