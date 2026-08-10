@@ -6,6 +6,7 @@
  */
 import type { Command } from "commander";
 import { runFilesLookup } from "../sdk/files.js";
+import { parseSourceLineRange } from "../sdk/traceability/source-traceability.js";
 import { EXIT_CODE, PmCliError } from "../sdk/runtime-primitives.js";
 import { getGlobalOptions, printResult } from "./registration-helpers.js";
 
@@ -46,6 +47,15 @@ async function runFilesLookupAction(
       offset: typeof options.offset === "number" ? options.offset : undefined,
       noTruncate: options.noTruncate === true,
       strictRead: options.strictRead === true,
+      explain: options.explain === true,
+      lineRange:
+        typeof options.lines === "string"
+          ? parseSourceLineRange(options.lines)
+          : undefined,
+      decisionDepth:
+        typeof options.decisionDepth === "number"
+          ? options.decisionDepth
+          : undefined,
     },
     globalOptions,
   );
@@ -70,6 +80,15 @@ export function registerFilesLookupCommand(filesCommand: Command): void {
     )
     .option("--no-truncate", "Return every referencing item")
     .option("--strict-read", "Fail when any authoritative item cannot be read")
-    .description("Find pm items that link the requested source paths.")
+    .option("--explain", "Include ranked source-to-work rationale")
+    .option("--lines <start:end>", "Attribute an inclusive source line range")
+    .option(
+      "--decision-depth <n>",
+      "Maximum governing-decision relationship depth",
+      parseIntegerBound("--decision-depth", 1),
+    )
+    .description(
+      "Find and explain pm items that govern requested source paths.",
+    )
     .action(runFilesLookupAction);
 }

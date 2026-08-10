@@ -20,7 +20,15 @@ import {
 } from "../runtime-primitives.js";
 import { wrapOwnershipConflict } from "../annotations.js";
 import { describeItemOwnershipConflict } from "../ownership-source.js";
-import { runNext, type NextRecommendation, type NextOptions } from "../query/next.js";
+import {
+  runNext,
+  type NextRecommendation,
+  type NextOptions,
+} from "../query/next.js";
+import {
+  recordClaimSemanticAttribution,
+  recordReleaseSemanticAttribution,
+} from "../context/semantic-session-attribution.js";
 
 /** Stable warning/error code for an exhausted atomic next-work walk. */
 export const NO_AVAILABLE_NEXT_ITEM_CODE = "no_available_next_item";
@@ -205,6 +213,15 @@ export async function runClaim(
     },
   });
 
+  if (!skipped) {
+    await recordClaimSemanticAttribution({
+      pmRoot,
+      settings,
+      principal: claimPrincipal,
+      itemId: result.item.id,
+    });
+  }
+
   return {
     item: toItemRecord(result.item),
     claimed_by:
@@ -346,6 +363,7 @@ export async function runRelease(
   }
   const settings = await readSettings(pmRoot);
   const author = resolveAuthor(options.author, settings.author_default);
+  const claimPrincipal = resolveClaimPrincipal(author);
   const ownershipReleaseBypass =
     (
       options as ReleaseMutationOptions & {
@@ -386,6 +404,12 @@ export async function runRelease(
       ],
     });
   }
+
+  await recordReleaseSemanticAttribution({
+    pmRoot,
+    principal: claimPrincipal,
+    itemId: result.item.id,
+  });
 
   return {
     item: toItemRecord(result.item),

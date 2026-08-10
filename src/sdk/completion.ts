@@ -801,7 +801,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --full-history --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    files)",
-    `      COMPREPLY=(${compgen("discover lookup --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --scope --limit --offset --no-truncate --strict-read --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("discover lookup --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --scope --limit --offset --no-truncate --strict-read --explain --lines --decision-depth --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    docs)",
     `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --note --validate-paths --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1623,6 +1623,9 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--offset[Skip the first lookup matches]:number' \\
             '--no-truncate[Return every lookup match]' \\
             '--strict-read[Require authoritative source reads]' \\
+            '--explain[Include ranked source-to-work rationale]' \\
+            '--lines[Attribute an inclusive source line range]:start_end' \\
+            '--decision-depth[Maximum governing-decision relationship depth]:number' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -2377,6 +2380,9 @@ complete -c pm -n '__fish_seen_subcommand_from files' -l limit -d 'Maximum looku
 complete -c pm -n '__fish_seen_subcommand_from files' -l offset -d 'Skip the first lookup matches' -r
 complete -c pm -n '__fish_seen_subcommand_from files' -l no-truncate -d 'Return every lookup match'
 complete -c pm -n '__fish_seen_subcommand_from files' -l strict-read -d 'Require authoritative source reads'
+complete -c pm -n '__fish_seen_subcommand_from files' -l explain -d 'Include ranked source-to-work rationale'
+complete -c pm -n '__fish_seen_subcommand_from files' -l lines -d 'Attribute an inclusive source line range' -r
+complete -c pm -n '__fish_seen_subcommand_from files' -l decision-depth -d 'Maximum governing-decision relationship depth' -r
 
 
 # search flags

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Source-to-item traceability: derive which tracked work produced any given file or line, so an agent can ask why this code exists and get an evidence-backed answer ([pm-f86lth](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-f86lth.toon))
+- Automatic semantic session attribution: infer bounded topic and role from claimed work and harness context without per-call identity flags ([pm-3zgh2c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3zgh2c.toon))
+
+### Fixed
+
+- pm get cannot report linked files, tests, or docs in any projection, so the one command an agent uses to rebuild an item's context silently reports them as absent ([pm-tld20c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tld20c.toon))
+
 ## 2026.8.10 - 2026-08-10
 
 ### Added

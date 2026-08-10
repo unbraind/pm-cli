@@ -8,6 +8,7 @@ import {
   runContextEvaluationScenario,
   scoreContextCandidates,
   scoreContextCandidatesWithActiveExtensions,
+  semanticAttributionAffinity,
   summarizeContextEvaluationReports,
   type ContextRelevanceCandidate,
   type ExtensionServiceRegistry,
@@ -167,6 +168,45 @@ describe("context relevance SDK primitives", () => {
       candidate("pm-signaled", "signaled", { risk_pressure: 1 }),
     ]);
     expect(sparse.ranked.find((entry) => entry.id === "pm-sparse")?.contributions.risk_pressure).toBeUndefined();
+  });
+
+  it("improves claimed-work relevance without increasing the token ceiling", () => {
+    const affinity = semanticAttributionAffinity({
+      role: "implementer",
+      topic: "pm-target",
+      confidence: "medium",
+      rule_version: "v2",
+      evidence: ["claim:pm-target", "lineage:pm-parent"],
+      active_item_ids: ["pm-target"],
+    });
+    const baseline = defaultScoreContextCandidates([
+      candidate("pm-distractor", "baseline leader"),
+      candidate("pm-target", "claimed target"),
+    ]);
+    const adaptive = defaultScoreContextCandidates([
+      candidate("pm-distractor", "baseline leader", { claim_focus: affinity?.["pm-distractor"] ?? 0 }),
+      candidate("pm-target", "claimed target", { claim_focus: affinity?.["pm-target"] ?? 0 }),
+    ]);
+    const baselineQuality = evaluateContextRanking({
+      ranked_ids: baseline.ranked.map((entry) => entry.id),
+      judgments: { "pm-target": 3, "pm-distractor": 0 },
+      required_ids: ["pm-target"],
+      actual_tokens: 96,
+      token_budget: 100,
+    });
+    const adaptiveQuality = evaluateContextRanking({
+      ranked_ids: adaptive.ranked.map((entry) => entry.id),
+      judgments: { "pm-target": 3, "pm-distractor": 0 },
+      required_ids: ["pm-target"],
+      actual_tokens: 96,
+      token_budget: 100,
+    });
+
+    expect(adaptive.ranked[0]?.id).toBe("pm-target");
+    expect(adaptiveQuality.ndcg).toBeGreaterThan(baselineQuality.ndcg);
+    expect(adaptiveQuality.reciprocal_rank).toBeGreaterThan(baselineQuality.reciprocal_rank);
+    expect(adaptiveQuality.token_budget_adherence).toBe(baselineQuality.token_budget_adherence);
+    expect(semanticAttributionAffinity(undefined)).toBeUndefined();
   });
 
   it("lets SDK consumers wrap the deterministic default scorer", async () => {

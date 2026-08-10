@@ -553,6 +553,9 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   apply: { type: "boolean" },
   discoveryNote: { type: "string" },
   lookupPath: { type: "array", items: { type: "string" } },
+  explain: { type: "boolean" },
+  lines: { type: "string", pattern: "^[1-9]\\d*:[1-9]\\d*$" },
+  decisionDepth: { type: "integer", minimum: 1, maximum: 32 },
   // GH-170 (pm-pfnx): single-string note for files/docs add batches (the shared
   // `note` key below is the array-typed create/update note seed).
   addNote: { type: "string" },
@@ -1255,6 +1258,20 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "One or more source paths whose referencing pm items should be returned by files lookup.",
     examples: [["src/sdk/files.ts"], ["README.md", "docs/SDK.md"]],
+  },
+  explain: {
+    description:
+      "Include ranked linked-file, rationale, and governing-decision evidence for a files lookup.",
+  },
+  lines: {
+    description:
+      "Inclusive start:end source-line range for Git contribution attribution; requires one lookup path.",
+    examples: ["10:24"],
+  },
+  decisionDepth: {
+    description:
+      "Maximum typed relationship depth searched for a governing Decision during files lookup.",
+    examples: [8],
   },
   clearComments: {
     description: "When true, clear item comments.",

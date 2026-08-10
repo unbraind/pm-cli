@@ -30,7 +30,26 @@ export {
   type ResolvedAuthorIdentity,
 } from "../core/shared/author.js";
 export {
+  SEMANTIC_ATTRIBUTION_LIMITS,
+  recordClaimSemanticAttribution,
+  recordFocusSemanticAttribution,
+  recordReleaseSemanticAttribution,
+  resolveSemanticLineageIds,
+  semanticAttributionAffinity,
+} from "./context/semantic-session-attribution.js";
+export {
+  explainSourceTraceability,
+  parseSourceLineRange,
+  type SourceDecisionPath,
+  type SourceLineRange,
+  type SourceTraceabilityEvidence,
+  type SourceTraceabilityExplanation,
+  type SourceTraceabilityRationale,
+  type SourceTraceabilityReceipt,
+} from "./traceability/source-traceability.js";
+export {
   analyzeAgentProvenanceDescriptorCoverage,
+  evaluateSemanticAttributionCoverage,
   groupHistoryByEpisode,
   resolveHistoryEpisodeGroupIdentity,
   summarizeAgentProvenance,
@@ -39,6 +58,8 @@ export {
   type AgentModelProvenanceCoverage,
   type AgentProvenanceDimensionCoverage,
   type AgentProvenanceDescriptorCoverage,
+  type AgentSemanticAttributionCoverage,
+  type AgentSemanticAttributionCoverageGate,
 } from "./provenance.js";
 export {
   analyzeSdkCliParameterCompleteness,
