@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:contracts","area:mcp",cross-surface-parity,defect-recurrence
 created_at: "2026-08-10T05:53:35.894Z"
-updated_at: "2026-08-10T06:01:37.313Z"
+updated_at: "2026-08-10T06:10:14.848Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Every MCP declared key resolves to a CLI flag, via a shared name or a registered alias; A parity gate fails when an MCP declared key has no CLI flag or alias that accepts it; The unknown-option recovery names the accepted flag for a known cross-surface synonym"
@@ -18,9 +18,11 @@ repro_steps: "1. Read the pm_update declared keys, which list linkedFile and lin
 expected_result: "One name per concept across MCP and CLI, or an alias so a contract-derived name always parses."
 actual_result: "The MCP contract advertises linkedFile/linkedTest; the CLI accepts only --file/--test. The refusal is well-formed but the agent had no way to know from the contract it just read, and the recovery does not name the correct flag."
 component: "mcp/server, sdk/cli-contracts, commands/update"
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-6xlyss,discovered_from,"2026-08-10T05:53:35.894Z","harness:claude-code","cli:create:dep",detected
   pm-7rrqsk,related,"2026-08-10T05:53:35.894Z","harness:claude-code","cli:create:dep",detected
   pm-9rgaal,implements,"2026-08-10T05:53:35.894Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-08-10T05:53:35.894Z","harness:claude-code","cli:create:dep",detected
+  pm-fs8q9x,related,"2026-08-10T06:10:14.694Z","harness:claude-code","cli:update:dep",detected
+  pm-pbyu,implements,"2026-08-10T06:10:14.694Z","harness:claude-code","cli:update:dep",detected
 body: ""

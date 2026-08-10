@@ -1,0 +1,29 @@
+id: pm-elmpav
+title: "Refusal reachability: every error code declares the states it owns, and an entrypoint-level probe proves each state is still reachable as that typed code rather than as an untyped fault"
+description: ""
+type: Feature
+status: open
+priority: 1
+tags[8]: agent-ux,"area:ci","area:contracts","area:sdk",error-taxonomy,gate,measurement,reachability
+created_at: "2026-08-10T06:09:23.711Z"
+updated_at: "2026-08-10T06:09:48.075Z"
+author: "harness:claude-code"
+estimated_minutes: 900
+acceptance_criteria: "Each error code in the generated catalog may declare the observable states it owns and the entrypoints through which each state is reachable; A probe drives a real command entrypoint into each declared state and asserts the refusal carries the declared code and exit class; A declared state with no reachable entrypoint fails CI rather than passing silently; A state that surfaces as an unclassified runtime error fails CI with the same finding; The declaration set may start empty and grow one code at a time, constraining nothing until a state is declared"
+value: Turns the error-code catalog from an inventory of codes the product can emit into a falsifiable claim that each code is still produced by the pipeline agents actually run.
+impact: "Closes the only defect class in this repository that is invisible to both unit tests and coverage: a correct guard stranded behind a newly added upstream read."
+outcome: An owned state with no reachable entrypoint is a CI finding; a state reachable only as an untyped fault is the same finding from the other side.
+why_now: "pm-6xlyss is a measured instance. tracker_root_not_directory was complete, typed, and unit-tested, yet the state it guards reached production as an unclassified fault and blocked the daily release for a full window."
+parent: pm-33cw
+risk: medium
+confidence: medium
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6qiwan,related,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
+  pm-6xlyss,discovered_from,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
+  pm-7rrqsk,related,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
+  pm-o0sqz5,related,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
+  pm-qxo5iu,related,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
+  pm-x4nn3z,related,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
+body: "## The gap\n\nThe generated error-code catalog enumerates the codes the product **can** emit. Nothing asserts that anything **still does**.\n\nThat distinction is not academic. A guard can be complete, typed, and fully unit-tested, and still never run, because reachability is decided by code the guard does not know about - anything that reads earlier in the same pipeline and can fail first. Its own tests call it directly, so they pass forever. Coverage records that the line executed under some caller, never that the caller is the one the product uses.\n\n## The measured instance\n\n`assertItemMetadataRoot` separates a missing root from a root that is a regular file, walks ancestors to attribute the cause, and raises `tracker_root_not_directory`. All of that is correct and tested.\n\nPointing a read command at a regular file produced none of it. An optional read of `context-intents.json` sits earlier in the pipeline, tolerated only `ENOENT`, and threw a raw `ENOTDIR` first. The state occurred; the guard never ran; the fault reached Sentry unclassified and blocked the daily release. See pm-6xlyss.\n\nNo test failed. No coverage number moved. The guard file was not touched by the change that stranded it.\n\n## Shape of the mechanism\n\nExtend the catalog from `code -> exists` to `code -> owned states -> reachable entrypoints`:\n\n```\ntracker_root_not_directory:\n  owns_state: tracker root exists and is not a directory\n  reachable_via: [list, get, update, close, ...]\n```\n\nThe probe then constructs each declared state for real and runs a real entrypoint against it, asserting the refusal carries the declared code and exit class. This is a property of the **composed pipeline**, so a unit test cannot establish it by construction - only an entrypoint-level probe can.\n\nTwo symmetric findings fall out, and both are currently undetectable:\n\n- a declared state no entrypoint can reach - the guard has been stranded\n- a declared state reachable only as an unclassified fault - the guard has been pre-empted\n\n## Why it is safe to ship incrementally\n\nAn empty declaration set constrains nothing, which is exactly current behaviour. The mechanism can land before any state is declared and grow one code at a time, so its cost is paid only where a claim is actually made.\n\n## Relationship to the horizon\n\nThis is the terminal answer of horizon AL on pm-doxj. It composes with AK rather than competing: pre-empting a guard is precisely falsifying a predicate an unrelated component relies on, so a stranded guard is one row in that registry rather than a separate mechanism."
