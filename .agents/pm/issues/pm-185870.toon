@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",contracts,errors,recovery
 created_at: "2026-07-25T07:10:54.548Z"
-updated_at: "2026-08-10T18:14:25.208Z"
-closed_at: "2026-08-10T18:09:29.149Z"
-completed_at: "2026-08-10T18:09:29.149Z"
+updated_at: "2026-08-10T18:42:03.424Z"
+closed_at: "2026-08-10T18:42:02.852Z"
+completed_at: "2026-08-10T18:42:02.852Z"
 author: unknown
 estimated_minutes: 240
 acceptance_criteria: "Every subcommand family (schema, plan, graph, history, package, merge, config, profile and any package-registered family) fails an unknown positional token through one shared helper that emits the single code unknown_subcommand with a stable envelope; the envelope always carries the complete allowed set untruncated and a suggested_retry with the nearest-match token when edit distance is within threshold; the hyphen-versus-space spelling trap resolves — 'pm schema add type X' either succeeds as add-type or fails with unknown_subcommand naming add-type, never with a raw commander arity message; help text for these families renders the literal tokens rather than slash-compressed shorthand; a contract test asserts code and envelope parity across all families so a new family cannot regress it; existing exit codes stay 2 and no command spelling is removed"
@@ -49,10 +49,12 @@ dependencies[7]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-25T07:12:47.062Z","harness:claude-code","Duplicate-check evidence (all-status pm search over unknown subcommand, suggested_retry, did-you-mean, positional, recovery): matched closed pm-8nyc, pm-r2kd, pm-bu1m, pm-zwl7 and open pm-g543, pm-gdi7, pm-ulqu, pm-mpbb. pm-g543 is top-level command ranking, pm-gdi7 is unknown-option suggestion, pm-ulqu is enum value-domain rendering inside an existing suggested_retry, pm-r2kd was a single command silently falling back to list. None covers positional subcommand tokens across families. Filed as a child of pm-mpbb."
   "2026-07-25T07:12:48.039Z","harness:claude-code","Reproduction on 2026.7.25, exact --json .code values: pm schema add-typ Foo -> unknown_subcommand (detail carries the full 15-token allowed set; title truncates it mid-list with an ellipsis). pm graph analyz -> invalid_argument_value (allowed set present in detail). pm plan sttus -> command_failed (allowed set present in detail; the code says execution failure for what is an input error). pm schema add type Foo -> invalid_command_usage with detail 'error: too many arguments for schema. Expected 2 arguments but got 3: add, type, Foo' and no allowed set at all. None of the four returns suggested_retry, although each mistake is edit distance 1 (or a pure hyphenation difference) from a valid token and the allowed set is available at the failure site. The space-form trap is invited by pm schema --help, which renders the subcommand list as 'add/remove type/status/field' rather than the literal tokens add-type, add-status, add-field, remove-type, remove-field."
   "2026-08-10T18:09:14.581Z","harness:codex","Implementation evidence: introduced the public SDK createUnknownSubcommandError primitive and migrated plan, merge, schema, profile, telemetry, workspace snapshot, graph, config, package/extension lifecycle, and bundled templates refusal families. Contracts expose sorted complete allowed_values, stable unknown_subcommand/reason, safe nearest retries, compatibility aliasing for unknown_lifecycle_action, and public SDK packaging. Verification: exact 100% coverage across 7,187 tests plus packed npm/npx/bun/bunx CLI and SDK-import acceptance in a fresh temporary project."
+  "2026-08-10T18:41:17.375Z","harness:codex","Review feedback: DeepScan PR #968 identified the now-unused original subcommand parameter on assertKnownPlanSubcommand after normalization moved into the shared recovery contract. Removing it and its call-site argument; no behavior change."
+  "2026-08-10T18:42:02.406Z","harness:codex","Review resolution: removed the unused pre-normalization subcommand parameter and call argument. Focused plan lifecycle, CLI guidance, and SDK recovery tests passed; ESLint and build passed."
 learnings[1]{created_at,author,text}:
   "2026-08-10T18:09:26.804Z","harness:codex",A universal refusal primitive should carry the complete sorted vocabulary and add a retry only when similarity or the caller provides a safe replacement; installed-package acceptance guards the public bundle barrel.
 files[17]{path,scope,note}:
@@ -82,5 +84,5 @@ test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/SDK_RUNTIME_BOUNDARIES.md,project,unified positional refusal boundary
   docs/SDK.md,project,public primitive reference
-close_reason: "Completed shared SDK unknown-subcommand recovery and broad CLI/SDK/MCP/package migration with compatibility aliases, exact full coverage, and installed-artifact acceptance."
+close_reason: Completed shared SDK unknown-subcommand recovery and broad family migration; exact-head DeepScan follow-up removed the obsolete plan helper parameter with focused verification.
 body: ""

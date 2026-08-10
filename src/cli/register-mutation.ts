@@ -1087,7 +1087,6 @@ function normalizePlanAliases(
 }
 
 function assertKnownPlanSubcommand(
-  subcommand: string | undefined,
   normalized: string,
   allowed: readonly string[],
 ): void {
@@ -1155,7 +1154,7 @@ async function runPlanAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
-  assertKnownPlanSubcommand(subcommand, normalizedSubcommand, PLAN_SUBCOMMANDS);
+  assertKnownPlanSubcommand(normalizedSubcommand, PLAN_SUBCOMMANDS);
   const planOptions = normalizePlanAliases(options);
   const reorderTo = parsePlanReorderTo(normalizedSubcommand, reorderToken);
   const planId =
