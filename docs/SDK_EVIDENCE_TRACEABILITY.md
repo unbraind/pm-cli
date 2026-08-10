@@ -12,6 +12,8 @@ Use `pm files lookup` with one or more project-relative or absolute paths:
 pm files lookup src/sdk/files.ts
 pm files lookup src/sdk/files.ts docs/SDK_EVIDENCE_TRACEABILITY.md --limit 20
 pm files lookup /absolute/project/src/sdk/files.ts --scope project --strict-read --json
+pm files lookup src/sdk/files.ts --explain
+pm files lookup src/sdk/files.ts --lines 650:720 --decision-depth 12 --json
 ```
 
 The command normalizes in-project absolute paths to project-relative paths, deduplicates targets, and returns referencing items in deterministic priority, update-time, and ID order. The default result limit is 50. Use `--offset` for bounded pagination or `--no-truncate` for an authoritative unbounded source scan.
@@ -26,6 +28,34 @@ Every response includes:
 
 `--strict-read` fails instead of returning partial source-scan results. Indexed reads are intentionally reported as `unchecked`: they are cursor-bound projections optimized for bounded context retrieval, while strict reads force authoritative item loading.
 
+## Explain why source exists
+
+`--explain` upgrades reverse lookup from an ownership list to a bounded context
+projection. Every match adds:
+
+- its linked-file evidence and compact `value`, `why_now`, `outcome`, and
+  `objective` rationale;
+- the shortest typed relationship path to a governing Decision, including
+  inverse edge names when traversal crosses an edge backwards;
+- a deterministic relevance score used before normal priority, update-time,
+  and id tie-breakers; and
+- explicit ambiguity codes when Git attribution is unavailable, selected lines
+  have no mapped commit, no governing Decision is reachable, or several
+  equally short Decisions exist.
+
+`--lines start:end` is an inclusive, one-based selector that implies
+`--explain` and accepts exactly one path. It runs bounded `git blame` and a
+256-commit path log. A blamed commit contributes only when its commit message
+contains the exact pm item id, so Git history supplements linked tracker
+evidence without inventing lineage. Git failures are non-fatal and appear as
+ambiguity rather than silently claiming attribution. `--decision-depth` is
+bounded from 1 through 32 and defaults to 8.
+
+The top-level `traceability_receipt` reports the requested range, blamed,
+mapped, and unmapped commit counts, and effective decision depth. Explained
+lookups use an authoritative source scan because a compact metadata index does
+not contain the rationale and graph fields required to support the answer.
+
 ## SDK and MCP
 
 The public SDK exposes both reusable-client and one-shot forms:
@@ -37,6 +67,9 @@ const client = new PmClient({ cwd: process.cwd() });
 const fromClient = await client.filesLookup({
   paths: ["src/sdk/files.ts"],
   limit: 20,
+  explain: true,
+  lineRange: { start: 650, end: 720 },
+  decisionDepth: 12,
 });
 
 const oneShot = await filesLookup(
@@ -45,7 +78,12 @@ const oneShot = await filesLookup(
 );
 ```
 
-The MCP `files` action uses the same primitive when `lookupPath` is present. `id` remains required for item-local add, remove, discover, and list operations; reverse lookup instead requires one or more `lookupPath` values. Use `pm contracts --command files --flags-only --json` for the active machine contract.
+The MCP `files` action uses the same primitive when `lookupPath` is present and
+accepts `explain`, `lines`, and `decisionDepth`. The dedicated `files_lookup`
+tool exposes the same fields. `id` remains required for item-local add, remove,
+discover, and list operations; reverse lookup instead requires one or more
+`lookupPath` values. Use `pm contracts --command files --flags-only --json` for
+the active machine contract.
 
 SDK hosts that manage authoritative item writes directly can use `queryLinkedFileMetadataIndex` from the public item-metadata-index surface. The reverse projection is rebuilt from linked-file collections and updated in the same derived-index writer section as normal metadata deltas. A missing, stale, corrupt, or extension-incompatible index must fall back to authoritative reads.
 

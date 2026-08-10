@@ -13,6 +13,10 @@ import {
   type AgentEpisodeIdentity,
   type AgentSessionContext,
 } from "./agent-session-context.js";
+import {
+  readAgentSemanticAttributionSync,
+  type AgentSemanticAttribution,
+} from "../session/session-state.js";
 
 /** Stable provenance categories recorded beside newly appended history authors. */
 export type AuthorSource = "asserted" | "configured" | "detected" | "unknown";
@@ -25,7 +29,8 @@ export type AgentModelSource =
   | "argv"
   | "host"
   | "session"
-  | "probe";
+  | "probe"
+  | "inferred";
 
 /** Stable built-in provenance dimensions understood by the default runtime. */
 export const AGENT_PROVENANCE_DIMENSIONS = [
@@ -47,6 +52,12 @@ export interface AgentProvenanceObservation {
   value: string;
   /** Signal class that supplied the value. */
   source: AgentModelSource;
+  /** Confidence attached to a semantic inference. */
+  confidence?: "high" | "medium" | "low";
+  /** Versioned inference rule when the value was derived. */
+  rule_version?: "v2";
+  /** Bounded item and lineage references supporting an inference. */
+  evidence?: readonly string[];
 }
 
 /**
@@ -417,14 +428,6 @@ function provenanceFromArgv(
   argv: readonly string[],
   dimension: string,
 ): string | undefined {
-  const flaggedValue = provenanceFlagValue(argv, dimension);
-  if (flaggedValue !== undefined) return flaggedValue;
-  if (dimension === "topic") {
-    return argv
-      .slice(0, 16)
-      .map((token) => token.trim())
-      .find((token) => /^pm-[a-z0-9][a-z0-9-]{2,63}$/u.test(token));
-  }
   if (dimension === "role") {
     const command = argv
       .slice(0, 8)
@@ -635,12 +638,40 @@ function descriptorMatchesSignals(
   return environmentMatch || argvMatch || clientMatch;
 }
 
+function inferredProvenanceObservation(
+  dimension: string,
+  semanticAttribution: AgentSemanticAttribution | undefined,
+): AgentProvenanceObservation | undefined {
+  if (!semanticAttribution) return undefined;
+  let value: string | undefined;
+  if (dimension === "topic") value = semanticAttribution.topic;
+  if (dimension === "role") value = semanticAttribution.role;
+  if (!value) return undefined;
+  return {
+    value,
+    source: "inferred",
+    confidence: semanticAttribution.confidence,
+    rule_version: semanticAttribution.rule_version,
+    evidence: semanticAttribution.evidence,
+  };
+}
+
+function firstProvenanceObservation(
+  candidates: readonly (readonly [string | undefined, AgentModelSource])[],
+): AgentProvenanceObservation | undefined {
+  const observed = candidates.find(([value]) => value !== undefined);
+  return observed?.[0]
+    ? { value: observed[0], source: observed[1] }
+    : undefined;
+}
+
 function resolveAgentProvenanceObservation(
   dimension: string,
   signals: HarnessDetectionSignals,
   env: Readonly<Record<string, string | undefined>>,
   descriptor: NormalizedHarnessSignalDescriptor | undefined,
   sessionContext: AgentSessionContext | undefined,
+  semanticAttribution: AgentSemanticAttribution | undefined,
 ): AgentProvenanceObservation | undefined {
   const overrideKey = `PM_AGENT_${dimension.toUpperCase().replaceAll("-", "_")}`;
   const hostResolvedDimensions = new Set([
@@ -649,12 +680,20 @@ function resolveAgentProvenanceObservation(
   ]);
   let overrideValue: string | undefined;
   let argvValue: string | undefined;
+  let argvFlagValue: string | undefined;
   if (hostResolvedDimensions.has(dimension)) {
     overrideValue = normalizeProvenanceValue(
       dimension,
       nonBlank(env[overrideKey])?.slice(0, 256),
     );
-    argvValue = provenanceFromArgv(signals.argv ?? [], dimension);
+    argvFlagValue = normalizeProvenanceValue(
+      dimension,
+      provenanceFlagValue(signals.argv ?? [], dimension),
+    );
+    argvValue = normalizeProvenanceValue(
+      dimension,
+      provenanceFromArgv(signals.argv ?? [], dimension),
+    );
   }
   const environmentKeysByDimension: Readonly<
     Record<string, readonly string[] | undefined>
@@ -666,41 +705,53 @@ function resolveAgentProvenanceObservation(
     ...signals.client_info?.provenance,
     model: signals.client_info?.model,
   };
-  const values = [
-    overrideValue,
-    boundedProvenanceValue(sessionContext?.provenance, dimension),
-    normalizeProvenanceValue(
-      dimension,
-      firstEnvironmentValue(env, environmentKeysByDimension[dimension]),
-    ),
-    normalizeProvenanceValue(
-      dimension,
-      boundedProvenanceValue(clientProvenance, dimension),
-    ),
-    normalizeProvenanceValue(
-      dimension,
-      boundedProvenanceValue(signals.provenance, dimension),
-    ),
-    normalizeProvenanceValue(dimension, argvValue),
-    resolveProvenanceProbe(dimension, signals, env, descriptor),
-  ];
-  const sources: readonly AgentModelSource[] = [
-    "override",
-    "session",
-    "environment",
-    "mcp_client",
-    "host",
-    "argv",
-    "probe",
-  ];
-  const candidates = sources.map((source, index) => ({
-    value: values[index],
-    source,
-  }));
-  return candidates.find(
-    (candidate): candidate is { value: string; source: AgentModelSource } =>
-      candidate.value !== undefined,
+  const sessionValue = boundedProvenanceValue(
+    sessionContext?.provenance,
+    dimension,
   );
+  const environmentValue = normalizeProvenanceValue(
+    dimension,
+    firstEnvironmentValue(env, environmentKeysByDimension[dimension]),
+  );
+  const clientValue = normalizeProvenanceValue(
+    dimension,
+    boundedProvenanceValue(clientProvenance, dimension),
+  );
+  const hostValue = normalizeProvenanceValue(
+    dimension,
+    boundedProvenanceValue(signals.provenance, dimension),
+  );
+  const probeValue = resolveProvenanceProbe(
+    dimension,
+    signals,
+    env,
+    descriptor,
+  );
+  const observed = firstProvenanceObservation([
+    [overrideValue, "override"],
+    [sessionValue, "session"],
+    [argvFlagValue, "argv"],
+    [environmentValue, "environment"],
+    [clientValue, "mcp_client"],
+    [hostValue, "host"],
+    [probeValue, "probe"],
+  ]);
+  return (
+    observed ??
+    inferredProvenanceObservation(dimension, semanticAttribution) ??
+    (argvValue ? { value: argvValue, source: "argv" } : undefined)
+  );
+}
+
+function resolveAgentInstance(
+  harness: string | undefined,
+  session: string | undefined,
+): string | undefined {
+  if (!harness || !session) return undefined;
+  return createHash("sha256")
+    .update(`pm-agent-instance:v1\0${harness}\0${session}`)
+    .digest("hex")
+    .slice(0, 24);
 }
 
 function resolveAgentProvenance(
@@ -708,6 +759,7 @@ function resolveAgentProvenance(
   env: Readonly<Record<string, string | undefined>>,
   descriptor: NormalizedHarnessSignalDescriptor | undefined,
   sessionContext: AgentSessionContext | undefined,
+  semanticAttribution: AgentSemanticAttribution | undefined,
 ): AgentProvenance {
   const descriptorDimensions = Object.keys(
     descriptor?.provenance_environment_keys ?? {},
@@ -728,6 +780,7 @@ function resolveAgentProvenance(
       env,
       descriptor,
       sessionContext,
+      semanticAttribution,
     );
     if (observed) {
       observations[dimension] = observed;
@@ -857,24 +910,24 @@ export function detectAgentIdentity(
     effectiveSignals,
     env,
   );
+  const session = [
+    firstEnvironmentValue(env, descriptor?.session_environment_keys),
+    nonBlank(effectiveSignals.client_info?.session)?.slice(0, 256),
+  ].find((candidate) => candidate !== undefined);
+  const instance = resolveAgentInstance(descriptor?.harness, session);
+  const semanticAttribution = readAgentSemanticAttributionSync({
+    cwd: effectiveSignals.cwd ?? process.cwd(),
+    env,
+    key: instance,
+  });
   const provenance = resolveAgentProvenance(
     effectiveSignals,
     env,
     descriptor,
     sessionContext,
+    semanticAttribution,
   );
   const modelCandidate = provenance.model;
-  const session = [
-    firstEnvironmentValue(env, descriptor?.session_environment_keys),
-    nonBlank(effectiveSignals.client_info?.session)?.slice(0, 256),
-  ].find((candidate) => candidate !== undefined);
-  const instance =
-    descriptor?.harness && session
-      ? createHash("sha256")
-          .update(`pm-agent-instance:v1\0${descriptor.harness}\0${session}`)
-          .digest("hex")
-          .slice(0, 24)
-      : undefined;
   const entries: Array<
     [
       keyof DetectedAgentIdentity,

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1483,
+    "covered_symbols": 1500,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1484
+    "required_symbols": 1501
   },
   "breaking_acknowledgements": [
     {
@@ -181,6 +181,25 @@
       ],
       "package_version": "2026.8.9",
       "reason": "Adds fail-fast dependency targets, lossless acceptance-criteria errors, and explicit unresolved dependency options across typed SDK contracts."
+    },
+    {
+      "changes": [
+        "signature ./sdk:AgentModelSource",
+        "signature ./sdk:AgentProvenanceObservation",
+        "signature ./sdk:FilesLookupMatch",
+        "signature ./sdk:FilesLookupOptions",
+        "signature ./sdk:FilesLookupResult",
+        "signature ./sdk:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/core:AgentModelSource",
+        "signature ./sdk/core:AgentProvenanceObservation",
+        "signature ./sdk/runtime:FilesLookupOptions",
+        "signature ./sdk/runtime:FilesLookupResult"
+      ],
+      "package_version": "2026.8.10",
+      "reason": "Intentional additive semantic-attribution and explained source-traceability SDK contract expansion for pm-3zgh2c and pm-f86lth; schema constants advance with transport fields."
     }
   ],
   "entrypoints": {
@@ -449,7 +468,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AgentModelSource",
-          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\";"
+          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\";"
         },
         {
           "classification": "supported",
@@ -479,13 +498,25 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AgentProvenanceObservation",
-          "signature": "export interface AgentProvenanceObservation { value: string; source: AgentModelSource; }"
+          "signature": "export interface AgentProvenanceObservation { value: string; source: AgentModelSource; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "AgentProvenanceOutcome",
           "signature": "export interface AgentProvenanceOutcome { status: \"resolved\" | \"unavailable\" | \"not_configured\" | \"failed\"; reason?: AgentProvenanceAbsenceReason; resolver?: AgentProvenanceResolver; rule_version: \"v1\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentSemanticAttributionCoverage",
+          "signature": "export interface AgentSemanticAttributionCoverage { harness: string; dimension: \"role\" | \"topic\"; entries: number; observed: number; by_source: Partial<Record<AgentModelSource, number>>; coverage: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentSemanticAttributionCoverageGate",
+          "signature": "export interface AgentSemanticAttributionCoverageGate { passed: boolean; minimum_coverage: number; minimum_entries: number; rows: AgentSemanticAttributionCoverage[]; failures: string[]; }"
         },
         {
           "classification": "supported",
@@ -3532,6 +3563,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "evaluateSemanticAttributionCoverage",
+          "signature": "(entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_provenance\">[], options?: { minimumCoverage?: number; minimumEntries?: number; }) => AgentSemanticAttributionCoverageGate | calls: (entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_provenance\">[], options?: { minimumCoverage?: number; minimumEntries?: number; }) => AgentSemanticAttributionCoverageGate"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "evaluateSimilarityGovernance",
           "signature": "(candidate: SimilarItemCandidate, options: FindSimilarItemsOptions & { mode: \"advisory\" | \"off\" | \"strict\"; allowDuplicate?: boolean; }) => Promise<SimilarityAdvisory | undefined> | calls: (candidate: SimilarItemCandidate, options: FindSimilarItemsOptions & { mode: \"off\" | \"advisory\" | \"strict\"; allowDuplicate?: boolean; }) => Promise<SimilarityAdvisory | undefined>"
         },
@@ -3600,6 +3637,12 @@
           "kind": "function",
           "name": "expandAddGlobEntries",
           "signature": "(entries: AddGlobEntry[], workspaceRoot?: string, invocationRoot?: string) => Promise<LinkedArtifact[]> | calls: (entries: AddGlobEntry[], workspaceRoot?: string, invocationRoot?: string) => Promise<LinkedArtifact[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "explainSourceTraceability",
+          "signature": "(params: { workspaceRoot: string; paths: readonly string[]; candidates: readonly TraceabilityCandidate[]; corpus: readonly ItemMetadata[]; lineRange?: SourceLineRange; decisionDepth?: number; }) => Promise<{ explanations: Map<string, SourceTraceabilityExplanation>; receipt: SourceTraceabilityReceipt; }> | calls: (params: { workspaceRoot: string; paths: readonly string[]; candidates: readonly TraceabilityCandidate[]; corpus: readonly ItemMetadata[]; lineRange?: SourceLineRange; decisionDepth?: number; }) => Promise<{ explanations: Map<string, SourceTraceabilityExplanation>; receipt: SourceTraceabilityReceipt; }>"
         },
         {
           "classification": "supported",
@@ -4331,19 +4374,19 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "FilesLookupMatch",
-          "signature": "export interface FilesLookupMatch { item: FilesLookupItem; files: LinkedFile[]; }"
+          "signature": "export interface FilesLookupMatch { item: FilesLookupItem; files: LinkedFile[]; traceability?: SourceTraceabilityExplanation; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "FilesLookupOptions",
-          "signature": "export interface FilesLookupOptions { paths: string[]; scope?: LinkScope; limit?: number; offset?: number; noTruncate?: boolean; strictRead?: boolean; }"
+          "signature": "export interface FilesLookupOptions { paths: string[]; scope?: LinkScope; limit?: number; offset?: number; noTruncate?: boolean; strictRead?: boolean; explain?: boolean; lineRange?: SourceLineRange; decisionDepth?: number; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "FilesLookupResult",
-          "signature": "export interface FilesLookupResult { paths: string[]; total: number; count: number; offset: number; limit: number | null; has_more: boolean; truncated: boolean; completeness: { status: \"complete\" | \"partial\" | \"unchecked\"; source: \"index\" | \"source_scan\"; }; warnings: string[]; matches: FilesLookupMatch[]; }"
+          "signature": "export interface FilesLookupResult { paths: string[]; total: number; count: number; offset: number; limit: number | null; has_more: boolean; truncated: boolean; completeness: { status: \"complete\" | \"partial\" | \"unchecked\"; source: \"index\" | \"source_scan\"; }; warnings: string[]; matches: FilesLookupMatch[]; traceability_receipt?: SourceTraceabilityReceipt; }"
         },
         {
           "classification": "supported",
@@ -7334,6 +7377,12 @@
           "signature": "export interface ParserOverrideDelta { args?: string[]; options?: Record<string, unknown>; global?: GlobalOptions; }"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseSourceLineRange",
+          "signature": "(value: string) => SourceLineRange | calls: (value: string) => SourceLineRange"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "parseStatusFilterCsv",
@@ -7781,7 +7830,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.1.0\""
+          "signature": "\"1.2.0\""
         },
         {
           "classification": "supported",
@@ -7871,7 +7920,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.4.1\""
+          "signature": "\"4.5.0\""
         },
         {
           "classification": "contract_data",
@@ -9142,6 +9191,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "recordClaimSemanticAttribution",
+          "signature": "(params: { pmRoot: string; settings: Awaited<ReturnType<typeof readSettings>>; principal: string; itemId: string; }) => Promise<void> | calls: (params: { pmRoot: string; settings: Awaited<ReturnType<typeof readSettings>>; principal: string; itemId: string; }) => Promise<void>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "recordContextUsageServing",
           "signature": "(options: ContextUsageLedgerOptions & { author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; }) => Promise<void> | calls: (options: ContextUsageLedgerOptions & { author: string; surface: ContextRelevanceSurface; profile: string; rows: ContextUsageServingRow[]; }) => Promise<void>"
         },
@@ -9156,6 +9211,12 @@
           "kind": "function",
           "name": "recordContextUsageTouches",
           "signature": "(options: ContextUsageLedgerOptions & { author: string; itemIds: readonly string[]; intent: string; }) => Promise<void> | calls: (options: ContextUsageLedgerOptions & { author: string; itemIds: readonly string[]; intent: string; }) => Promise<void>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "recordFocusSemanticAttribution",
+          "signature": "(params: { pmRoot: string; settings: Awaited<ReturnType<typeof readSettings>>; principal: string; itemId?: string; }) => Promise<void> | calls: (params: { pmRoot: string; settings: Awaited<ReturnType<typeof readSettings>>; principal: string; itemId?: string; }) => Promise<void>"
         },
         {
           "classification": "advanced_export",
@@ -9174,6 +9235,12 @@
           "kind": "interface",
           "name": "RecordImprovementObservationResult",
           "signature": "export interface RecordImprovementObservationResult { changed: boolean; observation: ImprovementObservation; ledger_path: \"improvement-ledger.json\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "recordReleaseSemanticAttribution",
+          "signature": "(params: { pmRoot: string; principal: string; itemId: string; }) => Promise<void> | calls: (params: { pmRoot: string; principal: string; itemId: string; }) => Promise<void>"
         },
         {
           "classification": "supported",
@@ -10572,6 +10639,12 @@
           "kind": "function",
           "name": "resolveSemanticCorpusCharacterLimit",
           "signature": "(providerName: string | undefined, configuredMaxCharacters: unknown) => SemanticCorpusCharacterLimitResolution | calls: (providerName: string | undefined, configuredMaxCharacters: unknown) => SemanticCorpusCharacterLimitResolution"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveSemanticLineageIds",
+          "signature": "(pmRoot: string, settings: Awaited<ReturnType<typeof readSettings>>, itemId: string) => Promise<string[]> | calls: (pmRoot: string, settings: Awaited<ReturnType<typeof readSettings>>, itemId: string) => Promise<string[]>"
         },
         {
           "classification": "advanced_export",
@@ -12140,6 +12213,18 @@
           "signature": "(snapshot: WorkspaceMemorySnapshot, tokenBudget: number, limit?: number) => WorkspaceMemoryRollup[] | calls: (snapshot: WorkspaceMemorySnapshot, tokenBudget: number, limit?: number) => WorkspaceMemoryRollup[]"
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "SEMANTIC_ATTRIBUTION_LIMITS",
+          "signature": "{ readonly lineage_depth: 16; readonly active_items: 64; readonly evidence_rows: 32; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "semanticAttributionAffinity",
+          "signature": "(attribution: AgentSemanticAttribution | undefined) => Readonly<Record<string, number>> | undefined | calls: (attribution: AgentSemanticAttribution | undefined) => Readonly<Record<string, number>> | undefined"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "sentryCaptureCliError",
@@ -12384,6 +12469,42 @@
           "kind": "interface",
           "name": "SourceContextWritePolicy",
           "signature": "export interface SourceContextWritePolicy { access: SourceContextAccessMode; write_override_applied: boolean; source_writes_allowed: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceDecisionPath",
+          "signature": "export interface SourceDecisionPath { status: \"found\" | \"ambiguous\" | \"not_found\"; nodes: string[]; kinds: string[]; alternative_decision_ids: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceLineRange",
+          "signature": "export interface SourceLineRange { start: number; end: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceTraceabilityEvidence",
+          "signature": "export interface SourceTraceabilityEvidence { kind: \"linked_file\" | \"git_commit\"; reference: string; contribution_lines?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceTraceabilityExplanation",
+          "signature": "export interface SourceTraceabilityExplanation { score: number; contribution_lines: number; evidence: SourceTraceabilityEvidence[]; rationale: SourceTraceabilityRationale; decision_path: SourceDecisionPath; ambiguities: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceTraceabilityRationale",
+          "signature": "export interface SourceTraceabilityRationale { value: string | null; why_now: string | null; outcome: string | null; objective: string | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceTraceabilityReceipt",
+          "signature": "export interface SourceTraceabilityReceipt { line_range: SourceLineRange | null; blamed_commit_count: number; mapped_commit_count: number; unmapped_commit_count: number; decision_depth: number; }"
         },
         {
           "classification": "advanced_export",
@@ -15947,7 +16068,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.1.0\""
+          "signature": "\"1.2.0\""
         },
         {
           "classification": "contract_data",
@@ -16013,7 +16134,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.4.1\""
+          "signature": "\"4.5.0\""
         },
         {
           "classification": "contract_data",
@@ -16811,7 +16932,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AgentModelSource",
-          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\";"
+          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\" | \"probe\" | \"inferred\";"
         },
         {
           "classification": "supported",
@@ -16841,13 +16962,25 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AgentProvenanceObservation",
-          "signature": "export interface AgentProvenanceObservation { value: string; source: AgentModelSource; }"
+          "signature": "export interface AgentProvenanceObservation { value: string; source: AgentModelSource; confidence?: \"high\" | \"medium\" | \"low\"; rule_version?: \"v2\"; evidence?: readonly string[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "AgentProvenanceOutcome",
           "signature": "export interface AgentProvenanceOutcome { status: \"resolved\" | \"unavailable\" | \"not_configured\" | \"failed\"; reason?: AgentProvenanceAbsenceReason; resolver?: AgentProvenanceResolver; rule_version: \"v1\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentSemanticAttributionCoverage",
+          "signature": "export interface AgentSemanticAttributionCoverage { harness: string; dimension: \"role\" | \"topic\"; entries: number; observed: number; by_source: Partial<Record<AgentModelSource, number>>; coverage: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentSemanticAttributionCoverageGate",
+          "signature": "export interface AgentSemanticAttributionCoverageGate { passed: boolean; minimum_coverage: number; minimum_entries: number; rows: AgentSemanticAttributionCoverage[]; failures: string[]; }"
         },
         {
           "classification": "supported",
@@ -17193,9 +17326,21 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "evaluateSemanticAttributionCoverage",
+          "signature": "(entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_provenance\">[], options?: { minimumCoverage?: number; minimumEntries?: number; }) => AgentSemanticAttributionCoverageGate | calls: (entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_provenance\">[], options?: { minimumCoverage?: number; minimumEntries?: number; }) => AgentSemanticAttributionCoverageGate"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "EXIT_CODE",
           "signature": "{ readonly SUCCESS: 0; readonly GENERIC_FAILURE: 1; readonly USAGE: 2; readonly NOT_FOUND: 3; readonly CONFLICT: 4; readonly DEPENDENCY_FAILED: 5; readonly NO_EFFECT: 6; readonly PARTIAL_EFFECT: 7; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "explainSourceTraceability",
+          "signature": "(params: { workspaceRoot: string; paths: readonly string[]; candidates: readonly TraceabilityCandidate[]; corpus: readonly ItemMetadata[]; lineRange?: SourceLineRange; decisionDepth?: number; }) => Promise<{ explanations: Map<string, SourceTraceabilityExplanation>; receipt: SourceTraceabilityReceipt; }> | calls: (params: { workspaceRoot: string; paths: readonly string[]; candidates: readonly TraceabilityCandidate[]; corpus: readonly ItemMetadata[]; lineRange?: SourceLineRange; decisionDepth?: number; }) => Promise<{ explanations: Map<string, SourceTraceabilityExplanation>; receipt: SourceTraceabilityReceipt; }>"
         },
         {
           "classification": "supported",
@@ -17457,6 +17602,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "parseSourceLineRange",
+          "signature": "(value: string) => SourceLineRange | calls: (value: string) => SourceLineRange"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "PM_CLI_EXPECTED_ERROR_NAME",
           "signature": "\"PmCliError\""
@@ -17614,6 +17765,24 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "recordClaimSemanticAttribution",
+          "signature": "(params: { pmRoot: string; settings: Awaited<ReturnType<typeof readSettings>>; principal: string; itemId: string; }) => Promise<void> | calls: (params: { pmRoot: string; settings: Awaited<ReturnType<typeof readSettings>>; principal: string; itemId: string; }) => Promise<void>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "recordFocusSemanticAttribution",
+          "signature": "(params: { pmRoot: string; settings: Awaited<ReturnType<typeof readSettings>>; principal: string; itemId?: string; }) => Promise<void> | calls: (params: { pmRoot: string; settings: Awaited<ReturnType<typeof readSettings>>; principal: string; itemId?: string; }) => Promise<void>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "recordReleaseSemanticAttribution",
+          "signature": "(params: { pmRoot: string; principal: string; itemId: string; }) => Promise<void> | calls: (params: { pmRoot: string; principal: string; itemId: string; }) => Promise<void>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "registerHarnessSignalDescriptors",
           "signature": "(descriptors: readonly HarnessSignalDescriptor[]) => () => void | calls: (descriptors: readonly HarnessSignalDescriptor[]) => () => void"
         },
@@ -17670,6 +17839,12 @@
           "kind": "function",
           "name": "resolveReadOutputSurface",
           "signature": "(command: string) => PmReadOutputSurface | undefined | calls: (command: string) => PmReadOutputSurface | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveSemanticLineageIds",
+          "signature": "(pmRoot: string, settings: Awaited<ReturnType<typeof readSettings>>, itemId: string) => Promise<string[]> | calls: (pmRoot: string, settings: Awaited<ReturnType<typeof readSettings>>, itemId: string) => Promise<string[]>"
         },
         {
           "classification": "supported",
@@ -17757,9 +17932,57 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "SEMANTIC_ATTRIBUTION_LIMITS",
+          "signature": "{ readonly lineage_depth: 16; readonly active_items: 64; readonly evidence_rows: 32; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "semanticAttributionAffinity",
+          "signature": "(attribution: AgentSemanticAttribution | undefined) => Readonly<Record<string, number>> | undefined | calls: (attribution: AgentSemanticAttribution | undefined) => Readonly<Record<string, number>> | undefined"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "serializeItemDocument",
           "signature": "(document: ItemDocument, options?: ItemDocumentFormatOptions) => string | calls: (document: ItemDocument, options?: ItemDocumentFormatOptions) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceDecisionPath",
+          "signature": "export interface SourceDecisionPath { status: \"found\" | \"ambiguous\" | \"not_found\"; nodes: string[]; kinds: string[]; alternative_decision_ids: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceLineRange",
+          "signature": "export interface SourceLineRange { start: number; end: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceTraceabilityEvidence",
+          "signature": "export interface SourceTraceabilityEvidence { kind: \"linked_file\" | \"git_commit\"; reference: string; contribution_lines?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceTraceabilityExplanation",
+          "signature": "export interface SourceTraceabilityExplanation { score: number; contribution_lines: number; evidence: SourceTraceabilityEvidence[]; rationale: SourceTraceabilityRationale; decision_path: SourceDecisionPath; ambiguities: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceTraceabilityRationale",
+          "signature": "export interface SourceTraceabilityRationale { value: string | null; why_now: string | null; outcome: string | null; objective: string | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SourceTraceabilityReceipt",
+          "signature": "export interface SourceTraceabilityReceipt { line_range: SourceLineRange | null; blamed_commit_count: number; mapped_commit_count: number; unmapped_commit_count: number; decision_depth: number; }"
         },
         {
           "classification": "supported",
@@ -22043,13 +22266,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "FilesLookupOptions",
-          "signature": "export interface FilesLookupOptions { paths: string[]; scope?: LinkScope; limit?: number; offset?: number; noTruncate?: boolean; strictRead?: boolean; }"
+          "signature": "export interface FilesLookupOptions { paths: string[]; scope?: LinkScope; limit?: number; offset?: number; noTruncate?: boolean; strictRead?: boolean; explain?: boolean; lineRange?: SourceLineRange; decisionDepth?: number; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "FilesLookupResult",
-          "signature": "export interface FilesLookupResult { paths: string[]; total: number; count: number; offset: number; limit: number | null; has_more: boolean; truncated: boolean; completeness: { status: \"complete\" | \"partial\" | \"unchecked\"; source: \"index\" | \"source_scan\"; }; warnings: string[]; matches: FilesLookupMatch[]; }"
+          "signature": "export interface FilesLookupResult { paths: string[]; total: number; count: number; offset: number; limit: number | null; has_more: boolean; truncated: boolean; completeness: { status: \"complete\" | \"partial\" | \"unchecked\"; source: \"index\" | \"source_scan\"; }; warnings: string[]; matches: FilesLookupMatch[]; traceability_receipt?: SourceTraceabilityReceipt; }"
         },
         {
           "classification": "supported",

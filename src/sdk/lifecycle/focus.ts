@@ -20,7 +20,10 @@ import {
   getSettingsPath,
   resolvePmRoot,
   readSettings,
+  resolveAuthor,
+  resolveClaimPrincipal,
 } from "../runtime-primitives.js";
+import { recordFocusSemanticAttribution } from "../context/semantic-session-attribution.js";
 /** Documents the focus options payload exchanged by command, SDK, and package integrations. */
 export interface FocusOptions {
   /** Value that configures or reports clear for this contract. */
@@ -66,7 +69,12 @@ export async function runFocus(
         EXIT_CODE.USAGE,
       );
     }
+    const settings = await readSettings(pmRoot);
+    const principal = resolveClaimPrincipal(
+      resolveAuthor(undefined, settings.author_default),
+    );
     await clearFocusedItem(pmRoot);
+    await recordFocusSemanticAttribution({ pmRoot, settings, principal });
     return {
       action: "clear",
       focused_item: null,
@@ -119,6 +127,14 @@ export async function runFocus(
   const loaded = await readLocatedItem(located, { schema: settings.schema });
   const title = nonEmptyTitleOrNull(loaded.document.metadata.title);
   await setFocusedItem(pmRoot, normalizedId);
+  await recordFocusSemanticAttribution({
+    pmRoot,
+    settings,
+    principal: resolveClaimPrincipal(
+      resolveAuthor(undefined, settings.author_default),
+    ),
+    itemId: normalizedId,
+  });
   return {
     action: "set",
     focused_item: normalizedId,

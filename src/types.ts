@@ -972,7 +972,8 @@ export interface HistoryEntry {
     | "argv"
     | "host"
     | "session"
-    | "probe";
+    | "probe"
+    | "inferred";
   /** Privacy-safe fingerprint distinguishing concurrent harness invocations. */
   agent_instance?: string;
   /** Extensible local-only descriptive agent provenance; null means declared but unavailable. */
@@ -990,7 +991,14 @@ export interface HistoryEntry {
           | "argv"
           | "host"
           | "session"
-          | "probe";
+          | "probe"
+          | "inferred";
+        /** Confidence attached to a semantic inference. */
+        confidence?: "high" | "medium" | "low";
+        /** Versioned semantic inference rule. */
+        rule_version?: "v2";
+        /** Bounded item and lineage references supporting the inference. */
+        evidence?: readonly string[];
       } | null
     >
   >;

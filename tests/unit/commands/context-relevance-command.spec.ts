@@ -8,7 +8,14 @@ import {
 } from "../../../src/cli/commands/context.js";
 import { runNext } from "../../../src/cli/commands/next.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
+import {
+  detectAgentIdentity,
+  resolveAuthor,
+  runWithHarnessDetectionSignals,
+} from "../../../src/core/shared/author.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
+import { recordClaimedWorkAttribution } from "../../../src/core/session/session-state.js";
+import { readSettings } from "../../../src/core/store/settings.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
 import {
   withTempPmPath,
@@ -296,6 +303,40 @@ describe("context relevance command integration", () => {
       await expect(
         runNext({ tokenBudget: 1.5 }, { path: context.pmPath }),
       ).rejects.toThrow("--token-budget must be a positive integer");
+    });
+  });
+
+  it("packs active semantic claims as required context within the same ceiling", async () => {
+    await withTempPmPath(async (context) => {
+      const createdIds = createContextRankingItems(context);
+      const settings = await readSettings(context.pmPath);
+      const author = resolveAuthor(undefined, settings.author_default);
+      const instance = detectAgentIdentity().instance;
+      await recordClaimedWorkAttribution({
+        pmRoot: context.pmPath,
+        principal: instance ? `${author}#${instance}` : author,
+        itemId: createdIds[0]!,
+      });
+
+      const result = await runContext(
+        { explainRanking: true, tokenBudget: "64" },
+        { path: context.pmPath },
+      );
+      expect(result.packing).toMatchObject({
+        token_budget: 64,
+        included: expect.arrayContaining([
+          expect.objectContaining({ id: createdIds[0] }),
+        ]),
+      });
+      expect(
+        result.ranking?.items.find((entry) => entry.id === createdIds[0])
+          ?.contributions.claim_focus,
+      ).toBeGreaterThan(0);
+      await expect(
+        runWithHarnessDetectionSignals({ cwd: context.tempRoot, env: {} }, () =>
+          runContext({}, { path: context.pmPath }),
+        ),
+      ).resolves.toBeDefined();
     });
   });
 

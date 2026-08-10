@@ -380,10 +380,7 @@ describe("agent runtime SDK primitives", () => {
       source: "argv",
       value: "implementer",
     });
-    expect(diagnosed.provenance?.topic).toEqual({
-      source: "argv",
-      value: "pm-contract123",
-    });
+    expect(diagnosed.provenance?.topic).toBeNull();
     expect(diagnosed.provenance_outcomes.model).toEqual({
       status: "failed",
       reason: "resolver_failed",

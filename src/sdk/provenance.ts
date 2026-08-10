@@ -9,6 +9,7 @@ import {
   BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
   type HarnessSignalDescriptor,
 } from "../core/shared/author.js";
+import type { AgentModelSource } from "../core/shared/author.js";
 
 /** One declared provenance dimension and the built-in harnesses that can supply it. */
 export interface AgentProvenanceDescriptorCoverage {
@@ -42,6 +43,36 @@ export interface AgentModelProvenanceCoverage {
 export interface AgentProvenanceDimensionCoverage extends AgentModelProvenanceCoverage {
   /** Stable provenance dimension being summarized. */
   dimension: string;
+}
+
+/** Semantic attribution coverage for one harness and role/topic dimension. */
+export interface AgentSemanticAttributionCoverage {
+  /** Stable detected harness namespace. */
+  harness: string;
+  /** Semantic dimension being measured. */
+  dimension: "role" | "topic";
+  /** History events attributed to the harness. */
+  entries: number;
+  /** Events carrying a non-empty semantic observation. */
+  observed: number;
+  /** Observed events grouped by precedence source. */
+  by_source: Partial<Record<AgentModelSource, number>>;
+  /** Observed fraction across all harness events. */
+  coverage: number;
+}
+
+/** Result of applying a corpus-facing semantic coverage threshold. */
+export interface AgentSemanticAttributionCoverageGate {
+  /** Whether every sampled harness/dimension row met the threshold. */
+  passed: boolean;
+  /** Required observed fraction. */
+  minimum_coverage: number;
+  /** Required event count before a row participates. */
+  minimum_entries: number;
+  /** Deterministically ordered coverage rows. */
+  rows: AgentSemanticAttributionCoverage[];
+  /** Harness/dimension keys that failed the threshold. */
+  failures: string[];
 }
 
 /** One declared or inferred episode group with deterministically nested children. */
@@ -242,6 +273,86 @@ export function summarizeAgentProvenance(
         left.harness.localeCompare(right.harness) ||
         left.dimension.localeCompare(right.dimension),
     );
+}
+
+/**
+ * Measure role/topic availability by harness and precedence source, then apply
+ * an explicit ratchet. Empty or synthetic corpora therefore remain useful
+ * negative controls instead of silently passing a production coverage gate.
+ */
+export function evaluateSemanticAttributionCoverage(
+  entries: readonly Pick<HistoryEntry, "agent_harness" | "agent_provenance">[],
+  options: { minimumCoverage?: number; minimumEntries?: number } = {},
+): AgentSemanticAttributionCoverageGate {
+  const minimumCoverage = options.minimumCoverage ?? 0.8;
+  const minimumEntries = options.minimumEntries ?? 5;
+  if (
+    ![
+      Number.isFinite(minimumCoverage),
+      minimumCoverage >= 0,
+      minimumCoverage <= 1,
+    ].every(Boolean)
+  ) {
+    throw new RangeError(
+      "Semantic attribution minimum coverage must be from 0 to 1.",
+    );
+  }
+  if (
+    ![Number.isSafeInteger(minimumEntries), minimumEntries >= 1].every(Boolean)
+  ) {
+    throw new RangeError(
+      "Semantic attribution minimum entries must be a positive integer.",
+    );
+  }
+  const rows = new Map<string, AgentSemanticAttributionCoverage>();
+  for (const entry of entries) {
+    if (!entry.agent_harness) continue;
+    for (const dimension of ["role", "topic"] as const) {
+      const key = `${entry.agent_harness}\0${dimension}`;
+      const row = rows.get(key) ?? {
+        harness: entry.agent_harness,
+        dimension,
+        entries: 0,
+        observed: 0,
+        by_source: {},
+        coverage: 0,
+      };
+      row.entries += 1;
+      const observation = entry.agent_provenance?.[dimension];
+      if (observation?.value) {
+        row.observed += 1;
+        row.by_source[observation.source] =
+          (row.by_source[observation.source] ?? 0) + 1;
+      }
+      rows.set(key, row);
+    }
+  }
+  const ordered = [...rows.values()]
+    .map((row) => ({
+      ...row,
+      coverage: row.observed / row.entries,
+      by_source: Object.fromEntries(
+        Object.entries(row.by_source).sort(([left], [right]) =>
+          left.localeCompare(right),
+        ),
+      ) as Partial<Record<AgentModelSource, number>>,
+    }))
+    .sort(
+      (left, right) =>
+        left.harness.localeCompare(right.harness) ||
+        left.dimension.localeCompare(right.dimension),
+    );
+  const eligible = ordered.filter((row) => row.entries >= minimumEntries);
+  const failures = eligible
+    .filter((row) => row.coverage < minimumCoverage)
+    .map((row) => `${row.harness}:${row.dimension}`);
+  return {
+    passed: eligible.length > 0 && failures.length === 0,
+    minimum_coverage: minimumCoverage,
+    minimum_entries: minimumEntries,
+    rows: ordered,
+    failures,
+  };
 }
 
 /**

@@ -6,11 +6,7 @@ import { Command } from "commander";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { registerFilesLookupCommand } from "../../../src/cli/register-files-lookup.js";
 import { runFiles, runFilesLookup } from "../../../src/sdk/files.js";
-import {
-  filesLookup,
-  PmClient,
-  runAction,
-} from "../../../src/sdk/runtime.js";
+import { filesLookup, PmClient, runAction } from "../../../src/sdk/runtime.js";
 import {
   generateBashScript,
   generateFishScript,
@@ -98,6 +94,31 @@ function createFilesLookupCli(pmPath: string): Command {
 }
 
 describe("context-management SDK primitives", () => {
+  it("preserves canonical file ranking when explanations have equal evidence", async () => {
+    await withTempPmPath(async (context) => {
+      const first = createTask(context, "Equal source evidence one");
+      const second = createTask(context, "Equal source evidence two");
+      for (const id of [first, second]) {
+        await runFiles(
+          id,
+          { add: ["path=src/equal.ts,scope=project"] },
+          { path: context.pmPath },
+        );
+      }
+      const baseline = await runFilesLookup(
+        { paths: ["src/equal.ts"] },
+        { path: context.pmPath },
+      );
+      const explained = await runFilesLookup(
+        { paths: ["src/equal.ts"], explain: true },
+        { path: context.pmPath },
+      );
+      expect(explained.matches.map((match) => match.item.id)).toEqual(
+        baseline.matches.map((match) => match.item.id),
+      );
+    });
+  });
+
   it("treats repeated linked-file additions as true no-op mutations", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "No-op evidence");
@@ -188,12 +209,16 @@ describe("context-management SDK primitives", () => {
       expect(script).toContain("--replace-docs");
       expect(script).toContain("lookup");
       expect(script).toContain("--strict-read");
+      expect(script).toContain("--explain");
+      expect(script).toContain("--lines");
     }
     const fish = generateFishScript();
     expect(fish).toContain("-l replace-files");
     expect(fish).toContain("-l replace-docs");
     expect(fish).toContain("discover lookup");
     expect(fish).toContain("-l strict-read");
+    expect(fish).toContain("-l explain");
+    expect(fish).toContain("-l lines");
   });
 
   it("finds source-linked items with bounded source-scan receipts", async () => {
@@ -202,7 +227,12 @@ describe("context-management SDK primitives", () => {
       const secondId = createTask(context, "Trace source second");
       await runFiles(
         firstId,
-        { add: ["path=src/sdk/files.ts,scope=project,note=implementation"] },
+        {
+          add: [
+            "path=src/sdk/files.ts,scope=project,note=implementation",
+            "path=src/sdk/files.ts,scope=global,note=global implementation",
+          ],
+        },
         { path: context.pmPath },
       );
       await runFiles(
@@ -226,6 +256,15 @@ describe("context-management SDK primitives", () => {
       });
       expect([firstId, secondId]).toContain(result.matches[0]?.item.id);
       expect(result.matches[0]?.files[0]?.path).toBe("src/sdk/files.ts");
+      await expect(
+        runFilesLookup(
+          { paths: ["src/sdk/files.ts"], explain: true, noTruncate: true },
+          { path: context.pmPath },
+        ),
+      ).resolves.toMatchObject({
+        total: 2,
+        traceability_receipt: { line_range: null, decision_depth: 8 },
+      });
     });
   });
 
@@ -270,16 +309,23 @@ describe("context-management SDK primitives", () => {
         "src/sdk/files.ts",
         "--scope",
         "global",
+        "--explain",
+        "--lines",
+        "1:1",
+        "--decision-depth",
+        "4",
       ]);
-      await expect(createFilesLookupCli(context.pmPath).parseAsync([
-        "node",
-        "pm",
-        "files",
-        "lookup",
-        "src/sdk/files.ts",
-        "--scope",
-        "unsupported",
-      ])).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        createFilesLookupCli(context.pmPath).parseAsync([
+          "node",
+          "pm",
+          "files",
+          "lookup",
+          "src/sdk/files.ts",
+          "--scope",
+          "unsupported",
+        ]),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       await expect(
         createFilesLookupCli(context.pmPath).parseAsync([
           "node",
@@ -314,11 +360,25 @@ describe("context-management SDK primitives", () => {
           "--offset",
           "0",
           "--strict-read",
+          "--explain",
+          "--lines",
+          "1:1",
+          "--decision-depth",
+          "4",
           "--json",
         ],
         { expectJson: true },
       );
-      expect(cli).toMatchObject({ code: 0, json: { total: 1 } });
+      expect(cli).toMatchObject({
+        code: 0,
+        json: {
+          total: 1,
+          traceability_receipt: {
+            line_range: { start: 1, end: 1 },
+            decision_depth: 4,
+          },
+        },
+      });
       expect(
         await context.runCliInProcess([
           "files",
@@ -353,8 +413,21 @@ describe("context-management SDK primitives", () => {
       await expect(
         new PmClient(clientOptions).filesLookup({
           paths: ["src/sdk/files.ts"],
+          explain: true,
+          lineRange: { start: 1, end: 1 },
         }),
-      ).resolves.toMatchObject({ total: 1 });
+      ).resolves.toMatchObject({
+        total: 1,
+        traceability_receipt: { line_range: { start: 1, end: 1 } },
+      });
+      for (const lineRange of ["invalid", null, []]) {
+        await expect(
+          new PmClient(clientOptions).filesLookup({
+            paths: ["src/sdk/files.ts"],
+            lineRange: lineRange as never,
+          }),
+        ).rejects.toThrow("must be an object");
+      }
       await expect(
         filesLookup(
           { paths: ["src/sdk/files.ts"], scope: "project" },
@@ -369,11 +442,20 @@ describe("context-management SDK primitives", () => {
             scope: "project",
             limit: "1",
             offset: "0",
+            explain: true,
+            lines: "1:1",
+            decisionDepth: 4,
           },
           pmRoot: context.pmPath,
           noExtensions: true,
         }),
-      ).resolves.toMatchObject({ total: 1 });
+      ).resolves.toMatchObject({
+        total: 1,
+        traceability_receipt: {
+          line_range: { start: 1, end: 1 },
+          decision_depth: 4,
+        },
+      });
       await expect(
         runAction({
           action: "files",
@@ -465,6 +547,15 @@ describe("context-management SDK primitives", () => {
           { path: context.pmPath },
         ),
       ).rejects.toThrow("non-negative integer");
+      await expect(
+        runFilesLookup(
+          {
+            paths: ["src/absolute.ts", "src/other.ts"],
+            lineRange: { start: 1, end: 1 },
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow("exactly one source path");
       await expect(
         runFilesLookup(
           {
@@ -645,14 +736,18 @@ describe("context-management SDK primitives", () => {
           paths: ["src/sdk/files.ts"],
         }),
       ).resolves.toMatchObject({
-        matches: [{
-          item: { id: "pm-projection-mismatch" },
-          files: [{
-            path: "src/sdk/files.ts",
-            scope: "project",
-            note: "indexed",
-          }],
-        }],
+        matches: [
+          {
+            item: { id: "pm-projection-mismatch" },
+            files: [
+              {
+                path: "src/sdk/files.ts",
+                scope: "project",
+                note: "indexed",
+              },
+            ],
+          },
+        ],
       });
       await fs.writeFile(queryIndexPath, "invalid sqlite", "utf8");
       await expect(
@@ -690,7 +785,8 @@ describe("context-management SDK primitives", () => {
     expect(
       classifyLinkedTestFailure({
         ...base,
-        stderr: "Could not acquire workspace lock\nAssertion failed after timeout",
+        stderr:
+          "Could not acquire workspace lock\nAssertion failed after timeout",
       }),
     ).toBe("assertion_failure");
   });

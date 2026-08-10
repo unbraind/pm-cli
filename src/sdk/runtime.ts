@@ -232,6 +232,7 @@ import {
   type GraphSubcommand,
 } from "./graph/run.js";
 import { runFiles, runFilesDiscover, runFilesLookup } from "./files.js";
+import { runtimeFilesLookupOptions } from "./traceability/runtime-files-lookup.js";
 import type { AppendCommandOptions, AppendResult } from "./lifecycle/append.js";
 import type {
   ClaimNextResult,
@@ -3037,30 +3038,30 @@ function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
     commentOptions.delete === undefined;
   if (isListing) {
     commentOptions.includeMeta = true;
-    if (commentOptions.limit === undefined && commentOptions.fullHistory !== true) {
+    if (
+      commentOptions.limit === undefined &&
+      commentOptions.fullHistory !== true
+    ) {
       commentOptions.limit = "20";
     }
   }
   return runComments(requireMcpItemId(ctx), commentOptions, ctx.global);
 }
 
+function runMcpFilesLookupAction(
+  ctx: McpActionDispatchContext,
+  paths: string[],
+): Promise<FilesLookupResult> {
+  return runFilesLookup(
+    runtimeFilesLookupOptions(ctx.options, paths, parseMcpInteger),
+    ctx.global,
+  );
+}
+
 function runMcpFilesAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const lookupPaths = readStringArray(ctx.options.lookupPath);
   if (lookupPaths && lookupPaths.length > 0) {
-    return runFilesLookup(
-      {
-        paths: lookupPaths,
-        scope:
-          ctx.options.scope === "project" || ctx.options.scope === "global"
-            ? ctx.options.scope
-            : undefined,
-        limit: parseMcpInteger(ctx.options.limit, "files lookup limit"),
-        offset: parseMcpInteger(ctx.options.offset, "files lookup offset"),
-        noTruncate: ctx.options.noTruncate === true,
-        strictRead: ctx.options.strictRead === true,
-      },
-      ctx.global,
-    );
+    return runMcpFilesLookupAction(ctx, lookupPaths);
   }
   const fileId = requireMcpItemId(ctx);
   return ctx.options.discover === true
@@ -3749,20 +3750,7 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   "files-discover": (ctx) =>
     runFilesDiscover(requireMcpItemId(ctx), ctx.options, ctx.global),
   "files-lookup": (ctx) =>
-    runFilesLookup(
-      {
-        paths: readStringArray(ctx.options.paths),
-        scope:
-          ctx.options.scope === "project" || ctx.options.scope === "global"
-            ? ctx.options.scope
-            : undefined,
-        limit: parseMcpInteger(ctx.options.limit, "files lookup limit"),
-        offset: parseMcpInteger(ctx.options.offset, "files lookup offset"),
-        noTruncate: ctx.options.noTruncate === true,
-        strictRead: ctx.options.strictRead === true,
-      },
-      ctx.global,
-    ),
+    runMcpFilesLookupAction(ctx, readStringArray(ctx.options.paths)),
   history: (ctx) => runHistory(requireMcpItemId(ctx), ctx.options, ctx.global),
   "history-redact": (ctx) =>
     runHistoryRedact(requireMcpItemId(ctx), ctx.options, ctx.global),

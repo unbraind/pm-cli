@@ -5,6 +5,7 @@ import {
 } from "../../../src/core/shared/author.js";
 import {
   analyzeAgentProvenanceDescriptorCoverage,
+  evaluateSemanticAttributionCoverage,
   summarizeAgentModelProvenance,
 } from "../../../src/sdk/provenance.js";
 
@@ -168,5 +169,68 @@ describe("agent provenance SDK analysis", () => {
         inert: false,
       },
     ]);
+  });
+
+  it("ratchets semantic coverage by harness and source with a negative control", () => {
+    const observed = evaluateSemanticAttributionCoverage(
+      [
+        {},
+        {
+          agent_harness: "codex",
+          agent_provenance: {
+            role: { value: "implementer", source: "inferred" },
+            topic: { value: "pm-feature", source: "inferred" },
+          },
+        },
+        {
+          agent_harness: "codex",
+          agent_provenance: {
+            role: { value: "reviewer", source: "override" },
+            topic: { value: "pm-feature", source: "session" },
+          },
+        },
+      ],
+      { minimumCoverage: 1, minimumEntries: 2 },
+    );
+    expect(observed).toMatchObject({
+      passed: true,
+      failures: [],
+      rows: [
+        {
+          harness: "codex",
+          dimension: "role",
+          coverage: 1,
+          by_source: { inferred: 1, override: 1 },
+        },
+        {
+          harness: "codex",
+          dimension: "topic",
+          coverage: 1,
+          by_source: { inferred: 1, session: 1 },
+        },
+      ],
+    });
+
+    expect(
+      evaluateSemanticAttributionCoverage([{ agent_harness: "synthetic" }], {
+        minimumCoverage: 0.8,
+        minimumEntries: 1,
+      }),
+    ).toMatchObject({
+      passed: false,
+      failures: ["synthetic:role", "synthetic:topic"],
+    });
+    expect(
+      evaluateSemanticAttributionCoverage([], {
+        minimumCoverage: 0.8,
+        minimumEntries: 1,
+      }).passed,
+    ).toBe(false);
+    expect(() =>
+      evaluateSemanticAttributionCoverage([], { minimumCoverage: 2 }),
+    ).toThrow("from 0 to 1");
+    expect(() =>
+      evaluateSemanticAttributionCoverage([], { minimumEntries: 0 }),
+    ).toThrow("positive integer");
   });
 });

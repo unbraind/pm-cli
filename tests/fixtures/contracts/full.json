@@ -2987,6 +2987,18 @@
           "flag": "--strict-read"
         },
         {
+          "flag": "--explain"
+        },
+        {
+          "flag": "--lines",
+          "value_name": "start:end"
+        },
+        {
+          "flag": "--decision-depth",
+          "value_name": "n",
+          "value_type": "number"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -21249,6 +21261,15 @@
             "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
             "type": "string"
           },
+          "decisionDepth": {
+            "description": "Maximum typed relationship depth searched for a governing Decision during files lookup.",
+            "examples": [
+              8
+            ],
+            "maximum": 32,
+            "minimum": 1,
+            "type": "integer"
+          },
           "discover": {
             "description": "When true for files action, use `pm files discover <id>` to scan item text for referenced file paths.",
             "type": "boolean"
@@ -21259,6 +21280,10 @@
               "discovered from item text"
             ],
             "type": "string"
+          },
+          "explain": {
+            "description": "Include ranked linked-file, rationale, and governing-decision evidence for a files lookup.",
+            "type": "boolean"
           },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
@@ -21287,6 +21312,14 @@
               10,
               "25"
             ]
+          },
+          "lines": {
+            "description": "Inclusive start:end source-line range for Git contribution attribution; requires one lookup path.",
+            "examples": [
+              "10:24"
+            ],
+            "pattern": "^[1-9]\\d*:[1-9]\\d*$",
+            "type": "string"
           },
           "list": {
             "description": "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
@@ -46004,6 +46037,15 @@
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
+          "decisionDepth": {
+            "description": "Maximum typed relationship depth searched for a governing Decision during files lookup.",
+            "examples": [
+              8
+            ],
+            "maximum": 32,
+            "minimum": 1,
+            "type": "integer"
+          },
           "discover": {
             "description": "When true for files action, use `pm files discover <id>` to scan item text for referenced file paths.",
             "type": "boolean"
@@ -46014,6 +46056,10 @@
               "discovered from item text"
             ],
             "type": "string"
+          },
+          "explain": {
+            "description": "Include ranked linked-file, rationale, and governing-decision evidence for a files lookup.",
+            "type": "boolean"
           },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
@@ -46045,6 +46091,14 @@
               10,
               "25"
             ]
+          },
+          "lines": {
+            "description": "Inclusive start:end source-line range for Git contribution attribution; requires one lookup path.",
+            "examples": [
+              "10:24"
+            ],
+            "pattern": "^[1-9]\\d*:[1-9]\\d*$",
+            "type": "string"
           },
           "list": {
             "description": "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
@@ -50548,10 +50602,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.4.1"
+    "x-schema-version": "4.5.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.4.1",
+  "schema_version": "4.5.0",
   "selected": {
     "action": null,
     "availability_only": false,

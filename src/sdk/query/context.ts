@@ -75,6 +75,12 @@ import {
   selectWorkspaceMemory,
   type WorkspaceMemoryRollup,
 } from "../workspace-memory.js";
+import { detectAgentIdentity } from "../../core/shared/author.js";
+import {
+  readSessionState,
+  semanticAttributionKey,
+} from "../../core/session/session-state.js";
+import { semanticAttributionAffinity } from "../context/semantic-session-attribution.js";
 
 // ---------------------------------------------------------------------------
 // Output format
@@ -2162,6 +2168,7 @@ async function resolveContextFocusGroups(
   useBoundedPage: boolean,
   pmRoot: string,
   tokenBudget: number,
+  claimFocus: Readonly<Record<string, number>> | undefined,
 ): Promise<ContextFocusGroups> {
   const structural = [...listedItemMetadata].sort((left, right) =>
     compareCriticalItems(left, right, statusRegistry),
@@ -2178,6 +2185,7 @@ async function resolveContextFocusGroups(
     now,
     author,
     usageAffinity: usage.affinity,
+    claimFocus,
   });
   const ranking = await scoreContextCandidatesWithActiveExtensions(
     "context",
@@ -2224,6 +2232,11 @@ async function resolveContextFocusGroups(
       ranked: ranking.ranked.filter((entry) => packingIds.has(entry.id)),
     },
     tokenBudget,
+    new Set(
+      Object.entries(claimFocus ?? {})
+        .filter(([, affinity]) => affinity >= 1)
+        .map(([id]) => id),
+    ),
   );
   const packedItems = packing.included.map((entry) => entry.item);
   const activeItems = packedItems.filter((item) =>
@@ -2273,9 +2286,7 @@ async function resolveContextFocusGroups(
     highLevel,
     lowLevel,
     blockedFallback: blockedFallbackUsed
-      ? blockedItems
-          .slice(0, limit)
-          .map(projectFocusItem)
+      ? blockedItems.slice(0, limit).map(projectFocusItem)
       : [],
     blockedFallbackUsed,
     ranking,
@@ -2668,6 +2679,18 @@ export async function resolveContextExtensionHealthProjection(
   };
 }
 
+async function resolveContextSemanticAffinity(
+  pmRoot: string,
+  author: string,
+): Promise<ReturnType<typeof semanticAttributionAffinity>> {
+  const identity = detectAgentIdentity();
+  const semanticState = await readSessionState(pmRoot);
+  const attributionKey = identity.instance || semanticAttributionKey(author);
+  return semanticAttributionAffinity(
+    semanticState.semantic_attribution?.[attributionKey],
+  );
+}
+
 /** Implements run context for the public runtime surface of this module. */
 export async function runContext(
   options: ContextOptions,
@@ -2689,6 +2712,7 @@ export async function runContext(
     ),
   };
   const author = resolveAuthor(undefined, runtime.settings.author_default);
+  const claimFocus = await resolveContextSemanticAffinity(pmRoot, author);
   const extensionHealthPromise = resolveContextExtensionHealthProjection(
     options.noExtensionHealth === true,
     pmRoot,
@@ -2715,6 +2739,7 @@ export async function runContext(
     shouldPageContextFocus(options, corpus.fullCorpus.length),
     pmRoot,
     runtime.tokenBudget,
+    claimFocus,
   );
   const agendaContext = await buildContextAgenda(
     global,

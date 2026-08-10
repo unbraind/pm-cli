@@ -85,10 +85,38 @@ values are ignored instead of polluting analytics. Presence-only harness flags,
 including `CLAUDE_CODE_CHILD_SESSION=1`, are detection evidence and are never
 persisted as semantic roles.
 
-For ordinary CLI mutations, the detector can infer an `implementer` or
-`reviewer` role from the bounded command verb and a topic from an explicit
-`pm-...` item argument. Explicit overrides, session declarations, and trusted
-host declarations retain precedence over this inference.
+## Infer semantic context from lifecycle state
+
+Successful `claim`, `release`, and `focus` operations maintain a bounded,
+checkout-local semantic workset. Later CLI and SDK mutations can therefore
+record useful role and topic provenance without repeating identity flags or
+retaining prompt text:
+
+- a claim records the item and at most 16 canonical parent ancestors, infers
+  `role=implementer`, and uses the item or stable multi-item workset as topic;
+- an explicit focus becomes the high-confidence topic and infers
+  `role=planner`;
+- a release removes only that claim and records `role=release-operator` while
+  other active claims remain; and
+- clearing the final claim and focus removes the inferred session record.
+
+At most 64 active item ids and 32 evidence rows are retained. Multi-item topics
+are deterministically bounded and hashed when their full identity would exceed
+the provenance limit. The state is partitioned by the privacy-safe agent
+instance when available, otherwise by a truncated hash of the resolved author.
+It lives in the gitignored runtime session file and malformed records fail open.
+
+The same workset feeds `pm context` as `claim_focus` relevance: claimed and
+focused items receive affinity `1`, while bounded canonical ancestors receive
+`0.75`. Active work is preserved by the context packer under its existing token
+ceiling; the inference never raises the requested budget.
+
+Explicit overrides, declared session context, command flags, environment,
+MCP-client declarations, host declarations, and configured probes all retain
+precedence. Automatic observations use `source=inferred`, `rule_version=v2`,
+and carry the bounded claim/focus/lineage evidence that supports them. The pure
+`semanticAttributionAffinity()` helper and lifecycle recording primitives are
+public SDK exports for custom hosts.
 
 ## Diagnose missing provenance
 
@@ -145,6 +173,11 @@ declared a dimension but supplied no value. The compatibility helper
 `summarizeAgentModelProvenance(entries)` remains available for model-only
 consumers.
 
+`evaluateSemanticAttributionCoverage(entries, options)` groups role/topic
+availability by harness and precedence source. Its explicit minimum-entry and
+minimum-coverage ratchet fails empty corpora, making a negative control part of
+the contract instead of allowing an unobserved harness to pass vacuously.
+
 `groupHistoryByEpisode(entries)` returns deterministic nested groups:
 
 - recorded episode keys produce `source: "declared"`;
@@ -166,3 +199,6 @@ channel. Do not put tokens, private hostnames, signed URLs, or raw external
 payloads in ids, labels, roles, or topics. Session ids used to derive
 `agent_instance` remain transient and are not persisted. Every new history
 field is optional, so existing streams and packages remain readable.
+Automatic semantic attribution is likewise restricted to item ids, controlled
+roles, rule metadata, and canonical lineage ids. It never persists argv,
+environment values, prompts, filesystem contents, or raw harness session ids.
