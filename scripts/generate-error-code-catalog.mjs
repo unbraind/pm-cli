@@ -38,6 +38,10 @@ const FALLBACK_EXIT_CODES_BY_CODE = new Map([
   ["history_author_acknowledge_target_unreadable", 2],
 ]);
 
+const ADDITIONAL_EMITTING_COMMANDS_BY_CODE = new Map([
+  ["acceptance_criteria_mutation_conflict", ["update-many"]],
+]);
+
 function resolveExplicitExitCode(property) {
   const declaration = ts.findAncestor(
     property,
@@ -155,7 +159,7 @@ function resolveFallbackExitCode(code) {
   return 1;
 }
 
-function inferEmittingCommands(sources) {
+function inferEmittingCommands(code, sources) {
   const commands = new Set();
   let hasCrossCuttingSource = false;
   for (const source of sources) {
@@ -168,6 +172,9 @@ function inferEmittingCommands(sources) {
     } else {
       hasCrossCuttingSource = true;
     }
+  }
+  for (const command of ADDITIONAL_EMITTING_COMMANDS_BY_CODE.get(code) ?? []) {
+    commands.add(command);
   }
   if (hasCrossCuttingSource) commands.add("*");
   return [...commands].sort();
@@ -310,7 +317,7 @@ function renderCatalogRow(code, entry, ledger, exitCode, errorClass) {
     ...renderGeneratedStringArray("sources", [...entry.sources]),
     ...renderGeneratedStringArray(
       "emitting_commands",
-      inferEmittingCommands(entry.sources),
+      inferEmittingCommands(code, entry.sources),
     ),
     `    canonical_code: ${JSON.stringify(canonicalCode)},`,
     ...renderGeneratedStringArray("aliases", aliases),

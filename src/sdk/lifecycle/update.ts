@@ -85,6 +85,7 @@ import {
 } from "./repeatable-metadata-parsers.js";
 import {
   assertDependencyEdgesAllowed,
+  assertDependencyTargetsResolvable,
   assertValidBareDependencyFlagValue,
 } from "../dependency-flag-validation.js";
 import {
@@ -168,6 +169,8 @@ export interface UpdateCommandOptions
   force?: boolean;
   /** Permit an intentional unresolved parent reference under strict validation. */
   allowMissingParent?: boolean;
+  /** Explicitly permit unresolved local dependency targets with warning receipts. */
+  allowUnresolvedDeps?: boolean;
   /** Value that configures or reports dep remove for this contract. */
   depRemove?: string[];
   /** Value that configures or reports replace deps for this contract. */
@@ -766,7 +769,8 @@ function normalizeDependencyKindInput(
     : raw;
 }
 
-function parseDependencyAdditions(
+/** Parse dependency additions into their canonical storage representation. */
+export function parseDependencyAdditions(
   raw: string[] | undefined,
   prefix: string,
   nowIso: string,
@@ -1535,7 +1539,29 @@ function validateLinkedArtifactReplacement(params: {
   }
 }
 
-function validateReplaceOptions(options: UpdateCommandOptions): void {
+/** Validate mutually exclusive and required update mutation option combinations. */
+export function assertUpdateMutationOptionCombinations(
+  options: UpdateCommandOptions,
+): void {
+  const hasAdditiveAcceptanceCriteriaMutation =
+    (options.addAc?.length ?? 0) > 0 || (options.removeAc?.length ?? 0) > 0;
+  if (
+    options.acceptanceCriteria !== undefined &&
+    hasAdditiveAcceptanceCriteriaMutation
+  ) {
+    throw new PmCliError(
+      "Cannot combine --acceptance-criteria replacement with --add-ac or --remove-ac. Use --remove-ac and --add-ac together for an atomic one-entry repair.",
+      EXIT_CODE.USAGE,
+      {
+        code: "acceptance_criteria_mutation_conflict",
+        reason: "replacement_and_additive_mutation_combined",
+        nextSteps: [
+          "Use --acceptance-criteria alone to replace the complete list.",
+          "Use --remove-ac <old> --add-ac <new> to repair one criterion without replacing unrelated entries.",
+        ],
+      },
+    );
+  }
   if (
     options.replaceDeps === true &&
     (options.dep === undefined || options.dep.length === 0)
@@ -2456,7 +2482,6 @@ function applyAcceptanceCriteriaAdditiveMutation(
   document: ItemDocument,
   context: UpdateMutationContext,
   scalarMutationContext: UpdateScalarMutationContext,
-  warnings: string[],
 ): void {
   const addValues = context.options.addAc;
   const removeValues = context.options.removeAc;
@@ -2471,8 +2496,22 @@ function applyAcceptanceCriteriaAdditiveMutation(
     addValues,
     removeValues,
   );
-  for (const unmatched of mutation.unmatchedRemovals) {
-    warnings.push(`remove_ac_unmatched:${unmatched}`);
+  if (mutation.unmatchedRemovals.length > 0) {
+    throw new PmCliError(
+      `Acceptance criteria removal did not match: ${mutation.unmatchedRemovals.join(", ")}`,
+      EXIT_CODE.NOT_FOUND,
+      {
+        code: "acceptance_criteria_remove_unmatched",
+        reason: "exact_match_not_found",
+        field: "acceptance_criteria",
+        unmatched: mutation.unmatchedRemovals,
+        why: "Lossless removal fails instead of silently applying the remaining mutations when an exact selector is wrong.",
+        nextSteps: [
+          "Read the current acceptance_criteria value and retry with the exact criterion text.",
+          "Use --acceptance-criteria alone only when replacing the complete list is intentional.",
+        ],
+      },
+    );
   }
   const nextValue = mutation.criteria.join("; ");
   if (document.metadata.acceptance_criteria === nextValue) {
@@ -2807,7 +2846,6 @@ function mutateUpdateDocument(
     document,
     context,
     scalarMutationContext,
-    warnings,
   );
   applyOwnershipAndIssueMutations(
     document,
@@ -2863,6 +2901,14 @@ function mutateUpdateDocument(
       ? document.body !== beforeBody
       : !stableValueEquals(beforeMetadata[field], afterMetadata[field]),
   );
+  if (
+    context.options.acceptanceCriteria !== undefined &&
+    actualChangedFields.includes("acceptance_criteria")
+  ) {
+    warnings.push(
+      `acceptance_criteria_replaced:${splitAcceptanceCriteria(beforeMetadata.acceptance_criteria).length}:${splitAcceptanceCriteria(afterMetadata.acceptance_criteria).length}`,
+    );
+  }
   return { changedFields: actualChangedFields, warnings };
 }
 
@@ -2916,7 +2962,7 @@ export async function runUpdate(
   const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
   const clearItemMetadataKeys = new Set<string>(unsetTargets.metadataKeys);
 
-  validateReplaceOptions(options);
+  assertUpdateMutationOptionCombinations(options);
   applyClearCollectionDefinitions({
     definitions: buildClearCollectionDefinitions(options),
     options,
@@ -2937,6 +2983,14 @@ export async function runUpdate(
     nowIso,
     author,
   );
+  const dependencyTargetWarnings = await assertDependencyTargetsResolvable({
+    pmRoot,
+    dependencies: dependencyUpdates.additions,
+    idPrefix: settings.id_prefix,
+    itemFormat: settings.item_format,
+    typeToFolder: typeRegistry.type_to_folder,
+    allowUnresolved: options.allowUnresolvedDeps,
+  });
   const dependencyRemovals = parseDependencyRemovals(
     options.depRemove,
     settings.id_prefix,
@@ -3110,6 +3164,7 @@ export async function runUpdate(
     warnings: [
       ...workflowTransitionWarnings,
       ...parentReferenceWarnings,
+      ...dependencyTargetWarnings,
       ...orderingCycleWarnings,
       ...result.warnings,
     ],

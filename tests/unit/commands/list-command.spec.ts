@@ -37,6 +37,7 @@ function createItem(
   const args = [
     "create",
     "--json",
+    "--allow-unresolved-deps",
     "--title",
     params.title,
     "--description",
@@ -1668,7 +1669,15 @@ describe("runList", () => {
       );
       expect(compact.projection).toEqual({
         mode: "compact",
-        fields: ["id", "title", "status", "type", "priority", "parent", "updated_at"],
+        fields: [
+          "id",
+          "title",
+          "status",
+          "type",
+          "priority",
+          "parent",
+          "updated_at",
+        ],
       });
       expect((compact as Record<string, unknown>).sorting).toBeUndefined();
       expect((compact as Record<string, unknown>).now).toBeUndefined();

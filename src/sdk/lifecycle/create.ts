@@ -132,6 +132,7 @@ import type {
 import { ensureEnumValue } from "./recurrence-parsers.js";
 import {
   assertDependencyEdgesAllowed,
+  assertDependencyTargetsResolvable,
   assertValidBareDependencyFlagValue,
 } from "../dependency-flag-validation.js";
 import {
@@ -197,6 +198,8 @@ export interface CreateCommandOptions
   body?: string;
   /** Value that configures or reports allow missing parent for this contract. */
   allowMissingParent?: boolean;
+  /** Explicitly permit unresolved local dependency targets with warning receipts. */
+  allowUnresolvedDeps?: boolean;
   /** Value that configures or reports template for this contract. */
   template?: string;
   /** Creates mode using the validated operation inputs. */
@@ -1845,8 +1848,10 @@ async function resolveCreateTypeSelection(
   type: string;
   schedulePreset: ReturnType<typeof resolveScheduleCreatePreset>;
   createMode: ReturnType<typeof resolveEffectiveCreateMode>;
+  warnings: string[];
 }> {
   let resolvedOptions = options;
+  const warnings: string[] = [];
   if (resolvedOptions.template !== undefined) {
     const templateName = resolvedOptions.template.trim();
     if (templateName.length === 0) {
@@ -1885,8 +1890,8 @@ async function resolveCreateTypeSelection(
       ? resolveTypeName(synonymCanonical, typeRegistry)
       : undefined;
     if (synonymResolved) {
-      printError(
-        `[pm] note: type '${resolvedOptions.type.trim()}' is not defined; using closest match '${synonymResolved}'. Run 'pm schema add-type "${resolvedOptions.type.trim()}"' to track it as a distinct type.`,
+      warnings.push(
+        `type_coercion:${resolvedOptions.type.trim()}:${synonymResolved}`,
       );
       resolvedOptions.type = synonymResolved;
       resolvedTypeName = synonymResolved;
@@ -1943,7 +1948,14 @@ async function resolveCreateTypeSelection(
     schedulePreset,
     settings.governance.create_mode_default,
   );
-  return { resolvedOptions, typeDefinition, type, schedulePreset, createMode };
+  return {
+    resolvedOptions,
+    typeDefinition,
+    type,
+    schedulePreset,
+    createMode,
+    warnings,
+  };
 }
 
 /** Seed the explicit-unset and clear-option key sets from the parsed `--unset` targets, then fold in each enabled `--clear-<collection>` flag: it marks the collection's item-metadata key as explicitly unset and its option key as cleared, and rejects combining a clear flag with its own value flag. Returns the augmented sets used downstream for required-flag relaxation and history messaging. */
@@ -2866,13 +2878,16 @@ export async function runCreate(
       ? "warn"
       : settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
-  const validationWarnings: string[] = collectCreateScheduleWarnings(
-    type,
-    id,
-    deadline,
-    reminders.values,
-    events.values,
-  );
+  const validationWarnings: string[] = [
+    ...typeSelection.warnings,
+    ...collectCreateScheduleWarnings(
+      type,
+      id,
+      deadline,
+      reminders.values,
+      events.values,
+    ),
+  ];
   const parentValidation = await resolveCreateParentWithWarnings({
     itemId: id,
     parent,
@@ -2920,6 +2935,16 @@ export async function runCreate(
   });
   const dependencyValues = blockedByResolution.dependencyValues;
   assertDependencyEdgesAllowed(id, dependencyValues);
+  validationWarnings.push(
+    ...(await assertDependencyTargetsResolvable({
+      pmRoot,
+      dependencies: dependencyValues,
+      idPrefix: settings.id_prefix,
+      itemFormat: settings.item_format,
+      typeToFolder: typeRegistry.type_to_folder,
+      allowUnresolved: resolvedOptions.allowUnresolvedDeps,
+    })),
+  );
   status = blockedByResolution.status;
   const blockedReason = resolveUnsettableOptionalString(
     unsetKeys,

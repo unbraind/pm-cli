@@ -2095,6 +2095,9 @@
           "flag": "--allow-missing-parent"
         },
         {
+          "flag": "--allow-unresolved-deps"
+        },
+        {
           "flag": "--reviewer"
         },
         {
@@ -7482,6 +7485,9 @@
           "flag": "--allow-missing-parent"
         },
         {
+          "flag": "--allow-unresolved-deps"
+        },
+        {
           "flag": "--reviewer"
         },
         {
@@ -8045,6 +8051,9 @@
             "--customer_impact"
           ],
           "flag": "--customer-impact"
+        },
+        {
+          "flag": "--allow-unresolved-deps"
         },
         {
           "flag": "--dep"
@@ -12637,6 +12646,13 @@
       },
       {
         "keys": [
+          "allowUnresolvedDeps",
+          "allow_unresolved_deps"
+        ],
+        "target": "allowUnresolvedDeps"
+      },
+      {
+        "keys": [
           "reviewer"
         ],
         "target": "reviewer"
@@ -13313,6 +13329,13 @@
       },
       {
         "keys": [
+          "allowUnresolvedDeps",
+          "allow_unresolved_deps"
+        ],
+        "target": "allowUnresolvedDeps"
+      },
+      {
+        "keys": [
           "completedAt",
           "completed_at"
         ],
@@ -13653,6 +13676,41 @@
     }
   ],
   "error_codes": [
+    {
+      "aliases": [],
+      "canonical_code": "acceptance_criteria_mutation_conflict",
+      "class": "usage",
+      "code": "acceptance_criteria_mutation_conflict",
+      "emitting_commands": [
+        "update",
+        "update-many"
+      ],
+      "exit_code": 2,
+      "meaning": "Acceptance criteria mutation conflict condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/update.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "acceptance_criteria_remove_unmatched",
+      "class": "not_found",
+      "code": "acceptance_criteria_remove_unmatched",
+      "emitting_commands": [
+        "update",
+        "update-many"
+      ],
+      "exit_code": 3,
+      "meaning": "Acceptance criteria remove unmatched condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/update-many.ts",
+        "sdk/lifecycle/update.ts"
+      ],
+      "stability": "provisional"
+    },
     {
       "aliases": [],
       "canonical_code": "acceptance_criteria_semicolon_forbidden",
@@ -14166,6 +14224,22 @@
         "sdk/dependency-flag-validation.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "dependency_target_not_found",
+      "class": "not_found",
+      "code": "dependency_target_not_found",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 3,
+      "meaning": "Dependency target not found condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/dependency-flag-validation.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -19721,7 +19795,7 @@
         "additionalProperties": true,
         "properties": {
           "acceptanceCriteria": {
-            "description": "Acceptance criteria text.",
+            "description": "Complete acceptance-criteria text supplied while creating or replacing an item field.",
             "type": "string"
           },
           "actualResult": {
@@ -19754,6 +19828,13 @@
           },
           "allowMissingParent": {
             "description": "Allow unresolved parent references and emit a validation warning.",
+            "type": "boolean"
+          },
+          "allowUnresolvedDeps": {
+            "description": "Permit unresolved local dependency targets while returning dependency_target_unresolved warning receipts. Cross-workspace references should use source_kind=external instead.",
+            "examples": [
+              true
+            ],
             "type": "boolean"
           },
           "assignee": {
@@ -23814,7 +23895,7 @@
         "additionalProperties": true,
         "properties": {
           "acceptanceCriteria": {
-            "description": "Acceptance criteria text.",
+            "description": "Complete acceptance-criteria text supplied while creating or replacing an item field.",
             "type": "string"
           },
           "actualResult": {
@@ -26210,9 +26291,27 @@
       "description": "Update pm item metadata/body/dependencies/log seeds natively. Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields delta.",
       "input_schema": {
         "additionalProperties": true,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "acceptanceCriteria",
+                "addAc"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "acceptanceCriteria",
+                "removeAc"
+              ]
+            }
+          }
+        ],
         "properties": {
           "acceptanceCriteria": {
-            "description": "Acceptance criteria text.",
+            "description": "Complete acceptance-criteria replacement text. Use removeAc plus addAc together for an atomic one-entry repair that preserves unrelated criteria.",
             "type": "string"
           },
           "actualResult": {
@@ -26253,6 +26352,13 @@
           },
           "allowMissingParent": {
             "description": "Allow Missing Parent.",
+            "type": "boolean"
+          },
+          "allowUnresolvedDeps": {
+            "description": "Permit unresolved local dependency targets while returning dependency_target_unresolved warning receipts. Cross-workspace references should use source_kind=external instead.",
+            "examples": [
+              true
+            ],
             "type": "boolean"
           },
           "assignee": {
@@ -26627,7 +26733,7 @@
             "type": "array"
           },
           "removeAc": {
-            "description": "Acceptance criteria removed individually by exact text match (one criterion per entry).",
+            "description": "Acceptance criteria removed individually by exact text match; the mutation fails atomically if any selector is unmatched (one criterion per entry).",
             "examples": [
               [
                 "superseded manual QA step"
@@ -31775,7 +31881,7 @@
         "additionalProperties": false,
         "properties": {
           "acceptanceCriteria": {
-            "description": "Acceptance criteria text.",
+            "description": "Complete acceptance-criteria text supplied while creating or replacing an item field.",
             "type": "string"
           },
           "action": {
@@ -31812,6 +31918,13 @@
           },
           "allowMissingParent": {
             "description": "Allow Missing Parent.",
+            "type": "boolean"
+          },
+          "allowUnresolvedDeps": {
+            "description": "Permit unresolved local dependency targets while returning dependency_target_unresolved warning receipts. Cross-workspace references should use source_kind=external instead.",
+            "examples": [
+              true
+            ],
             "type": "boolean"
           },
           "assignee": {
@@ -43114,9 +43227,27 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "acceptanceCriteria",
+                "addAc"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "acceptanceCriteria",
+                "removeAc"
+              ]
+            }
+          }
+        ],
         "properties": {
           "acceptanceCriteria": {
-            "description": "Acceptance criteria text.",
+            "description": "Complete acceptance-criteria replacement text. Use removeAc plus addAc together for an atomic one-entry repair that preserves unrelated criteria.",
             "type": "string"
           },
           "action": {
@@ -43161,6 +43292,13 @@
           },
           "allowMissingParent": {
             "description": "Allow Missing Parent.",
+            "type": "boolean"
+          },
+          "allowUnresolvedDeps": {
+            "description": "Permit unresolved local dependency targets while returning dependency_target_unresolved warning receipts. Cross-workspace references should use source_kind=external instead.",
+            "examples": [
+              true
+            ],
             "type": "boolean"
           },
           "assignee": {
@@ -43534,7 +43672,7 @@
             "type": "array"
           },
           "removeAc": {
-            "description": "Acceptance criteria removed individually by exact text match (one criterion per entry).",
+            "description": "Acceptance criteria removed individually by exact text match; the mutation fails atomically if any selector is unmatched (one criterion per entry).",
             "examples": [
               [
                 "superseded manual QA step"
@@ -43688,9 +43826,27 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "acceptanceCriteria",
+                "addAc"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "acceptanceCriteria",
+                "removeAc"
+              ]
+            }
+          }
+        ],
         "properties": {
           "acceptanceCriteria": {
-            "description": "Acceptance criteria text.",
+            "description": "Complete acceptance-criteria replacement text. Use removeAc plus addAc together for an atomic one-entry repair that preserves unrelated criteria.",
             "type": "string"
           },
           "action": {
@@ -43732,6 +43888,13 @@
           "affectedVersion": {
             "description": "Affected Version.",
             "type": "string"
+          },
+          "allowUnresolvedDeps": {
+            "description": "Permit unresolved local dependency targets while returning dependency_target_unresolved warning receipts. Cross-workspace references should use source_kind=external instead.",
+            "examples": [
+              true
+            ],
+            "type": "boolean"
           },
           "assignee": {
             "description": "Assignee identity.",
@@ -44310,7 +44473,7 @@
             "type": "array"
           },
           "removeAc": {
-            "description": "Acceptance criteria removed individually by exact text match (one criterion per entry).",
+            "description": "Acceptance criteria removed individually by exact text match; the mutation fails atomically if any selector is unmatched (one criterion per entry).",
             "examples": [
               [
                 "superseded manual QA step"
@@ -46662,7 +46825,7 @@
         "additionalProperties": false,
         "properties": {
           "acceptanceCriteria": {
-            "description": "Acceptance criteria text.",
+            "description": "Complete acceptance-criteria text supplied while creating or replacing an item field.",
             "type": "string"
           },
           "action": {

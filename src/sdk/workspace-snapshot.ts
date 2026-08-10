@@ -76,17 +76,18 @@ class WorkspaceLockHeartbeat {
 
   /** Begin renewing the lock without keeping the process alive on its own. */
   start(): void {
+    this.scheduleRenewal();
     this.timer = setInterval(() => {
-      if (this.refresh !== undefined) return;
-      this.refresh = this.renew()
-        .catch((error: unknown) => {
-          this.failure = error;
-        })
-        .finally(() => {
-          this.refresh = undefined;
-        });
+      this.scheduleRenewal();
     }, this.intervalMs);
     this.timer.unref();
+  }
+
+  /** Force and await one owned renewal so callers can establish a fresh lease boundary. */
+  async refreshNow(): Promise<void> {
+    this.scheduleRenewal();
+    await this.refresh;
+    this.assertHealthy();
   }
 
   /** Fail the restore before activation when lease ownership was lost. */
@@ -103,6 +104,18 @@ class WorkspaceLockHeartbeat {
     if (this.timer !== undefined) clearInterval(this.timer);
     await this.refresh;
     this.assertHealthy();
+  }
+
+  /** Serialize renewal attempts and retain the first ownership failure. */
+  private scheduleRenewal(): void {
+    if (this.refresh !== undefined || this.failure !== undefined) return;
+    this.refresh = this.renew()
+      .catch((error: unknown) => {
+        this.failure = error;
+      })
+      .finally(() => {
+        this.refresh = undefined;
+      });
   }
 
   /** Atomically refresh only the lock still owned by this process and actor. */
@@ -798,6 +811,7 @@ export async function restoreWorkspaceSnapshotWithRecovery(
     lockTtlSeconds,
   );
   heartbeat.start();
+  await heartbeat.refreshNow();
   let staging: string | undefined;
   let swapStarted = false;
   let heartbeatStopped = false;
@@ -861,6 +875,7 @@ export async function restoreWorkspaceSnapshotWithRecovery(
       async () => {
         heartbeat.start();
         heartbeatStopped = false;
+        await heartbeat.refreshNow();
       },
     );
     await heartbeat.stop();

@@ -1281,11 +1281,21 @@ const result = await commitItemMutations({
 `commitWorkspaceTransaction` remains the escape hatch for arbitrary domains
 (relationship events, foreign stores, mixed-step plans); `commitItemMutations`
 covers the item-mutation 90% case with correct-by-construction wiring.
-Update mutation options use the same acceptance-criteria representation as the
-CLI: criteria are stored in one string with semicolons as boundaries. Therefore
-each `addAc`/`removeAc` entry must be semicolon-free; unmatched removals are
-reported as `remove_ac_unmatched:<text>` warnings rather than disappearing as
-silent no-ops.
+Update mutation options use the same lossless acceptance-criteria contract as
+the CLI: criteria are stored in one string with semicolons as boundaries, so
+each `addAc`/`removeAc` entry must be semicolon-free. Every removal must match or
+the complete mutation rejects with `acceptance_criteria_remove_unmatched` and
+structured `unmatched` recovery data. Whole-value `acceptanceCriteria`
+replacement is mutually exclusive with additive edits and returns an
+`acceptance_criteria_replaced:<before-count>:<after-count>` warning when it
+changes existing criteria.
+
+Create and update mutation options also resolve every newly supplied local
+dependency target before persistence. Use `source_kind: "external"` for a
+cross-workspace endpoint. A staged local import must opt in with
+`allowUnresolvedDeps: true`; successful results then retain one
+`dependency_target_unresolved:<id>` warning per missing target. Bulk dry-runs
+perform the identical validation before producing a plan.
 
 `parseItemMutationBatch` is the strict legacy JSON boundary for that primitive. It
 accepts either a non-empty mutation array or `{ "mutations": [...] }`, derives

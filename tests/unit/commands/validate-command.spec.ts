@@ -438,9 +438,9 @@ describe("runValidate", () => {
   it("reports dangling structured dependency references with remediation", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "dangling-dependency");
-      context.runCli(["update", id, "--dep", "id=pm-ghost,kind=blocked_by", "--json"], { expectJson: true });
+      context.runCli(["update", id, "--allow-unresolved-deps", "--dep", "id=pm-ghost,kind=blocked_by", "--json"], { expectJson: true });
       const secondId = createTask(context, "second-dangling-dependency");
-      context.runCli(["update", secondId, "--dep", "id=pm-phantom,kind=blocked_by", "--json"], { expectJson: true });
+      context.runCli(["update", secondId, "--allow-unresolved-deps", "--dep", "id=pm-phantom,kind=blocked_by", "--json"], { expectJson: true });
       const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
       const check = checkByName(result, "dependency_references");
       expect(check.status).toBe("warn");

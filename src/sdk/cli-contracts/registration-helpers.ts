@@ -518,6 +518,11 @@ export function normalizeCreateOptions(
         "allowMissingParent",
         "allow_missing_parent",
       ]) === true,
+    allowUnresolvedDeps:
+      anyOptionTrue(commandOptions, [
+        "allowUnresolvedDeps",
+        "allow_unresolved_deps",
+      ]) === true,
     allowDuplicate: optionTrue(commandOptions, "allowDuplicate") === true,
     reviewer: readCreateString("reviewer"),
     risk: readCreateString("risk"),
@@ -630,6 +635,11 @@ export function normalizeUpdateOptions(
       commandOptions.ownershipDependencyBypass === true ? true : undefined,
     assignee: readUpdateString("assignee"),
     parent: readUpdateString("parent"),
+    allowUnresolvedDeps:
+      anyOptionTrue(commandOptions, [
+        "allowUnresolvedDeps",
+        "allow_unresolved_deps",
+      ]) === true,
     reviewer: readUpdateString("reviewer"),
     risk: readUpdateString("risk"),
     confidence: readUpdateString("confidence"),
@@ -1224,8 +1234,7 @@ export function normalizeContextOptions(
     activityLimit: readContextString("activityLimit"),
     staleThreshold: readContextString("staleThreshold"),
     tokenBudget: readContextStringOrNumber("tokenBudget"),
-    noExtensionHealth:
-      options.extensionHealth === false ? true : undefined,
+    noExtensionHealth: options.extensionHealth === false ? true : undefined,
     noTags: options.tags === false ? true : undefined,
   };
   for (const [key, value] of Object.entries(options)) {

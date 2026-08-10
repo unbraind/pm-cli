@@ -1,0 +1,45 @@
+id: pm-embm6t
+title: "GH-960: structured diagnostic notices preserve machine-readable JSON envelopes"
+description: Route human-facing diagnostic notes through the structured output contract so JSON failures remain exactly parseable while retaining actionable type-coercion context.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-08-10T07:03:54.985Z"
+updated_at: "2026-08-10T09:08:04.122Z"
+closed_at: "2026-08-10T09:01:36.676Z"
+completed_at: "2026-08-10T09:01:36.676Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: JSON mode emits exactly one parseable JSON document on success and failure; Type coercion notices are retained as typed structured data with stable SDK contracts; Human and NDJSON modes remain truthful and transport-appropriate; CLI SDK MCP and generated contracts share the diagnostic notice model; Regression tests cover defined and coerced types plus pre-parse and post-parse failure paths
+goal: project management = context management
+objective: Make every JSON success and failure stream structurally valid and lossless
+value: Agents can consume recovery bundles without fragile line stripping and still receive coercion warnings
+why_now: GitHub #960 reproduces the only known branch that prepends prose to an otherwise machine-readable failure envelope
+parent: pm-mpbb
+risk: high
+confidence: high
+severity: high
+resolution: Fixed unstructured type-coercion diagnostics by preserving machine-readable success and failure envelopes.
+expected_result: JSON mode emits one parseable document whose structured notices preserve actionable diagnostics
+actual_result: A human note is prepended to the JSON error document and makes stderr unparseable
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cha95z,implements,"2026-08-10T07:03:54.985Z","harness:codex","cli:create:dep",detected
+  pm-frk8,discovered_from,"2026-08-10T07:03:54.985Z","harness:codex","cli:create:dep",detected
+  pm-lppm6y,related,"2026-08-10T07:03:54.985Z","harness:codex","cli:create:dep",detected
+  pm-x3dq0l,related,"2026-08-10T07:03:54.985Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-10T07:03:54.985Z","harness:codex","Duplicate-check evidence: searched all 2,409 items across every status for GH-960,diagnostic note JSON error stream,type coercion notices,and structured error envelopes. Closed pm-frk8 owns the original structured-error platform and open pm-cha95z owns broad diagnostic budgeting; neither owns transport-safe structured notices,so this is a distinct regression item linked to both."
+  "2026-08-10T08:26:23.374Z","harness:codex","Implementation evidence: legacy Bug input is normalized to Issue with structured type_coercion:Bug:Issue mutation warnings, never unstructured diagnostic stdout. Clean-directory JSON success and strict-mode failure envelopes both parse, generated error catalog/contracts are refreshed, and all 7141 tests pass."
+  "2026-08-10T08:36:14.999Z","harness:codex","Hosted static-gate feedback disposition: aggregate contracts now include dependency/criteria structured error catalog entries after pnpm contracts:update; JSON diagnostic behavior remains unchanged and fully covered."
+  "2026-08-10T09:01:36.161Z","harness:codex","Exact-head closeout: PR #961 head ac47bef479f4f4445556119e5d98cfbcaedf8a03 is mergeable and clean; no non-success checks, no unresolved review threads, and no unreacted bot comments, reviews, or inline replies remain."
+files[3]{path,scope,note}:
+  src/sdk/generated-error-code-catalog.ts,project,generated structured error catalog
+  src/sdk/lifecycle/create.ts,project,structured type coercion warnings
+  tests/unit/commands/lossless-mutation-contracts.spec.ts,project,JSON success and failure regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lossless-mutation-contracts.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,structured SDK warning contract
+close_reason: "Implemented and exact-head verified in PR #961: type coercion and mutation diagnostics remain parseable structured success/failure envelopes, generated catalogs are current, manual CLI acceptance passes, and hosted plus local coverage gates are green."
+body: ""

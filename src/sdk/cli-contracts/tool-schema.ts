@@ -888,8 +888,21 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       required: ["id", "target"],
       optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
     },
-    update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
-    "update-many": { optional: UPDATE_MANY_CONTRACT_PARAMETER_KEYS },
+    update: {
+      required: ["id"],
+      optional: UPDATE_CONTRACT_PARAMETER_KEYS,
+      mutuallyExclusive: [
+        ["acceptanceCriteria", "addAc"],
+        ["acceptanceCriteria", "removeAc"],
+      ],
+    },
+    "update-many": {
+      optional: UPDATE_MANY_CONTRACT_PARAMETER_KEYS,
+      mutuallyExclusive: [
+        ["acceptanceCriteria", "addAc"],
+        ["acceptanceCriteria", "removeAc"],
+      ],
+    },
     close: {
       required: ["id"],
       optional: [

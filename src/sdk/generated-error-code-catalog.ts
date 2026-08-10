@@ -8,6 +8,32 @@ import { definePmErrorCodeCatalog } from "./error-code-catalog.js";
 /** Exhaustive catalog generated from literal error guidance declarations. */
 export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
   {
+    code: "acceptance_criteria_mutation_conflict",
+    meaning: "Acceptance criteria mutation conflict condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/lifecycle/update.ts"],
+    emitting_commands: ["update", "update-many"],
+    canonical_code: "acceptance_criteria_mutation_conflict",
+    aliases: [],
+  },
+  {
+    code: "acceptance_criteria_remove_unmatched",
+    meaning: "Acceptance criteria remove unmatched condition.",
+    stability: "provisional",
+    exit_code: 3,
+    class: "not_found",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/lifecycle/update-many.ts", "sdk/lifecycle/update.ts"],
+    emitting_commands: ["update", "update-many"],
+    canonical_code: "acceptance_criteria_remove_unmatched",
+    aliases: [],
+  },
+  {
     code: "acceptance_criteria_semicolon_forbidden",
     meaning: "Acceptance criteria semicolon forbidden condition.",
     stability: "stable",
@@ -421,6 +447,19 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["sdk/dependency-flag-validation.ts"],
     emitting_commands: ["*"],
     canonical_code: "dependency_edge_not_allowed",
+    aliases: [],
+  },
+  {
+    code: "dependency_target_not_found",
+    meaning: "Dependency target not found condition.",
+    stability: "provisional",
+    exit_code: 3,
+    class: "not_found",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/dependency-flag-validation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "dependency_target_not_found",
     aliases: [],
   },
   {

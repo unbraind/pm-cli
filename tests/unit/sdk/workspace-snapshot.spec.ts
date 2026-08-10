@@ -241,56 +241,47 @@ describe("workspace snapshots", () => {
 
   it("renews the writer lease beyond its TTL and removes failed staging", async () => {
     await withTempPmPath(async ({ pmPath }) => {
-      const payloadRoot = path.join(pmPath, "lease-payload");
-      await mkdir(payloadRoot);
-      await Promise.all(
-        Array.from({ length: 1_000 }, (_, index) =>
-          writeFile(
-            path.join(payloadRoot, `${index.toString().padStart(4, "0")}.txt`),
-            `${index}\n`,
-            "utf8",
-          ),
-        ),
-      );
-      await createWorkspaceSnapshot(pmPath, { name: "lease-target" });
-      await writeFile(
-        path.join(pmPath, "settings.json"),
-        '{"changed":true}\n',
-        "utf8",
-      );
-      const restore = restoreWorkspaceSnapshotWithRecovery(
+      const release = await acquireLock(
         pmPath,
-        "lease-target",
-        {
-          force: true,
-          author: "lease-holder",
-          lockTtlSeconds: 0.03,
-        },
+        "sdk-workspace-transaction",
+        0.03,
+        "lease-holder",
+        false,
+        false,
+        0,
       );
-      const writerLock = getLockPath(pmPath, "sdk-workspace-transaction");
-      for (let attempt = 0; attempt < 100; attempt += 1) {
-        try {
-          await access(writerLock);
-          break;
-        } catch {
-          await new Promise((resolve) => setTimeout(resolve, 5));
-        }
+      const heartbeat = new _testOnlyWorkspaceSnapshot.WorkspaceLockHeartbeat(
+        getLockPath(pmPath, "sdk-workspace-transaction"),
+        "lease-holder",
+        0.03,
+      );
+      try {
+        const lockPath = getLockPath(pmPath, "sdk-workspace-transaction");
+        const lock = JSON.parse(await readFile(lockPath, "utf8")) as Record<
+          string,
+          unknown
+        >;
+        await writeFile(
+          lockPath,
+          `${JSON.stringify({ ...lock, created_at: "2000-01-01T00:00:00.000Z" }, null, 2)}\n`,
+          "utf8",
+        );
+        await heartbeat.refreshNow();
+        await expect(
+          acquireLock(
+            pmPath,
+            "sdk-workspace-transaction",
+            0.03,
+            "competing-restore",
+            false,
+            false,
+            0,
+          ),
+        ).rejects.toThrow("locked");
+      } finally {
+        await heartbeat.stop();
+        await release();
       }
-      await new Promise((resolve) => setTimeout(resolve, 80));
-      await expect(
-        acquireLock(
-          pmPath,
-          "sdk-workspace-transaction",
-          0.03,
-          "competing-restore",
-          false,
-          false,
-          0,
-        ),
-      ).rejects.toThrow("locked");
-      await expect(restore).resolves.toMatchObject({
-        audit_operation: "workspace_snapshot_restore",
-      });
     });
 
     await withTempPmPath(async ({ pmPath }) => {

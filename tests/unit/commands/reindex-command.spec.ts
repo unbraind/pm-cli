@@ -40,6 +40,7 @@ function createSeedItem(context: TempPmContext, title: string, body: string, wit
     [
       "create",
       "--json",
+      "--allow-unresolved-deps",
       "--title",
       title,
       "--description",

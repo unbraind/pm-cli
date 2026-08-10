@@ -2,7 +2,7 @@
 
 This is a task-oriented command guide. For exact flags, use runtime help because extensions and settings can change the active surface:
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-qd3woa](../.agents/pm/issues/pm-qd3woa.toon), [pm-ypuc39](../.agents/pm/issues/pm-ypuc39.toon), [pm-tz2ikr](../.agents/pm/issues/pm-tz2ikr.toon), the schema-migration recovery contract [pm-s79kel](../.agents/pm/issues/pm-s79kel.toon), and the SDK-first agent grammar tranche [pm-p316vn](../.agents/pm/issues/pm-p316vn.toon), [pm-st7wgu](../.agents/pm/issues/pm-st7wgu.toon), [pm-mkinft](../.agents/pm/issues/pm-mkinft.toon), [pm-ulqu](../.agents/pm/issues/pm-ulqu.toon), [pm-qmjx](../.agents/pm/issues/pm-qmjx.toon), [pm-4bzq](../.agents/pm/features/pm-4bzq.toon), [pm-x2vx](../.agents/pm/issues/pm-x2vx.toon), and [pm-g543](../.agents/pm/issues/pm-g543.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-qd3woa](../.agents/pm/issues/pm-qd3woa.toon), [pm-ypuc39](../.agents/pm/issues/pm-ypuc39.toon), [pm-tz2ikr](../.agents/pm/issues/pm-tz2ikr.toon), the schema-migration recovery contract [pm-s79kel](../.agents/pm/issues/pm-s79kel.toon), the lossless mutation contracts [pm-x3dq0l](../.agents/pm/issues/pm-x3dq0l.toon), [pm-lppm6y](../.agents/pm/issues/pm-lppm6y.toon), and [pm-embm6t](../.agents/pm/issues/pm-embm6t.toon), and the SDK-first agent grammar tranche [pm-p316vn](../.agents/pm/issues/pm-p316vn.toon), [pm-st7wgu](../.agents/pm/issues/pm-st7wgu.toon), [pm-mkinft](../.agents/pm/issues/pm-mkinft.toon), [pm-ulqu](../.agents/pm/issues/pm-ulqu.toon), [pm-qmjx](../.agents/pm/issues/pm-qmjx.toon), [pm-4bzq](../.agents/pm/features/pm-4bzq.toon), [pm-x2vx](../.agents/pm/issues/pm-x2vx.toon), and [pm-g543](../.agents/pm/issues/pm-g543.toon).
 
 ```bash
 pm <command> --help
@@ -453,7 +453,7 @@ pm update pm-abc1 --remove-tags stale            # drops "stale", keeps the rest
 pm create "New backend task" --add-tags backend,p1
 ```
 
-Acceptance criteria get the same additive treatment on `update`/`update-many`: `--acceptance-criteria`/`--ac` REPLACES the whole value, while `--add-ac <text>` appends one criterion (repeatable; deduped on exact text) and `--remove-ac <text>` removes one criterion by exact text match (repeatable; a non-matching selector adds a `remove_ac_unmatched:<text>` warning instead of silently no-oping). Criteria are stored with semicolon-space separators, so one criterion cannot contain a semicolon. Disjoint `--add-ac` edits from concurrent agents/branches merge cleanly instead of clobbering each other.
+Acceptance criteria get the same additive treatment on `update`/`update-many`: `--acceptance-criteria`/`--ac` explicitly REPLACES the whole value and returns an `acceptance_criteria_replaced:<before-count>:<after-count>` warning when it changes existing criteria. `--add-ac <text>` appends one criterion (repeatable; deduped on exact text), while `--remove-ac <text>` removes one criterion by exact text match. Every requested removal must match: otherwise the mutation fails atomically with `acceptance_criteria_remove_unmatched` and reports the unmatched selectors, without applying valid removals or additions. Whole-value replacement cannot be combined with additive flags in one mutation. Criteria are stored with semicolon-space separators, so one criterion cannot contain a semicolon. Disjoint `--add-ac` edits from concurrent agents/branches merge cleanly instead of clobbering each other.
 
 ```bash
 pm update pm-abc1 --add-ac "error path covered by a regression test"
@@ -492,7 +492,7 @@ pm update <id> \
 pm update <id> --expected "Retry succeeds after backoff" --actual "Retry threw on first attempt"
 ```
 
-Repeat `--ac`/`--acceptance-criteria` to build multi-part criteria; values are stored in order joined by `; `. Dependency inputs accept either a bare existing item id or the explicit `id=<id>,kind=<kind>` form, and malformed shorthand such as `related:pm-abcd` fails before it can create a dangling graph edge.
+Repeat `--ac`/`--acceptance-criteria` to build multi-part criteria; values are stored in order joined by `; `. Dependency inputs accept either a bare existing item id or the explicit `id=<id>,kind=<kind>` form, and malformed shorthand such as `related:pm-abcd` fails before it can create a dangling graph edge. New local dependency targets must already exist. Cross-workspace targets must declare `source_kind=external` (canonicalized to `global`); deliberately staged local edges require `--allow-unresolved-deps` and return one structured `dependency_target_unresolved:<id>` warning per missing target. The same validation runs during `update-many --dry-run`, so preview and apply cannot disagree.
 
 Mutation commands (`create`/`update`/`close`/`append`/...) default to an
 agent-efficient `id`/`status`/`changed_field_count` envelope. Use

@@ -241,7 +241,9 @@ describe("update-many command helper coverage", () => {
     expect(_testOnlyUpdateManyCommand.normalizeExistingTags("alpha")).toEqual(
       [],
     );
-    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const statusRegistry = resolveRuntimeStatusRegistry(
+      SETTINGS_DEFAULTS.schema,
+    );
     expect(
       _testOnlyUpdateManyCommand.normalizeStatusFilter(
         undefined,
@@ -1141,8 +1143,8 @@ describe("runUpdateMany", () => {
         {
           list: { ids: firstId },
           update: {
-            acceptanceCriteria: "replaced",
-            removeAc: ["replaced"],
+            removeAc: ["bulk-ac-first acceptance"],
+            addAc: ["repaired bulk criterion"],
             author: "bulk-author",
           },
           dryRun: true,
@@ -1153,7 +1155,7 @@ describe("runUpdateMany", () => {
         {
           field: "acceptance_criteria",
           before: "bulk-ac-first acceptance; shared bulk criterion",
-          after: "",
+          after: "shared bulk criterion; repaired bulk criterion",
         },
       ]);
 
@@ -1166,55 +1168,34 @@ describe("runUpdateMany", () => {
         },
         { path: context.pmPath },
       );
-      const absentRemoval = await runUpdateMany(
-        {
-          list: { ids: secondId },
-          update: { removeAc: ["missing criterion"] },
-          dryRun: true,
-        },
-        { path: context.pmPath },
-      );
-      expect(absentRemoval.item_plans?.[0]?.changes).toEqual([]);
-      expect(absentRemoval.item_plans?.[0]?.warnings).toEqual([
-        "remove_ac_unmatched:missing criterion",
-      ]);
-
-      const absentRemovalApply = await runUpdateMany(
-        {
-          list: { ids: secondId },
-          update: { removeAc: ["missing criterion"], author: "bulk-author" },
-        },
-        { path: context.pmPath },
-      );
-      expect(absentRemovalApply.updated_count).toBe(0);
-      expect(absentRemovalApply.rows).toEqual([
-        {
-          id: secondId,
-          status: "skipped",
-          warnings: ["remove_ac_unmatched:missing criterion"],
-        },
-      ]);
-
-      const mixedRemoval = await runUpdateMany(
-        {
-          list: { ids: `${firstId},${secondId}` },
-          update: {
-            removeAc: ["shared bulk criterion"],
-            author: "bulk-author",
+      await expect(
+        runUpdateMany(
+          {
+            list: { ids: secondId },
+            update: { removeAc: ["missing criterion"] },
+            dryRun: true,
           },
-        },
-        { path: context.pmPath },
-      );
-      expect(mixedRemoval.updated_count).toBe(1);
-      expect(mixedRemoval.skipped_count).toBe(1);
-      const mixedRows = new Map(mixedRemoval.rows?.map((row) => [row.id, row]));
-      expect(mixedRows.get(firstId)).toEqual(
-        expect.objectContaining({ id: firstId, status: "updated" }),
-      );
-      expect(mixedRows.get(secondId)).toEqual({
-        id: secondId,
-        status: "skipped",
-        warnings: ["remove_ac_unmatched:shared bulk criterion"],
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        context: { code: "acceptance_criteria_remove_unmatched" },
+      });
+
+      await expect(
+        runUpdateMany(
+          {
+            list: { ids: `${firstId},${secondId}` },
+            update: {
+              removeAc: ["shared bulk criterion"],
+              author: "bulk-author",
+            },
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        context: { code: "acceptance_criteria_remove_unmatched" },
       });
     });
   });

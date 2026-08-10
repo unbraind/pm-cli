@@ -90,6 +90,7 @@ function createContextItem(
   const args = [
     "create",
     "--json",
+    "--allow-unresolved-deps",
     "--title",
     options.title,
     "--description",

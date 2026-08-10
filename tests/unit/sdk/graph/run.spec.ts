@@ -44,6 +44,7 @@ function createItem(
     [
       "create",
       "--json",
+      "--allow-unresolved-deps",
       "--title",
       title,
       "--description",
