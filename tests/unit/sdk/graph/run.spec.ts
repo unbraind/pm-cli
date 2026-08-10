@@ -108,8 +108,31 @@ describe("parseGraphSubcommand", () => {
     ).toThrowError(
       expect.objectContaining({
         exitCode: EXIT_CODE.USAGE,
-        message: expect.stringContaining("ancestors, descendants"),
+        code: "unknown_subcommand",
+        context: expect.objectContaining({
+          reason: "unknown_positional_token",
+          recovery: expect.objectContaining({
+            allowed_values: expect.arrayContaining([
+              "ancestors",
+              "descendants",
+            ]),
+          }),
+        }),
       }) as never,
+    );
+    expect(() =>
+      parseGraphSubcommand("analyz", undefined, undefined),
+    ).toThrowError(
+      expect.objectContaining({
+        context: expect.objectContaining({
+          recovery: expect.objectContaining({
+            suggested_retry: "pm graph analyze",
+          }),
+        }),
+      }) as never,
+    );
+    expect(() => parseGraphSubcommand(" ", undefined, undefined)).toThrowError(
+      expect.objectContaining({ code: "unknown_subcommand" }) as never,
     );
   });
 

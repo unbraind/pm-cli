@@ -16,6 +16,18 @@ export type PmErrorCodeClass =
   | "conflict"
   | "dependency_failed";
 
+/** One externally observable refusal state and its executable entrypoint probe. */
+export interface PmRefusalStateContract {
+  /** Stable semantic state owned by the error code. */
+  state: string;
+  /** Stable probe identifier implemented by the entrypoint conformance suite. */
+  probe_id: string;
+  /** Public command roots through which the state must remain reachable. */
+  entrypoints: string[];
+  /** Exit class expected when the probe reaches the state. */
+  expected_exit_class: PmErrorCodeClass;
+}
+
 /** Stable shell exit-code taxonomy shared by every structured error. */
 export const PM_ERROR_CODE_EXIT_CLASS_CONTRACTS = [
   { exit_code: 1, class: "generic_failure" },
@@ -63,6 +75,40 @@ export interface PmErrorCodeContract {
   canonical_code?: string;
   /** Stable compatibility spellings that resolve to this canonical code. */
   aliases?: string[];
+  /** Observable states this code claims, each backed by a real-entrypoint probe. */
+  owned_states?: PmRefusalStateContract[];
+}
+
+function normalizeOwnedStates(
+  states: readonly PmRefusalStateContract[] | undefined,
+): PmRefusalStateContract[] {
+  if (!states) return [];
+  const seenStates = new Set<string>();
+  const seenProbes = new Set<string>();
+  return states
+    .map((state) => {
+      const normalizedState = state.state.trim();
+      const probeId = state.probe_id.trim();
+      const entrypoints = normalizeContractList(state.entrypoints);
+      if (
+        !/^[a-z][a-z0-9_]*$/.test(normalizedState) ||
+        !/^[a-z][a-z0-9-]*$/.test(probeId) ||
+        entrypoints.length === 0 ||
+        seenStates.has(normalizedState) ||
+        seenProbes.has(probeId)
+      ) {
+        throw new TypeError("Invalid pm refusal state contract");
+      }
+      seenStates.add(normalizedState);
+      seenProbes.add(probeId);
+      return {
+        state: normalizedState,
+        probe_id: probeId,
+        entrypoints,
+        expected_exit_class: state.expected_exit_class,
+      };
+    })
+    .sort((left, right) => left.state.localeCompare(right.state));
 }
 
 function isValidNormalizedErrorCodeContract(
@@ -165,6 +211,7 @@ export function definePmErrorCodeCatalog(
     );
     const canonicalCode = (declaration.canonical_code ?? code).trim();
     const aliases = normalizeContractList(declaration.aliases ?? []);
+    const ownedStates = normalizeOwnedStates(declaration.owned_states);
     if (
       !isValidNormalizedErrorCodeContract(
         declaration,
@@ -176,6 +223,13 @@ export function definePmErrorCodeCatalog(
     ) {
       throw new TypeError(`Invalid pm error code contract: ${code}`);
     }
+    if (
+      ownedStates.some(
+        (state) => state.expected_exit_class !== declaration.class,
+      )
+    ) {
+      throw new TypeError(`Invalid pm refusal state exit class: ${code}`);
+    }
     return Object.freeze({
       ...declaration,
       code,
@@ -185,6 +239,7 @@ export function definePmErrorCodeCatalog(
       emitting_commands: emittingCommands,
       canonical_code: canonicalCode,
       aliases,
+      owned_states: ownedStates,
     });
   });
   validateErrorCodeAliases(normalized);

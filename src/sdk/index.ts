@@ -632,6 +632,8 @@ export * from "./runtime-primitives.js";
 export * from "./error-runtime.js";
 export * from "./error-code-catalog.js";
 export * from "./generated-error-code-catalog.js";
+export * from "./agent/refusal-reachability.js";
+export * from "./agent/subcommand-recovery.js";
 export * from "./flag-invocation-contracts.js";
 export * from "./relationships.js";
 export * from "./actionability.js";

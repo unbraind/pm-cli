@@ -2429,14 +2429,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     code: "tracker_not_initialized",
     meaning: "Tracker not initialized condition.",
     stability: "stable",
-    exit_code: 1,
-    class: "generic_failure",
+    exit_code: 3,
+    class: "not_found",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
     emitting_commands: ["*"],
     canonical_code: "tracker_not_initialized",
     aliases: [],
+    owned_states: [
+      { state: "selected_tracker_root_is_a_regular_file", probe_id: "tracker-root-regular-file", entrypoints: ["list"], expected_exit_class: "not_found" },
+    ],
   },
   {
     code: "tracker_root_missing",
@@ -2580,9 +2583,9 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/extension.ts"],
+    sources: ["sdk/agent/subcommand-recovery.ts"],
     emitting_commands: ["*"],
-    canonical_code: "unknown_lifecycle_action",
+    canonical_code: "unknown_subcommand",
     aliases: [],
   },
   {
@@ -2597,6 +2600,9 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     emitting_commands: ["*"],
     canonical_code: "unknown_option",
     aliases: [],
+    owned_states: [
+      { state: "declared_option_is_rejected_on_the_selected_command_path", probe_id: "cross-command-unknown-option", entrypoints: ["deps"], expected_exit_class: "usage" },
+    ],
   },
   {
     code: "unknown_plan_template",
@@ -2645,15 +2651,16 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: [
-      "cli/register-mutation.ts",
-      "cli/register-operations.ts",
-      "sdk/runtime-extended-actions.ts",
-      "sdk/telemetry.ts",
-    ],
+    sources: ["cli/error-guidance.ts", "sdk/agent/subcommand-recovery.ts"],
     emitting_commands: ["*"],
     canonical_code: "unknown_subcommand",
-    aliases: [],
+    aliases: ["unknown_lifecycle_action"],
+    owned_states: [
+      { state: "config_action_token_is_not_declared", probe_id: "config-unknown-action", entrypoints: ["config"], expected_exit_class: "usage" },
+      { state: "graph_command_token_is_not_declared", probe_id: "graph-unknown-subcommand", entrypoints: ["graph"], expected_exit_class: "usage" },
+      { state: "nested_command_token_is_not_declared_by_its_family", probe_id: "schema-unknown-subcommand", entrypoints: ["schema"], expected_exit_class: "usage" },
+      { state: "package_lifecycle_token_is_not_declared", probe_id: "package-unknown-action", entrypoints: ["package"], expected_exit_class: "usage" },
+    ],
   },
   {
     code: "unsupported_update_option",

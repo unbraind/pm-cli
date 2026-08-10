@@ -384,6 +384,15 @@ describe("CLI main error helpers", () => {
               reason: "canonical first-party GitHub repository fallback",
             },
           ],
+          allowed_values: ["npm", "github"],
+          candidate_commands: [
+            {
+              command: "pm install --project github.com/unbraind/pm-brief",
+              shared_flags: ["--project"],
+            },
+          ],
+          candidate_commands_total: 15,
+          candidate_commands_truncated: true,
           next_best_command: "pm install --project github.com/unbraind/pm-brief",
         },
       },
@@ -402,6 +411,15 @@ describe("CLI main error helpers", () => {
           reason: "canonical first-party GitHub repository fallback",
         },
       ],
+      allowed_values: ["npm", "github"],
+      candidate_commands: [
+        {
+          command: "pm install --project github.com/unbraind/pm-brief",
+          shared_flags: ["--project"],
+        },
+      ],
+      candidate_commands_total: 15,
+      candidate_commands_truncated: true,
       next_best_command: "pm install --project github.com/unbraind/pm-brief",
     });
   });
@@ -4557,6 +4575,10 @@ describe("CLI Commander usage recovery helpers", () => {
         new Map(),
       );
       expect(otherCommand.unknownOptionOtherCommands).toEqual(expect.arrayContaining(["create", "list"]));
+      expect(otherCommand.unknownOptionOtherCommandsTotal).toBe(
+        otherCommand.unknownOptionOtherCommands?.length ?? 0,
+      );
+      expect(otherCommand.unknownOptionOtherCommandsTruncated).toBeUndefined();
 
       const shortUnknown = await resolveCommanderUsageContext(
         { message: "error: unknown option '-z'" },

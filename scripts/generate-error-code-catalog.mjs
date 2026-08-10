@@ -86,6 +86,18 @@ function renderGeneratedStringArray(name, values) {
       ];
 }
 
+function renderOwnedStates(states) {
+  if (states.length === 0) return [];
+  return [
+    "    owned_states: [",
+    ...states.map(
+      (state) =>
+        `      { state: ${JSON.stringify(state.state)}, probe_id: ${JSON.stringify(state.probe_id)}, entrypoints: [${state.entrypoints.map((entrypoint) => JSON.stringify(entrypoint)).join(", ")}], expected_exit_class: ${JSON.stringify(state.expected_exit_class)} },`,
+    ),
+    "    ],",
+  ];
+}
+
 async function discoverSourceFiles(sourceRoot, outputPath) {
   const sourceFiles = [];
   const pendingDirectories = [sourceRoot];
@@ -189,6 +201,22 @@ function isValidatedRecord(value, validateEntry) {
   );
 }
 
+function isReachabilityStateDeclaration(state) {
+  return (
+    typeof state === "object" &&
+    state !== null &&
+    /^[a-z][a-z0-9_]*$/.test(state.state) &&
+    /^[a-z][a-z0-9-]*$/.test(state.probe_id) &&
+    Array.isArray(state.entrypoints) &&
+    state.entrypoints.length > 0 &&
+    state.entrypoints.every(
+      (entrypoint) =>
+        typeof entrypoint === "string" && entrypoint.trim().length > 0,
+    ) &&
+    [...EXIT_CODE_CLASSES.values()].includes(state.expected_exit_class)
+  );
+}
+
 async function readStabilityLedger(stabilityPath) {
   const content = await readFile(stabilityPath, "utf8").catch((error) => {
     if (
@@ -242,6 +270,35 @@ async function readStabilityLedger(stabilityPath) {
   };
 }
 
+async function readReachabilityLedger(reachabilityPath) {
+  const content = await readFile(reachabilityPath, "utf8").catch((error) => {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return null;
+    }
+    throw error;
+  });
+  if (content === null) return new Map();
+  const parsed = JSON.parse(content);
+  if (
+    parsed?.schema_version !== 1 ||
+    !isValidatedRecord(
+      parsed.codes,
+      (code, states) =>
+        /^[a-z][a-z0-9_]*$/.test(code) &&
+        Array.isArray(states) &&
+        states.every(isReachabilityStateDeclaration),
+    )
+  ) {
+    throw new Error("Invalid error-code reachability ledger.");
+  }
+  return new Map(Object.entries(parsed.codes));
+}
+
 function resolveCatalogExitCode(code, entry, ledger, allowMissingStableExit) {
   if (entry.explicitExitCodes.size > 1) {
     throw new Error(
@@ -277,7 +334,12 @@ function resolveCatalogExitCode(code, entry, ledger, allowMissingStableExit) {
   return exitCode;
 }
 
-function validateAliases(ledger, sourcesByCode, exitCodesByCode) {
+function validateCatalogLedgers(
+  ledger,
+  sourcesByCode,
+  exitCodesByCode,
+  reachabilityByCode,
+) {
   for (const [alias, canonical] of ledger.aliases) {
     if (
       alias === canonical ||
@@ -293,9 +355,37 @@ function validateAliases(ledger, sourcesByCode, exitCodesByCode) {
       throw new Error(`Alias transport mismatch: ${alias} -> ${canonical}`);
     }
   }
+  const unknownReachabilityCode = [...reachabilityByCode.keys()].find(
+    (code) => !sourcesByCode.has(code),
+  );
+  if (unknownReachabilityCode) {
+    throw new Error(
+      `Reachability declaration names unknown code: ${unknownReachabilityCode}`,
+    );
+  }
+  const exitClassMismatchCode = [...reachabilityByCode].find(
+    ([code, states]) => {
+      const expectedClass = EXIT_CODE_CLASSES.get(exitCodesByCode.get(code));
+      return states.some(
+        (state) => state.expected_exit_class !== expectedClass,
+      );
+    },
+  )?.[0];
+  if (exitClassMismatchCode) {
+    throw new Error(
+      `Reachability exit class mismatch for ${exitClassMismatchCode}`,
+    );
+  }
 }
 
-function renderCatalogRow(code, entry, ledger, exitCode, errorClass) {
+function renderCatalogRow(
+  code,
+  entry,
+  ledger,
+  exitCode,
+  errorClass,
+  ownedStates,
+) {
   const canonicalCode = ledger.aliases.get(code) ?? code;
   const aliases = [...ledger.aliases.entries()]
     .filter(([, canonical]) => canonical === code)
@@ -321,6 +411,7 @@ function renderCatalogRow(code, entry, ledger, exitCode, errorClass) {
     ),
     `    canonical_code: ${JSON.stringify(canonicalCode)},`,
     ...renderGeneratedStringArray("aliases", aliases),
+    ...renderOwnedStates(ownedStates),
     "  },",
   ].join("\n");
 }
@@ -337,6 +428,11 @@ export async function main(
     "generated-error-code-catalog.ts",
   );
   const stabilityPath = path.join(root, "scripts", "error-code-stability.json");
+  const reachabilityPath = path.join(
+    root,
+    "scripts",
+    "error-code-reachability.json",
+  );
   const sourcesByCode = new Map();
   for (const absolute of await discoverSourceFiles(sourceRoot, outputPath)) {
     const content = await readFile(absolute, "utf8");
@@ -393,7 +489,13 @@ export async function main(
       ),
     ]),
   );
-  validateAliases(ledger, sourcesByCode, exitCodesByCode);
+  const reachabilityByCode = await readReachabilityLedger(reachabilityPath);
+  validateCatalogLedgers(
+    ledger,
+    sourcesByCode,
+    exitCodesByCode,
+    reachabilityByCode,
+  );
 
   const rows = [...sourcesByCode.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
@@ -405,6 +507,7 @@ export async function main(
         ledger,
         exitCode,
         EXIT_CODE_CLASSES.get(exitCode),
+        reachabilityByCode.get(code) ?? [],
       );
     });
 

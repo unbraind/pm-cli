@@ -34,6 +34,24 @@ describe("generate error code catalog", () => {
       'const duplicate = { code: "item_not_found" };',
       "utf8",
     );
+    await mkdir(path.join(root, "scripts"), { recursive: true });
+    await writeFile(
+      path.join(root, "scripts", "error-code-reachability.json"),
+      JSON.stringify({
+        schema_version: 1,
+        codes: {
+          unknown_flag: [
+            {
+              state: "unknown_option_on_selected_path",
+              probe_id: "unknown-option",
+              entrypoints: ["test-all"],
+              expected_exit_class: "usage",
+            },
+          ],
+        },
+      }),
+      "utf8",
+    );
     await writeFile(
       path.join(
         root,
@@ -66,6 +84,8 @@ describe("generate error code catalog", () => {
     expect(output).toContain('emitting_commands: ["*"]');
     expect(output).toContain('canonical_code: "item_not_found"');
     expect(output).toContain("aliases: []");
+    expect(output).toContain('state: "unknown_option_on_selected_path"');
+    expect(output).toContain('probe_id: "unknown-option"');
     expect(output).toContain('code: "ambiguous_list_all"');
     expect(output).toContain('code: "protocol_failure"');
     expect(output).not.toContain("exit_code: 64");
@@ -270,6 +290,67 @@ describe("generate error code catalog", () => {
     );
     await rm(ledgerPath);
     await mkdir(ledgerPath);
+    await expect(main(root, [])).rejects.toMatchObject({ code: "EISDIR" });
+  });
+
+  it("rejects invalid or contradictory refusal reachability declarations", async () => {
+    const root = await harness.createTempRoot("pm-error-reachability-");
+    await mkdir(path.join(root, "src", "sdk"), { recursive: true });
+    await mkdir(path.join(root, "scripts"), { recursive: true });
+    await writeFile(
+      path.join(root, "src", "sdk", "source.ts"),
+      'const failure = { code: "unknown_fixture" };',
+      "utf8",
+    );
+    const reachabilityPath = path.join(
+      root,
+      "scripts",
+      "error-code-reachability.json",
+    );
+    await writeFile(reachabilityPath, '{"schema_version":2,"codes":{}}');
+    await expect(main(root, [])).rejects.toThrow(
+      "Invalid error-code reachability ledger",
+    );
+    await writeFile(
+      reachabilityPath,
+      JSON.stringify({
+        schema_version: 1,
+        codes: {
+          missing_code: [
+            {
+              state: "missing_state",
+              probe_id: "missing-state",
+              entrypoints: ["fixture"],
+              expected_exit_class: "usage",
+            },
+          ],
+        },
+      }),
+    );
+    await expect(main(root, [])).rejects.toThrow(
+      "Reachability declaration names unknown code",
+    );
+    await writeFile(
+      reachabilityPath,
+      JSON.stringify({
+        schema_version: 1,
+        codes: {
+          unknown_fixture: [
+            {
+              state: "fixture_state",
+              probe_id: "fixture-state",
+              entrypoints: ["fixture"],
+              expected_exit_class: "conflict",
+            },
+          ],
+        },
+      }),
+    );
+    await expect(main(root, [])).rejects.toThrow(
+      "Reachability exit class mismatch for unknown_fixture",
+    );
+    await rm(reachabilityPath);
+    await mkdir(reachabilityPath);
     await expect(main(root, [])).rejects.toMatchObject({ code: "EISDIR" });
   });
 

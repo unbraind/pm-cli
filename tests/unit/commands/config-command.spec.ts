@@ -21,7 +21,13 @@ describe("config command helper coverage", () => {
   it("normalizes policy values and rejects unsupported variants", () => {
     expect(_testOnlyConfigCommand.normalizeAction("get")).toBe("get");
     expect(() => _testOnlyConfigCommand.normalizeAction("delete")).toThrow(
-      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+      expect.objectContaining({
+        exitCode: EXIT_CODE.USAGE,
+        code: "unknown_subcommand",
+      }),
+    );
+    expect(() => _testOnlyConfigCommand.normalizeAction(" ")).toThrow(
+      expect.objectContaining({ code: "unknown_subcommand" }),
     );
     expect(_testOnlyConfigCommand.normalizeScope("global")).toBe("global");
     expect(_testOnlyConfigCommand.normalizeScope("project")).toBe("project");

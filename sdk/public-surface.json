@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1500,
+    "covered_symbols": 1501,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1501
+    "required_symbols": 1502
   },
   "breaking_acknowledgements": [
     {
@@ -200,6 +200,41 @@
       ],
       "package_version": "2026.8.10",
       "reason": "Intentional additive semantic-attribution and explained source-traceability SDK contract expansion for pm-3zgh2c and pm-f86lth; schema constants advance with transport fields."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorRecoveryPayload",
+        "signature ./sdk:PmErrorCodeContract",
+        "signature ./sdk/contracts:PmErrorCodeContract",
+        "signature ./sdk/runtime:PmErrorCodeContract"
+      ],
+      "package_version": "2026.8.10",
+      "reason": "Intentional compatible public contract expansion: optional recovery and owned-state fields plus new refusal primitives; existing consumers require no changes."
+    },
+    {
+      "changes": [
+        "error code missing_probe removed",
+        "error code undeclared_probe removed",
+        "error code wrong_error_code removed",
+        "error code wrong_exit_class removed",
+        "signature ./sdk:PmRefusalReachabilityFinding"
+      ],
+      "package_version": "2026.8.10",
+      "reason": "Intentional compatible public contract expansion: optional recovery and owned-state fields plus new refusal primitives; existing consumers require no changes."
+    },
+    {
+      "changes": [
+        "signature ./sdk:UnknownSubcommandErrorOptions"
+      ],
+      "package_version": "2026.8.10",
+      "reason": "Intentional compatible public contract expansion: optional recovery and owned-state fields plus configurable refusal display labels; existing consumers require no changes."
+    },
+    {
+      "changes": [
+        "signature ./sdk:UnknownSubcommandErrorOptions"
+      ],
+      "package_version": "2026.8.10",
+      "reason": "Intentional compatible public contract expansion and stable alias migration: unknown_lifecycle_action now resolves canonically to unknown_subcommand while retaining its catalog identity."
     }
   ],
   "entrypoints": {
@@ -2725,6 +2760,12 @@
           "kind": "type",
           "name": "CreateTemplateOptions",
           "signature": "export type CreateTemplateOptions = Record<string, TemplateOptionValue>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "createUnknownSubcommandError",
+          "signature": "(options: UnknownSubcommandErrorOptions) => PmCliError | calls: (options: UnknownSubcommandErrorOptions) => PmCliError"
         },
         {
           "classification": "advanced_export",
@@ -8034,7 +8075,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorRecoveryPayload",
-          "signature": "export interface PmCliErrorRecoveryPayload { recovery_mode?: \"compact\"; attempted_command?: string; normalized_args?: string[]; provided_fields?: string[]; missing?: string[]; missing_required_fields?: string[]; suggested_flags?: string[]; suggested_retry?: string; retry_after_ms?: number; fallback_candidates?: Array<{ source: string; command: string; reason: string; }>; next_best_command?: string; }"
+          "signature": "export interface PmCliErrorRecoveryPayload { recovery_mode?: \"compact\"; attempted_command?: string; normalized_args?: string[]; provided_fields?: string[]; missing?: string[]; missing_required_fields?: string[]; suggested_flags?: string[]; allowed_values?: string[]; candidate_commands?: string[]; candidate_commands_total?: number; candidate_commands_truncated?: boolean; suggested_retry?: string; retry_after_ms?: number; fallback_candidates?: Array<{ source: string; command: string; reason: string; }>; next_best_command?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -8190,7 +8231,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmErrorCodeContract",
-          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; canonical_code?: string; aliases?: string[]; }"
+          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; canonical_code?: string; aliases?: string[]; owned_states?: PmRefusalStateContract[]; }"
         },
         {
           "classification": "contract_data",
@@ -8437,6 +8478,30 @@
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
           "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRefusalProbeObservation",
+          "signature": "export interface PmRefusalProbeObservation { probe_id: string; code: string; exit_class: PmErrorCodeClass; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRefusalReachabilityFinding",
+          "signature": "export interface PmRefusalReachabilityFinding { kind: \"missing_probe\" | \"wrong_error_code\" | \"wrong_exit_class\" | \"undeclared_probe\"; probe_id: string; detail: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRefusalReachabilityReport",
+          "signature": "export interface PmRefusalReachabilityReport { ok: boolean; declared_probe_count: number; observed_probe_count: number; findings: PmRefusalReachabilityFinding[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmRefusalStateContract",
+          "signature": "export interface PmRefusalStateContract { state: string; probe_id: string; entrypoints: string[]; expected_exit_class: PmErrorCodeClass; }"
         },
         {
           "classification": "contract_data",
@@ -13263,10 +13328,22 @@
           "signature": "Record<\"Chore\" | \"Decision\" | \"Epic\" | \"Event\" | \"Feature\" | \"Issue\" | \"Meeting\" | \"Milestone\" | \"Plan\" | \"Reminder\" | \"Task\", string>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "UNKNOWN_SUBCOMMAND_COMPATIBILITY_CODES",
+          "signature": "readonly [{ readonly code: \"unknown_lifecycle_action\"; }]"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "UnknownAuthorHistoryEvent",
           "signature": "export interface UnknownAuthorHistoryEvent { item_id: string; line: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "UnknownSubcommandErrorOptions",
+          "signature": "export interface UnknownSubcommandErrorOptions { command_path: string; token: string; allowed: readonly string[]; display_name?: string; token_kind?: \"subcommand\" | \"action\" | \"path\"; trailing_args?: readonly string[]; retry_command?: string; message_suffix?: string; fallback_candidates?: PmCliErrorRecoveryPayload[\"fallback_candidates\"]; exit_code?: number; examples?: readonly string[]; }"
         },
         {
           "classification": "supported",
@@ -13555,6 +13632,12 @@
           "kind": "function",
           "name": "verifyHistoryEntries",
           "signature": "(history: HistoryEntry[], currentDocument?: ItemDocument) => HistoryVerificationResult | calls: (history: HistoryEntry[], currentDocument?: ItemDocument) => HistoryVerificationResult"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "verifyPmRefusalReachability",
+          "signature": "(catalog: readonly PmErrorCodeContract[], observations: readonly PmRefusalProbeObservation[]) => PmRefusalReachabilityReport | calls: (catalog: readonly PmErrorCodeContract[], observations: readonly PmRefusalProbeObservation[]) => PmRefusalReachabilityReport"
         },
         {
           "classification": "contract_data",
@@ -16296,7 +16379,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmErrorCodeContract",
-          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; canonical_code?: string; aliases?: string[]; }"
+          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; canonical_code?: string; aliases?: string[]; owned_states?: PmRefusalStateContract[]; }"
         },
         {
           "classification": "contract_data",
@@ -16471,6 +16554,12 @@
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
           "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmRefusalStateContract",
+          "signature": "export interface PmRefusalStateContract { state: string; probe_id: string; entrypoints: string[]; expected_exit_class: PmErrorCodeClass; }"
         },
         {
           "classification": "contract_data",
@@ -23058,7 +23147,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmErrorCodeContract",
-          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; canonical_code?: string; aliases?: string[]; }"
+          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; class: PmErrorCodeClass; recovery: string; sources: string[]; emitting_commands: string[]; canonical_code?: string; aliases?: string[]; owned_states?: PmRefusalStateContract[]; }"
         },
         {
           "classification": "supported",

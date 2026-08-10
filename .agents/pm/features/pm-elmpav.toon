@@ -2,11 +2,13 @@ id: pm-elmpav
 title: "Refusal reachability: every error code declares the states it owns, and an entrypoint-level probe proves each state is still reachable as that typed code rather than as an untyped fault"
 description: ""
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[8]: agent-ux,"area:ci","area:contracts","area:sdk",error-taxonomy,gate,measurement,reachability
 created_at: "2026-08-10T06:09:23.711Z"
-updated_at: "2026-08-10T06:09:48.075Z"
+updated_at: "2026-08-10T18:14:24.776Z"
+closed_at: "2026-08-10T18:09:30.250Z"
+completed_at: "2026-08-10T18:09:30.250Z"
 author: "harness:claude-code"
 estimated_minutes: 900
 acceptance_criteria: "Each error code in the generated catalog may declare the observable states it owns and the entrypoints through which each state is reachable; A probe drives a real command entrypoint into each declared state and asserts the refusal carries the declared code and exit class; A declared state with no reachable entrypoint fails CI rather than passing silently; A state that surfaces as an unclassified runtime error fails CI with the same finding; The declaration set may start empty and grow one code at a time, constraining nothing until a state is declared"
@@ -17,7 +19,10 @@ why_now: "pm-6xlyss is a measured instance. tracker_root_not_directory was compl
 parent: pm-33cw
 risk: medium
 confidence: medium
-dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
+resolution: completed
+expected_result: Declared refusal states are exercised through real entrypoints and checked against their catalog code and exit class.
+actual_result: "Six declared probes now exercise tracker-root, option, schema, graph, config, and package failures; generation and the public SDK verifier fail on missing, untyped, mismatched, or undeclared observations."
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-6qiwan,related,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
   pm-6xlyss,discovered_from,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
   pm-7rrqsk,related,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
@@ -26,4 +31,30 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-qxo5iu,related,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
   pm-x4nn3z,related,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-10T06:09:23.711Z","harness:claude-code","cli:create:dep",detected
+  pm-6xlyss,verifies,"2026-08-10T16:45:13.473Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-10T18:09:15.069Z","harness:codex","Implementation evidence: error-code source declarations now own real entrypoint probe IDs and expected exit classes; generation validates declarations and emits owned_states; the public SDK verifyPmRefusalReachability primitive compares catalog declarations with observations; six real probes cover tracker roots, cross-command options, schema, graph, config, and package lifecycle. Corrected tracker_not_initialized to the observed stable exit class. Verification: generator checks, integration probes, public surface parity, and full exact coverage passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-10T18:09:27.300Z","harness:codex",Error catalogs become executable governance when source declarations own stable probe IDs and expected exit classes and a public verifier compares them with real entrypoint observations.
+files[10]{path,scope,note}:
+  scripts/error-code-reachability.json,project,versioned refusal-state declarations
+  scripts/error-code-stability.json,project,runtime-truth exit class correction
+  scripts/generate-error-code-catalog.mjs,project,generated owned-state joins and validation
+  src/sdk/agent/refusal-reachability.ts,project,fail-closed observation verifier
+  src/sdk/error-code-catalog.ts,project,public owned-state contract
+  src/sdk/generated-error-code-catalog.ts,project,generated refusal reachability catalog
+  src/sdk/index.ts,project,public SDK exports
+  src/sdk/runtime-primitives.ts,project,portable primitive exports
+  tests/integration/refusal-reachability.integration.spec.ts,project,real entrypoint probe integration coverage
+  tests/unit/sdk/refusal-reachability.spec.ts,project,public verifier conformance coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/refusal-reachability.spec.ts tests/unit/sdk/error-code-catalog.spec.ts tests/unit/scripts/generate-error-code-catalog.spec.ts tests/integration/refusal-reachability.integration.spec.ts,project,240
+  CI=1 node scripts/run-tests.mjs coverage,project,600
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msnhri4y-5dropm,test,passed,"2026-08-10T17:14:24.139Z","2026-08-10T17:14:34.258Z","2026-08-10T17:14:34.258Z",1,0,0
+  test-local-msnhrslq-xx2xe8,test,passed,"2026-08-10T17:14:38.469Z","2026-08-10T17:14:47.822Z","2026-08-10T17:14:47.822Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/SDK_RUNTIME_BOUNDARIES.md,project,reachability declaration and probe contract
+  docs/SDK.md,project,SDK catalog verifier reference
+close_reason: "Completed declarative refusal reachability, generated catalog ownership, six real entrypoint probes, and public SDK conformance verification with exact full coverage."
 body: "## The gap\n\nThe generated error-code catalog enumerates the codes the product **can** emit. Nothing asserts that anything **still does**.\n\nThat distinction is not academic. A guard can be complete, typed, and fully unit-tested, and still never run, because reachability is decided by code the guard does not know about - anything that reads earlier in the same pipeline and can fail first. Its own tests call it directly, so they pass forever. Coverage records that the line executed under some caller, never that the caller is the one the product uses.\n\n## The measured instance\n\n`assertItemMetadataRoot` separates a missing root from a root that is a regular file, walks ancestors to attribute the cause, and raises `tracker_root_not_directory`. All of that is correct and tested.\n\nPointing a read command at a regular file produced none of it. An optional read of `context-intents.json` sits earlier in the pipeline, tolerated only `ENOENT`, and threw a raw `ENOTDIR` first. The state occurred; the guard never ran; the fault reached Sentry unclassified and blocked the daily release. See pm-6xlyss.\n\nNo test failed. No coverage number moved. The guard file was not touched by the change that stranded it.\n\n## Shape of the mechanism\n\nExtend the catalog from `code -> exists` to `code -> owned states -> reachable entrypoints`:\n\n```\ntracker_root_not_directory:\n  owns_state: tracker root exists and is not a directory\n  reachable_via: [list, get, update, close, ...]\n```\n\nThe probe then constructs each declared state for real and runs a real entrypoint against it, asserting the refusal carries the declared code and exit class. This is a property of the **composed pipeline**, so a unit test cannot establish it by construction - only an entrypoint-level probe can.\n\nTwo symmetric findings fall out, and both are currently undetectable:\n\n- a declared state no entrypoint can reach - the guard has been stranded\n- a declared state reachable only as an unclassified fault - the guard has been pre-empted\n\n## Why it is safe to ship incrementally\n\nAn empty declaration set constrains nothing, which is exactly current behaviour. The mechanism can land before any state is declared and grow one code at a time, so its cost is paid only where a claim is actually made.\n\n## Relationship to the horizon\n\nThis is the terminal answer of horizon AL on pm-doxj. It composes with AK rather than competing: pre-empting a guard is precisely falsifying a predicate an unrelated component relies on, so a stranded guard is one row in that registry rather than a separate mechanism."

@@ -223,6 +223,7 @@
   ],
   "aliases": {
     "history_merge_conflict_markers_detected": "merge_conflict_markers_detected",
+    "unknown_lifecycle_action": "unknown_subcommand",
     "validate_format_version_ahead_items": "integrity_item_ahead_format_version",
     "validate_format_version_outdated_items": "integrity_item_outdated_format_version",
     "validate_history_drift_chain_mismatches": "history_drift_chain_mismatch",
@@ -388,7 +389,7 @@
     "terminal_plan_mutation": 4,
     "terminal_state_conflict": 4,
     "tracked_runtime_cache_files": 1,
-    "tracker_not_initialized": 1,
+    "tracker_not_initialized": 3,
     "tracker_root_missing": 3,
     "tracker_root_not_directory": 2,
     "type_duplicate": 1,

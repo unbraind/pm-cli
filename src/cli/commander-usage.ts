@@ -95,6 +95,24 @@ const SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS: Record<
   },
 };
 
+const SCHEMA_SUBCOMMAND_VALUES = [
+  "add-field",
+  "add-status",
+  "add-type",
+  "apply-preset",
+  "list",
+  "list-fields",
+  "remap-status",
+  "remove-field",
+  "remove-status",
+  "remove-type",
+  "rename-field",
+  "rename-type",
+  "show",
+  "show-field",
+  "show-status",
+] as const;
+
 function getSemanticUnknownOptionSuggestions(
   commandName: string,
   unknownOption: string,
@@ -469,9 +487,21 @@ function findOtherCommandsForFlag(
     return [];
   }
   const normalizedCurrent = currentCommand?.trim().toLowerCase();
+  const currentFlags = new Set(collectKnownLongFlags(normalizedCurrent));
   return commands
     .filter((command) => command !== normalizedCurrent)
-    .slice(0, 3);
+    .map((command) => ({
+      command,
+      sharedFlagCount: collectKnownLongFlags(command).filter((flag) =>
+        currentFlags.has(flag),
+      ).length,
+    }))
+    .sort((left, right) =>
+      left.sharedFlagCount !== right.sharedFlagCount
+        ? right.sharedFlagCount - left.sharedFlagCount
+        : left.command.localeCompare(right.command),
+    )
+    .map(({ command }) => command);
 }
 
 function rewriteUnknownOptionArgv(
@@ -809,6 +839,43 @@ function resolveSuggestedRetryForMissingOption(
   ]);
 }
 
+function resolveSplitSchemaSubcommand(
+  message: string,
+  invocationArgv: string[],
+): Partial<CommanderGuidanceContext> | undefined {
+  if (!/too many arguments/i.test(message)) {
+    return undefined;
+  }
+  const schemaIndex = invocationArgv.indexOf("schema");
+  if (schemaIndex < 0) {
+    return undefined;
+  }
+  const verb = invocationArgv[schemaIndex + 1]?.trim().toLowerCase();
+  const noun = invocationArgv[schemaIndex + 2]?.trim().toLowerCase();
+  if (!verb || !noun) {
+    return undefined;
+  }
+  const joined = `${verb}-${noun}`;
+  if (
+    !SCHEMA_SUBCOMMAND_VALUES.includes(
+      joined as (typeof SCHEMA_SUBCOMMAND_VALUES)[number],
+    )
+  ) {
+    return undefined;
+  }
+  const rewritten = [
+    ...invocationArgv.slice(0, schemaIndex + 1),
+    joined,
+    ...invocationArgv.slice(schemaIndex + 3),
+  ];
+  return {
+    unknownSubcommandPath: "schema",
+    unknownSubcommandToken: `${verb} ${noun}`,
+    unknownSubcommandAllowedValues: [...SCHEMA_SUBCOMMAND_VALUES],
+    suggestedRetryCommand: renderAttemptedCommand(rewritten),
+  };
+}
+
 /** Implements resolve commander usage context for the public runtime surface of this module. */
 export async function resolveCommanderUsageContext(
   error: unknown,
@@ -835,12 +902,18 @@ export async function resolveCommanderUsageContext(
     extensionDescriptors,
   );
   const unknownOption = resolveUnknownOptionSuggestions(message, commandName);
+  const splitSchemaSubcommand = resolveSplitSchemaSubcommand(
+    message,
+    invocationArgv,
+  );
   const suggestedRetryCommand =
+    splitSchemaSubcommand?.suggestedRetryCommand ??
     resolveSuggestedRetryForUnknownOption(
       invocationArgv,
       unknownOption.match,
       unknownOption.suggestions,
-    ) ?? resolveSuggestedRetryForMissingOption(message, invocationArgv);
+    ) ??
+    resolveSuggestedRetryForMissingOption(message, invocationArgv);
   return {
     message,
     commandName,
@@ -851,9 +924,16 @@ export async function resolveCommanderUsageContext(
     unknownOptionSuggestions: unknownOption.suggestions,
     unknownOptionOtherCommands:
       unknownOption.otherCommands.length > 0
-        ? unknownOption.otherCommands
+        ? unknownOption.otherCommands.slice(0, 12)
         : undefined,
+    unknownOptionOtherCommandsTotal:
+      unknownOption.otherCommands.length > 0
+        ? unknownOption.otherCommands.length
+        : undefined,
+    unknownOptionOtherCommandsTruncated:
+      unknownOption.otherCommands.length > 12 || undefined,
     suggestedRetryCommand,
+    ...splitSchemaSubcommand,
     ...unknownCommandGuidance,
     ...guidanceOverrides,
   };
@@ -883,6 +963,11 @@ export async function formatCommanderUsageMessage(
     providedOptionFlags,
     unknownOptionSuggestions,
     unknownOptionOtherCommands,
+    unknownOptionOtherCommandsTotal,
+    unknownOptionOtherCommandsTruncated,
+    unknownSubcommandPath,
+    unknownSubcommandToken,
+    unknownSubcommandAllowedValues,
     suggestedRetryCommand,
     failedExtensions,
   } = usageContext;
@@ -898,6 +983,11 @@ export async function formatCommanderUsageMessage(
       providedOptionFlags,
       unknownOptionSuggestions,
       unknownOptionOtherCommands,
+      unknownOptionOtherCommandsTotal,
+      unknownOptionOtherCommandsTruncated,
+      unknownSubcommandPath,
+      unknownSubcommandToken,
+      unknownSubcommandAllowedValues,
       suggestedRetryCommand,
       failedExtensions,
     },
@@ -940,6 +1030,14 @@ export async function formatCommanderUsageJson(
       providedOptionFlags: usageContext.providedOptionFlags,
       unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
       unknownOptionOtherCommands: usageContext.unknownOptionOtherCommands,
+      unknownOptionOtherCommandsTotal:
+        usageContext.unknownOptionOtherCommandsTotal,
+      unknownOptionOtherCommandsTruncated:
+        usageContext.unknownOptionOtherCommandsTruncated,
+      unknownSubcommandPath: usageContext.unknownSubcommandPath,
+      unknownSubcommandToken: usageContext.unknownSubcommandToken,
+      unknownSubcommandAllowedValues:
+        usageContext.unknownSubcommandAllowedValues,
       suggestedRetryCommand: usageContext.suggestedRetryCommand,
       failedExtensions: usageContext.failedExtensions,
     },

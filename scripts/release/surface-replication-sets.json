@@ -320,11 +320,11 @@
   "cli_refusal_dispositions": [
     {
       "path": "src/cli/register-mutation.ts",
-      "expected_count": 21,
+      "expected_count": 17,
       "rule_ownership": "all_occurrences",
-      "owner": "pm-0xmajx",
+      "owner": "pm-185870",
       "disposition": "transport_validation",
-      "reason": "Commander mutation syntax and local filesystem argument checks remain CLI transport policy while business mutations execute through SDK actions."
+      "reason": "Unknown positional subcommands moved to the shared SDK constructor; the remaining Commander mutation syntax and local filesystem checks are transport policy."
     },
     {
       "path": "src/cli/register-annotations.ts",
@@ -344,11 +344,11 @@
     },
     {
       "path": "src/cli/register-operations.ts",
-      "expected_count": 8,
+      "expected_count": 6,
       "rule_ownership": "all_occurrences",
-      "owner": "pm-0xmajx",
+      "owner": "pm-185870",
       "disposition": "transport_validation",
-      "reason": "Interactive operation flags and shell-facing setup errors are owned by the CLI adapter."
+      "reason": "Telemetry and workspace positional refusals moved to the shared SDK constructor; remaining interactive flags and shell-facing setup errors stay in the CLI adapter."
     },
     {
       "path": "src/cli/main.ts",

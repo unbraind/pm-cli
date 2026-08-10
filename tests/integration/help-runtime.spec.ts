@@ -340,10 +340,29 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(envelope.code).toBe("unknown_option");
       expect(envelope.next_steps).toEqual(
         expect.arrayContaining([
-          expect.stringContaining(
-            "--type is a valid option on: create, list, list-all",
-          ),
+          expect.stringContaining("--type is accepted by"),
         ]),
+      );
+    });
+  });
+
+  it("returns ranked bounded prose and complete structured candidates", async () => {
+    await withTempPmPath(async (context) => {
+      const result = context.runCli([
+        "deps",
+        "--add",
+        "related:pm-x",
+        "--json",
+      ]);
+      expect(result.code).toBe(2);
+      const envelope = parseJsonErrorEnvelope(result.stderr);
+      expect(envelope.recovery).toMatchObject({
+        candidate_commands: expect.arrayContaining(["docs", "files", "test"]),
+        candidate_commands_total: expect.any(Number),
+      });
+      expect(envelope.next_steps?.join("\n")).toContain("more command path(s)");
+      expect(envelope.next_steps?.join("\n")).not.toContain(
+        "run that command instead",
       );
     });
   });

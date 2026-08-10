@@ -18,6 +18,10 @@ export {
   resolveFlagValueKind,
 } from "../core/extensions/flag-value-types.js";
 export {
+  createUnknownSubcommandError,
+  type UnknownSubcommandErrorOptions,
+} from "./agent/subcommand-recovery.js";
+export {
   type ActiveExtensionHookContext,
   type ExtensionCommandRegistry,
   type ExtensionDiscoveryResult,

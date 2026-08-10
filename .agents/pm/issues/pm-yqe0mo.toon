@@ -2,11 +2,13 @@ id: pm-yqe0mo
 title: "Unknown-option recovery names three of six commands that accept the flag, capped silently and in arbitrary order, so the hint excludes the right answer while reading as exhaustive"
 description: "pm deps --add reports '--add is a valid option on: comments, notes, learnings' while files, docs and test also accept it; findOtherCommandsForFlag slices to 3 with no truncation marker and no relevance ranking, and error-guidance renders it as a closed set ('if you meant one of those'). Duplicate check 2026-07-26: searched unknown-option/recovery/cross-command/flag-suggestion items across all statuses; pm-8nyc (closed) built this feature, pm-gdi7 covers same-command flag suggestions, pm-cha95z covers diagnostic budget in aggregate. No open item covers the cross-command enumeration being silently partial."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",diagnostics,error-contract,recovery-bundle
 created_at: "2026-07-26T05:40:48.321Z"
-updated_at: "2026-07-31T06:14:43.873Z"
+updated_at: "2026-08-10T18:09:40.919Z"
+closed_at: "2026-08-10T18:09:27.895Z"
+completed_at: "2026-08-10T18:09:27.895Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The cross-command candidate list is relevance-ranked before any cap is applied, so a binding cap retains the best candidates rather than the first-enumerated ones; when the cap binds, both the rendered prose and the structured recovery bundle declare truncation using this repository's existing truncation vocabulary; the structured bundle carries the full candidate set under its own bounded ceiling independent of what fits the prose sentence; a regression test asserts that --add on a non-accepting command enumerates files, docs and test among candidates or declares truncation; the closed-world phrasing 'if you meant one of those' is only emitted when the set is genuinely complete"
@@ -17,17 +19,56 @@ why_now: "Reproduced live on the shipped 2026.7.26 build while probing the annot
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[5]{id,kind,created_at}:
-  pm-8nyc,discovered_from,"2026-07-26T05:40:48.321Z"
-  pm-cha95z,related,"2026-07-26T05:40:48.321Z"
-  pm-gdi7,related,"2026-07-26T05:40:48.321Z"
-  pm-rtn5h6,related,"2026-07-26T05:40:48.321Z"
-  pm-1kxs,implements,"2026-07-26T05:49:59.573Z"
-comments[1]{created_at,author,text}:
+resolution: completed
+expected_result: "Cross-command recovery ranks the complete candidate set, exposes bounded structured candidates with truncation receipts, and never presents a partial prose list as exhaustive."
+actual_result: "Implemented deterministic shared-flag ranking, concise first-three prose with remainder count, a 12-entry structured ceiling with total/truncated fields, and final CLI projection coverage."
+dependencies[7]:
+  - id: pm-8nyc
+    kind: discovered_from
+    created_at: "2026-07-26T05:40:48.321Z"
+  - id: pm-cha95z
+    kind: related
+    created_at: "2026-07-26T05:40:48.321Z"
+  - id: pm-gdi7
+    kind: related
+    created_at: "2026-07-26T05:40:48.321Z"
+  - id: pm-rtn5h6
+    kind: related
+    created_at: "2026-07-26T05:40:48.321Z"
+  - id: pm-1kxs
+    kind: implements
+    created_at: "2026-07-26T05:49:59.573Z"
+  - id: pm-elmpav
+    kind: verifies
+    created_at: "2026-08-10T16:45:11.078Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-mkinft
+    kind: related
+    created_at: "2026-08-10T16:45:11.078Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[3]{created_at,author,text}:
   "2026-07-31T06:14:43.873Z","harness:claude-code","Reproduced at HEAD 2026-07-31 on a different flag than the original report. `pm context --limit 10 --summary` recovery bundle states \"--summary is a valid option on: graph, deps, health\" — three commands. A direct sweep of --help across nineteen read commands finds four that accept --summary: deps, graph, health and contracts. The hint reads as exhaustive and omits one, on a flag whose whole purpose is reducing output."
-files[2]{path,scope,note}:
+  "2026-08-10T16:45:15.135Z","harness:codex","GitHub intake: issue #967 is a fixed-version report of the positional --id recovery defect already implemented under closed pm-mkinft; current 2026.8.10 live CLI accepts both notes --id and show --id. This active item remains scoped to truthful complete cross-command recovery rather than duplicating the shipped item-addressing work."
+  "2026-08-10T18:09:14.157Z","harness:codex","Implementation evidence: unknown-option recovery now retains the complete deterministic candidate set, ranks candidates by shared supplied flags then command path, caps only structured transport at 12 with total/truncated receipts, and renders a concise truthful first-three summary. Final CLI enrichment preserves allowed_values and candidate metadata. Verification: 475 files / 7,187 tests passed with exact 100/100/100/100 coverage; packed npm+npx acceptance confirmed candidate_commands and total at the installed CLI boundary; bun+bunx also passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-10T18:09:26.329Z","harness:codex",Structured recovery must be projected through the top-level CLI error boundary; source-level payload tests alone cannot prove the packed JSON contract.
+files[4]{path,scope,note}:
   src/cli/commander-usage.ts,project,findOtherCommandsForFlag slices the cross-command candidate list to 3 with no truncation marker and no ranking (line ~445)
   src/cli/error-guidance.ts,project,"renders the capped list as a closed set: 'is a valid option on: ... If you meant one of those' (line ~1232)"
-tests[1]{command,scope,timeout_seconds}:
+  src/cli/main.ts,project,Preserve structured option and command candidate recovery fields through top-level CLI error enrichment
+  src/core/shared/errors.ts,project,public recovery payload fields
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/cli/recovery-context-usage.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/integration/help-runtime.spec.ts,project,240
+  CI=1 node scripts/run-tests.mjs coverage,project,600
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msnhr2z1-39vo36,test,passed,"2026-08-10T17:13:50.145Z","2026-08-10T17:14:14.605Z","2026-08-10T17:14:14.605Z",2,0,0
+docs[2]{path,scope,note}:
+  docs/SDK_RUNTIME_BOUNDARIES.md,project,candidate ranking and truncation contract
+  docs/SDK.md,project,SDK recovery payload documentation
+close_reason: "Completed deterministic cross-command option recovery with truthful truncation receipts, final-boundary preservation, exact full coverage, and packed npm/npx/bun/bunx acceptance."
 body: "## Evidence (reproduced 2026-07-26 against the installed 2026.7.26 build)\n\nRunning `pm deps <id> --add <other> --kind blocked_by` — a plausible wrong guess, because `--add` is the annotation idiom everywhere else — produces this recovery hint:\n\n```\nNext steps:\n  - --add is a valid option on: comments, notes, learnings. If you meant one of\n    those, run that command instead.\n```\n\nThe enumeration is presented as exhaustive and is not. Probing every candidate command directly:\n\n| command | accepts `--add` |\n|---|---|\n| comments | yes |\n| notes | yes |\n| learnings | yes |\n| files | **yes — omitted** |\n| docs | **yes — omitted** |\n| test | **yes — omitted** |\n| deps | no (read-only surface) |\n\nSix commands accept `--add`; the hint names three. The three it drops include `pm files --add`, which was the command actually wanted in the reproducing session. The hint did not merely fail to help — it actively asserted a closed set that excluded the right answer, and an agent that trusts structured recovery output (which this repository asks agents to trust) is steered away from the fix.\n\nThe same truncation is observable on an unrelated flag: `pm graph predecessors <id> --depth 8` reports `--depth is a valid option on: context, get, plan`, again capped at three.\n\n## Root cause\n\n`src/cli/commander-usage.ts:429-446`, `findOtherCommandsForFlag`:\n\n```ts\nreturn commands\n  .filter((command) => command !== normalizedCurrent)\n  .slice(0, 3);\n```\n\nTwo independent defects in four lines.\n\n1. **Silent truncation.** `.slice(0, 3)` drops the tail with no `+N more` marker and no `truncated` field in the recovery bundle, so neither a human nor a parser can distinguish \"these three\" from \"three of six\". Every other bounded collection in this CLI carries a truncation signal — `pm list` emits `truncated`, `pm validate` emits `*_truncated`, `pm graph` emits `truncated`. This surface does not.\n\n2. **Arbitrary retention order.** The retained three are whichever the cross-command flag index happened to enumerate first; nothing ranks candidates by proximity to the attempted command, by shared noun family, or by argument-shape compatibility. When the cap does bind, which three survive is an accident of index construction order, so the most probable intent has no better chance of surviving than the least probable one.\n\nThe consumer at `src/cli/error-guidance.ts:1232` renders the list into prose that reads as complete: `\"${optionName} is a valid option on: ${otherCommands.join(\", \")}. If you meant one of those, run that command instead.\"` The phrase \"one of those\" is a closed-world claim the producer cannot honour.\n\n## Why this matters more than its size suggests\n\nRecovery bundles are the output an agent reads at exactly the moment it is already wrong. A wrong-but-confident hint costs a retry cycle plus the tokens of a second failure, and the failure mode is silent: the agent does not learn that the list was partial. This is the specific class of defect that `pm-cha95z` argues about in aggregate (diagnostics are the most-read output with the least discipline) — this item is one concrete, fixable instance with a four-line root cause.\n\n## Deliverable\n\n- The cross-command list is ranked before it is capped, so the cap keeps the best candidates rather than the first ones. Ranking uses signals already available: command-family adjacency (annotation family, query family, lifecycle family), and whether the attempted argument shape is accepted by the candidate.\n- When the cap binds, the rendered prose and the structured recovery bundle both say so, using this repository's existing truncation vocabulary rather than a new one.\n- The structured bundle carries the full candidate list under a bounded ceiling even when the prose is capped, because a parser has no reason to be limited to what fits a sentence.\n- A regression test asserts the reproducing case: `--add` on a command that does not accept it enumerates `files`, `docs`, and `test` among the candidates or declares truncation.\n\n## Relationship to neighbours\n\n- `pm-8nyc` (closed) built this cross-command suggestion feature. This is a defect in the shipped result, not a request for the feature; recorded as `discovered_from` so the escape is attributable.\n- `pm-rtn5h6` requires every escaped defect to land a gate that would have caught it. The gate here is the assertion that any capped enumeration in a recovery bundle declares its truncation — a rule, not a single case.\n- `pm-gdi7` covers unknown-option errors suggesting valid flags *for the attempted command*. This item is the orthogonal axis: which *other commands* accept the flag. Neither subsumes the other.\n- `pm-cha95z` owns the diagnostic-output budget as a whole; this instance argues that a budget without a truncation contract produces confidently wrong output rather than merely short output."

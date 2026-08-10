@@ -156,20 +156,31 @@ describe("pm cli error guidance context plumbing", () => {
   it("surfaces nearest options and cross-command flag hints for unknown options", () => {
     const envelope = formatCommanderErrorForJson("unknown option '--type'", "test-all", "Task|Issue", 2, {
       unknownOptionSuggestions: ["--tag"],
-      unknownOptionOtherCommands: ["create", "list", "list-all"],
+      unknownOptionOtherCommands: ["create", "list", "list-all", "search"],
+      unknownOptionOtherCommandsTotal: 7,
+      unknownOptionOtherCommandsTruncated: true,
     });
     expect(envelope.code).toBe("unknown_option");
     expect(envelope.next_steps).toEqual(
       expect.arrayContaining([
         "Nearest supported options: --tag",
-        "--type is a valid option on: create, list, list-all. If you meant one of those, run that command instead.",
+        "--type is accepted by create, list, list-all and 4 more command path(s). Inspect those command contracts only if you intended a different operation.",
       ]),
     );
+    expect(envelope.recovery).toMatchObject({
+      candidate_commands: ["create", "list", "list-all", "search"],
+      candidate_commands_total: 7,
+      candidate_commands_truncated: true,
+    });
 
     const guidance = formatCommanderErrorForDisplay("unknown option '--type'", "test-all", "Task|Issue", {
       unknownOptionOtherCommands: ["create", "list", "list-all"],
+      unknownOptionOtherCommandsTotal: 7,
+      unknownOptionOtherCommandsTruncated: true,
     });
-    expect(guidance).toContain("--type is a valid option on: create, list, list-all");
+    expect(guidance).toContain("--type is accepted by create, list, list-all");
+    expect(guidance).not.toContain("run that command instead");
+    expect(guidance).toContain("candidate_commands_truncated: true");
   });
 
   it("applies runtime unknown-command guidance examples for commander errors", () => {

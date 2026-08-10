@@ -28,6 +28,7 @@ import { resolveItemTypesFilePath } from "../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
 import { migrateItemFilesToFormat } from "../core/store/item-format-migration.js";
 import {
   getSettingsPath,
@@ -438,10 +439,12 @@ function normalizeAction(value: string): ConfigAction {
   ) {
     return value;
   }
-  throw new PmCliError(
-    `Invalid config action "${value}". Allowed: get, set, list, export`,
-    EXIT_CODE.USAGE,
-  );
+  throw createUnknownSubcommandError({
+    command_path: "config",
+    token: value.trim() || "<empty>",
+    allowed: ["export", "get", "list", "set"],
+    token_kind: "action",
+  });
 }
 
 function normalizeKey(value: string): ConfigKey {

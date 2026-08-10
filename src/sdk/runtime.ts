@@ -70,6 +70,7 @@ import {
 } from "./workspace-contracts-cache.js";
 import { SDK_ACTION_ALIASES } from "./runtime-action-aliases.js";
 import { createExtensionCommandSdk } from "./extension-command-context.js";
+import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
 import {
   applyContextIntentProjection,
   attachReadOutputContracts,
@@ -172,6 +173,7 @@ import {
   type AcknowledgeUnknownAuthorEventsOptions,
 } from "./author-attribution.js";
 import {
+  PROFILE_SUBCOMMANDS,
   runProfileApply,
   runProfileLint,
   runProfileList,
@@ -291,6 +293,7 @@ import type {
   ProfileSubcommand,
 } from "./profile.js";
 import {
+  SCHEMA_SUBCOMMANDS,
   runSchemaAddField,
   runSchemaAddStatus,
   runSchemaAddType,
@@ -3405,10 +3408,12 @@ function runMcpSchemaAction(
     }
     return runMcpSchemaAddTypeAction(schema);
   }
-  throw new PmCliError(
-    `Unknown pm schema subcommand "${schema.subcommand}". Allowed: add-type, remove-type, add-status, remove-status, add-field, remove-field, rename-type, rename-field, remap-status, list-fields, show-field, apply-preset, list, show, show-status`,
-    64,
-  );
+  throw createUnknownSubcommandError({
+    command_path: "schema",
+    token: schema.subcommand,
+    allowed: SCHEMA_SUBCOMMANDS,
+    exit_code: 64,
+  });
 }
 
 function runMcpProfileAction(
@@ -3438,10 +3443,12 @@ function runMcpProfileAction(
   };
   const handler = getOwnHandler(handlers, normalizedSubcommand);
   if (!handler) {
-    throw new PmCliError(
-      `Unknown pm profile subcommand "${subcommand}". Allowed: list, show, apply, lint`,
-      64,
-    );
+    throw createUnknownSubcommandError({
+      command_path: "profile",
+      token: subcommand,
+      allowed: PROFILE_SUBCOMMANDS,
+      exit_code: 64,
+    });
   }
   return handler();
 }

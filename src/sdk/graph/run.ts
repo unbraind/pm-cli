@@ -18,6 +18,7 @@ import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.j
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { createUnknownSubcommandError } from "../agent/subcommand-recovery.js";
 import { listAllItemMetadataLight } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -647,10 +648,11 @@ export function parseGraphSubcommand(
 ): GraphSubcommand {
   const candidate = raw.trim().toLowerCase();
   if (!(GRAPH_SUBCOMMAND_VALUES as readonly string[]).includes(candidate)) {
-    throw new PmCliError(
-      `Invalid graph subcommand "${raw}". Use one of: ${GRAPH_SUBCOMMAND_VALUES.join(", ")}.`,
-      EXIT_CODE.USAGE,
-    );
+    throw createUnknownSubcommandError({
+      command_path: "graph",
+      token: candidate || "<empty>",
+      allowed: GRAPH_SUBCOMMAND_VALUES,
+    });
   }
   const subcommand = candidate as GraphSubcommand;
   if (ROOTED_SUBCOMMANDS.has(subcommand) && !id?.trim()) {

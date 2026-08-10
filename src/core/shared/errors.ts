@@ -19,6 +19,14 @@ export interface PmCliErrorRecoveryPayload {
   missing_required_fields?: string[];
   /** Value that configures or reports suggested flags for this contract. */
   suggested_flags?: string[];
+  /** Complete allowed value set for a refused positional or enum token. */
+  allowed_values?: string[];
+  /** Ranked command paths that accept an option rejected on the attempted path. */
+  candidate_commands?: string[];
+  /** Complete number of accepting command paths before the recovery ceiling. */
+  candidate_commands_total?: number;
+  /** Whether additional accepting command paths were omitted from this payload. */
+  candidate_commands_truncated?: boolean;
   /** Value that configures or reports suggested retry for this contract. */
   suggested_retry?: string;
   /** Elapsed time in milliseconds for retry after. */
