@@ -1964,13 +1964,16 @@
           "value_name": "item-id"
         },
         {
-          "flag": "--title"
+          "flag": "--title",
+          "value_name": "value"
         },
         {
-          "flag": "--author"
+          "flag": "--author",
+          "value_name": "value"
         },
         {
-          "flag": "--message"
+          "flag": "--message",
+          "value_name": "value"
         },
         {
           "flag": "--allow-duplicate",
@@ -3037,7 +3040,8 @@
           "flag": "--depth"
         },
         {
-          "flag": "--full"
+          "flag": "--full",
+          "value_type": "boolean"
         },
         {
           "flag": "--fields",
