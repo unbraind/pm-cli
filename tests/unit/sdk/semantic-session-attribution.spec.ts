@@ -236,6 +236,22 @@ describe("semantic session attribution", () => {
       getSessionStatePath(pmRoot),
       JSON.stringify({
         semantic_attribution: {
+          [semanticAttributionKey(principal)]: null,
+        },
+      }),
+      "utf8",
+    );
+    expect(
+      readAgentSemanticAttributionSync({
+        cwd: workspace,
+        env: {},
+        key: semanticAttributionKey(principal),
+      }),
+    ).toBeUndefined();
+    await writeFile(
+      getSessionStatePath(pmRoot),
+      JSON.stringify({
+        semantic_attribution: {
           [semanticAttributionKey(principal)]: {
             role: "implementer",
             topic: 42,
