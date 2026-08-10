@@ -1292,9 +1292,9 @@ export const ITEM_COMPLETE_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for copy flag contracts, shared by SDK and presentation-layer consumers. */
 export const COPY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
-  { flag: "--title" },
-  { flag: "--author" },
-  { flag: "--message" },
+  { flag: "--title", value_name: "value" },
+  { flag: "--author", value_name: "value" },
+  { flag: "--message", value_name: "value" },
   { flag: "--allow-duplicate", value_type: "boolean" },
 ];
 
@@ -1585,7 +1585,7 @@ export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--for", value_name: "intent" },
   { flag: "--token-budget", aliases: ["--token_budget"] },
   { flag: "--depth" },
-  { flag: "--full" },
+  { flag: "--full", value_type: "boolean" },
   { flag: "--fields", list: true },
   { flag: "--at" },
   { flag: "--tree" },

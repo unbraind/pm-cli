@@ -59,10 +59,10 @@ export function rankCommandPaths(
   return commandPaths
     .map((path) => ({ path, score: scoreCommandPathMatch(path, queryToken) }))
     .filter((entry) => Number.isFinite(entry.score))
-    .sort((left, right) =>
-      left.score !== right.score
-        ? left.score - right.score
-        : left.path.localeCompare(right.path),
-    )
+    .sort((left, right) => {
+      if (left.score !== right.score) return left.score - right.score;
+      if (left.path === right.path) return 0;
+      return left.path < right.path ? -1 : 1;
+    })
     .map((entry) => entry.path);
 }

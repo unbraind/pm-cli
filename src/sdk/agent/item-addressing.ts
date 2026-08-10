@@ -53,6 +53,17 @@ const GLOBAL_VALUE_FLAGS = new Set([
   "--pm-path",
 ]);
 
+const TRAILING_POSITIONAL_COUNTS = new Map([
+  ["append", 1],
+  ["close", 1],
+  ["close-task", 1],
+  ["comments", 1],
+  ["item complete", 1],
+  ["learnings", 1],
+  ["notes", 1],
+  ["restore", 1],
+]);
+
 /** Result of normalizing one item-addressed invocation. */
 export interface ItemAddressInvocationResult {
   /** Canonical argv with an `--id` value moved into positional-id location. */
@@ -147,25 +158,45 @@ function collectNamedItemIds(argv: string[]): NamedItemId[] {
   return namedIds;
 }
 
-function hasPositionalItemIdBeforeNamed(
+function consumesSeparateFlagValue(
+  token: string,
+  nextToken: string | undefined,
+  contractsByFlag: ReadonlyMap<string, CliFlagContract>,
+): boolean {
+  const separatorIndex = token.indexOf("=");
+  if (separatorIndex >= 0 || nextToken === undefined || nextToken.startsWith("-")) {
+    return false;
+  }
+  const contract = contractsByFlag.get(token);
+  return contract !== undefined && contract.value_type !== "boolean";
+}
+
+function hasPositionalItemId(
   argv: string[],
   addressIndex: number,
+  commandPath: string,
   namedIndex: number,
   contractsByFlag: ReadonlyMap<string, CliFlagContract>,
 ): boolean {
-  for (let index = addressIndex; index < namedIndex; index += 1) {
+  let trailingPositionals = 0;
+  for (let index = addressIndex; index < argv.length; index += 1) {
     const token = argv[index];
-    if (!token.startsWith("-")) return true;
-    const separatorIndex = token.indexOf("=");
-    const flag = separatorIndex < 0 ? token : token.slice(0, separatorIndex);
-    if (
-      separatorIndex < 0 &&
-      contractsByFlag.get(flag)?.value_name !== undefined
-    ) {
+    if (token === "--") break;
+    if (token === "--id") {
+      index += 1;
+      continue;
+    }
+    if (token.startsWith("--id=")) continue;
+    if (!token.startsWith("-")) {
+      if (index < namedIndex) return true;
+      trailingPositionals += 1;
+      continue;
+    }
+    if (consumesSeparateFlagValue(token, argv[index + 1], contractsByFlag)) {
       index += 1;
     }
   }
-  return false;
+  return trailingPositionals > (TRAILING_POSITIONAL_COUNTS.get(commandPath) ?? 0);
 }
 
 /**
@@ -203,9 +234,10 @@ export function normalizeItemAddressInvocation(
   }
   if (
     namedIds.length > 1 ||
-    hasPositionalItemIdBeforeNamed(
+    hasPositionalItemId(
       argv,
       addressIndex,
+      commandPath,
       named.index,
       contractsByFlag,
     )

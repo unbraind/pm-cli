@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: detection,gates,meta,replication,self-improvement
 created_at: "2026-08-09T06:03:57.529Z"
-updated_at: "2026-08-09T10:00:19.288Z"
-closed_at: "2026-08-09T08:05:41.855Z"
-completed_at: "2026-08-09T08:05:41.855Z"
+updated_at: "2026-08-10T00:53:07.875Z"
+closed_at: "2026-08-10T00:53:07.300Z"
+completed_at: "2026-08-10T00:53:07.300Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: A detector reports the count of replicated rule bodies across src independent of what surface-replication-sets.json declares; The ratio of declared-and-covered replication to detected replication is emitted as a number; That ratio carries a floor so coverage cannot silently regress as the tree grows
@@ -28,22 +28,25 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-z0cfor,discovered_from,"2026-08-09T06:06:50.362Z","harness:claude-code","cli:update:dep",detected
   pm-z71aoy,related,"2026-08-09T06:06:50.362Z","harness:claude-code","cli:update:dep",detected
   pm-ulxdqp,verifies,"2026-08-09T07:29:50.034Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-09T07:29:50.712Z","harness:codex","Implementation correction: the declaration now includes detector policy with a five-cluster denominator floor; the focused negative control covers invalid policies, coverage regression, cluster-floor regression, and public entrypoint behavior without duplicate full-tree scans."
   "2026-08-09T08:05:21.234Z","harness:codex","Final evidence: focused detector suite passes with 100/100/100/100 coverage for the gate module; repository detector reports exactly five clusters at the committed floor; static quality and the full repository coverage gate pass."
   "2026-08-09T09:24:00.299Z","harness:codex","PR #947 review hardening: AST cluster keys now use the TypeScript printer with comments removed; detected coverage requires all occurrence paths to coexist in one declaration set; split-set and comment-only negative controls prevent false coverage; and the two intentional DatabaseSync seam clusters are declared, raising the enforced measured floor from 0 to 0.4 (2 of 5 current clusters)."
   "2026-08-09T09:54:50.597Z","harness:codex","Delivery review: https://github.com/unbraind/pm-cli/pull/947 carries this item's implementation, tests, documentation, generated contracts, and hosted review corrections on branch feat/sdk-context-read-remediation-replication."
   "2026-08-09T10:00:19.288Z","harness:codex","Final exact-head verification: static quality passes with five detected AST clusters, two clusters covered by one declared DatabaseSync set, measured ratio 0.4 at the enforced 0.4 floor, and no replication violations."
+  "2026-08-10T00:52:53.043Z","harness:codex","Review evidence: the canonical gate test link now names the default waiver assertions for both main([--list-waivers]) and main([--declaration,--list-waivers]); the focused linked test passed under the claimed lifecycle."
+  "2026-08-10T00:53:06.765Z","harness:codex","Correction: pm files --add correctly no-opped on the existing path, so the prior comment overstated the note update. Under this active claim the old link was removed and re-added through pm with the waiver-specific canonical note; no history was edited."
 learnings[1]{created_at,author,text}:
   "2026-08-09T06:08:48.290Z","harness:claude-code","Ask a gate what its denominator is, and who computes it. A gate whose input is a hand-written list of instances reports a pass rate of one by construction: it examines what someone enumerated, agrees with itself, and says nothing about the population it was built to police. The verdict is honest and the inference drawn from it is not.\n\nThe tell is that widening coverage and finding a defect are indistinguishable from outside — both show up as the list getting longer — so there is no signal that separates 'we are covering more' from 'there was more than we thought'. Three instruments in this repo had the shape simultaneously on 2026-08-09 (surface-replication-sets.json, smoke-external-packages.mjs, sdk/public-surface.json vs src/sdk/index.ts), which suggests the shape is a default a quality mechanism falls into rather than an oversight in any one of them.\n\nPractical form: before writing a gate, name the set it claims to speak for and check whether that set is computable from the tree. If it is, compute it and emit examined-over-total. If it is not, the gate is a regression test and should be described as one, never cited as coverage."
 files[4]{path,scope,note}:
   scripts/release/static-quality-gate.mts,project,Consumes the declared sets; passes honestly over whatever was enumerated
   scripts/release/surface-replication-gate.mjs,project,AST denominator detector and floor enforcement
   scripts/release/surface-replication-sets.json,project,Configures AST denominator floors and keeps intentional surface replication declarations queryable
-  tests/unit/scripts/release/surface-replication-gate.spec.ts,project,Detector negative control
+  tests/unit/scripts/release/surface-replication-gate.spec.ts,project,Detector negative controls plus default waiver listings for implicit and explicit declaration paths
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/surface-replication-gate.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mslicc6q-vad229,test,passed,"2026-08-09T07:55:01.089Z","2026-08-09T07:55:13.970Z","2026-08-09T07:55:13.970Z",1,0,0
-close_reason: "Added an AST-derived replication denominator, coverage metrics, and non-regressing floors"
+  test-local-msmip1ae-k5v8lv,test,passed,"2026-08-10T00:52:41.598Z","2026-08-10T00:52:52.550Z","2026-08-10T00:52:52.550Z",1,0,0
+close_reason: Waiver-specific canonical file note replaced through pm under claim; prior linked test pass remains current evidence.
 body: ""

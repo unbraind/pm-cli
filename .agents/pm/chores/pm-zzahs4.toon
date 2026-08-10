@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[6]: "area:docs","area:privacy","area:provenance",changelog-exclude,"pr:957",review-followup
 created_at: "2026-08-09T23:11:47.579Z"
-updated_at: "2026-08-09T23:39:39.422Z"
-closed_at: "2026-08-09T23:39:38.888Z"
-completed_at: "2026-08-09T23:39:38.888Z"
+updated_at: "2026-08-10T00:52:30.859Z"
+closed_at: "2026-08-10T00:52:30.407Z"
+completed_at: "2026-08-10T00:52:30.407Z"
 author: "harness:codex"
 estimated_minutes: 30
 acceptance_criteria: pm-lu6sca has a concise user-visible capability title; pm-changelog generation is unchanged on check and retains detailed diagnosis only in the linked record
@@ -27,11 +27,12 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-lu6sca,discovered_from,"2026-08-09T23:11:47.579Z","harness:codex","cli:create:dep",detected
   pm-szn67i,discovered_from,"2026-08-09T23:11:47.579Z","harness:codex","cli:create:dep",detected
   pm-u9d0,verifies,"2026-08-09T23:11:47.579Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-09T23:11:47.579Z","harness:codex","Duplicate check: searched all statuses for public changelog, private harness, resolver/probe, and user-visible provenance title. pm-lu6sca owns the shipped capability, but no item owns this review-driven public-title correction."
   "2026-08-09T23:12:58.577Z","harness:codex","Evidence: pm-lu6sca was updated only through pm, preserving append-only history; pm-changelog 2026.8.7 regenerated the public entry from the user-visible title and check mode reports unchanged."
   "2026-08-09T23:13:43.863Z","harness:codex","Verification correction: the first linked pnpm changelog check correctly failed because linked tests run against an isolated zero-item PM schema and therefore cannot reproduce the real 2,403-item generated file. Replaced it with a sandbox-safe positive/negative content assertion; that linked test passes. The authoritative real-tracker changelog check is run directly after regeneration."
   "2026-08-09T23:39:38.066Z","harness:codex","Exact-head evidence before re-closure: pm-changelog 2026.8.7 generated the real 2,405-item tracker with --exclude-tag changelog-exclude, removed both internal review/process entries, retained the user-facing provenance and linked-test capability entries, and pnpm changelog:pm:check returned unchanged. The original isolated linked-test failure remains append-only evidence and was not rewritten."
+  "2026-08-10T00:52:26.913Z","harness:codex","Governance remediation: after normal reopen and claim, pm-changelog 2026.8.7 verified the real tracker unchanged and the linked public-capability assertion remains the canonical sandbox-safe test. The earlier post-release test metadata operations remain immutable history; this claimed verification records the corrected lifecycle without rewriting them."
 files[3]{path,scope,note}:
   .agents/pm/features/pm-lu6sca.toon,project,User-visible shipped capability title
   .agents/pm/history/pm-lu6sca.jsonl,project,Append-only title correction history
@@ -41,5 +42,5 @@ tests[1]{command,scope,timeout_seconds,note}:
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msmf4jnd-jyxkml,test,failed,"2026-08-09T23:12:46.413Z","2026-08-09T23:12:57.721Z","2026-08-09T23:12:57.721Z",0,1,0
   test-local-msmf5ixa-mj8k9a,test,passed,"2026-08-09T23:13:41.405Z","2026-08-09T23:13:43.438Z","2026-08-09T23:13:43.438Z",1,0,0
-close_reason: Re-closed after authoritative generator evidence established the public changelog exclusion policy before closure.
+close_reason: Re-verified linked and real-tracker changelog evidence under an active claim; append-only history preserves the original chronology.
 body: ""

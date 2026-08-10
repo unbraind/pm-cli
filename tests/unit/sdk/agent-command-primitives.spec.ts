@@ -45,6 +45,43 @@ describe("agent command SDK primitives", () => {
       ]).conflict,
     ).toBe(true);
     expect(
+      normalizeItemAddressInvocation([
+        "get",
+        "--id",
+        "pm-a1",
+        "--format",
+        "toon",
+      ]),
+    ).toEqual({
+      argv: ["get", "pm-a1", "--format", "toon"],
+      changed: true,
+      conflict: false,
+      itemId: "pm-a1",
+    });
+    expect(
+      normalizeItemAddressInvocation([
+        "get",
+        "--id",
+        "pm-a2",
+        "--full",
+        "pm-a1",
+      ]).conflict,
+    ).toBe(true);
+    expect(
+      normalizeItemAddressInvocation([
+        "copy",
+        "--title",
+        "Copy title",
+        "--id",
+        "pm-a1",
+      ]),
+    ).toEqual({
+      argv: ["copy", "pm-a1", "--title", "Copy title"],
+      changed: true,
+      conflict: false,
+      itemId: "pm-a1",
+    });
+    expect(
       normalizeItemAddressInvocation(["get", "--id", "pm-a1", "--id=pm-a2"])
         .conflict,
     ).toBe(true);
@@ -80,6 +117,14 @@ describe("agent command SDK primitives", () => {
       argv: ["get", "--", "--id", "pm-a1"],
       changed: false,
       conflict: false,
+    });
+    expect(
+      normalizeItemAddressInvocation(["get", "--id", "pm-a1", "--", "operand"]),
+    ).toEqual({
+      argv: ["get", "pm-a1", "--", "operand"],
+      changed: true,
+      conflict: false,
+      itemId: "pm-a1",
     });
     expect(
       normalizeItemAddressInvocation(["--pm-path", "/tmp/example"]),
@@ -257,5 +302,13 @@ describe("agent command SDK primitives", () => {
         )[0],
       ).toBe(expected);
     }
+    expect(rankCommandPaths(["å-command", "z-command"], "command")).toEqual([
+      "z-command",
+      "å-command",
+    ]);
+    expect(rankCommandPaths(["list", "list"], "list")).toEqual([
+      "list",
+      "list",
+    ]);
   });
 });

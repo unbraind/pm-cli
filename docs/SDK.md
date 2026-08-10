@@ -3268,9 +3268,10 @@ For SDK and automation consumers, the key runtime change is the optional `recove
 
 Treat `recovery.suggested_retry` as the first-choice deterministic replay
 command when present. Generic missing-option retries preserve every original
-argv token, append only absent real flags, and derive placeholders from the
-declared flag domain (`<off|warn|strict>` for enum values and no placeholder for
-booleans). It is emitted only from structured recovery metadata or flags
+argv token, insert only absent real flags before the first `--` argument
+terminator while leaving that terminator in place, and derive placeholders from
+the declared flag domain (`<off|warn|strict>` for enum values and no placeholder
+for booleans). It is emitted only from structured recovery metadata or flags
 declared on the invoked command; prose that merely mentions another flag is not
 interpreted as a missing input. Strict close validation reports missing
 resolution fields first and suggests a targeted `pm update` before retrying the

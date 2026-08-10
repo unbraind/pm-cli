@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- The replication gate's input is a hand-written list of known replications, so it can regress what was found and never discover what was not ([pm-b84irw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b84irw.toon))
 - Review hardening: terminator-safe recovery, exact nested aliases, and tracker-scoped close retries ([pm-szn67i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-szn67i.toon))
 - GH-490: unknown-command suggester ranks substring hits over synonyms/edit distance — pm log suggests 'extension catalog' ([pm-g543](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g543.toon))
 - GH-515: pm test --add reorders linked tests — --only-last can execute a non-newest command ([pm-x2vx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x2vx.toon))
@@ -23,7 +24,6 @@
 - GH-948: version-skewed pm invocations silently rewrite the tracked merge fence during unrelated commands ([pm-l56d0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l56d0o.toon))
 - A measurement ratchet bound stops enforcing the moment its owner reaches a terminal status, so every guarded population goes unbounded exactly when its fix ships ([pm-5z9plz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5z9plz.toon))
 - The docs tree grows one file per shipped contract, so 39 of 51 documents are stubs and the SDK's story is split across twelve files ([pm-9hv1o7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9hv1o7.toon))
-- The replication gate's input is a hand-written list of known replications, so it can regress what was found and never discover what was not ([pm-b84irw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b84irw.toon))
 - The status-token normalization rule is replicated at five sites and the replication gate covers none of them ([pm-ulxdqp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ulxdqp.toon))
 - The two slowest governance commands load every item body while twenty other SDK modules use the light read path ([pm-sr3xzg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sr3xzg.toon))
 - GH-946: context signal-store staleness warning has no executable remediation contract ([pm-wn1jy1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wn1jy1.toon))

@@ -6,31 +6,40 @@ status: closed
 priority: 1
 tags[7]: "area:cli","area:release","area:sdk",changelog-exclude,pr-957,regression,review-hardening
 created_at: "2026-08-09T23:34:03.288Z"
-updated_at: "2026-08-10T00:09:11.056Z"
-closed_at: "2026-08-10T00:08:51.080Z"
-completed_at: "2026-08-10T00:08:51.080Z"
+updated_at: "2026-08-10T01:12:00.693Z"
+closed_at: "2026-08-10T01:12:00.199Z"
+completed_at: "2026-08-10T01:12:00.199Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Create-mode help policy ignores operands after -- while preserving both supported option forms before it; Item addressing rejects duplicate named IDs and positional-plus-named IDs regardless of intervening flags; Generated public changelog contains user-facing capability changes only and pm-changelog verification passes; Focused, full, coverage, static, and manual acceptance gates pass before closure"
 parent: pm-usfg
-resolution: Made create-mode help parsing terminator-aware; made item-address normalization consume the declared flag schema and reject multiple or mixed IDs; established canonical changelog exclusion for internal PM records.
+resolution: "Made create-mode help parsing terminator-aware; made item-address normalization consume declared flag arity across the complete pre-terminator stream, reject every mixed-ID ambiguity, preserve valid trailing operands, and copy value metadata; made command suggestion ties locale-independent; documented recovery insertion before --; retained canonical changelog exclusion and waiver-specific PM evidence."
 expected_result: "Every item-addressed invocation resolves one unambiguous ID through declared flag arity, create-mode policy stops at --, and generated public notes exclude internal review records."
-actual_result: "Focused 9/9, full suite, and exact 50,815/37,177/10,437/49,165 coverage counts pass; strict quality gates and isolated manual acceptance pass."
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "Focused SDK tests pass; full repository suite passes 466 files and 7,111 tests; exact coverage is 50,834/50,834 statements, 37,194/37,194 branches, 10,438/10,438 functions, and 49,180/49,180 lines; static quality and isolated manual acceptance remain green."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-szn67i,discovered_from,"2026-08-09T23:34:48.092Z","harness:codex","cli:update:dep",detected
   pm-xg60q3,related,"2026-08-09T23:34:48.092Z","harness:codex","cli:update:dep",detected
   pm-zzahs4,discovered_from,"2026-08-09T23:34:48.092Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+  pm-b84irw,discovered_from,"2026-08-10T00:45:54.946Z","harness:codex","cli:update:dep",detected
+  pm-mkinft,related,"2026-08-10T00:45:54.946Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
   "2026-08-09T23:34:03.288Z","harness:codex","Duplicate governance identified pm-xg60q3,but that closed item is only the prior coverage-shard ordering repair. This item is intentionally distinct because it tracks four new exact-head findings in different parser/changelog surfaces; all-status search found no canonical item for this finding set."
   "2026-08-10T00:08:49.700Z","harness:codex","Final evidence: focused parser/acceptance tests pass 9/9; full repository suite passes; exact coverage passes at statements 50,815/50,815, branches 37,177/37,177, functions 10,437/10,437, lines 49,165/49,165. ESLint has zero warnings, jscpd has zero clones, and quality:static passes all docstring, SDK boundary, replication, token/context, tracker-ratchet, import-cost, and transport-floor gates. In a fresh isolated tracker, normal --id reads succeeded, flag-interleaved positional-plus-named IDs and duplicate named IDs failed before execution, an operand --create-mode strict stayed progressive, and a real pre-terminator strict option stayed strict. pm-changelog 2026.8.7 check is unchanged with both internal entries excluded and user-facing capability entries retained."
-learnings[2]{created_at,author,text}:
+  "2026-08-10T00:45:42.267Z","harness:codex","Review-round duplicate decision: reuse this canonical PR #957 exact-head hardening item because the new findings extend the same item-addressing parser, recovery docs, changelog governance, and gate evidence surfaces. All-status search found no more specific active owner for this combined set; pm-b84irw remains the canonical replication-gate test owner and will receive only its own waiver-specific evidence under a separate claim."
+  "2026-08-10T00:45:55.566Z","harness:codex","Ownership chronology note: pm claim correctly refused the terminal item without the prohibited --force override, so the public lifecycle required reopening before a normal claim. The item is now claimed before any source, docs, tests, or further metadata implementation changes; the recovery remains append-only and no override was used."
+  "2026-08-10T01:11:58.678Z","harness:codex","Second-round exact-head evidence: all five CodeRabbit findings are implemented. Recovery documentation now specifies insertion before the first --; item addressing scans the complete pre-terminator stream, consumes contract-declared option values, preserves legitimate command operands, rejects named-first mixed IDs, and has explicit copy value metadata; suggestion ties use code-point ordering; historical post-release PM chronology was remediated append-only under normal claims; the replication waiver test is linked with waiver-specific evidence. Focused SDK tests pass, pnpm typecheck passes, pnpm lint passes with zero ESLint warnings and zero jscpd clones, pnpm quality:static passes, and the full sandboxed coverage run passes 466 files / 7,111 tests at exact 100/100/100/100 (50,834 statements, 37,194 branches, 10,438 functions, 49,180 lines)."
+learnings[4]{created_at,author,text}:
   "2026-08-10T00:08:50.099Z","harness:codex",Argument normalization must parse option arity from the same command flag contracts as Commander; fixed-position scans cannot distinguish option values from item operands once flags are interleaved.
   "2026-08-10T00:08:50.548Z","harness:codex","Public changelog exclusion is an invocation policy as well as item metadata: the generator's --exclude-tag contract must be present in both generate and check scripts."
-files[6]{path,scope,note}:
+  "2026-08-10T01:11:59.111Z","harness:codex","Option-aware item addressing is a small grammar, not a positional splice: scan the entire pre-terminator stream, consume values from the public flag contract, and model legitimate trailing operands per command before deciding that a second item ID exists."
+  "2026-08-10T01:11:59.583Z","harness:codex",Deterministic agent output must not depend on host locale; score ties need explicit code-point comparison and an equality branch for duplicate command paths.
+files[8]{path,scope,note}:
   CHANGELOG.md,project,Generated public changelog exclusion verification
   package.json,project,Canonical changelog exclusion policy for internal PM items
   src/cli/help-json-payload.ts,project,Terminator-safe create-mode help parsing
+  src/sdk/agent/command-suggestions.ts,project,Locale-independent deterministic suggestion tie-break
   src/sdk/agent/item-addressing.ts,project,Schema-aware complete item ID conflict parsing
+  src/sdk/cli-contracts/flag-contracts.ts,project,Explicit copy option arity for item-address parsing
   tests/integration/sdk-agent-command-contracts.integration.spec.ts,project,Argument terminator help regression
   tests/unit/sdk/agent-command-primitives.spec.ts,project,Duplicate and flag-interleaved ID regressions
 tests[4]{command,scope,timeout_seconds,note}:
@@ -44,5 +53,7 @@ test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msmgdr8u-ba53er,test,failed,"2026-08-09T23:43:45.747Z","2026-08-09T23:48:07.086Z","2026-08-09T23:48:07.086Z",0,1,0
   test-local-msmgmjcz-9fn7xl,test,failed,"2026-08-09T23:50:38.827Z","2026-08-09T23:54:56.771Z","2026-08-09T23:54:56.771Z",0,1,0
   test-local-msmgt9em-hab3bo,test,passed,"2026-08-09T23:55:56.248Z","2026-08-10T00:00:10.462Z","2026-08-10T00:00:10.462Z",1,0,0
-close_reason: "All exact-head findings resolved with schema-aware parsers, public changelog policy, full coverage, strict gates, and manual acceptance evidence."
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Recovery insertion contract before the argument terminator
+close_reason: "Resolved both exact-head review rounds with complete command grammar, deterministic recovery/suggestions, public changelog integrity, honest append-only PM remediation, isolated acceptance, strict static gates, 7,111 passing tests, and exact 100/100/100/100 coverage."
 body: ""
