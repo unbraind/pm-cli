@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,dependencies,dogfood,validation
 created_at: "2026-07-10T11:10:11.237Z"
-updated_at: "2026-07-26T22:20:00.755Z"
+updated_at: "2026-08-10T12:02:53.846Z"
 closed_at: "2026-07-10T13:18:58.128Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -17,29 +17,65 @@ release: v2026.7.11
 severity: medium
 environment: "@unbrained/pm-cli 2026.7.10, live tracker"
 repro_steps: "pm create issue t --ac a --dep related:pm-x26a --json; pm deps <new-id> shows dependency id pm-related:pm-x26a with missing: true"
-dependencies[11]{id,kind,created_at,author,source_kind}:
-  pm-b84u,related,"2026-07-26T17:30:55.609Z",null,null
-  pm-dlfq,related,"2026-07-26T17:30:55.609Z",null,null
-  pm-ec8s,related,"2026-07-26T17:30:55.609Z",null,null
-  pm-ghf1,related,"2026-07-26T17:30:55.609Z",null,null
-  pm-kfq5,related,"2026-07-26T17:30:55.609Z",null,null
-  pm-kvev,related,"2026-07-26T17:30:55.609Z",null,null
-  pm-l6rz,related,"2026-07-26T17:30:55.609Z",null,null
-  pm-orrl,related,"2026-07-26T17:30:55.609Z",null,null
-  pm-q6gx,related,"2026-07-26T17:30:55.609Z",null,null
-  pm-x26a,related,"2026-07-26T17:30:55.609Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:20:00.441Z",null,null
+dependencies[12]:
+  - id: pm-b84u
+    kind: related
+    created_at: "2026-07-26T17:30:55.609Z"
+  - id: pm-dlfq
+    kind: related
+    created_at: "2026-07-26T17:30:55.609Z"
+  - id: pm-ec8s
+    kind: related
+    created_at: "2026-07-26T17:30:55.609Z"
+  - id: pm-ghf1
+    kind: related
+    created_at: "2026-07-26T17:30:55.609Z"
+  - id: pm-kfq5
+    kind: related
+    created_at: "2026-07-26T17:30:55.609Z"
+  - id: pm-kvev
+    kind: related
+    created_at: "2026-07-26T17:30:55.609Z"
+  - id: pm-l6rz
+    kind: related
+    created_at: "2026-07-26T17:30:55.609Z"
+  - id: pm-orrl
+    kind: related
+    created_at: "2026-07-26T17:30:55.609Z"
+  - id: pm-q6gx
+    kind: related
+    created_at: "2026-07-26T17:30:55.609Z"
+  - id: pm-x26a
+    kind: related
+    created_at: "2026-07-26T17:30:55.609Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:20:00.441Z"
+  - id: pm-96h7
+    kind: implements
+    created_at: "2026-08-10T12:02:53.715Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-07-10T12:21:47.729Z",codex-root,"Implementation start: selected after live all-status duplicate/lineage review and full metadata inspection. This item is actively implemented in the broad schema-driven input fidelity bundle with pm-kfq5, pm-l6rz, pm-zazb, pm-b84u, and pm-ghf1; shared verification will include focused tests, 100/100/100/100 coverage, strict quality gates, and installed-package temporary-project proof."
   "2026-07-10T13:18:57.430Z",codex-root,"Implementation evidence: broad schema-driven input fidelity bundle completed. Focused suite passed 445 tests; final repository coverage passed 270 files / 5514 tests at Statements 100%, Branches 100%, Functions 100%, Lines 100%; pnpm typecheck, lint (ESLint + zero jscpd clones + strict static/docstring/import-boundary/token gates), docs/skills, contracts snapshot, audit, secret scan, health, and history-drift checks passed. Installed-package proof from packed tarball in /tmp/pm-proof.rzTX77 verified repeated --ac stores 'first; second', malformed related:pm-abcd fails before graph mutation, and public SDK RESERVED_ITEM_FIELD_NAMES/lintExtensionBlueprint rejects severity collisions. Sentry telemetry is healthy (0.28% finish error rate); two external pm-starter package handled errors PM-CLI-1Y/1Z remain visible and are not caused by this change set."
 notes[1]{created_at,author,text}:
   "2026-07-10T11:46:41.973Z",maintainer-agent,"Additional instance found 2026-07-10: transitive graph under pm-ec8s carries a pre-existing dangling related-edge to nonexistent pm-0wm0 (surfaced via pm deps missing_count) - the write-time existence check in this item's AC would have caught it at the source."
-files[5]{path,scope,note}:
-  src/cli/commands/create.ts,project,Validate create dependency seeds before id normalization
-  "src/cli/commands/create.ts:dependency flag parsing entry",project,null
-  src/cli/commands/update.ts,project,Validate update dependency additions before id normalization
-  "src/cli/commands/update.ts:dependency flag parsing entry",project,null
-  src/sdk/dependency-flag-validation.ts,project,Shared malformed dependency shorthand guard for create/update
+files[5]:
+  - path: src/cli/commands/create.ts
+    scope: project
+    note: Validate create dependency seeds before id normalization
+  - path: "src/cli/commands/create.ts:dependency flag parsing entry"
+    scope: project
+  - path: src/cli/commands/update.ts
+    scope: project
+    note: Validate update dependency additions before id normalization
+  - path: "src/cli/commands/update.ts:dependency flag parsing entry"
+    scope: project
+  - path: src/sdk/dependency-flag-validation.ts
+    scope: project
+    note: Shared malformed dependency shorthand guard for create/update
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,240
 docs[2]{path,scope,note}:

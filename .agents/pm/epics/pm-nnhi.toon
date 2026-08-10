@@ -6,18 +6,34 @@ status: closed
 priority: 1
 tags[3]: audit,code-quality,pm-cli
 created_at: "2026-05-01T23:46:35.809Z"
-updated_at: "2026-07-26T22:17:37.516Z"
+updated_at: "2026-08-10T11:52:45.424Z"
 author: audit-agent
 release: v2026.5.2
 resolution: Full audit complete. Build fixed. Zero type errors. Zero any usage. 1088 tests passing. Security scanner enhanced. Telemetry stack documented. Sentry analyzed. Performance baselined.
 expected_result: "All pm CLI systems audited, working, and documented"
 actual_result: All systems verified. 3 improvement items created for future work.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-6c3h,related,"2026-07-26T17:21:21.510Z",null,null
-  pm-f6wr,related,"2026-07-26T17:21:21.510Z",null,null
-  pm-p0p1,related,"2026-07-26T17:21:21.510Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:37.252Z",null,null
-  pm-rrjv,discovered_from,"2026-07-26T22:17:37.252Z",null,null
+dependencies[6]:
+  - id: pm-6c3h
+    kind: related
+    created_at: "2026-07-26T17:21:21.510Z"
+  - id: pm-f6wr
+    kind: related
+    created_at: "2026-07-26T17:21:21.510Z"
+  - id: pm-p0p1
+    kind: related
+    created_at: "2026-07-26T17:21:21.510Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:37.252Z"
+  - id: pm-rrjv
+    kind: discovered_from
+    created_at: "2026-07-26T22:17:37.252Z"
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:52:45.318Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 learnings[3]{created_at,author,text}:
   "2026-05-01T23:47:30.179Z",audit-agent,"Build fix: Root-level barrel re-exports (src/constants.ts etc) were deleted but tests still imported from them. Restored 15 barrel files as single-line re-exports to core/ modules. This preserves backward compatibility for existing test imports while keeping the core/ module decomposition clean."
   "2026-05-01T23:47:44.257Z",audit-agent,"Sentry data is clean: 8 issues total, all PmCliError (validation), zero unhandled exceptions. Error scrubbing verified working -- no PII in events. The error guidance system provides structured remediation that is highly agent-friendly."

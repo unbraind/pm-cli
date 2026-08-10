@@ -6,18 +6,32 @@ status: closed
 priority: 3
 tags[3]: dx,extensions,sdk
 created_at: "2026-05-30T21:44:37.379Z"
-updated_at: "2026-07-26T22:18:27.220Z"
+updated_at: "2026-08-10T12:03:24.665Z"
 author: maintainer-agent
 acceptance_criteria: SDK exports a package-safe error primitive; manifest pm_min_version gate; canonical replicable example package; docs reconciled
 release: v2026.6.1
 resolution: "Added package-safe expected error helpers, SDK testing helper, manifest compatibility gates, and package authoring docs."
 expected_result: "Package authors get stable SDK primitives, compatibility failures happen before deep runtime failures, and docs avoid private internals."
 actual_result: "SDK exports and docs are updated; focused SDK/loader/package tests, full coverage, static quality, and release gates passed."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-hq28,related,"2026-07-26T17:22:29.237Z",null,null
-  pm-p4mw,related,"2026-07-26T17:22:29.237Z",null,null
-  pm-rnpb,related,"2026-07-26T17:22:29.237Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:18:26.921Z",null,null
+dependencies[5]:
+  - id: pm-hq28
+    kind: related
+    created_at: "2026-07-26T17:22:29.237Z"
+  - id: pm-p4mw
+    kind: related
+    created_at: "2026-07-26T17:22:29.237Z"
+  - id: pm-rnpb
+    kind: related
+    created_at: "2026-07-26T17:22:29.237Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:18:26.921Z"
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-08-10T12:03:24.505Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-05-31T05:42:10.700Z",claude-code-agent,"SDK ergonomics audit 2026-05-31 (deferred from this perf-focused PR; concrete plan for a follow-up): (1) Version negotiation gap — ExtensionManifest (core/extensions/extension-types.ts) has version + optional manifest_version but NO pm_min_version/engines gate; loader.ts loads + activates without any CLI-version compatibility check, so a package using newer SDK features silently loads in an old CLI and fails deep in a handler. Add pm_min_version?:string to the manifest and check it in the loader before activation with a clear diagnostic. (2) PM_CLI_PACKAGE_ROOT is undocumented — set in cli/main.ts, guide.ts, mcp/server.ts and consumed by bundled package runtime-loaders (packages/pm-todos/.../runtime-loader.ts), but absent from docs/SDK.md and docs/EXTENSIONS.md; document it as the first-party mechanism for bundled packages to locate dist assets, and note third-party npm packages must not rely on it. (3) Package-safe error base — packages hand-redefine `class PmCliError extends Error { name='PmCliError' }` to match the Sentry isExpectedCliErrorEvent filter; this is actually the CORRECT pattern (packages cannot value-import from src/sdk once installed), but it is tribal knowledge — document it in the extension authoring guide. None of these block agents today; tracking for a dedicated SDK PR."
   "2026-05-31T08:03:29.844Z",codex-gpt5-20260531,"Evidence: implemented focused SDK/package authoring ergonomics changes: createPmCliExpectedError/isPmCliExpectedError public runtime exports, sdk/testing assertRegisteredCommandContract subpath, pm_min_version + engines manifest typing and discovery gate, and SDK/EXTENSIONS docs for stable public subpaths, first-party-only PM_CLI_PACKAGE_ROOT, and registerService(\"output_format\") naming. Linked test evidence: pm test pm-oxyo --run --progress passed command PM_PATH=\"$(mktemp -d)/pm\" PM_GLOBAL_PATH=\"$(mktemp -d)/global\" pnpm exec vitest run tests/unit/sdk-index.spec.ts tests/unit/sdk-testing.spec.ts tests/unit/extension-loader.spec.ts tests/unit/package-manifest.spec.ts; 4 files passed, 67 tests passed. Earlier pnpm build/run-tests wrapper was blocked by unrelated vectorization-metadata TypeScript errors before the user reported main integration typecheck passing; no broad build rerun after that status update."

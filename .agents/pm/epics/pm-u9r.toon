@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:core-crud",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:01:10.609Z"
-updated_at: "2026-07-29T04:22:15.270Z"
+updated_at: "2026-08-10T11:52:35.044Z"
 deadline: "2026-02-23T23:01:10.609Z"
 assignee: steve
 author: steve
@@ -41,7 +41,7 @@ fixed_version: archive-2026q2
 component: project-management/milestone-1-core-item-crud-locking
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Milestone 1 - Core Item CRUD + Locking.
-dependencies[4]:
+dependencies[6]:
   - id: pm-2xl
     kind: blocks
     created_at: "2026-02-17T23:01:10.609Z"
@@ -55,6 +55,18 @@ dependencies[4]:
   - id: pm-zetb
     kind: implements
     created_at: "2026-07-26T22:16:37.559Z"
+  - id: pm-w7ccmv
+    kind: implements
+    created_at: "2026-08-10T11:52:34.927Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-zetb
+    kind: supersedes
+    created_at: "2026-08-10T11:52:34.927Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[4]{created_at,author,text}:
   "2026-02-17T23:01:10.609Z",steve,Milestone 1 builds on milestone 0 foundations for core mutation workflows.
   "2026-03-04T13:54:51.333Z",maintainer-agent,"Planned changeset: verify Milestone 1 completion against PRD core CRUD+locking checklist and current CLI command surface, then run mandatory pm test + pm test-all sweeps and close with evidence if all checks pass."

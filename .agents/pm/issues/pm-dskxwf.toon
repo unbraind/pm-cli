@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: artifact-smoke,ci,contracts,runtime-compatibility
 created_at: "2026-08-08T11:29:24.575Z"
-updated_at: "2026-08-08T11:40:03.987Z"
+updated_at: "2026-08-10T12:05:56.759Z"
 closed_at: "2026-08-08T11:39:50.179Z"
 completed_at: "2026-08-08T11:39:50.179Z"
 author: "harness:codex"
@@ -18,9 +18,10 @@ resolution: "Re-exported the shared error identity from the focused compatibilit
 expected_result: "Dist-only version smoke passes on Node 22/24 and macOS/Ubuntu, and contracts:check is clean on the exact PR head."
 actual_result: "The early CLI now imports PmCliError from the focused dependency-light compatibility SDK module, so a copied dist/package artifact runs --version without node_modules. The regenerated contract fixture passes contracts:check; exact coverage and every lint/static gate pass."
 component: cli-runtime
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-ei6x66,related,"2026-08-08T11:29:24.575Z","harness:codex","cli:create:dep",detected
   pm-zjelve,discovered_from,"2026-08-08T11:29:24.575Z","harness:codex","cli:create:dep",detected
+  pm-9rxu,implements,"2026-08-10T12:05:56.610Z","harness:claude-code","cli:update:dep",detected
 comments[2]{created_at,author,text}:
   "2026-08-08T11:29:24.575Z","harness:codex","Duplicate check: all-status searches for dist artifact fast version fast-json-patch and contract snapshot stale runtime compatibility found no matching active implementation. Historical items cover prior artifact and snapshot families but not this exact PR regression,so this item records the exact-head CI lineage."
   "2026-08-08T11:39:49.666Z","harness:codex","Verification: copied dist plus package.json into a temporary directory with no node_modules and node dist/cli.js --version returned 2026.8.7. pnpm contracts:check passes after regenerating tests/fixtures/contracts/full.json. The full repository run passes 453 files / 7,049 tests at exact 50,251/50,251 statements, 36,654/36,654 branches, 10,318/10,318 functions, and 48,655/48,655 lines; full lint/static quality passes after routing the import through the focused SDK seam."

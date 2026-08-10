@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:next",cli,gh-issue
 created_at: "2026-07-10T10:32:13.106Z"
-updated_at: "2026-07-26T22:19:18.132Z"
+updated_at: "2026-08-10T12:02:32.866Z"
 closed_at: "2026-07-10T20:32:39.637Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -17,10 +17,22 @@ release: v2026.7.11
 resolution: Made pm next preserve lifecycle-blocked and dangling-dependency work in the blocked companion list and summary.
 expected_result: Blocked counts and rows remain truthful for graph and lifecycle blocking states.
 actual_result: Blocked rows now include lifecycle-only and missing-reference blockers with safe suggestions; regression tests pass.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-hfg5,related,"2026-07-10T10:32:13.106Z",null,null
-  pm-yl6c,related,"2026-07-10T10:32:13.106Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:19:17.894Z",null,null
+dependencies[4]:
+  - id: pm-hfg5
+    kind: related
+    created_at: "2026-07-10T10:32:13.106Z"
+  - id: pm-yl6c
+    kind: related
+    created_at: "2026-07-10T10:32:13.106Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:19:17.894Z"
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-08-10T12:02:32.478Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-07-10T16:57:36.687Z",maintainer-agent,"Root-cause narrowing (review 2026-07-10, current main build): the GH-489 repro still fails — fresh workspace with one status=blocked item yields summary.blocked: 0 AND candidates: 1, i.e. the status=blocked item is excluded from the candidate pool entirely, not merely miscounted. Contrast: the real workspace reports blocked: 25 with zero status=blocked items (pm stats), so next's blocked counter is derived from open items with open blockers (graph-blocked). Fix likely needs BOTH paths: include status=blocked items in candidates/summary and populate the companion from the union of status-blocked + graph-blocked. Regression test should assert candidates counts them too."
   "2026-07-10T17:51:50.816Z",codex-root,"Implementation start: active in the broad atomic work-selection and agent recovery PR. Live all-status duplicate check, full item metadata, closed prerequisite lineage, GitHub issues, security alerts, dependency audit, release state, and Sentry issue surface were reviewed before claiming. This item shares CLI/SDK contracts, recovery envelopes, and end-to-end verification with the seven sibling items in the bundle."

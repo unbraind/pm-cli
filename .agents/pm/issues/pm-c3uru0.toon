@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:cli","area:observability",author,sentry,ux
 created_at: "2026-08-06T21:16:53.374Z"
-updated_at: "2026-08-07T05:39:52.585Z"
+updated_at: "2026-08-10T12:05:52.595Z"
 closed_at: "2026-08-07T05:39:52.480Z"
 completed_at: "2026-08-07T05:39:52.480Z"
 author: "harness:codex"
@@ -31,8 +31,9 @@ affected_version: 2026.8.5
 component: CLI observability boundary
 regression: false
 customer_impact: Release operators see a high unresolved production error for a correctly rejected request; no data corruption occurred.
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-zqpnte,discovered_from,"2026-08-06T21:16:53.374Z","harness:codex","cli:create:dep",detected
+  pm-5oj5,implements,"2026-08-10T12:05:52.367Z","harness:claude-code","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-08-06T21:16:53.374Z","harness:codex","Duplicate check: searched all statuses for the exact Sentry ID, author acknowledgment target text, handled Sentry validation errors, and expected command-error observability noise. No item tracks PM-CLI-2W; pm-zqpnte tracks the delivered command surface, while prior classifier items cover different error families."
   "2026-08-06T21:20:15.868Z","harness:codex","Closeout evidence: the 14-day release gate queried live systems and failed only on Sentry PM-CLI-2W (critical=0, high=1, total=1, threshold_ok=false). The separate server-side telemetry query succeeded with finish_error_rate_pct=0.61 and failures_without_error_code_rows=0. Local telemetry flush drained 1/1 queued event with a successful receipt. This item remains open and unclaimed for a later implementation tranche; no Sentry issue was resolved or hidden."

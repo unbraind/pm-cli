@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:history",core,"milestone:2",pm-cli
 created_at: "2026-02-17T23:01:11.006Z"
-updated_at: "2026-07-29T04:22:16.281Z"
+updated_at: "2026-08-10T11:52:35.586Z"
 deadline: "2026-02-27T23:01:11.006Z"
 assignee: steve
 author: steve
@@ -41,7 +41,7 @@ fixed_version: archive-2026q2
 component: project-management/milestone-2-history-restore
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Milestone 2 - History + Restore.
-dependencies[4]:
+dependencies[6]:
   - id: pm-u9r
     kind: blocks
     created_at: "2026-02-17T23:01:11.006Z"
@@ -55,6 +55,18 @@ dependencies[4]:
   - id: pm-murz
     kind: implements
     created_at: "2026-07-26T22:16:36.078Z"
+  - id: pm-murz
+    kind: supersedes
+    created_at: "2026-08-10T11:52:35.474Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-w7ccmv
+    kind: implements
+    created_at: "2026-08-10T11:52:35.474Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-02-17T23:01:11.006Z",steve,Milestone 2 ensures every mutation is auditable and restorable.
   "2026-03-04T14:55:37.646Z",unknown,"Planned closure pass: validate Milestone 2 completion against PRD + linked child tasks, then run linked sandbox coverage and regression sweeps (test-all in_progress + closed) before closing with evidence."

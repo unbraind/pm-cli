@@ -6,12 +6,20 @@ status: closed
 priority: 2
 tags[5]: agent-ux,calendar,cleanup,deps,type-safety
 created_at: "2026-05-30T21:43:28.045Z"
-updated_at: "2026-07-26T22:17:54.804Z"
+updated_at: "2026-08-10T12:03:28.299Z"
 author: maintainer-agent
 acceptance_criteria: Mistyped calendar view/format suggests closest; c8 gone from lockfile; RiskLevel used
 release: v2026.5.31
 resolution: "Done: calendar did-you-mean, c8 removed, RiskLevel used."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-doxj,blocks,"2026-07-26T22:17:54.571Z",null,null
+dependencies[2]:
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:54.571Z"
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-08-10T12:03:28.138Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 close_reason: "Calendar suggestClosestChoice did-you-mean for --view/--format (verified weeek->week, jsonn->json); removed c8 devDep + synced lockfile; RiskLevel wired into ItemFrontMatter.risk. Full suite 2012 tests green; static gate green."
 body: ""

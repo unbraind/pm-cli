@@ -6,17 +6,33 @@ status: closed
 priority: 1
 tags[5]: auto-release,dogfood,release,sentry,telemetry
 created_at: "2026-07-10T08:30:05.775Z"
-updated_at: "2026-07-26T22:19:13.709Z"
+updated_at: "2026-08-10T12:02:27.790Z"
 closed_at: "2026-07-10T08:49:00.004Z"
 author: codex-root
 release: v2026.7.10
 resolution: fixed
 expected_result: "Handled duplicate-import dogfood refusals do not count against the release threshold, while unhandled failures with the same text remain blocking."
 actual_result: The narrow guarded classifier ignores PM-CLI-1X and the live gate reports zero blocking high/critical issues; the regression keeps the isUnhandled=true twin in blocking_short_ids.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-7zs0,incident_from,"2026-07-10T08:32:49.253Z",codex-root,release_recovery
-  pm-yohx,related_to,"2026-07-10T08:32:49.253Z",codex-root,duplicate_check
-  pm-doxj,blocks,"2026-07-26T22:19:13.432Z",null,null
+dependencies[4]:
+  - id: pm-7zs0
+    kind: incident_from
+    created_at: "2026-07-10T08:32:49.253Z"
+    author: codex-root
+    source_kind: release_recovery
+  - id: pm-yohx
+    kind: related_to
+    created_at: "2026-07-10T08:32:49.253Z"
+    author: codex-root
+    source_kind: duplicate_check
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:19:13.432Z"
+  - id: pm-5oj5
+    kind: implements
+    created_at: "2026-08-10T12:02:27.670Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-07-10T08:30:05.775Z",codex-root,"Duplicate check: pm search --status all for Sentry telemetry gate handled import merge-strategy fail release blocker and PM-CLI-1X found no item for this exact 2026-07-10 classifier gap. Canonical precedent pm-yohx is closed historical remediation; this item links the new Sentry group and current release incident without rewriting shipped history."
   "2026-07-10T08:48:56.947Z",codex-root,"TDD and release-gate evidence: failing regression first observed high=2 for handled+unhandled duplicate-import twins; implementation adds the narrow merge-strategy fail bead classifier behind the existing CommandError/PmCliError and isUnhandled=false guard. Focused suite passes 49/49. Full repository coverage passes 270 files and 5,506 tests at statements 34380/34380, branches 24588/24588, functions 6882/6882, lines 33039/33039. Typecheck, contract snapshot, ESLint, jscpd 0 clones, static quality/docstrings, token budget, docs/skills, secret scan, and production audit all pass. Live production-token Sentry gate now reports critical=0 high=0, ignored_expected_handled=5 including PM-CLI-1X, and telemetry best-effort reports 0.25% finish errors with zero missing error-code rows. Inline telemetry flush drained the local queue to zero on disk at 2026-07-10T08:48Z."

@@ -6,21 +6,45 @@ status: closed
 priority: 0
 tags[6]: agent-ux,audit,dependency-update,ecosystem,github-issue,sdk
 created_at: "2026-06-02T21:58:47.916Z"
-updated_at: "2026-07-26T17:19:41.608Z"
+updated_at: "2026-08-10T12:05:58.318Z"
 author: codex-broad-audit-20260602
 parent: pm-doxj
 release: v2026.6.5
 expected_result: "Latest CLI/SDK/ecosystem are audited in isolated temp projects, concrete non-duplicate findings are fixed or documented, GitHub PR/issues/dependency/security reports are handled, release gates and observability checks pass, a PR is reviewed, green, and merged."
-dependencies[9]{id,kind,created_at,author,source_kind}:
-  pm-59gj,related,"2026-07-26T17:19:41.357Z",null,null
-  pm-5teq,related,"2026-07-26T17:19:41.357Z",null,null
-  pm-doxj,implements,"2026-07-26T17:19:41.357Z",null,null
-  pm-etxf,related,"2026-07-26T17:19:41.357Z",null,null
-  pm-kcba,related,"2026-07-26T17:19:41.357Z",null,null
-  pm-kd9n,related,"2026-07-26T17:19:41.357Z",null,null
-  pm-kddw,related,"2026-07-26T17:19:41.357Z",null,null
-  pm-qvdj,related,"2026-07-26T17:19:41.357Z",null,null
-  pm-z0ip,related,"2026-07-26T17:19:41.357Z",null,null
+dependencies[10]:
+  - id: pm-59gj
+    kind: related
+    created_at: "2026-07-26T17:19:41.357Z"
+  - id: pm-5teq
+    kind: related
+    created_at: "2026-07-26T17:19:41.357Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T17:19:41.357Z"
+  - id: pm-etxf
+    kind: related
+    created_at: "2026-07-26T17:19:41.357Z"
+  - id: pm-kcba
+    kind: related
+    created_at: "2026-07-26T17:19:41.357Z"
+  - id: pm-kd9n
+    kind: related
+    created_at: "2026-07-26T17:19:41.357Z"
+  - id: pm-kddw
+    kind: related
+    created_at: "2026-07-26T17:19:41.357Z"
+  - id: pm-qvdj
+    kind: related
+    created_at: "2026-07-26T17:19:41.357Z"
+  - id: pm-z0ip
+    kind: related
+    created_at: "2026-07-26T17:19:41.357Z"
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-08-10T12:05:58.178Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[15]{created_at,author,text}:
   "2026-06-02T21:59:44.429Z",codex-ecosystem-lane-20260602,"Ecosystem lane start: auditing external pm packages and isolated temp-project package-first dogfood with separate PM_PATH/PM_GLOBAL_PATH; no claim/release and no repo file edits."
   "2026-06-02T21:59:49.442Z",codex-sdk-lane-20260602,"SDK/custom-item-fields lane start: auditing GitHub issue #97 / pm-qvdj for registerItemFields, create/update contracts/help, validation, tests, and SDK docs/examples. Scope is findings only; no claim/release and no code edits planned."

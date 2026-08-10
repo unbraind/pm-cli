@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:history","area:restore",core,pm-cli
 created_at: "2026-04-01T15:26:39.295Z"
-updated_at: "2026-07-26T22:17:40.125Z"
+updated_at: "2026-08-10T11:53:12.662Z"
 deadline: "2026-04-08T15:26:39.295Z"
 author: cursor-agent
 estimated_minutes: 300
@@ -39,18 +39,51 @@ fixed_version: target-vnext
 component: history-core
 regression: false
 customer_impact: Improves reliability for all users when history streams/items are missing
-dependencies[11]{id,kind,created_at,author,source_kind}:
-  pm-1hkq,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
-  pm-4yl0,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
-  pm-9lc,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
-  pm-c0r,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
-  pm-er7n,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
-  pm-0vnr,related,"2026-07-26T17:21:53.347Z",null,null
-  pm-1tyv,related,"2026-07-26T17:21:53.347Z",null,null
-  pm-8wnm,related,"2026-07-26T17:21:53.347Z",null,null
-  pm-g6qd,related,"2026-07-26T17:21:53.347Z",null,null
-  pm-kb21,related,"2026-07-26T17:21:53.347Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:39.837Z",null,null
+dependencies[12]:
+  - id: pm-1hkq
+    kind: related
+    created_at: "2026-04-01T15:26:39.295Z"
+    author: cursor-agent
+  - id: pm-4yl0
+    kind: related
+    created_at: "2026-04-01T15:26:39.295Z"
+    author: cursor-agent
+  - id: pm-9lc
+    kind: related
+    created_at: "2026-04-01T15:26:39.295Z"
+    author: cursor-agent
+  - id: pm-c0r
+    kind: related
+    created_at: "2026-04-01T15:26:39.295Z"
+    author: cursor-agent
+  - id: pm-er7n
+    kind: related
+    created_at: "2026-04-01T15:26:39.295Z"
+    author: cursor-agent
+  - id: pm-0vnr
+    kind: related
+    created_at: "2026-07-26T17:21:53.347Z"
+  - id: pm-1tyv
+    kind: related
+    created_at: "2026-07-26T17:21:53.347Z"
+  - id: pm-8wnm
+    kind: related
+    created_at: "2026-07-26T17:21:53.347Z"
+  - id: pm-g6qd
+    kind: related
+    created_at: "2026-07-26T17:21:53.347Z"
+  - id: pm-kb21
+    kind: related
+    created_at: "2026-07-26T17:21:53.347Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:39.837Z"
+  - id: pm-w7ccmv
+    kind: implements
+    created_at: "2026-08-10T11:53:12.545Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-04-01T15:26:39.295Z",cursor-agent,Created after de-dup checks found no active item for strict missing-history policy plus restore missing-item recovery scope.
   "2026-04-01T15:59:05.275Z",cursor-agent,"Epic delivery evidence: implemented missing-stream policy configuration and enforcement across history-touching paths, added restore recovery for missing/deleted item files from history-only state, updated docs/changelog, and verified with full build/test sweeps. Known residual: global coverage gate remains below strict 100% thresholds (97.32/95.02/98.10/97.02)."

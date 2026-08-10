@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,documentation,pm-cli,templates
 created_at: "2026-04-26T20:16:52.690Z"
-updated_at: "2026-07-26T22:19:28.271Z"
+updated_at: "2026-08-10T12:02:13.239Z"
 deadline: "2026-04-29T20:16:52.690Z"
 author: audit-agent
 estimated_minutes: 15
@@ -15,11 +15,25 @@ release: v2026.5.1
 resolution: "Resolution normalized from close_reason: Templates syntax guidance now clearly documents positional template names and unsupported --name flag in help/docs."
 expected_result: "Expected closure outcome: Templates syntax guidance now clearly documents positional template names and unsupported --name flag in help/docs."
 actual_result: "Actual closure outcome: Templates syntax guidance now clearly documents positional template names and unsupported --name flag in help/docs."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-8k83,related,"2026-07-26T17:06:02.178Z",null,null
-  pm-d7id,related,"2026-07-26T17:06:02.178Z",null,null
-  pm-f583,related,"2026-07-26T17:06:02.178Z",null,null
-  pm-lnq3,discovered_from,"2026-07-26T22:19:27.873Z",null,null
+dependencies[5]:
+  - id: pm-8k83
+    kind: related
+    created_at: "2026-07-26T17:06:02.178Z"
+  - id: pm-d7id
+    kind: related
+    created_at: "2026-07-26T17:06:02.178Z"
+  - id: pm-f583
+    kind: related
+    created_at: "2026-07-26T17:06:02.178Z"
+  - id: pm-lnq3
+    kind: discovered_from
+    created_at: "2026-07-26T22:19:27.873Z"
+  - id: pm-8jdc
+    kind: implements
+    created_at: "2026-08-10T12:02:13.073Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-04-26T21:09:19.120Z",codex-agent,"Clarified templates syntax across help and docs: templates help tips now explicitly state names are positional (, ) and that  is unsupported; mirrored the same guidance in AGENTS.md and README templates section."
   "2026-04-26T21:09:21.879Z",codex-agent,"Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts passed (19 tests)."

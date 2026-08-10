@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:ci","area:docs","area:release",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:13.323Z"
-updated_at: "2026-08-04T09:19:17.700Z"
+updated_at: "2026-08-10T11:56:11.160Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: Docs gates validate links and anchors; onboarding verified from a clean install; daily auto-release and nightly matrices stay green for 30 consecutive days without manual intervention.
@@ -29,9 +29,6 @@ dependencies[9]:
   - id: pm-zclzll
     kind: related
     created_at: "2026-07-24T23:54:44.691Z"
-  - id: pm-xp1xsw
-    kind: implements
-    created_at: "2026-07-26T05:48:55.434Z"
   - id: pm-1qkivy
     kind: blocked_by
     created_at: "2026-08-03T11:15:50.561Z"
@@ -54,6 +51,12 @@ dependencies[9]:
     kind: blocked_by
     created_at: "2026-08-03T11:15:50.561Z"
     author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:56:11.034Z"
+    author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
 comments[15]{created_at,author,text}:

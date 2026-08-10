@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:list","area:ux","area:validation",external-audit,pm-cli
 created_at: "2026-04-03T18:06:54.487Z"
-updated_at: "2026-07-26T22:17:44.037Z"
+updated_at: "2026-08-10T11:52:53.853Z"
 deadline: "2026-04-10T18:06:54.487Z"
 author: codex-agent
 estimated_minutes: 360
@@ -38,20 +38,52 @@ fixed_version: target-vnext
 component: cli-core
 regression: false
 customer_impact: Improves reliability and inspectability for existing users and agents
-dependencies[13]{id,kind,created_at,author,source_kind}:
-  pm-0lbm,related,"2026-07-26T17:23:57.227Z",null,null
-  pm-6e0p,related,"2026-07-26T17:23:57.227Z",null,null
-  pm-a4z3,related,"2026-07-26T17:23:57.227Z",null,null
-  pm-dzrj,related,"2026-07-26T17:23:57.227Z",null,null
-  pm-gtdx,related,"2026-07-26T17:23:57.227Z",null,null
-  pm-ice4,related,"2026-07-26T17:23:57.227Z",null,null
-  pm-k6ml,related,"2026-07-26T17:23:57.227Z",null,null
-  pm-vsux,related,"2026-07-26T17:23:57.227Z",null,null
-  pm-ykgu,related,"2026-07-26T17:23:57.227Z",null,null
-  pm-ykib,related,"2026-07-26T17:23:57.227Z",null,null
-  pm-zzt1,related,"2026-07-26T17:23:57.227Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:43.702Z",null,null
-  pm-iswo,discovered_from,"2026-07-26T22:17:43.702Z",null,null
+dependencies[14]:
+  - id: pm-0lbm
+    kind: related
+    created_at: "2026-07-26T17:23:57.227Z"
+  - id: pm-6e0p
+    kind: related
+    created_at: "2026-07-26T17:23:57.227Z"
+  - id: pm-a4z3
+    kind: related
+    created_at: "2026-07-26T17:23:57.227Z"
+  - id: pm-dzrj
+    kind: related
+    created_at: "2026-07-26T17:23:57.227Z"
+  - id: pm-gtdx
+    kind: related
+    created_at: "2026-07-26T17:23:57.227Z"
+  - id: pm-ice4
+    kind: related
+    created_at: "2026-07-26T17:23:57.227Z"
+  - id: pm-k6ml
+    kind: related
+    created_at: "2026-07-26T17:23:57.227Z"
+  - id: pm-vsux
+    kind: related
+    created_at: "2026-07-26T17:23:57.227Z"
+  - id: pm-ykgu
+    kind: related
+    created_at: "2026-07-26T17:23:57.227Z"
+  - id: pm-ykib
+    kind: related
+    created_at: "2026-07-26T17:23:57.227Z"
+  - id: pm-zzt1
+    kind: related
+    created_at: "2026-07-26T17:23:57.227Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:43.702Z"
+  - id: pm-iswo
+    kind: discovered_from
+    created_at: "2026-07-26T22:17:43.702Z"
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:52:53.734Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[4]{created_at,author,text}:
   "2026-04-03T18:06:54.487Z",codex-agent,Created after dedup scan and reproduction mapping.
   "2026-04-03T18:08:13.990Z",codex-agent,"Dedup/repro mapping complete: reopened pm-dzrj for reproduced non-interactive test-all progress gap; list limit/body/status scopes mapped to existing closed items (pm-zzt1, pm-0lbm, pm-ykib, pm-vsux, pm-6e0p) with comment-only evidence; net-new work tracked under pm-a4z3/pm-ice4 (list pagination+stream) and pm-gtdx/pm-k6ml (validate command + close-time checks) with pm-ykgu reserved for docs/verification gate."

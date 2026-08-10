@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:parser",external-audit,pm-cli
 created_at: "2026-04-04T08:23:25.627Z"
-updated_at: "2026-07-26T22:17:42.544Z"
+updated_at: "2026-08-10T11:52:55.202Z"
 deadline: "2026-04-11T08:23:25.627Z"
 author: codex-agent
 estimated_minutes: 300
@@ -38,15 +38,37 @@ fixed_version: target-vnext
 component: cli-create-parser
 regression: true
 customer_impact: Maintainers and agents retain complete audit evidence when seeding narrative text.
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-4emi,related,"2026-07-26T17:22:50.823Z",null,null
-  pm-a228,related,"2026-07-26T17:22:50.823Z",null,null
-  pm-doek,related,"2026-07-26T17:22:50.823Z",null,null
-  pm-l5tr,related,"2026-07-26T17:22:50.823Z",null,null
-  pm-m3mf,related,"2026-07-26T17:22:50.823Z",null,null
-  pm-wn34,related,"2026-07-26T17:22:50.823Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:42.270Z",null,null
-  pm-qfg8,discovered_from,"2026-07-26T22:17:42.270Z",null,null
+dependencies[9]:
+  - id: pm-4emi
+    kind: related
+    created_at: "2026-07-26T17:22:50.823Z"
+  - id: pm-a228
+    kind: related
+    created_at: "2026-07-26T17:22:50.823Z"
+  - id: pm-doek
+    kind: related
+    created_at: "2026-07-26T17:22:50.823Z"
+  - id: pm-l5tr
+    kind: related
+    created_at: "2026-07-26T17:22:50.823Z"
+  - id: pm-m3mf
+    kind: related
+    created_at: "2026-07-26T17:22:50.823Z"
+  - id: pm-wn34
+    kind: related
+    created_at: "2026-07-26T17:22:50.823Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:42.270Z"
+  - id: pm-qfg8
+    kind: discovered_from
+    created_at: "2026-07-26T22:17:42.270Z"
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:52:55.025Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-04-04T08:23:25.627Z",codex-agent,Created after dedupe sweep confirmed only Issue1 remains unresolved.
   "2026-04-04T08:40:22.568Z",codex-agent,"Epic closure evidence: feature pm-m3mf and task pm-l5tr are closed/released with code/test/docs updates, full regression+coverage pass, and health/validate audit checks. External Issues 2-5 were handled via canonical closed items (pm-wn34, pm-4emi, pm-a228, pm-doek) without duplicates."

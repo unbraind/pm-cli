@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-08-06T18:02:03.618Z"
-updated_at: "2026-08-06T21:01:32.117Z"
+updated_at: "2026-08-10T12:03:32.986Z"
 closed_at: "2026-08-06T21:01:27.394Z"
 completed_at: "2026-08-06T21:01:27.394Z"
 author: "harness:codex"
@@ -16,9 +16,10 @@ resolution: completed
 expected_result: "The repository uses @toon-format/toon 4.1.1, all codec and contract tests pass, and packed npm/npx/bunx acceptance remains compatible."
 actual_result: "Updated @toon-format/toon to 4.1.1; focused codec/CLI tests, exact full coverage, zero-vulnerability audit, packed transport acceptance, generated changelog linkage, and review remediation all pass."
 component: dependencies
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-5cgm2z,related,"2026-08-06T18:02:03.618Z","harness:codex","cli:create:dep",detected
   pm-tll8,related,"2026-08-06T18:02:03.618Z","harness:codex","cli:create:dep",detected
+  pm-o2kc,implements,"2026-08-10T12:03:32.796Z","harness:claude-code","cli:update:dep",detected
 comments[6]{created_at,author,text}:
   "2026-08-06T18:02:03.618Z","harness:codex","Duplicate check: searched all statuses for the exact package/version and inspected the dependency lineage; no canonical item for the 4.1.1 patch existed. This chore reuses the established TOON codec and dependency-governance graph."
   "2026-08-06T18:02:58.516Z","harness:codex","Implementation: advanced @toon-format/toon from 4.1.0 to the latest compatible 4.1.1 patch. The package remains within the existing semver and supported-runtime policy; package and lockfile are linked for traceability."

@@ -6,30 +6,68 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-11T15:31:51.939Z"
-updated_at: "2026-07-26T17:12:05.528Z"
+updated_at: "2026-08-10T12:05:46.330Z"
 author: maintainer-agent
 parent: pm-doxj
 release: v2026.6.12
 resolution: completed
 expected_result: 12 pm items shipped as one coherent self-repair PR with green gates
 actual_result: All items closed with per-agent tracking; coverage gate green; manual E2E in temp sandboxes passed
-dependencies[16]{id,kind,created_at,author,source_kind}:
-  pm-doxj,parent,"2026-06-11T15:31:51.939Z",null,null
-  pm-0hx2,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-0v2m,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-2cgu,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-6mit,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-6qi8,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-8jss,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-9ftr,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-c3sz,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-df9k,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-doxj,implements,"2026-07-26T17:12:05.237Z",null,null
-  pm-lg9i,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-pfnx,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-pmyq,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-wcaa,related,"2026-07-26T17:12:05.237Z",null,null
-  pm-xo1n,related,"2026-07-26T17:12:05.237Z",null,null
+dependencies[17]:
+  - id: pm-doxj
+    kind: parent
+    created_at: "2026-06-11T15:31:51.939Z"
+  - id: pm-0hx2
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-0v2m
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-2cgu
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-6mit
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-6qi8
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-8jss
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-9ftr
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-c3sz
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-df9k
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-lg9i
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-pfnx
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-pmyq
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-wcaa
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-xo1n
+    kind: related
+    created_at: "2026-07-26T17:12:05.237Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:05:46.135Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[5]{created_at,author,text}:
   "2026-06-11T22:32:05.374Z",maintainer-agent,"Integration complete. 12 items shipped in branch validate-autofix-and-self-repair: pm-6qi8 (completion drift + drift test), pm-pmyq (missing_by_type), pm-c3sz (--auto-fix/--dry-run/fixes output), pm-8jss (--fix-scope lifecycle gating), pm-0v2m (moved/deleted classification + --prune-missing), pm-2cgu (calendar hint), pm-9ftr (history-repair --all), pm-xo1n (health locks check), pm-pfnx (files/docs --note), pm-6mit (plan --step accumulation), pm-0hx2 (consent CI guard), pm-df9k (optsWithGlobals at 14 lifecycle call sites + files discover). Full gate: 150 files / 2797 tests green, coverage 82.71/75.18/86.68/82.79 above ratchet. Manual E2E in 2 temp sandboxes (plain + git): plan steps x3, files/docs --note, calendar hint, missing_by_type, auto-fix dry-run+apply (resolution backfilled from close_reason), lifecycle gating (--unset parent only under --fix-scope lifecycle), moved-vs-deleted with tracked-all (moved link NOT pruned), health locks (stale+unparseable counts, locks_stale_count warning, remediation_map), history-repair --all (real chain-mismatch drift repaired, health ok:true), extension explore --global honored."
   "2026-06-11T22:37:17.260Z",code-risk-subagent,"Verification sub-agent pass: reviewed current diff around validate auto-fix/prune, history-repair --all, lock health scan, MCP pm_files discover dispatch, and related contracts/tests. No actionable bugs found. Targeted verification passed: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/core/lock/lock-gc.spec.ts tests/integration/mcp-handshake.spec.ts (4 files, 128 tests)."

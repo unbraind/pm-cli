@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags: []
 created_at: "2026-08-08T11:42:58.003Z"
-updated_at: "2026-08-08T12:51:46.076Z"
+updated_at: "2026-08-10T12:05:50.211Z"
 closed_at: "2026-08-08T12:51:20.845Z"
 completed_at: "2026-08-08T12:51:20.845Z"
 author: "harness:codex"
@@ -18,10 +18,11 @@ resolution: fixed
 expected_result: "All eleven inline findings are fixed with focused tests, every bot thread is acknowledged and resolved, and the refreshed exact-head CI/review inventory is green."
 actual_result: "All eleven initial CodeRabbit findings and the follow-up post-command global-option parsing flaw are fixed through f2e7775c1. Every bot comment/review was reacted to and answered where GitHub supports it, all inline threads are resolved, exact local and hosted coverage is 100/100/100/100, all cross-platform/security/quality checks are green, and provider-limited CodeRabbit/Sourcery reruns are recorded as unavailable rather than approvals."
 component: SDK runtime and release gates
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-dskxwf,discovered_from,"2026-08-08T11:42:58.003Z","harness:codex","cli:create:dep",detected
   pm-ei6x66,related,"2026-08-08T11:42:58.003Z","harness:codex","cli:create:dep",detected
   pm-zjelve,related,"2026-08-08T11:42:58.003Z","harness:codex","cli:create:dep",detected
+  pm-33cw,implements,"2026-08-10T12:05:50.022Z","harness:claude-code","cli:update:dep",detected
 comments[5]{created_at,author,text}:
   "2026-08-08T11:42:58.003Z","harness:codex","Duplicate check: searched all statuses for PR 935, CodeRabbit review, runtime gates, pins, and source context; no canonical review-remediation item existed. This item consolidates all eleven findings from one paid feedback round."
   "2026-08-08T11:55:35.315Z","harness:codex","Implementation evidence: all eleven CodeRabbit findings were verified as valid. The local registry now supplies actual commands, arguments, environment, capture mode, and skip policy; skips emit status=skipped and ok=false. Runtime flags accept equals forms without re-scanning ambiguous values, lockfile parsing is package-entry bounded, upper/exclusion dependency ranges do not become floors, inherited source access fails closed, and snapshot resource exhaustion has its own public code. Focused suite passes 100/100 tests; lint, static quality, typecheck, generated contracts, and SDK surface checks pass."

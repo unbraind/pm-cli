@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-08-07T08:33:38.061Z"
-updated_at: "2026-08-08T16:50:08.260Z"
+updated_at: "2026-08-10T12:05:57.530Z"
 closed_at: "2026-08-08T16:50:07.752Z"
 completed_at: "2026-08-08T16:50:07.752Z"
 author: "harness:codex"
@@ -21,9 +21,10 @@ expected_result: Closed plans omit terminal close guidance and expose only valid
 actual_result: Completed terminal Plans no longer recommend a redundant close command; active Plans retain actionable lifecycle guidance and the integration contract covers the closed state.
 affected_version: 2026.8.6
 component: plan projection and next actions
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-je50,related,"2026-08-07T08:33:38.061Z","harness:codex","cli:create:dep",detected
   pm-je50,discovered_from,"2026-08-07T08:34:27.173Z","harness:codex","cli:update:dep",detected
+  pm-mpbb,implements,"2026-08-10T12:05:57.371Z","harness:claude-code","cli:update:dep",detected
 comments[2]{created_at,author,text}:
   "2026-08-07T08:33:38.061Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/924. Duplicate check searched all 2,351 items and every status for closed plan next_actions,completed plan pm close,plan show,and GH-924; no canonical issue existed."
   "2026-08-08T16:46:59.410Z","harness:codex","Verification evidence (2026-08-08): full release pipeline reached the pre-commit hosted-review boundary after all local gates passed. Exact coverage: 460 files, 7072 tests, statements 50283/50283, branches 36738/36738, functions 10330/10330, lines 48684/48684. Static quality/docstrings, docs/skills, SDK surface, package boundary/parity, token/context/retrieval/tracker/security/version, packed npx (13 packages), and 88-command temporary package-first dogfood all passed. Manual packed external acceptance also passed all-status duplicates, 13 unique package rows with aliases, SDK direction-independent merge, package-manage output resolution, merge install, and health classification. The remaining greptile gate refusal is expected before a reviewable commit: no committed code changes to review against main."

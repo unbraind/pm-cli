@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:release",core,"milestone:6",pm-cli
 created_at: "2026-02-17T23:01:12.657Z"
-updated_at: "2026-07-29T04:22:20.200Z"
+updated_at: "2026-08-10T11:52:37.997Z"
 deadline: "2026-03-19T23:01:12.657Z"
 assignee: steve
 author: steve
@@ -41,7 +41,7 @@ fixed_version: archive-2026q2
 component: project-management/milestone-6-hardening-release-readiness
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Milestone 6 - Hardening + Release Readiness.
-dependencies[4]:
+dependencies[6]:
   - id: pm-b1w
     kind: blocks
     created_at: "2026-02-17T23:01:12.657Z"
@@ -55,6 +55,18 @@ dependencies[4]:
   - id: pm-j7a
     kind: implements
     created_at: "2026-07-26T22:16:31.440Z"
+  - id: pm-defw
+    kind: supersedes
+    created_at: "2026-08-10T11:52:37.891Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:52:37.891Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-02-17T23:01:12.657Z",steve,Milestone 6 stabilizes quality and release confidence.
   "2026-03-04T16:13:16.657Z",cursor-maintainer,"Planned change-set: verify milestone-6 release-readiness gates (build + full coverage + pm test-all regressions) and close this epic only if evidence confirms acceptance criteria."

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: changelog,ci,governance,ordering,provenance,release
 created_at: "2026-07-26T17:35:13.800Z"
-updated_at: "2026-07-26T17:35:13.800Z"
+updated_at: "2026-08-10T12:17:28.430Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Row order within a release section derives from a key that does not change when an item is edited; The drift check proves that a metadata write on an already-published item produces a byte-identical changelog, not merely an unchanged section assignment; The chosen key is deterministic across machines and across regeneration order, so two agents regenerating from the same tracker state produce identical bytes; Existing published sections are regenerated once under the new key and the resulting diff is reviewed as a one-time reordering rather than being suppressed; The ordering rule is documented where the changelog conventions live, so it is not rediscovered by the next bulk pass"
@@ -19,14 +19,16 @@ why_now: "Attribution is now stamped, so ordering is the only remaining reason a
 parent: pm-pcys9n
 risk: low
 confidence: high
-dependencies[9]{id,kind,created_at,author,source_kind}:
-  pm-10l1vm,related,"2026-07-26T17:35:13.800Z",null,null
-  pm-3j6it6,discovered_from,"2026-07-26T17:35:13.800Z",null,null
-  pm-e9zh,related,"2026-07-26T17:35:13.800Z",null,null
-  pm-kpftft,related,"2026-07-26T17:35:13.800Z",null,null
-  pm-pcys9n,implements,"2026-07-26T17:35:13.800Z",null,null
-  pm-pjnu91,related,"2026-07-26T17:35:13.800Z",null,null
-  pm-qudvto,related,"2026-07-26T17:35:13.800Z",null,null
-  pm-w7ccmv,verifies,"2026-07-26T17:35:13.800Z",null,null
-  pm-wenq,related,"2026-07-26T17:35:13.800Z",null,null
+dependencies[9]{id,kind,created_at}:
+  pm-10l1vm,related,"2026-07-26T17:35:13.800Z"
+  pm-3j6it6,discovered_from,"2026-07-26T17:35:13.800Z"
+  pm-e9zh,related,"2026-07-26T17:35:13.800Z"
+  pm-kpftft,related,"2026-07-26T17:35:13.800Z"
+  pm-pcys9n,implements,"2026-07-26T17:35:13.800Z"
+  pm-pjnu91,related,"2026-07-26T17:35:13.800Z"
+  pm-qudvto,related,"2026-07-26T17:35:13.800Z"
+  pm-w7ccmv,verifies,"2026-07-26T17:35:13.800Z"
+  pm-wenq,related,"2026-07-26T17:35:13.800Z"
+comments[1]{created_at,author,text}:
+  "2026-08-10T12:17:28.415Z","harness:claude-code","Isolated 2026-08-10: this item, not release re-bucketing, is the whole of the residual changelog risk in a closed-item mutation, and it is much smaller than the convention built on top of it assumes.\nDirect measurement. Starting from a tree where changelog:pm:check reported changed:false, one typed dependency row was added to one long-closed legacy item (pm-02c4, release v2026.5.1, closed_at null, updated_at 2026-07-27). The check then failed. Regenerating to a scratch path and diffing against the committed file gave the whole delta: three lines, one row, moving from line 2571 to line 2568. item_count stayed 2017 and bytes stayed 355556, byte-for-byte identical on both sides.\nSo section membership did not move. The row stayed inside v2026.5.1's own section and changed only its position within it, because rows sort on a mutable timestamp — exactly the defect this item names. Release-tag attribution under --all-release-tags held membership stable even though the item carries no closed_at, which is the property pm-wrbe recorded as landing 2026-07-26 and which this measurement independently confirms.\nConsequence for the ordering of the whole backlog. The standing convention is that closed items must not be touched because a metadata write re-buckets long-shipped work into the current release. That was true before release-tag attribution and is no longer true. What remains is intra-section reordering, which is cosmetic and is fully healed by regenerating the changelog in the same commit — which is already the mandated flow, since regeneration is the last step of every tracker change. The terminal-record enrichment programme is therefore not blocked on pm-wrbe's closed_at backfill for changelog safety; it is blocked only on remembering to regenerate.\nThat was verified in practice on the same day: the strategic-ladder, parentless-lineage and apex-bypass waves wrote 220 evidence-cited typed edges across 213 items, the large majority of them terminal, and the only changelog consequence was row order inside already-shipped sections.\nTwo things follow for this item. First, the fix is worth more than its size suggests, because a stable intra-section sort key makes every closed-item mutation changelog-invisible and removes the last reason for the convention. The sort key must be immutable: closed_at where present, else the release-derived close instant, else id, never updated_at. Second, the reason this took nineteen days to establish is that the drift check reports only that the file is out of date and never what moved, so an order-only diff and a real attribution defect are indistinguishable without a manual diff. That diagnostic gap is now filed as pm-2f80fn."
 body: ""

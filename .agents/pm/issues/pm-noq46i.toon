@@ -6,16 +6,17 @@ status: closed
 priority: 1
 tags[4]: github,macos,nightly,path-canonicalization
 created_at: "2026-08-01T07:55:14.379Z"
-updated_at: "2026-08-01T08:09:52.249Z"
+updated_at: "2026-08-10T12:02:35.397Z"
 closed_at: "2026-08-01T07:59:05.253Z"
 completed_at: "2026-08-01T07:59:05.253Z"
 author: "harness:codex"
 resolution: fixed
 expected_result: Current and ancestor init discovery roots compare equal across filesystem aliases on macOS and Windows while preserving discovery provenance and suggested-path semantics.
 actual_result: "macOS /var aliases and Windows long versus 8.3 path aliases represented the same tracker with different lexical strings, causing false assertion failures."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-dprb,discovered_from,"2026-08-01T07:55:14.379Z","harness:codex","cli:create:dep",detected
   pm-z5pmf8,related_to,"2026-08-01T07:55:14.379Z","harness:codex","cli:create:dep",detected
+  pm-mpbb,implements,"2026-08-10T12:02:35.260Z","harness:claude-code","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-08-01T07:55:14.379Z","harness:codex","Duplicate check: all-status searches for 'Nightly Validation macos Node 24' and exact 'GH-851' found no item tracking this new failure; pm-dprb is retained as historical provenance for the same macOS /var realpath class, not reused because its GH-510 regression is already closed."
   "2026-08-01T07:59:00.062Z","harness:codex","Evidence: nightly run 30687922326 failed only because macOS reported the same temp tracker as /private/var while the test retained its /var spelling. The regression now resolves pmRoot and nestedRoot with realpath before asserting current discovery and ancestor recovery provenance. The linked init command suite passes 36/36; full lint/static quality, zero-clone, token/calibration, SDK surface/import-cost/transport, and secret gates pass. PR #850 exact-head macOS runtime smoke is green."

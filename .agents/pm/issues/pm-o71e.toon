@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,error-recovery,extensions,gh-issue
 created_at: "2026-07-11T02:49:52.213Z"
-updated_at: "2026-07-26T22:19:24.079Z"
+updated_at: "2026-08-10T12:02:36.242Z"
 closed_at: "2026-07-11T08:33:30.806Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -17,9 +17,19 @@ release: v2026.7.12
 resolution: Outer extension recovery suppresses inferred retries when a nested structured failure owns recovery.
 expected_result: Nested tracker recovery remains actionable and unrelated flags are never suggested.
 actual_result: Nested failures retain their recovery path without bogus outer missing flags or suggested retries.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-gdi7,related,"2026-07-11T02:49:52.213Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:19:23.791Z",null,null
+dependencies[3]:
+  - id: pm-gdi7
+    kind: related
+    created_at: "2026-07-11T02:49:52.213Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:19:23.791Z"
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-08-10T12:02:36.033Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[5]{created_at,author,text}:
   "2026-07-11T04:45:43.644Z",codex-root,"Implementation start: bundled with GH-503/504/505/507 because flattened aliases, bare importer/exporter contracts, nested typed recovery, and boolean retry arity share extension registration and structured-error surfaces. Duplicate check used pm search --status all; closed prior extension SDK work remains closed."
   "2026-07-11T04:48:28.830Z",codex-root,"Pause note: root cause investigation reached structured recovery assembly in src/cli/main.ts, but no verified patch is recorded yet. Item remains open and unclaimed."

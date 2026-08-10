@@ -6,18 +6,34 @@ status: closed
 priority: 1
 tags[5]: audit,code-quality,pm-cli,security,telemetry
 created_at: "2026-05-02T06:54:11.903Z"
-updated_at: "2026-07-26T22:17:29.562Z"
+updated_at: "2026-08-10T11:52:44.895Z"
 author: audit-agent
 release: v2026.5.2
 resolution: "Resolution normalized from close_reason: All 9 phases complete. 15 dead files removed, security scanner enhanced, Sentry sample rate optimized, vector warnings added. 81 test files, 1087 tests pass. Telemetry and Sentry data analyzed. All findings tracked as pm items."
 expected_result: "Expected closure outcome: All 9 phases complete. 15 dead files removed, security scanner enhanced, Sentry sample rate optimized, vector warnings added. 81 test files, 1087 tests pass. Telemetry and Sentry data analyzed. All findings tracked as pm items."
 actual_result: "Actual closure outcome: All 9 phases complete. 15 dead files removed, security scanner enhanced, Sentry sample rate optimized, vector warnings added. 81 test files, 1087 tests pass. Telemetry and Sentry data analyzed. All findings tracked as pm items."
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-6c3h,related,"2026-07-26T17:18:32.632Z",null,null
-  pm-f6wr,related,"2026-07-26T17:18:32.632Z",null,null
-  pm-p0p1,related,"2026-07-26T17:18:32.632Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:29.238Z",null,null
-  pm-nnhi,discovered_from,"2026-07-26T22:17:29.238Z",null,null
+dependencies[6]:
+  - id: pm-6c3h
+    kind: related
+    created_at: "2026-07-26T17:18:32.632Z"
+  - id: pm-f6wr
+    kind: related
+    created_at: "2026-07-26T17:18:32.632Z"
+  - id: pm-p0p1
+    kind: related
+    created_at: "2026-07-26T17:18:32.632Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:29.238Z"
+  - id: pm-nnhi
+    kind: discovered_from
+    created_at: "2026-07-26T22:17:29.238Z"
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:52:44.700Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 notes[1]{created_at,author,text}:
   "2026-05-02T06:55:27.831Z",audit-agent,"Phase 0-9 complete. Code changes: removed 15 dead facade files, enhanced security scanner, lowered Sentry sample rate, added vector mismatch warnings. Audit comments added to pm-6c3h, pm-f6wr, pm-p0p1. Telemetry analysis: 32990 events from 1357 installs. Sentry analysis: 8 validation-error issues, no bugs. All 81 test files pass (1087 tests)."
 learnings[1]{created_at,author,text}:

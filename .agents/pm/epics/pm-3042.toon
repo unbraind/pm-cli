@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-docs,docs,public-docs,security
 created_at: "2026-05-01T20:46:58.298Z"
-updated_at: "2026-07-26T22:17:09.390Z"
+updated_at: "2026-08-10T11:52:48.688Z"
 deadline: "2026-05-02T20:46:58.298Z"
 author: codex-agent
 estimated_minutes: 180
@@ -15,10 +15,22 @@ release: v2026.5.2
 resolution: Documentation overhaul epic completed through feature pm-r9gu and task pm-1sb2.
 expected_result: "Public documentation is concise, progressively disclosed, agent-optimized, navigable through GitHub-compatible links, and avoids private operations material."
 actual_result: README reduced to 104 lines; focused docs and tracker links were added; private-string scan and package dry-run passed; linked coverage passed at 100%.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-1sb2,related,"2026-07-26T17:02:32.433Z",null,null
-  pm-r9gu,related,"2026-07-26T17:02:32.433Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:09.068Z",null,null
+dependencies[4]:
+  - id: pm-1sb2
+    kind: related
+    created_at: "2026-07-26T17:02:32.433Z"
+  - id: pm-r9gu
+    kind: related
+    created_at: "2026-07-26T17:02:32.433Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:09.068Z"
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:52:48.541Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-05-01T20:51:21.686Z",codex-agent,"Duplicate check evidence: ran pm context --limit 10,pm search for README documentation docs progressive disclosure agents private operations,pm list-open --limit 20,and pm list-in-progress --limit 20. No open or in-progress documentation overhaul item existed; closed historical hits were not reusable,so a net-new parent epic was required."
   "2026-05-01T21:22:05.858Z",codex-agent,"Epic closure evidence: pm-1sb2 closed with linked documentation,private operations exclusion checks,package dry-run,security scan,build,link checks,and 100% linked coverage."

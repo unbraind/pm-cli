@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: extensions,external-audit,pm-cli,runtime-probe
 created_at: "2026-04-05T18:46:53.384Z"
-updated_at: "2026-07-26T22:19:50.964Z"
+updated_at: "2026-08-10T12:02:38.688Z"
 deadline: "2026-05-09T17:09:59.595Z"
 author: codex-agent
 estimated_minutes: 240
@@ -15,10 +15,22 @@ release: v2026.5.1
 resolution: Runtime-probe parity closeout completed by confirming top-level and subcommand extension forms share identical manage runtime-probe and doctor trace/detail behavior.
 expected_result: Parity regressions pass and manage runtime_probe + doctor trace/detail metadata are consistent across both invocation forms.
 actual_result: "pm test pm-p0ij --run passed linked suites (2 files, 103 tests) validating runtime-probe and doctor parity semantics with no failures."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-r9ei,related,"2026-07-26T17:22:33.404Z",null,null
-  pm-vhdc,related,"2026-07-26T17:22:33.404Z",null,null
-  pm-gt8u,discovered_from,"2026-07-26T22:19:50.765Z",null,null
+dependencies[4]:
+  - id: pm-r9ei
+    kind: related
+    created_at: "2026-07-26T17:22:33.404Z"
+  - id: pm-vhdc
+    kind: related
+    created_at: "2026-07-26T17:22:33.404Z"
+  - id: pm-gt8u
+    kind: discovered_from
+    created_at: "2026-07-26T22:19:50.765Z"
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-08-10T12:02:38.516Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[8]{created_at,author,text}:
   "2026-04-05T18:46:53.384Z",codex-agent,"Duplicate-check evidence: pm context --limit 20; pm list-open --limit 200; pm list-in-progress --limit 200; pm search 'extension diagnostics warning parity runtime probe' --limit 20; pm search 'activation_status unknown manage doctor' --limit 20. Net-new scope because no active canonical item tracks opt-in runtime probe mode for manage."
   "2026-04-05T19:29:09.252Z",codex-agent,"Completed opt-in runtime probe mode for extension manage parity with doctor-like runtime_active/activation_status semantics when explicitly requested. Default manage behavior remains compatibility-safe. Verification: extension command + CLI integration tests, full coverage, and typecheck passed."

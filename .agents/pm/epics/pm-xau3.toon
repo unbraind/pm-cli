@@ -6,22 +6,44 @@ status: closed
 priority: 1
 tags[4]: "area:ci","area:tests",coverage,test-architecture
 created_at: "2026-06-15T05:09:21.282Z"
-updated_at: "2026-07-26T17:29:29.040Z"
+updated_at: "2026-08-10T11:52:49.989Z"
 author: maintainer-agent
 goal: "Every file in the coverage scope (src, packages, plugins, scripts, docs/examples) reaches literal 100% statements/branches/functions/lines, with a clean, conventionally-named, deduplicated, fast test suite."
 objective: "Retire the curated include/exclude allowlist (ADR pm-w13j) AND the interim lane-A/B/C + waveN spec scaffolding, replacing them with module-mirrored spec files and shared harness helpers."
 value: "A trustworthy 100/100/100/100 gate plus a maintainable, discoverable test layout that contributors and agents can extend without re-deriving structure."
 parent: pm-doxj
 release: v2026.6.16
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-6tch,related,"2026-07-26T17:29:28.819Z",null,null
-  pm-7v9s,related,"2026-07-26T17:29:28.819Z",null,null
-  pm-doxj,implements,"2026-07-26T17:29:28.819Z",null,null
-  pm-f2ne,related,"2026-07-26T17:29:28.819Z",null,null
-  pm-krwu,related,"2026-07-26T17:29:28.819Z",null,null
-  pm-ud1x,related,"2026-07-26T17:29:28.819Z",null,null
-  pm-uvxc,related,"2026-07-26T17:29:28.819Z",null,null
-  pm-w13j,related,"2026-07-26T17:29:28.819Z",null,null
+dependencies[9]:
+  - id: pm-6tch
+    kind: related
+    created_at: "2026-07-26T17:29:28.819Z"
+  - id: pm-7v9s
+    kind: related
+    created_at: "2026-07-26T17:29:28.819Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T17:29:28.819Z"
+  - id: pm-f2ne
+    kind: related
+    created_at: "2026-07-26T17:29:28.819Z"
+  - id: pm-krwu
+    kind: related
+    created_at: "2026-07-26T17:29:28.819Z"
+  - id: pm-ud1x
+    kind: related
+    created_at: "2026-07-26T17:29:28.819Z"
+  - id: pm-uvxc
+    kind: related
+    created_at: "2026-07-26T17:29:28.819Z"
+  - id: pm-w13j
+    kind: related
+    created_at: "2026-07-26T17:29:28.819Z"
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:52:49.869Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[10]{created_at,author,text}:
   "2026-06-15T14:39:28.817Z",claude-code-agent,"Session resumed 2026-06-15 (claude-code-agent orchestration). Picked up the in-flight all-source-100% + reorg program after prior sessions were cut off by session limits. Current state verified: suite was RED (2 failing tests in the migrated tests/unit/scripts/dogfood-package-first.spec.ts) — FIXED. Plan: (1) get definitive full-coverage gap snapshot, (2) complete lane->module migration (lane-a already mirrored; lane-b docs-examples NOT yet migrated [tests/unit/docs-examples empty]; lane-c scripts partially split), (3) close all <100% gaps via specialized sub-agents writing module-mirrored specs, (4) delete lane/wave dirs + clean describe titles, (5) green PR + bot-review loop + merge. Secret scan: node scripts/check-secrets.mjs = clean."
   "2026-06-15T14:53:43.269Z",claude-code-agent,"Coverage campaign dispatched (claude-code-agent 2026-06-15). Definitive gap from full green run: TOTAL 98.08L/92.42B/98F/97.83S; 93 files <100% — src/cli 61, src/core 22, scripts 8, mcp 1, sdk 1; packages/plugins/docs already 100% (except lane-unique modules being re-homed). Mapped onto existing items (NO new items): pm-f2ne=scripts(8), pm-6tch=packages/docs(lane-b re-home+gaps), pm-krwu=core/mcp/sdk(22+2), pm-uvxc=cli register-infra + cli infra-misc, pm-ud1x=cli mutation/storage handlers (next batch), pm-7v9s=cli query/search/test/extension handlers (next batch). 5 specialized sub-agents launched in parallel on disjoint source+spec files (coverage-scripts/packages/core/reg-infra/cli-misc-agent), each claiming its item + documenting evidence. Hardest single file: src/cli/register-mutation.ts (139 uncovered branches, 1478 LOC) -> dedicated reg-infra agent. Command-handler buckets held for next batch to cap concurrency at ~5 and re-verify cache health."

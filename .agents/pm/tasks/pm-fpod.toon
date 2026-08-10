@@ -6,23 +6,55 @@ status: closed
 priority: 1
 tags[2]: audit,session-2026-07-02
 created_at: "2026-07-02T21:26:27.682Z"
-updated_at: "2026-07-27T07:13:15.855Z"
+updated_at: "2026-08-10T12:03:01.915Z"
 author: unknown
 release: v2026.7.3
-dependencies[13]{id,kind,created_at}:
-  pm-3l76,related,"2026-07-26T17:14:00.161Z"
-  pm-3wsi,related,"2026-07-26T17:14:00.161Z"
-  pm-6vy7,related,"2026-07-26T17:14:00.161Z"
-  pm-gdi7,related,"2026-07-26T17:14:00.161Z"
-  pm-ghf1,related,"2026-07-26T17:14:00.161Z"
-  pm-hfli,related,"2026-07-26T17:14:00.161Z"
-  pm-kes3,related,"2026-07-26T17:14:00.161Z"
-  pm-llrp,related,"2026-07-26T17:14:00.161Z"
-  pm-mo2v,related,"2026-07-26T17:14:00.161Z"
-  pm-p99b,related,"2026-07-26T17:14:00.161Z"
-  pm-z1pv,related,"2026-07-26T17:14:00.161Z"
-  pm-doxj,blocks,"2026-07-26T22:20:32.431Z"
-  pm-y7sc,supersedes,"2026-07-27T07:13:15.647Z"
+dependencies[14]:
+  - id: pm-3l76
+    kind: related
+    created_at: "2026-07-26T17:14:00.161Z"
+  - id: pm-3wsi
+    kind: related
+    created_at: "2026-07-26T17:14:00.161Z"
+  - id: pm-6vy7
+    kind: related
+    created_at: "2026-07-26T17:14:00.161Z"
+  - id: pm-gdi7
+    kind: related
+    created_at: "2026-07-26T17:14:00.161Z"
+  - id: pm-ghf1
+    kind: related
+    created_at: "2026-07-26T17:14:00.161Z"
+  - id: pm-hfli
+    kind: related
+    created_at: "2026-07-26T17:14:00.161Z"
+  - id: pm-kes3
+    kind: related
+    created_at: "2026-07-26T17:14:00.161Z"
+  - id: pm-llrp
+    kind: related
+    created_at: "2026-07-26T17:14:00.161Z"
+  - id: pm-mo2v
+    kind: related
+    created_at: "2026-07-26T17:14:00.161Z"
+  - id: pm-p99b
+    kind: related
+    created_at: "2026-07-26T17:14:00.161Z"
+  - id: pm-z1pv
+    kind: related
+    created_at: "2026-07-26T17:14:00.161Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:20:32.431Z"
+  - id: pm-y7sc
+    kind: supersedes
+    created_at: "2026-07-27T07:13:15.647Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:03:01.761Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[1]{created_at,author,text}:
   "2026-07-02T22:36:11.238Z",claude-code-agent,"PR #420 opened (branch docs-freshness-and-ci-hardening): docs freshness + CI hardening fixes, greptile pre-push review iterated to clean (5/5 confidence, 0 comments over 4 rounds: openai-key char class + sk-ant overlap + svcacct coverage + stale marketplace tool count). Awaiting GitHub checks + AI bot reviews."
 learnings[1]{created_at,author,text}:

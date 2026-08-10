@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: coverage,docs,docstrings,quality,source
 created_at: "2026-07-04T20:17:55.271Z"
-updated_at: "2026-07-26T17:03:49.700Z"
+updated_at: "2026-08-10T11:52:49.352Z"
 closed_at: "2026-07-11T00:02:33.260Z"
 author: maintainer-agent
 estimated_minutes: 960
@@ -18,11 +18,25 @@ release: v2026.7.11
 resolution: Repo-wide documentation contract completed and enforced by mandatory static quality gates.
 expected_result: Every in-scope public API and data-contract symbol is documented and regression-gated.
 actual_result: Static gate reports 100% module/export/member docstring coverage with zero trivial or boilerplate violations; release gates and exact 100% code coverage pass.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-5566,related,"2026-07-26T17:03:49.508Z",null,null
-  pm-p4mw,related,"2026-07-26T17:03:49.508Z",null,null
-  pm-u9d0,implements,"2026-07-26T17:03:49.508Z",null,null
-  pm-w8q4,related,"2026-07-26T17:03:49.508Z",null,null
+dependencies[5]:
+  - id: pm-5566
+    kind: related
+    created_at: "2026-07-26T17:03:49.508Z"
+  - id: pm-p4mw
+    kind: related
+    created_at: "2026-07-26T17:03:49.508Z"
+  - id: pm-u9d0
+    kind: implements
+    created_at: "2026-07-26T17:03:49.508Z"
+  - id: pm-w8q4
+    kind: related
+    created_at: "2026-07-26T17:03:49.508Z"
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:52:49.236Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[4]{created_at,author,text}:
   "2026-07-04T20:56:40.910Z",codex-agent,"Audit note from all-status PM review 2026-07-04: this claimed epic is the only active item returned by pm list --status open,in_progress --filter-metadata-missing and --filter-estimates-missing. It already has parent/tags/AC/risk/confidence/assignee and 8 active children; missing fields are estimated_minutes plus reviewer/sprint/release. I did not take over the claim from maintainer-agent; please add the missing planning metadata during the docstring lane update."
   "2026-07-06T21:41:06.424Z",maintainer-agent,"Audit #14 (2026-07-06): epic + all 8 child tasks were set in_progress on 07-04/05 but no work ever started — no claim, no branch, no PR, no docstring commits. Reverting the whole family to open so WIP signals (pm next/context/stats) are honest. Scope, AC, and estimates are untouched; work can resume by claiming pm-5566 (the gate) first. This incident is the evidence base for pm-w8q4 (stale in-progress detection)."

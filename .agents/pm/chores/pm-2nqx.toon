@@ -6,12 +6,22 @@ status: closed
 priority: 2
 tags[3]: audit,tech-debt,testing
 created_at: "2026-06-16T07:08:50.208Z"
-updated_at: "2026-07-26T22:17:59.688Z"
+updated_at: "2026-08-10T12:03:26.553Z"
 author: claude-code-agent
 release: v2026.6.16
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-xau3,related,"2026-07-26T17:02:09.149Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:59.476Z",null,null
+dependencies[3]:
+  - id: pm-xau3
+    kind: related
+    created_at: "2026-07-26T17:02:09.149Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:59.476Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:03:26.395Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[4]{created_at,author,text}:
   "2026-06-16T07:09:24.880Z",claude-code-agent,"[D1 HIGH] background-refresh duplicate — exact safe-merge map. Both files import src/core/search/background-refresh.js.\n\nDUPLICATED (identical code path + assertions), present in BOTH:\n- shouldRunSearchRefreshInForeground: bg-refresh 114/119/131/138/153 vs search-cache 1717/1722/1753 (inline-under-vitest default; explicit inline override; worker-child marker).\n- queue enqueue/drain: bg-refresh \"merges/dedupes/sorts then drains\" 162, \"ignores empty/blank\" 171, \"malformed json / non-array\" 179, \"removes stale gate\" 195 vs search-cache 1760/1773/1781/1790/1809.\n- runSemanticRefreshWorker: bg-refresh \"drains+refreshes under lock\" 300, \"settings cannot be read warning\" 286, \"re-enqueues+warns on throw\" 341, \"returns without draining when lock held\" 352, \"returns early when pm root missing\" 276 vs search-cache 1848/1908/1927/1891/1939.\n\nUNIQUE to search-cache.spec.ts (MUST be ported into background-refresh.spec.ts before deletion, or coverage drops):\n- \"falls back to an unguarded queue merge when the pending queue gate stays contended\" (1797)\n- \"keeps awaited queue-gate backoff timers referenced so CLI top-level await can settle\" (1822)\n- \"processes ids enqueued mid-refresh in a follow-up round\" (1864)\nNOTE: bg-refresh has near-equivalents (1797~bg 207 unguarded-merge; verify branch identity before assuming redundant). 1822 and 1864 appear genuinely unique — port them.\n\nUNIQUE to background-refresh.spec.ts (keep): \"uses default author when PM_AUTHOR unset\" 318, \"skips while fresh gate held by another writer\" 229, \"re-dispatches child on sibling enqueue in final window\" 369, \"does not re-dispatch after failure\" 403, dispatchRefreshChild spawn tests 244/264.\n\nSafe merge: port the 2-3 unique search-cache cases above into background-refresh.spec.ts, then delete the shouldRunSearchRefreshInForeground/queue/runSemanticRefreshWorker describe blocks (search-cache ~1712-1946). Re-run coverage; background-refresh.ts must stay 100%."
   "2026-06-16T07:09:41.606Z",claude-code-agent,"[D2 MEDIUM] check-secrets duplicate — exact safe-merge map. Both exercise scripts/check-secrets-lib.mjs scanContent.\n\ncheck-secrets-rules.spec.ts imports the module ONCE at top level (shared RULES, push/pop in try/finally). check-secrets-lib.spec.ts uses createScriptHarness().importModule for a FRESH cache-busted module per test (cleaner isolation — preferred base).\n\nDUPLICATED assertions:\n- one-based line numbers: rules \"reports one-based line numbers\" (line 54, asserts line===3) vs lib \"computes one-based line numbers across multiple newlines\" (16, line===5) AND \"line number of 1 for first line\" (24). Same code path; lib covers more positions.\n- includeFiles scoping: rules \"honors includeFiles when custom rules are scoped\" (39) vs lib \"skips a rule whose includeFiles pattern does not match\" (31). Same branch.\n- excludeFiles scoping: rules \"honors excludeFiles for path/host heuristics\" (34) vs lib \"skips a rule whose excludeFiles pattern matches\" (43). Same branch (absolute-home-path under tests/).\n\nUNIQUE to check-secrets-rules.spec.ts (MUST keep — these are the only places hit):\n- \"flags every GitHub token prefix\" (11): ghp_/gho_/ghu_/ghs_/ghr_ + github_pat_ — github-token rule variants.\n- \"flags other high-risk credential shapes\" (19): private-key, aws-access-key, sentry-org-token, private-ssh-target, private-ip.\n- \"does not flag clean documentation content\" (30): zero-findings path.\n- \"exposes a non-empty rule set\" (60): RULES array shape.\n\nSafe merge: fold the include/exclude + line-number cases into check-secrets-lib.spec.ts (better per-test fresh-module isolation), keep the rule-coverage cases (GitHub prefixes, credential shapes, clean-doc, rule-set shape) — they are NOT in the lib spec and likely cover distinct regex branches. Re-run coverage on check-secrets-lib.mjs."

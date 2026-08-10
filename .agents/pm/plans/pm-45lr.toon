@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,architecture,audit,ecosystem,sdk
 created_at: "2026-07-15T19:57:25.865Z"
-updated_at: "2026-07-27T07:13:24.393Z"
+updated_at: "2026-08-10T12:05:43.983Z"
 closed_at: "2026-07-15T20:09:07.394Z"
 author: codex-audit-20260715
 estimated_minutes: 360
@@ -18,25 +18,67 @@ release: v2026.7.16
 resolution: "Completed a tracker-only review pass, enriched canonical roadmap items, backfilled active metadata, and filed exactly three deduplicated focused gaps without implementing product changes."
 expected_result: "A complete live CLI, SDK, repository, performance, security, quality, package-lifecycle, and 18-repository ecosystem audit documented through pm, with canonical ownership, runnable evidence, no duplicate roadmap growth, and direct-main publication."
 actual_result: "All requested surfaces were audited and documented; twenty descriptions and seventeen tag sets were backfilled; pm-2tan, pm-ld0z, and pm-nf7q were created; broad findings were routed to existing owners; final tracker-context linked run passed 8 of 8 checks; no product files changed."
-dependencies[18]{id,kind,created_at}:
-  pm-92if,related,"2026-07-15T19:57:25.865Z"
-  pm-9rxu,related,"2026-07-15T19:57:25.865Z"
-  pm-doxj,parent,"2026-07-15T19:57:25.865Z"
-  pm-n7rr,related,"2026-07-15T19:57:25.865Z"
-  pm-ugqx,related,"2026-07-15T19:57:25.865Z"
-  pm-usfg,related,"2026-07-15T19:57:25.865Z"
-  pm-2tan,related,"2026-07-26T17:03:40.875Z"
-  pm-801d,related,"2026-07-26T17:03:40.875Z"
-  pm-doxj,implements,"2026-07-26T17:03:40.875Z"
-  pm-kb5h,related,"2026-07-26T17:03:40.875Z"
-  pm-ld0z,related,"2026-07-26T17:03:40.875Z"
-  pm-nf7q,related,"2026-07-26T17:03:40.875Z"
-  pm-o8um,related,"2026-07-26T17:03:40.875Z"
-  pm-onpb,related,"2026-07-26T17:03:40.875Z"
-  pm-quzx,related,"2026-07-26T17:03:40.875Z"
-  pm-tll8,related,"2026-07-26T17:03:40.875Z"
-  pm-yh8r,related,"2026-07-26T17:03:40.875Z"
-  pm-su60,supersedes,"2026-07-27T07:13:24.126Z"
+dependencies[19]:
+  - id: pm-92if
+    kind: related
+    created_at: "2026-07-15T19:57:25.865Z"
+  - id: pm-9rxu
+    kind: related
+    created_at: "2026-07-15T19:57:25.865Z"
+  - id: pm-doxj
+    kind: parent
+    created_at: "2026-07-15T19:57:25.865Z"
+  - id: pm-n7rr
+    kind: related
+    created_at: "2026-07-15T19:57:25.865Z"
+  - id: pm-ugqx
+    kind: related
+    created_at: "2026-07-15T19:57:25.865Z"
+  - id: pm-usfg
+    kind: related
+    created_at: "2026-07-15T19:57:25.865Z"
+  - id: pm-2tan
+    kind: related
+    created_at: "2026-07-26T17:03:40.875Z"
+  - id: pm-801d
+    kind: related
+    created_at: "2026-07-26T17:03:40.875Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T17:03:40.875Z"
+  - id: pm-kb5h
+    kind: related
+    created_at: "2026-07-26T17:03:40.875Z"
+  - id: pm-ld0z
+    kind: related
+    created_at: "2026-07-26T17:03:40.875Z"
+  - id: pm-nf7q
+    kind: related
+    created_at: "2026-07-26T17:03:40.875Z"
+  - id: pm-o8um
+    kind: related
+    created_at: "2026-07-26T17:03:40.875Z"
+  - id: pm-onpb
+    kind: related
+    created_at: "2026-07-26T17:03:40.875Z"
+  - id: pm-quzx
+    kind: related
+    created_at: "2026-07-26T17:03:40.875Z"
+  - id: pm-tll8
+    kind: related
+    created_at: "2026-07-26T17:03:40.875Z"
+  - id: pm-yh8r
+    kind: related
+    created_at: "2026-07-26T17:03:40.875Z"
+  - id: pm-su60
+    kind: supersedes
+    created_at: "2026-07-27T07:13:24.126Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:05:43.798Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-07-15T19:57:37.772Z",codex-audit-20260715,"Duplicate-check evidence: searched all statuses for ecosystem audit, SDK architecture, simplification, performance, security, external-package, test-organization, renderer-scoping, and plan-help terms; reviewed prior closed audit lineages plus live review pass 90 notes. No active audit execution item represented this new manual pass, so this short-lived Plan is the evidence container; implementation findings remain or are filed under their canonical capability parents."
   "2026-07-15T20:09:05.506Z",codex-audit-20260715,"Completion evidence: linked verification passed for build, typecheck, ESLint, jscpd zero-clone scan, security scan, docs/skills gate, health, and validate. Final health is ok with zero warnings; validation is ok with the known 276 historical resolution metadata warnings; open exact/fuzzy/parent-scope dedupe audits are empty; 225 open items have descriptions and tags; all linked files/docs resolve; git diff --check passes. No issue implementation, product code, test, public doc, or skill content was changed."

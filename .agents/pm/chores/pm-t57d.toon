@@ -6,11 +6,21 @@ status: closed
 priority: 1
 tags[3]: perf,refactor,startup
 created_at: "2026-05-31T05:41:23.297Z"
-updated_at: "2026-07-26T22:18:09.338Z"
+updated_at: "2026-08-10T12:03:36.945Z"
 author: claude-code-agent
 release: v2026.5.31
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-3mal,related,"2026-07-26T17:26:04.670Z",null,null
-  pm-w7f2,discovered_from,"2026-07-26T22:18:09.055Z",null,null
+dependencies[3]:
+  - id: pm-3mal
+    kind: related
+    created_at: "2026-07-26T17:26:04.670Z"
+  - id: pm-w7f2
+    kind: discovered_from
+    created_at: "2026-07-26T22:18:09.055Z"
+  - id: pm-9rxu
+    kind: implements
+    created_at: "2026-08-10T12:03:36.749Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 close_reason: "Implemented and verified. All 44 handler call sites in register-setup/list-query/mutation/operations now import their specific command module; the unused barrel lazy-loaders were removed. esbuild now emits per-command chunks (verified: 943KB commands monolith gone, fast-glob 0 resolutions during `pm list`). Full suite green (2029 tests)."
 body: ""

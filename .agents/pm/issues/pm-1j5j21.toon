@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:38.852Z"
-updated_at: "2026-08-09T16:09:41.852Z"
+updated_at: "2026-08-10T12:05:51.008Z"
 closed_at: "2026-08-09T15:57:23.719Z"
 completed_at: "2026-08-09T15:57:23.719Z"
 author: "harness:codex"
@@ -21,11 +21,12 @@ expected_result: Merge decision evidence must survive a fresh clone without comm
 actual_result: "Fresh clones retain stable hash-only decision evidence, original clones retain raw-value receipts, duplicate receipt identities prefer local detail, and reconciliation updates both stores."
 affected_version: 2026.8.6
 component: merge safety and durable history
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-g5sx,related,"2026-08-07T08:33:38.852Z","harness:codex","cli:create:dep",detected
   pm-ysqb6n,related,"2026-08-07T08:33:38.852Z","harness:codex","cli:create:dep",detected
   pm-g5sx,discovered_from,"2026-08-07T08:34:27.916Z","harness:codex","cli:update:dep",detected
   pm-ysqb6n,supersedes,"2026-08-07T08:34:27.916Z","harness:codex","cli:update:dep",detected
+  pm-dj98,implements,"2026-08-10T12:05:50.781Z","harness:claude-code","cli:update:dep",detected
 comments[5]{created_at,author,text}:
   "2026-08-07T08:33:38.852Z","harness:codex","GitHub sources: https://github.com/unbraind/pm-cli/issues/921 and https://github.com/unbraind/pm-cli/issues/922. Duplicate check searched all 2,351 items and every status for clone-local/gitignored merge receipts,fresh-clone CI,discarded values,history-repair,and both GH numbers. The reports share one root contract and are intentionally consolidated; closed pm-ysqb6n is predecessor evidence,not an active duplicate."
   "2026-08-08T15:39:02.830Z","harness:codex","Investigation boundary (2026-08-08): this PR deliberately does not claim fresh-clone durability. The implemented receipt work classifies lossless versus discarded-value decisions and requires explicit acceptance, but raw recovery receipts remain clone-local and ignored. A durable privacy-safe pushed evidence design needs a separate tracked-record contract and fresh-clone lifecycle, so retaining this item as open avoids falsely closing GH-921/GH-922."

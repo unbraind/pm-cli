@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: ci,flake-class,macos,tests
 created_at: "2026-07-11T09:55:36.355Z"
-updated_at: "2026-07-26T22:19:22.900Z"
+updated_at: "2026-08-10T12:02:23.237Z"
 closed_at: "2026-07-11T23:15:31.641Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -17,10 +17,22 @@ release: v2026.7.12
 resolution: "Fixed in PR#520: withTempPmPath canonicalizes mkdtemp output via fs.realpath; init-path-guard suite stable on macOS."
 expected_result: Temp PM roots identical under symlinked /var vs /private/var; macOS nightly green.
 actual_result: mkdtemp output used un-canonicalized; init-path-guard probe-root assertion failed on macos-latest/Node 24.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-gf6f,related,"2026-07-11T09:56:01.533Z",null,null
-  pm-kvev,related,"2026-07-11T09:56:01.533Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:19:22.618Z",null,null
+dependencies[4]:
+  - id: pm-gf6f
+    kind: related
+    created_at: "2026-07-11T09:56:01.533Z"
+  - id: pm-kvev
+    kind: related
+    created_at: "2026-07-11T09:56:01.533Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:19:22.618Z"
+  - id: pm-u9d0
+    kind: implements
+    created_at: "2026-08-10T12:02:23.090Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-07-11T23:05:14.061Z",codex-root,"Implementation start: selected after live all-status duplicate checks, full metadata/comments/notes/learnings review, GitHub issue/PR/security/dependency inspection, and SDK-first frontier reconciliation. This item is actively edited in the broad schema/config/profile/init SDK promotion bundle; unrelated open items remain unclaimed."
   "2026-07-11T23:15:29.326Z",codex-root,"Evidence: shared withTempPmPath now realpath-canonicalizes mkdtemp output once at the source. The full init-path-guard integration suite passed, including root-layout probe identity, and type/lint/static gates passed."

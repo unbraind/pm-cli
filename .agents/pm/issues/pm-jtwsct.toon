@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-07T08:33:39.644Z"
-updated_at: "2026-08-08T17:41:08.981Z"
+updated_at: "2026-08-10T12:05:51.751Z"
 closed_at: "2026-08-08T17:41:08.555Z"
 completed_at: "2026-08-08T17:41:08.555Z"
 author: "harness:codex"
@@ -21,11 +21,12 @@ expected_result: "Strict health blocks on discarded-value decisions, reports los
 actual_result: Health partitions merge receipts correctly and its no-provider regression proof now verifies the integrity check returns the expected ok status.
 affected_version: 2026.8.5
 component: merge health and receipt classification
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-g5sx,related,"2026-08-07T08:33:39.644Z","harness:codex","cli:create:dep",detected
   pm-ysqb6n,related,"2026-08-07T08:33:39.644Z","harness:codex","cli:create:dep",detected
   pm-g5sx,discovered_from,"2026-08-07T08:34:28.760Z","harness:codex","cli:update:dep",detected
   pm-1j5j21,related,"2026-08-07T08:47:19.689Z","harness:codex","cli:update:dep",detected
+  pm-5oj5,implements,"2026-08-10T12:05:51.587Z","harness:claude-code","cli:update:dep",detected
 comments[5]{created_at,author,text}:
   "2026-08-07T08:33:39.644Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/920. Duplicate check searched all 2,351 items and every status for lossless merge receipts,pending decisions,strict health,discarded fields,and GH-920; no canonical issue existed."
   "2026-08-07T08:47:19.689Z","harness:codex","Governance repair: retained the companion lineage to pm-1j5j21 as related, without asserting the blocks spelling that pm-jkbqt8 proves is currently invisible to readiness and governed by a non-growth ratchet."

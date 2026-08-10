@@ -6,14 +6,22 @@ status: closed
 priority: 3
 tags[2]: "area:telemetry",bug
 created_at: "2026-06-10T20:20:07.984Z"
-updated_at: "2026-07-26T22:19:06.818Z"
+updated_at: "2026-08-10T12:02:07.609Z"
 author: coverage-ratchet-agent
 release: v2026.6.12
 resolution: fixed
 expected_result: CI=true (or CI=1) skips the telemetry first-run prompt; CI=false or empty behaves as unset.
 actual_result: "Previously the guard reused the disable-value set, so only CI=false/0/no/off skipped and CI=true did not (masked by the non-TTY guard in real CI); now truthy CI values skip and falsy/empty values fall through to the interactive prompt."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-doxj,blocks,"2026-07-26T22:19:06.467Z",null,null
+dependencies[2]:
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:19:06.467Z"
+  - id: pm-5oj5
+    kind: implements
+    created_at: "2026-08-10T12:02:07.433Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[1]{created_at,author,text}:
   "2026-06-11T22:13:05.322Z",cli-fixes-agent,"Truthiness rules for the CI guard (new isTruthyEnvValue, separate from parseBooleanLike which only matches the disable set): the prompt is skipped iff CI is SET to a value that is non-empty after trim and not in {0,false,no,off} (case-insensitive) - so CI=true, CI=1, CI=yes, and any other CI=<token> skip. CI unset, CI=\"\" (empty/whitespace, treated as unset per common CI conventions), and the explicit falsy spellings do NOT skip. PM_TELEMETRY_PROMPT keeps its existing opt-out semantics (disable values suppress the prompt) - only the CI check changed. tests/unit/telemetry-consent.spec.ts updated: the inverted assertion (CI=false skips) replaced with CI=true/CI=1 skip assertions plus a new test that CI=false and CI=\"\" still prompt interactively."
 close_reason: "Fixed the inverted CI guard in shouldSkipTelemetryPrompt: a new isTruthyEnvValue check skips the first-run prompt when CI is set to any non-empty value outside {0,false,no,off}; CI unset/empty/falsy behaves as not-CI. PM_TELEMETRY_PROMPT opt-out semantics unchanged. telemetry-consent.spec.ts assertions flipped to the fixed behavior plus a new test that CI=false and CI=\"\" still prompt."

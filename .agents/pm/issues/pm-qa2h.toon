@@ -6,14 +6,22 @@ status: closed
 priority: 1
 tags[6]: auto-release,bug,ci,github-actions,pm-cli,release
 created_at: "2026-05-17T06:23:17.480Z"
-updated_at: "2026-07-29T04:25:39.665Z"
+updated_at: "2026-08-10T12:02:41.886Z"
 assignee: claude-code-agent
 author: claude-code-agent
 release: v2026.5.18
 resolution: Completed auto-release.yml workflow_dispatch silently overrides explicit push=false to true and closed with verified delivery evidence.
 expected_result: "Expected result: closure includes explicit resolution metadata and verifiable delivery evidence."
 actual_result: "Actual result: Completed auto-release.yml workflow_dispatch silently overrides explicit push=false to true and closed with verified delivery evidence."
-dependencies[1]{id,kind,created_at}:
-  pm-jrjt,discovered_from,"2026-07-26T22:18:35.905Z"
+dependencies[2]:
+  - id: pm-jrjt
+    kind: discovered_from
+    created_at: "2026-07-26T22:18:35.905Z"
+  - id: pm-u9d0
+    kind: implements
+    created_at: "2026-08-10T12:02:41.740Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 close_reason: auto-release.yml workflow_dispatch no longer silently overrides an explicit push=false. Derived from the recorded resolution during 2026-07-29 governance repair.
 body: ""

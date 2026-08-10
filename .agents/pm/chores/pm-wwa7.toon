@@ -6,15 +6,25 @@ status: closed
 priority: 3
 tags[3]: code-quality,dedup,packages
 created_at: "2026-05-24T22:03:17.712Z"
-updated_at: "2026-07-26T22:18:10.671Z"
+updated_at: "2026-08-10T12:03:37.727Z"
 author: package-dedup-agent
 release: v2026.5.27
 resolution: Implemented install-safe generated runtime-loader entrypoints for beads/todos and verified copied package installs.
 expected_result: "beads/todos index loaders share one source of truth without static SDK imports at module load time, and installed package commands continue to work."
 actual_result: "Generated runtime-loader files are in sync, entrypoints call loadPackageRuntimeModule, manual temp-project copied installs passed, and full release gate passed."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-ybfj,related,"2026-07-26T17:29:05.249Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:18:10.423Z",null,null
+dependencies[3]:
+  - id: pm-ybfj
+    kind: related
+    created_at: "2026-07-26T17:29:05.249Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:18:10.423Z"
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-08-10T12:03:37.525Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[6]{created_at,author,text}:
   "2026-05-24T22:38:46.379Z",codex-subagent-dedup,"Subagent review finding: packages/pm-beads/extensions/beads/runtime-loader.ts:18-64 and packages/pm-todos/extensions/todos/runtime-loader.ts:18-64 are generated/in-sync, but packages/pm-beads/extensions/beads/index.ts:38-84 and packages/pm-todos/extensions/todos/index.ts:40-86 still contain and call their own loadRuntimeModule implementations. Current branch leaves the generated loaders dead/unreferenced and the index.ts duplication intact; wire index.ts to loadPackageRuntimeModule or drop the generated files before closing this chore."
   "2026-05-24T22:40:32.872Z",codex-dedup-subagents,"Implementation update: resolved sub-agent dead-loader finding by wiring packages/pm-beads/extensions/beads/index.{ts,js} and packages/pm-todos/extensions/todos/index.{ts,js} to generated runtime-loader.{ts,js}; removed duplicated resolvePackageRootCandidates/loadRuntimeModule bodies from entrypoints while keeping generated loaders SDK-import-free at load time."

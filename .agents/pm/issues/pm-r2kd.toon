@@ -6,17 +6,31 @@ status: closed
 priority: 2
 tags[4]: agent-ux,dogfood-2026-06-12,packages,templates
 created_at: "2026-06-12T16:19:03.068Z"
-updated_at: "2026-07-26T22:19:56.232Z"
+updated_at: "2026-08-10T12:02:44.074Z"
 author: maintainer-agent
 release: v2026.6.19
 resolution: Fixed templates package fallback so unknown parent/subcommand/options/extra args fail fast.
 expected_result: Invalid templates invocations produce usage errors instead of silently listing or ignoring tokens.
 actual_result: templates list/save/show now validate args/options; builtin extension tests/manual package-command checks/full coverage/dogfood passed.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-2fgn,related,"2026-07-26T17:24:37.934Z",null,null
-  pm-hq28,related,"2026-07-26T17:24:37.934Z",null,null
-  pm-ill9gv,related,"2026-07-26T17:24:37.934Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:19:55.972Z",null,null
+dependencies[5]:
+  - id: pm-2fgn
+    kind: related
+    created_at: "2026-07-26T17:24:37.934Z"
+  - id: pm-hq28
+    kind: related
+    created_at: "2026-07-26T17:24:37.934Z"
+  - id: pm-ill9gv
+    kind: related
+    created_at: "2026-07-26T17:24:37.934Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:19:55.972Z"
+  - id: pm-8jdc
+    kind: implements
+    created_at: "2026-08-10T12:02:43.914Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[1]{created_at,author,text}:
   "2026-06-17T23:12:21.405Z",codex-audit-agent,"Final evidence: templates unknown subcommands/options/extra args now exit usage instead of list/silent ignore; verified by builtin extension entrypoint tests, manual /tmp package-command checks, full coverage 100%, dogfood package-first, release gates, security scan, and validation history_drift ok."
 files[2]{path,scope,note}:

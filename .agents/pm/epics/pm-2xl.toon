@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:foundations",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:01:10.322Z"
-updated_at: "2026-07-29T04:22:14.328Z"
+updated_at: "2026-08-10T11:52:34.453Z"
 deadline: "2026-02-20T23:01:10.322Z"
 assignee: steve
 author: steve
@@ -41,10 +41,28 @@ fixed_version: archive-2026q2
 component: project-management/milestone-0-foundations
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Milestone 0 - Foundations.
-dependencies[3]{id,kind,created_at}:
-  pm-6hhn,implements,"2026-07-26T22:16:39.467Z"
-  pm-doxj,blocks,"2026-07-26T22:16:39.467Z"
-  pm-j7a,implements,"2026-07-26T22:16:39.467Z"
+dependencies[5]:
+  - id: pm-6hhn
+    kind: implements
+    created_at: "2026-07-26T22:16:39.467Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:16:39.467Z"
+  - id: pm-j7a
+    kind: implements
+    created_at: "2026-07-26T22:16:39.467Z"
+  - id: pm-6hhn
+    kind: supersedes
+    created_at: "2026-08-10T11:52:34.298Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:52:34.298Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-02-17T23:01:10.322Z",steve,Milestone 0 establishes the base architecture for later work.
   "2026-02-22T18:18:40.639Z",maintainer-agent,"Planned change-set: verify Milestone 0 completion against PRD checklist and current command surface, link governing docs and sandbox-safe tests, run pm test + pm test-all regressions, then close this epic with evidence if all checks pass."

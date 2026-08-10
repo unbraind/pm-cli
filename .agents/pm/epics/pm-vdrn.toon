@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: agent-ux,"area:calendar","area:recurrence",core,pm-cli
 created_at: "2026-03-31T22:29:17.588Z"
-updated_at: "2026-07-26T22:16:57.246Z"
+updated_at: "2026-08-10T11:53:11.399Z"
 deadline: "2026-04-14T22:29:17.588Z"
 assignee: codex-agent
 author: codex-agent
@@ -40,9 +40,20 @@ fixed_version: archive-2026q2
 component: project-management/calendar-parity-phase-2-events-and-recurrence
 regression: false
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for Calendar parity phase 2: events and recurrence."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-qh3p,related,"2026-03-31T22:29:17.588Z",codex-agent,null
-  pm-doxj,blocks,"2026-07-26T22:16:56.971Z",null,null
+dependencies[3]:
+  - id: pm-qh3p
+    kind: related
+    created_at: "2026-03-31T22:29:17.588Z"
+    author: codex-agent
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:16:56.971Z"
+  - id: pm-t4d7nz
+    kind: implements
+    created_at: "2026-08-10T11:53:11.229Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-03-31T22:29:17.588Z",codex-agent,Epic created to extend calendar beyond reminders and deadlines.
   "2026-03-31T23:27:14.850Z",codex-agent,"All phase-2 child features are complete: schema+mutation, occurrence engine+controls, and integration/docs hardening with 100 percent verification."

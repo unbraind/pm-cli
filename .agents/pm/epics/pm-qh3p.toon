@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: agent-ux,"area:calendar","area:reminders",core,pm-cli
 created_at: "2026-03-31T21:27:17.807Z"
-updated_at: "2026-07-26T22:17:45.368Z"
+updated_at: "2026-08-10T11:53:12.012Z"
 deadline: "2026-04-14T21:27:17.807Z"
 author: codex-agent
 estimated_minutes: 480
@@ -39,24 +39,67 @@ fixed_version: vnext
 component: cli/calendar
 regression: false
 customer_impact: Improves agent deadline and reminder planning workflows.
-dependencies[17]{id,kind,created_at,author,source_kind}:
-  pm-2fj,related,"2026-03-31T21:27:17.807Z",codex-agent,null
-  pm-2p6q,related,"2026-03-31T21:27:17.807Z",codex-agent,null
-  pm-r0m,related,"2026-03-31T21:27:17.807Z",codex-agent,null
-  pm-0lbm,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-122q,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-2v01,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-7e6n,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-c877,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-ezri,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-kglq,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-qze9,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-r15d,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-tuhf,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-tyq3,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-x2k0,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-ysgr,related,"2026-07-26T17:24:01.460Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:45.092Z",null,null
+dependencies[18]:
+  - id: pm-2fj
+    kind: related
+    created_at: "2026-03-31T21:27:17.807Z"
+    author: codex-agent
+  - id: pm-2p6q
+    kind: related
+    created_at: "2026-03-31T21:27:17.807Z"
+    author: codex-agent
+  - id: pm-r0m
+    kind: related
+    created_at: "2026-03-31T21:27:17.807Z"
+    author: codex-agent
+  - id: pm-0lbm
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-122q
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-2v01
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-7e6n
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-c877
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-ezri
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-kglq
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-qze9
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-r15d
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-tuhf
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-tyq3
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-x2k0
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-ysgr
+    kind: related
+    created_at: "2026-07-26T17:24:01.460Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:45.092Z"
+  - id: pm-t4d7nz
+    kind: implements
+    created_at: "2026-08-10T11:53:11.871Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[5]{created_at,author,text}:
   "2026-03-31T21:27:17.807Z",codex-agent,Calendar epic created after duplicate scan across existing pm items.
   "2026-03-31T21:29:17.884Z",codex-agent,"Hierarchy seeded after duplicate scan: features pm-tuhf pm-c877 pm-122q; tasks pm-7e6n pm-ysgr pm-ezri pm-kglq pm-qze9 pm-tyq3 pm-2v01. Linked related historical items pm-r0m pm-2p6q pm-0lbm pm-2fj for continuity."

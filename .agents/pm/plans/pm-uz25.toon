@@ -6,20 +6,40 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-05-23T03:43:24.111Z"
-updated_at: "2026-07-26T22:20:08.951Z"
+updated_at: "2026-08-10T12:03:44.168Z"
 author: claude-code-agent
 release: v2026.5.23
 resolution: Resolution metadata backfilled during active tracker hygiene; existing closure comments and history remain the detailed source of truth.
 expected_result: "Closed item has explicit resolution, expected_result, and actual_result metadata so pm validate can confirm closure hygiene."
 actual_result: Metadata fields backfilled without changing the closed status or implementation history.
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-c3dx,related,"2026-07-26T17:27:26.660Z",null,null
-  pm-fu5d,related,"2026-07-26T17:27:26.660Z",null,null
-  pm-kyd6,related,"2026-07-26T17:27:26.660Z",null,null
-  pm-swie,related,"2026-07-26T17:27:26.660Z",null,null
-  pm-uzmf,related,"2026-07-26T17:27:26.660Z",null,null
-  pm-xk39,related,"2026-07-26T17:27:26.660Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:20:08.781Z",null,null
+dependencies[8]:
+  - id: pm-c3dx
+    kind: related
+    created_at: "2026-07-26T17:27:26.660Z"
+  - id: pm-fu5d
+    kind: related
+    created_at: "2026-07-26T17:27:26.660Z"
+  - id: pm-kyd6
+    kind: related
+    created_at: "2026-07-26T17:27:26.660Z"
+  - id: pm-swie
+    kind: related
+    created_at: "2026-07-26T17:27:26.660Z"
+  - id: pm-uzmf
+    kind: related
+    created_at: "2026-07-26T17:27:26.660Z"
+  - id: pm-xk39
+    kind: related
+    created_at: "2026-07-26T17:27:26.660Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:20:08.781Z"
+  - id: pm-96h7
+    kind: implements
+    created_at: "2026-08-10T12:03:43.945Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[8]{created_at,author,text}:
   "2026-05-23T04:18:33.981Z",claude-code-agent,"PR #45 opened (branch agent-ux-deps-graph-batch-20260523, commit 398fb079). Full local gate green: 1473 tests / 100% coverage; check-secrets clean; manual temp-dir smoke for all 8 findings passed. Awaiting CI + AI-bot review (>=15min) before merge. Follow-up pm-swie filed for the update/create --test parser consistency."
   "2026-05-23T04:26:28.854Z",claude-code-agent,"CI feedback cycle 1: PR #45 'Gates (static)' failed — pm-kyd6 additions pushed runUpdate cyclomatic complexity 257->264 over the 260 budget. Fixed in commit 316284ef by extracting resolveBlockedByDependencyTarget + applyBlockedByDependencyEdge module-level helpers (pure refactor; behavior unchanged). Re-verified locally: full build OK, 1473 tests / 100% coverage, static gate passes. Pushed; awaiting CI re-run + AI-bot review."

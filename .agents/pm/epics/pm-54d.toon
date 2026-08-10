@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:operations",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:01:11.350Z"
-updated_at: "2026-07-29T04:22:17.448Z"
+updated_at: "2026-08-10T11:52:36.127Z"
 deadline: "2026-03-03T23:01:11.350Z"
 assignee: steve
 author: steve
@@ -41,7 +41,7 @@ fixed_version: archive-2026q2
 component: project-management/milestone-3-query-operations
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Milestone 3 - Query + Operations.
-dependencies[4]:
+dependencies[6]:
   - id: pm-c0r
     kind: blocks
     created_at: "2026-02-17T23:01:11.350Z"
@@ -55,6 +55,18 @@ dependencies[4]:
   - id: pm-met4
     kind: implements
     created_at: "2026-07-26T22:16:34.327Z"
+  - id: pm-j82fd3
+    kind: implements
+    created_at: "2026-08-10T11:52:36.017Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-met4
+    kind: supersedes
+    created_at: "2026-08-10T11:52:36.017Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[5]{created_at,author,text}:
   "2026-02-17T23:01:11.350Z",steve,Milestone 3 turns core data into usable project operations.
   "2026-03-04T14:41:02.957Z",unknown,"Planned change-set: add explicit integration assertions for list-open/list-in-progress/list-blocked/list-closed/list-canceled command filtering, then update PRD Milestone 3 list checklist from [~] to [x] once verified by sandboxed coverage + regression runs."

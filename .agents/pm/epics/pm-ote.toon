@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:meta",pm-cli,release,release-readiness
 created_at: "2026-02-17T23:36:55.193Z"
-updated_at: "2026-07-26T22:17:41.326Z"
+updated_at: "2026-08-10T11:52:38.602Z"
 deadline: "2026-03-03T23:36:55.193Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -40,10 +40,22 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-refactor
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release readiness refactor.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-zgkk,related,"2026-07-26T17:22:20.490Z",null,null
-  pm-j7a,implements,"2026-07-26T22:16:10.634Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:41.082Z",null,null
+dependencies[4]:
+  - id: pm-zgkk
+    kind: related
+    created_at: "2026-07-26T17:22:20.490Z"
+  - id: pm-j7a
+    kind: implements
+    created_at: "2026-07-26T22:16:10.634Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:41.082Z"
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:52:38.482Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[80]{created_at,author,text}:
   "2026-02-17T23:36:55.193Z",cursor-agent,Epic created to coordinate release-hardening with strict dogfood logging.
   "2026-02-18T00:15:45.830Z",cursor-agent,"Aggregate validation evidence: node dist/cli.js test-all --status in_progress --json completed successfully with totals items=7 linked_tests=8 passed=8 failed=0 skipped=0 after removing recursive linked test entries."

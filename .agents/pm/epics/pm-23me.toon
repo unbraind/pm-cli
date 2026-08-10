@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: audit,calendar,dogfood,extensibility,pm-cli,sdk,telemetry
 created_at: "2026-04-30T19:37:11.721Z"
-updated_at: "2026-07-26T22:17:08.171Z"
+updated_at: "2026-08-10T11:52:40.417Z"
 deadline: "2026-05-02T19:37:11.721Z"
 author: codex-audit
 estimated_minutes: 360
@@ -15,12 +15,28 @@ release: v2026.5.2
 resolution: "Resolution normalized from close_reason: Superseded by pm-2eb3 (2026-05-01 Full PM CLI Dogfood Audit v2) which covers the latest 2026.5.1-2 build comprehensively"
 expected_result: "Expected closure outcome: Superseded by pm-2eb3 (2026-05-01 Full PM CLI Dogfood Audit v2) which covers the latest 2026.5.1-2 build comprehensively"
 actual_result: "Actual closure outcome: Superseded by pm-2eb3 (2026-05-01 Full PM CLI Dogfood Audit v2) which covers the latest 2026.5.1-2 build comprehensively"
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-2eb3,related,"2026-07-26T17:01:32.590Z",null,null
-  pm-mb4n,related,"2026-07-26T17:01:32.590Z",null,null
-  pm-wg1d,related,"2026-07-26T17:01:32.590Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:07.991Z",null,null
-  pm-wg1d,discovered_from,"2026-07-26T22:17:07.991Z",null,null
+dependencies[6]:
+  - id: pm-2eb3
+    kind: related
+    created_at: "2026-07-26T17:01:32.590Z"
+  - id: pm-mb4n
+    kind: related
+    created_at: "2026-07-26T17:01:32.590Z"
+  - id: pm-wg1d
+    kind: related
+    created_at: "2026-07-26T17:01:32.590Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:07.991Z"
+  - id: pm-wg1d
+    kind: discovered_from
+    created_at: "2026-07-26T22:17:07.991Z"
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-08-10T11:52:40.272Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[1]{created_at,author,text}:
   "2026-04-30T19:37:11.721Z",codex-audit,"Duplicate check before create: pm context --limit 10 showed no active items; pm search 'manual audit sdk calendar telemetry dogfood extensibility' returned only closed prior audits including pm-wg1d and pm-mb4n; pm list-open/list-in-progress both returned 0. Net-new scope is required for the 2026-04-30 latest-build audit."
 notes[1]{created_at,author,text}:

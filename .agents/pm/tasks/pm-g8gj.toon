@@ -6,15 +6,23 @@ status: closed
 priority: 1
 tags[4]: "[redacted_monitoring_ui]",monitoring,telemetry,verification
 created_at: "2026-05-01T18:59:57.901Z"
-updated_at: "2026-08-04T15:47:12.270Z"
+updated_at: "2026-08-10T12:03:03.424Z"
 deadline: "2026-05-08T18:59:57.901Z"
 author: maintainer-agent
 release: v2026.5.2
 resolution: "Full end-to-end telemetry stack verified: [redacted_service_count] services healthy, [redacted_event_count] events in [redacted_datastore], synthetic event ingestion confirmed, [redacted_metrics_service]/[redacted_monitoring_ui] operational"
 expected_result: "Remote telemetry stack receives events, [redacted_queue_service] processes them, [redacted_datastore] stores them, [redacted_monitoring_ui]/[redacted_metrics_service] display them"
 actual_result: "All services up 4+ days, queue drained to 0, [redacted_event_count] events in [redacted_datastore], synthetic event verified end-to-end, 6 [redacted_metrics_service] targets up, pm health telemetry probe ok"
-dependencies[1]{id,kind,created_at}:
-  pm-23me,discovered_from,"2026-07-26T22:20:17.110Z"
+dependencies[2]:
+  - id: pm-23me
+    kind: discovered_from
+    created_at: "2026-07-26T22:20:17.110Z"
+  - id: pm-5oj5
+    kind: implements
+    created_at: "2026-08-10T12:03:03.253Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-05-01T19:32:36.541Z",cursor-agent,"Stack verification complete (2026-05-01): [redacted_service_count] [redacted_service_group] healthy and up 4+ days. Telemetry API healthz returns ok. [redacted_monitoring_ui] API health returns 200. [redacted_queue_service] queue fully drained (0/0/1 consumer). [redacted_datastore] contains [redacted_event_count] events spanning 2026-04-25 to 2026-05-01. [redacted_metrics_service] scraping 6 active targets (all up). Synthetic event accepted by API, processed through queue, persisted in [redacted_datastore]. Local pm health --check-telemetry reports ok=true with probe=ok and queue_draining=true. Full report at scripts/prod/telemetry/reports/2026-05-01-stack-verification.md."
   "2026-08-04T15:47:12.270Z","harness:codex","Context hygiene 2026-08-04: pm-j8z6 removed stale current-state links to ignored local telemetry/operations artifacts. Historical outcome and release attribution remain unchanged; public tracked evidence now points only to repository-owned files."

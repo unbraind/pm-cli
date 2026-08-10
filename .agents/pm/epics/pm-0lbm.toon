@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:cli","area:contracts",body,json,list,pm-cli
 created_at: "2026-03-31T19:36:37.724Z"
-updated_at: "2026-07-26T22:17:07.163Z"
+updated_at: "2026-08-10T11:53:00.177Z"
 deadline: "2026-04-03T19:36:37.724Z"
 assignee: codex-agent
 author: codex-agent
@@ -40,14 +40,39 @@ fixed_version: v0.1
 component: cli/list
 regression: true
 customer_impact: Users and agents can accurately analyze item completeness from list JSON when needed.
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-54d,related,"2026-03-31T19:36:37.724Z",codex-agent,null
-  pm-gus1,related,"2026-03-31T19:36:37.724Z",codex-agent,null
-  pm-ote,related,"2026-03-31T19:36:37.724Z",codex-agent,null
-  pm-r0m,related,"2026-03-31T19:36:37.724Z",codex-agent,null
-  pm-zzt1,related,"2026-03-31T19:36:37.724Z",codex-agent,null
-  pm-ykib,related,"2026-07-26T17:00:14.072Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:06.957Z",null,null
+dependencies[8]:
+  - id: pm-54d
+    kind: related
+    created_at: "2026-03-31T19:36:37.724Z"
+    author: codex-agent
+  - id: pm-gus1
+    kind: related
+    created_at: "2026-03-31T19:36:37.724Z"
+    author: codex-agent
+  - id: pm-ote
+    kind: related
+    created_at: "2026-03-31T19:36:37.724Z"
+    author: codex-agent
+  - id: pm-r0m
+    kind: related
+    created_at: "2026-03-31T19:36:37.724Z"
+    author: codex-agent
+  - id: pm-zzt1
+    kind: related
+    created_at: "2026-03-31T19:36:37.724Z"
+    author: codex-agent
+  - id: pm-ykib
+    kind: related
+    created_at: "2026-07-26T17:00:14.072Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:06.957Z"
+  - id: pm-j82fd3
+    kind: implements
+    created_at: "2026-08-10T11:53:00.037Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[4]{created_at,author,text}:
   "2026-03-31T19:36:37.724Z",codex-agent,Epic created after duplicate-guard sweep and external issue report.
   "2026-03-31T19:45:51.565Z",codex-agent,"Feature pm-ykib and child tasks are closed with evidence: include-body is now opt-in for list variants, docs/changelog are updated, and sandbox test plus coverage runs remain green at 100%."

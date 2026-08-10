@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: dependencies,quality,release
 created_at: "2026-07-28T23:19:18.831Z"
-updated_at: "2026-07-29T01:06:05.237Z"
+updated_at: "2026-08-10T12:03:29.852Z"
 closed_at: "2026-07-29T01:02:55.843Z"
 completed_at: "2026-07-29T01:02:55.843Z"
 author: "harness:codex"
@@ -15,11 +15,12 @@ acceptance_criteria: "@types/node and jscpd use latest compatible patches; lockf
 resolution: Compatible development dependencies were refreshed while incompatible majors remain on their canonical evidence-backed items and the suppression ceiling was lowered.
 expected_result: The supported dependency graph remains vulnerability-free and all quality contracts pass without weakening compatibility.
 actual_result: "@types/node 26.1.2 and jscpd 5.0.14 pass audit lint typecheck contracts dogfood and 6,497 tests at exact 100 percent coverage; suppression budget is 130."
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-r31390,related_to,"2026-07-28T23:19:18.831Z","harness:codex","cli:create:dep",detected
   pm-do5b,related,"2026-07-28T23:20:02.694Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,related,"2026-07-28T23:20:02.694Z","harness:codex","cli:update:dep",detected
   pm-feecbs,verifies,"2026-07-29T01:01:36.773Z","harness:codex","cli:update:dep",detected
+  pm-u9d0,implements,"2026-08-10T12:03:29.691Z","harness:claude-code","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-07-28T23:19:18.831Z","harness:codex","Duplicate check: searched all statuses for the exact dependency names and current outdated inventory. Historical refreshes are terminal; pm-r31390, pm-do5b, and pm-ksr40d remain the canonical disposition records for incompatible candidates. This item owns only the two newly available compatible patches."
   "2026-07-29T00:42:32.105Z","harness:codex","Verification note: the production audit linked test passed. A nested pnpm test:coverage run under pm test failed because the linked-test sandbox deliberately injects an outer PM_PATH and broad root-fixture ownership tests then observe the sandbox tracker. This is harness-context contamination rather than a product failure; the unsafe recursive link was removed and the complete suite is rerun directly from the repository root."

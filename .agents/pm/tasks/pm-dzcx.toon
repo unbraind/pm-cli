@@ -6,17 +6,31 @@ status: closed
 priority: 3
 tags[3]: audit-2026-06-12,dedup,refactor
 created_at: "2026-06-12T16:11:16.056Z"
-updated_at: "2026-07-26T22:20:30.951Z"
+updated_at: "2026-08-10T12:03:00.215Z"
 author: maintainer-agent
 release: v2026.6.13
 resolution: Deduplicated private Levenshtein implementations onto the shared bounded OSA helper.
 expected_result: Item-id and extension-capability suggestions share the same typo-distance primitive.
 actual_result: Private copies were removed and focused helper/extension tests plus coverage passed.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-hq28,related,"2026-07-26T17:12:25.506Z",null,null
-  pm-ju83,related,"2026-07-26T17:12:25.506Z",null,null
-  pm-p4mw,related,"2026-07-26T17:12:25.506Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:20:30.757Z",null,null
+dependencies[5]:
+  - id: pm-hq28
+    kind: related
+    created_at: "2026-07-26T17:12:25.506Z"
+  - id: pm-ju83
+    kind: related
+    created_at: "2026-07-26T17:12:25.506Z"
+  - id: pm-p4mw
+    kind: related
+    created_at: "2026-07-26T17:12:25.506Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:20:30.757Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:03:00.042Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[1]{created_at,author,text}:
   "2026-06-12T16:40:31.690Z",codex-sdk-cli-agent,"Evidence: shared helper focused coverage passed in expanded run: tests/unit/levenshtein.spec.ts plus extension-loader usage coverage; 224 tests passed overall."
 files[3]{path,scope,note}:

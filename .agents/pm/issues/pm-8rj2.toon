@@ -6,14 +6,22 @@ status: closed
 priority: 1
 tags[4]: agent-ux,bug,cli,help
 created_at: "2026-05-17T06:47:16.090Z"
-updated_at: "2026-07-26T22:18:43.960Z"
+updated_at: "2026-08-10T12:02:16.576Z"
 deadline: "2026-05-22T06:47:16.090Z"
 author: maintainer-agent
 release: v2026.5.18
 resolution: "Implemented bare 'pm' invocation now shows --help via outputHelp() in src/cli/main.ts. Verified: 'pm' (no args) prints usage and command list, exits 0."
 expected_result: "Expected result: closure includes explicit resolution metadata and verifiable delivery evidence."
 actual_result: "Actual result: Implemented bare 'pm' invocation now shows --help via outputHelp() in src/cli/main.ts. Verified: 'pm' (no args) prints usage and command list, exits 0."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-jrjt,discovered_from,"2026-07-26T22:18:43.558Z",null,null
+dependencies[2]:
+  - id: pm-jrjt
+    kind: discovered_from
+    created_at: "2026-07-26T22:18:43.558Z"
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-08-10T12:02:16.432Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 close_reason: "Implemented bare 'pm' invocation now shows --help via outputHelp() in src/cli/main.ts. Verified: 'pm' (no args) prints usage and command list, exits 0."
 body: ""

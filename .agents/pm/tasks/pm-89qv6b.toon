@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: brainstorm,context-management,governance,graph,organization,planning,review
 created_at: "2026-07-27T06:59:13.980Z"
-updated_at: "2026-07-27T07:27:28.508Z"
+updated_at: "2026-08-10T12:05:33.120Z"
 closed_at: "2026-07-27T07:27:14.965Z"
 author: "harness:opencode"
 acceptance_criteria: "All-status census recorded with live verification evidence (auto-release, npm, CI); brainstorms recorded on the canonical items; every new item dedupe-checked with search evidence; no numbered pass identifiers; graph edges added only where semantically true; pm validate/health re-run clean at the end"
@@ -15,15 +15,37 @@ objective: "Keep the living backlog a complete, deeply-linked, duplicate-free ma
 value: Agents and humans can traverse from any active work to the outcome it serves; brainstorm output is preserved as tracker knowledge instead of chat ephemera
 why_now: "Maintainer requested a comprehensive review, brainstorm, organization, and long-term planning pass across all items with deep graph linking"
 parent: pm-doxj
-dependencies[8]{id,kind,created_at}:
-  pm-4k6b,related,"2026-07-27T06:59:30.778Z"
-  pm-96h7,related,"2026-07-27T06:59:30.778Z"
-  pm-bzmeaa,related,"2026-07-27T06:59:30.778Z"
-  pm-doxj,implements,"2026-07-27T06:59:30.778Z"
-  pm-n7rr,related,"2026-07-27T06:59:30.778Z"
-  pm-usfg,related,"2026-07-27T06:59:30.778Z"
-  pm-zeifd2,related,"2026-07-27T06:59:30.778Z"
-  pm-v4iypw,supersedes,"2026-07-27T07:13:00.580Z"
+dependencies[9]:
+  - id: pm-4k6b
+    kind: related
+    created_at: "2026-07-27T06:59:30.778Z"
+  - id: pm-96h7
+    kind: related
+    created_at: "2026-07-27T06:59:30.778Z"
+  - id: pm-bzmeaa
+    kind: related
+    created_at: "2026-07-27T06:59:30.778Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-27T06:59:30.778Z"
+  - id: pm-n7rr
+    kind: related
+    created_at: "2026-07-27T06:59:30.778Z"
+  - id: pm-usfg
+    kind: related
+    created_at: "2026-07-27T06:59:30.778Z"
+  - id: pm-zeifd2
+    kind: related
+    created_at: "2026-07-27T06:59:30.778Z"
+  - id: pm-v4iypw
+    kind: supersedes
+    created_at: "2026-07-27T07:13:00.580Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:05:32.965Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-07-27T07:00:45.792Z","harness:opencode","Census evidence (live): 2,127 items + this pass item = 2,128 streams; by status open 308 / closed 1,806 / canceled 13 / in_progress 1 (this item). Types: Task 641, Issue 593, Feature 389, Chore 271, Epic 87, Decision 63, Story 53, Plan 22, Milestone 7. History: 39,625 entries across 2,138 streams, drift 0/2,128. Graph: 2,130 nodes, 9,405 edges (related 4,479, implements 1,989, parent 1,952, blocked_by 385, blocks 219, discovered_from 190, verifies 133, supersedes 41, child 15, incident_from 2), 0 isolated active nodes, 0 degree<=1 active nodes. Live system: auto-release scheduled run succeeded 2026-07-27T06:05Z (v2026.7.27 on npm dist-tags.latest + GitHub release, one auto-release today); CI green on main (CodeQL, CodSpeed, Docs, OSSF, Security). Health: only warn is local merge_driver_configuration:5 (environment, not tracker data). Validate: history_drift 0; resolution backfill warning 290 (tracked by pm-e9zh/pm-wrbe). Duplicate check for this pass: pm search 'ecosystem review brainstorm organization planning pass' shows only closed pm-e9yevx (2026-07-26) as predecessor; pm duplicates shows no open cluster matching this theme."
   "2026-07-27T07:18:38.231Z","harness:opencode",warm-loop probe

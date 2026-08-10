@@ -1,0 +1,36 @@
+id: pm-c90tfh
+title: "The blocks ceiling counts fabricated and evidence-cited ordering edges identically, so the historical ordering reconstruction another item mandates cannot land"
+description: "The dependency-kind-blocks ratchet sits at ceiling 243 with zero headroom while pm-1w6scp, pm-gxs55a and pm-ye46ns all require adding blocks rows; the selector cannot distinguish a fabricated directional edge from an evidence-cited delivery-order edge, so the two properties are mutually unsatisfiable and neither item names the conflict."
+type: Issue
+status: open
+priority: 1
+tags[5]: enforcement,graph,measurement-ratchet,ordering,tracker-governance
+created_at: "2026-08-10T12:11:08.571Z"
+updated_at: "2026-08-10T12:15:36.099Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "The blocks population is partitioned by provenance so an evidence-cited ordering edge and a fabricated directional edge are separately countable; The anti-fabrication property remains enforced as a ceiling over the unsourced partition, with a negative control proving it still fails; The evidence-cited partition is enforced as a floor so a later pass cannot silently delete recovered ordering; pm-1w6scp, pm-gxs55a and pm-ye46ns each carry a typed edge to this item so the dependency is readable from either side"
+goal: Provable history
+objective: Make delivery sequence reconstructible by graph traversal
+value: Unblocks the ordering half of the historical-spine reconstruction without giving up the anti-fabrication guarantee
+impact: Three accepted items currently cannot land as specified
+outcome: Ordering edges carry provenance and are enforced by a partitioned declaration
+why_now: Measured at zero headroom on 2026-08-10 while the spine reconstruction is the active graph wave
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: 2026-w33
+reporter: maintainer-agent
+severity: high
+environment: "pm 2026.8.10, 2412 items, 29 enforced measurement declarations"
+expected_result: "A bound can name the population it governs, so evidence-cited ordering edges are floored while fabricated directional edges stay ceilinged"
+actual_result: "One unqualified count governs every blocks row, so any ordering reconstruction exceeds the ceiling regardless of its evidence"
+component: scripts/release/tracker-measurement-gate.mjs
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1w6scp,discovered_from,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
+  pm-96h7,implements,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
+  pm-g4k74y,related,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
+  pm-gxs55a,related,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
+  pm-jkbqt8,related,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
+  pm-ye46ns,related,"2026-08-10T12:11:08.571Z","harness:claude-code","cli:create:dep",detected
+body: "## What was measured\n\n`scripts/release/tracker-measurement-gate.mjs` reports every enforced bound with its observed value. On 2026-08-10 the `dependency-kind-blocks` declaration (owner pm-jkbqt8) reads ceiling 243 against an observed 243: **zero headroom**. Fourteen of the twenty-nine enforced bounds sit at zero headroom, but this one is different in kind, because another open item's acceptance criteria require the population to grow.\n\n## The conflict\n\n`blocks` and `blocked_by` are the only registered relationship kinds whose contract sets `ordering: true`. Delivery sequence is therefore inexpressible in any other kind.\n\npm-1w6scp requires, verbatim, that \"the original milestones carry their delivery order as typed edges so a traversal can reconstruct the sequence without parsing titles\". pm-gxs55a records that 1,763 of 1,991 sequenced nodes have no predecessor at all. pm-ye46ns exists to recover sequence edges for terminal work from prerequisite statements already recorded in the tracker.\n\nEvery one of those three requires adding `blocks` rows. The ceiling refuses the first one.\n\n## Why the ceiling exists, and why that is not wrong\n\nThe ceiling was filed to stop the failure mode where a relation that merely *feels* directional gets minted as `blocks`, inflating the ordering graph with edges that carry no scheduling meaning. That is a real and recurring failure mode and the ceiling is the correct instrument for it.\n\nThe defect is not the ceiling's existence. It is that the ceiling is **unqualified**: it counts every `blocks` row identically, so an evidence-cited ordering edge recovered from a recorded prerequisite statement is indistinguishable from a fabricated one. A single global count cannot separate the population the ceiling wants to suppress from the population another accepted item requires.\n\n## Consequence\n\nThe ordering half of the historical-spine reconstruction is unlandable as specified. It is not blocked by missing evidence or missing tooling; it is blocked by an enforcement mechanism that cannot express the distinction the work depends on. Neither item names the other, so the deadlock is invisible from either side: pm-1w6scp reads as ready, and the declaration reads as satisfied.\n\n## Dispositions available\n\n1. **Partition the selector.** Let a declaration scope to edges carrying a provenance marker (`source_kind`), so fabricated `blocks` stays ceilinged while evidence-cited ordering is counted separately and floored. This is the only option that keeps both properties enforced.\n2. **Re-declare with a recorded reason.** Raise the ceiling once, in the same change that lands the ordering tranche, with a note naming the evidence rule that justifies the new value. Cheap, but it spends the ceiling's whole protective value in one step.\n3. **Restate pm-1w6scp.** Drop the ordering criterion and accept that delivery sequence stays unreadable. This should be chosen only if the sequence is judged not worth recording.\n\nOption 1 is the one consistent with the polarity work in pm-g4k74y: a bound should be able to say which population it speaks for."

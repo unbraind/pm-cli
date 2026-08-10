@@ -6,22 +6,34 @@ status: closed
 priority: 2
 tags[2]: audit-followup,performance
 created_at: "2026-07-02T21:55:41.688Z"
-updated_at: "2026-07-26T22:20:47.049Z"
+updated_at: "2026-08-10T12:03:14.523Z"
 author: claude-code-agent
 release: v2026.7.3
 resolution: "Merged PR #421: stat-validated in-process memo for the three front-matter cache envelopes (LRU re-insert on hit, cap 24, repopulated on persist) plus capped memos for Date.parse in compareTimestampStrings and normalizeStatusToken; shared evictOldestMemoEntries half-eviction helper in core/shared/memo.ts."
 expected_result: Common reads (pm next/context/list/get) substantially faster warm with byte-identical output; target under ~300ms for common reads.
 actual_result: "Warm on this 857-item tracker: next 1282-1545->564-699ms, context 1233-1579->494-703ms, list --status open 987-1042->425-478ms, get 704-762->262-304ms. get meets the 300ms target; next/context remaining cost is ~300ms ESM bundle load + double corpus stat-scan (build-level lazy-load follow-up candidate). Output verified byte-identical vs published 2026.7.2; 5283 tests 100% coverage; greptile 2 local rounds + PR bots (greptile/gemini/coderabbit) all clean or addressed."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-fpod,related,"2026-07-02T21:55:55.554Z",null,null
-  pm-3l76,related,"2026-07-26T17:30:41.434Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:20:46.763Z",null,null
+dependencies[4]:
+  - id: pm-fpod
+    kind: related
+    created_at: "2026-07-02T21:55:55.554Z"
+  - id: pm-3l76
+    kind: related
+    created_at: "2026-07-26T17:30:41.434Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:20:46.763Z"
+  - id: pm-9rxu
+    kind: implements
+    created_at: "2026-08-10T12:03:14.379Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[1]{created_at,author,text}:
   "2026-07-03T04:27:39.327Z",claude-code-agent,"Implementation evidence: CPU-profiled pm next on this repo (857 items, ~1450 toon files). Dominant costs: (1) each runList re-read+re-parsed metadata-cache.json (3.2MB) and metadata-cache-collections.json (4.9MB) — pm next/context call runList twice, so ~16MB JSON per invocation; (2) Date.parse per comparison in compareTimestampStrings and regex pipeline in normalizeStatusToken inside O(n log n) sort comparators. Fixes: stat-validated in-process memo for the three cache envelopes in front-matter-cache.ts (invalidated on persist + by stat signature; also removes per-call re-parse in the long-lived MCP server), plus capped memos for Date.parse and status-token normalization. Warm timings before→after: next 1282-1545→564-699ms, context 1233-1579→494-703ms, list --status open 987-1042→425-478ms, get 704-762→262-304ms. Behavior verified byte-identical vs published 2026.7.2 on this tracker (next/list/get identical; context differs only in embedded now timestamps). Remaining above-300ms cost for next/context is ~300ms ESM module load + double corpus stat-scan — candidates for a follow-up build-level lazy-load pass."
-files[3]{path,scope,note}:
-  src/core/schema/status-defs-file.ts,project,null
-  src/core/shared/time.ts,project,null
-  src/core/store/front-matter-cache.ts,project,null
+files[3]{path,scope}:
+  src/core/schema/status-defs-file.ts,project
+  src/core/shared/time.ts,project
+  src/core/store/front-matter-cache.ts,project
 tests[3]{command,scope}:
   tests/unit/core/item/front-matter-cache.spec.ts,project
   tests/unit/core/schema/item-types-file.spec.ts,project

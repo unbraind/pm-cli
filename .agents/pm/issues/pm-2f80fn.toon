@@ -1,0 +1,37 @@
+id: pm-2f80fn
+title: "The changelog drift check reports that the changelog is out of date without naming what drifted, so an order-only diff is indistinguishable from a release-attribution defect"
+description: "changelog generate --check exits 1 with only the file path; it never reports which sections changed, which items moved, or whether membership changed at all. The two causes require opposite responses, so every closed-item mutation reads as equally dangerous and the terminal-record enrichment programme has been deferred behind a diagnostic that already computed the answer and discarded it."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,changelog,diagnostics,release,token-efficiency
+created_at: "2026-08-10T12:11:45.027Z"
+updated_at: "2026-08-10T12:15:36.569Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "The drift refusal reports whether any item entered or left the changelog, as an explicit boolean, not inferred from counts; The refusal names the affected release sections and a bounded sample of moved rows with before and after positions; Counts come first and the sample is capped, so the diagnostic stays within the command output budget; A regeneration whose only difference is intra-section row order is reported as order-only in the refusal text"
+goal: Agent-legible diagnostics
+objective: Make a drift refusal actionable from the refusal alone
+value: Retires the do-not-touch-closed-items convention by letting an agent see that a diff is order-only
+impact: Blocks the terminal-record graph enrichment programme and every closed-item metadata burn-down behind it
+outcome: A drift refusal distinguishes membership change from row reordering and is actionable without a manual diff
+why_now: Measured 2026-08-10 while establishing whether historical graph enrichment is changelog-safe; the check was the only thing that could not answer
+reviewer: maintainer-review
+risk: low
+confidence: high
+sprint: 2026-w33
+reporter: maintainer-agent
+severity: medium
+environment: "pm 2026.8.10, pm-changelog 2026.8.7, 2017 changelog items"
+repro_steps: "Run changelog:pm:check on a clean tree; add one dependency row to a long-closed item; run changelog:pm:check again"
+expected_result: "The refusal names whether membership changed, which sections moved, and a bounded sample of moved rows"
+actual_result: "The refusal names only the output path, so the agent must regenerate to a scratch path and diff by hand to learn anything"
+component: pm-changelog changelog generate --check
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cha95z,related,"2026-08-10T12:11:45.027Z","harness:claude-code","cli:create:dep",detected
+  pm-f05lsg,related,"2026-08-10T12:11:45.027Z","harness:claude-code","cli:create:dep",detected
+  pm-nwuzaq,related,"2026-08-10T12:11:45.027Z","harness:claude-code","cli:create:dep",detected
+  pm-pcys9n,related,"2026-08-10T12:11:45.027Z","harness:claude-code","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-10T12:11:45.027Z","harness:claude-code","cli:create:dep",detected
+  pm-wrbe,discovered_from,"2026-08-10T12:11:45.027Z","harness:claude-code","cli:create:dep",detected
+body: "## Reproduction\n\nMeasured 2026-08-10 on a workspace where `changelog:pm:check` reported `changed: false`.\n\n1. Add one typed dependency row to one long-closed item (`pm update pm-02c4 --dep \"id=pm-qwoy,kind=implements\"`).\n2. Run `changelog:pm:check`.\n\nThe check exits 1 with:\n\n```\nWhat happened:\n  Changelog is out of date: CHANGELOG.md\nWhat is required:\n  Adjust command input or tracker state and retry.\n```\n\nThat is the entire diagnostic. The recovery bundle repeats the command line and the provided flag names. Nothing states which release section changed, which items moved, whether any item entered or left the changelog, or whether the byte count changed.\n\n## Why the omission is expensive\n\nThe agent cannot tell the two possible causes apart, and they demand opposite responses:\n\n- **Membership change** — an item moved between release sections. That is a real attribution defect and must be investigated before regenerating.\n- **Intra-section reordering** — the same items in the same sections, in a different order, because rows sort on a mutable timestamp (pm-nwuzaq). That is cosmetic and is healed by regenerating in the same commit.\n\nDistinguishing them requires the agent to generate a second copy to a scratch path and diff it by hand. In this measurement that hand diff was three lines and settled the question immediately: `item_count` 2017 and `bytes` 355556 were identical before and after, and one row moved from line 2571 to 2568. The check already computed everything needed to say so and discarded it.\n\n## Consequence for the convention this sustains\n\nThis is the instrument behind the standing \"do not touch closed items\" convention. Because the check cannot say that a diff is order-only, every closed-item mutation looks equally dangerous, so the whole terminal-record enrichment programme has been deferred behind it. pm-wrbe records this deferral as the single largest unlock in the backlog and attributes it to changelog re-bucketing. The measurement above shows re-bucketing is no longer what happens: release-tag attribution holds section membership stable, and only row order moves. The convention outlived its cause because the diagnostic could not report the difference.\n\n## Required shape\n\nThe check is a comparison; it already holds both sides. It should report the comparison, bounded like every other read: counts first, then a capped sample of moved rows, with the section each row moved within or between, and an explicit flag for whether membership changed at all."

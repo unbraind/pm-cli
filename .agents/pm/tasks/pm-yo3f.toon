@@ -6,18 +6,32 @@ status: closed
 priority: 0
 tags[6]: agent-ux,audit,ecosystem,github,observability,sdk
 created_at: "2026-06-07T08:15:35.100Z"
-updated_at: "2026-07-26T17:30:25.405Z"
+updated_at: "2026-08-10T12:05:59.221Z"
 author: codex-broad-ecosystem-audit-20260607
 parent: pm-doxj
 release: v2026.6.8
 resolution: "Implemented --pm-path guardrails, completed ecosystem audit, and recorded verification/observability evidence."
 expected_result: "Agents have safer tracker-path semantics, issue #140 is remediated, external packages and gates are verified, and tracker evidence is complete."
 actual_result: "Added preferred --pm-path alias, workspace-root init guard with --force override, docs/completions/contracts/tests/changelog updates, 17-package smoke evidence, green linked tests/coverage/contracts/docs/security/Sentry gates, and closed/released pm-yo3f."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-doxj,implements,"2026-07-26T17:30:25.168Z",null,null
-  pm-etxf,related,"2026-07-26T17:30:25.168Z",null,null
-  pm-kddw,related,"2026-07-26T17:30:25.168Z",null,null
-  pm-z0ip,related,"2026-07-26T17:30:25.168Z",null,null
+dependencies[5]:
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T17:30:25.168Z"
+  - id: pm-etxf
+    kind: related
+    created_at: "2026-07-26T17:30:25.168Z"
+  - id: pm-kddw
+    kind: related
+    created_at: "2026-07-26T17:30:25.168Z"
+  - id: pm-z0ip
+    kind: related
+    created_at: "2026-07-26T17:30:25.168Z"
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-08-10T12:05:58.959Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[9]{created_at,author,text}:
   "2026-06-07T08:16:00.000Z",codex-broad-ecosystem-audit-20260607,"Duplicate check evidence: pm context/list-in-progress found no active implementation work; pm search found prior broad audit tasks pm-z0ip/pm-kddw/pm-etxf as closed; open GitHub issue #140 is in scope for this fresh dated implementation task."
   "2026-06-07T08:19:36.823Z",codex-docs-agent-ux-review-20260607,"Sub-agent docs/agent-UX review: reviewed README.md, AGENTS.md, docs/COMMANDS.md, docs/CONFIGURATION.md, docs/TESTING.md, docs/EXTENSIONS.md, and docs/SDK.md for progressive disclosure, stale examples, duplicated guidance, token-efficient output guidance, and agent blockers. Finding: no blocking stale command examples or broken requested-doc links found; command-surface spot checks matched current help/contracts for install/package/upgrade/comments/docs/plan. Small fix applied: removed duplicated npm registry-404 fallback paragraph in docs/EXTENSIONS.md so package-source guidance appears once. Verification: pm test pm-yo3f --run --progress passed pnpm build and pnpm quality:docs-links."

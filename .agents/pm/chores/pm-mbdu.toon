@@ -6,17 +6,31 @@ status: closed
 priority: 2
 tags[2]: code-quality,refactor
 created_at: "2026-05-16T15:07:29.175Z"
-updated_at: "2026-07-26T22:18:06.934Z"
+updated_at: "2026-08-10T12:03:34.613Z"
 author: claude-code-agent
 release: v2026.5.27
 resolution: "Barrel-split all four originally-cited command files below 2000 LOC via re-export with zero consumer/behavior change: extension.ts 3352->1712, loader.ts 3231->1929, sdk/cli-contracts.ts 3097->1811, test.ts 2017->1841. Created 15 cohesive sibling modules (under src/cli/commands/extension/, src/core/extensions/extension-*, src/sdk/cli-contracts/*, src/cli/commands/test/). All registered in the coverage uncovered-allowlist governance test. No src .ts file now exceeds 2000 LOC. create.ts/update.ts were already <2000 from pm-why9. Full release gate (17 gates incl. 100% coverage, static, npm-pack, dogfood, sentry-telemetry) green."
 expected_result: All command modules listed in the chore are under the 2000 LOC maintainability threshold while preserving public imports and behavior.
 actual_result: "extension.ts, loader.ts, cli-contracts.ts, and test.ts were split into sibling modules/barrels; each is now under 2000 LOC with tests and release gates passing."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-p5if,related,"2026-07-26T17:20:09.063Z",null,null
-  pm-why9,related,"2026-07-26T17:20:09.063Z",null,null
-  pm-zwl7,related,"2026-07-26T17:20:09.063Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:18:06.678Z",null,null
+dependencies[5]:
+  - id: pm-p5if
+    kind: related
+    created_at: "2026-07-26T17:20:09.063Z"
+  - id: pm-why9
+    kind: related
+    created_at: "2026-07-26T17:20:09.063Z"
+  - id: pm-zwl7
+    kind: related
+    created_at: "2026-07-26T17:20:09.063Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:18:06.678Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:03:34.447Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[10]{created_at,author,text}:
   "2026-05-16T16:48:23.315Z",codex-agent,"Audit update 2026-05-16: release static gate and full coverage pass, but large command files remain a maintainability concern visible in npm pack output and source review (extension/create/update/test families). No duplicate item created; keep this chore as the canonical LOC/complexity refactor."
   "2026-05-21T21:57:40.078Z",claude-code-agent,"Code-quality audit produced concrete low-risk split plans (re-export via existing barrels, no consumer changes): (1) sdk/cli-contracts.ts 3059 LOC -> cli-contracts/tool-option-contracts.ts (TOOL_*_OPTION_CONTRACTS data tables) + cli-contracts/enum-contracts.ts (PM_* consts + guards), root keeps flag-alias helpers + GLOBAL/SUBCOMMAND contracts. (2) core/extensions/loader.ts 3272 -> extension-capability-aliases.ts (825-990), extension-registries.ts (createEmpty* factories 1180-1221), extension-hook-runtime.ts (run*Override/Hooks 2847-3225); loader keeps discovery/activation. (3) cli/commands/extension.ts 3192 -> extension/install-sources.ts (github/npm/local 1069-1408), extension/managed-state.ts (600-752), extension/bundled-catalog.ts. Highest-value duplication: runUpdate (update.ts ~972 LOC) has 53 near-identical field blocks + ~30 non-null assertions; drive from a declarative field table [{option, metadataKey, transform}] to collapse ~500 lines. Also: shared toItemRecord() helper to remove ~15 'item as unknown as Record' + 10 'as unknown as ItemMetadata' casts."

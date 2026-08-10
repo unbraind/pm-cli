@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: background-runtime,item-tracking,linked-tests,pm-cli,test-runs
 created_at: "2026-04-04T19:05:06.647Z"
-updated_at: "2026-07-26T22:16:51.247Z"
+updated_at: "2026-08-10T11:53:08.157Z"
 deadline: "2026-04-18T19:05:06.647Z"
 author: codex-agent
 estimated_minutes: 720
@@ -27,8 +27,16 @@ fixed_version: target-vnext
 component: linked-test-runtime
 regression: true
 customer_impact: Improves agent/operator ergonomics without changing default foreground behavior.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-doxj,blocks,"2026-07-26T22:16:50.985Z",null,null
+dependencies[2]:
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:16:50.985Z"
+  - id: pm-9rgaal
+    kind: implements
+    created_at: "2026-08-10T11:53:08.021Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[1]{created_at,author,text}:
   "2026-04-04T19:05:06.647Z",codex-agent,"Duplicate-check evidence: pm context --limit 10 --json; pm search background test service linked tests --limit 20 --json; pm search record test results to pm items --limit 20 --json; pm list-open --limit 50 --json; pm list-in-progress --limit 50 --json; pm list-blocked --limit 50 --json. Net-new because no active item delivers background lifecycle management plus item-level test-result tracking."
 notes[1]{created_at,author,text}:

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-10T17:24:09.633Z"
-updated_at: "2026-07-26T22:19:49.288Z"
+updated_at: "2026-08-10T12:02:37.858Z"
 closed_at: "2026-07-10T21:12:00.734Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -17,11 +17,25 @@ release: v2026.7.11
 resolution: Kept missing blocker IDs unresolved and added dependency-reference validation with remediation hints.
 expected_result: "Dangling parent, scalar blocker, and structured dependency references cannot silently unblock work."
 actual_result: Actionability blocks dangling references and validate reports sorted affected rows plus replace-deps remediation.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-l0bu,related,"2026-07-10T17:24:09.633Z",null,null
-  pm-z9e9,related,"2026-07-26T17:22:03.033Z",null,null
-  pm-zazb,related,"2026-07-26T17:22:03.033Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:19:49.030Z",null,null
+dependencies[5]:
+  - id: pm-l0bu
+    kind: related
+    created_at: "2026-07-10T17:24:09.633Z"
+  - id: pm-z9e9
+    kind: related
+    created_at: "2026-07-26T17:22:03.033Z"
+  - id: pm-zazb
+    kind: related
+    created_at: "2026-07-26T17:22:03.033Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:19:49.030Z"
+  - id: pm-96h7
+    kind: implements
+    created_at: "2026-08-10T12:02:37.684Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[4]{created_at,author,text}:
   "2026-07-10T17:51:56.413Z",codex-root,"Implementation start: active in the broad atomic work-selection and agent recovery PR. Live all-status duplicate check, full item metadata, closed prerequisite lineage, GitHub issues, security alerts, dependency audit, release state, and Sentry issue surface were reviewed before claiming. This item shares CLI/SDK contracts, recovery envelopes, and end-to-end verification with the seven sibling items in the bundle."
   "2026-07-10T20:32:32.350Z",codex-wide-pm-sdk,"Verification: pnpm release:gates passed build/typecheck/static/docstring ratchets/docs/context/security, 100/100/100/100 coverage with 5,524 tests, packed npx smoke, and 88-command package dogfood; isolated installed-tarball acceptance created two items, atomically claimed one, accepted comments --body, detected one dangling dependency, and imported PmClient. Live Sentry/telemetry: 0 blocking critical/high, 0.34% finish error rate, zero missing error-code rows. pm health: all 7 checks ok; history drift: 0 across 1,709 items."

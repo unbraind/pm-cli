@@ -6,21 +6,41 @@ status: closed
 priority: 0
 tags[7]: agent-ux,audit,ci,ecosystem,package-first,sdk,telemetry
 created_at: "2026-06-02T15:13:31.225Z"
-updated_at: "2026-07-26T17:18:16.166Z"
+updated_at: "2026-08-10T12:05:35.455Z"
 author: codex-audit-20260602
 parent: pm-doxj
 release: v2026.6.5
 resolution: Completed latest-main audit and implemented concrete low-risk fixes found during the audit.
 expected_result: "pm CLI/SDK/ecosystem are audited on latest main, findings are tracked, concrete non-duplicate issues are fixed, release gates and observability checks are green, and the change is ready for PR."
 actual_result: "Sub-agent lanes recorded SDK, CLI UX, external package, CI/security, and observability findings; patch dependency updates were applied; contracts unknown-command recovery now emits unknown_command context; manifest version docs match runtime contracts; expected handled validation Sentry issues are filtered while max-high remains zero; final release gates passed."
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-59gj,related,"2026-07-26T17:18:15.929Z",null,null
-  pm-doxj,implements,"2026-07-26T17:18:15.929Z",null,null
-  pm-etxf,related,"2026-07-26T17:18:15.929Z",null,null
-  pm-izsi,related,"2026-07-26T17:18:15.929Z",null,null
-  pm-kcba,related,"2026-07-26T17:18:15.929Z",null,null
-  pm-kd9n,related,"2026-07-26T17:18:15.929Z",null,null
-  pm-z0ip,related,"2026-07-26T17:18:15.929Z",null,null
+dependencies[8]:
+  - id: pm-59gj
+    kind: related
+    created_at: "2026-07-26T17:18:15.929Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T17:18:15.929Z"
+  - id: pm-etxf
+    kind: related
+    created_at: "2026-07-26T17:18:15.929Z"
+  - id: pm-izsi
+    kind: related
+    created_at: "2026-07-26T17:18:15.929Z"
+  - id: pm-kcba
+    kind: related
+    created_at: "2026-07-26T17:18:15.929Z"
+  - id: pm-kd9n
+    kind: related
+    created_at: "2026-07-26T17:18:15.929Z"
+  - id: pm-z0ip
+    kind: related
+    created_at: "2026-07-26T17:18:15.929Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:05:35.230Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[15]{created_at,author,text}:
   "2026-06-02T15:13:38.798Z",codex-audit-20260602,"Audit lanes started: local critical path covers dependency/security/GitHub/temp-project dogfood; sub-agent lanes cover SDK/package authoring, CLI agent UX/contracts, external package ecosystem, and CI/observability review. Duplicate-check evidence is in the item description."
   "2026-06-02T15:16:12.037Z",codex-audit-20260602,"Dependency audit: pnpm audit found 0 vulnerabilities; gh Dependabot open-alert count is 0 (historical fixed alerts remain); pnpm outdated after patch update only reports commander 15.0.0 major, intentionally left for compatibility-focused work instead of this patch-maintenance change."

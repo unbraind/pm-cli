@@ -6,15 +6,23 @@ status: closed
 priority: 1
 tags[5]: agent-ux,context-efficiency,contracts,pm-cli,token-budget
 created_at: "2026-05-17T05:49:46.095Z"
-updated_at: "2026-07-26T22:18:39.189Z"
+updated_at: "2026-08-10T12:02:40.183Z"
 deadline: "2026-05-24T05:49:46.095Z"
 author: claude-code-agent
 release: v2026.5.18
 resolution: "Implemented pm-p8j6 partial: pm contracts default now skips the schema oneOf union for unfiltered queries (default output 9268->2362 lines, 80% reduction). Restore old behavior via --full. Filtered queries (--command/--action) keep schema. Tests still valid."
 expected_result: "Expected result: closure includes explicit resolution metadata and verifiable delivery evidence."
 actual_result: "Actual result: Implemented pm-p8j6 partial: pm contracts default now skips the schema oneOf union for unfiltered queries (default output 9268->2362 lines, 80% reduction). Restore old behavior via --full. Filtered queries (--command/--action) keep schema. Tests still valid."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-jrjt,discovered_from,"2026-07-26T22:18:38.733Z",null,null
+dependencies[2]:
+  - id: pm-jrjt
+    kind: discovered_from
+    created_at: "2026-07-26T22:18:38.733Z"
+  - id: pm-5k4v
+    kind: implements
+    created_at: "2026-08-10T12:02:40.025Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[1]{created_at,author,text}:
   "2026-05-17T07:37:02.231Z",codex-agent,"Audit follow-up 2026-05-17 (--allow-audit-comment): completed additional token reduction beyond prior partial closure. Unfiltered pm contracts default now also omits command_flags and commander_aliases (in addition to schema union) unless --full is set; measured output dropped to 22983 bytes / 999 lines from 90195 bytes / 4888 lines in this branch while preserving full output via --full and scoped --flags-only/--command workflows."
 close_reason: "Implemented pm-p8j6 partial: pm contracts default now skips the schema oneOf union for unfiltered queries (default output 9268->2362 lines, 80% reduction). Restore old behavior via --full. Filtered queries (--command/--action) keep schema. Tests still valid."

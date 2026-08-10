@@ -6,14 +6,22 @@ status: closed
 priority: 0
 tags[8]: agent-ux,bug,cli,create,parsing,pm-cli,tags,update
 created_at: "2026-05-17T05:49:42.738Z"
-updated_at: "2026-07-26T22:18:30.715Z"
+updated_at: "2026-08-10T12:02:30.979Z"
 deadline: "2026-05-20T05:49:42.738Z"
 author: claude-code-agent
 release: v2026.5.18
 resolution: "Verified fixed: parseTags() in src/core/item/parse.ts:27-66 already accepts JSON-array input via coerceJsonTagArray() (commit 46a225b). Dogfood test in /tmp confirms --tags '[\"a\",\"b\"]' produces tags=[a,b] correctly."
 expected_result: "Expected result: closure includes explicit resolution metadata and verifiable delivery evidence."
 actual_result: "Actual result: Verified fixed: parseTags() in src/core/item/parse.ts:27-66 already accepts JSON-array input via coerceJsonTagArray() (commit 46a225b). Dogfood test in /tmp confirms --tags '[\"a\",\"b\"]' produces tags=[a,b] correctly."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-jrjt,discovered_from,"2026-07-26T22:18:30.447Z",null,null
+dependencies[2]:
+  - id: pm-jrjt
+    kind: discovered_from
+    created_at: "2026-07-26T22:18:30.447Z"
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-08-10T12:02:30.823Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 close_reason: "Verified fixed: parseTags() in src/core/item/parse.ts:27-66 already accepts JSON-array input via coerceJsonTagArray() (commit 46a225b). Dogfood test in /tmp confirms --tags '[\"a\",\"b\"]' produces tags=[a,b] correctly."
 body: ""

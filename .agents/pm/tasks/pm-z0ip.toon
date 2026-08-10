@@ -6,18 +6,34 @@ status: closed
 priority: 0
 tags[7]: agent-ux,audit,ci,ecosystem,package-first,sdk,telemetry
 created_at: "2026-06-01T20:57:09.204Z"
-updated_at: "2026-07-26T22:20:45.776Z"
+updated_at: "2026-08-10T12:03:13.580Z"
 author: codex-audit-20260601
 release: v2026.6.2
 resolution: "Completed the June 1 pm CLI/SDK/ecosystem audit with sub-agent findings, targeted hardening, temp-project dogfood, telemetry/Sentry proof, PR #95, and review-agent feedback loop."
 expected_result: "pm CLI and SDK audit findings are tracked, actionable issues are fixed, verification is green, review feedback is addressed, and the branch is ready to merge back to main."
 actual_result: "Implemented agent-UX, deterministic equality, validate diagnostic, Sentry gate, extension docs, and bundle concurrency hardening; local verification and PR #95 checks passed; Gemini/Codex latest-head reviews reported no remaining issues."
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-59gj,related,"2026-07-26T17:30:40.488Z",null,null
-  pm-etxf,related,"2026-07-26T17:30:40.488Z",null,null
-  pm-kd9n,related,"2026-07-26T17:30:40.488Z",null,null
-  pm-qmx3,related,"2026-07-26T17:30:40.488Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:20:45.538Z",null,null
+dependencies[6]:
+  - id: pm-59gj
+    kind: related
+    created_at: "2026-07-26T17:30:40.488Z"
+  - id: pm-etxf
+    kind: related
+    created_at: "2026-07-26T17:30:40.488Z"
+  - id: pm-kd9n
+    kind: related
+    created_at: "2026-07-26T17:30:40.488Z"
+  - id: pm-qmx3
+    kind: related
+    created_at: "2026-07-26T17:30:40.488Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:20:45.538Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:03:13.438Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[22]{created_at,author,text}:
   "2026-06-01T20:57:16.236Z",codex-audit-20260601,"Investigation note: Required orientation completed: pm context, pm search, pm list-open, pm list-in-progress. Existing broad audit lineage is closed; no in-progress duplicate found. Proceeding with bounded sub-agent review lanes and local dogfood/implementation."
   "2026-06-01T20:58:05.168Z",subagent-sdk-20260601,"Lane start: SDK/package ecosystem audit by subagent-sdk-20260601. Scope: package.json, sdk sources, package/extension runtime surfaces, docs/SDK.md, docs/EXTENSIONS.md, and init/install/contracts tests. Read-only lane; no file edits planned."

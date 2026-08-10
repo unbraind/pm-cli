@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-31T07:57:37.866Z"
-updated_at: "2026-07-31T08:32:00.737Z"
+updated_at: "2026-08-10T12:05:55.874Z"
 closed_at: "2026-07-31T08:31:40.267Z"
 completed_at: "2026-07-31T08:31:40.267Z"
 author: "harness:codex"
@@ -15,9 +15,10 @@ parent: pm-doxj
 resolution: Upgraded to packed-consumer-safe @sentry/node 10.69 and Greptile 3.3 with clean audit and observability gates.
 expected_result: "Compatible current dependency minors pass repository, packed-consumer, security, hosted-review, Sentry, and telemetry gates."
 actual_result: "All local and live gates passed; Sentry 10.68 declaration incompatibility was avoided by ratcheting 10.69, and the only transient failure was isolated runner tmpfs inode pressure."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4dz7,related_to,"2026-07-31T07:57:37.866Z","harness:codex","cli:create:dep",detected
   pm-tll8,related_to,"2026-07-31T07:57:37.866Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-10T12:05:55.701Z","harness:claude-code","cli:update:dep",detected
 comments[4]{created_at,author,text}:
   "2026-07-31T07:57:37.866Z","harness:codex","Duplicate check: all-status searches for Sentry 10.69 and Greptile 3.3 found only prior closed refresh lineages and broader quality parents; this date-specific compatible refresh is new work. npm-package-arg 14 remains canonically tracked by pm-ksr40d and TypeScript 7 by pm-do5b."
   "2026-07-31T08:18:38.723Z","harness:codex","Packed consumer proof: an unrelated fresh npm project installed the repository tarball plus TypeScript 6 and Node declarations, compiled a strict NodeNext SDK import with no emit, and resolved the packaged pm executable. This proves Sentry 10.69 declaration compatibility after the known 10.68 regression."

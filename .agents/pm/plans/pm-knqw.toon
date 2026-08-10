@@ -6,22 +6,44 @@ status: closed
 priority: 2
 tags[4]: audit,living-map,methodology,pm-cli
 created_at: "2026-05-31T19:50:17.050Z"
-updated_at: "2026-07-26T17:18:38.137Z"
+updated_at: "2026-08-10T12:05:47.092Z"
 author: maintainer-agent
 parent: pm-doxj
 release: v2026.6.1
 resolution: "Merged PR #90 to main at 31b4d749 after addressing AI reviewer feedback and validating post-merge CI, Sentry, telemetry, dogfood, and release gates."
 expected_result: "pm ecosystem audit produces a deduplicated living map, captures SDK/CLI/package improvement backlog, fixes actionable issues, validates temp-project dogfood and observability, and lands on main with green checks."
 actual_result: "Reused pm-knqw lineage, coordinated specialized subagent findings, fixed release/Sentry docs and tracker metadata, resolved relevant Sentry issue, passed package-first dogfood including semantic mode, passed release gates, addressed Gemini review feedback, merged PR #90, and verified post-merge CI/Docs plus telemetry stack health."
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-doxj,parent,"2026-05-31T19:50:17.050Z",null,null
-  pm-0hnu,related,"2026-07-26T17:18:37.855Z",null,null
-  pm-59gj,related,"2026-07-26T17:18:37.855Z",null,null
-  pm-doxj,implements,"2026-07-26T17:18:37.855Z",null,null
-  pm-irp1,related,"2026-07-26T17:18:37.855Z",null,null
-  pm-kd9n,related,"2026-07-26T17:18:37.855Z",null,null
-  pm-m2u1,related,"2026-07-26T17:18:37.855Z",null,null
-  pm-w7f2,related,"2026-07-26T17:18:37.855Z",null,null
+dependencies[9]:
+  - id: pm-doxj
+    kind: parent
+    created_at: "2026-05-31T19:50:17.050Z"
+  - id: pm-0hnu
+    kind: related
+    created_at: "2026-07-26T17:18:37.855Z"
+  - id: pm-59gj
+    kind: related
+    created_at: "2026-07-26T17:18:37.855Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T17:18:37.855Z"
+  - id: pm-irp1
+    kind: related
+    created_at: "2026-07-26T17:18:37.855Z"
+  - id: pm-kd9n
+    kind: related
+    created_at: "2026-07-26T17:18:37.855Z"
+  - id: pm-m2u1
+    kind: related
+    created_at: "2026-07-26T17:18:37.855Z"
+  - id: pm-w7f2
+    kind: related
+    created_at: "2026-07-26T17:18:37.855Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:05:46.938Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-05-31T20:20:23.121Z",codex-audit-20260531,"Closeout note: resuming existing living-map plan step 4 for latest verification, changelog, PR, AI-review loop, observability, and merge. Duplicate check reused pm-knqw under pm-doxj rather than creating a new broad-audit item; latest related closed audit is pm-kd9n under pm-59gj."
   "2026-05-31T20:31:06.275Z",codex-audit-20260531,"Evidence: specialists found no immediate SDK/package, CLI/perf, or tracker-structure blockers. Fixed release docs to match the Sentry token requirement. Backfilled branch-local closed item resolution metadata, reducing validation warnings from 69 to 29 historical rows with history drift still ok. Local gates passed: pnpm build; pm health summary ok; secret scan ok; package-first dogfood ok; semantic package-first dogfood ok with qwen3-embedding:0.6b; required Sentry/telemetry gate ok with zero critical/high and telemetry error rate 1.23%; release run-gates ok including 2068 tests and 100% coverage."

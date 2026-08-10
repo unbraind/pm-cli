@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:cli","area:error","area:help","area:output","area:ux",pm-cli
 created_at: "2026-04-01T12:38:01.326Z"
-updated_at: "2026-07-26T22:17:26.045Z"
+updated_at: "2026-08-10T11:52:57.388Z"
 deadline: "2026-04-15T12:38:01.326Z"
 author: codex-agent
 estimated_minutes: 960
@@ -39,24 +39,69 @@ fixed_version: archive-2026q2
 component: cli-ux
 regression: true
 customer_impact: Improves usability and lowers command failure loops for all pm users
-dependencies[17]{id,kind,created_at,author,source_kind}:
-  pm-00yy,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
-  pm-axlr,related,"2026-04-01T12:38:01.326Z",codex-agent,null
-  pm-b3id,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
-  pm-r15d,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
-  pm-vqam,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
-  pm-eonv,related,"2026-07-26T17:16:57.360Z",null,null
-  pm-frk8,related,"2026-07-26T17:16:57.360Z",null,null
-  pm-gggs,related,"2026-07-26T17:16:57.360Z",null,null
-  pm-i0iy,related,"2026-07-26T17:16:57.360Z",null,null
-  pm-j162,related,"2026-07-26T17:16:57.360Z",null,null
-  pm-jfpf,related,"2026-07-26T17:16:57.360Z",null,null
-  pm-qhcw,related,"2026-07-26T17:16:57.360Z",null,null
-  pm-t2hj,related,"2026-07-26T17:16:57.360Z",null,null
-  pm-vf7n,related,"2026-07-26T17:16:57.360Z",null,null
-  pm-x3fh,related,"2026-07-26T17:16:57.360Z",null,null
-  pm-y76e,related,"2026-07-26T17:16:57.360Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:25.780Z",null,null
+dependencies[18]:
+  - id: pm-00yy
+    kind: discovered_from
+    created_at: "2026-04-01T12:38:01.326Z"
+    author: codex-agent
+  - id: pm-axlr
+    kind: related
+    created_at: "2026-04-01T12:38:01.326Z"
+    author: codex-agent
+  - id: pm-b3id
+    kind: discovered_from
+    created_at: "2026-04-01T12:38:01.326Z"
+    author: codex-agent
+  - id: pm-r15d
+    kind: discovered_from
+    created_at: "2026-04-01T12:38:01.326Z"
+    author: codex-agent
+  - id: pm-vqam
+    kind: discovered_from
+    created_at: "2026-04-01T12:38:01.326Z"
+    author: codex-agent
+  - id: pm-eonv
+    kind: related
+    created_at: "2026-07-26T17:16:57.360Z"
+  - id: pm-frk8
+    kind: related
+    created_at: "2026-07-26T17:16:57.360Z"
+  - id: pm-gggs
+    kind: related
+    created_at: "2026-07-26T17:16:57.360Z"
+  - id: pm-i0iy
+    kind: related
+    created_at: "2026-07-26T17:16:57.360Z"
+  - id: pm-j162
+    kind: related
+    created_at: "2026-07-26T17:16:57.360Z"
+  - id: pm-jfpf
+    kind: related
+    created_at: "2026-07-26T17:16:57.360Z"
+  - id: pm-qhcw
+    kind: related
+    created_at: "2026-07-26T17:16:57.360Z"
+  - id: pm-t2hj
+    kind: related
+    created_at: "2026-07-26T17:16:57.360Z"
+  - id: pm-vf7n
+    kind: related
+    created_at: "2026-07-26T17:16:57.360Z"
+  - id: pm-x3fh
+    kind: related
+    created_at: "2026-07-26T17:16:57.360Z"
+  - id: pm-y76e
+    kind: related
+    created_at: "2026-07-26T17:16:57.360Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:17:25.780Z"
+  - id: pm-j82fd3
+    kind: implements
+    created_at: "2026-08-10T11:52:57.243Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[5]{created_at,author,text}:
   "2026-04-01T12:38:01.326Z",codex-agent,Duplicate scan completed against open and in-progress plus targeted search before creation.
   "2026-04-01T12:40:29.287Z",codex-agent,"PM hierarchy created: epic pm-izbd; features pm-j162/pm-frk8/pm-t2hj/pm-i0iy; tasks pm-vf7n/pm-gggs/pm-eonv/pm-x3fh/pm-qhcw/pm-jfpf/pm-y76e."

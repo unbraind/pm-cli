@@ -6,11 +6,19 @@ status: closed
 priority: 2
 tags[4]: agent-ux,dogfood-2026-06-12,extensions,sdk
 created_at: "2026-06-12T16:19:03.304Z"
-updated_at: "2026-07-26T22:19:12.151Z"
+updated_at: "2026-08-10T12:02:52.283Z"
 author: maintainer-agent
 release: v2026.6.16
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-doxj,blocks,"2026-07-26T22:19:11.871Z",null,null
+dependencies[2]:
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:19:11.871Z"
+  - id: pm-5oj5
+    kind: implements
+    created_at: "2026-08-10T12:02:52.134Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-06-16T11:19:36.828Z",codex-sdk-cli-consolidation-20260616,"Evidence: extension install/list flows now include activation_diagnostics with error/hint details from runtime activation failures while preserving existing warning codes."
   "2026-06-16T12:30:24.346Z",codex-sdk-cli-consolidation-20260616,"Merged via PR #246 (Consolidate SDK/CLI core primitives, UX diagnostics, and release reliability). Post-review follow-up commits addressed bot feedback; CI gates are green including strict coverage 100/100/100/100 and CodeQL/compat/smoke checks."

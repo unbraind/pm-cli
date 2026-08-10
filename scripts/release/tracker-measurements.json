@@ -9,9 +9,9 @@
         "source": "dependency_kind",
         "kind": "implements"
       },
-      "floor": 2305,
-      "measured_on": "2026-08-09",
-      "note": "Typed implements edges. This is the kind the strategic reachability invariant traverses: an active item resolves to an outcome milestone through implements, so this population is the outcome ladder's substrate rather than decoration. The total-edge floor cannot protect it, because converting implements rows to related rows leaves the edge count identical and every ceiling in this document unmoved, while silently flattening the ladder into an untyped mesh. Lower it deliberately here if a conversion is ever correct."
+      "floor": 2544,
+      "measured_on": "2026-08-10",
+      "note": "Typed implements edges. This is the kind the strategic reachability invariant traverses: an active item resolves to an outcome milestone through implements, so this population is the outcome ladder's substrate rather than decoration. The total-edge floor cannot protect it, because converting implements rows to related rows leaves the edge count identical and every ceiling in this document unmoved, while silently flattening the ladder into an untyped mesh. Lower it deliberately here if a conversion is ever correct. Raised 2026-08-10 by the strategic-ladder wave: every capability and delivery-epoch epic now resolves to an outcome milestone through implements, and every parentless terminal item resolves to a capability epic, so apex-bypassing roots fell from 154 to 0 and items reaching no outcome fell from 1,024 to 11 recorded residuals. That layer is what this floor now protects; deleting it would restore the sibling-set topology pm-h6b73t was filed for."
     },
     {
       "id": "dependency-kind-discovered-from-floor",
@@ -20,8 +20,8 @@
         "source": "dependency_kind",
         "kind": "discovered_from"
       },
-      "floor": 438,
-      "measured_on": "2026-08-09",
+      "floor": 463,
+      "measured_on": "2026-08-10",
       "note": "Typed discovered_from edges: the derivation lineage recording which finding produced which item. It is the only kind that reconstructs how the record learned what it knows, it is written overwhelmingly onto terminal holders where no active-scoped check looks, and it is changelog-safe to author, which is exactly why it is easy to delete without anyone noticing. Guarded on the same terms as implements."
     },
     {
@@ -31,9 +31,20 @@
         "source": "dependency_kind",
         "kind": "verifies"
       },
-      "floor": 233,
-      "measured_on": "2026-08-09",
+      "floor": 239,
+      "measured_on": "2026-08-10",
       "note": "Typed verifies edges, the gate-to-product relation that records which mechanism proves which claim. The gate-versus-product split is a recurring filing pattern in this tracker and this edge is the only structural trace of it; without a floor, the relation degrades to related one row at a time and the record loses the ability to answer which guarantees are actually witnessed."
+    },
+    {
+      "id": "dependency-kind-supersedes-floor",
+      "owner": "pm-wmf72c",
+      "selector": {
+        "source": "dependency_kind",
+        "kind": "supersedes"
+      },
+      "floor": 71,
+      "measured_on": "2026-08-10",
+      "note": "Typed supersedes edges: the only kind that records evolution, meaning which item replaced which as the project's understanding changed. pm-wmf72c was filed because this population was one edge across 1,799 closed items, so the record could not answer what superseded what across fourteen releases. It is now 71, of which 9 anchor duplicate-consolidation clusters recovered verbatim from consolidation comments and 8 join the v1 delivery epoch's canonical milestones to their archived PRD-numbered duplicates (pm-1w6scp). Every one of those was derived from durable recorded text, so none of them can be re-derived if deleted -- the consolidation comments would still exist but the reviewed direction would not. Guarded on the same terms as implements and discovered_from: a legitimate reduction must lower this number deliberately here."
     },
     {
       "id": "graph-profile-edges-floor",
@@ -42,9 +53,9 @@
         "source": "graph_profile",
         "field": "edges"
       },
-      "floor": 11318,
-      "measured_on": "2026-08-07",
-      "note": "Total deduplicated directed relationship edges. The typed graph is authored deliberately, pass after pass, and is the substrate every graph analytic and the strategic outcome ladder read. Nothing else in this document can notice it shrinking: every ceiling here falls when edges are removed, so before this floor existed a mass deletion improved the gate's verdict. Legitimate reductions do exist \u2014 retiring an alias kind or removing a genuinely wrong edge \u2014 and they must lower this number deliberately by editing it here, because --update only ever raises a floor."
+      "floor": 11847,
+      "measured_on": "2026-08-10",
+      "note": "Total deduplicated directed relationship edges. The typed graph is authored deliberately, pass after pass, and is the substrate every graph analytic and the strategic outcome ladder read. Nothing else in this document can notice it shrinking: every ceiling here falls when edges are removed, so before this floor existed a mass deletion improved the gate's verdict. Legitimate reductions do exist — retiring an alias kind or removing a genuinely wrong edge — and they must lower this number deliberately by editing it here, because --update only ever raises a floor. Raised 2026-08-10 after the strategic-ladder and parentless-lineage waves added 220 evidence-cited typed edges."
     },
     {
       "id": "graph-profile-nodes-floor",

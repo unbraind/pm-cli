@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-05T21:27:22.114Z"
-updated_at: "2026-08-06T07:26:17.190Z"
+updated_at: "2026-08-10T12:02:41.017Z"
 closed_at: "2026-08-06T07:26:03.830Z"
 completed_at: "2026-08-06T07:26:03.830Z"
 author: "harness:codex"
@@ -15,9 +15,10 @@ acceptance_criteria: A local npm package with a hoisted declared runtime depende
 resolution: fixed
 expected_result: "All acceptance criteria are satisfied with local, manual, and hosted evidence."
 actual_result: "Packed and manual extension installs resolve hoisted runtime dependencies truthfully, retain real failure reporting, and leave zero snapshot residue."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4v4c,related,"2026-08-05T21:27:22.114Z","harness:codex","cli:create:dep",detected
   pm-x6jf,discovered_from,"2026-08-05T21:27:22.114Z","harness:codex","cli:create:dep",detected
+  pm-ugqx,implements,"2026-08-10T12:02:40.763Z","harness:claude-code","cli:update:dep",detected
 comments[4]{created_at,author,text}:
   "2026-08-05T21:27:22.114Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for GH-911, isolated activation probes, hoisted runtime dependencies, extension install false failures, and temporary module graphs. Closed lifecycle and stale-probe items are lineage, not this dependency-topology defect. Source: https://github.com/unbraind/pm-cli/issues/911"
   "2026-08-06T06:53:56.414Z","harness:codex","Implementation evidence: post-install and activation runtime probes now create fresh module-graph snapshots beside the active project/global topology, preserving ancestor node_modules resolution while retaining cache isolation and finally cleanup. Packed npm runtime-dependency integration, package dogfood (88 commands), manual package activation with zero snapshot residue, build, static gates, and exact full coverage pass."

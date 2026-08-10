@@ -6,12 +6,22 @@ status: closed
 priority: 2
 tags[3]: perf,startup,telemetry
 created_at: "2026-05-29T22:28:38.724Z"
-updated_at: "2026-07-26T22:18:00.979Z"
+updated_at: "2026-08-10T12:03:27.413Z"
 author: maintainer-agent
 release: v2026.5.31
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-ss1d,related,"2026-07-26T17:03:11.970Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:18:00.785Z",null,null
+dependencies[3]:
+  - id: pm-ss1d
+    kind: related
+    created_at: "2026-07-26T17:03:11.970Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:18:00.785Z"
+  - id: pm-9rxu
+    kind: implements
+    created_at: "2026-08-10T12:03:27.277Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-05-29T22:59:24.881Z",maintainer-agent,"Addressed the highest-frequency sub-item: scheduleTelemetryFlush now spawns the detached flush child AT MOST ONCE per process (in-process guard). Previously command_start + command_finish each spawned a child (~6.5ms fork/exec each, deduped only by lock AFTER paying Node startup). One child drains the whole queue. DEFERRED with rationale: (a) PM_TOOL_PARAMETERS_SCHEMA lazy-build — it is public SDK surface (sdk/index.ts re-exports it, contract-tested in sdk-index.spec) and the eager build is only ~3ms (~1% of a ~300ms command); churning the public API for 1% is not worth it. (b) completion.ts flag-string constants are not on the bundled CLI hot path. The dominant per-command cost is ESM module-load/bundle, tracked separately under pm-ss1d (esbuild --splitting --packages=external). Keeping open for the bundling lever."
   "2026-05-30T05:07:04.484Z",maintainer-agent,"CORRECTION: reverted the in-process flush spawn-once guard. A flush child boots (~50-100ms) before even a normal command finishes (~300ms), so spawning only at command_start would systematically defer the command_finish event to the next invocation — a real-time telemetry timeliness regression not worth ~6.5ms. The correct optimization is a cheap cross-process 'flush already in flight' check before spawn (skip redundant spawns while preserving timeliness), tracked as future work. No telemetry runtime change ships in this PR; pm-3mal stays open for the bundling lever (pm-ss1d) + the in-flight cross-process flush guard."

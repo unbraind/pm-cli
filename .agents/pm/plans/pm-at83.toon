@@ -6,25 +6,61 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-05T14:37:43.450Z"
-updated_at: "2026-07-26T22:20:02.156Z"
+updated_at: "2026-08-10T12:03:40.057Z"
 author: maintainer-agent
 release: v2026.6.6
-dependencies[15]{id,kind,created_at,author,source_kind}:
-  pm-3puw,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-5k4v,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-77t3,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-7j8t,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-d6kq,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-fd8n,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-hywv,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-k5r6,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-kl11,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-qxwu,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-r9sz,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-te9x,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-ugqx,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-z5nb,related,"2026-07-26T17:09:32.107Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:20:01.903Z",null,null
+dependencies[16]:
+  - id: pm-3puw
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-5k4v
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-77t3
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-7j8t
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-d6kq
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-fd8n
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-hywv
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-k5r6
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-kl11
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-qxwu
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-r9sz
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-te9x
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-ugqx
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-z5nb
+    kind: related
+    created_at: "2026-07-26T17:09:32.107Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:20:01.903Z"
+  - id: pm-5k4v
+    kind: implements
+    created_at: "2026-08-10T12:03:39.890Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[21]{created_at,author,text}:
   "2026-06-05T14:58:16.580Z",maintainer-agent,"BUNDLE COMPLETE (working tree only; NOT committed/pushed per run constraint). Delivered via 2 specialized sub-agents (mcp-platform-subagent, sdk-docs-subagent) on disjoint file sets + orchestrator. Closed 8 children: pm-hywv+pm-77t3 (narrow MCP tools pm_notes/pm_learnings/pm_deps, 18→21 tools), pm-qxwu (typo-swallow hardening: TOOL_DECLARED_KEYS + structuredContent.warnings + stderr + did-you-mean, pm_run exempt), pm-fd8n (pm_run action list derived from PM_TOOL_ACTIONS), pm-r9sz (PM_TOOL_PARAMETERS_SCHEMA_VERSION/_MAJOR constants + bound assertion sites), pm-kl11 (tests/integration/mcp-handshake.spec.ts), pm-te9x + pm-k5r6 (docs/EXTENSIONS.md: capture_level semantics + dual write-path contract). VERIFICATION: clean build, 139 files / 2309 tests pass, 100% coverage (stmts/branch/func/lines), manual sandbox MCP test (tools/list=21, narrow tools functional, typo warning fires, unknown-tool error, pm contracts schema_version=4.0.2). FOLLOW-UP filed: pm-3puw (MCP stdio server handles JSON-RPC lines concurrently → pipelined same-item mutations lock-conflict; pre-existing, low severity, out of scope). Plan left open as the durable session record (per pm-z5nb precedent for coordination plans)."
   "2026-06-05T15:22:17.934Z",codex-coverage-contracts,"Coverage/contracts verification sub-agent evidence: inspected dirty diff for pm-d6kq/MCP/SDK contracts. Verified package scripts include contracts:update/contracts:check, CI static gate calls pnpm contracts:check, scripts/contracts-snapshot.mjs runs dist/cli.js contracts --full --json against tests/fixtures/contracts/full.json, and docs/TESTING.md documents the update/check flow. Focused verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/shared-helpers.spec.ts (3 files, 41 tests); pnpm contracts:check. GitHub read-only checks: no open PRs, no open issues, no open Dependabot alerts via gh api GET, pnpm audit clean; pnpm outdated reports only commander 14.0.3 -> 15.0.0, already tracked by pm-7j8t. Gap: pm-d6kq is not ready to close until untracked scripts/contracts-snapshot.mjs and tests/fixtures/contracts/full.json are included in the PR; otherwise a fresh checkout would miss the gate and/or fixture even though this dirty worktree passes."

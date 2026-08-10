@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,cli,gh-issue,token-efficiency
 created_at: "2026-07-10T16:20:02.384Z"
-updated_at: "2026-07-26T22:19:20.659Z"
+updated_at: "2026-08-10T12:02:53.086Z"
 closed_at: "2026-07-10T20:32:51.911Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -17,10 +17,22 @@ release: v2026.7.11
 resolution: Added hidden --body and --comment aliases for comments --add across CLI and runtime contracts.
 expected_result: Agent callers can append comments with common body aliases without breaking canonical help.
 actual_result: "Both aliases normalize to add, remain hidden from concise help, and work from an installed tarball."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-g543,related,"2026-07-10T16:20:02.384Z",null,null
-  pm-gdi7,related,"2026-07-10T16:22:00.795Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:19:20.380Z",null,null
+dependencies[4]:
+  - id: pm-g543
+    kind: related
+    created_at: "2026-07-10T16:20:02.384Z"
+  - id: pm-gdi7
+    kind: related
+    created_at: "2026-07-10T16:22:00.795Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:19:20.380Z"
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-08-10T12:02:52.915Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-07-10T17:52:02.121Z",codex-root,"Implementation start: active in the broad atomic work-selection and agent recovery PR. Live all-status duplicate check, full item metadata, closed prerequisite lineage, GitHub issues, security alerts, dependency audit, release state, and Sentry issue surface were reviewed before claiming. This item shares CLI/SDK contracts, recovery envelopes, and end-to-end verification with the seven sibling items in the bundle."
   "2026-07-10T20:32:35.423Z",codex-wide-pm-sdk,"Verification: pnpm release:gates passed build/typecheck/static/docstring ratchets/docs/context/security, 100/100/100/100 coverage with 5,524 tests, packed npx smoke, and 88-command package dogfood; isolated installed-tarball acceptance created two items, atomically claimed one, accepted comments --body, detected one dangling dependency, and imported PmClient. Live Sentry/telemetry: 0 blocking critical/high, 0.34% finish error rate, zero missing error-code rows. pm health: all 7 checks ok; history drift: 0 across 1,709 items."

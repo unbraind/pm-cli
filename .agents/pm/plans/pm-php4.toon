@@ -6,15 +6,29 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T12:42:27.592Z"
-updated_at: "2026-07-26T22:20:07.752Z"
+updated_at: "2026-08-10T12:03:43.342Z"
 author: claude-code-agent
 release: v2026.6.16
 resolution: All 3 child features shipped (pm-7snq/pm-hntj/pm-mfl1) in one PR. Plan type excluded from changelog.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-7snq,related,"2026-07-26T17:23:01.541Z",null,null
-  pm-hntj,related,"2026-07-26T17:23:01.541Z",null,null
-  pm-mfl1,related,"2026-07-26T17:23:01.541Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:20:07.448Z",null,null
+dependencies[5]:
+  - id: pm-7snq
+    kind: related
+    created_at: "2026-07-26T17:23:01.541Z"
+  - id: pm-hntj
+    kind: related
+    created_at: "2026-07-26T17:23:01.541Z"
+  - id: pm-mfl1
+    kind: related
+    created_at: "2026-07-26T17:23:01.541Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:20:07.448Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:03:43.073Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-06-16T12:51:39.813Z",claude-code-agent,"Core primitives done. metadata-coverage.ts NEW exports: isReviewerMissing/isRiskMissing/isConfidenceMissing/isSprintMissing/isReleaseMissing; MissingMetadataFilters extended with reviewerMissing/riskMissing/confidenceMissing/sprintMissing/releaseMissing; hasMissingMetadataFilter + itemMatchesMissingMetadata (per-flag AND, governance fields added to metadataMissing union); CoverageItem gained reviewer/risk/confidence(string|number)/sprint/release. content-fields.ts exports verbatim per spec: ContentField, CONTENT_FIELD_ORDER, ContentFieldItem, isContentFieldPresent, ContentFieldSelection, ContentFieldFilters, hasContentFieldFilter, itemMatchesContentFilters, filterByContentFields, contentFiltersNeedCollections, contentFiltersNeedBody, ContentFieldUtilization, ContentFieldUtilizationReport, computeContentFieldUtilization. DEVIATIONS: (1) confidence typed string|number because ItemMetadata.confidence is ConfidenceValue=number|string and pure-string broke consumer assignability in stats.ts; isConfidenceMissing treats a finite number as present. (2) vitest.config include is already a literal src-glob so content-fields.ts is auto coverage-gated; no edit needed. (3) Did NOT fix tests/unit/commands/metadata-governance-commands.spec.ts:79 (outside my scope) which now FAILS as an intended consequence of widening the metadataMissing union to governance fields; the command-layer sub-agent must reconcile that expectation. typecheck green; the two governance specs pass (48 tests)."
   "2026-06-16T13:43:31.604Z",claude-code-agent,Work fully shipped (pm-7snq/pm-hntj/pm-mfl1 all closed). Kept open as orchestration record so the Plan rollup stays out of the changelog (the 3 child Features carry the clean Added entries).

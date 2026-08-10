@@ -6,10 +6,18 @@ status: closed
 priority: 2
 tags[2]: cleanup,health
 created_at: "2026-05-31T05:41:32.956Z"
-updated_at: "2026-07-26T22:18:55.898Z"
+updated_at: "2026-08-10T12:02:51.560Z"
 author: claude-code-agent
 release: v2026.5.31
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-w7f2,discovered_from,"2026-07-26T22:18:55.621Z",null,null
+dependencies[2]:
+  - id: pm-w7f2
+    kind: discovered_from
+    created_at: "2026-07-26T22:18:55.621Z"
+  - id: pm-5oj5
+    kind: implements
+    created_at: "2026-08-10T12:02:51.417Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 close_reason: "Removed 'index' from PM_CORE_REQUIRED_SUBDIRS (src/core/shared/constants.ts). pm health now reports ok:true on the dev repo. gc still cleans legacy index/ for old repos (unchanged). Updated shared-constants-errors.spec PM_REQUIRED_SUBDIRS assertion and the gc + cli.integration tests that seeded index/manifest.json (now mkdir the dir explicitly). Tests green."
 body: ""

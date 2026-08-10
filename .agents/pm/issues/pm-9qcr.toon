@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-ux,cli,error-recovery,extensions,gh-issue
 created_at: "2026-07-11T02:50:04.830Z"
-updated_at: "2026-07-26T22:19:33.898Z"
+updated_at: "2026-08-10T12:02:17.326Z"
 closed_at: "2026-07-11T09:30:49.822Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -17,11 +17,25 @@ release: v2026.7.12
 resolution: Suggested retries use longest registered command-path matching across all token occurrences and honor required flag arity.
 expected_result: Recovery suggestions remain executable when command tokens repeat before or after invocation and when required flags omit explicit type metadata.
 actual_result: "Trailing/leading token collisions resolve the canonical descriptor, boolean flags stay bare, and required untyped flags receive value placeholders."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-6y58,related,"2026-07-11T02:50:04.830Z",null,null
-  pm-o71e,related,"2026-07-11T02:50:04.830Z",null,null
-  pm-s9iu,related,"2026-07-26T17:08:28.976Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:19:33.664Z",null,null
+dependencies[5]:
+  - id: pm-6y58
+    kind: related
+    created_at: "2026-07-11T02:50:04.830Z"
+  - id: pm-o71e
+    kind: related
+    created_at: "2026-07-11T02:50:04.830Z"
+  - id: pm-s9iu
+    kind: related
+    created_at: "2026-07-26T17:08:28.976Z"
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:19:33.664Z"
+  - id: pm-5k4v
+    kind: implements
+    created_at: "2026-08-10T12:02:17.150Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[9]{created_at,author,text}:
   "2026-07-11T04:45:45.833Z",codex-root,"Implementation start: bundled with GH-503/504/505/507 because flattened aliases, bare importer/exporter contracts, nested typed recovery, and boolean retry arity share extension registration and structured-error surfaces. Duplicate check used pm search --status all; closed prior extension SDK work remains closed."
   "2026-07-11T04:48:29.576Z",codex-root,"Pause note: root cause investigation reached structured recovery assembly in src/cli/main.ts, but no verified patch is recorded yet. Item remains open and unclaimed."

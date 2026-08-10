@@ -6,13 +6,21 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-05-16T21:37:12.766Z"
-updated_at: "2026-07-26T22:20:16.058Z"
+updated_at: "2026-08-10T12:03:11.532Z"
 author: unknown
 release: v2026.5.18
 resolution: Closed audit smoke item was cleanup-only and required no product code changes.
 expected_result: Temporary smoke item is closed cleanly and does not leave validation metadata warnings.
 actual_result: Smoke item was closed for cleanup; resolution metadata backfilled during the 2026-05-17 audit.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-jrjt,discovered_from,"2026-07-26T22:20:15.840Z",null,null
+dependencies[2]:
+  - id: pm-jrjt
+    kind: discovered_from
+    created_at: "2026-07-26T22:20:15.840Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:03:11.403Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 close_reason: audit smoke test - cleanup
 body: ""

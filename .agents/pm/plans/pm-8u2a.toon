@@ -6,30 +6,68 @@ status: closed
 priority: 1
 tags[6]: 2026-06-07,audit,backlog,context-management,living-map,pm-cli
 created_at: "2026-06-07T09:53:26.457Z"
-updated_at: "2026-07-26T17:07:54.835Z"
+updated_at: "2026-08-10T12:05:45.469Z"
 author: maintainer-agent
 parent: pm-doxj
 release: v2026.6.8
 resolution: "Completed forward-backlog rebuild, PR review loop, merge, and observability verification."
 expected_result: "The pm-cli tracker has a non-duplicate living forward backlog across all capability epics, ADR gaps are recorded, PR checks and reviewer state are clean, and main is current after merge."
 actual_result: "Created and merged PR #143, added the forward backlog and ADR records, fixed the static secret-scan issue, verified green GitHub checks plus telemetry/Sentry visibility, and closed/released the plan."
-dependencies[16]{id,kind,created_at,author,source_kind}:
-  pm-doxj,parent,"2026-06-07T09:53:26.457Z",null,null
-  pm-34gb,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-3b1t,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-5dbn,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-5k4v,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-5oj5,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-7sq6,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-7zs0,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-8jdc,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-97yv,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-b4cp,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-cc04,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-doxj,implements,"2026-07-26T17:07:54.600Z",null,null
-  pm-haak,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-irc7,related,"2026-07-26T17:07:54.600Z",null,null
-  pm-ji5c,related,"2026-07-26T17:07:54.600Z",null,null
+dependencies[17]:
+  - id: pm-doxj
+    kind: parent
+    created_at: "2026-06-07T09:53:26.457Z"
+  - id: pm-34gb
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-3b1t
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-5dbn
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-5k4v
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-5oj5
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-7sq6
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-7zs0
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-8jdc
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-97yv
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-b4cp
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-cc04
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-haak
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-irc7
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-ji5c
+    kind: related
+    created_at: "2026-07-26T17:07:54.600Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-08-10T12:05:45.305Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[5]{created_at,author,text}:
   "2026-06-07T10:24:45.552Z",maintainer-agent,"Audit waves 1-5 complete: 71 OPEN backlog items created + AC backfilled + dedupe sweep clean (0 dups) + validate/health ok + 2 ADRs recorded. Proceeding to consolidation, commit, PR, bot-review loop."
   "2026-06-07T10:45:40.829Z",maintainer-agent,"Continuation note: live GitHub check on 2026-06-07 found no open PRs and no PR attached to branch pm/forward-backlog-rebuild-and-adr-gaps-2026-06-07, despite the pending PR-review loop language. Local branch is clean with commit ee897da3 ahead of origin/main. Bootstrap before publish passed: npm install -g . and pnpm build."
