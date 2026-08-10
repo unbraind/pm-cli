@@ -2,13 +2,13 @@ id: pm-obh6lo
 title: Refresh pinned GitHub Actions for PR #958 with exact-head compatibility proof
 description: "Review, rebase, verify, and merge the grouped pinned-action updates for pnpm setup, CodeQL, CodSpeed, and related workflow consumers without weakening immutable-SHA or free-tier quality gates."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-08-10T07:04:30.062Z"
-updated_at: "2026-08-10T08:27:14.291Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#f40a3612ddfb4cf32376b325"
+updated_at: "2026-08-10T09:01:40.467Z"
+closed_at: "2026-08-10T09:01:39.879Z"
+completed_at: "2026-08-10T09:01:39.879Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Every updated action remains pinned to an immutable commit SHA; The PR is rebased on current main and every required exact-head check passes; Review comments are acknowledged with evidence and the merged head leaves no open dependency PR
@@ -23,9 +23,10 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2czc,discovered_from,"2026-08-10T07:04:30.062Z","harness:codex","cli:create:dep",detected
   pm-qwoy,implements,"2026-08-10T07:04:30.062Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-08-10T07:04:30.062Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-10T07:04:30.062Z","harness:codex","Duplicate-check evidence: searched every status for the GitHub Actions group,five updates,PR #958,pnpm/action-setup 6.0.10,CodeQL 4.37.6,and CodSpeed 5.0.3. Closed pm-2czc covers an older lockstep compatibility incident,not this current grouped refresh; no current item owns PR #958."
   "2026-08-10T08:26:24.254Z","harness:codex","Exact-head dependency evidence: Dependabot PR #958 head b5348c5308ab46de01cff25eaeeb6d69cae358b4 is mergeable with all CI, four coverage shards, aggregate coverage, CodeQL, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, docs, CodSpeed, CodeFactor, DeepScan, Hound, Semgrep, and Codecov green. Every bot status comment was reacted to and given an explicit disposition; Greptile exclusion is recorded as unavailable rather than approval. The immutable workflow changes will be incorporated into the broad feature branch to avoid consuming the sole daily auto-release before the SDK tranche lands."
+  "2026-08-10T09:01:39.281Z","harness:codex","Exact-head closeout: PR #961 head ac47bef479f4f4445556119e5d98cfbcaedf8a03 is mergeable and clean; no non-success checks, no unresolved review threads, and no unreacted bot comments, reviews, or inline replies remain."
 files[8]{path,scope,note}:
   .github/workflows/auto-release.yml,project,Pinned grouped Actions update from PR 958
   .github/workflows/ci.yml,project,Pinned grouped Actions update from PR 958
@@ -39,4 +40,5 @@ tests[1]{command,scope,timeout_seconds}:
   "pnpm security:scan && pnpm quality:docs-skills && node scripts/bench/cli-transport-floor.mjs --check",project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msmyxcku-yng4rl,test,passed,"2026-08-10T08:26:55.920Z","2026-08-10T08:27:14.286Z","2026-08-10T08:27:14.286Z",1,0,0
+close_reason: "Completed through PR #961: exact Dependabot commit b5348c5308ab46de01cff25eaeeb6d69cae358b4 was incorporated unchanged, duplicate PR #958 was closed, immutable action pins and all workflow/security/platform gates are green, and every bot status was reacted to and dispositioned."
 body: ""

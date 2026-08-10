@@ -9,6 +9,10 @@
 
 ### Fixed
 
+- GH-959 recurrence: snapshot restore planning races lease-expiry fixture cleanup ([pm-usq49n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-usq49n.toon))
+- GH-960: structured diagnostic notices preserve machine-readable JSON envelopes ([pm-embm6t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-embm6t.toon))
+- GH-956: lossless acceptance-criteria replacement and unmatched-removal failure contract ([pm-lppm6y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lppm6y.toon))
+- GH-954: fail-fast dependency target validation with explicit forward-reference intent ([pm-x3dq0l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x3dq0l.toon))
 - Preserve executable recovery semantics across terminators, nested aliases, and tracker scope ([pm-szn67i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-szn67i.toon))
 - Measure source replication against an independently discovered denominator ([pm-b84irw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b84irw.toon))
 - GH-515: pm test --add reorders linked tests — --only-last can execute a non-newest command ([pm-x2vx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x2vx.toon))
@@ -33,6 +37,7 @@
 
 ### Other
 
+- Refresh pinned GitHub Actions for PR \#958 with exact-head compatibility proof ([pm-obh6lo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-obh6lo.toon))
 - The measurement ratchet floors only aggregate graph totals, so converting typed semantic edges to untyped ones passes every declaration ([pm-70jyvw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-70jyvw.toon))
 
 ## 2026.8.9 - 2026-08-09
