@@ -2,27 +2,27 @@ id: pm-l5bc03
 title: "Exact-head review hardening: terminator-safe create mode, complete item ID conflict parsing, and public changelog integrity"
 description: "Resolve all actionable exact-head review findings on PR #957 across three review rounds: preserve argument terminators and global/command option arity during item-ID normalization, reject every ambiguous item identifier form, keep command suggestions deterministic, expose exact close validation domains, prove executable aliases and tracker-scoped recovery, keep public changelog entries user-facing through canonical PM metadata, and preserve honest generator/gate evidence."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[7]: "area:cli","area:release","area:sdk",changelog-exclude,pr-957,regression,review-hardening
 created_at: "2026-08-09T23:34:03.288Z"
-updated_at: "2026-08-10T10:46:55.375Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#f40a3612ddfb4cf32376b325"
+updated_at: "2026-08-10T10:57:19.945Z"
+closed_at: "2026-08-10T10:57:19.277Z"
+completed_at: "2026-08-10T10:57:19.277Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Create-mode and recovery policy stop at --; item addressing consumes global and command-local value flags and rejects every mixed-ID ambiguity; show --id executes through alias normalization; close-task and item-complete expose off|warn|strict validation domains; public generated changelog uses capability language; historical PM lifecycle corrections remain append-only; focused, full, coverage, static, contract, manual, and exact-head CI gates pass before closure"
 parent: pm-usfg
 resolution: "Aligned release preparation with canonical changelog exclusion, added bounded exact-tag changelog regeneration for unpublished immutable-tag recovery, and executable workflow guards for ordinary, recovery, and unexpected-mutation paths."
 expected_result: "Every item-addressed invocation resolves one unambiguous ID through declared flag arity, create-mode policy stops at --, and generated public notes exclude internal review records."
-actual_result: "PR #962 merged as 83e3bf0b6; exact-tag recovery run 31377907853 passed all release gates and published the sole immutable v2026.8.10 package and GitHub Release. Independent npm, npx, bunx, pm-mcp, and installed npm/Bun lifecycle verification passed. Sentry release has 17 commits, zero new groups, and zero unresolved issues in the 14-day window; telemetry is checked with 1.19% finish error rate and zero missing error-code rows."
+actual_result: PR #962 recovered and published the sole immutable v2026.8.10 release; PR #963 merged as 66a935aa6 and hardened same-day retry identity normalization. Production close-event run 31381268108 passed in 49s via retry_already_attempted without rerunning or republishing. npm/npx/bunx/MCP and installed npm+Bun lifecycle acceptance passed; Sentry and telemetry remained healthy.
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-szn67i,discovered_from,"2026-08-09T23:34:48.092Z","harness:codex","cli:update:dep",detected
   pm-xg60q3,related,"2026-08-09T23:34:48.092Z","harness:codex","cli:update:dep",detected
   pm-zzahs4,discovered_from,"2026-08-09T23:34:48.092Z","harness:codex","cli:update:dep",detected
   pm-b84irw,discovered_from,"2026-08-10T00:45:54.946Z","harness:codex","cli:update:dep",detected
   pm-mkinft,related,"2026-08-10T00:45:54.946Z","harness:codex","cli:update:dep",detected
-comments[13]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-08-09T23:34:03.288Z","harness:codex","Duplicate governance identified pm-xg60q3,but that closed item is only the prior coverage-shard ordering repair. This item is intentionally distinct because it tracks four new exact-head findings in different parser/changelog surfaces; all-status search found no canonical item for this finding set."
   "2026-08-10T00:08:49.700Z","harness:codex","Final evidence: focused parser/acceptance tests pass 9/9; full repository suite passes; exact coverage passes at statements 50,815/50,815, branches 37,177/37,177, functions 10,437/10,437, lines 49,165/49,165. ESLint has zero warnings, jscpd has zero clones, and quality:static passes all docstring, SDK boundary, replication, token/context, tracker-ratchet, import-cost, and transport-floor gates. In a fresh isolated tracker, normal --id reads succeeded, flag-interleaved positional-plus-named IDs and duplicate named IDs failed before execution, an operand --create-mode strict stayed progressive, and a real pre-terminator strict option stayed strict. pm-changelog 2026.8.7 check is unchanged with both internal entries excluded and user-facing capability entries retained."
   "2026-08-10T00:45:42.267Z","harness:codex","Review-round duplicate decision: reuse this canonical PR #957 exact-head hardening item because the new findings extend the same item-addressing parser, recovery docs, changelog governance, and gate evidence surfaces. All-status search found no more specific active owner for this combined set; pm-b84irw remains the canonical replication-gate test owner and will receive only its own waiver-specific evidence under a separate claim."
@@ -36,6 +36,7 @@ comments[13]{created_at,author,text}:
   "2026-08-10T10:03:24.092Z","harness:codex","Exact-head hosted inventory: PR #962 at a9cf7c15ecd454d0165dce1cc11e120101030524 has no non-success checks, no review threads, and every bot comment/review surface is reacted to and explicitly acknowledged. CodeRabbit and Sourcery full reviews were quota-limited and are recorded as unavailable rather than approval; Sourcery guide, Codecov, CodSpeed, DeepScan, CodeFactor, Hound, CodeQL, security, shell, platform, static, coverage, compatibility, and smoke evidence are green."
   "2026-08-10T10:25:27.943Z","harness:codex","Production closeout: Release workflow run 31377907853 succeeded in 12m46s from the existing f4dcfa846 tag. npm @unbrained/pm-cli@2026.8.10 is public (integrity sha512-u/uo7tMc4rOPEfOTaDwe403EvqkvZHGE2sudBGoBiv1T4kDEQsDOmE94Zx+TF0DLkAJlm/TMFv8I/A30Mnq7rg==; unpacked 16,142,001 bytes); npx and bunx execute pm, package-default pm, and pm-mcp; both installed-agent sessions passed all 10 lifecycle steps; GitHub Release is non-draft/non-prerelease. Sentry release pm-cli@2026.8.10 is finalized with 17 commits, zero new groups, and the 14-day issue gate reports critical=0/high=0/blocking=0. Telemetry live analysis is healthy at 1.19% finish error rate with zero failure rows missing error codes; local flush progressed the queue successfully."
   "2026-08-10T10:46:55.375Z","harness:codex","Production guard regression and verification: Auto Release run 31379212377 safely preserved the sole v2026.8.10 tag/package but failed because gh issue view normalized the Actions marker author to github-actions, so the github-actions[bot]-only selector missed the marker and reran the older failed tag workflow. The workflow now trusts exactly the normalized and canonical Actions identities. A live selector against issue #959 finds the current-day marker; focused workflow contracts pass 12/12; full coverage passes 468 files / 7,142 tests at exact 100/100/100/100 (50,923 statements, 37,237 branches, 10,456 functions, 49,265 lines). ESLint, jscpd zero-clone, docstring, package boundary, replication, token/context, tracker, and surface gates passed. The host-timing import-cost tail was non-deterministically red on different entrypoints across two isolated runs and remains delegated to hosted exact-head CI."
+  "2026-08-10T10:57:18.614Z","harness:codex","Final production guard proof: after PR #963 merged, issue #959 was closed again and Auto Release run 31381268108 succeeded in 49s. The workflow recognized its existing current-day Actions marker and executed Record resolved-issue auto-release retry skip; no Release workflow was rerun, no tag moved, and no package was republished. The cache-save annotation was nonblocking and expected under the issue-event token's read-oriented cache scope."
 learnings[5]{created_at,author,text}:
   "2026-08-10T00:08:50.099Z","harness:codex",Argument normalization must parse option arity from the same command flag contracts as Commander; fixed-position scans cannot distinguish option values from item operands once flags are interleaved.
   "2026-08-10T00:08:50.548Z","harness:codex","Public changelog exclusion is an invocation policy as well as item metadata: the generator's --exclude-tag contract must be present in both generate and check scripts."
@@ -86,4 +87,5 @@ test_runs[6]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/RELEASING.md,project,Release changelog and exact-tag recovery operator contract
   docs/SDK.md,project,Recovery insertion contract before the argument terminator
+close_reason: Merged PRs #962 and #963; recovered v2026.8.10 and proved the normalized trusted-marker guard skips repeated same-day issue closures without a second release.
 body: ""
