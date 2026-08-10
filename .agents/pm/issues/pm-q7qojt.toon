@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-28T11:30:12.179Z"
-updated_at: "2026-07-28T16:31:02.531Z"
+updated_at: "2026-08-10T15:58:52.279Z"
 closed_at: "2026-07-28T16:27:55.507Z"
 author: "harness:codex"
 estimated_minutes: 120
@@ -20,9 +20,10 @@ confidence: high
 resolution: fixed
 expected_result: All-status scope and pagination completeness are explicit and unambiguous.
 actual_result: Deprecated --all now errors with exact --status all and --no-truncate migration commands.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-6j7r1a,related,"2026-07-28T11:30:12.179Z","harness:codex","cli:create:dep",detected
   pm-pfqi,blocks,"2026-07-28T11:30:12.179Z","harness:codex","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-08-10T15:58:52.172Z","harness:claude-code","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-07-28T11:30:12.179Z","harness:codex","Duplicate check evidence: all-status search found open pm-pfqi for list-family consolidation and pm-6j7r1a for enumeration closure, but no item owns the --all pagination/status collision and false completeness reported by GH-793."
   "2026-07-28T11:30:12.179Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/793"

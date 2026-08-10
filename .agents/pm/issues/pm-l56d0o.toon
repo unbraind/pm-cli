@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:merge","area:sdk",determinism,read-only,regression,version-skew
 created_at: "2026-08-09T14:32:29.084Z"
-updated_at: "2026-08-09T16:09:42.259Z"
+updated_at: "2026-08-10T15:58:51.053Z"
 closed_at: "2026-08-09T15:57:21.544Z"
 completed_at: "2026-08-09T15:57:21.544Z"
 author: "harness:codex"
@@ -25,9 +25,10 @@ actual_result: "Current clients migrate legacy fences to v2, recognize both gene
 affected_version: 2026.8.3-2026.8.9
 regression: true
 customer_impact: Agents and contributors accumulate unrelated tracked diffs and can accidentally weaken merge safety when local/global pm versions differ.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-1j5j21,related,"2026-08-09T14:32:29.084Z","harness:codex","cli:create:dep",detected
   pm-tu71,related,"2026-08-09T14:32:29.084Z","harness:codex","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-08-10T15:58:50.909Z","harness:claude-code","cli:update:dep",detected
 comments[4]{created_at,author,text}:
   "2026-08-09T14:32:29.084Z","harness:codex","Duplicate check evidence: pm search GH-948 and exact title across status=all returned zero items; pm duplicates --status all was reviewed. GitHub source: https://github.com/unbraind/pm-cli/issues/948"
   "2026-08-09T15:57:17.861Z","harness:codex","Evidence: focused linked tests passed; full suite passed 7,100/7,100 with exact 100/100/100/100 coverage; pnpm lint and pnpm quality:static passed; pm merge reconcile --dry-run reported zero drift and a healthy v2 fence. Packed manual acceptance in an isolated temporary Git project completed init/create/comment/get/health/validate/storage/history successfully."

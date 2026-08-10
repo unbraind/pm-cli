@@ -122,6 +122,9 @@ jobs:
           SENTRY_PERSONAL_ADMIN_TOKEN: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN }}
           ISSUE_CREATED_AT: ${{ github.event.issue.created_at || '' }}
           ISSUE_NUMBER: ${{ github.event.issue.number || '' }}
+          # Gate runners write their verdict here when they fail, so the alert
+          # step can name the real cause instead of the preflight state.
+          RELEASE_FAILURE_RECORD: ${{ runner.temp }}/release-failure-record.json
         run: |
           set -euo pipefail
           if [[ "${GITHUB_EVENT_NAME}" == "issues" ]]; then
@@ -214,7 +217,16 @@ jobs:
             args+=(--push)
           fi
           PREVIOUS_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          set +e
           node scripts/release/run-release-pipeline.mjs "${args[@]}"
+          PIPELINE_STATUS=$?
+          set -e
+          if [[ "${PIPELINE_STATUS}" -ne 0 ]]; then
+            # Publish the failing gate's own verdict as step outputs so the
+            # blocker issue names a cause the run actually produced.
+            node scripts/release/release-failure-record.mjs "${RELEASE_FAILURE_RECORD}" >> "${GITHUB_OUTPUT}"
+            exit "${PIPELINE_STATUS}"
+          fi
           NEW_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
           if [[ "${INPUT_PUSH}" != "true" || "${INPUT_DRY_RUN}" == "true" || -z "${NEW_TAG}" || "${NEW_TAG}" == "${PREVIOUS_TAG}" ]]; then
             echo "No new pushed release tag detected; publish dispatch skipped."
@@ -350,6 +362,8 @@ jobs:
           INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (inputs.dry_run && 'true' || 'false') || 'false' }}
           RELEASE_PAT_CONFIGURED: ${{ secrets.RELEASE_PAT != '' }}
           SENTRY_PERSONAL_ADMIN_TOKEN_CONFIGURED: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN != '' }}
+          RECORDED_FAILURE_STAGE: ${{ steps.auto_release.outputs.failure_stage }}
+          RECORDED_FAILURE_CAUSE: ${{ steps.auto_release.outputs.failure_cause }}
         run: |
           set -euo pipefail
           title="Auto Release blocked: scheduled run failed"
@@ -378,11 +392,18 @@ jobs:
             failure_intro="The scheduled daily Auto Release run did not complete. A tag or npm package may already exist if the downstream Release workflow failed after publication; inspect the live tag, npm, and GitHub Release states before retrying."
             release_path_description="the scheduled production release"
           fi
-          detected_cause="Inspect the failed workflow logs for the exact failing command."
-          if [[ "${INPUT_PUSH}" == "true" && "${INPUT_DRY_RUN}" != "true" && "${RELEASE_PAT_CONFIGURED}" != "true" ]]; then
+          # Prefer the verdict the failing gate recorded. The preflight booleans
+          # below can only ever name a missing secret, so they stay as the
+          # fallback for failures that produced no structured record (pm-x63izf).
+          failing_stage="${RECORDED_FAILURE_STAGE:-unrecorded}"
+          if [[ -n "${RECORDED_FAILURE_CAUSE:-}" ]]; then
+            detected_cause="${RECORDED_FAILURE_CAUSE}"
+          elif [[ "${INPUT_PUSH}" == "true" && "${INPUT_DRY_RUN}" != "true" && "${RELEASE_PAT_CONFIGURED}" != "true" ]]; then
             detected_cause="RELEASE_PAT is missing from the release environment; ${release_path_description} cannot push the checked version commit/tag to protected main."
           elif [[ "${INPUT_PUSH}" == "true" && "${INPUT_DRY_RUN}" != "true" && "${SENTRY_PERSONAL_ADMIN_TOKEN_CONFIGURED}" != "true" ]]; then
             detected_cause="SENTRY_PERSONAL_ADMIN_TOKEN is missing from the release environment; ${release_path_description} cannot run the mandatory reliability gate."
+          else
+            detected_cause="No gate recorded a verdict and the release environment is fully configured; inspect the failed workflow logs for the exact failing command."
           fi
           body="${failure_intro}
 
@@ -395,6 +416,7 @@ jobs:
           - dry_run: \`${INPUT_DRY_RUN}\`
           - release_pat_configured: \`${RELEASE_PAT_CONFIGURED}\`
           - sentry_personal_admin_token_configured: \`${SENTRY_PERSONAL_ADMIN_TOKEN_CONFIGURED}\`
+          - failing_stage: \`${failing_stage}\`
           - detected_cause: ${detected_cause}
 
           Common causes:

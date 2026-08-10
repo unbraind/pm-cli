@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { readFileSync } from "node:fs";
+import { recordGateFailure } from "./release-failure-record.mjs";
 import {
   commandFor,
   fail,
@@ -54,6 +55,14 @@ function runCheckedStep(name, command, args, options = {}) {
       stderr ? `stderr:\n${stderr}` : "",
     ].filter(Boolean);
     const suffix = details.length > 0 ? `\n${details.join("\n")}` : "";
+    // Keep the verdict the gate just produced. Without this the blocked-release
+    // alert can only report the run's preflight configuration (pm-x63izf).
+    recordGateFailure({
+      gate: name,
+      status: result.status,
+      stdout: result.stdout,
+      stderr: result.stderr,
+    });
     fail(`Gate failed: ${name}${suffix}`, result.status);
   }
   return result;

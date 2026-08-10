@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: "area:history","area:storage",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:10.941Z"
-updated_at: "2026-07-25T22:10:12.492Z"
+updated_at: "2026-08-10T15:57:57.272Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "History chain integrity gates stay green; gc, compact, redact, and repair flows verified on large workspaces; no open data-loss classes."
@@ -16,11 +16,25 @@ value: "Trustworthy, portable, bounded-growth git-native storage"
 parent: pm-doxj
 risk: low
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-2sbj8p,related,"2026-07-24T23:54:40.467Z",null,null
-  pm-a8lnoh,related,"2026-07-24T23:54:40.467Z",null,null
-  pm-w7ccmv,related,"2026-07-24T23:54:40.467Z",null,null
-  pm-w7ccmv,implements,"2026-07-25T22:10:12.281Z",null,null
+dependencies[5]:
+  - id: pm-2sbj8p
+    kind: related
+    created_at: "2026-07-24T23:54:40.467Z"
+  - id: pm-a8lnoh
+    kind: related
+    created_at: "2026-07-24T23:54:40.467Z"
+  - id: pm-w7ccmv
+    kind: related
+    created_at: "2026-07-24T23:54:40.467Z"
+  - id: pm-w7ccmv
+    kind: implements
+    created_at: "2026-07-25T22:10:12.281Z"
+  - id: pm-murz
+    kind: supersedes
+    created_at: "2026-08-10T15:57:57.127Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-07-18T14:08:40.386Z",codex-ecosystem-planner,"Immutable-proof review 2026-07-18: the live tracker has 30,491 activity entries across 1,874 streams; every one of the 1,866 current items has at least one recorded event, and validation reports zero missing streams, hash mismatches, chain mismatches, or drifted items. Mutation-op inventory includes create/update/claim/release/close, annotations, linked artifacts, test runs, plans, compact/repair/redact, and even edit/delete operations as recorded events. Remaining guarantee extensions are already individually tracked: pm-klo8 for workspace singleton state, pm-9yfo for contract-enumerated mutation completeness, pm-4e12 for atomic multi-entity commits, pm-g5sx for branch-safe merge/reconciliation, pm-3z0k for portable attestations, and pm-u14c for principal signatures. Point-in-time non-mutating read pm-hib1 and restore/recovery foundations are shipped. No new history item needed."
   "2026-07-21T15:56:04.897Z",codex-tracker-governance,"Immutable-proof review 2026-07-21: the pre-mutation tracker exposed 31,782 activity entries across 1,909 streams; every one of the 1,901 current item ids appeared in activity, every sampled event carried before and after hashes, and workspace validation reported zero history drift. Eight history-only ids correspond to recorded delete operations rather than current items. Existing completion work remains canonical for workspace-scoped mutation coverage, contract-enumerated mutation completeness, atomic commits, branch reconciliation, portable attestations, signatures, and restore. Historical metadata debt was not rewritten with placeholders."

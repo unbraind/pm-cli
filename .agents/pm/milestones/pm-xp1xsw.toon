@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: contract,ga,"horizon:gate",milestone,outcome,semver,stability
 created_at: "2026-07-24T23:44:20.858Z"
-updated_at: "2026-07-31T10:16:07.260Z"
+updated_at: "2026-08-10T15:58:00.630Z"
 deadline: "2027-12-31T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 3600
@@ -20,7 +20,7 @@ why_now: "Deferred deliberately: freezing before grammar consolidation and SDK c
 parent: pm-doxj
 risk: high
 confidence: medium
-dependencies[19]:
+dependencies[20]:
   - id: pm-0mox
     kind: related
     created_at: "2026-07-24T23:44:20.858Z"
@@ -91,6 +91,12 @@ dependencies[19]:
     kind: blocked_by
     created_at: "2026-07-31T10:16:07.067Z"
     author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-lty
+    kind: supersedes
+    created_at: "2026-08-10T15:58:00.477Z"
+    author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
 body: "## Outcome\nA written, testable stability contract for the CLI grammar, the SDK API, the storage format, and the published scale targets.\n\n## Gate semantics\nThis milestone is a gate, not a workstream: it cannot open until the grammar, SDK-complete, and provable-history milestones are reached, and its scale claims are limited to what the scale milestone has actually measured.\n\n## Delivery chain\nADR pm-agou drafts the contract -> pm-0mox alias usage counters supply removal evidence -> the cross-version compatibility matrix supplies format evidence -> benchmark evidence supplies the scale numbers.\n\n## Explicit non-goals\nNot a feature freeze. Not a marketing event — messaging lives under pm-wjfa."

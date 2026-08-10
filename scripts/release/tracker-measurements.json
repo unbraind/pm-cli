@@ -9,7 +9,7 @@
         "source": "dependency_kind",
         "kind": "implements"
       },
-      "floor": 2544,
+      "floor": 2551,
       "measured_on": "2026-08-10",
       "note": "Typed implements edges. This is the kind the strategic reachability invariant traverses: an active item resolves to an outcome milestone through implements, so this population is the outcome ladder's substrate rather than decoration. The total-edge floor cannot protect it, because converting implements rows to related rows leaves the edge count identical and every ceiling in this document unmoved, while silently flattening the ladder into an untyped mesh. Lower it deliberately here if a conversion is ever correct. Raised 2026-08-10 by the strategic-ladder wave: every capability and delivery-epoch epic now resolves to an outcome milestone through implements, and every parentless terminal item resolves to a capability epic, so apex-bypassing roots fell from 154 to 0 and items reaching no outcome fell from 1,024 to 11 recorded residuals. That layer is what this floor now protects; deleting it would restore the sibling-set topology pm-h6b73t was filed for."
     },
@@ -20,7 +20,7 @@
         "source": "dependency_kind",
         "kind": "discovered_from"
       },
-      "floor": 463,
+      "floor": 465,
       "measured_on": "2026-08-10",
       "note": "Typed discovered_from edges: the derivation lineage recording which finding produced which item. It is the only kind that reconstructs how the record learned what it knows, it is written overwhelmingly onto terminal holders where no active-scoped check looks, and it is changelog-safe to author, which is exactly why it is easy to delete without anyone noticing. Guarded on the same terms as implements."
     },
@@ -42,7 +42,7 @@
         "source": "dependency_kind",
         "kind": "supersedes"
       },
-      "floor": 71,
+      "floor": 79,
       "measured_on": "2026-08-10",
       "note": "Typed supersedes edges: the only kind that records evolution, meaning which item replaced which as the project's understanding changed. pm-wmf72c was filed because this population was one edge across 1,799 closed items, so the record could not answer what superseded what across fourteen releases. It is now 71, of which 9 anchor duplicate-consolidation clusters recovered verbatim from consolidation comments and 8 join the v1 delivery epoch's canonical milestones to their archived PRD-numbered duplicates (pm-1w6scp). Every one of those was derived from durable recorded text, so none of them can be re-derived if deleted -- the consolidation comments would still exist but the reviewed direction would not. Guarded on the same terms as implements and discovered_from: a legitimate reduction must lower this number deliberately here."
     },
@@ -53,7 +53,7 @@
         "source": "graph_profile",
         "field": "edges"
       },
-      "floor": 11847,
+      "floor": 11871,
       "measured_on": "2026-08-10",
       "note": "Total deduplicated directed relationship edges. The typed graph is authored deliberately, pass after pass, and is the substrate every graph analytic and the strategic outcome ladder read. Nothing else in this document can notice it shrinking: every ceiling here falls when edges are removed, so before this floor existed a mass deletion improved the gate's verdict. Legitimate reductions do exist — retiring an alias kind or removing a genuinely wrong edge — and they must lower this number deliberately by editing it here, because --update only ever raises a floor. Raised 2026-08-10 after the strategic-ladder and parentless-lineage waves added 220 evidence-cited typed edges."
     },
@@ -64,8 +64,8 @@
         "source": "graph_profile",
         "field": "nodes"
       },
-      "floor": 2368,
-      "measured_on": "2026-08-07",
+      "floor": 2420,
+      "measured_on": "2026-08-10",
       "note": "Total graph nodes, which tracks the item corpus including terminal items. The record is append-only by intent and items are closed rather than deleted, so this number only ever rises; a fall means items left the record, which is the one mutation no amount of history verification can reconstruct from the remaining streams."
     },
     {

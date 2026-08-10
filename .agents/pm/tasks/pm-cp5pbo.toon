@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:quality",codefactor,deepscan,static-analysis
 created_at: "2026-08-04T06:06:49.202Z"
-updated_at: "2026-08-04T07:35:00.089Z"
+updated_at: "2026-08-10T15:58:50.360Z"
 closed_at: "2026-08-04T07:27:53.370Z"
 completed_at: "2026-08-04T07:27:53.370Z"
 author: "harness:codex"
@@ -15,6 +15,8 @@ parent: pm-92if
 resolution: "Removed all 28 supplied static-analysis findings without suppressions, added retry-safe complete bot-review acknowledgements, and incorporated every actionable review finding."
 expected_result: DeepScan and CodeFactor report no new findings; local and hosted gates pass; every bot artifact is auditable and actionable threads are resolved.
 actual_result: "DeepScan reports 0 new and 28 fixed, CodeFactor reports 0 annotations, 6801 tests pass at 100 percent coverage, all GitHub checks are green, and all actionable review threads are resolved."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-xp1xsw,implements,"2026-08-10T15:58:50.233Z","harness:claude-code","cli:update:dep",detected
 comments[5]{created_at,author,text}:
   "2026-08-04T06:06:49.202Z","harness:codex","Duplicate check 2026-08-04: searched all statuses for the exact graph/run.ts, item-format.ts, Sentry, normalizeBootstrapInvocation, and static-analysis terms. pm-zt1c and pm-xsth are closed historical spread waves at different or earlier sites; pm-92if is the canonical open quality parent and no matching active child exists."
   "2026-08-04T06:47:44.834Z","harness:codex","Evidence before publication: removed every supplied unnecessary-spread, undefined-value, insufficient-null-check, unused declaration/import/parameter, useless-array, and stale-call-signature finding without suppressions. Added complete top-level bot acknowledgement commands to scripts/reviews/pr-review-loop.mjs and documented exact-head blocking review workflow. Linked focused suite passed 674/674; full coverage passed 6800/6800 at 100/100/100/100; linked ESLint/duplication/static gate and typecheck passed; full pnpm lint passed including SDK entrypoint and CLI transport floors. pm validate reports history drift 0 and storage integrity ok; pre-existing resolution metadata warning remains 295 closed items."
