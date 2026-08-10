@@ -941,7 +941,7 @@ export const CLOSE_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
-  { flag: "--validate-close" },
+  { flag: "--validate-close", value_name: "off|warn|strict" },
   { flag: "--force" },
 ];
 
@@ -1281,7 +1281,7 @@ export const ITEM_COMPLETE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--expected-result", value_name: "value" },
   { flag: "--actual-result", value_name: "value" },
   { flag: "--completed-at", value_name: "value" },
-  { flag: "--validate-close", value_name: "mode" },
+  { flag: "--validate-close", value_name: "off|warn|strict" },
   { flag: "--lock-ttl-seconds", value_name: "n" },
   { flag: "--lock-wait-ms", value_name: "n" },
   { flag: "--dry-run" },

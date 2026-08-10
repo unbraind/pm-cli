@@ -1,14 +1,14 @@
 id: pm-b84irw
-title: "The replication gate's input is a hand-written list of known replications, so it can regress what was found and never discover what was not"
+title: Measure source replication against an independently discovered denominator
 description: "scripts/release/surface-replication-sets.json is the project's answer to partial application, the defect family recorded as the largest recurring one on pm-7rrqsk: a change lands on some members of a surface and not others. The gate works. It declares sets, each with triggers and required changed members, and the static quality gate fails when a triggered set is only partly updated.\n\nIts coverage, however, is whatever a human enumerated. Four sets are declared today. A replication only becomes visible to the gate after someone has already noticed it, understood it well enough to name its members, and written it down. That inverts the direction the mechanism is supposed to run in. It converts each discovered replication into a regression test, which is valuable, but it provides no pressure at all on the undiscovered ones — and the undiscovered ones are the entire population that partial application draws from.\n\npm-ulxdqp is the concrete demonstration: a five-site replication of the status-token normalization rule, three sites sharing a function name, two of them documenting their mutual agreement in prose, sitting in the tree while the gate that exists to catch replication reports a pass. The gate was not wrong. It was never told.\n\nThe asymmetry worth naming is that declared replication and actual replication are measured by different instruments. Declared replication is measured by the gate. Actual replication is measured by nobody. There is no number anywhere in the repository for how many replicated rules exist, so there is also no way to state what fraction of them the gate covers, and therefore no way for the gate's coverage to be observed getting worse. A gate whose denominator is unknown cannot report a coverage ratchet.\n\nThe candidate remedy is a detector rather than a larger list: normalized-token or AST-shape clustering across src to surface near-identical exported bodies and repeated literal rules, reported as a count with a floor, in the same spirit as the edge and node floors shipped under pm-z0cfor when the graph ratchet was found to be ceiling-only. The point is not to auto-fail on every clone. It is to make the population size visible so the declared sets can be scored against it."
 type: Issue
 status: closed
 priority: 1
 tags[5]: detection,gates,meta,replication,self-improvement
 created_at: "2026-08-09T06:03:57.529Z"
-updated_at: "2026-08-10T00:53:07.875Z"
-closed_at: "2026-08-10T00:53:07.300Z"
-completed_at: "2026-08-10T00:53:07.300Z"
+updated_at: "2026-08-10T01:55:10.067Z"
+closed_at: "2026-08-10T01:55:09.489Z"
+completed_at: "2026-08-10T01:55:09.489Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: A detector reports the count of replicated rule bodies across src independent of what surface-replication-sets.json declares; The ratio of declared-and-covered replication to detected replication is emitted as a number; That ratio carries a floor so coverage cannot silently regress as the tree grows
@@ -28,7 +28,7 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-z0cfor,discovered_from,"2026-08-09T06:06:50.362Z","harness:claude-code","cli:update:dep",detected
   pm-z71aoy,related,"2026-08-09T06:06:50.362Z","harness:claude-code","cli:update:dep",detected
   pm-ulxdqp,verifies,"2026-08-09T07:29:50.034Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-09T07:29:50.712Z","harness:codex","Implementation correction: the declaration now includes detector policy with a five-cluster denominator floor; the focused negative control covers invalid policies, coverage regression, cluster-floor regression, and public entrypoint behavior without duplicate full-tree scans."
   "2026-08-09T08:05:21.234Z","harness:codex","Final evidence: focused detector suite passes with 100/100/100/100 coverage for the gate module; repository detector reports exactly five clusters at the committed floor; static quality and the full repository coverage gate pass."
   "2026-08-09T09:24:00.299Z","harness:codex","PR #947 review hardening: AST cluster keys now use the TypeScript printer with comments removed; detected coverage requires all occurrence paths to coexist in one declaration set; split-set and comment-only negative controls prevent false coverage; and the two intentional DatabaseSync seam clusters are declared, raising the enforced measured floor from 0 to 0.4 (2 of 5 current clusters)."
@@ -36,6 +36,7 @@ comments[7]{created_at,author,text}:
   "2026-08-09T10:00:19.288Z","harness:codex","Final exact-head verification: static quality passes with five detected AST clusters, two clusters covered by one declared DatabaseSync set, measured ratio 0.4 at the enforced 0.4 floor, and no replication violations."
   "2026-08-10T00:52:53.043Z","harness:codex","Review evidence: the canonical gate test link now names the default waiver assertions for both main([--list-waivers]) and main([--declaration,--list-waivers]); the focused linked test passed under the claimed lifecycle."
   "2026-08-10T00:53:06.765Z","harness:codex","Correction: pm files --add correctly no-opped on the existing path, so the prior comment overstated the note update. Under this active claim the old link was removed and re-added through pm with the waiver-specific canonical note; no history was edited."
+  "2026-08-10T01:55:08.979Z","harness:codex","Release-note correction: the canonical title now states the delivered capability. The implementation independently detects repeated TypeScript rule clusters, reports covered-over-detected counts, and enforces a regression floor; waiver-specific evidence and focused tests remain linked."
 learnings[1]{created_at,author,text}:
   "2026-08-09T06:08:48.290Z","harness:claude-code","Ask a gate what its denominator is, and who computes it. A gate whose input is a hand-written list of instances reports a pass rate of one by construction: it examines what someone enumerated, agrees with itself, and says nothing about the population it was built to police. The verdict is honest and the inference drawn from it is not.\n\nThe tell is that widening coverage and finding a defect are indistinguishable from outside — both show up as the list getting longer — so there is no signal that separates 'we are covering more' from 'there was more than we thought'. Three instruments in this repo had the shape simultaneously on 2026-08-09 (surface-replication-sets.json, smoke-external-packages.mjs, sdk/public-surface.json vs src/sdk/index.ts), which suggests the shape is a default a quality mechanism falls into rather than an oversight in any one of them.\n\nPractical form: before writing a gate, name the set it claims to speak for and check whether that set is computable from the tree. If it is, compute it and emit examined-over-total. If it is not, the gate is a regression test and should be described as one, never cited as coverage."
 files[4]{path,scope,note}:
@@ -48,5 +49,5 @@ tests[1]{command,scope,timeout_seconds}:
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mslicc6q-vad229,test,passed,"2026-08-09T07:55:01.089Z","2026-08-09T07:55:13.970Z","2026-08-09T07:55:13.970Z",1,0,0
   test-local-msmip1ae-k5v8lv,test,passed,"2026-08-10T00:52:41.598Z","2026-08-10T00:52:52.550Z","2026-08-10T00:52:52.550Z",1,0,0
-close_reason: Waiver-specific canonical file note replaced through pm under claim; prior linked test pass remains current evidence.
+close_reason: "Independent AST discovery measures repeated rule clusters, reports declared coverage against the detected denominator, enforces the 0.4 regression floor, and retains waiver-specific focused-test evidence."
 body: ""

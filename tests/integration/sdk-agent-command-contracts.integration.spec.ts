@@ -30,6 +30,12 @@ describe("SDK-first agent command contracts", () => {
       expect(get.code).toBe(0);
       expect((get.json as { item: { id: string } }).item.id).toBe(id);
 
+      const show = context.runCli(["show", "--id", id, "--json"], {
+        expectJson: true,
+      });
+      expect(show.code).toBe(0);
+      expect((show.json as { item: { id: string } }).item.id).toBe(id);
+
       const comment = context.runCli(
         ["comments", "--id", id, "--add", "addressed uniformly", "--json"],
         { expectJson: true },

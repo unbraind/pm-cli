@@ -1715,7 +1715,8 @@
           "flag": "--message"
         },
         {
-          "flag": "--validate-close"
+          "flag": "--validate-close",
+          "value_name": "off|warn|strict"
         },
         {
           "flag": "--force"
@@ -3493,7 +3494,7 @@
         },
         {
           "flag": "--validate-close",
-          "value_name": "mode"
+          "value_name": "off|warn|strict"
         },
         {
           "flag": "--lock-ttl-seconds",

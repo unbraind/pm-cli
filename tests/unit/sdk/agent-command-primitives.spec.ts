@@ -16,13 +16,33 @@ import { resolveItemTypeRegistry } from "../../../src/sdk/runtime-primitives.js"
 import { _testOnly as helpJsonTestOnly } from "../../../src/cli/help-json-payload.js";
 
 describe("agent command SDK primitives", () => {
-  it("normalizes --id into the canonical positional address without losing argv", () => {
+  it("declares the supported item-address capability scope", () => {
     expect(supportsItemIdAlias("get")).toBe(true);
     expect(normalizeItemAddressInvocation(["--"])).toEqual({
       argv: ["--"],
       changed: false,
       conflict: false,
     });
+    expect(normalizeItemAddressInvocation(["get", "--id", ""])).toEqual({
+      argv: ["get", "--id", ""],
+      changed: false,
+      conflict: false,
+    });
+    expect(normalizeItemAddressInvocation(["item", "--id", "pm-a1"])).toEqual({
+      argv: ["item", "--id", "pm-a1"],
+      changed: false,
+      conflict: false,
+    });
+    expect(
+      normalizeItemAddressInvocation(["item", "show", "--id", "pm-a1"]),
+    ).toEqual({
+      argv: ["item", "show", "--id", "pm-a1"],
+      changed: false,
+      conflict: false,
+    });
+  });
+
+  it("normalizes direct and nested --id aliases without losing option values", () => {
     expect(
       normalizeItemAddressInvocation(["get", "--json", "--id", "pm-a1"]),
     ).toEqual({
@@ -31,19 +51,6 @@ describe("agent command SDK primitives", () => {
       conflict: false,
       itemId: "pm-a1",
     });
-    expect(
-      normalizeItemAddressInvocation(["get", "pm-a1", "--id", "pm-a2"])
-        .conflict,
-    ).toBe(true);
-    expect(
-      normalizeItemAddressInvocation([
-        "get",
-        "--full",
-        "pm-a1",
-        "--id",
-        "pm-a2",
-      ]).conflict,
-    ).toBe(true);
     expect(
       normalizeItemAddressInvocation([
         "get",
@@ -60,15 +67,6 @@ describe("agent command SDK primitives", () => {
     });
     expect(
       normalizeItemAddressInvocation([
-        "get",
-        "--id",
-        "pm-a2",
-        "--full",
-        "pm-a1",
-      ]).conflict,
-    ).toBe(true);
-    expect(
-      normalizeItemAddressInvocation([
         "copy",
         "--title",
         "Copy title",
@@ -81,10 +79,6 @@ describe("agent command SDK primitives", () => {
       conflict: false,
       itemId: "pm-a1",
     });
-    expect(
-      normalizeItemAddressInvocation(["get", "--id", "pm-a1", "--id=pm-a2"])
-        .conflict,
-    ).toBe(true);
     expect(normalizeItemAddressInvocation(["get", "--id=pm-a1"]).argv).toEqual([
       "get",
       "pm-a1",
@@ -106,11 +100,66 @@ describe("agent command SDK primitives", () => {
         "pm-a1",
       ]).argv,
     ).toEqual(["get", "pm-a1", "--output-format=toon"]);
-    expect(normalizeItemAddressInvocation(["get", "--id", ""])).toEqual({
-      argv: ["get", "--id", ""],
-      changed: false,
+    expect(
+      normalizeItemAddressInvocation([
+        "get",
+        "--id",
+        "pm-a1",
+        "--path",
+        ".",
+        "--author",
+        "owner-a",
+        "--output-format",
+        "toon",
+      ]).argv,
+    ).toEqual([
+      "get",
+      "pm-a1",
+      "--path",
+      ".",
+      "--author",
+      "owner-a",
+      "--output-format",
+      "toon",
+    ]);
+    expect(
+      normalizeItemAddressInvocation([
+        "close",
+        "--id",
+        "pm-a1",
+        "done",
+        "--validate-close",
+        "off",
+      ]).argv,
+    ).toEqual(["close", "pm-a1", "done", "--validate-close", "off"]);
+    expect(
+      normalizeItemAddressInvocation([
+        "item",
+        "complete",
+        "--id=pm-a1",
+        "--transaction-id",
+        "tx-1",
+      ]).argv,
+    ).toEqual(["item", "complete", "pm-a1", "--transaction-id", "tx-1"]);
+    expect(normalizeItemAddressInvocation(["files", "--id", "pm-a1"])).toEqual({
+      argv: ["files", "pm-a1"],
+      changed: true,
       conflict: false,
+      itemId: "pm-a1",
     });
+    expect(
+      normalizeItemAddressInvocation(["files", "discover", "--id", "pm-a1"])
+        .argv,
+    ).toEqual(["files", "discover", "pm-a1"]);
+    const bootstrap = normalizeBootstrapInvocation(["get", "--id", "pm-a1"]);
+    expect(bootstrap.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ reason: "item_id_alias" }),
+      ]),
+    );
+  });
+
+  it("preserves argument terminators during item-address normalization", () => {
     expect(
       normalizeItemAddressInvocation(["get", "--", "--id", "pm-a1"]),
     ).toEqual({
@@ -133,53 +182,35 @@ describe("agent command SDK primitives", () => {
       changed: false,
       conflict: false,
     });
+  });
+
+  it("rejects every positional-plus-named or duplicate named item id", () => {
+    expect(
+      normalizeItemAddressInvocation(["get", "pm-a1", "--id", "pm-a2"])
+        .conflict,
+    ).toBe(true);
     expect(
       normalizeItemAddressInvocation([
-        "close",
-        "--id",
+        "get",
+        "--full",
         "pm-a1",
-        "done",
-        "--validate-close",
-        "off",
-      ]).argv,
-    ).toEqual(["close", "pm-a1", "done", "--validate-close", "off"]);
+        "--id",
+        "pm-a2",
+      ]).conflict,
+    ).toBe(true);
     expect(
       normalizeItemAddressInvocation([
-        "item",
-        "complete",
-        "--id=pm-a1",
-        "--transaction-id",
-        "tx-1",
-      ]).argv,
-    ).toEqual(["item", "complete", "pm-a1", "--transaction-id", "tx-1"]);
-    expect(normalizeItemAddressInvocation(["item", "--id", "pm-a1"])).toEqual({
-      argv: ["item", "--id", "pm-a1"],
-      changed: false,
-      conflict: false,
-    });
+        "get",
+        "--id",
+        "pm-a2",
+        "--full",
+        "pm-a1",
+      ]).conflict,
+    ).toBe(true);
     expect(
-      normalizeItemAddressInvocation(["item", "show", "--id", "pm-a1"]),
-    ).toEqual({
-      argv: ["item", "show", "--id", "pm-a1"],
-      changed: false,
-      conflict: false,
-    });
-    expect(normalizeItemAddressInvocation(["files", "--id", "pm-a1"])).toEqual({
-      argv: ["files", "pm-a1"],
-      changed: true,
-      conflict: false,
-      itemId: "pm-a1",
-    });
-    expect(
-      normalizeItemAddressInvocation(["files", "discover", "--id", "pm-a1"])
-        .argv,
-    ).toEqual(["files", "discover", "pm-a1"]);
-    const bootstrap = normalizeBootstrapInvocation(["get", "--id", "pm-a1"]);
-    expect(bootstrap.trace).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ reason: "item_id_alias" }),
-      ]),
-    );
+      normalizeItemAddressInvocation(["get", "--id", "pm-a1", "--id=pm-a2"])
+        .conflict,
+    ).toBe(true);
     expect(() =>
       normalizeBootstrapInvocation(["get", "pm-a1", "--id", "pm-a2"]),
     ).toThrow("either positionally or with --id");
@@ -230,6 +261,12 @@ describe("agent command SDK primitives", () => {
     expect(resolveMissingOptionPlaceholder("close", "--validate-close")).toBe(
       "<off|warn|strict>",
     );
+    expect(
+      resolveMissingOptionPlaceholder("close-task", "--validate-close"),
+    ).toBe("<off|warn|strict>");
+    expect(
+      resolveMissingOptionPlaceholder("item complete", "--validate-close"),
+    ).toBe("<off|warn|strict>");
     expect(resolveMissingOptionPlaceholder("close", "--force")).toBeNull();
     expect(resolveMissingOptionPlaceholder("close", "--reason")).toBe(
       "<value>",

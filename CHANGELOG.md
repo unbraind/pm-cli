@@ -9,10 +9,10 @@
 
 ### Fixed
 
-- The replication gate's input is a hand-written list of known replications, so it can regress what was found and never discover what was not ([pm-b84irw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b84irw.toon))
-- Review hardening: terminator-safe recovery, exact nested aliases, and tracker-scoped close retries ([pm-szn67i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-szn67i.toon))
-- GH-490: unknown-command suggester ranks substring hits over synonyms/edit distance — pm log suggests 'extension catalog' ([pm-g543](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g543.toon))
+- Preserve executable recovery semantics across terminators, nested aliases, and tracker scope ([pm-szn67i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-szn67i.toon))
+- Measure source replication against an independently discovered denominator ([pm-b84irw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b84irw.toon))
 - GH-515: pm test --add reorders linked tests — --only-last can execute a non-newest command ([pm-x2vx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x2vx.toon))
+- GH-490: unknown-command suggester ranks substring hits over synonyms/edit distance — pm log suggests 'extension catalog' ([pm-g543](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g543.toon))
 - GH-441: type-aware create help mislabels applicable flags as required (ignores create-mode) ([pm-qmjx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qmjx.toon))
 - GH-519: close recovery bundle suggests --validate-close "<value\>" for an enum flag and hides the real resolution-fields blocker ([pm-ulqu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ulqu.toon))
 - GH-950: item-addressing commands reject a consistent --id alias and misroute recovery ([pm-mkinft](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mkinft.toon))

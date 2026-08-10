@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[1]: changelog-exclude
 created_at: "2026-08-09T22:30:49.833Z"
-updated_at: "2026-08-10T00:51:55.870Z"
-closed_at: "2026-08-10T00:51:55.369Z"
-completed_at: "2026-08-10T00:51:55.369Z"
+updated_at: "2026-08-10T01:54:45.673Z"
+closed_at: "2026-08-10T01:54:45.108Z"
+completed_at: "2026-08-10T01:54:45.108Z"
 author: "harness:codex"
 estimated_minutes: 45
 acceptance_criteria: The integration test reads real persisted CLI order and passes it to the production selector; the newest entry is selected; focused and exact-head coverage gates pass; no test timeout is raised
@@ -26,10 +26,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-usfg,implements,"2026-08-09T22:30:49.833Z","harness:codex","cli:create:dep",detected
   pm-wo8,verifies,"2026-08-09T22:30:49.833Z","harness:codex","cli:create:dep",detected
   pm-x2vx,discovered_from,"2026-08-09T22:30:49.833Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-09T22:30:49.833Z","harness:codex","Duplicate-check evidence: searched all statuses for the exact SDK agent contract integration timeout and nested-process coverage failure. Existing CI performance work is historical and pm-x2vx owns product behavior; no item owns this PR-specific deterministic acceptance repair."
   "2026-08-09T22:32:39.254Z","harness:codex","Evidence: the exact CI blob identified only the nested execution assertion timing out at 30 seconds. The revised integration composes persisted CLI order with the production resolveLinkedTestRunSelection primitive; focused 5/5 passes in 4.40 seconds, typecheck and ESLint pass."
   "2026-08-10T00:51:51.782Z","harness:codex","Governance remediation: after normal reopen and claim, pm-changelog 2026.8.7 regenerated/check-verified the real tracker unchanged with changelog-exclude active. The earlier unclaimed tag append remains immutable history; this claimed verification records the corrected lifecycle without rewriting it."
+  "2026-08-10T01:54:44.423Z","harness:codex","Closure correction: the later changelog-governance remediation supplements, rather than replaces, the original deterministic acceptance. The production --only-last selector still composes with real persisted append order and the focused acceptance selected index 4 echo NEWEST without nested process timing."
 learnings[1]{created_at,author,text}:
   "2026-08-09T22:32:39.763Z","harness:codex",Integration tests can verify cross-layer behavior by composing persisted CLI output with the production pure selector; avoid nesting an execution engine when process execution itself is already covered elsewhere.
 files[1]{path,scope,note}:
@@ -38,5 +39,5 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/sdk-agent-command-contracts.integration.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msmdop8k-jn9r9d,test,passed,"2026-08-09T22:32:28.655Z","2026-08-09T22:32:38.852Z","2026-08-09T22:32:38.852Z",1,0,0
-close_reason: Re-verified changelog exclusion under an active claim; append-only history preserves the original chronology.
+close_reason: "Deterministic persisted-order acceptance selects the newest linked test without nested-process timing; changelog exclusion was also re-verified under a normal active claim, with append-only history preserving both evidence phases."
 body: ""
