@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-09T22:12:37.531Z"
-updated_at: "2026-08-10T09:01:35.688Z"
+updated_at: "2026-08-10T09:08:03.673Z"
 closed_at: "2026-08-10T09:01:35.134Z"
 completed_at: "2026-08-10T09:01:35.134Z"
 author: "harness:codex"
@@ -20,6 +20,7 @@ parent: pm-mpbb
 risk: high
 confidence: high
 severity: high
+resolution: Fixed acceptance-criteria mutation loss by making replacement conflicts and unmatched removals atomic across single and bulk updates.
 expected_result: Repairing one criterion preserves every unrelated criterion or fails without mutation
 actual_result: An unmatched remove plus replacing --ac exits successfully and drops other criteria
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:

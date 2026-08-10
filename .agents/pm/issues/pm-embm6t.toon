@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-10T07:03:54.985Z"
-updated_at: "2026-08-10T09:01:37.241Z"
+updated_at: "2026-08-10T09:08:04.122Z"
 closed_at: "2026-08-10T09:01:36.676Z"
 completed_at: "2026-08-10T09:01:36.676Z"
 author: "harness:codex"
@@ -20,6 +20,7 @@ parent: pm-mpbb
 risk: high
 confidence: high
 severity: high
+resolution: Fixed unstructured type-coercion diagnostics by preserving machine-readable success and failure envelopes.
 expected_result: JSON mode emits one parseable document whose structured notices preserve actionable diagnostics
 actual_result: A human note is prepended to the JSON error document and makes stderr unparseable
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
