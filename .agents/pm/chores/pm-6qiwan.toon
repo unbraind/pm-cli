@@ -1,0 +1,24 @@
+id: pm-6qiwan
+title: "One shared tracker-initialization guard: 48 sites re-implement resolvePmRoot plus a settings probe plus the same literal refusal, so every precision fix has to be applied 48 times and never is"
+description: ""
+type: Chore
+status: open
+priority: 2
+tags[5]: "area:sdk",defect-recurrence,error-taxonomy,refactor,simplification
+created_at: "2026-08-10T05:54:06.969Z"
+updated_at: "2026-08-10T06:01:37.860Z"
+author: "harness:claude-code"
+estimated_minutes: 360
+acceptance_criteria: "A single SDK guard owns the tracker-initialization refusal and all 48 call sites delegate to it; The guard distinguishes root-missing, root-is-a-file, and settings-missing, and each carries its own recovery; The recovery for root-is-a-file does not suggest pm init, which cannot succeed against a regular file; The surface-replication gate declares this set so a 49th hand-rolled copy fails CI"
+parent: pm-usfg
+risk: medium
+confidence: high
+component: "sdk/* command entrypoints, core/store/item-store"
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-69nl,related,"2026-08-10T05:54:06.969Z","harness:claude-code","cli:create:dep",detected
+  pm-6xlyss,discovered_from,"2026-08-10T05:54:06.969Z","harness:claude-code","cli:create:dep",detected
+  pm-7rrqsk,related,"2026-08-10T05:54:06.969Z","harness:claude-code","cli:create:dep",detected
+  pm-9rgaal,implements,"2026-08-10T05:54:06.969Z","harness:claude-code","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-08-10T05:54:06.969Z","harness:claude-code","cli:create:dep",detected
+  pm-tmhs,related,"2026-08-10T05:54:06.969Z","harness:claude-code","cli:create:dep",detected
+body: "## The population\n\n`grep -rn \"Run pm init first\" src/ --include=*.ts | grep -v test` returns **48** sites. Each one repeats the same three steps:\n\n```ts\nconst pmRoot = resolvePmRoot(process.cwd(), global.path);\nif (!(await pathExists(getSettingsPath(pmRoot)))) {\n  throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);\n}\n```\n\n## Why it matters beyond tidiness\n\nThe refusal is not merely duplicated, it is **imprecise in a way that cannot be fixed cheaply**. Three distinct states collapse into one message:\n\n- the root does not exist\n- the root exists but is a regular file\n- the root is a directory with no settings\n\nOnly the third is repairable by `pm init`, yet all three recommend it. pm-tmhs already closed one shape of this defect (recovery re-suggested `pm init` when a `--pm-path` tracker existed). The class recurred in a new shape - discovered via pm-6xlyss, where a root that is a regular file still recommends `pm init`. It will keep recurring while the guard has 48 owners.\n\n## Shape of the fix\n\n`core/store/item-store.ts` already contains the precise logic: `assertItemMetadataRoot` distinguishes `tracker_root_missing`, `tracker_root_not_directory`, and walks ancestors to attribute the cause. That analysis is the right one and is already tested. It is simply not what the 48 entrypoints call.\n\nPromote it to a single SDK guard, delegate all 48 sites, and declare the set in the surface-replication gate so a 49th copy fails CI rather than review."

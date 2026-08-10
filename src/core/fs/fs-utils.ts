@@ -24,6 +24,19 @@ export async function pathExists(targetPath: string): Promise<boolean> {
   }
 }
 
+/**
+ * Report whether an error means "this file is not there".
+ *
+ * `ENOENT` is the common case. `ENOTDIR` is the same answer reached from a
+ * different direction: a path component is a regular file, so the target
+ * cannot exist under it either. Absence-tolerant readers must accept both,
+ * otherwise a misdirected root turns a graceful default into an unclassified
+ * runtime fault instead of reaching the caller's own root validation.
+ */
+export function isFileAbsentError(error: unknown): boolean {
+  return isErrno(error, "ENOENT") || isErrno(error, "ENOTDIR");
+}
+
 /** Implements read file if exists for the public runtime surface of this module. */
 export async function readFileIfExists(
   targetPath: string,
@@ -31,7 +44,7 @@ export async function readFileIfExists(
   try {
     return await fs.readFile(targetPath, "utf8");
   } catch (error: unknown) {
-    if (isErrno(error, "ENOENT")) {
+    if (isFileAbsentError(error)) {
       return null;
     }
     throw error;
@@ -136,7 +149,7 @@ export async function removeFileIfExists(targetPath: string): Promise<void> {
   try {
     await fs.unlink(targetPath);
   } catch (error: unknown) {
-    if (!isErrno(error, "ENOENT")) {
+    if (!isFileAbsentError(error)) {
       throw error;
     }
   }

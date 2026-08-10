@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   appendLineAtomic,
   ensureDir,
+  isFileAbsentError,
   pathExists,
   readFileIfExists,
   removeFileIfExists,
@@ -43,6 +44,27 @@ describe("core/fs/fs-utils", () => {
       } catch (error: unknown) {
         expect((error as NodeJS.ErrnoException).code).not.toBe("ENOENT");
       }
+    });
+  });
+
+  it("treats ENOENT and ENOTDIR alike as file absence and nothing else", () => {
+    expect(isFileAbsentError({ code: "ENOENT" })).toBe(true);
+    expect(isFileAbsentError({ code: "ENOTDIR" })).toBe(true);
+    expect(isFileAbsentError({ code: "EACCES" })).toBe(false);
+    expect(isFileAbsentError(new Error("no code"))).toBe(false);
+    expect(isFileAbsentError(null)).toBe(false);
+  });
+
+  it("reads an optional file under a non-directory ancestor as absent", async () => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
+      const filePath = path.join(tempDir, "regular.txt");
+      await fs.writeFile(filePath, "hello", "utf8");
+      // The ancestor is a regular file, so the target cannot exist: the same
+      // answer as ENOENT, reached through ENOTDIR.
+      const underFile = path.join(filePath, "settings.json");
+
+      expect(await readFileIfExists(underFile)).toBeNull();
+      await expect(removeFileIfExists(underFile)).resolves.toBeUndefined();
     });
   });
 

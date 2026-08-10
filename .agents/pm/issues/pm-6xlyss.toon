@@ -1,0 +1,49 @@
+id: pm-6xlyss
+title: "Absence-tolerant readers accept only ENOENT, so a tracker root that is a regular file raises an unclassified fault instead of the typed refusal the guard already owns — and that fault blocks the daily release"
+description: ""
+type: Issue
+status: open
+priority: 1
+tags[7]: "area:ci","area:sdk",defect-recurrence,error-taxonomy,gate,refusal-typing,release-blocker
+created_at: "2026-08-10T05:50:32.166Z"
+updated_at: "2026-08-10T06:01:38.435Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: readWorkspaceContextIntentContracts treats ENOTDIR as absence so the authoritative tracker-root guard emits the refusal; A shared isFileAbsentError helper expresses the ENOENT/ENOTDIR equivalence in one place; A ratchet gate fails any NEW catch clause that tolerates ENOENT without ENOTDIR; The remaining 45 declared sites are reviewed per-site and the ceiling reaches 0
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: high
+environment: "pm-cli 2026.8.9, node v26.5.0, linux; observed in production telemetry and reproduced locally"
+repro_steps: 1. touch ./notadir  2. pm list --path ./notadir
+expected_result: "A typed usage/not-found refusal (PmCliError), which shouldCaptureCliError excludes from Sentry."
+actual_result: "Raw Node ENOTDIR escapes as unclassified_runtime_error, is captured to Sentry as PM-CLI-2X 'Error: ENOTDIR: not a directory, open', classified unexpected_fault, and fails sentry-telemetry-gate (max_high 0) — blocking every daily Auto Release cut."
+component: "sdk/context-intent-runtime, core/fs/fs-utils, release/sentry-telemetry-gate"
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7rrqsk,related,"2026-08-10T05:50:32.166Z","harness:claude-code","cli:create:dep",detected
+  pm-h75tjh,related,"2026-08-10T05:50:32.166Z","harness:claude-code","cli:create:dep",detected
+  pm-qxo5iu,related,"2026-08-10T05:50:32.166Z","harness:claude-code","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-08-10T05:50:32.166Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-08-10T05:50:32.166Z","harness:claude-code","cli:create:dep",detected
+notes[2]{created_at,author,text}:
+  "2026-08-10T05:51:29.524Z","harness:claude-code",probe
+  "2026-08-10T05:52:24.862Z","harness:claude-code",The gate that blocked the release was right; the event it blocked on was the bug. Asking 'could this fault have been a refusal?' is the cheaper question than asking 'is this gate too strict?'.
+learnings[2]{created_at,author,text}:
+  "2026-08-10T05:52:24.862Z","harness:claude-code","An authoritative guard is only as good as its position in the pipeline. tracker_root_not_directory was correct, tested, and unreachable, because a later-added optional read ran before it. Ordering, not absence, was the defect."
+  "2026-08-10T05:52:24.862Z","harness:claude-code","For an optional read, ENOENT and ENOTDIR are the same answer reached from different directions. Any absence-tolerant reader that accepts only ENOENT converts a graceful default into an unclassified fault the moment a path component is a regular file - and an untyped fault is the one thing the release gate cannot forgive."
+files[5]:
+  - path: scripts/release/absence-tolerance-baseline.json
+    scope: project
+  - path: scripts/release/absence-tolerance-gate.mjs
+    scope: project
+  - path: src/core/fs/fs-utils.ts
+    scope: project
+  - path: src/sdk/context-intent-runtime.ts
+    scope: project
+  - path: tests/unit/scripts/release/absence-tolerance-gate.spec.ts
+    scope: project
+    note: Spec proving the absence-tolerance ratchet fails in both directions
+tests[2]{command,path,scope}:
+  npx vitest run tests/unit/scripts/release/absence-tolerance-gate.spec.ts,tests/unit/scripts/release/absence-tolerance-gate.spec.ts,project
+  npx vitest run tests/unit/core/fs/fs-utils.spec.ts,tests/unit/core/fs/fs-utils.spec.ts,project
+body: "## What the record shows\n\nThe daily scheduled Auto Release run failed on `sentry-telemetry-gate` with `max_high: 0` and one blocking issue:\n\n```\n\"blocking_short_ids\": [\"PM-CLI-2X\"],\n\"blocking_titles\": [\"Error: ENOTDIR: not a directory, open\"],\n\"blocking_reasons\": [{\"short_id\": \"PM-CLI-2X\", \"reason\": \"unexpected_fault\"}]\n```\n\nThe gate is correct. The event is a genuine unclassified fault. The defect is that it should never have been a fault at all.\n\n## Root cause\n\n`readWorkspaceContextIntentContracts` reads the optional `context-intents.json` and tolerates only `ENOENT`:\n\n```ts\nif (isRecord(error) && typeof error.code === \"string\" && error.code === \"ENOENT\") return [];\nthrow error;\n```\n\nWhen the tracker root is a regular file, Node reports `ENOTDIR`, not `ENOENT`. For an **optional** read those two errno values answer the same question - the file is not there and cannot be there - but only one of them is accepted, so the raw error escapes.\n\nThe guard that owns this refusal already exists and is correct. `assertItemMetadataRoot` in `core/store/item-store.ts` raises a typed `tracker_root_not_directory` usage refusal for exactly this state. It simply never runs: the optional declaration read happens **earlier in the command pipeline** and throws first.\n\nThis is the recurrence family owned by pm-7rrqsk - a newer read path added without picking up an established guard. The consequence chain is what makes it expensive:\n\nuntyped fault -> `shouldCaptureCliError` returns true -> Sentry `unexpected_fault` -> release gate `max_high` breached -> every daily cut blocked.\n\n## Population\n\nAn AST scan of `src/**/*.ts` for catch clauses that name `ENOENT` without `ENOTDIR` found **45** sites after the two central fixes. Most are not reachable from a misdirected root today, but each is the same latent shape, and any one of them can become the next release blocker the same way this one did.\n\n## Disposition\n\nShipped in this change:\n\n- `isFileAbsentError` in `core/fs/fs-utils.ts` states the equivalence once; `readFileIfExists` and `removeFileIfExists` adopt it.\n- `sdk/context-intent-runtime.ts` uses it, so the authoritative root guard now speaks instead of the optional reader.\n- `scripts/release/absence-tolerance-gate.mjs` ratchets the population. The bound fails in **both** directions: a higher count is a regression, a lower one is an undeclared improvement that must be written down so the next regression cannot hide beneath slack.\n\nLeft open by this item: driving the declared ceiling from 45 to 0 by reviewing each remaining site, since a blind rewrite would wrongly silence readers where `ENOTDIR` really does mean corruption rather than absence.\n\n## Verification\n\n`pm list --path <a regular file>` now exits 3 with a typed refusal and is not captured to Sentry."

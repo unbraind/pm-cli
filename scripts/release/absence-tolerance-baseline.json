@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "description": "Ceiling on catch clauses that treat ENOENT as file absence without also treating ENOTDIR as absence. For an optional read the two errno values answer the same question, so handling only ENOENT turns a graceful default into an unclassified runtime fault when a path component is a regular file. Owner: pm-7rrqsk. Lower this number as readers migrate to isFileAbsentError; it may never rise.",
+  "max_enoent_only_absence_catches": 45
+}

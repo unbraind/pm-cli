@@ -7,6 +7,7 @@
  */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { isFileAbsentError } from "../core/fs/fs-utils.js";
 import {
   runWithContextIntentContracts,
   type PmContextIntentContract,
@@ -97,11 +98,11 @@ export async function readWorkspaceContextIntentContracts(
   try {
     source = await readFile(declarationPath, "utf8");
   } catch (error: unknown) {
-    if (
-      isRecord(error) &&
-      typeof error.code === "string" &&
-      error.code === "ENOENT"
-    ) {
+    // Absent declarations are the norm. `ENOTDIR` counts as absent too: when
+    // the tracker root is a regular file the declaration cannot exist, and the
+    // authoritative root guard downstream owns that refusal — this optional
+    // read must not pre-empt it with a raw runtime fault.
+    if (isFileAbsentError(error)) {
       return [];
     }
     throw error;
