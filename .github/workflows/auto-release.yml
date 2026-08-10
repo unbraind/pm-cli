@@ -138,7 +138,10 @@ jobs:
               exit 0
             fi
             retry_marker="<!-- auto-release-retry-attempted:${current_day} -->"
-            if ! trusted_issue_comments="$(gh issue view "${ISSUE_NUMBER}" --json comments --jq '.comments[] | select(.author.login? == "github-actions[bot]") | .body')"; then
+            # `gh issue view` normalizes the GitHub Actions app login to
+            # `github-actions`, while REST surfaces may retain the canonical
+            # `github-actions[bot]` login. Trust only those two representations.
+            if ! trusted_issue_comments="$(gh issue view "${ISSUE_NUMBER}" --json comments --jq '.comments[] | select(.author.login? == "github-actions" or .author.login? == "github-actions[bot]") | .body')"; then
               echo "Could not inspect Auto Release blocker issue #${ISSUE_NUMBER}; refusing untracked production retry."
               echo "retry_skip_reason=retry_state_unavailable" >> "${GITHUB_OUTPUT}"
               exit 0
