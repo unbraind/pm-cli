@@ -106,7 +106,7 @@ The pipeline performs:
 1. change detection + one-release-per-day guard
 2. a single `YYYY.M.D` version bump; ordinal targets and the removed
    `--allow-same-day-release` override fail closed
-3. latest `pm-changelog` install and main changelog refresh through package-owned full-history generation; the release pipeline passes `--release-version` with `--all-release-tags` so the pending release section matches post-tag CI checks
+3. latest `pm-changelog` install and main changelog refresh through package-owned full-history generation; the release pipeline passes `--release-version`, `--all-release-tags`, and the canonical `--exclude-tag changelog-exclude` policy so the pending release section matches post-tag CI checks
 4. build, clone-local merge-driver installation, then the remaining strict gates (typecheck, docs/skills freshness, coverage, static quality, compatibility, security, smoke checks, reliability gate); this ordering makes the checkout-owned CLI available before bootstrap, matches CI, and prevents fresh-clone tracker measurements from observing undeclared merge-driver repairs
 5. release note generation from changelog + pm evidence
 6. commit and tag creation (plus optional push)
@@ -265,7 +265,10 @@ git push origin v<version>
 - build, clone-local merge-driver installation, typecheck, test, and coverage
 - generated changelog verification and `pm-changelog` installation before the
   tracker-bearing static gate, so a clean checkout does not misclassify the
-  managed extension's linked files as missing
+  managed extension's linked files as missing. Recovery of an unpublished
+  immutable tag regenerates only `CHANGELOG.md` with the tagged checkout's
+  canonical package script and fails if that operation changes any other
+  tracked source path (apart from managed-extension install metadata).
 - static quality gate (shared complexity, duplication, dead/orphan module, file/folder hygiene, source/exported docstring coverage profile)
 - temporary-project compatibility gate against latest published tracker data
 - reliability threshold gate (Sentry severity threshold, bounded to a recent-activity window via `--sentry-window-days` (default `14`, `0` = unbounded) so a stale benign unresolved issue cannot block every scheduled release; `--telemetry-mode` gate policy: `off` | `best-effort` | `required`). Scheduled `auto-release.yml` failures open/update an `Auto Release blocked` GitHub issue so blocked daily releases are never silently skipped.
@@ -350,9 +353,10 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   existing version keeps the reviewed dispatch-time `main` source and cannot
   be republished. A definitive missing-version response pins the checkout to
   the existing immutable tag, reapplies the version guard, installs the managed
-  changelog extension before tracker measurement, and permits first publication
-  only from that exact tagged source. Other registry failures stop before
-  source selection or publication.
+  changelog extension, regenerates the package changelog with the tagged
+  checkout's canonical policy under a tracked-path mutation guard, and permits
+  first publication only from that tagged source. Other registry failures stop
+  before source selection or publication.
 - If an immutable published package contains a defect that cannot be repaired
   by rerunning the same tag workflow, document the incident and ship the code
   fix in the next UTC day's release.

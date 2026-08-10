@@ -347,6 +347,8 @@ function prepareReleaseChangelog(params) {
       "--all-release-tags",
       "--status",
       "closed",
+      "--exclude-tag",
+      "changelog-exclude",
       "--item-url-base",
       "https://github.com/unbraind/pm-cli/blob/main/.agents/pm",
     ]);
