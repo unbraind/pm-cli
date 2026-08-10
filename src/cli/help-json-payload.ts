@@ -44,6 +44,7 @@ import {
   BUILTIN_TYPE_HELP_VALUES,
   buildUnknownCommandGuidanceFromRuntime,
 } from "./commander-usage.js";
+import { resolveCreateExplicitEmptyFlag } from "../sdk/agent/create-option-policy.js";
 
 /** Documents the help argument summary payload exchanged by command, SDK, and package integrations. */
 export interface HelpArgumentSummary {
@@ -492,6 +493,57 @@ function appendTypeOptionHelpLines(
   }
 }
 
+function buildCreatePolicyRequiredSets(
+  commandName: "create" | "update",
+  typeDefinition: NonNullable<ReturnType<typeof resolveTypeDefinition>>,
+): { progressive: Set<string>; strict: Set<string> } {
+  const progressive =
+    commandName === "create"
+      ? new Set<string>(["title", "type"])
+      : new Set<string>();
+  const strict = new Set(progressive);
+  if (commandName === "create") {
+    for (const option of [
+      ...typeDefinition.required_create_fields,
+      ...typeDefinition.required_create_repeatables,
+    ]) {
+      strict.add(option);
+    }
+  }
+  return { progressive, strict };
+}
+
+function appendStrictCreatePolicyHelpLines(
+  lines: string[],
+  typeDefinition: NonNullable<ReturnType<typeof resolveTypeDefinition>>,
+  progressiveRequired: string[],
+  strictRequired: string[],
+): void {
+  const progressive = new Set(progressiveRequired);
+  const strictOnly = strictRequired.filter(
+    (option) => !progressive.has(option),
+  );
+  const toFlags = (options: string[]): string =>
+    options.length > 0
+      ? options
+          .map((option) => commandOptionFlagLabel("create", option))
+          .join(", ")
+      : "none";
+  lines.push(`  required in strict mode: ${toFlags(strictOnly)}`);
+  const explicitEmptyFlags = strictOnly
+    .map(resolveCreateExplicitEmptyFlag)
+    .filter((flag): flag is string => flag !== undefined);
+  lines.push(
+    `  explicit empty assertion: ${explicitEmptyFlags.length > 0 ? explicitEmptyFlags.join(", ") : "none"}`,
+  );
+  if (["Reminder", "Meeting", "Event"].includes(typeDefinition.name)) {
+    lines.push(
+      "  schedule preset: --schedule-preset lightweight switches schedule artifacts to progressive required-option policy.",
+    );
+    lines.push("  strict parity remains available via --create-mode strict.");
+  }
+}
+
 function buildCreateUpdatePolicyHelpText(
   commandName: "create" | "update",
   typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
@@ -512,20 +564,33 @@ function buildCreateUpdatePolicyHelpText(
     ].join("\n");
   }
 
-  const baseRequired =
-    commandName === "create"
-      ? new Set<string>([
-          "title",
-          "description",
-          "type",
-          ...typeDefinition.required_create_fields,
-          ...typeDefinition.required_create_repeatables,
-        ])
-      : new Set<string>();
+  const argumentTerminatorIndex = argv.indexOf("--");
+  const optionArgv =
+    argumentTerminatorIndex < 0 ? argv : argv.slice(0, argumentTerminatorIndex);
+  const createModeTokenIndex = optionArgv.findIndex(
+    (token) => token === "--create-mode" || token.startsWith("--create-mode="),
+  );
+  const createModeToken =
+    createModeTokenIndex < 0
+      ? undefined
+      : optionArgv[createModeTokenIndex]?.startsWith("--create-mode=")
+        ? optionArgv[createModeTokenIndex]?.slice("--create-mode=".length)
+        : optionArgv[createModeTokenIndex + 1];
+  const strictCreateMode =
+    commandName === "create" && createModeToken?.toLowerCase() === "strict";
+  const requiredSets = buildCreatePolicyRequiredSets(
+    commandName,
+    typeDefinition,
+  );
+  const progressivePolicyState = resolveCommandOptionPolicyState(
+    typeDefinition,
+    commandName,
+    requiredSets.progressive,
+  );
   const policyState = resolveCommandOptionPolicyState(
     typeDefinition,
     commandName,
-    baseRequired,
+    strictCreateMode ? requiredSets.strict : requiredSets.progressive,
   );
   const toFlags = (options: string[]): string =>
     options.length > 0
@@ -541,14 +606,18 @@ function buildCreateUpdatePolicyHelpText(
     `  disabled: ${toFlags(policyState.disabled)}`,
     `  hidden: ${toFlags(policyState.hidden)}`,
   ];
-  if (
-    commandName === "create" &&
-    ["Reminder", "Meeting", "Event"].includes(typeDefinition.name)
-  ) {
-    lines.push(
-      "  schedule preset: --schedule-preset lightweight switches schedule artifacts to progressive required-option policy.",
+  if (commandName === "create") {
+    const strictPolicyState = resolveCommandOptionPolicyState(
+      typeDefinition,
+      commandName,
+      requiredSets.strict,
     );
-    lines.push("  strict parity remains available via --create-mode strict.");
+    appendStrictCreatePolicyHelpLines(
+      lines,
+      typeDefinition,
+      progressivePolicyState.required,
+      strictPolicyState.required,
+    );
   }
   appendTypeOptionHelpLines(lines, typeDefinition);
   if (policyState.errors.length > 0) {

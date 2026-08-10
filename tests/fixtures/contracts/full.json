@@ -1372,6 +1372,10 @@
       "command": "append",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "flag": "--body",
           "short": "-b"
         },
@@ -1390,6 +1394,10 @@
     {
       "command": "claim",
       "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
         {
           "aliases": [
             "--assignee"
@@ -1454,45 +1462,60 @@
       "command": "close",
       "flags": [
         {
-          "flag": "--reason"
+          "flag": "--id",
+          "value_name": "item-id"
         },
         {
-          "flag": "--close-reason"
+          "flag": "--reason",
+          "value_name": "value"
         },
         {
-          "flag": "--completed-at"
+          "flag": "--close-reason",
+          "value_name": "value"
         },
         {
-          "flag": "--duplicate-of"
+          "flag": "--completed-at",
+          "value_name": "value"
         },
         {
-          "flag": "--author"
+          "flag": "--duplicate-of",
+          "value_name": "value"
         },
         {
-          "flag": "--message"
+          "flag": "--author",
+          "value_name": "value"
         },
         {
-          "flag": "--validate-close"
+          "flag": "--message",
+          "value_name": "value"
         },
         {
-          "flag": "--resolution"
+          "flag": "--validate-close",
+          "value_name": "off|warn|strict"
+        },
+        {
+          "flag": "--resolution",
+          "value_name": "value"
         },
         {
           "aliases": [
             "--expected_result",
             "--expected"
           ],
-          "flag": "--expected-result"
+          "flag": "--expected-result",
+          "value_name": "value"
         },
         {
           "aliases": [
             "--actual_result",
             "--actual"
           ],
-          "flag": "--actual-result"
+          "flag": "--actual-result",
+          "value_name": "value"
         },
         {
-          "flag": "--force"
+          "flag": "--force",
+          "value_type": "boolean"
         }
       ],
       "provider": "core"
@@ -1679,6 +1702,10 @@
       "command": "close-task",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "aliases": [
             "--assignee"
           ],
@@ -1688,7 +1715,8 @@
           "flag": "--message"
         },
         {
-          "flag": "--validate-close"
+          "flag": "--validate-close",
+          "value_name": "off|warn|strict"
         },
         {
           "flag": "--force"
@@ -1699,6 +1727,10 @@
     {
       "command": "comments",
       "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
         {
           "aliases": [
             "--comment",
@@ -1927,8 +1959,29 @@
     },
     {
       "command": "copy",
-      "flags": [],
-      "provider": "extension"
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--title",
+          "value_name": "value"
+        },
+        {
+          "flag": "--author",
+          "value_name": "value"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
+        },
+        {
+          "flag": "--allow-duplicate",
+          "value_type": "boolean"
+        }
+      ],
+      "provider": "core"
     },
     {
       "command": "create",
@@ -2352,6 +2405,10 @@
       "command": "delete",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "flag": "--dry-run"
         },
         {
@@ -2369,6 +2426,10 @@
     {
       "command": "deps",
       "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
         {
           "flag": "--format"
         },
@@ -2409,6 +2470,10 @@
     {
       "command": "docs",
       "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
         {
           "flag": "--add"
         },
@@ -2876,6 +2941,10 @@
       "command": "files",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "flag": "--add"
         },
         {
@@ -2928,8 +2997,16 @@
     },
     {
       "command": "focus",
-      "flags": [],
-      "provider": "extension"
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--clear"
+        }
+      ],
+      "provider": "core"
     },
     {
       "command": "gc",
@@ -2947,6 +3024,10 @@
       "command": "get",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "flag": "--for",
           "value_name": "intent"
         },
@@ -2960,7 +3041,8 @@
           "flag": "--depth"
         },
         {
-          "flag": "--full"
+          "flag": "--full",
+          "value_type": "boolean"
         },
         {
           "flag": "--fields",
@@ -3098,6 +3180,10 @@
       "command": "history",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -3174,6 +3260,10 @@
       "command": "history-compact",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "flag": "--before"
         },
         {
@@ -3213,6 +3303,10 @@
       "command": "history-redact",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "flag": "--literal"
         },
         {
@@ -3239,6 +3333,10 @@
     {
       "command": "history-repair",
       "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
         {
           "flag": "--all"
         },
@@ -3336,6 +3434,10 @@
       "command": "item complete",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "flag": "--transaction-id",
           "required": true,
           "value_name": "value"
@@ -3392,7 +3494,7 @@
         },
         {
           "flag": "--validate-close",
-          "value_name": "mode"
+          "value_name": "off|warn|strict"
         },
         {
           "flag": "--lock-ttl-seconds",
@@ -3450,6 +3552,10 @@
     {
       "command": "learnings",
       "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
         {
           "aliases": [
             "--learning"
@@ -5464,6 +5570,10 @@
       "command": "notes",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "aliases": [
             "--note"
           ],
@@ -6285,6 +6395,10 @@
       "command": "pause-task",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "aliases": [
             "--assignee"
           ],
@@ -6731,6 +6845,10 @@
       "command": "release",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "aliases": [
             "--assignee"
           ],
@@ -6753,6 +6871,10 @@
     {
       "command": "restore",
       "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
         {
           "flag": "--author"
         },
@@ -7047,6 +7169,10 @@
       "command": "start-task",
       "flags": [
         {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
           "aliases": [
             "--assignee"
           ],
@@ -7103,6 +7229,10 @@
     {
       "command": "test",
       "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
         {
           "flag": "--add"
         },
@@ -7248,6 +7378,10 @@
     {
       "command": "update",
       "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
         {
           "flag": "--stdin-json"
         },

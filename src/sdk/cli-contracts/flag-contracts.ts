@@ -177,7 +177,7 @@ const MANY_GOVERNANCE_AND_CONTENT_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--filter-has-linked-command" },
   { flag: "--filter-no-linked-command" },
   { flag: "--ids", list: true },
-      { flag: "--limit" },
+  { flag: "--limit" },
   { flag: "--offset" },
 ];
 
@@ -272,6 +272,7 @@ export const AGGREGATE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for comments flag contracts, shared by SDK and presentation-layer consumers. */
 export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--add", aliases: ["--comment", "--body"] },
   { flag: "--stdin" },
   { flag: "--file" },
@@ -297,6 +298,7 @@ function withCursorSemantics(
 
 /** Public contract for notes flag contracts, shared by SDK and presentation-layer consumers. */
 export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--add", aliases: ["--note"] },
   { flag: "--add-json" },
   { flag: "--stdin" },
@@ -315,6 +317,7 @@ export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for learnings flag contracts, shared by SDK and presentation-layer consumers. */
 export const LEARNINGS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--add", aliases: ["--learning"] },
   { flag: "--limit" },
   { flag: "--full-history" },
@@ -325,6 +328,7 @@ export const LEARNINGS_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for files flag contracts, shared by SDK and presentation-layer consumers. */
 export const FILES_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--add" },
   { flag: "--add-glob" },
   { flag: "--remove" },
@@ -347,6 +351,7 @@ export const FILES_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for docs flag contracts, shared by SDK and presentation-layer consumers. */
 export const DOCS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--add" },
   { flag: "--add-glob" },
   { flag: "--remove" },
@@ -362,6 +367,7 @@ export const DOCS_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for history flag contracts, shared by SDK and presentation-layer consumers. */
 export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--limit" },
   { flag: "--compact" },
   { flag: "--full" },
@@ -388,6 +394,7 @@ export const MERGE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for history redact flag contracts, shared by SDK and presentation-layer consumers. */
 export const HISTORY_REDACT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--literal" },
   { flag: "--regex" },
   { flag: "--replacement" },
@@ -399,6 +406,7 @@ export const HISTORY_REDACT_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for history repair flag contracts, shared by SDK and presentation-layer consumers. */
 export const HISTORY_REPAIR_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--all" },
   { flag: "--dry-run" },
   { flag: "--author" },
@@ -417,6 +425,7 @@ export const HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for history compact flag contracts, shared by SDK and presentation-layer consumers. */
 export const HISTORY_COMPACT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--before" },
   { flag: "--ids", list: true },
   { flag: "--all-over", value_type: "number" },
@@ -791,21 +800,33 @@ export const REINDEX_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for close flag contracts, shared by SDK and presentation-layer consumers. */
 export const CLOSE_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--reason" },
-  { flag: "--close-reason" },
-  { flag: "--completed-at" },
-  { flag: "--duplicate-of" },
-  { flag: "--author" },
-  { flag: "--message" },
-  { flag: "--validate-close" },
+  { flag: "--id", value_name: "item-id" },
+  { flag: "--reason", value_name: "value" },
+  { flag: "--close-reason", value_name: "value" },
+  { flag: "--completed-at", value_name: "value" },
+  { flag: "--duplicate-of", value_name: "value" },
+  { flag: "--author", value_name: "value" },
+  { flag: "--message", value_name: "value" },
+  {
+    flag: "--validate-close",
+    value_name: "off|warn|strict",
+  },
   // pm-fl0c #11 (2026-05-28) + Codex P2 follow-up: inline closure-validation
   // fields. Surface them through the contract so `pm contracts --command
   // close`, the JSON help payload, and bootstrap flag normalization /
   // suggestions all stay consistent with the commander registration.
-  { flag: "--resolution" },
-  { flag: "--expected-result", aliases: ["--expected_result", "--expected"] },
-  { flag: "--actual-result", aliases: ["--actual_result", "--actual"] },
-  { flag: "--force" },
+  { flag: "--resolution", value_name: "value" },
+  {
+    flag: "--expected-result",
+    aliases: ["--expected_result", "--expected"],
+    value_name: "value",
+  },
+  {
+    flag: "--actual-result",
+    aliases: ["--actual_result", "--actual"],
+    value_name: "value",
+  },
+  { flag: "--force", value_type: "boolean" },
 ];
 
 // close-many shares update-many's `--filter-*` scoping family and close's
@@ -846,6 +867,7 @@ export const CLOSE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for append flag contracts, shared by SDK and presentation-layer consumers. */
 export const APPEND_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--body", short: "-b" },
   { flag: "--author" },
   { flag: "--message" },
@@ -854,6 +876,7 @@ export const APPEND_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for claim flag contracts, shared by SDK and presentation-layer consumers. */
 export const CLAIM_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
   { flag: "--force" },
@@ -874,6 +897,7 @@ export const CLAIM_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for restore flag contracts, shared by SDK and presentation-layer consumers. */
 export const RESTORE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -881,6 +905,7 @@ export const RESTORE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for delete flag contracts, shared by SDK and presentation-layer consumers. */
 export const DELETE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--dry-run" },
   { flag: "--author" },
   { flag: "--message" },
@@ -889,6 +914,7 @@ export const DELETE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for release flag contracts, shared by SDK and presentation-layer consumers. */
 export const RELEASE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
   { flag: "--force" },
@@ -896,6 +922,7 @@ export const RELEASE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for start task flag contracts, shared by SDK and presentation-layer consumers. */
 export const START_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
   { flag: "--force" },
@@ -903,6 +930,7 @@ export const START_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for pause task flag contracts, shared by SDK and presentation-layer consumers. */
 export const PAUSE_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
   { flag: "--force" },
@@ -910,9 +938,10 @@ export const PAUSE_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for close task flag contracts, shared by SDK and presentation-layer consumers. */
 export const CLOSE_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
-  { flag: "--validate-close" },
+  { flag: "--validate-close", value_name: "off|warn|strict" },
   { flag: "--force" },
 ];
 
@@ -951,6 +980,7 @@ export const REMIND_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for test flag contracts, shared by SDK and presentation-layer consumers. */
 export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--add" },
   { flag: "--add-json" },
   { flag: "--remove" },
@@ -1238,6 +1268,7 @@ export const ITEM_MUTATE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Atomic item-completion flags shared by contracts, help, and completions. */
 export const ITEM_COMPLETE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--transaction-id", value_name: "value", required: true },
   { flag: "--reason", value_name: "value" },
   { flag: "--file", value_name: "value", repeatable: true },
@@ -1250,7 +1281,7 @@ export const ITEM_COMPLETE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--expected-result", value_name: "value" },
   { flag: "--actual-result", value_name: "value" },
   { flag: "--completed-at", value_name: "value" },
-  { flag: "--validate-close", value_name: "mode" },
+  { flag: "--validate-close", value_name: "off|warn|strict" },
   { flag: "--lock-ttl-seconds", value_name: "n" },
   { flag: "--lock-wait-ms", value_name: "n" },
   { flag: "--dry-run" },
@@ -1260,17 +1291,22 @@ export const ITEM_COMPLETE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for copy flag contracts, shared by SDK and presentation-layer consumers. */
 export const COPY_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--title" },
-  { flag: "--author" },
-  { flag: "--message" },
+  { flag: "--id", value_name: "item-id" },
+  { flag: "--title", value_name: "value" },
+  { flag: "--author", value_name: "value" },
+  { flag: "--message", value_name: "value" },
   { flag: "--allow-duplicate", value_type: "boolean" },
 ];
 
 /** Public contract for focus flag contracts, shared by SDK and presentation-layer consumers. */
-export const FOCUS_FLAG_CONTRACTS: CliFlagContract[] = [{ flag: "--clear" }];
+export const FOCUS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
+  { flag: "--clear" },
+];
 
 /** Public contract for update flag contracts, shared by SDK and presentation-layer consumers. */
 export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--stdin-json" },
   { short: "-t", flag: "--title" },
   { short: "-d", flag: "--description" },
@@ -1545,10 +1581,11 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
 
 /** Public contract for get flag contracts, shared by SDK and presentation-layer consumers. */
 export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--for", value_name: "intent" },
   { flag: "--token-budget", aliases: ["--token_budget"] },
   { flag: "--depth" },
-  { flag: "--full" },
+  { flag: "--full", value_type: "boolean" },
   { flag: "--fields", list: true },
   { flag: "--at" },
   { flag: "--tree" },
@@ -1566,6 +1603,7 @@ export const GUIDE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for deps flag contracts, shared by SDK and presentation-layer consumers. */
 export const DEPS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id", value_name: "item-id" },
   { flag: "--format" },
   { flag: "--max-depth" },
   { flag: "--collapse" },
@@ -1923,9 +1961,8 @@ export function resolveSubcommandFlagContractsForCommand(
       resolveExtensionLifecycleFlagContracts(rootCommand, lifecycleSubcommand),
     );
   }
-  return withSubcommandGlobalFlags(
-    SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND.get(normalized) ?? [],
-  );
+  const contracts = SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND.get(normalized) ?? [];
+  return withSubcommandGlobalFlags(contracts);
 }
 
 /** Renders a space-separated, de-duplicated list of every flag spelling (short, canonical, and aliases) for shell-completion candidate generation, optionally appending the shared subcommand-global flags. */

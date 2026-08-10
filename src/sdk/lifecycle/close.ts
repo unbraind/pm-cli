@@ -26,10 +26,7 @@ import {
   shouldCompletePlanOnClose,
   getActiveExtensionRegistrations,
 } from "../runtime-primitives.js";
-import {
-  collectBlockedByIds,
-  indexBlockedByIds,
-} from "../actionability.js";
+import { collectBlockedByIds, indexBlockedByIds } from "../actionability.js";
 import {
   applyTerminalOrderingPolicy,
   requireTerminalReason,
@@ -80,6 +77,7 @@ interface AutoUnblockCandidate {
 type CloseInlineFieldKey = "resolution" | "expected_result" | "actual_result";
 
 interface CloseMutationContext {
+  pmRoot: string;
   statusRegistry: RuntimeStatusRegistry;
   force: boolean | undefined;
   options: CloseOperationOptions;
@@ -93,7 +91,6 @@ interface CloseMutationContext {
 }
 
 type ValidateCloseMode = "off" | "warn" | "strict";
-
 
 const CLOSE_VALIDATION_FIELDS: Array<{
   key: keyof Pick<
@@ -138,12 +135,12 @@ function parseValidateCloseMode(
 
 function findMissingCloseValidationFields(
   itemMetadata: ItemMetadata,
-): string[] {
-  const missing: string[] = [];
+): (typeof CLOSE_VALIDATION_FIELDS)[number][] {
+  const missing: (typeof CLOSE_VALIDATION_FIELDS)[number][] = [];
   for (const field of CLOSE_VALIDATION_FIELDS) {
     const rawValue = itemMetadata[field.key];
     if (typeof rawValue !== "string" || rawValue.trim().length === 0) {
-      missing.push(field.label);
+      missing.push(field);
     }
   }
   return missing;
@@ -453,40 +450,42 @@ function collectCloseValidationWarnings(
   metadata: ItemMetadata,
   validateCloseMode: ValidateCloseMode,
   activeChildIds: string[],
-  closeReason: string | undefined,
+  pmRoot: string,
 ): string[] {
   const warnings: string[] = [];
   if (validateCloseMode !== "off") {
     const missingFields = findMissingCloseValidationFields(metadata);
     if (missingFields.length > 0) {
+      const missingLabels = missingFields.map((field) => field.label);
       if (validateCloseMode === "strict") {
         const missingFlags = missingFields.map(
-          (field) => `--${field.replaceAll("_", "-")}`,
+          (field) => `--${field.key.replaceAll("_", "-")}`,
         );
-        const retryTokens = [
-          "close",
+        const updateTokens = [
+          "--pm-path",
+          pmRoot,
+          "update",
           metadata.id,
-          closeReason ?? "<reason>",
           ...missingFlags.flatMap((flag) => [flag, "<value>"]),
         ];
         throw new PmCliError(
-          `Cannot close item ${metadata.id}: missing ${missingFields.join(", ")}. Populate fields or use --validate-close warn.`,
+          `Cannot close item ${metadata.id}: missing ${missingLabels.join(", ")}. Populate fields or use --validate-close warn.`,
           EXIT_CODE.USAGE,
           {
             code: "close_validation_missing_fields",
             recovery: {
               missing: missingFlags,
-              suggested_retry: renderPmCommand(retryTokens),
+              suggested_retry: renderPmCommand(updateTokens),
             },
             nextSteps: [
-              "Use pm close with the missing closure fields populated.",
+              "Run the suggested pm update, then retry the original pm close invocation.",
               "Use --validate-close warn only when governance permits an evidenced exception.",
             ],
           },
         );
       }
       warnings.push(
-        `close_validation_missing_fields:${metadata.id}:${missingFields.join(",")}`,
+        `close_validation_missing_fields:${metadata.id}:${missingLabels.join(",")}`,
       );
     }
     if (activeChildIds.length > 0) {
@@ -551,7 +550,7 @@ function mutateCloseMetadata(
     metadata,
     context.validateCloseMode,
     context.activeChildIds,
-    context.closeReason,
+    context.pmRoot,
   );
   metadata.status = context.statusRegistry.close_status;
   metadata.closed_at = context.closedAt;
@@ -715,6 +714,7 @@ export async function closeItem(
     force: options.force,
     mutate(document) {
       return mutateCloseMetadata(document.metadata, {
+        pmRoot,
         statusRegistry,
         force: options.force,
         options,

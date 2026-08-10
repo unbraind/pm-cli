@@ -4,17 +4,26 @@
 
 ### Added
 
-- A declared provenance resolver that fails at runtime is recorded identically to a dimension the harness cannot supply, so a broken probe is invisible until someone reads the source ([pm-lu6sca](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-lu6sca.toon))
+- GH-472: create error for missing required custom fields lists the field names ([pm-4bzq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4bzq.toon))
+- Provenance records distinguish unavailable configuration from resolver failures ([pm-lu6sca](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-lu6sca.toon))
 
 ### Fixed
 
+- Preserve executable recovery semantics across terminators, nested aliases, and tracker scope ([pm-szn67i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-szn67i.toon))
+- Measure source replication against an independently discovered denominator ([pm-b84irw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b84irw.toon))
+- GH-515: pm test --add reorders linked tests — --only-last can execute a non-newest command ([pm-x2vx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x2vx.toon))
+- GH-490: unknown-command suggester ranks substring hits over synonyms/edit distance — pm log suggests 'extension catalog' ([pm-g543](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g543.toon))
+- GH-441: type-aware create help mislabels applicable flags as required (ignores create-mode) ([pm-qmjx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qmjx.toon))
+- GH-519: close recovery bundle suggests --validate-close "<value\>" for an enum flag and hides the real resolution-fields blocker ([pm-ulqu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ulqu.toon))
+- GH-950: item-addressing commands reject a consistent --id alias and misroute recovery ([pm-mkinft](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mkinft.toon))
+- GH-951: required-field policy can force fabricated relationship edges ([pm-st7wgu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-st7wgu.toon))
+- GH-953: close recovery suggested_retry is not executable and drops supplied flags ([pm-p316vn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p316vn.toon))
 - A sandboxed fixture records provenance from the host harness environment, so the suite is green on CI and deterministically red for any agent running it locally ([pm-xgah3a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xgah3a.toon))
 - The session-role dimension is wired to a boolean child-session flag, so every nested claude-code invocation records the role literally as "1" and fleet analytics will group real work under a meaningless label ([pm-eq9dlw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eq9dlw.toon))
 - GH-921/GH-922: merge-decision receipts are not durable in fresh-clone CI ([pm-1j5j21](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1j5j21.toon))
 - GH-948: version-skewed pm invocations silently rewrite the tracked merge fence during unrelated commands ([pm-l56d0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l56d0o.toon))
 - A measurement ratchet bound stops enforcing the moment its owner reaches a terminal status, so every guarded population goes unbounded exactly when its fix ships ([pm-5z9plz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5z9plz.toon))
 - The docs tree grows one file per shipped contract, so 39 of 51 documents are stubs and the SDK's story is split across twelve files ([pm-9hv1o7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9hv1o7.toon))
-- The replication gate's input is a hand-written list of known replications, so it can regress what was found and never discover what was not ([pm-b84irw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b84irw.toon))
 - The status-token normalization rule is replicated at five sites and the replication gate covers none of them ([pm-ulxdqp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ulxdqp.toon))
 - The two slowest governance commands load every item body while twenty other SDK modules use the light read path ([pm-sr3xzg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sr3xzg.toon))
 - GH-946: context signal-store staleness warning has no executable remediation contract ([pm-wn1jy1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wn1jy1.toon))

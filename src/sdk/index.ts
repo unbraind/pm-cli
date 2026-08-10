@@ -123,6 +123,10 @@ export {
   quoteWindowsCommandArg,
   renderPmCommand,
 } from "./command-line.js";
+export * from "./agent/command-recovery.js";
+export * from "./agent/command-suggestions.js";
+export * from "./agent/item-addressing.js";
+export * from "./agent/create-option-policy.js";
 export {
   runGc,
   type GcCheckpointsSummary,

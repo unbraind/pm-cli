@@ -2,17 +2,33 @@ id: pm-qmjx
 title: "GH-441: type-aware create help mislabels applicable flags as required (ignores create-mode)"
 description: "Dogfood GH-441: create help lists 19 type-applicable flags as 'required' though a 3-flag create succeeds; help must reflect the active create-mode policy. Duplicate check: searched create help required/type-aware policy — no existing item."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",bug,gh-issue
 created_at: "2026-07-06T08:03:04.731Z"
-updated_at: "2026-07-26T05:56:20.583Z"
+updated_at: "2026-08-09T22:09:39.698Z"
+closed_at: "2026-08-09T22:09:39.084Z"
+completed_at: "2026-08-09T22:09:39.084Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm create --help --type T shows genuinely mandatory fields for the active create-mode with applicable fields labeled separately; spec covers default vs strict rendering
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T05:56:20.368Z",null,null
+resolution: Separated active create-mode requirements from type-applicable option metadata.
+expected_result: Default and strict help accurately describe what runtime creation requires.
+actual_result: Snapshot and integration tests confirm help/runtime parity for both modes.
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T05:56:20.368Z"
+comments[1]{created_at,author,text}:
+  "2026-08-09T22:09:37.792Z","harness:codex","Evidence: create help now separates active-mode requirements from type-applicable fields using the same public policy primitive as runtime enforcement. Default and strict-mode snapshots, focused integration, and full coverage pass."
+learnings[1]{created_at,author,text}:
+  "2026-08-09T22:09:38.463Z","harness:codex","Help must describe the active enforcement mode, not relabel every schema-applicable field as mandatory."
+files[1]{path,scope,note}:
+  src/cli/help-json-payload.ts,project,Active create-mode requirements
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/integration/sdk-agent-command-contracts.integration.spec.ts,project,240,Create-mode help parity
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Mode-aware create help
+close_reason: Mode-aware create help is implemented and verified.
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/441\n\n## Problem\n`pm create --help --type Task` prints a \"Type-aware option policies\" block listing 19 flags as \"required\", but a 3-flag create succeeds in default mode. The list is actually type-APPLICABLE flags and ignores the active --create-mode. Agents over-provision creates or judge create unusable.\n\n## Proposed fix\nHelp must reflect the real policy: genuinely mandatory fields for the ACTIVE create-mode (default -> --title/--type), with the full set labeled \"applicable\" (or \"required in strict mode\"). Strict mode shows the strict set.\n\n## Definition of done\nType-aware help output matches runtime enforcement per create-mode; spec covers default vs strict rendering; contracts/help snapshots updated."

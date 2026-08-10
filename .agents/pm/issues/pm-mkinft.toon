@@ -1,0 +1,52 @@
+id: pm-mkinft
+title: "GH-950: item-addressing commands reject a consistent --id alias and misroute recovery"
+description: Declare one SDK item-identifier input contract and project it across positional-id CLI commands without removing their canonical positional form.
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk",contracts,gh-950,grammar
+created_at: "2026-08-09T20:27:22.194Z"
+updated_at: "2026-08-09T22:09:12.171Z"
+closed_at: "2026-08-09T22:09:11.524Z"
+completed_at: "2026-08-09T22:09:11.524Z"
+author: "harness:codex"
+estimated_minutes: 420
+acceptance_criteria: Every command that accepts one positional item id also accepts --id as a compatibility alias; supplying both fails deterministically; the public SDK exposes one reusable item-address resolution primitive; contracts help completions and MCP parity declare the alias consistently; unknown-option recovery no longer points away from the selected command; tests cover get test files docs deps comments notes learnings and lifecycle commands without removing positional compatibility
+goal: project management = context management
+objective: Remove item-identifier grammar context from agent memory
+value: One addressing convention works throughout an end-to-end PM loop
+why_now: A current dogfood session burned repeated retries in create-note-test-close flows
+parent: pm-mpbb
+risk: medium
+confidence: high
+severity: medium
+resolution: Introduced a shared item-addressing primitive and projected --id across all single-item commands.
+expected_result: "Positional IDs and --id are equivalent, with deterministic conflicts when both are supplied."
+actual_result: "Unit, integration, manual acceptance, contracts, completion, and replication gates verify the complete matrix."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gdi7,discovered_from,"2026-08-09T20:27:22.194Z","harness:codex","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-08-09T20:27:22.194Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-09T20:27:22.194Z","harness:codex","cli:create:dep",detected
+  pm-fs8q9x,related,"2026-08-09T21:31:43.272Z","harness:codex","cli:update:dep",detected
+  pm-ya7x55,related,"2026-08-09T21:31:43.272Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-09T20:27:22.194Z","harness:codex","Duplicate-check evidence: searched all statuses for show/get/test --id rejection, positional recovery, flag consistency, and item addressing. The existing grammar and unknown-option items are broader or adjacent; none owns a shared identifier resolver across the single-item surface."
+  "2026-08-09T21:43:38.147Z","harness:codex","Manual acceptance finding: the first temp-workspace pass proved get/comments/notes/learnings/files/docs/test --id and append ordering, then exposed close --id missing from the normalization set plus copy/focus misclassified as extension-only contract surfaces. Expanded the shared primitive to all single-item lifecycle commands and nested item complete/files discover paths; added copy/focus to the core runtime contract map; focused integration now passes."
+  "2026-08-09T22:09:10.266Z","harness:codex","Evidence: one public SDK item-address resolver now projects --id across the complete single-item command matrix, detects positional conflicts, and feeds contracts/completions. Manual temp-workspace acceptance and broad integration coverage pass; copy/focus runtime contracts and bounded replication waivers are explicit."
+learnings[1]{created_at,author,text}:
+  "2026-08-09T22:09:10.844Z","harness:codex","A grammar alias is a cross-surface contract change: normalization, errors, help, completion, runtime classification, and replication policy must move together."
+files[8]{path,scope,note}:
+  scripts/release/surface-replication-sets.json,project,Bounded annotation replication waivers for CLI-only grammar change
+  src/cli/main.ts,project,Expected conflict error handling
+  src/sdk/agent/item-addressing.ts,project,Shared item identifier grammar
+  src/sdk/cli-bootstrap.ts,project,CLI normalization adapter
+  src/sdk/cli-contracts/flag-contracts.ts,project,Contracts and completion alias projection
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Core copy and focus command contract classification
+  tests/integration/sdk-agent-command-contracts.integration.spec.ts,project,Cross-command item addressing and create policy integration coverage
+  tests/unit/scripts/release/surface-replication-gate.spec.ts,project,Waiver visibility and working-copy replication regression coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk-agent-command-contracts.integration.spec.ts,project,240,Cross-command item addressing acceptance
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Uniform item address forms
+close_reason: Uniform SDK-backed item addressing is implemented across the CLI.
+body: "GitHub #950 reproduces show/get and test rejecting --id while create, close, notes, and activity accept it; generic unknown-option recovery points to different commands instead of correcting the chosen command. Every-status duplicate search found the positional grammar epic, flag lexicon, and older unknown-option work, but no canonical item for a shared item-addressing contract."

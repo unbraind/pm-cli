@@ -37,7 +37,7 @@ function baseItemMetadata(overrides: Partial<ItemMetadata> = {}): ItemMetadata {
 }
 
 describe("core/item/item-format additional branch coverage", () => {
-  it("sorts dependency, log, test, and doc ties deterministically", () => {
+  it("sorts dependency, log, and doc ties while preserving linked-test append order", () => {
     const normalized = normalizeItemMetadata(
       baseItemMetadata({
         dependencies: [
@@ -74,11 +74,11 @@ describe("core/item/item-format additional branch coverage", () => {
       "beta:zed",
     ]);
     expect(normalized.files).toEqual([{ path: "src/cli/main.ts", scope: "project", note: "normalized" }]);
-    expect(normalized.tests?.map((value) => `${value.timeout_seconds}:${value.note}`)).toEqual(["10:a", "10:b", "20:z"]);
+    expect(normalized.tests?.map((value) => `${value.timeout_seconds}:${value.note}`)).toEqual(["20:z", "10:b", "10:a"]);
     expect(normalized.docs?.map((value) => value.note)).toEqual(["a", "z"]);
   });
 
-  it("uses note tie-break ordering for tests and docs with identical primary sort keys", () => {
+  it("preserves test order and uses note tie-break ordering for docs", () => {
     const normalized = normalizeItemMetadata(
       baseItemMetadata({
         tests: [
@@ -92,11 +92,11 @@ describe("core/item/item-format additional branch coverage", () => {
       }),
     );
 
-    expect(normalized.tests?.map((value) => value.note)).toEqual(["a", "z"]);
+    expect(normalized.tests?.map((value) => value.note)).toEqual(["z", "a"]);
     expect(normalized.docs?.map((value) => value.note)).toEqual(["a", "z"]);
   });
 
-  it("covers dependency and linked-test comparator branch paths", () => {
+  it("covers dependency ordering and linked-test append stability", () => {
     const dependencySorted = normalizeItemMetadata(
       baseItemMetadata({
         dependencies: [
@@ -115,7 +115,7 @@ describe("core/item/item-format additional branch coverage", () => {
         ],
       }),
     );
-    expect(scopeSorted.tests?.map((value) => value.scope)).toEqual(["global", "project"]);
+    expect(scopeSorted.tests?.map((value) => value.scope)).toEqual(["project", "global"]);
 
     const pathSorted = normalizeItemMetadata(
       baseItemMetadata({
@@ -125,7 +125,7 @@ describe("core/item/item-format additional branch coverage", () => {
         ],
       }),
     );
-    expect(pathSorted.tests?.map((value) => value.path)).toEqual(["tests/unit/a.spec.ts", "tests/unit/b.spec.ts"]);
+    expect(pathSorted.tests?.map((value) => value.path)).toEqual(["tests/unit/b.spec.ts", "tests/unit/a.spec.ts"]);
 
     const commandSorted = normalizeItemMetadata(
       baseItemMetadata({
@@ -135,7 +135,7 @@ describe("core/item/item-format additional branch coverage", () => {
         ],
       }),
     );
-    expect(commandSorted.tests?.map((value) => value.command)).toEqual(["a-run", "z-run"]);
+    expect(commandSorted.tests?.map((value) => value.command)).toEqual(["z-run", "a-run"]);
 
     const timeoutSorted = normalizeItemMetadata(
       baseItemMetadata({
@@ -145,7 +145,7 @@ describe("core/item/item-format additional branch coverage", () => {
         ],
       }),
     );
-    expect(timeoutSorted.tests?.map((value) => value.timeout_seconds)).toEqual([10, 20]);
+    expect(timeoutSorted.tests?.map((value) => value.timeout_seconds)).toEqual([20, 10]);
   });
 
   it("covers nullish fallback branches for optional test/doc sort keys", () => {

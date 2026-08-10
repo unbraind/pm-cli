@@ -238,7 +238,85 @@
       ]
     }
   ],
-  "waivers": [],
+  "waivers": [
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/annotations.ts",
+      "pm_item": "pm-mkinft",
+      "reason": "Item-address aliasing changes CLI argv grammar, not annotation mutation receipt semantics.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/comments.ts",
+      "pm_item": "pm-mkinft",
+      "reason": "The SDK comments API already receives a typed item id; only CLI compatibility parsing changed.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/notes.ts",
+      "pm_item": "pm-mkinft",
+      "reason": "The SDK notes API already receives a typed item id; only CLI compatibility parsing changed.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/learnings.ts",
+      "pm_item": "pm-mkinft",
+      "reason": "The SDK learnings API already receives a typed item id; only CLI compatibility parsing changed.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/cli/register-annotations.ts",
+      "pm_item": "pm-mkinft",
+      "reason": "Bootstrap normalization supplies the canonical positional id before Commander registration.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/cli-contracts/tool-schema.ts",
+      "pm_item": "pm-mkinft",
+      "reason": "Structured tool actions already declare the item id; no tool schema mutation is needed.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/cli-contracts/tool-parameter-tables.ts",
+      "pm_item": "pm-mkinft",
+      "reason": "Structured tool actions already declare the item id; no parameter-table mutation is needed.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/completion.ts",
+      "pm_item": "pm-mkinft",
+      "reason": "Completion consumes the changed shared flag-contract arrays and inherits --id without a local edit.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/runtime.ts",
+      "pm_item": "pm-mkinft",
+      "reason": "Runtime annotation actions already carry typed ids; the change is confined to CLI argv normalization.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "tests/unit/sdk/read-contract-integrity.spec.ts",
+      "pm_item": "pm-mkinft",
+      "reason": "Receipt integrity is unchanged; dedicated item-address contract and integration tests cover the new grammar.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "docs/SDK_CONTEXT_INTEGRITY.md",
+      "pm_item": "pm-mkinft",
+      "reason": "Context-integrity receipts are unchanged; item addressing is documented in COMMANDS and SDK.",
+      "expires_on": "2026-08-12"
+    }
+  ],
   "cli_refusal_dispositions": [
     {
       "path": "src/cli/register-mutation.ts",

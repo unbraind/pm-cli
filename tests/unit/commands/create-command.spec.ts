@@ -3768,6 +3768,32 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
     });
   });
 
+  it("accepts an explicit empty required dependency collection in strict mode", async () => {
+    await withTempPmPath(async (context) => {
+      await writeItemTypeDefinitions(context.pmPath, [
+        {
+          name: "ContextualIssue",
+          folder: "contextual-issues",
+          required_create_fields: [],
+          required_create_repeatables: ["dep"],
+        },
+      ]);
+      const result = await runCreate(
+        {
+          title: "truthful graph root",
+          type: "ContextualIssue",
+          createMode: "strict",
+          clearDeps: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(result.item.dependencies).toEqual([]);
+      expect(readCreateHistory(context, result.item.id)[0]?.message).toContain(
+        "explicit_unset=dependencies",
+      );
+    });
+  });
+
   it("rejects combining --unset for a scalar field with that field's value flag", async () => {
     await withTempPmPath(async (context) => {
       await expect(
@@ -3799,6 +3825,98 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
       );
       expect((result.item as Record<string, unknown>).review_url).toBe("https://example.test/runtime");
       expect(result.changed_fields).toEqual(expect.arrayContaining(["review_url"]));
+    });
+  });
+
+  it("describes missing required runtime fields with executable input formats", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { fields?: Array<Record<string, unknown>> };
+      };
+      settings.schema = {
+        ...settings.schema,
+        fields: [
+          {
+            key: "storyPoints",
+            metadata_key: "story_points",
+            type: "number",
+            cli_flag: "story-points",
+            commands: ["create"],
+            required_on_create: true,
+          },
+          {
+            key: "verified",
+            type: "boolean",
+            cli_flag: "verified",
+            commands: ["create"],
+            required_on_create: true,
+          },
+          {
+            key: "milestones",
+            type: "array",
+            cli_flag: "milestones",
+            commands: ["create"],
+            required_on_create: true,
+          },
+          {
+            key: "configuration",
+            type: "object",
+            cli_flag: "configuration",
+            commands: ["create"],
+            required_on_create: true,
+          },
+          {
+            key: "ownerContext",
+            metadata_key: "owner_context",
+            type: "string",
+            cli_flag: "owner-context",
+            commands: ["create"],
+            required_on_create: true,
+          },
+          {
+            key: "reviewers",
+            type: "string_array",
+            cli_flag: "reviewers",
+            commands: ["create"],
+            required_on_create: true,
+          },
+          {
+            key: "weights",
+            type: "number",
+            repeatable: true,
+            cli_flag: "weights",
+            commands: ["create"],
+            required_on_create: true,
+          },
+          {
+            key: "optionalContext",
+            type: "string",
+            cli_flag: "optional-context",
+            commands: ["create"],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      await expect(
+        runCreate(
+          {
+            title: "missing runtime field",
+            type: "Task",
+            createMode: "progressive",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          examples: [expect.stringContaining("--story-points <number>")],
+          nextSteps: expect.arrayContaining([
+            expect.stringContaining("--story-points maps to story_points (number)"),
+          ]),
+        },
+      });
     });
   });
 

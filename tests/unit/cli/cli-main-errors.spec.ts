@@ -4789,6 +4789,12 @@ describe("CLI Commander usage recovery helpers", () => {
         ["test", "pm-123", "--add=command"],
       ),
     ).toBeUndefined();
+    expect(
+      commanderUsageTestOnly.resolveSuggestedRetryForMissingOption(
+        "error: required option '--add <value>' not specified",
+        [],
+      ),
+    ).toBeUndefined();
   });
 
   it("falls back to a default commander usage message for non-object errors", async () => {
@@ -5676,7 +5682,9 @@ describe("CLI rich help content", () => {
       "--help",
     ]);
     expect(createText).toContain("Type-aware option policies for Incident");
-    expect(createText).toContain("required: --title, --description, --type, --comment, --status");
+    expect(createText).toContain("required: --title, --type, --status");
+    expect(createText).toContain("required in strict mode: --comment");
+    expect(createText).toContain("explicit empty assertion: --clear-comments");
     expect(createText).toContain("disabled: --body");
     expect(createText).toContain("hidden: --reviewer");
     expect(createText).toContain("values: high|low");
@@ -5685,6 +5693,22 @@ describe("CLI rich help content", () => {
     expect(createText).toContain('Unsupported command_option_policies option "not-a-real-option"');
     expect(createText).toContain("values: any non-empty string");
     expect(createText).toContain("aliases: none");
+
+    const strictInlineText = helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, [
+      "create",
+      "--type",
+      "inc",
+      "--create-mode=strict",
+    ]);
+    expect(strictInlineText).toContain("required: --title, --type, --comment, --status");
+    const strictSpacedText = helpJsonTestOnly.buildCreateUpdatePolicyHelpText("create", registry, [
+      "create",
+      "--type",
+      "inc",
+      "--create-mode",
+      "strict",
+    ]);
+    expect(strictSpacedText).toContain("required: --title, --type, --comment, --status");
 
     const updateText = helpJsonTestOnly.buildCreateUpdatePolicyHelpText("update", registry, ["update", "--type=Incident"]);
     expect(updateText).toContain("required: --force");

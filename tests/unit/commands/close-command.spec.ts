@@ -1075,6 +1075,13 @@ describe("runClose", () => {
         ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
+        context: {
+          recovery: {
+            suggested_retry: expect.stringMatching(
+              /^pm --pm-path \S+ update \S+ --resolution "<value>" --expected-result "<value>" --actual-result "<value>"$/,
+            ),
+          },
+        },
       });
 
       const settings = await readSettings(context.pmPath);
@@ -1096,7 +1103,7 @@ describe("runClose", () => {
         exitCode: EXIT_CODE.USAGE,
         context: {
           recovery: {
-            suggested_retry: expect.stringContaining("<reason>"),
+            suggested_retry: expect.stringContaining("pm update"),
           },
         },
       });

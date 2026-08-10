@@ -2,19 +2,36 @@ id: pm-ulqu
 title: "GH-519: close recovery bundle suggests --validate-close \"<value>\" for an enum flag and hides the real resolution-fields blocker"
 description: Make close failure recovery show enum values accurately and surface missing resolution fields before secondary validation guidance.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",gh-issue
 created_at: "2026-07-11T22:55:46.032Z"
-updated_at: "2026-07-26T05:56:30.681Z"
+updated_at: "2026-08-09T22:09:14.702Z"
+closed_at: "2026-08-09T22:09:14.140Z"
+completed_at: "2026-08-09T22:09:14.140Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "suggested_retry renders enum-valued flags with allowed values inline (--validate-close <off|warn|strict>) instead of a generic <value> placeholder; when strict close validation blocks a close, the FIRST error surfaces missing resolution/expected_result/actual_result with a suggested pm update retry carrying those flags; regression specs cover both the enum rendering and the blocker-first ordering; agent reaches the actionable error in 1 invocation instead of 3"
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-6y58,related,"2026-07-11T22:55:46.032Z",null,null
-  pm-9qcr,related,"2026-07-11T22:55:46.032Z",null,null
-  pm-mpbb,implements,"2026-07-26T05:56:30.452Z",null,null
+resolution: Ordered close recovery by executable validation phase and sourced placeholders from enum contracts.
+expected_result: The first recovery step is actionable and enum values are valid choices.
+actual_result: Focused regression tests and manual strict-close acceptance confirm executable ordering and domains.
+dependencies[3]{id,kind,created_at}:
+  pm-6y58,related,"2026-07-11T22:55:46.032Z"
+  pm-9qcr,related,"2026-07-11T22:55:46.032Z"
+  pm-mpbb,implements,"2026-07-26T05:56:30.452Z"
+comments[1]{created_at,author,text}:
+  "2026-08-09T22:09:12.720Z","harness:codex","Evidence: close recovery now reports the earliest actionable blocker and enum-domain placeholders before later metadata requirements; focused close and SDK recovery tests plus manual execution pass."
+learnings[1]{created_at,author,text}:
+  "2026-08-09T22:09:13.446Z","harness:codex","Recovery should follow execution order: reporting later validation before an earlier blocker creates a retry that cannot advance state."
+files[2]{path,scope,note}:
+  src/sdk/agent/command-recovery.ts,project,Enum-domain placeholder rendering
+  src/sdk/lifecycle/close.ts,project,Blocker-first close recovery
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts tests/unit/sdk/agent-command-primitives.spec.ts,project,240,Enum recovery and blocker ordering
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Enum recovery and close ordering
+close_reason: Blocker-first enum-aware close recovery is implemented.
 body: "GH-519 (open, enhancement + agent-experience labels, pm 2026.7.11). With governance-require-close-reason + strict close validation, pm close on an item lacking resolution fields emits missing: --validate-close and suggested_retry ... --validate-close \"<value>\". Two defects: (1) --validate-close is a mode enum (off|warn|strict) but renders as a free-text placeholder, so following the suggestion is GUARANTEED to fail with Invalid --validate-close mode; (2) the stated gap misdirects — the real blocker (missing resolution, expected_result, actual_result) only surfaces after two failed retries; three invocations to reach the actionable error. This is the third member of the placeholder-ignores-flag-value-domain family: GH-500/pm-6y58 fixed the BOOLEAN arity literally, GH-507/pm-9qcr fixed extension-contract boolean arity, this is the ENUM domain — recovery rendering still has no notion of a flag's value domain. Consider fixing the class (render from the flag's declared contract domain) rather than a third point patch; pm-srns uniform-output-contract territory is adjacent."

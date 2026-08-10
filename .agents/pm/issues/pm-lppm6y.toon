@@ -1,0 +1,29 @@
+id: pm-lppm6y
+title: "GH-956: lossless acceptance-criteria replacement and unmatched-removal failure contract"
+description: Prevent a composed remove-and-replace update from silently discarding unrelated acceptance criteria; make destructive and unmatched list mutations explicit and machine-actionable.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-09T22:12:37.531Z"
+updated_at: "2026-08-09T22:16:20.387Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: Unmatched removal fails or requires an explicit allow-noop contract; replacing nonempty acceptance criteria is explicitly named and reports discarded entries; one-entry repair has an atomic operation that preserves unrelated criteria; CLI SDK MCP bulk transaction help and completions share semantics; tests cover delimiter normalization composed flags warnings exits and history atomicity
+goal: project management = context management
+objective: Make acceptance-criteria mutations lossless and failure-atomic
+value: Agents cannot silently erase closure contracts while repairing one criterion
+why_now: GitHub #956 demonstrates a successful zero-exit path that destroys unrelated acceptance criteria
+parent: pm-mpbb
+risk: high
+confidence: high
+severity: high
+expected_result: Repairing one criterion preserves every unrelated criterion or fails without mutation
+actual_result: An unmatched remove plus replacing --ac exits successfully and drops other criteria
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-inn5y5,related,"2026-08-09T22:12:37.531Z","harness:codex","cli:create:dep",detected
+  pm-mpbb,implements,"2026-08-09T22:12:37.531Z","harness:codex","cli:create:dep",detected
+  pm-xh82,discovered_from,"2026-08-09T22:12:37.531Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-09T22:12:37.531Z","harness:codex","Duplicate-check evidence: searched every status for GH-956, remove-ac unmatched behavior, replace-only --ac, and acceptance-criteria loss. Closed pm-xh82 deliberately added exact-match warnings and replace-then-add composition; #956 proves the remaining destructive combination, while pm-inn5y5 concerns branch merge storage, so this is distinct follow-on work."
+body: ""

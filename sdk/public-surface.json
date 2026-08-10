@@ -5749,6 +5749,12 @@
           "signature": "readonly [\"tags\", \"dependencies\", \"comments\", \"notes\", \"learnings\", \"files\", \"tests\", \"test_runs\", \"docs\", \"reminders\", \"events\"]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ItemAddressInvocationResult",
+          "signature": "export interface ItemAddressInvocationResult { argv: string[]; changed: boolean; conflict: boolean; itemId?: string; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "ItemContextRelevanceCandidate",
@@ -6689,6 +6695,12 @@
           "kind": "function",
           "name": "normalizeExtensionContributionInventory",
           "signature": "(value: unknown) => ExtensionContributionInventory | null | undefined | calls: (value: unknown) => ExtensionContributionInventory | null | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "normalizeItemAddressInvocation",
+          "signature": "(argv: string[]) => ItemAddressInvocationResult | calls: (argv: string[]) => ItemAddressInvocationResult"
         },
         {
           "classification": "supported",
@@ -8899,6 +8911,12 @@
           "signature": "(arg: string) => string | calls: (arg: string) => string"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "rankCommandPaths",
+          "signature": "(commandPaths: string[], queryToken: string) => string[] | calls: (commandPaths: string[], queryToken: string) => string[]"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "RankedContextCandidate",
@@ -9985,6 +10003,12 @@
           "signature": "(result: GuideResult) => string | calls: (result: GuideResult) => string"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "renderMissingOptionRetry",
+          "signature": "(invocationArgv: string[], commandName: string, missingLabels: string[]) => string | undefined | calls: (invocationArgv: string[], commandName: string, missingLabels: string[]) => string | undefined"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "renderNextMarkdown",
@@ -10177,6 +10201,12 @@
           "signature": "(raw: string | number | undefined, fallback: number) => number | calls: (raw: string | number | undefined, fallback: number) => number"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveCreateExplicitEmptyFlag",
+          "signature": "(optionKey: string) => string | undefined | calls: (optionKey: string) => string | undefined"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "ResolvedAuthorIdentity",
@@ -10343,6 +10373,12 @@
           "kind": "value",
           "name": "resolveMissingMetadataFilters",
           "signature": "(options: { filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; filterReviewerMissing?: boolean; filterRiskMissing?: boolean; filterConfidenceMissing?: boolean; filterSprintMissing?: boolean; filterReleaseMissing?: boolean; }) => MissingMetadataFilters | calls: (options: { filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; filterReviewerMissing?: boolean; filterRiskMissing?: boolean; filterConfidenceMissing?: boolean; filterSprintMissing?: boolean; filterReleaseMissing?: boolean; }) => MissingMetadataFilters"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveMissingOptionPlaceholder",
+          "signature": "(commandName: string, missingLabel: string) => string | null | undefined | calls: (commandName: string, missingLabel: string) => string | null | undefined"
         },
         {
           "classification": "advanced_export",
@@ -11845,6 +11881,12 @@
           "signature": "export type SchemaSubcommand = (typeof SCHEMA_SUBCOMMANDS)[number];"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "scoreCommandPathMatch",
+          "signature": "(commandPath: string, queryToken: string) => number | calls: (commandPath: string, queryToken: string) => number"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "scoreContextCandidates",
@@ -12527,6 +12569,18 @@
           "kind": "function",
           "name": "summarizeMergeReceipt",
           "signature": "(receipt: MergeDecisionReceipt) => MergeDecisionReceiptSummary | calls: (receipt: MergeDecisionReceipt) => MergeDecisionReceiptSummary"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "supportsCreateExplicitEmpty",
+          "signature": "(optionKey: string) => boolean | calls: (optionKey: string) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "supportsItemIdAlias",
+          "signature": "(commandName: string | undefined) => boolean | calls: (commandName: string | undefined) => boolean"
         },
         {
           "classification": "advanced_export",
