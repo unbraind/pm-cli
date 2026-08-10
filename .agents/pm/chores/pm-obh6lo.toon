@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-08-10T07:04:30.062Z"
-updated_at: "2026-08-10T08:26:24.254Z"
+updated_at: "2026-08-10T08:27:14.291Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f40a3612ddfb4cf32376b325"
 author: "harness:codex"
@@ -26,4 +26,17 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
 comments[2]{created_at,author,text}:
   "2026-08-10T07:04:30.062Z","harness:codex","Duplicate-check evidence: searched every status for the GitHub Actions group,five updates,PR #958,pnpm/action-setup 6.0.10,CodeQL 4.37.6,and CodSpeed 5.0.3. Closed pm-2czc covers an older lockstep compatibility incident,not this current grouped refresh; no current item owns PR #958."
   "2026-08-10T08:26:24.254Z","harness:codex","Exact-head dependency evidence: Dependabot PR #958 head b5348c5308ab46de01cff25eaeeb6d69cae358b4 is mergeable with all CI, four coverage shards, aggregate coverage, CodeQL, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, docs, CodSpeed, CodeFactor, DeepScan, Hound, Semgrep, and Codecov green. Every bot status comment was reacted to and given an explicit disposition; Greptile exclusion is recorded as unavailable rather than approval. The immutable workflow changes will be incorporated into the broad feature branch to avoid consuming the sole daily auto-release before the SDK tranche lands."
+files[8]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,Pinned grouped Actions update from PR 958
+  .github/workflows/ci.yml,project,Pinned grouped Actions update from PR 958
+  .github/workflows/codeql.yml,project,Pinned grouped Actions update from PR 958
+  .github/workflows/codspeed.yml,project,Pinned grouped Actions update from PR 958
+  .github/workflows/docs.yml,project,Pinned grouped Actions update from PR 958
+  .github/workflows/nightly.yml,project,Pinned grouped Actions update from PR 958
+  .github/workflows/release.yml,project,Pinned grouped Actions update from PR 958
+  .github/workflows/scorecard.yml,project,Pinned grouped Actions update from PR 958
+tests[1]{command,scope,timeout_seconds}:
+  "pnpm security:scan && pnpm quality:docs-skills && node scripts/bench/cli-transport-floor.mjs --check",project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msmyxcku-yng4rl,test,passed,"2026-08-10T08:26:55.920Z","2026-08-10T08:27:14.286Z","2026-08-10T08:27:14.286Z",1,0,0
 body: ""
