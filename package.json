@@ -198,7 +198,7 @@
     "node": ">=22.18.0"
   },
   "dependencies": {
-    "@sentry/node": "10.69.0",
+    "@sentry/node": "10.70.0",
     "@toon-format/toon": "^4.1.1",
     "@types/node": ">=22",
     "commander": "^15.0.0",

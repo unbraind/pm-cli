@@ -1,0 +1,43 @@
+id: pm-fb0lkg
+title: Evaluate and refresh @sentry/node 10.70 with packed-consumer proof
+description: "Evaluate the registry-current @sentry/node 10.70.0 release discovered during final dependency closeout, adopt it only if the runtime, strict NodeNext declaration graph, isolated packed consumer, telemetry gate, security scans, and exact repository coverage all pass, and leave the separately canonical npm-package-arg 14 and TypeScript 7 major deferrals unchanged."
+type: Chore
+status: in_progress
+priority: 2
+tags[5]: dependencies,packed-consumer,release-gate,sentry,telemetry
+created_at: "2026-08-11T11:15:12.377Z"
+updated_at: "2026-08-11T11:34:41.416Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#f016837593b4e6bc7293988d"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: package.json and pnpm-lock.yaml resolve @sentry/node 10.70.0 with no 10.69 runtime residue; the strict packed NodeNext SDK consumer and executable containment gates pass against a fresh tarball; Sentry telemetry audit security typecheck package and exact 100/100/100/100 coverage gates pass; pnpm outdated reports only the canonically deferred npm-package-arg 14 and TypeScript 7 majors
+value: Keep observability current without repeating the Sentry 10.68 published-declaration regression.
+outcome: A reproducible safe 10.70 adoption or an evidence-backed incompatibility disposition.
+why_now: The final all-dependency inventory after PR #977 found 10.70.0 as the sole unowned compatible candidate.
+parent: pm-u9d0
+risk: medium
+confidence: high
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-67b84b,discovered_from,"2026-08-11T11:15:12.377Z","harness:codex","cli:create:dep",detected
+  pm-7564ov,supersedes,"2026-08-11T11:15:12.377Z","harness:codex","cli:create:dep",detected
+  pm-do5b,related,"2026-08-11T11:15:12.377Z","harness:codex","cli:create:dep",detected
+  pm-ksr40d,related,"2026-08-11T11:15:12.377Z","harness:codex","cli:create:dep",detected
+  pm-r31390,related,"2026-08-11T11:15:12.377Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-11T11:15:12.377Z","harness:codex","Duplicate-check evidence 2026-08-11: all-status searches for @sentry/node 10.70.0 and Sentry dependency refreshes found the closed 10.68 rejection pm-r31390 and successful 10.69 refresh pm-7564ov, but no item owns 10.70.0. The final PR #977 dependency inventory discovered this candidate after pm-67b84b closed; incompatible npm-package-arg 14 and TypeScript 7 majors remain canonically owned by pm-ksr40d and pm-do5b."
+  "2026-08-11T11:34:40.745Z","harness:codex","TDD and compatibility evidence 2026-08-11: upgrading to @sentry/node 10.70.0 first produced the intended red package-manifest ratchet (expected 10.69.0). After updating that existing contract and rationale, 87 linked focused tests and an expanded 110-test Sentry/package/packed-smoke set passed. The real smoke-npx-from-pack temporary-project workflow exited successfully, proving the packed executable and strict NodeNext consumer declaration graph. Exact repository coverage then passed all 7,223 tests across 483 files at 100/100/100/100; typecheck, ESLint, zero-duplicate detection, package artifact, Sentry/telemetry, and audit gates also pass. pnpm outdated now reports only the separately tracked npm-package-arg 14 and TypeScript 7 majors."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T11:34:41.416Z","harness:codex",Exact dependency pins should be guarded by a deliberately red version ratchet plus a real packed strict-consumer compile; registry engine compatibility alone would not have caught the prior Sentry 10.68 declaration defect.
+files[3]{path,scope,note}:
+  package.json,project,exact public Sentry runtime pin
+  pnpm-lock.yaml,project,reproducible Sentry 10.70 dependency graph
+  tests/unit/packages/package-manifest.spec.ts,project,packed-consumer declaration ratchet and isolated tarball boundary
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry/instrument.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/packages/package-manifest.spec.ts,project,300
+  "pnpm quality:package-artifact && pnpm sentry:telemetry:gate -- --telemetry-mode best-effort && pnpm audit --audit-level low",project,600
+  node scripts/run-tests.mjs coverage -- --reporter=dot --coverage.reporter=json-summary --maxWorkers=4,project,1200
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msokntif-7ibd2w,test,failed,"2026-08-11T11:16:05.260Z","2026-08-11T11:23:27.399Z","2026-08-11T11:23:27.399Z",1,2,0
+  test-local-msol1wqu-6fo1ch,test,passed,"2026-08-11T11:26:40.443Z","2026-08-11T11:34:24.773Z","2026-08-11T11:34:24.773Z",3,0,0
+body: ""
