@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-970: repeated row contracts consume half of agent read output without a suppression contract ([pm-gjjurs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gjjurs.toon))
+- The output encoding named toon has no tabular array form, so every row collection pays three to five lines per row while the storage format beside it uses the encoding correctly ([pm-5y05kq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5y05kq.toon))
+- pm activity answers what happened to one item in the last half hour when the agent asked what changed in the workspace: 20 rows cover 5 of the 272 items touched in 24 hours and none carries a title ([pm-j1r8gl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-j1r8gl.toon))
+- pm stats default output is dominated by rows that carry no information: 7 of 17 type buckets are zero, the status split agents actually need is missing, and the row contract costs more than the data ([pm-7nqo6b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7nqo6b.toon))
+
+### Other
+
+- Refresh compatible tsx 4.23.12 and esbuild 0.28.2 patches ([pm-67b84b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-67b84b.toon))
+
 ## 2026.8.11 - 2026-08-11
 
 ### Added

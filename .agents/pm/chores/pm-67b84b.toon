@@ -2,13 +2,13 @@ id: pm-67b84b
 title: Refresh compatible tsx 4.23.12 and esbuild 0.28.2 patches
 description: "Adopt the two registry-current compatible toolchain patches discovered during the 2026-08-11 broad context-efficiency SDK/CLI delivery, regenerate the pnpm lockfile, and prove the exact combined head through the full quality, coverage, security, package, and consumer gates."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[3]: dependencies,release-gate,toolchain
 created_at: "2026-08-11T08:24:23.413Z"
-updated_at: "2026-08-11T09:18:24.781Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#f016837593b4e6bc7293988d"
+updated_at: "2026-08-11T11:02:41.251Z"
+closed_at: "2026-08-11T11:02:02.005Z"
+completed_at: "2026-08-11T11:02:02.005Z"
 author: "harness:codex"
 estimated_minutes: 45
 acceptance_criteria: package.json and pnpm-lock.yaml resolve tsx 4.23.12 and esbuild 0.28.2; pnpm audit is clean; only the canonically blocked npm-package-arg 14 and TypeScript 7 majors remain outdated; the exact combined SDK/CLI head passes 100/100/100/100 coverage and all release gates
@@ -18,13 +18,17 @@ why_now: "The user requires no compatible dependency updates to remain after thi
 parent: pm-u9d0
 risk: low
 confidence: high
+resolution: Refreshed compatible tsx and esbuild patches and enforced a single current esbuild resolution.
+expected_result: All compatible dependency patches are current without widening runtime constraints or leaving security debt.
+actual_result: "The merged lockfile resolves tsx 4.23.12 and esbuild 0.28.2; audit, security, package, and exact coverage gates pass."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-do5b,related,"2026-08-11T08:24:58.377Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,related,"2026-08-11T08:24:58.377Z","harness:codex","cli:update:dep",detected
   pm-nw1y14,supersedes,"2026-08-11T08:24:58.377Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-11T08:24:23.413Z","harness:codex","Duplicate check (all statuses): searches for tsx 4.23.12, esbuild 0.28.2, compatible tooling refresh, npm-package-arg 14, and TypeScript 7 found prior closed patch tranches pm-nw1y14/pm-8l1m5t plus distinct canonical incompatible-major items pm-ksr40d and pm-do5b. No item owns these exact new patch versions, so this version-specific child of pm-u9d0 is canonical."
   "2026-08-11T09:18:24.009Z","harness:codex","Evidence 2026-08-11: refreshed tsx to ^4.23.12 and esbuild to 0.28.2, raised the workspace override floor, and confirmed pnpm resolves only esbuild 0.28.2. pnpm audit reports zero vulnerabilities across 384 dependencies; fresh Trivy, credential scan, typecheck, contracts, package artifact, and exact 100% coverage gates pass. Remaining outdated entries are only the separately tracked incompatible npm-package-arg 14 and TypeScript 7 majors."
+  "2026-08-11T11:01:54.648Z","harness:codex","Merged-head evidence 2026-08-11: PR #977 merged to main at 77bc5a8262e3b2c339d689b6b150d4d4f6371200. All required exact-head GitHub checks passed, all actionable review threads were resolved, and every bot response was read, reacted to, and acknowledged; final CodeRabbit and Sourcery requests were rate-limited and are recorded as provider limitations rather than approval. Local exact coverage passed 7,223 tests across 483 files at 100/100/100/100, and packed CLI/SDK acceptance passed in an isolated temporary project."
 learnings[1]{created_at,author,text}:
   "2026-08-11T09:18:24.781Z","harness:codex",A compatible patch refresh should also ratchet transitive overrides so the lockfile cannot retain an older vulnerable or inconsistent toolchain copy; incompatible majors remain separate canonical work with live peer/runtime evidence.
 files[3]{path,scope,note}:
@@ -34,4 +38,5 @@ files[3]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs coverage -- --reporter=dot --coverage.reporter=json-summary --maxWorkers=4,project,900
   "pnpm typecheck && pnpm lint && pnpm contracts:check && pnpm quality:package-artifact && pnpm security:scan",project,1200
+close_reason: "Delivered the compatible tsx 4.23.12 and esbuild 0.28.2 refresh in merged PR #977 with a single enforced esbuild resolution, zero audit vulnerabilities, and exact full-gate proof."
 body: ""

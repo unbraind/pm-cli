@@ -2,26 +2,30 @@ id: pm-5y05kq
 title: "The output encoding named toon has no tabular array form, so every row collection pays three to five lines per row while the storage format beside it uses the encoding correctly"
 description: "Item files on disk use real TOON: a length-marked tabular header followed by CSV rows (a dependencies block with an explicit row count and column list, tags with a length marker). The renderer behind --output-format toon in the output module has no tabular branch at all - arrays of uniform flat objects render as YAML-style expanded blocks, one line per field per row, with no length marker anywhere. Measured on the live tracker: activity rows 2046 bytes expanded versus 1307 tabular (36 percent smaller), list rows 3948 versus 3074 (22 percent), next rows 2062 versus 1405 (32 percent). The cost is paid by every read command that returns a row collection, and an agent that learned the tabular encoding from item files cannot reuse that knowledge on command output. This is the encoding half of the same waste that the row-contract suppression item measures on the envelope half."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[5]: agent-ux,context-efficiency,output-contracts,token-budget,toon
 created_at: "2026-08-11T05:24:19.788Z"
-updated_at: "2026-08-11T09:18:21.849Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#f016837593b4e6bc7293988d"
+updated_at: "2026-08-11T11:02:40.091Z"
+closed_at: "2026-08-11T11:01:58.897Z"
+completed_at: "2026-08-11T11:01:58.897Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The toon renderer emits a length-marked tabular header plus CSV rows for arrays whose entries are flat objects sharing one key set, and falls back to the current expanded form for every other shape; Values containing a separator, a quote or a newline are quoted and escaped so a rendered tabular row round-trips through the existing toon decoder; The active row encoding is discoverable from the output contract or its replacement, so agents parse tabular and expanded output without guessing; The per-command saving is measured in the token-budget-gate corpus and declared as a ratchet floor rather than recorded as a one-time improvement; The json encoding is unchanged and existing snapshot fixtures are regenerated in the same change"
 parent: pm-5t33or
 risk: medium
 confidence: medium
+resolution: Added conservative canonical tabular TOON rendering for uniform flat object arrays with strict escaping and recursive fallback.
+expected_result: Uniform row collections render compactly and round-trip without changing JSON or losing heterogeneous and nested values.
+actual_result: "Merged renderer, decoder-oracle tests, output contracts, and token ratchets prove compact tabular rows and lossless fallback."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gjjurs,related,"2026-08-11T05:24:19.788Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-08-11T05:24:19.788Z","harness:claude-code","cli:create:dep",detected
   pm-o87av6,related,"2026-08-11T05:24:19.788Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-11T05:25:46.048Z","harness:claude-code","Measurement and implementation map, taken on the live tracker at 2026-08-11.\n\nThe asymmetry\nAn item file on disk encodes a dependency block as a length-marked tabular header naming the row count and the column list, followed by one CSV row per dependency, and encodes tags as a length-marked inline list. That is the TOON tabular form and it is what makes the storage format compact.\n\nThe renderer behind --output-format toon does not have that branch. Reading it end to end: the array case emits one dash-prefixed block per entry and recurses, and the object case emits one key-colon-value line per field. There is no uniform-shape detection, no column list, and no length marker anywhere in the output path. What the CLI calls toon is a YAML-shaped dialect that happens to share the name.\n\nMeasured cost, rows only, envelope excluded\n- activity default compact, 20 rows over 4 columns: 2046 bytes expanded, 1307 tabular, 36 percent smaller.\n- list --limit 20, 20 rows over 4 columns: 3948 expanded, 3074 tabular, 22 percent smaller.\n- next, 5 rows over 15 columns: 2062 expanded, 1405 tabular, 32 percent smaller.\n\nThe saving grows with row count and shrinks with column count, which is the opposite of how the current renderer behaves - it pays a key name per field per row regardless.\n\nWhy this is worth separating from the two command items\nThe stats and activity items each change one command. This changes the cost of every command that returns a row collection: list, list-open, list-all, list-closed, search, next, context, activity, history, deps, aggregate, duplicates, graph and the annotation readers. It is also the only one of the four that an agent can verify against a second implementation already in the repository, because the storage encoder demonstrates the target form.\n\nImplementation notes\n- Detection has to be conservative: tabular only when every entry is a flat object with an identical key set and no nested values, otherwise fall back to today's expanded form. A mixed array must not silently lose fields.\n- Escaping has to satisfy the existing toon decoder, which is the round-trip oracle already present in the tree.\n- The active encoding needs to be discoverable, otherwise a parser written against expanded output breaks silently on the first uniform collection. That discoverability lands on whatever survives the row-contract suppression work.\n"
   "2026-08-11T09:18:21.139Z","harness:codex","Evidence 2026-08-11: uniform flat object arrays now use the canonical @toon-format/toon tabular encoding; mixed and nested values retain the recursive fallback. Strict decoder round trips, escaping cases, output snapshots, packed CLI usage, and the 100% coverage run all pass. Token budgets were ratcheted to the smaller encoding."
+  "2026-08-11T11:01:53.501Z","harness:codex","Merged-head evidence 2026-08-11: PR #977 merged to main at 77bc5a8262e3b2c339d689b6b150d4d4f6371200. All required exact-head GitHub checks passed, all actionable review threads were resolved, and every bot response was read, reacted to, and acknowledged; final CodeRabbit and Sourcery requests were rate-limited and are recorded as provider limitations rather than approval. Local exact coverage passed 7,223 tests across 483 files at 100/100/100/100, and packed CLI/SDK acceptance passed in an isolated temporary project."
 learnings[1]{created_at,author,text}:
   "2026-08-11T09:18:21.849Z","harness:codex",TOON's token advantage depends on selecting tabular encoding only when every row has the same flat keys; preserving the recursive fallback keeps heterogeneous and nested projections lossless.
 files[8]{path,scope,note}:
@@ -38,4 +42,5 @@ tests[2]{command,scope,timeout_seconds}:
   node scripts/release/token-budget-gate.mjs,project,240
 docs[1]{path,scope,note}:
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project,canonical uniform-row TOON encoding contract
+close_reason: "Delivered canonical tabular TOON for uniform flat rows in merged PR #977 with strict escaping round trips, conservative fallback behavior, and token-budget ratchets."
 body: ""
