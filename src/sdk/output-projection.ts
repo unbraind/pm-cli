@@ -477,11 +477,13 @@ function resolveGetReceipt(
     "schedule",
   ];
   const materialGroups = MATERIAL_FIELD_GROUPS_BY_RESULT.get(result);
+  const ownerFor = (name: string): Record<string, unknown> =>
+    itemGroups.includes(name) || name === "body" ? item : result;
   const groups = ["body", ...itemGroups, ...resultGroups.slice(1)]
     .filter((name) =>
       materialGroups === undefined ||
       materialGroups.has(name) ||
-      Object.hasOwn(itemGroups.includes(name) || name === "body" ? item : result, name),
+      Object.hasOwn(ownerFor(name), name),
     )
     .map((name) => ({
       name,
@@ -491,7 +493,7 @@ function resolveGetReceipt(
     groups,
     new Set(
       groups.flatMap(({ name }) =>
-        !Object.hasOwn(itemGroups.includes(name) || name === "body" ? item : result, name)
+        !Object.hasOwn(ownerFor(name), name)
           ? []
           : [name],
       ),

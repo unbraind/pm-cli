@@ -8,6 +8,7 @@ import {
   runAssuranceAction,
   runAssuranceDispatch,
 } from "../../../src/sdk/governance/assurance-action.js";
+import { normalizeAssuranceMutation } from "../../../src/sdk/governance/assurance-mutation-error.js";
 import { runClose } from "../../../src/sdk/lifecycle/close.js";
 import { runCreate } from "../../../src/sdk/lifecycle/create.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -210,6 +211,10 @@ describe("assurance action transport", () => {
         await expect(refusal()).rejects.toMatchObject({
           name: "PmCliError",
           exitCode: EXIT_CODE.USAGE,
+          context: {
+            code: "invalid_argument_value",
+            reason: "assurance_mutation_refused",
+          },
         });
       }
     });
@@ -229,6 +234,14 @@ describe("assurance action transport", () => {
         context: { code: "assurance_registry_invalid" },
       });
     });
+  });
+
+  it("preserves unexpected TypeErrors outside the typed refusal boundary", async () => {
+    const unexpected = new TypeError("unexpected internal fault");
+
+    await expect(
+      normalizeAssuranceMutation(() => Promise.reject(unexpected)),
+    ).rejects.toBe(unexpected);
   });
 
   it("keeps CRUD and generic dispatch projections aligned", async () => {

@@ -65,6 +65,8 @@ function compareJsonValues(
   right: unknown,
   fallback: unknown,
 ): number {
+  // Preserve the original v1 comparator byte-for-byte: replacing JSON.stringify
+  // with stableStringify would invalidate immutable hashes from legacy streams.
   return JSON.stringify(left ?? fallback).localeCompare(
     JSON.stringify(right ?? fallback),
   );

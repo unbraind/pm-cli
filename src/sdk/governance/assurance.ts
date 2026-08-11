@@ -21,6 +21,7 @@ import {
   getWorkspaceHistoryPath,
 } from "../runtime-primitives.js";
 import { MAX_ASSURANCE_VERDICT_LIMIT } from "./assurance-limits.js";
+import { AssuranceMutationRefusalError } from "./assurance-mutation-error.js";
 
 /** Current serialized assurance registry format. */
 export const ASSURANCE_DOCUMENT_VERSION = 1 as const;
@@ -504,20 +505,24 @@ const DEFAULT_VERDICT_LIMIT = 50;
 
 function requireStableId(value: string, field: string): void {
   if (!ID_PATTERN.test(value)) {
-    throw new TypeError(`${field} must be a stable lowercase id`);
+    throw new AssuranceMutationRefusalError(
+      `${field} must be a stable lowercase id`,
+    );
   }
 }
 
 function requireFiniteNonNegative(value: number, field: string): void {
   if (!Number.isFinite(value) || value < 0) {
-    throw new TypeError(`${field} must be a finite non-negative number`);
+    throw new AssuranceMutationRefusalError(
+      `${field} must be a finite non-negative number`,
+    );
   }
 }
 
 function boundFor(assertion: AssuranceAssertionDefinition): AssuranceBound {
   const present = POLARITY_KEYS.filter((key) => assertion[key] !== undefined);
   if (present.length !== 1) {
-    throw new TypeError(
+    throw new AssuranceMutationRefusalError(
       `assertion ${assertion.id} must declare exactly one polarity`,
     );
   }
@@ -628,14 +633,18 @@ export function validateMeasurementDefinition(
   }
   const source = definition.source;
   if (source.kind === "items" && source.field !== undefined && source.equals === undefined) {
-    throw new TypeError("items source with field requires equals");
+    throw new AssuranceMutationRefusalError(
+      "items source with field requires equals",
+    );
   }
   if (
     source.kind === "dependency_kind" &&
     (typeof source.dependency_kind !== "string" ||
       source.dependency_kind.trim().length === 0)
   ) {
-    throw new TypeError("dependency_kind source requires dependency_kind");
+    throw new AssuranceMutationRefusalError(
+      "dependency_kind source requires dependency_kind",
+    );
   }
   if (
     (source.kind === "graph" ||
@@ -643,7 +652,9 @@ export function validateMeasurementDefinition(
       source.kind === "health") &&
     (typeof source.field !== "string" || source.field.trim().length === 0)
   ) {
-    throw new TypeError(`${source.kind} source requires field`);
+    throw new AssuranceMutationRefusalError(
+      `${source.kind} source requires field`,
+    );
   }
   if (source.kind === "provider") {
     requireStableId(source.provider, "provider source provider");
@@ -662,24 +673,34 @@ export function validateAssertionDefinition(
     typeof definition.owner_item_id !== "string" ||
     definition.owner_item_id.trim().length === 0
   ) {
-    throw new TypeError("assertion.owner_item_id is required");
+    throw new AssuranceMutationRefusalError(
+      "assertion.owner_item_id is required",
+    );
   }
   const bound = boundFor(definition);
   if (typeof bound.value === "number" && !Number.isFinite(bound.value)) {
-    throw new TypeError(`assertion.${bound.polarity} must be a finite number`);
+    throw new AssuranceMutationRefusalError(
+      `assertion.${bound.polarity} must be a finite number`,
+    );
   }
   if (definition.lifetime === "retire" && !definition.retire_reason?.trim()) {
-    throw new TypeError("retired assertion requires retire_reason");
+    throw new AssuranceMutationRefusalError(
+      "retired assertion requires retire_reason",
+    );
   }
   if (definition.scope.kind === "filter") {
     requireStableId(definition.scope.measurement_id, "assertion.scope.measurement_id");
   }
   const cases = definition.negative_control?.cases;
   if (!Array.isArray(cases) || !cases.some((entry) => entry.expected === "pass") || !cases.some((entry) => entry.expected === "fail")) {
-    throw new TypeError("assertion negative control requires pass and fail cases");
+    throw new AssuranceMutationRefusalError(
+      "assertion negative control requires pass and fail cases",
+    );
   }
   if (!proveNegativeControl(definition)) {
-    throw new TypeError(`assertion ${definition.id} negative control does not prove its bound`);
+    throw new AssuranceMutationRefusalError(
+      `assertion ${definition.id} negative control does not prove its bound`,
+    );
   }
   return definition;
 }
@@ -690,11 +711,15 @@ export function validateGateDefinition(
 ): AssuranceGateDefinition {
   requireStableId(definition.id, "gate.id");
   if (definition.assertion_ids.length === 0) {
-    throw new TypeError("gate requires at least one assertion");
+    throw new AssuranceMutationRefusalError(
+      "gate requires at least one assertion",
+    );
   }
   for (const id of definition.assertion_ids) requireStableId(id, "gate.assertion_id");
   if (definition.triggers.length === 0) {
-    throw new TypeError("gate requires at least one trigger");
+    throw new AssuranceMutationRefusalError(
+      "gate requires at least one trigger",
+    );
   }
   return definition;
 }
@@ -704,17 +729,27 @@ export function validateAssuranceDocument(
   document: AssuranceDocument,
 ): AssuranceDocument {
   if (document.version !== ASSURANCE_DOCUMENT_VERSION) {
-    throw new TypeError(`unsupported assurance document version ${String(document.version)}`);
+    throw new AssuranceMutationRefusalError(
+      `unsupported assurance document version ${String(document.version)}`,
+    );
   }
   const ids = new Set<string>();
   for (const definition of document.measurements) {
     validateMeasurementDefinition(definition);
-    if (ids.has(`measurement:${definition.id}`)) throw new TypeError(`duplicate measurement ${definition.id}`);
+    if (ids.has(`measurement:${definition.id}`)) {
+      throw new AssuranceMutationRefusalError(
+        `duplicate measurement ${definition.id}`,
+      );
+    }
     ids.add(`measurement:${definition.id}`);
   }
   for (const definition of document.assertions) {
     validateAssertionDefinition(definition);
-    if (ids.has(`assertion:${definition.id}`)) throw new TypeError(`duplicate assertion ${definition.id}`);
+    if (ids.has(`assertion:${definition.id}`)) {
+      throw new AssuranceMutationRefusalError(
+        `duplicate assertion ${definition.id}`,
+      );
+    }
     ids.add(`assertion:${definition.id}`);
   }
   for (const definition of document.gates) {
@@ -722,14 +757,20 @@ export function validateAssuranceDocument(
     const missing = definition.assertion_ids.filter(
       (id) => !document.assertions.some((assertionDefinition) => assertionDefinition.id === id),
     );
-    if (missing.length > 0) throw new TypeError(`gate ${definition.id} references missing assertions: ${missing.join(", ")}`);
-    if (ids.has(`gate:${definition.id}`)) throw new TypeError(`duplicate gate ${definition.id}`);
+    if (missing.length > 0) {
+      throw new AssuranceMutationRefusalError(
+        `gate ${definition.id} references missing assertions: ${missing.join(", ")}`,
+      );
+    }
+    if (ids.has(`gate:${definition.id}`)) {
+      throw new AssuranceMutationRefusalError(`duplicate gate ${definition.id}`);
+    }
     ids.add(`gate:${definition.id}`);
   }
   const measurementIds = new Set(document.measurements.map((entry) => entry.id));
   for (const [measurementId, consumers] of collectMeasurementReferences(document)) {
     if (!measurementIds.has(measurementId)) {
-      throw new TypeError(
+      throw new AssuranceMutationRefusalError(
         `${consumers.join(", ")} references missing measurement ${measurementId}`,
       );
     }
@@ -1251,7 +1292,7 @@ export async function putAssuranceDeclaration(
       ) {
         const decision = (definition as AssuranceAssertionDefinition).authorization_decision;
         if (!decision || !options.authorized_decision_ids?.includes(decision)) {
-          throw new TypeError(
+          throw new AssuranceMutationRefusalError(
             `loosening assertion ${definition.id} requires a verified authorization_decision`,
           );
         }
@@ -1289,17 +1330,23 @@ export async function removeAssuranceDeclaration(
       if (kind === "measurement") {
         const consumers = collectMeasurementReferences(document).get(id);
         if (consumers && consumers.length > 0) {
-          throw new TypeError(
+          throw new AssuranceMutationRefusalError(
             `assurance measurement ${id} is referenced by ${consumers.join(", ")}`,
           );
         }
       }
       if (kind === "assertion" && document.gates.some((entry) => entry.assertion_ids.includes(id))) {
-        throw new TypeError(`assurance assertion ${id} is referenced by gate`);
+        throw new AssuranceMutationRefusalError(
+          `assurance assertion ${id} is referenced by gate`,
+        );
       }
       const collection = collectionFor(document, kind);
       const index = collection.findIndex((entry) => entry.id === id);
-      if (index < 0) throw new TypeError(`assurance ${kind} ${id} not found`);
+      if (index < 0) {
+        throw new AssuranceMutationRefusalError(
+          `assurance ${kind} ${id} not found`,
+        );
+      }
       collection.splice(index, 1);
       validateAssuranceDocument(document);
       return {

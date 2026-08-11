@@ -26,6 +26,7 @@ import {
   type AssuranceMutationReceipt,
 } from "./assurance.js";
 import { MAX_ASSURANCE_VERDICT_LIMIT } from "./assurance-limits.js";
+import { normalizeAssuranceMutation } from "./assurance-mutation-error.js";
 import { createAssuranceWorkspaceContext } from "./assurance-runtime.js";
 import { resolvePmRoot } from "../runtime-primitives.js";
 import { parseRuntimeInteger, readRuntimeString } from "../runtime-input.js";
@@ -176,22 +177,6 @@ function projectMutationReceipt(
   idOnly: boolean | undefined,
 ): AssuranceMutationReceipt | { id: string } {
   return idOnly === true ? { id: receipt.id } : receipt;
-}
-
-async function normalizeAssuranceMutation<T>(
-  operation: () => Promise<T>,
-): Promise<T> {
-  try {
-    return await operation();
-  } catch (error: unknown) {
-    if (error instanceof TypeError) {
-      throw new PmCliError(error.message, EXIT_CODE.USAGE, {
-        code: "invalid_argument_value",
-        reason: "assurance_mutation_refused",
-      });
-    }
-    throw error;
-  }
 }
 
 async function authorizedDecisionIds(
