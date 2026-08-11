@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: concurrency,github,package-exports,sdk
 created_at: "2026-08-11T08:33:49.248Z"
-updated_at: "2026-08-11T16:25:26.366Z"
+updated_at: "2026-08-11T16:29:51.797Z"
 closed_at: "2026-08-11T16:21:47.737Z"
 completed_at: "2026-08-11T16:21:47.737Z"
 author: "harness:codex"
@@ -26,13 +26,14 @@ customer_impact: Extension concurrency guards couple to an internal error code a
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-8t5x,supersedes,"2026-08-11T08:33:49.248Z","harness:codex","cli:create:dep",detected
   pm-9x6e,verifies,"2026-08-11T08:33:49.248Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-11T08:33:49.248Z","harness:codex","Duplicate check (all statuses): searched GH-975, isAlreadyClaimedError, already_claimed_by, claim race, and SDK exports. pm-8t5x owns the closed atomic-claim behavior and pm-9x6e owns the closed public-boundary capstone, but no item owns the missing predicate export. This new open issue is canonical for #975."
   "2026-08-11T15:05:38.328Z","harness:codex","TDD evidence 2026-08-11: the public-surface test first failed with isAlreadyClaimedError not a function. The predicate is now exported from @unbrained/pm-cli/sdk and /sdk/core and 25 focused lifecycle tests pass; packed-consumer proof remains in the release gate."
   "2026-08-11T15:14:10.280Z","harness:codex","Packed-consumer acceptance evidence: a tarball-installed ESM consumer exposed that instanceof PmCliError is false across duplicated SDK bundle identities. Added a cross-bundle regression, changed isAlreadyClaimedError to require Error + exact PmCliError name + context.code=already_claimed_by, repacked, and verified both node index.mjs execution and strict TypeScript 6 compilation with skipLibCheck=false. The packed consumer also completed npm audit with zero vulnerabilities."
   "2026-08-11T15:37:21.897Z","harness:codex","Repository-wide verification evidence: exact coverage gate passed 486 files / 7,230 tests at 100% statements, branches, functions, and lines. Packed ESM runtime and strict downstream TypeScript consumer checks passed independently."
   "2026-08-11T16:20:44.732Z","harness:codex","Final acceptance 2026-08-11: the linked 25-test claim lifecycle run passed. A tarball-installed ESM consumer and strict TypeScript 6 NodeNext consumer passed with skipLibCheck disabled; the exact 7,234-test 100/100/100/100 gate, public snapshot, package, npx, plugin, external-package, contract, audit, and security gates all passed."
   "2026-08-11T16:25:26.366Z","harness:codex","Release-candidate evidence: installed managed pm-changelog 2026.8.9 matches the latest npm version; replace-mode generation added this closed item to Unreleased with its canonical GitHub item link."
+  "2026-08-11T16:29:51.797Z","harness:codex","Delivery lineage: included in broad PR #981 (https://github.com/unbraind/pm-cli/pull/981), coordinated by pm-ajj4r7 through exact-head review, merge, and immutable release verification."
 learnings[1]{created_at,author,text}:
   "2026-08-11T16:20:44.263Z","harness:codex",Public predicates crossing independently bundled entrypoints cannot rely on instanceof identity. Structural checks should retain strict name and stable context-code guards while still requiring a genuine Error object.
 files[6]{path,scope,note}:

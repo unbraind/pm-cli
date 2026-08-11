@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,context-efficiency,output-contracts,token-budget
 created_at: "2026-08-10T22:59:19.233Z"
-updated_at: "2026-08-11T16:25:24.902Z"
+updated_at: "2026-08-11T16:29:50.425Z"
 closed_at: "2026-08-11T16:21:44.095Z"
 completed_at: "2026-08-11T16:21:44.095Z"
 author: "harness:codex"
@@ -27,13 +27,14 @@ customer_impact: Agents cannot trust the low-context depth control and spend mor
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,related,"2026-08-10T22:59:19.233Z","harness:codex","cli:create:dep",detected
   pm-p258tx,discovered_from,"2026-08-10T22:59:19.233Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-10T22:59:19.233Z","harness:codex","Duplicate-check evidence 2026-08-11: all-status search found the shipped omission-receipt primitive pm-p258tx and token-budget parent pm-5t33or, but no item covering the GH-969 monotonicity inversion. Canonical source: https://github.com/unbraind/pm-cli/issues/969."
   "2026-08-11T15:05:28.846Z","harness:codex","TDD evidence 2026-08-11: the new material-receipt test failed because no non-serialized materiality contract existed. The implementation now charges only material get groups, locates body at item.body, preserves explicit restore flags, and passed 26 focused output/get tests."
   "2026-08-11T15:37:20.453Z","harness:codex","Repository-wide verification evidence: exact coverage gate passed 486 files / 7,230 tests at 100% statements, branches, functions, and lines. Static quality, ESLint, jscpd zero clones, SDK snapshot, token-budget, context calibration, tracker measurement, graph composition, and record integrity gates passed."
   "2026-08-11T15:41:24.641Z","harness:codex","Acceptance recovery: the real Codex plugin smoke exposed a stale created.item.id assumption. Updated it to enforce the same lean changed_field_count/id/status envelope already required by the Claude smoke, with negative tests for stale and id-less envelopes. Focused 5-test suite, real Codex MCP lifecycle, and real Claude MCP lifecycle all pass."
   "2026-08-11T16:20:39.798Z","harness:codex","Final acceptance 2026-08-11: linked 26-test run passed in an isolated schema tracker; manual JSON measured 867 <= 973 <= 1120 bytes and TOON measured 609 <= 611 <= 611 bytes. Real Codex and Claude plugin lifecycles, packed npx, package artifact, contract, docs, security, and 10-package compatibility gates passed. Repository coverage is exact 100/100/100/100 across 486 files and 7,234 tests."
   "2026-08-11T16:25:24.902Z","harness:codex","Release-candidate evidence: installed managed pm-changelog 2026.8.9 matches the latest npm version; replace-mode generation added this closed item to Unreleased with its canonical GitHub item link."
+  "2026-08-11T16:29:50.425Z","harness:codex","Delivery lineage: included in broad PR #981 (https://github.com/unbraind/pm-cli/pull/981), coordinated by pm-ajj4r7 through exact-head review, merge, and immutable release verification."
 learnings[1]{created_at,author,text}:
   "2026-08-11T16:20:39.257Z","harness:codex","Omission receipts need producer-owned materiality evidence. Inferring materiality from an already projected value either bills defaults or hides recoverable context, so output projection should consume nonserialized source evidence."
 files[7]{path,scope,note}:

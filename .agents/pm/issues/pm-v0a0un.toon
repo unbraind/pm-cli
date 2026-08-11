@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:assurance","area:observability",error-taxonomy,release-gate,sentry
 created_at: "2026-08-11T15:52:37.247Z"
-updated_at: "2026-08-11T16:25:27.201Z"
+updated_at: "2026-08-11T16:29:52.683Z"
 closed_at: "2026-08-11T16:21:50.348Z"
 completed_at: "2026-08-11T16:21:50.348Z"
 author: "harness:codex"
@@ -30,11 +30,12 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-dqtzva,related,"2026-08-11T15:52:37.247Z","harness:codex","cli:create:dep",detected
   pm-qxo5iu,related,"2026-08-11T15:52:37.247Z","harness:codex","cli:create:dep",detected
   pm-wn6wot,discovered_from,"2026-08-11T15:52:37.247Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-11T15:52:45.472Z","harness:codex","Duplicate and live-evidence record 2026-08-11: all-status searches across Sentry classification, assurance authorization, assertion references, and undefined trim found the closed observability contracts pm-c8qa/pm-dqtzva/pm-qxo5iu and assurance parent pm-1jzupz, but no item owns PM-CLI-2Y/2Z/30. The authenticated reliability gate reported critical=0/high=3. Each latest event is handled, release 2026.8.11, count 1/2/1, tagged unclassified_runtime_error exit 1; no private payload, endpoint, token, event id, or host detail is recorded here."
   "2026-08-11T15:57:56.755Z","harness:codex","TDD evidence: the new action-transport regression failed red with raw TypeError for missing owner_item_id and also exposed concurrent raw reference/authorization rejections. The implementation now normalizes TypeError only around assurance put/remove into canonical invalid_argument_value usage errors, leaving non-TypeError evaluator/storage failures untouched; nested dependency_kind, graph, validate, health, and owner fields are type-checked before trim. Green evidence: 58 focused assurance/Sentry/CLI integration tests, focused ESLint, and full typecheck pass. Manual isolated CLI acceptance returns urn:pm-cli:error:invalid_argument_value, title assertion.owner_item_id is required, and exit_code=2 with Sentry disabled and no real tracker mutation."
   "2026-08-11T16:20:48.094Z","harness:codex","Final acceptance 2026-08-11: the linked 59-test assurance, Sentry-helper, and CLI integration run passed, including malformed, referenced, unauthorized, and corrupt-registry controls. Manual isolated CLI acceptance returned invalid_argument_value and exit 2 with Sentry disabled. The final exact gate passed 7,234 tests at 100/100/100/100, and contracts, generated error catalog, package, npx, real plugins, 10 external packages, audit, and credential scan passed. The three already-recorded external Sentry high issues remain unresolved historical live state and are not being misrepresented as cleared."
   "2026-08-11T16:25:27.201Z","harness:codex","Release-candidate evidence: installed managed pm-changelog 2026.8.9 matches the latest npm version; replace-mode generation added this closed item to Unreleased with its canonical GitHub item link."
+  "2026-08-11T16:29:52.683Z","harness:codex","Delivery lineage: included in broad PR #981 (https://github.com/unbraind/pm-cli/pull/981), coordinated by pm-ajj4r7 through exact-head review, merge, and immutable release verification."
 learnings[1]{created_at,author,text}:
   "2026-08-11T16:20:47.572Z","harness:codex",Normalize only at the narrow transport boundary where user-caused validation TypeErrors are distinguishable from infrastructure failures. Pair that normalization with field guards and a negative-control test proving non-validation failures keep their original taxonomy.
 files[7]{path,scope,note}:

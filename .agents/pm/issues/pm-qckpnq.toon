@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-context,github,merge-safety
 created_at: "2026-08-11T08:33:30.091Z"
-updated_at: "2026-08-11T16:25:25.887Z"
+updated_at: "2026-08-11T16:29:51.345Z"
 closed_at: "2026-08-11T16:21:46.413Z"
 completed_at: "2026-08-11T16:21:46.413Z"
 author: "harness:codex"
@@ -26,13 +26,14 @@ customer_impact: Agents can wrongly conclude their branch value survived and act
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-g5sx,verifies,"2026-08-11T08:33:30.091Z","harness:codex","cli:create:dep",detected
   pm-jtwsct,supersedes,"2026-08-11T08:33:30.091Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-11T08:33:30.091Z","harness:codex","Duplicate check (all statuses): searched GH-974, preferred/retained/discarded, stable_value_order, and merge receipts. Closed pm-g5sx, pm-jtwsct, pm-rh98vo, and pm-dlx7v7 establish the merge/receipt lineage but none owns this exact self-contradictory preferred-side contract. This new open issue is canonical for #974."
   "2026-08-11T15:05:43.201Z","harness:codex","TDD evidence 2026-08-11: direction coverage first failed because stable-value results exposed only preferred=ours. New item/driver/receipt outputs expose requested_preference while retained/discarded remains authoritative; legacy receipts normalize without re-emitting preferred, and 27 merge/reconciliation tests pass."
   "2026-08-11T15:07:30.187Z","harness:codex","Public contract evidence: sdk/public-surface.json records the intentional GH-974 correction from ambiguous preferred to requested_preference across item, driver, receipt, and summary types. The breaking-change acknowledgement names the reason; persisted legacy schema-v1 receipts remain readable and normalize at ingestion."
   "2026-08-11T15:37:21.443Z","harness:codex","Repository-wide verification evidence: exact coverage gate passed 486 files / 7,230 tests at 100% statements, branches, functions, and lines. Added explicit compatibility coverage for legacy receipts that have preferred and older receipts with neither preference key; current outputs remain requested_preference-only."
   "2026-08-11T16:20:43.116Z","harness:codex","Final acceptance 2026-08-11: the linked 27-test merge direction, receipt, safety, and reconciliation run passed, including legacy and pre-preference receipts. The acknowledged public SDK snapshot, exact 7,234-test 100/100/100/100 gate, package artifact, packed npx, plugin, external-package, contract, docs, audit, and security gates all passed."
   "2026-08-11T16:25:25.887Z","harness:codex","Release-candidate evidence: installed managed pm-changelog 2026.8.9 matches the latest npm version; replace-mode generation added this closed item to Unreleased with its canonical GitHub item link."
+  "2026-08-11T16:29:51.345Z","harness:codex","Delivery lineage: included in broad PR #981 (https://github.com/unbraind/pm-cli/pull/981), coordinated by pm-ajj4r7 through exact-head review, merge, and immutable release verification."
 learnings[1]{created_at,author,text}:
   "2026-08-11T16:20:42.587Z","harness:codex","A merge policy request and a merge outcome are different facts. Persist the request as requested_preference and make per-decision retained/discarded values the sole outcome evidence; compatibility belongs at ingestion, not in new output."
 files[7]{path,scope,note}:
