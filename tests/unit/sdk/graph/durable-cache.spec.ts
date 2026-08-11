@@ -189,6 +189,9 @@ describe("durable graph cache primitives", () => {
           nodes: 1,
           edges: 0,
           edges_by_kind: {},
+          edge_share_by_kind: {},
+          semantic_edges: 0,
+          semantic_edge_share: 0,
           active_nodes: 1,
           missing_nodes: 0,
           isolated_active_nodes: 1,
@@ -220,6 +223,10 @@ describe("durable graph cache primitives", () => {
         JSON.stringify({
           ...snapshot,
           affected_subjects_by_code: [1],
+        }),
+        JSON.stringify({
+          ...snapshot,
+          fingerprint: 7,
         }),
         JSON.stringify({
           ...snapshot,
@@ -295,8 +302,13 @@ describe("durable graph cache primitives", () => {
         expect(await loadGraphAuditBaseline(context.pmPath)).toBeUndefined();
       }
 
-      const { coverage_by_type: _legacyCoverage, ...legacyProfile } =
-        snapshot.profile;
+      const {
+        coverage_by_type: _legacyCoverage,
+        edge_share_by_kind: _legacyShares,
+        semantic_edges: _legacySemanticEdges,
+        semantic_edge_share: _legacySemanticShare,
+        ...legacyProfile
+      } = snapshot.profile;
       await writeFile(
         graphAuditBaselinePath(context.pmPath),
         JSON.stringify({ ...snapshot, profile: legacyProfile }),
@@ -304,7 +316,13 @@ describe("durable graph cache primitives", () => {
       );
       expect(await loadGraphAuditBaseline(context.pmPath)).toEqual({
         ...snapshot,
-        profile: { ...legacyProfile, coverage_by_type: {} },
+        profile: {
+          ...legacyProfile,
+          edge_share_by_kind: {},
+          semantic_edges: 0,
+          semantic_edge_share: 0,
+          coverage_by_type: {},
+        },
       });
     });
   });

@@ -78,6 +78,12 @@ export interface RelationshipCoverageProfile {
   edge_basis: "deduplicated_directed";
   /** Deterministic per-kind edge counts. */
   edges_by_kind: Record<string, number>;
+  /** Per-kind share of all deduplicated directed edges. */
+  edge_share_by_kind: Record<string, number>;
+  /** Edges carrying discovery, provenance, incident, or verification semantics. */
+  semantic_edges: number;
+  /** Share of all edges carrying discovery, provenance, incident, or verification semantics. */
+  semantic_edge_share: number;
   /** Nodes whose lifecycle status is active (non-terminal, non-missing). */
   active_nodes: number;
   /** Materialized placeholder nodes for referenced-but-absent items. */
@@ -116,6 +122,14 @@ export interface RelationshipAuditReport {
 
 /** Default bounded sample size applied to every finding family. */
 const DEFAULT_MAX_SAMPLE_SIZE = 25;
+
+/** Relationship kinds that preserve why work exists or how evidence supports it. */
+const SEMANTIC_CONTEXT_KINDS = new Set([
+  "discovered_from",
+  "incident_from",
+  "supersedes",
+  "verifies",
+]);
 
 /** Rank used to order findings by decreasing severity. */
 const SEVERITY_RANK: Record<RelationshipAuditSeverity, number> = {
@@ -738,17 +752,32 @@ function collectCoverageReport(
     (count) => `${count} active item(s) with exactly one relationship`,
     "Investigate for an honest second edge (story->task, defect family, cross-epic complement); do not fabricate one.",
   );
+  const edgeCount = assembly.graph.edges().length;
+  const sortedEdgesByKind = Object.fromEntries(
+    Object.entries(edgesByKind).sort(([left], [right]) =>
+      left.localeCompare(right),
+    ),
+  );
+  const semanticEdges = Object.entries(sortedEdgesByKind).reduce(
+    (count, [kind, value]) =>
+      count + (SEMANTIC_CONTEXT_KINDS.has(kind) ? value : 0),
+    0,
+  );
   return {
     findings,
     profile: {
       nodes: assembly.graph.nodes().length,
-      edges: assembly.graph.edges().length,
+      edges: edgeCount,
       edge_basis: "deduplicated_directed",
-      edges_by_kind: Object.fromEntries(
-        Object.entries(edgesByKind).sort(([left], [right]) =>
-          left.localeCompare(right),
-        ),
+      edges_by_kind: sortedEdgesByKind,
+      edge_share_by_kind: Object.fromEntries(
+        Object.entries(sortedEdgesByKind).map(([kind, count]) => [
+          kind,
+          count / edgeCount,
+        ]),
       ),
+      semantic_edges: semanticEdges,
+      semantic_edge_share: edgeCount === 0 ? 0 : semanticEdges / edgeCount,
       active_nodes: tallies.active,
       missing_nodes: tallies.missing,
       isolated_active_nodes: tallies.isolated,
@@ -886,6 +915,12 @@ export interface RelationshipAuditDelta {
     degree_leq_one_active_nodes: number;
     /** Signed per-kind edge-count deltas; unchanged kinds are dropped. */
     edges_by_kind: Record<string, number>;
+    /** Signed per-kind edge-share deltas; unchanged kinds are dropped. */
+    edge_share_by_kind: Record<string, number>;
+    /** Change in semantic-context edge count. */
+    semantic_edges: number;
+    /** Change in semantic-context edge share. */
+    semantic_edge_share: number;
     /** Signed per-type coverage deltas; unchanged types are dropped. */
     coverage_by_type: Record<string, RelationshipCoverageTypeProfile>;
   };
@@ -937,17 +972,32 @@ export function diffRelationshipAuditSnapshots(
     ]),
   ].sort();
   for (const type of typeKeys) {
-    const before = baselineCoverageByType[type];
-    const after = currentCoverageByType[type];
+    const before = Object.assign(
+      { active: 0, isolated: 0, degree_leq_one: 0 },
+      baselineCoverageByType[type],
+    );
+    const after = Object.assign(
+      { active: 0, isolated: 0, degree_leq_one: 0 },
+      currentCoverageByType[type],
+    );
     const delta = {
-      active: (after?.active ?? 0) - (before?.active ?? 0),
-      isolated: (after?.isolated ?? 0) - (before?.isolated ?? 0),
-      degree_leq_one:
-        (after?.degree_leq_one ?? 0) - (before?.degree_leq_one ?? 0),
+      active: after.active - before.active,
+      isolated: after.isolated - before.isolated,
+      degree_leq_one: after.degree_leq_one - before.degree_leq_one,
     };
     if (Object.values(delta).some((value) => value !== 0))
       coverageByType[type] = delta;
   }
+  const {
+    edge_share_by_kind: baselineEdgeShareByKind = {},
+    semantic_edges: baselineSemanticEdges = 0,
+    semantic_edge_share: baselineSemanticEdgeShare = 0,
+  } = baseline.profile;
+  const {
+    edge_share_by_kind: currentEdgeShareByKind = {},
+    semantic_edges: currentSemanticEdges = 0,
+    semantic_edge_share: currentSemanticEdgeShare = 0,
+  } = current.profile;
   return {
     baseline_saved_at: baseline.saved_at,
     same_snapshot: baseline.fingerprint === current.fingerprint,
@@ -972,6 +1022,12 @@ export function diffRelationshipAuditSnapshots(
         baseline.profile.edges_by_kind,
         current.profile.edges_by_kind,
       ),
+      edge_share_by_kind: diffCountRecords(
+        baselineEdgeShareByKind,
+        currentEdgeShareByKind,
+      ),
+      semantic_edges: currentSemanticEdges - baselineSemanticEdges,
+      semantic_edge_share: currentSemanticEdgeShare - baselineSemanticEdgeShare,
       coverage_by_type: coverageByType,
     },
   };

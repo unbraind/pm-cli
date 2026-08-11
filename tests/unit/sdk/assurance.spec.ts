@@ -74,7 +74,10 @@ function evaluationContext(): AssuranceEvaluationContext {
         status: "open",
         type: "Issue",
         tags: ["quality"],
-        dependencies: [{ id: "pm-b", kind: "blocks" }],
+        dependencies: [
+          { id: "pm-b", kind: "blocks" },
+          { id: "pm-b", kind: "related_to" },
+        ],
         files: [{ path: "src/a.ts" }],
       },
       {
@@ -187,7 +190,10 @@ describe("assurance SDK", () => {
         validateMeasurementDefinition(
           (kind === "graph"
             ? { id: kind, source: { kind, operation: "audit" } }
-            : { id: kind, source: { kind, check: "check" } }) as unknown as AssuranceMeasurementDefinition,
+            : {
+                id: kind,
+                source: { kind, check: "check" },
+              }) as unknown as AssuranceMeasurementDefinition,
         ),
       ).toThrow("requires field");
     }
@@ -240,7 +246,24 @@ describe("assurance SDK", () => {
         id: "field-without-value",
         source: { kind: "items", field: "priority" },
       }),
-    ).toThrow("requires equals");
+    ).toThrow("requires exactly one of equals or state");
+    expect(() =>
+      validateMeasurementDefinition({
+        id: "missing-priority",
+        source: { kind: "items", field: "priority", state: "missing" },
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validateMeasurementDefinition({
+        id: "ambiguous-priority",
+        source: {
+          kind: "items",
+          field: "priority",
+          equals: null,
+          state: "missing",
+        },
+      }),
+    ).toThrow("exactly one of equals or state");
     expect(() =>
       validateAssertionDefinition({
         ...assertion,
@@ -309,7 +332,9 @@ describe("assurance SDK", () => {
           },
         ],
       }),
-    ).toThrow("derived measurement dangling-derived references missing measurement");
+    ).toThrow(
+      "derived measurement dangling-derived references missing measurement",
+    );
     expect(() =>
       validateAssuranceDocument({
         ...document,
@@ -347,7 +372,12 @@ describe("assurance SDK", () => {
       assuranceAssertionUpdateIsLoosening(assertion, {
         ...assertion,
         ceiling: 2,
-        negative_control: { cases: [{ observed: 2, expected: "pass" }, { observed: 3, expected: "fail" }] },
+        negative_control: {
+          cases: [
+            { observed: 2, expected: "pass" },
+            { observed: 3, expected: "fail" },
+          ],
+        },
       }),
     ).toBe(true);
     const loosenings: AssuranceAssertionDefinition[] = [
@@ -358,19 +388,35 @@ describe("assurance SDK", () => {
         ...assertion,
         floor: 1,
         ceiling: undefined,
-        negative_control: { cases: [{ observed: 1, expected: "pass" }, { observed: 0, expected: "fail" }] },
+        negative_control: {
+          cases: [
+            { observed: 1, expected: "pass" },
+            { observed: 0, expected: "fail" },
+          ],
+        },
       },
       { ...assertion, enforcement: "warn" },
-      { ...assertion, lifetime: "retire", retire_reason: "Temporary migration bound." },
+      {
+        ...assertion,
+        lifetime: "retire",
+        retire_reason: "Temporary migration bound.",
+      },
     ];
     for (const updated of loosenings) {
-      expect(assuranceAssertionUpdateIsLoosening(assertion, updated)).toBe(true);
+      expect(assuranceAssertionUpdateIsLoosening(assertion, updated)).toBe(
+        true,
+      );
     }
     const subset: AssuranceAssertionDefinition = {
       ...assertion,
       ceiling: undefined,
       subset_of: ["a", "b"],
-      negative_control: { cases: [{ observed: ["a"], expected: "pass" }, { observed: ["c"], expected: "fail" }] },
+      negative_control: {
+        cases: [
+          { observed: ["a"], expected: "pass" },
+          { observed: ["c"], expected: "fail" },
+        ],
+      },
     };
     expect(
       assuranceAssertionUpdateIsLoosening(subset, {
@@ -382,7 +428,12 @@ describe("assurance SDK", () => {
       assuranceAssertionUpdateIsLoosening(subset, {
         ...subset,
         subset_of: ["a", "b", "c"],
-        negative_control: { cases: [{ observed: ["c"], expected: "pass" }, { observed: ["d"], expected: "fail" }] },
+        negative_control: {
+          cases: [
+            { observed: ["c"], expected: "pass" },
+            { observed: ["d"], expected: "fail" },
+          ],
+        },
       }),
     ).toBe(true);
     expect(
@@ -392,53 +443,161 @@ describe("assurance SDK", () => {
       ),
     ).toBe(true);
     expect(
-      assuranceAssertionUpdateIsLoosening(
-        subset,
-        { ...subset, subset_of: 1 as unknown as string[] },
-      ),
+      assuranceAssertionUpdateIsLoosening(subset, {
+        ...subset,
+        subset_of: 1 as unknown as string[],
+      }),
     ).toBe(true);
     const equals: AssuranceAssertionDefinition = {
       ...assertion,
       ceiling: undefined,
       equals: ["a"],
-      negative_control: { cases: [{ observed: ["a"], expected: "pass" }, { observed: ["b"], expected: "fail" }] },
+      negative_control: {
+        cases: [
+          { observed: ["a"], expected: "pass" },
+          { observed: ["b"], expected: "fail" },
+        ],
+      },
     };
     expect(assuranceAssertionUpdateIsLoosening(equals, equals)).toBe(false);
     expect(
       assuranceAssertionUpdateIsLoosening(equals, {
         ...equals,
         equals: ["b"],
-        negative_control: { cases: [{ observed: ["b"], expected: "pass" }, { observed: ["a"], expected: "fail" }] },
+        negative_control: {
+          cases: [
+            { observed: ["b"], expected: "pass" },
+            { observed: ["a"], expected: "fail" },
+          ],
+        },
       }),
     ).toBe(true);
-    const numericBaselines: Array<[
-      AssuranceAssertionDefinition,
-      AssuranceAssertionDefinition,
-      boolean,
-    ]> = [
+    const numericBaselines: Array<
+      [AssuranceAssertionDefinition, AssuranceAssertionDefinition, boolean]
+    > = [
       [
-        { ...assertion, ceiling: undefined, floor: 1, negative_control: { cases: [{ observed: 1, expected: "pass" }, { observed: 0, expected: "fail" }] } },
-        { ...assertion, ceiling: undefined, floor: 2, negative_control: { cases: [{ observed: 2, expected: "pass" }, { observed: 1, expected: "fail" }] } },
+        {
+          ...assertion,
+          ceiling: undefined,
+          floor: 1,
+          negative_control: {
+            cases: [
+              { observed: 1, expected: "pass" },
+              { observed: 0, expected: "fail" },
+            ],
+          },
+        },
+        {
+          ...assertion,
+          ceiling: undefined,
+          floor: 2,
+          negative_control: {
+            cases: [
+              { observed: 2, expected: "pass" },
+              { observed: 1, expected: "fail" },
+            ],
+          },
+        },
         false,
       ],
       [
-        { ...assertion, ceiling: undefined, floor: 1, negative_control: { cases: [{ observed: 1, expected: "pass" }, { observed: 0, expected: "fail" }] } },
-        { ...assertion, ceiling: undefined, floor: 0, negative_control: { cases: [{ observed: 0, expected: "pass" }, { observed: -1, expected: "fail" }] } },
+        {
+          ...assertion,
+          ceiling: undefined,
+          floor: 1,
+          negative_control: {
+            cases: [
+              { observed: 1, expected: "pass" },
+              { observed: 0, expected: "fail" },
+            ],
+          },
+        },
+        {
+          ...assertion,
+          ceiling: undefined,
+          floor: 0,
+          negative_control: {
+            cases: [
+              { observed: 0, expected: "pass" },
+              { observed: -1, expected: "fail" },
+            ],
+          },
+        },
         true,
       ],
       [
-        { ...assertion, ceiling: undefined, monotone_nonincreasing: 1, negative_control: { cases: [{ observed: 1, expected: "pass" }, { observed: 2, expected: "fail" }] } },
-        { ...assertion, ceiling: undefined, monotone_nonincreasing: 2, negative_control: { cases: [{ observed: 2, expected: "pass" }, { observed: 3, expected: "fail" }] } },
+        {
+          ...assertion,
+          ceiling: undefined,
+          monotone_nonincreasing: 1,
+          negative_control: {
+            cases: [
+              { observed: 1, expected: "pass" },
+              { observed: 2, expected: "fail" },
+            ],
+          },
+        },
+        {
+          ...assertion,
+          ceiling: undefined,
+          monotone_nonincreasing: 2,
+          negative_control: {
+            cases: [
+              { observed: 2, expected: "pass" },
+              { observed: 3, expected: "fail" },
+            ],
+          },
+        },
         true,
       ],
       [
-        { ...assertion, ceiling: undefined, monotone_nondecreasing: 1, negative_control: { cases: [{ observed: 1, expected: "pass" }, { observed: 0, expected: "fail" }] } },
-        { ...assertion, ceiling: undefined, monotone_nondecreasing: 2, negative_control: { cases: [{ observed: 2, expected: "pass" }, { observed: 1, expected: "fail" }] } },
+        {
+          ...assertion,
+          ceiling: undefined,
+          monotone_nondecreasing: 1,
+          negative_control: {
+            cases: [
+              { observed: 1, expected: "pass" },
+              { observed: 0, expected: "fail" },
+            ],
+          },
+        },
+        {
+          ...assertion,
+          ceiling: undefined,
+          monotone_nondecreasing: 2,
+          negative_control: {
+            cases: [
+              { observed: 2, expected: "pass" },
+              { observed: 1, expected: "fail" },
+            ],
+          },
+        },
         false,
       ],
       [
-        { ...assertion, ceiling: undefined, zero: true, negative_control: { cases: [{ observed: 0, expected: "pass" }, { observed: 1, expected: "fail" }] } },
-        { ...assertion, ceiling: undefined, zero: true, negative_control: { cases: [{ observed: 0, expected: "pass" }, { observed: 2, expected: "fail" }] } },
+        {
+          ...assertion,
+          ceiling: undefined,
+          zero: true,
+          negative_control: {
+            cases: [
+              { observed: 0, expected: "pass" },
+              { observed: 1, expected: "fail" },
+            ],
+          },
+        },
+        {
+          ...assertion,
+          ceiling: undefined,
+          zero: true,
+          negative_control: {
+            cases: [
+              { observed: 0, expected: "pass" },
+              { observed: 2, expected: "fail" },
+            ],
+          },
+        },
         false,
       ],
     ];
@@ -455,8 +614,11 @@ describe("assurance SDK", () => {
 
   it("evaluates built-in, external, and derived measurements with cost receipts", async () => {
     const context = evaluationContext();
-    await expect(evaluateMeasurement(itemsMeasurement, context)).resolves.toMatchObject({
+    await expect(
+      evaluateMeasurement(itemsMeasurement, context),
+    ).resolves.toMatchObject({
       id: "active-issues",
+      definition_fingerprint: expect.stringMatching(/^sha256:[a-f0-9]{64}$/),
       value: 1,
       population_size: 2,
       cost: { units: 2 },
@@ -472,32 +634,89 @@ describe("assurance SDK", () => {
     ).resolves.toMatchObject({ value: 1, population_size: 2 });
     await expect(
       evaluateMeasurement(
+        {
+          id: "related",
+          source: { kind: "dependency_kind", dependency_kind: "related" },
+        },
+        context,
+      ),
+    ).resolves.toMatchObject({ value: 1, population_size: 2 });
+    await expect(
+      evaluateMeasurement(
+        {
+          id: "custom-kind",
+          source: {
+            kind: "dependency_kind",
+            dependency_kind: " CUSTOM_KIND ",
+          },
+        },
+        {
+          ...context,
+          items: [
+            {
+              id: "custom-source",
+              dependencies: [{ id: "custom-target", kind: " CUSTOM_KIND " }],
+            },
+          ] as never,
+        },
+      ),
+    ).resolves.toMatchObject({
+      value: 1,
+      population_size: 1,
+      contributors: ["custom-source->custom-target"],
+    });
+    await expect(
+      evaluateMeasurement(
+        {
+          id: "missing-priority",
+          source: { kind: "items", field: "priority", state: "missing" },
+        },
+        context,
+      ),
+    ).resolves.toMatchObject({ value: 2, population_size: 2 });
+    await expect(
+      evaluateMeasurement(
         { id: "updates", source: { kind: "history", op: "update" } },
         context,
       ),
     ).resolves.toMatchObject({ value: 1, population_size: 2 });
     await expect(
       evaluateMeasurement(
-        { id: "missing-tests", source: { kind: "links", link: "tests", state: "missing" } },
+        {
+          id: "missing-tests",
+          source: { kind: "links", link: "tests", state: "missing" },
+        },
         context,
       ),
     ).resolves.toMatchObject({ value: 2, population_size: 2 });
     await expect(
       evaluateMeasurement(
-        { id: "health", source: { kind: "health", check: "storage", field: "warnings" } },
+        {
+          id: "health",
+          source: { kind: "health", check: "storage", field: "warnings" },
+        },
         context,
       ),
     ).resolves.toMatchObject({ value: 0, cost: { units: 2 } });
     await expect(
       evaluateMeasurement(
-        { id: "coverage", source: { kind: "provider", provider: "coverage", key: "lines" } },
+        {
+          id: "coverage",
+          source: { kind: "provider", provider: "coverage", key: "lines" },
+        },
         context,
       ),
     ).resolves.toMatchObject({ value: 98.5, cost: { units: 3 } });
 
     const measurements: AssuranceMeasurementDefinition[] = [
-      { id: "nodes", source: { kind: "graph", operation: "audit", field: "nodes" } },
-      { id: "redundant", source: { kind: "graph", operation: "redundancy", field: "count" } },
+      {
+        id: "nodes",
+        source: { kind: "graph", operation: "audit", field: "nodes" },
+      },
+      {
+        id: "redundant",
+        source: { kind: "graph", operation: "redundancy", field: "count" },
+      },
       {
         id: "load-bearing",
         source: {
@@ -552,8 +771,14 @@ describe("assurance SDK", () => {
         },
         context,
         [
-          { id: "cycle-a", source: { kind: "derived", expression: { measurement: "cycle-b" } } },
-          { id: "cycle-b", source: { kind: "derived", expression: { measurement: "cycle-a" } } },
+          {
+            id: "cycle-a",
+            source: { kind: "derived", expression: { measurement: "cycle-b" } },
+          },
+          {
+            id: "cycle-b",
+            source: { kind: "derived", expression: { measurement: "cycle-a" } },
+          },
         ],
       ),
     ).rejects.toThrow("cycle-a -> cycle-b -> cycle-a");
@@ -567,7 +792,10 @@ describe("assurance SDK", () => {
           id: "field-match",
           source: { kind: "items", field: "priority", equals: "high" },
         },
-        { ...context, items: [{ id: "a", status: "open", type: "Task", priority: "high" }] },
+        {
+          ...context,
+          items: [{ id: "a", status: "open", type: "Task", priority: "high" }],
+        },
       ),
     ).resolves.toMatchObject({ value: 1 });
     await expect(
@@ -578,33 +806,49 @@ describe("assurance SDK", () => {
     ).resolves.toMatchObject({ value: 0 });
     await expect(
       evaluateMeasurement(
-        { id: "no-deps", source: { kind: "dependency_kind", dependency_kind: "blocks" } },
+        {
+          id: "no-deps",
+          source: { kind: "dependency_kind", dependency_kind: "blocks" },
+        },
         { ...context, items: [{ id: "none", status: "open", type: "Task" }] },
       ),
     ).resolves.toMatchObject({ value: 0 });
     await expect(
       evaluateMeasurement(
-        { id: "linked-files", source: { kind: "links", link: "files", state: "present" } },
+        {
+          id: "linked-files",
+          source: { kind: "links", link: "files", state: "present" },
+        },
         context,
       ),
     ).resolves.toMatchObject({ value: 1 });
     await expect(
       evaluateMeasurement(
-        { id: "agent-history", source: { kind: "history", author: "agent-a", harness: "none", model: "none" } },
+        {
+          id: "agent-history",
+          source: {
+            kind: "history",
+            author: "agent-a",
+            harness: "none",
+            model: "none",
+          },
+        },
         context,
       ),
     ).resolves.toMatchObject({ value: 0 });
     await expect(
       evaluateMeasurement(
         { id: "model-history", source: { kind: "history", model: "model-a" } },
-        { ...context, history: [{ op: "create", author: "a", agent_model: "model-a" }] },
+        {
+          ...context,
+          history: [{ op: "create", author: "a", agent_model: "model-a" }],
+        },
       ),
     ).resolves.toMatchObject({ value: 1 });
 
-    const arithmeticCases: Array<[
-      "add" | "multiply" | "divide" | "min" | "max",
-      number,
-    ]> = [
+    const arithmeticCases: Array<
+      ["add" | "multiply" | "divide" | "min" | "max", number]
+    > = [
       ["add", 6],
       ["multiply", 8],
       ["divide", 2],
@@ -632,7 +876,10 @@ describe("assurance SDK", () => {
       evaluateMeasurement(
         {
           id: "empty-derived",
-          source: { kind: "derived", expression: { operator: "add", operands: [] } },
+          source: {
+            kind: "derived",
+            expression: { operator: "add", operands: [] },
+          },
         },
         context,
       ),
@@ -643,7 +890,10 @@ describe("assurance SDK", () => {
           id: "divide-zero",
           source: {
             kind: "derived",
-            expression: { operator: "divide", operands: [{ literal: 1 }, { literal: 0 }] },
+            expression: {
+              operator: "divide",
+              operands: [{ literal: 1 }, { literal: 0 }],
+            },
           },
         },
         context,
@@ -666,8 +916,14 @@ describe("assurance SDK", () => {
         },
         context,
         [
-          { id: "set-derived", source: { kind: "derived", expression: { measurement: "set" } } },
-          { id: "set", source: { kind: "provider", provider: "coverage", key: "labels" } },
+          {
+            id: "set-derived",
+            source: { kind: "derived", expression: { measurement: "set" } },
+          },
+          {
+            id: "set",
+            source: { kind: "provider", provider: "coverage", key: "labels" },
+          },
         ],
       ),
     ).rejects.toThrow("is not numeric");
@@ -675,7 +931,9 @@ describe("assurance SDK", () => {
       evaluateMeasurement(
         {
           id: "unsupported",
-          source: { kind: "unsupported" } as unknown as AssuranceMeasurementDefinition["source"],
+          source: {
+            kind: "unsupported",
+          } as unknown as AssuranceMeasurementDefinition["source"],
         },
         context,
       ),
@@ -687,7 +945,13 @@ describe("assurance SDK", () => {
       id: "measurement",
       value: 2,
       population_size: 1,
-      cost: { units: 1, items_scanned: 1, history_entries: 0, provider_calls: 0, duration_ms: 0 },
+      cost: {
+        units: 1,
+        items_scanned: 1,
+        history_entries: 0,
+        provider_calls: 0,
+        duration_ms: 0,
+      },
       contributors: [],
     };
     const cases: AssuranceAssertionDefinition[] = [
@@ -696,35 +960,60 @@ describe("assurance SDK", () => {
         id: "floor",
         floor: 2,
         ceiling: undefined,
-        negative_control: { cases: [{ observed: 2, expected: "pass" }, { observed: 1, expected: "fail" }] },
+        negative_control: {
+          cases: [
+            { observed: 2, expected: "pass" },
+            { observed: 1, expected: "fail" },
+          ],
+        },
       },
       {
         ...assertion,
         id: "equals",
         equals: 2,
         ceiling: undefined,
-        negative_control: { cases: [{ observed: 2, expected: "pass" }, { observed: 1, expected: "fail" }] },
+        negative_control: {
+          cases: [
+            { observed: 2, expected: "pass" },
+            { observed: 1, expected: "fail" },
+          ],
+        },
       },
       {
         ...assertion,
         id: "nondecreasing",
         monotone_nondecreasing: 2,
         ceiling: undefined,
-        negative_control: { cases: [{ observed: 2, expected: "pass" }, { observed: 1, expected: "fail" }] },
+        negative_control: {
+          cases: [
+            { observed: 2, expected: "pass" },
+            { observed: 1, expected: "fail" },
+          ],
+        },
       },
       {
         ...assertion,
         id: "nonincreasing",
         monotone_nonincreasing: 2,
         ceiling: undefined,
-        negative_control: { cases: [{ observed: 2, expected: "pass" }, { observed: 3, expected: "fail" }] },
+        negative_control: {
+          cases: [
+            { observed: 2, expected: "pass" },
+            { observed: 3, expected: "fail" },
+          ],
+        },
       },
       {
         ...assertion,
         id: "zero",
         zero: true,
         ceiling: undefined,
-        negative_control: { cases: [{ observed: 0, expected: "pass" }, { observed: 1, expected: "fail" }] },
+        negative_control: {
+          cases: [
+            { observed: 0, expected: "pass" },
+            { observed: 1, expected: "fail" },
+          ],
+        },
       },
     ];
     for (const definition of cases) {
@@ -757,7 +1046,10 @@ describe("assurance SDK", () => {
       verdict: "fail",
     });
     expect(
-      evaluateAssuranceAssertion(assertion, { ...result, value: ["not-numeric"] }),
+      evaluateAssuranceAssertion(assertion, {
+        ...result,
+        value: ["not-numeric"],
+      }),
     ).toMatchObject({ verdict: "fail" });
   });
 
@@ -804,7 +1096,8 @@ describe("assurance SDK", () => {
     const retiredAssertion: AssuranceAssertionDefinition = {
       ...assertion,
       lifetime: "retire",
-      retire_reason: "Migration guarantee only applies while delivery remains active.",
+      retire_reason:
+        "Migration guarantee only applies while delivery remains active.",
     };
     await expect(
       evaluateAssuranceGate(
@@ -836,7 +1129,9 @@ describe("assurance SDK", () => {
         { ...context, terminal_statuses: undefined },
         { trigger: "ci" },
       ),
-    ).resolves.toMatchObject({ assertions: [{ population_size: 1, verdict: "pass" }] });
+    ).resolves.toMatchObject({
+      assertions: [{ population_size: 1, verdict: "pass" }],
+    });
 
     const filterMeasurement: AssuranceMeasurementDefinition = {
       id: "quality-scope",
@@ -890,12 +1185,17 @@ describe("assurance SDK", () => {
       });
     }
     await expect(
-      evaluateAssuranceGate("missing", {
-        version: 1,
-        measurements: [itemsMeasurement],
-        assertions: [assertion],
-        gates: [gate],
-      }, context, { trigger: "ci" }),
+      evaluateAssuranceGate(
+        "missing",
+        {
+          version: 1,
+          measurements: [itemsMeasurement],
+          assertions: [assertion],
+          gates: [gate],
+        },
+        context,
+        { trigger: "ci" },
+      ),
     ).rejects.toThrow("not found");
     await expect(
       evaluateAssuranceGate(
@@ -919,7 +1219,9 @@ describe("assurance SDK", () => {
 
   it("persists registry mutations and verdicts through the verified workspace history", async () => {
     await withTempPmPath(async ({ pmPath }) => {
-      expect((await listAssuranceDeclarations(pmPath, "gate")).items).toEqual([]);
+      expect((await listAssuranceDeclarations(pmPath, "gate")).items).toEqual(
+        [],
+      );
       await expect(
         removeAssuranceDeclaration(pmPath, "measurement", "missing", {
           author: "test-author",
@@ -940,9 +1242,9 @@ describe("assurance SDK", () => {
       await putAssuranceDeclaration(pmPath, "gate", gate, {
         author: "test-author",
       });
-      expect((await listAssuranceDeclarations(pmPath, "measurement")).items).toEqual([
-        itemsMeasurement,
-      ]);
+      expect(
+        (await listAssuranceDeclarations(pmPath, "measurement")).items,
+      ).toEqual([itemsMeasurement]);
       expect(
         await getAssuranceDeclaration(pmPath, "assertion", assertion.id),
       ).toEqual(assertion);
@@ -1018,9 +1320,9 @@ describe("assurance SDK", () => {
       await expect(
         recordAssuranceVerdict(pmPath, { ...verdict, dry_run: true }),
       ).rejects.toThrow("not persisted");
-      expect(await listAssuranceVerdicts(pmPath, { gate_id: gate.id })).toEqual([
-        verdict,
-      ]);
+      expect(await listAssuranceVerdicts(pmPath, { gate_id: gate.id })).toEqual(
+        [verdict],
+      );
       expect(await listAssuranceVerdicts(pmPath)).toEqual([verdict]);
       const newerVerdict = {
         ...verdict,
@@ -1033,13 +1335,13 @@ describe("assurance SDK", () => {
       expect(
         await listAssuranceVerdicts(pmPath, { gate_id: gate.id, limit: 1 }),
       ).toEqual([newerVerdict]);
-      await expect(
-        listAssuranceVerdicts(pmPath, { limit: 0 }),
-      ).rejects.toThrow("integer from 1 through 1000");
+      await expect(listAssuranceVerdicts(pmPath, { limit: 0 })).rejects.toThrow(
+        "integer from 1 through 1000",
+      );
       for (const limit of [1.5, 1_001]) {
-        await expect(
-          listAssuranceVerdicts(pmPath, { limit }),
-        ).rejects.toThrow("integer from 1 through 1000");
+        await expect(listAssuranceVerdicts(pmPath, { limit })).rejects.toThrow(
+          "integer from 1 through 1000",
+        );
       }
       const history = await readHistoryEntries(
         getWorkspaceHistoryPath(pmPath),
@@ -1056,9 +1358,7 @@ describe("assurance SDK", () => {
       ]);
       expect(verifyHistoryChain(history)).toEqual({ ok: true, errors: [] });
       expect(
-        JSON.parse(
-          await readFile(path.join(pmPath, "assurance.json"), "utf8"),
-        ),
+        JSON.parse(await readFile(path.join(pmPath, "assurance.json"), "utf8")),
       ).toMatchObject({ version: 1 });
 
       await expect(
@@ -1069,9 +1369,14 @@ describe("assurance SDK", () => {
       await removeAssuranceDeclaration(pmPath, "assertion", assertion.id, {
         author: "test-author",
       });
-      await removeAssuranceDeclaration(pmPath, "measurement", itemsMeasurement.id, {
-        author: "test-author",
-      });
+      await removeAssuranceDeclaration(
+        pmPath,
+        "measurement",
+        itemsMeasurement.id,
+        {
+          author: "test-author",
+        },
+      );
       await putAssuranceDeclaration(pmPath, "measurement", itemsMeasurement, {
         author: "test-author",
       });
@@ -1082,12 +1387,9 @@ describe("assurance SDK", () => {
           expression: { measurement: itemsMeasurement.id },
         },
       };
-      await putAssuranceDeclaration(
-        pmPath,
-        "measurement",
-        derivedReference,
-        { author: "test-author" },
-      );
+      await putAssuranceDeclaration(pmPath, "measurement", derivedReference, {
+        author: "test-author",
+      });
       await expect(
         removeAssuranceDeclaration(pmPath, "measurement", itemsMeasurement.id, {
           author: "test-author",
@@ -1133,10 +1435,14 @@ describe("assurance SDK", () => {
       });
       await expect(
         putAssuranceDeclaration(pmPath, "measurement", itemsMeasurement),
-      ).rejects.toMatchObject({ context: { code: "assurance_registry_invalid" } });
+      ).rejects.toMatchObject({
+        context: { code: "assurance_registry_invalid" },
+      });
       await expect(
         removeAssuranceDeclaration(pmPath, "measurement", itemsMeasurement.id),
-      ).rejects.toMatchObject({ context: { code: "assurance_registry_invalid" } });
+      ).rejects.toMatchObject({
+        context: { code: "assurance_registry_invalid" },
+      });
     });
   });
 });

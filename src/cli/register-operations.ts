@@ -92,6 +92,7 @@ function collectTestMutationValues(options: Record<string, unknown>): {
   addValues: string[];
   addJsonValues: string[];
   removeValues: string[];
+  removeIndexValues: string[];
 } {
   return {
     addValues: Array.isArray(options.add) ? (options.add as string[]) : [],
@@ -100,6 +101,9 @@ function collectTestMutationValues(options: Record<string, unknown>): {
       : [],
     removeValues: Array.isArray(options.remove)
       ? (options.remove as string[])
+      : [],
+    removeIndexValues: Array.isArray(options.removeIndex)
+      ? (options.removeIndex as string[])
       : [],
   };
 }
@@ -110,6 +114,7 @@ function validateBackgroundTestOptions(
     addValues: string[];
     addJsonValues: string[];
     removeValues: string[];
+    removeIndexValues: string[];
   },
 ): void {
   if (options.background !== true) {
@@ -121,10 +126,11 @@ function validateBackgroundTestOptions(
   if (
     values.addValues.length > 0 ||
     values.addJsonValues.length > 0 ||
-    values.removeValues.length > 0
+    values.removeValues.length > 0 ||
+    values.removeIndexValues.length > 0
   ) {
     throw new PmCliError(
-      "--background does not support --add/--add-json/--remove; update linked tests first, then run in background",
+      "--background does not support --add/--add-json/--remove/--remove-index; update linked tests first, then run in background",
       EXIT_CODE.USAGE,
     );
   }
@@ -138,6 +144,7 @@ async function runBackgroundLinkedTests(
     addValues: string[];
     addJsonValues: string[];
     removeValues: string[];
+    removeIndexValues: string[];
   },
 ): Promise<void> {
   const result = await runStartBackgroundRun(
@@ -148,6 +155,7 @@ async function runBackgroundLinkedTests(
         add: values.addValues,
         addJson: values.addJsonValues,
         remove: values.removeValues,
+        removeIndex: values.removeIndexValues,
       }),
       targetId: id,
       author: typeof options.author === "string" ? options.author : undefined,
@@ -164,12 +172,14 @@ function buildRunTestOptions(
     addValues: string[];
     addJsonValues: string[];
     removeValues: string[];
+    removeIndexValues: string[];
   },
 ) {
   return {
     add: values.addValues,
     addJson: values.addJsonValues,
     remove: values.removeValues,
+    removeIndex: values.removeIndexValues,
     list: Boolean(options.list),
     run: Boolean(options.run),
     match: typeof options.match === "string" ? options.match : undefined,
@@ -216,6 +226,7 @@ async function runForegroundLinkedTests(
     addValues: string[];
     addJsonValues: string[];
     removeValues: string[];
+    removeIndexValues: string[];
   },
 ): Promise<void> {
   const result = await runTest(
@@ -227,7 +238,8 @@ async function runForegroundLinkedTests(
     values.addValues.length > 0 ||
     values.addJsonValues.length > 0 ||
     values.removeValues.length > 0 ||
-    options.run === true
+    options.run === true ||
+    values.removeIndexValues.length > 0
   ) {
     await invalidateSearchCachesForMutation(globalOptions, result);
   }
@@ -909,7 +921,12 @@ export function registerOperationCommands(program: Command): void {
     )
     .option(
       "--remove <value>",
-      "Remove linked test entry by command/path (command=<value>, path=<value>, markdown pairs, plain value, or - for stdin)",
+      "Remove linked test entry by exact command/path (command=<value> and path=<value> preserve commas and equals signs; or - for stdin)",
+      collect,
+    )
+    .option(
+      "--remove-index <n>",
+      "Remove the 1-based linked-test index from --list order (repeatable)",
       collect,
     )
     .option("--list", "List linked tests without mutating")

@@ -987,6 +987,7 @@ export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add" },
   { flag: "--add-json" },
   { flag: "--remove" },
+  { flag: "--remove-index", repeatable: true },
   { flag: "--run" },
   { flag: "--match" },
   { flag: "--only-index" },

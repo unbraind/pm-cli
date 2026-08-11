@@ -7313,6 +7313,10 @@
           "flag": "--remove"
         },
         {
+          "flag": "--remove-index",
+          "repeatable": true
+        },
+        {
           "flag": "--run"
         },
         {
@@ -13920,6 +13924,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "annotation_transposed_subcommand",
+      "class": "usage",
+      "code": "annotation_transposed_subcommand",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Annotation transposed subcommand condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-annotations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "append_empty_body",
       "class": "usage",
       "code": "append_empty_body",
@@ -14140,6 +14161,23 @@
         "sdk/test/execution.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "collection_transposed_subcommand",
+      "class": "generic_failure",
+      "code": "collection_transposed_subcommand",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Collection transposed subcommand condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -15812,6 +15850,23 @@
         "sdk/similarity.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "linked_test_remove_no_match",
+      "class": "not_found",
+      "code": "linked_test_remove_no_match",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 3,
+      "meaning": "Linked test remove no match condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -26746,6 +26801,29 @@
             "description": "Remove.",
             "items": {
               "type": "string"
+            },
+            "type": "array"
+          },
+          "removeIndex": {
+            "description": "Remove linked tests by their 1-based positions from pm test <id> --list order; repeatable and lossless for commands containing commas or equals signs.",
+            "examples": [
+              [
+                1
+              ],
+              [
+                "2",
+                "4"
+              ]
+            ],
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
             },
             "type": "array"
           },
@@ -48401,6 +48479,29 @@
             },
             "type": "array"
           },
+          "removeIndex": {
+            "description": "Remove linked tests by their 1-based positions from pm test <id> --list order; repeatable and lossless for commands containing commas or equals signs.",
+            "examples": [
+              [
+                1
+              ],
+              [
+                "2",
+                "4"
+              ]
+            ],
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "type": "array"
+          },
           "requireAssertionsForPm": {
             "description": "Require assertion metadata for linked PM command test entries during run execution.",
             "type": "boolean"
@@ -49710,8 +49811,17 @@
                               ]
                             },
                             "then": {
-                              "required": [
-                                "equals"
+                              "oneOf": [
+                                {
+                                  "required": [
+                                    "equals"
+                                  ]
+                                },
+                                {
+                                  "required": [
+                                    "state"
+                                  ]
+                                }
                               ]
                             }
                           }
@@ -49730,6 +49840,12 @@
                           },
                           "kind": {
                             "const": "items"
+                          },
+                          "state": {
+                            "enum": [
+                              "present",
+                              "missing"
+                            ]
                           },
                           "statuses": {
                             "items": {
@@ -51985,10 +52101,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.6.0"
+    "x-schema-version": "4.7.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.6.0",
+  "schema_version": "4.7.0",
   "selected": {
     "action": null,
     "availability_only": false,

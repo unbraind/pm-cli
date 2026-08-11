@@ -19,7 +19,10 @@ describe("pm cli error guidance context plumbing", () => {
         code: "merge_conflict_markers_detected",
         required: "Resolve all conflict markers before retrying.",
         why: "Conflicted item files cannot be parsed deterministically.",
-        examples: ['pm history pm-a1b2 --limit 5 --diff', 'pm update pm-a1b2 --status open --message "retry"'],
+        examples: [
+          "pm history pm-a1b2 --limit 5 --diff",
+          'pm update pm-a1b2 --status open --message "retry"',
+        ],
         nextSteps: ["Resolve markers and rerun command."],
       },
     );
@@ -39,15 +42,28 @@ describe("pm cli error guidance context plumbing", () => {
   });
 
   it("normalizes compact recovery arrays defensively", () => {
-    const envelope = formatPmCliErrorForJson("Missing required option --message for type \"Task\"", 2, {
-      code: "missing_required_option",
-      recovery: {
-        recovery_mode: "compact",
-        missing_required_fields: [" --message ", 123, null, ""] as unknown as string[],
-        suggested_flags: [" --create-mode progressive ", false, "--message"] as unknown as string[],
-        retry_after_ms: 250,
+    const envelope = formatPmCliErrorForJson(
+      'Missing required option --message for type "Task"',
+      2,
+      {
+        code: "missing_required_option",
+        recovery: {
+          recovery_mode: "compact",
+          missing_required_fields: [
+            " --message ",
+            123,
+            null,
+            "",
+          ] as unknown as string[],
+          suggested_flags: [
+            " --create-mode progressive ",
+            false,
+            "--message",
+          ] as unknown as string[],
+          retry_after_ms: 250,
+        },
       },
-    });
+    );
 
     expect(envelope.recovery).toMatchObject({
       recovery_mode: "compact",
@@ -58,31 +74,49 @@ describe("pm cli error guidance context plumbing", () => {
   });
 
   it("applies PmCliError context fields to text guidance output", () => {
-    const text = formatPmCliErrorForDisplay("History replay failed due to merge conflict markers.", {
-      code: "history_merge_conflict_markers_detected",
-      required: "Repair history stream markers before restore replay.",
-      why: "Replay requires a clean append-only history stream.",
-      nextSteps: ["Run pm history <id> --verify and resolve conflicts."],
-      recovery: { retry_after_ms: 250 },
-    });
-    expect(text).toContain("Error: History replay failed due to merge conflict markers.");
+    const text = formatPmCliErrorForDisplay(
+      "History replay failed due to merge conflict markers.",
+      {
+        code: "history_merge_conflict_markers_detected",
+        required: "Repair history stream markers before restore replay.",
+        why: "Replay requires a clean append-only history stream.",
+        nextSteps: ["Run pm history <id> --verify and resolve conflicts."],
+        recovery: { retry_after_ms: 250 },
+      },
+    );
+    expect(text).toContain(
+      "Error: History replay failed due to merge conflict markers.",
+    );
     expect(text).toContain("What is required:");
-    expect(text).toContain("Repair history stream markers before restore replay.");
+    expect(text).toContain(
+      "Repair history stream markers before restore replay.",
+    );
     expect(text).toContain("Why:");
-    expect(text).toContain("Replay requires a clean append-only history stream.");
+    expect(text).toContain(
+      "Replay requires a clean append-only history stream.",
+    );
     expect(text).toContain("Next steps:");
-    expect(text).toContain("Run pm history <id> --verify and resolve conflicts.");
+    expect(text).toContain(
+      "Run pm history <id> --verify and resolve conflicts.",
+    );
     expect(text).toContain("retry_after_ms: 250");
   });
 
   it("returns deterministic item-not-found recovery examples without echoing invalid ids", () => {
-    const envelope = formatPmCliErrorForJson("Item pm-does-not-exist not found", 3);
+    const envelope = formatPmCliErrorForJson(
+      "Item pm-does-not-exist not found",
+      3,
+    );
     expect(envelope.code).toBe("item_not_found");
     expect(envelope.examples).toEqual([
       "pm list-open --limit 20",
       'pm search "<keyword>" --limit 10',
     ]);
-    expect(envelope.examples?.some((example) => example.includes("pm-does-not-exist"))).toBe(false);
+    expect(
+      envelope.examples?.some((example) =>
+        example.includes("pm-does-not-exist"),
+      ),
+    ).toBe(false);
   });
 
   it("explains that update --message must accompany a real field mutation", () => {
@@ -90,7 +124,9 @@ describe("pm cli error guidance context plumbing", () => {
 
     expect(envelope.code).toBe("no_update_fields");
     expect(envelope.required).toContain("field-changing flag");
-    expect(envelope.required).toContain("Use --message only to label a real mutation.");
+    expect(envelope.required).toContain(
+      "Use --message only to label a real mutation.",
+    );
     expect(envelope.required).not.toContain("or --message");
     expect(envelope.examples).toEqual([
       'pm update pm-a1b2 --status in_progress --message "Start implementation"',
@@ -103,7 +139,10 @@ describe("pm cli error guidance context plumbing", () => {
   });
 
   it("classifies requires-style validation messages as invalid argument values", () => {
-    const envelope = formatPmCliErrorForJson("--reminder requires at=<iso|relative> and text=<value>", 2);
+    const envelope = formatPmCliErrorForJson(
+      "--reminder requires at=<iso|relative> and text=<value>",
+      2,
+    );
 
     expect(envelope.code).toBe("invalid_argument_value");
     expect(envelope.title).toBe("Invalid argument value");
@@ -111,16 +150,23 @@ describe("pm cli error guidance context plumbing", () => {
   });
 
   it("uses attempted command context for allowed-value retry guidance", () => {
-    const envelope = formatPmCliErrorForJson("Get --depth must be one of brief|standard|deep|full", 2, {
-      recovery: {
-        attempted_command: "pm get pm-rnpb --depth verbose",
-        normalized_args: ["get", "pm-rnpb", "--depth", "verbose"],
-        provided_fields: ["--depth"],
+    const envelope = formatPmCliErrorForJson(
+      "Get --depth must be one of brief|standard|deep|full",
+      2,
+      {
+        recovery: {
+          attempted_command: "pm get pm-rnpb --depth verbose",
+          normalized_args: ["get", "pm-rnpb", "--depth", "verbose"],
+          provided_fields: ["--depth"],
+        },
       },
-    });
+    );
 
     expect(envelope.code).toBe("invalid_argument_value");
-    expect(envelope.examples).toEqual(["pm get pm-rnpb --depth brief", "pm get --help"]);
+    expect(envelope.examples).toEqual([
+      "pm get pm-rnpb --depth brief",
+      "pm get --help",
+    ]);
     expect(envelope.next_steps).toEqual([
       "Allowed values: brief|standard|deep|full",
       'Run "pm get --help" to confirm command-specific constraints.',
@@ -139,27 +185,42 @@ describe("pm cli error guidance context plumbing", () => {
       ],
       next_best_command: "pm install --project github.com/unbraind/pm-brief",
     };
-    const envelope = formatPmCliErrorForJson("npm package \"pm-brief\" was not found in the registry.", 3, {
-      code: "npm_package_not_found",
-      recovery,
-    });
+    const envelope = formatPmCliErrorForJson(
+      'npm package "pm-brief" was not found in the registry.',
+      3,
+      {
+        code: "npm_package_not_found",
+        recovery,
+      },
+    );
     expect(envelope.recovery).toMatchObject(recovery);
 
-    const text = formatPmCliErrorForDisplay("npm package \"pm-brief\" was not found in the registry.", {
-      code: "npm_package_not_found",
-      recovery,
-    });
-    expect(text).toContain("next_best_command: pm install --project github.com/unbraind/pm-brief");
+    const text = formatPmCliErrorForDisplay(
+      'npm package "pm-brief" was not found in the registry.',
+      {
+        code: "npm_package_not_found",
+        recovery,
+      },
+    );
+    expect(text).toContain(
+      "next_best_command: pm install --project github.com/unbraind/pm-brief",
+    );
     expect(text).toContain("github.com/unbraind/pm-brief");
   });
 
   it("surfaces nearest options and cross-command flag hints for unknown options", () => {
-    const envelope = formatCommanderErrorForJson("unknown option '--type'", "test-all", "Task|Issue", 2, {
-      unknownOptionSuggestions: ["--tag"],
-      unknownOptionOtherCommands: ["create", "list", "list-all", "search"],
-      unknownOptionOtherCommandsTotal: 7,
-      unknownOptionOtherCommandsTruncated: true,
-    });
+    const envelope = formatCommanderErrorForJson(
+      "unknown option '--type'",
+      "test-all",
+      "Task|Issue",
+      2,
+      {
+        unknownOptionSuggestions: ["--tag"],
+        unknownOptionOtherCommands: ["create", "list", "list-all", "search"],
+        unknownOptionOtherCommandsTotal: 7,
+        unknownOptionOtherCommandsTruncated: true,
+      },
+    );
     expect(envelope.code).toBe("unknown_option");
     expect(envelope.next_steps).toEqual(
       expect.arrayContaining([
@@ -173,94 +234,186 @@ describe("pm cli error guidance context plumbing", () => {
       candidate_commands_truncated: true,
     });
 
-    const guidance = formatCommanderErrorForDisplay("unknown option '--type'", "test-all", "Task|Issue", {
-      unknownOptionOtherCommands: ["create", "list", "list-all"],
-      unknownOptionOtherCommandsTotal: 7,
-      unknownOptionOtherCommandsTruncated: true,
-    });
+    const guidance = formatCommanderErrorForDisplay(
+      "unknown option '--type'",
+      "test-all",
+      "Task|Issue",
+      {
+        unknownOptionOtherCommands: ["create", "list", "list-all"],
+        unknownOptionOtherCommandsTotal: 7,
+        unknownOptionOtherCommandsTruncated: true,
+      },
+    );
     expect(guidance).toContain("--type is accepted by create, list, list-all");
     expect(guidance).not.toContain("run that command instead");
     expect(guidance).toContain("candidate_commands_truncated: true");
   });
 
   it("applies runtime unknown-command guidance examples for commander errors", () => {
-    const envelope = formatCommanderErrorForJson("unknown command 'beads'", "help", "Task|Issue", 2, {
-      unknownCommandExamples: ["pm --help", "pm list-open --help", "pm context --help"],
-      unknownCommandNextSteps: [
-        'Run "pm --help" to inspect available command paths in this runtime.',
-        'Use one of the suggested command paths with "--help".',
-      ],
-    });
+    const envelope = formatCommanderErrorForJson(
+      "unknown command 'beads'",
+      "help",
+      "Task|Issue",
+      2,
+      {
+        unknownCommandExamples: [
+          "pm --help",
+          "pm list-open --help",
+          "pm context --help",
+        ],
+        unknownCommandNextSteps: [
+          'Run "pm --help" to inspect available command paths in this runtime.',
+          'Use one of the suggested command paths with "--help".',
+        ],
+      },
+    );
 
     expect(envelope.code).toBe("unknown_command");
-    expect(envelope.examples).toEqual(["pm --help", "pm list-open --help", "pm context --help"]);
+    expect(envelope.examples).toEqual([
+      "pm --help",
+      "pm list-open --help",
+      "pm context --help",
+    ]);
     expect(envelope.next_steps).toEqual([
       'Run "pm --help" to inspect available command paths in this runtime.',
       'Use one of the suggested command paths with "--help".',
     ]);
     expect(envelope.why).toBeUndefined();
 
-    const guidance = formatCommanderErrorForDisplay("unknown command 'beads'", "help", "Task|Issue", {
-      unknownCommandExamples: ["pm --help", "pm list-open --help"],
-    });
+    const guidance = formatCommanderErrorForDisplay(
+      "unknown command 'beads'",
+      "help",
+      "Task|Issue",
+      {
+        unknownCommandExamples: ["pm --help", "pm list-open --help"],
+      },
+    );
     expect(guidance).toContain("pm list-open --help");
     expect(guidance).not.toContain("pm todos --help");
   });
 
   it("adds a concrete install hint for known package-provided commands", () => {
-    const guideEnvelope = formatCommanderErrorForJson("unknown command 'guide'", "help", "Task|Issue", 2, {
-      unknownCommandExamples: ["pm --help"],
-      unknownCommandNextSteps: ["Verify spelling and active extensions, then rerun."],
-    });
+    const guideEnvelope = formatCommanderErrorForJson(
+      "unknown command 'guide'",
+      "help",
+      "Task|Issue",
+      2,
+      {
+        unknownCommandExamples: ["pm --help"],
+        unknownCommandNextSteps: [
+          "Verify spelling and active extensions, then rerun.",
+        ],
+      },
+    );
     expect(guideEnvelope.code).toBe("unknown_command");
     expect(guideEnvelope.detail).toContain("@unbrained/pm-guide-shell");
     expect(guideEnvelope.examples).toContain("pm install guide-shell");
-    expect(guideEnvelope.next_steps?.some((step) => step.includes("pm install guide-shell"))).toBe(true);
-    expect(guideEnvelope.next_steps).toContain("Verify spelling and active extensions, then rerun.");
+    expect(
+      guideEnvelope.next_steps?.some((step) =>
+        step.includes("pm install guide-shell"),
+      ),
+    ).toBe(true);
+    expect(guideEnvelope.next_steps).toContain(
+      "Verify spelling and active extensions, then rerun.",
+    );
 
-    const templatesGuidance = formatCommanderErrorForDisplay("unknown command 'templates'", "help", "Task|Issue");
+    const templatesGuidance = formatCommanderErrorForDisplay(
+      "unknown command 'templates'",
+      "help",
+      "Task|Issue",
+    );
     expect(templatesGuidance).toContain("@unbrained/pm-templates");
     expect(templatesGuidance).toContain("pm install templates");
 
-    const calGuidance = formatCommanderErrorForDisplay("unknown command 'cal'", "help", "Task|Issue");
+    const calGuidance = formatCommanderErrorForDisplay(
+      "unknown command 'cal'",
+      "help",
+      "Task|Issue",
+    );
     expect(calGuidance).toContain("@unbrained/pm-calendar");
     expect(calGuidance).toContain("pm install calendar");
 
-    const calendarEnvelope = formatCommanderErrorForJson("unknown command 'calendar'", "help", "Task|Issue", 2);
+    const calendarEnvelope = formatCommanderErrorForJson(
+      "unknown command 'calendar'",
+      "help",
+      "Task|Issue",
+      2,
+    );
     expect(calendarEnvelope.examples).toContain("pm install calendar");
   });
 
   it("covers every optional-package command root with an install hint", () => {
-    const expectations: Array<[command: string, packageName: string, installCommand: string]> = [
+    const expectations: Array<
+      [command: string, packageName: string, installCommand: string]
+    > = [
       ["completion", "@unbrained/pm-guide-shell", "pm install guide-shell"],
-      ["completion-statuses", "@unbrained/pm-guide-shell", "pm install guide-shell"],
-      ["completion-tags", "@unbrained/pm-guide-shell", "pm install guide-shell"],
-      ["completion-types", "@unbrained/pm-guide-shell", "pm install guide-shell"],
+      [
+        "completion-statuses",
+        "@unbrained/pm-guide-shell",
+        "pm install guide-shell",
+      ],
+      [
+        "completion-tags",
+        "@unbrained/pm-guide-shell",
+        "pm install guide-shell",
+      ],
+      [
+        "completion-types",
+        "@unbrained/pm-guide-shell",
+        "pm install guide-shell",
+      ],
       ["shell", "@unbrained/pm-guide-shell", "pm install guide-shell"],
       ["comments-audit", "@unbrained/pm-governance-audit", "pm install audit"],
       ["dedupe-audit", "@unbrained/pm-governance-audit", "pm install audit"],
       ["dedupe-merge", "@unbrained/pm-governance-audit", "pm install audit"],
       ["normalize", "@unbrained/pm-governance-audit", "pm install audit"],
-      ["reindex", "@unbrained/pm-search-advanced", "pm install search-advanced"],
-      ["search-advanced", "@unbrained/pm-search-advanced", "pm install search-advanced"],
-      ["test-runs", "@unbrained/pm-linked-test-adapters", "pm install linked-test-adapters"],
+      [
+        "reindex",
+        "@unbrained/pm-search-advanced",
+        "pm install search-advanced",
+      ],
+      [
+        "search-advanced",
+        "@unbrained/pm-search-advanced",
+        "pm install search-advanced",
+      ],
+      [
+        "test-runs",
+        "@unbrained/pm-linked-test-adapters",
+        "pm install linked-test-adapters",
+      ],
     ];
     for (const [command, packageName, installCommand] of expectations) {
-      const envelope = formatCommanderErrorForJson(`unknown command '${command}'`, "help", "Task|Issue", 2);
+      const envelope = formatCommanderErrorForJson(
+        `unknown command '${command}'`,
+        "help",
+        "Task|Issue",
+        2,
+      );
       expect(envelope.detail, command).toContain(packageName);
       expect(envelope.examples, command).toContain(installCommand);
     }
   });
 
   it("does not add a package install hint for genuinely unknown commands", () => {
-    const envelope = formatCommanderErrorForJson("unknown command 'frobnicate'", "help", "Task|Issue", 2, {
-      unknownCommandExamples: ["pm --help"],
-      unknownCommandNextSteps: ["Verify spelling and active extensions, then rerun."],
-    });
+    const envelope = formatCommanderErrorForJson(
+      "unknown command 'frobnicate'",
+      "help",
+      "Task|Issue",
+      2,
+      {
+        unknownCommandExamples: ["pm --help"],
+        unknownCommandNextSteps: [
+          "Verify spelling and active extensions, then rerun.",
+        ],
+      },
+    );
     expect(envelope.code).toBe("unknown_command");
     expect(envelope.detail).not.toContain("@unbrained/");
     expect(envelope.examples).toEqual(["pm --help"]);
-    expect(envelope.next_steps).toEqual(["Verify spelling and active extensions, then rerun."]);
+    expect(envelope.next_steps).toEqual([
+      "Verify spelling and active extensions, then rerun.",
+    ]);
   });
 
   it("suppresses install advice when the matching installed extension failed activation", () => {
@@ -286,15 +439,25 @@ describe("pm cli error guidance context plumbing", () => {
       "Task|Issue",
       2,
       {
-        attemptedCommand: 'pm create --title "Agent fast command loop" --type Task',
-        normalizedInvocationArgs: ["create", "--title", "Agent fast command loop", "--type", "Task"],
+        attemptedCommand:
+          'pm create --title "Agent fast command loop" --type Task',
+        normalizedInvocationArgs: [
+          "create",
+          "--title",
+          "Agent fast command loop",
+          "--type",
+          "Task",
+        ],
         providedOptionFlags: ["--title", "--type"],
-        suggestedRetryCommand: 'pm create --title "Agent fast command loop" --type Task --description <value>',
+        suggestedRetryCommand:
+          'pm create --title "Agent fast command loop" --type Task --description <value>',
       },
     );
 
     expect(envelope.title).toBe("Missing required option --description");
-    expect(envelope.required).toBe("Pass --description with a valid value before running the command.");
+    expect(envelope.required).toBe(
+      "Pass --description with a valid value before running the command.",
+    );
     expect(envelope.recovery?.missing).toEqual(["--description"]);
     expect(envelope.recovery?.suggested_retry).toBe(
       'pm create --title "Agent fast command loop" --type Task --description <value>',
@@ -315,9 +478,13 @@ describe("pm cli error guidance context plumbing", () => {
       "pm package manage --doctor --project",
       "pm health --check-only --json",
     ]);
-    expect(envelope.next_steps).toContain("Rebuild the checkout or package that provides the missing module.");
+    expect(envelope.next_steps).toContain(
+      "Rebuild the checkout or package that provides the missing module.",
+    );
 
-    const classified = classifyUnknownError("ERR_MODULE_NOT_FOUND: Cannot find package '@example/missing'");
+    const classified = classifyUnknownError(
+      "ERR_MODULE_NOT_FOUND: Cannot find package '@example/missing'",
+    );
     expect(classified.code).toBe("module_import_failed");
 
     const generic = formatUnknownErrorForJson("Unexpected runtime failure", 1);
@@ -327,29 +494,67 @@ describe("pm cli error guidance context plumbing", () => {
 
 describe("linked-test value quoting guidance (GH-191)", () => {
   const ALLOWED_TYPES = "Task|Issue";
-  const TOO_MANY = "error: too many arguments for 'test'. Expected 1 argument but got 4.";
+  const TOO_MANY =
+    "error: too many arguments for 'test'. Expected 1 argument but got 4.";
 
   it("classifies an unquoted test --add value as linked_test_value_not_quoted with a re-joined retry", () => {
-    const envelope = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2, {
-      normalizedInvocationArgs: ["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"],
-      providedOptionFlags: ["--add"],
-    });
+    const envelope = formatCommanderErrorForJson(
+      TOO_MANY,
+      "test",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: [
+          "test",
+          "pm-a1b2",
+          "--add",
+          "command",
+          "npm",
+          "test",
+          "--",
+          "parser",
+        ],
+        providedOptionFlags: ["--add"],
+      },
+    );
 
     expect(envelope.code).toBe("linked_test_value_not_quoted");
     expect(envelope.title).toBe("Linked-test --add value must be one argument");
     expect(envelope.required).toContain('--add "command=npm test -- parser"');
     expect(envelope.required).toContain("two-token form");
-    expect(envelope.recovery?.suggested_retry).toBe('pm test pm-a1b2 --add "command=npm test -- parser"');
-    expect(envelope.examples?.[0]).toBe('pm test pm-a1b2 --add "command=npm test -- parser"');
-    expect(envelope.examples).toContain('pm test pm-a1b2 --add command "npm test -- parser"');
-    expect(envelope.examples).toContain(`pm test pm-a1b2 --add-json '{"command":"npm test -- parser"}'`);
-    expect(envelope.next_steps?.[0]).toContain("Replay with the value re-joined into one argument:");
+    expect(envelope.recovery?.suggested_retry).toBe(
+      'pm test pm-a1b2 --add "command=npm test -- parser"',
+    );
+    expect(envelope.examples?.[0]).toBe(
+      'pm test pm-a1b2 --add "command=npm test -- parser"',
+    );
+    expect(envelope.examples).toContain(
+      'pm test pm-a1b2 --add command "npm test -- parser"',
+    );
+    expect(envelope.examples).toContain(
+      `pm test pm-a1b2 --add-json '{"command":"npm test -- parser"}'`,
+    );
+    expect(envelope.next_steps?.[0]).toContain(
+      "Replay with the value re-joined into one argument:",
+    );
   });
 
   it("targets guidance without a retry when the value tokens cannot be re-joined unambiguously", () => {
-    const envelope = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2, {
-      normalizedInvocationArgs: ["test", "--add", "command", "echo x -- y", "pm-a1b2"],
-    });
+    const envelope = formatCommanderErrorForJson(
+      TOO_MANY,
+      "test",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: [
+          "test",
+          "--add",
+          "command",
+          "echo x -- y",
+          "pm-a1b2",
+        ],
+      },
+    );
 
     expect(envelope.code).toBe("linked_test_value_not_quoted");
     expect(envelope.recovery?.suggested_retry).toBeUndefined();
@@ -357,26 +562,57 @@ describe("linked-test value quoting guidance (GH-191)", () => {
   });
 
   it("detects --add-json and inline --add= forms as linked-test mutations", () => {
-    const addJson = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2, {
-      normalizedInvocationArgs: ["test", "pm-a1b2", "--add-json", "{command:", "x}"],
-    });
+    const addJson = formatCommanderErrorForJson(
+      TOO_MANY,
+      "test",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: [
+          "test",
+          "pm-a1b2",
+          "--add-json",
+          "{command:",
+          "x}",
+        ],
+      },
+    );
     expect(addJson.code).toBe("linked_test_value_not_quoted");
-    expect(addJson.title).toBe("Linked-test --add-json value must be one argument");
+    expect(addJson.title).toBe(
+      "Linked-test --add-json value must be one argument",
+    );
     expect(addJson.recovery?.suggested_retry).toBeUndefined();
 
-    const inline = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2, {
-      normalizedInvocationArgs: ["test", "pm-a1b2", "--add=command", "extra"],
-    });
+    const inline = formatCommanderErrorForJson(
+      TOO_MANY,
+      "test",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: ["test", "pm-a1b2", "--add=command", "extra"],
+      },
+    );
     expect(inline.code).toBe("linked_test_value_not_quoted");
   });
 
   it("keeps generic usage guidance for test excess arguments without linked-test flags", () => {
-    const envelope = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2, {
-      normalizedInvocationArgs: ["test", "pm-a1b2", "extra", "--run"],
-    });
+    const envelope = formatCommanderErrorForJson(
+      TOO_MANY,
+      "test",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: ["test", "pm-a1b2", "extra", "--run"],
+      },
+    );
     expect(envelope.code).toBe("invalid_command_usage");
 
-    const noContext = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2);
+    const noContext = formatCommanderErrorForJson(
+      TOO_MANY,
+      "test",
+      ALLOWED_TYPES,
+      2,
+    );
     expect(noContext.code).toBe("invalid_command_usage");
   });
 
@@ -386,33 +622,120 @@ describe("linked-test value quoting guidance (GH-191)", () => {
       "get",
       ALLOWED_TYPES,
       2,
-      { normalizedInvocationArgs: ["get", "pm-a1b2", "--add", "command", "x", "y"] },
+      {
+        normalizedInvocationArgs: [
+          "get",
+          "pm-a1b2",
+          "--add",
+          "command",
+          "x",
+          "y",
+        ],
+      },
     );
     expect(otherCommand.code).toBe("invalid_command_usage");
 
-    const otherMessage = formatCommanderErrorForJson("error: something else entirely", "test", ALLOWED_TYPES, 2, {
-      normalizedInvocationArgs: ["test", "pm-a1b2", "--add", "command", "x", "y"],
-    });
+    const otherMessage = formatCommanderErrorForJson(
+      "error: something else entirely",
+      "test",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: [
+          "test",
+          "pm-a1b2",
+          "--add",
+          "command",
+          "x",
+          "y",
+        ],
+      },
+    );
     expect(otherMessage.code).toBe("invalid_command_usage");
   });
 
   it("renders the targeted guidance in text output", () => {
-    const text = formatCommanderErrorForDisplay(TOO_MANY, "test", ALLOWED_TYPES, {
-      normalizedInvocationArgs: ["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"],
-    });
+    const text = formatCommanderErrorForDisplay(
+      TOO_MANY,
+      "test",
+      ALLOWED_TYPES,
+      {
+        normalizedInvocationArgs: [
+          "test",
+          "pm-a1b2",
+          "--add",
+          "command",
+          "npm",
+          "test",
+          "--",
+          "parser",
+        ],
+      },
+    );
     expect(text).toContain("Linked-test --add value must be one argument");
-    expect(text).toContain('pm test pm-a1b2 --add "command=npm test -- parser"');
+    expect(text).toContain(
+      'pm test pm-a1b2 --add "command=npm test -- parser"',
+    );
+  });
+});
+
+describe("collection mutation transposition guidance", () => {
+  it("labels positional roles and supplies object-first recovery", () => {
+    const envelope = formatCommanderErrorForJson(
+      "error: too many arguments for 'files'. Expected 1 argument but got 2.",
+      "files",
+      "Task|Issue",
+      2,
+      { normalizedInvocationArgs: ["files", "add", "pm-a1b2"] },
+    );
+
+    expect(envelope.code).toBe("collection_transposed_subcommand");
+    expect(envelope.recovery?.parsed_positionals).toEqual([
+      { role: "transposed_subcommand", value: "add" },
+      { role: "item_id", value: "pm-a1b2" },
+    ]);
+    expect(envelope.recovery?.suggested_retry).toBe(
+      "pm files pm-a1b2 --add <value>",
+    );
+  });
+
+  it("renders typed positional roles and defensively normalizes malformed roles", () => {
+    const text = formatPmCliErrorForDisplay("Annotation tokens were transposed.", {
+      code: "annotation_transposed_subcommand",
+      recovery: {
+        parsed_positionals: [
+          { role: " transposed_subcommand ", value: " add " },
+          { role: 7, value: null },
+        ] as never,
+      },
+    });
+
+    expect(text).toContain("parsed_positionals:");
+    expect(text).toContain("- transposed_subcommand: add");
+    expect(text).not.toContain("- : ");
+    expect(
+      _testOnly.normalizeRecoveryPayload({
+        parsed_positionals: [{ role: 7, value: null }] as never,
+      }),
+    ).toBeUndefined();
   });
 });
 
 describe("context item-argument guidance", () => {
   const ALLOWED_TYPES = "Task|Issue";
-  const TOO_MANY = "error: too many arguments for 'context'. Expected 0 arguments but got 1: pm-a1b2.";
+  const TOO_MANY =
+    "error: too many arguments for 'context'. Expected 0 arguments but got 1: pm-a1b2.";
 
   it("routes pm context <id> to pm get and pm context --parent", () => {
-    const envelope = formatCommanderErrorForJson(TOO_MANY, "context", ALLOWED_TYPES, 2, {
-      normalizedInvocationArgs: ["context", "pm-a1b2"],
-    });
+    const envelope = formatCommanderErrorForJson(
+      TOO_MANY,
+      "context",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: ["context", "pm-a1b2"],
+      },
+    );
 
     expect(envelope.code).toBe("context_takes_no_item_argument");
     expect(envelope.required).toContain("pm get pm-a1b2");
@@ -428,7 +751,12 @@ describe("context item-argument guidance", () => {
       ALLOWED_TYPES,
       2,
       {
-        normalizedInvocationArgs: ["context", "--parent", "pm-a1b2", "extra-arg"],
+        normalizedInvocationArgs: [
+          "context",
+          "--parent",
+          "pm-a1b2",
+          "extra-arg",
+        ],
       },
     );
 
@@ -491,7 +819,12 @@ describe("context item-argument guidance", () => {
       ALLOWED_TYPES,
       2,
       {
-        normalizedInvocationArgs: ["context", "--parent", "pm-a1b2", "extra-arg"],
+        normalizedInvocationArgs: [
+          "context",
+          "--parent",
+          "pm-a1b2",
+          "extra-arg",
+        ],
       },
     );
 
@@ -506,7 +839,13 @@ describe("context item-argument guidance", () => {
       ALLOWED_TYPES,
       2,
       {
-        normalizedInvocationArgs: ["context", "--pm-path", "/tmp/project/.agents/pm", "--path=/tmp/legacy", "pm-a1b2"],
+        normalizedInvocationArgs: [
+          "context",
+          "--pm-path",
+          "/tmp/project/.agents/pm",
+          "--path=/tmp/legacy",
+          "pm-a1b2",
+        ],
       },
     );
 
@@ -555,12 +894,23 @@ describe("context item-argument guidance", () => {
   });
 
   it("keeps generic usage guidance when no positional token is present", () => {
-    const flagOnly = formatCommanderErrorForJson("error: too many arguments for 'context'. Expected 0 arguments.", "context", ALLOWED_TYPES, 2, {
-      normalizedInvocationArgs: ["context", "--parent"],
-    });
+    const flagOnly = formatCommanderErrorForJson(
+      "error: too many arguments for 'context'. Expected 0 arguments.",
+      "context",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: ["context", "--parent"],
+      },
+    );
     expect(flagOnly.code).toBe("invalid_command_usage");
 
-    const noContext = formatCommanderErrorForJson("error: too many arguments for 'context'. Expected 0 arguments.", "context", ALLOWED_TYPES, 2);
+    const noContext = formatCommanderErrorForJson(
+      "error: too many arguments for 'context'. Expected 0 arguments.",
+      "context",
+      ALLOWED_TYPES,
+      2,
+    );
     expect(noContext.code).toBe("invalid_command_usage");
 
     const unknownCommandName = formatCommanderErrorForJson(
@@ -576,14 +926,26 @@ describe("context item-argument guidance", () => {
   });
 
   it("keeps generic usage guidance for other commands and other messages", () => {
-    const otherCommand = formatCommanderErrorForJson(TOO_MANY, "focus", ALLOWED_TYPES, 2, {
-      normalizedInvocationArgs: ["focus", "pm-a1b2", "extra"],
-    });
+    const otherCommand = formatCommanderErrorForJson(
+      TOO_MANY,
+      "focus",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: ["focus", "pm-a1b2", "extra"],
+      },
+    );
     expect(otherCommand.code).toBe("invalid_command_usage");
 
-    const otherMessage = formatCommanderErrorForJson("error: something else entirely", "context", ALLOWED_TYPES, 2, {
-      normalizedInvocationArgs: ["context", "pm-a1b2"],
-    });
+    const otherMessage = formatCommanderErrorForJson(
+      "error: something else entirely",
+      "context",
+      ALLOWED_TYPES,
+      2,
+      {
+        normalizedInvocationArgs: ["context", "pm-a1b2"],
+      },
+    );
     expect(otherMessage.code).toBe("invalid_command_usage");
   });
 });
@@ -591,28 +953,77 @@ describe("context item-argument guidance", () => {
 describe("buildLinkedTestQuotedRetryCommand", () => {
   it("re-joins shell-split value tokens into a quoted key=value retry", () => {
     expect(
-      buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"]),
+      buildLinkedTestQuotedRetryCommand([
+        "test",
+        "pm-a1b2",
+        "--add",
+        "command",
+        "npm",
+        "test",
+        "--",
+        "parser",
+      ]),
     ).toBe('pm test pm-a1b2 --add "command=npm test -- parser"');
     expect(
-      buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--remove", "path", "tests/a", "b"]),
+      buildLinkedTestQuotedRetryCommand([
+        "test",
+        "pm-a1b2",
+        "--remove",
+        "path",
+        "tests/a",
+        "b",
+      ]),
     ).toBe('pm test pm-a1b2 --remove "path=tests/a b"');
   });
 
   it("stops the re-joined value at the next long flag", () => {
     expect(
-      buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--add", "command", "npm", "test", "--run"]),
+      buildLinkedTestQuotedRetryCommand([
+        "test",
+        "pm-a1b2",
+        "--add",
+        "command",
+        "npm",
+        "test",
+        "--run",
+      ]),
     ).toBe('pm test pm-a1b2 --add "command=npm test" --run');
   });
 
   it("returns undefined when the shape is not the unquoted linked-test form", () => {
     expect(buildLinkedTestQuotedRetryCommand(undefined)).toBeUndefined();
-    expect(buildLinkedTestQuotedRetryCommand(["get", "pm-a1b2", "extra"])).toBeUndefined();
+    expect(
+      buildLinkedTestQuotedRetryCommand(["get", "pm-a1b2", "extra"]),
+    ).toBeUndefined();
     expect(buildLinkedTestQuotedRetryCommand(["test"])).toBeUndefined();
-    expect(buildLinkedTestQuotedRetryCommand(["test", "--add", "command", "a", "b"])).toBeUndefined();
-    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--list"])).toBeUndefined();
-    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--add"])).toBeUndefined();
-    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--add", "scope", "a", "b"])).toBeUndefined();
-    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--add", "command", "single-token"])).toBeUndefined();
+    expect(
+      buildLinkedTestQuotedRetryCommand(["test", "--add", "command", "a", "b"]),
+    ).toBeUndefined();
+    expect(
+      buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--list"]),
+    ).toBeUndefined();
+    expect(
+      buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--add"]),
+    ).toBeUndefined();
+    expect(
+      buildLinkedTestQuotedRetryCommand([
+        "test",
+        "pm-a1b2",
+        "--add",
+        "scope",
+        "a",
+        "b",
+      ]),
+    ).toBeUndefined();
+    expect(
+      buildLinkedTestQuotedRetryCommand([
+        "test",
+        "pm-a1b2",
+        "--add",
+        "command",
+        "single-token",
+      ]),
+    ).toBeUndefined();
   });
 });
 
@@ -621,19 +1032,29 @@ describe("error-guidance helper edge branches", () => {
     expect(_testOnly.resolveKnownPackageCommandHint("   ")).toBeUndefined();
     expect(_testOnly.renderList("Examples:", [])).toEqual([]);
     expect(_testOnly.dedupeStrings(["a", "a", "b", "a"])).toEqual(["a", "b"]);
-    expect(_testOnly.commandExampleForRequiredOption("update", "--status", "Task|Issue")).toEqual([
+    expect(
+      _testOnly.commandExampleForRequiredOption(
+        "update",
+        "--status",
+        "Task|Issue",
+      ),
+    ).toEqual([
       'pm update pm-a1b2 --status in_progress --message "Start implementation"',
     ]);
 
     const existing = ["pm create --help"];
-    expect(_testOnly.appendIfMissing(existing, "pm create --help")).toBe(existing);
+    expect(_testOnly.appendIfMissing(existing, "pm create --help")).toBe(
+      existing,
+    );
     expect(_testOnly.appendIfMissing(existing, undefined)).toBe(existing);
   });
 
   it("covers recovery normalization and commander guidance fallback branches", () => {
     expect(
       _testOnly.normalizeRecoveryPayload({
-        fallback_candidates: [{ source: 1, command: null, reason: false } as never],
+        fallback_candidates: [
+          { source: 1, command: null, reason: false } as never,
+        ],
       }),
     ).toBeUndefined();
 
@@ -644,7 +1065,9 @@ describe("error-guidance helper edge branches", () => {
       happened: "Minimal happened",
       required: "Minimal required",
     };
-    expect(_testOnly.guidanceToJsonEnvelope(minimalGuidance as never, 2)).toEqual({
+    expect(
+      _testOnly.guidanceToJsonEnvelope(minimalGuidance as never, 2),
+    ).toEqual({
       type: "urn:pm-cli:error:minimal",
       code: "minimal",
       title: "Minimal",
@@ -652,7 +1075,9 @@ describe("error-guidance helper edge branches", () => {
       required: "Minimal required",
       exit_code: 2,
     });
-    expect(_testOnly.guidanceToClassification(minimalGuidance as never)).toEqual({
+    expect(
+      _testOnly.guidanceToClassification(minimalGuidance as never),
+    ).toEqual({
       type: "urn:pm-cli:error:minimal",
       code: "minimal",
       title: "Minimal",
@@ -660,19 +1085,36 @@ describe("error-guidance helper edge branches", () => {
       required: "Minimal required",
     });
 
-    expect(_testOnly.commandExampleForRequiredOption("create", "--type", "")).toEqual([
+    expect(
+      _testOnly.commandExampleForRequiredOption("create", "--type", ""),
+    ).toEqual([
       'pm create --title "Example title" --description "Example description" --type Task --status open --priority 1 --message "Create item" --create-mode progressive',
     ]);
-    expect(_testOnly.commandExampleForRequiredOption(undefined, "--message", "Task|Issue")).toEqual([
-      "pm <command> --help",
-    ]);
+    expect(
+      _testOnly.commandExampleForRequiredOption(
+        undefined,
+        "--message",
+        "Task|Issue",
+      ),
+    ).toEqual(["pm <command> --help"]);
 
-    const missingRequired = formatPmCliErrorForJson("Missing required option --title", 2);
+    const missingRequired = formatPmCliErrorForJson(
+      "Missing required option --title",
+      2,
+    );
     expect(missingRequired.title).toBe("Missing required option --title");
-    const missingRequiredPlural = formatPmCliErrorForJson("Missing required options --title, --description", 2);
+    const missingRequiredPlural = formatPmCliErrorForJson(
+      "Missing required options --title, --description",
+      2,
+    );
     expect(missingRequiredPlural.title).toBe("Missing required options");
 
-    const bareOption = formatCommanderErrorForJson("error: required option 'title' not specified", undefined, "Task|Issue", 2);
+    const bareOption = formatCommanderErrorForJson(
+      "error: required option 'title' not specified",
+      undefined,
+      "Task|Issue",
+      2,
+    );
     expect(bareOption.title).toBe("Missing required option title");
     const missingTypeOption = formatCommanderErrorForJson(
       "error: required option '--type <value>' not specified",
@@ -684,16 +1126,36 @@ describe("error-guidance helper edge branches", () => {
       'Run "pm create --help --type <value>" for type-aware policy details.',
     );
 
-    const missingArgument = formatCommanderErrorForJson("error: missing required argument 'id'", undefined, "Task|Issue", 2);
+    const missingArgument = formatCommanderErrorForJson(
+      "error: missing required argument 'id'",
+      undefined,
+      "Task|Issue",
+      2,
+    );
     expect(missingArgument.examples).toEqual(["pm <command> --help"]);
 
-    const unknownDoc = formatCommanderErrorForJson("unknown option '--doc'", "update", "Task|Issue", 2);
+    const unknownDoc = formatCommanderErrorForJson(
+      "unknown option '--doc'",
+      "update",
+      "Task|Issue",
+      2,
+    );
     expect(unknownDoc.code).toBe("unsupported_update_option");
 
-    const unknownFallback = formatCommanderErrorForJson("unknown option '--bogus'", undefined, "Task|Issue", 2);
+    const unknownFallback = formatCommanderErrorForJson(
+      "unknown option '--bogus'",
+      undefined,
+      "Task|Issue",
+      2,
+    );
     expect(unknownFallback.examples).toContain("pm <command> --help");
 
-    const invalidUsageFallback = formatCommanderErrorForJson("error: random usage failure", undefined, "Task|Issue", 2);
+    const invalidUsageFallback = formatCommanderErrorForJson(
+      "error: random usage failure",
+      undefined,
+      "Task|Issue",
+      2,
+    );
     expect(invalidUsageFallback.examples).toContain("pm <command> --help");
 
     const contextual = _testOnly.applyPmCliErrorContext(

@@ -23,7 +23,7 @@ import { runHealth } from "./health.js";
 import { runValidate } from "./validate.js";
 import {
   getHistoryPath,
-  listAllItemMetadataLight,
+  listAllItemMetadata,
   readHistoryEntries,
   readSettings,
   resolveItemTypeRegistry,
@@ -53,43 +53,67 @@ const HISTORY_READ_CONCURRENCY = 16;
 function valueAtPath(input: unknown, field: string): AssuranceValue {
   let current: unknown = input;
   for (const segment of field.split(".")) {
-    if (typeof current !== "object" || current === null || Array.isArray(current)) {
+    if (
+      typeof current !== "object" ||
+      current === null ||
+      Array.isArray(current)
+    ) {
       throw new TypeError(`assurance field ${field} is not present`);
     }
     current = (current as Record<string, unknown>)[segment];
   }
   if (typeof current === "number" && Number.isFinite(current)) return current;
-  if (Array.isArray(current) && current.every((entry) => typeof entry === "string")) {
+  if (
+    Array.isArray(current) &&
+    current.every((entry) => typeof entry === "string")
+  ) {
     return current;
   }
-  throw new TypeError(`assurance field ${field} must resolve to a finite number or string array`);
+  throw new TypeError(
+    `assurance field ${field} must resolve to a finite number or string array`,
+  );
 }
 
 function checkValue(
-  result: { checks: Array<{ name: string; status: string; details?: Record<string, unknown> }> },
+  result: {
+    checks: Array<{
+      name: string;
+      status: string;
+      ok?: boolean;
+      details?: Record<string, unknown>;
+    }>;
+  },
   checkName: string,
   field: string,
 ): AssuranceExternalMeasurementResult {
   const check = result.checks.find((entry) => entry.name === checkName);
-  if (!check) throw new TypeError(`assurance check ${checkName} is not present`);
+  if (!check)
+    throw new TypeError(`assurance check ${checkName} is not present`);
   const value =
-    field === "status"
-      ? check.status === "ok"
+    field === "status" || field === "ok"
+      ? (check.ok ?? check.status === "ok")
         ? 0
         : 1
       : valueAtPath(check.details, field);
   return { value, population_size: 1, cost: result.checks.length };
 }
 
-async function resolveTreeId(pmRoot: string, explicit: string | undefined): Promise<string> {
+async function resolveTreeId(
+  pmRoot: string,
+  explicit: string | undefined,
+): Promise<string> {
   if (explicit?.trim()) return explicit.trim();
   try {
-    const { stdout } = await execFileAsync("git", ["rev-parse", "HEAD^{commit}"], {
-      cwd: pmRoot,
-      encoding: "utf8",
-      timeout: 5_000,
-      windowsHide: true,
-    });
+    const { stdout } = await execFileAsync(
+      "git",
+      ["rev-parse", "HEAD^{commit}"],
+      {
+        cwd: pmRoot,
+        encoding: "utf8",
+        timeout: 5_000,
+        windowsHide: true,
+      },
+    );
     return stdout.trim();
   } catch {
     return "working-copy";
@@ -138,7 +162,7 @@ export async function createAssuranceWorkspaceContext(
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const metadata = await listAllItemMetadataLight(
+  const metadata = await listAllItemMetadata(
     pmRoot,
     settings.item_format,
     typeRegistry.type_to_folder,
@@ -146,7 +170,7 @@ export async function createAssuranceWorkspaceContext(
     settings.schema,
   );
   const items: AssuranceItemRecord[] = metadata.map((item) => ({
-    ...(item as AssuranceItemRecord),
+    ...item,
     id: item.id,
     status: item.status,
     type: item.type,
@@ -194,7 +218,9 @@ export async function createAssuranceWorkspaceContext(
       }
       const provider = options.providers?.[source.provider];
       if (!provider) {
-        throw new TypeError(`assurance provider ${source.provider} is not registered`);
+        throw new TypeError(
+          `assurance provider ${source.provider} is not registered`,
+        );
       }
       return provider(source);
     },

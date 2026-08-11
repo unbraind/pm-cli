@@ -1051,6 +1051,13 @@ describe("operation command actions", () => {
     expect(options.metricDiff).toBe("coverage");
     expect(invalidateSearchCachesForMutation).toHaveBeenCalled();
 
+    await runCli("test", "pm-1", "--remove-index", "1");
+    options = lastCallArg<Record<string, unknown>>(
+      vi.mocked(runTest) as never,
+      1,
+    );
+    expect(options.removeIndex).toEqual(["1"]);
+
     vi.mocked(runTest).mockResolvedValue({
       run_results: [{ status: "failed" }],
       fail_on_skipped_triggered: false,
@@ -2791,6 +2798,22 @@ describe("mutation command actions", () => {
     expect(
       lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).add,
     ).toBe("note text");
+    await runCli("notes", "pm-1", "--note", "alias note");
+    expect(
+      lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).add,
+    ).toBe("alias note");
+    await expect(
+      runCli("notes", "add", "pm-1", "--note", "transposed"),
+    ).rejects.toThrow("does not use an add subcommand");
+    await expect(runCli("notes", "add", "pm-1")).rejects.toThrow(
+      "does not use an add subcommand",
+    );
+    await expect(
+      runCli("comments", "add", "pm-1", "--body", "transposed body"),
+    ).rejects.toThrow("does not use an add subcommand");
+    await expect(
+      runCli("comments", "add", "pm-1", "--comment", "transposed comment"),
+    ).rejects.toThrow("does not use an add subcommand");
     await runCli("notes", "pm-1", "--delete", "2");
     expect(
       lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1)
@@ -2822,7 +2845,7 @@ describe("mutation command actions", () => {
     await expect(
       runCli("learnings", "pm-1", "a", "--add", "b"),
     ).rejects.toThrow("not both");
-    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(8);
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(9);
   });
 
   it("maps files/docs link management and discover routing", async () => {

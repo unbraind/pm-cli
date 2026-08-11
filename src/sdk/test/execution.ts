@@ -202,6 +202,8 @@ export interface TestCommandOptions {
   addJson?: string[];
   /** Value that configures or reports remove for this contract. */
   remove?: string[];
+  /** Remove linked tests by their stable 1-based list position. */
+  removeIndex?: Array<string | number>;
   /** Value that configures or reports list for this contract. */
   list?: boolean;
   /** Value that configures or reports run for this contract. */
@@ -323,6 +325,8 @@ export interface TestResult {
   changed: boolean;
   /** Value that configures or reports count for this contract. */
   count: number;
+  /** Number of linked-test entries removed by this mutation. */
+  removed?: number;
   /** Measurements supplied for the current producing run. */
   measurements?: TestRunMeasurement[];
   /** Existing and current measurements below the selected threshold. */
@@ -957,7 +961,14 @@ function parseAddJsonEntries(raw: string[] | undefined): LinkedTest[] {
 }
 /* c8 ignore stop */
 
-function parseRemoveEntries(raw: string[] | undefined): string[] {
+interface LinkedTestRemovalSelector {
+  kind: "command" | "path" | "either";
+  value: string;
+}
+
+function parseRemoveEntries(
+  raw: string[] | undefined,
+): LinkedTestRemovalSelector[] {
   if (!raw) return [];
   return raw.map((entry) => {
     const trimmed = entry.trim();
@@ -967,12 +978,32 @@ function parseRemoveEntries(raw: string[] | undefined): string[] {
         EXIT_CODE.USAGE,
       );
     }
+    const identityPrefix = /^(command|path)\s*=/i.exec(trimmed);
+    if (identityPrefix) {
+      const value = trimmed.slice(identityPrefix[0].length).trim();
+      if (!value) {
+        throw new PmCliError(
+          "--remove requires a non-empty command=<value> or path=<value>",
+          EXIT_CODE.USAGE,
+        );
+      }
+      return {
+        kind: identityPrefix[1].toLowerCase() as "command" | "path",
+        value,
+      };
+    }
+    if (/^[A-Za-z_][\w-]*=\S+$/u.test(trimmed)) {
+      throw new PmCliError(
+        "--remove structured selectors require command=<value> or path=<value>",
+        EXIT_CODE.USAGE,
+      );
+    }
     if (
-      trimmed.includes("=") ||
-      /^(?:[-*+]\s+)?(?:path|command)\s*[:=]/i.test(trimmed) ||
+      /^(?:[-*+]\s+)?(?:path|command)\s*:/i.test(trimmed) ||
       trimmed.startsWith("```")
     ) {
       const kv = parseCsvKv(trimmed, "--remove");
+      const kind = kv.path !== undefined ? "path" : "command";
       const value = kv.path ?? kv.command;
       if (!value?.trim()) {
         throw new PmCliError(
@@ -980,10 +1011,33 @@ function parseRemoveEntries(raw: string[] | undefined): string[] {
           EXIT_CODE.USAGE,
         );
       }
-      return value.trim();
+      return { kind, value: value.trim() };
     }
-    return trimmed;
+    return { kind: "either", value: trimmed };
   });
+}
+
+function parseRemoveIndexes(raw: Array<string | number> | undefined): number[] {
+  if (!raw) return [];
+  return [
+    ...new Set(
+      raw.map((value) => {
+        const parsed =
+          typeof value === "number" ? value : Number.parseInt(value, 10);
+        if (
+          !Number.isInteger(parsed) ||
+          parsed < 1 ||
+          String(parsed) !== String(value).trim()
+        ) {
+          throw new PmCliError(
+            "--remove-index must be a positive integer",
+            EXIT_CODE.USAGE,
+          );
+        }
+        return parsed;
+      }),
+    ),
+  ];
 }
 
 function closeLinkedTestStdin(child: ChildProcess): void {
@@ -2491,6 +2545,7 @@ interface ResolvedTestItem {
   tests: LinkedTest[];
   testRuns: ItemTestRunSummary[];
   changed: boolean;
+  removed: number;
 }
 
 interface ResolvedTestRunOptions {
@@ -2523,6 +2578,7 @@ async function readLinkedTestItem(params: {
     tests: loaded.document.metadata.tests ?? [],
     testRuns: loaded.document.metadata.test_runs ?? [],
     changed: false,
+    removed: 0,
   };
 }
 
@@ -2553,26 +2609,34 @@ function appendMissingLinkedTests(
 
 function removeLinkedTestsBySelector(
   current: LinkedTest[],
-  removals: string[],
-): LinkedTest[] {
-  if (removals.length === 0) {
-    return current;
+  removals: LinkedTestRemovalSelector[],
+  removeIndexes: number[],
+): { tests: LinkedTest[]; removed: number } {
+  if (removals.length === 0 && removeIndexes.length === 0) {
+    return { tests: current, removed: 0 };
   }
-  return current.filter(
-    (entry) =>
-      !removals.includes(entry.path ?? "") &&
-      !removals.includes(entry.command ?? ""),
-  );
+  const indexSet = new Set(removeIndexes);
+  const tests = current.filter((entry, index) => {
+    if (indexSet.has(index + 1)) return false;
+    return !removals.some((selector) => {
+      if (selector.kind === "command") return entry.command === selector.value;
+      if (selector.kind === "path") return entry.path === selector.value;
+      return entry.command === selector.value || entry.path === selector.value;
+    });
+  });
+  return { tests, removed: current.length - tests.length };
 }
 
 function applyLinkedTestMutations(
   previous: LinkedTest[],
   adds: LinkedTest[],
-  removes: string[],
-): LinkedTest[] {
+  removes: LinkedTestRemovalSelector[],
+  removeIndexes: number[],
+): { tests: LinkedTest[]; removed: number } {
   return removeLinkedTestsBySelector(
     appendMissingLinkedTests(previous, adds),
     removes,
+    removeIndexes,
   );
 }
 
@@ -2618,27 +2682,65 @@ async function resolveLinkedTestItem(params: {
   settings: Awaited<ReturnType<typeof readSettings>>;
   typeToFolder: Record<string, string>;
   adds: LinkedTest[];
-  removes: string[];
+  removes: LinkedTestRemovalSelector[];
+  removeIndexes: number[];
 }): Promise<ResolvedTestItem> {
-  const { id, options, pmRoot, settings, typeToFolder, adds, removes } = params;
-  if (adds.length === 0 && removes.length === 0) {
+  const {
+    id,
+    options,
+    pmRoot,
+    settings,
+    typeToFolder,
+    adds,
+    removes,
+    removeIndexes,
+  } = params;
+  if (adds.length === 0 && removes.length === 0 && removeIndexes.length === 0) {
     return readLinkedTestItem({ id, pmRoot, settings, typeToFolder });
   }
+  let removed = 0;
   const result = await mutateItem({
     pmRoot,
     settings,
     id,
-    op: "tests_add",
+    op: adds.length > 0 ? "tests_add" : "tests_remove",
     author: resolveAuthor(options.author, settings.author_default),
     message: options.message,
     force: options.force,
     skipNoop: true,
     mutate(document) {
       const previous = document.metadata.tests ?? [];
-      const next = applyLinkedTestMutations(previous, adds, removes);
-      document.metadata.tests = next;
+      const mutation = applyLinkedTestMutations(
+        previous,
+        adds,
+        removes,
+        removeIndexes,
+      );
+      removed = mutation.removed;
+      if ((removes.length > 0 || removeIndexes.length > 0) && removed === 0) {
+        throw new PmCliError(
+          "No linked tests matched the requested removal selector",
+          EXIT_CODE.NOT_FOUND,
+          {
+            code: "linked_test_remove_no_match",
+            unmatched: [
+              ...removes.map((entry) => `${entry.kind}=${entry.value}`),
+              ...removeIndexes.map((index) => `index=${index}`),
+            ],
+            required:
+              "List linked tests and retry with an exact command/path or a current 1-based --remove-index.",
+            examples: [
+              `pm test ${id} --list`,
+              `pm test ${id} --remove-index 1`,
+            ],
+          },
+        );
+      }
+      document.metadata.tests = mutation.tests;
       return {
-        changedFields: stableValueEquals(previous, next) ? [] : ["tests"],
+        changedFields: stableValueEquals(previous, mutation.tests)
+          ? []
+          : ["tests"],
       };
     },
   });
@@ -2647,6 +2749,7 @@ async function resolveLinkedTestItem(params: {
     tests: result.item.tests ?? [],
     testRuns: result.item.test_runs ?? [],
     changed: result.changedFields.length > 0,
+    removed,
   };
 }
 
@@ -2901,6 +3004,7 @@ export async function runTest(
     ...parseAddJsonEntries(resolvedAddJsons),
   ];
   const removes = parseRemoveEntries(resolvedRemoves);
+  const removeIndexes = parseRemoveIndexes(options.removeIndex);
   const item = await resolveLinkedTestItem({
     id,
     options,
@@ -2909,6 +3013,7 @@ export async function runTest(
     typeToFolder: typeRegistry.type_to_folder,
     adds,
     removes,
+    removeIndexes,
   });
   const runOptions = resolveTestRunOptions(options, item.tests);
   const runStartedAt = options.run === true ? nowIso() : undefined;
@@ -2967,6 +3072,7 @@ export async function runTest(
     warnings: warnings.length > 0 ? warnings : undefined,
     changed: item.changed,
     count: item.tests.length,
+    ...(item.removed > 0 ? { removed: item.removed } : {}),
     ...measurementProjection,
   };
 }

@@ -1,0 +1,62 @@
+id: pm-m0b7h8
+title: Linked-test removal must be lossless and observable for commands containing comma or equals delimiters
+description: "GitHub #982 proves pm test --add-json can persist a command containing comma and equals characters that pm test --remove cannot later address. The remove selector is reparsed as structured CSV, silently matches nothing, and returns ok:true without a removed count. This creates stale evidence that cannot be repaired through the supported CLI. All-status exact and conjunctive searches for linked-test removal, delimiter-safe selectors, comma/equals commands, and no-op removal found no canonical owner."
+type: Issue
+status: closed
+priority: 1
+tags[8]: agent-ux,"area:cli","area:sdk",contracts,linked-tests,lossless-mutation,safety,token-efficiency
+created_at: "2026-08-11T20:50:17.622Z"
+updated_at: "2026-08-11T22:24:04.466Z"
+closed_at: "2026-08-11T22:24:03.826Z"
+completed_at: "2026-08-11T22:24:03.826Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: Every linked-test command accepted by --add or --add-json can be removed losslessly even when it contains comma or equals characters; Removal reports an explicit removed count and a zero-match selector never returns an indistinguishable success receipt; A stable index selector addresses the 1-based --list order without reparsing stored command text; CLI SDK MCP help contracts completions and docs expose one shared selector contract; Focused integration packaged npm npx bun bunx exact 100/100/100/100 coverage docstring and static gates pass
+goal: project management = context management
+objective: Make linked-test evidence fully reversible and make no-op mutations machine-observable
+value: Agents can repair stale test evidence without hand-editing tracker files or trusting false-success receipts
+impact: Linked-test mutation becomes lossless across CLI SDK and MCP consumers
+why_now: The current published package can create evidence it cannot remove and silently reports success while leaving it stale
+parent: pm-mpbb
+risk: high
+confidence: 98
+reporter: GitHub #982
+severity: high
+environment: @unbrained/pm-cli 2026.8.7 through 2026.8.11 Node 22/26 Linux
+repro_steps: "Add a linked test command name=x,result=pass with pm test --add-json then remove it by command value; observe ok:true and the entry remains"
+resolution: "Linked-test removal now preserves delimiter-bearing commands, supports stable 1-based remove indexes, returns effective removed counts, and rejects zero matches with a typed not-found error."
+expected_result: The exact entry is removed or the command returns a typed zero-match refusal with removed=0
+actual_result: "The selector is split at delimiters no entry matches and the mutation reports ok:true with no observable removal count"
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0v9k,discovered_from,"2026-08-11T20:50:17.622Z","harness:codex","cli:create:dep",detected
+  pm-mpbb,implements,"2026-08-11T20:50:17.622Z","harness:codex","cli:create:dep",detected
+  pm-rncuf7,related,"2026-08-11T20:50:17.622Z","harness:codex","cli:create:dep",detected
+  pm-vcu7,related,"2026-08-11T20:50:17.622Z","harness:codex","cli:create:dep",detected
+  pm-x2vx,related,"2026-08-11T20:50:17.622Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-11T20:50:17.622Z","harness:codex","Duplicate-check evidence: all-status exact and conjunctive searches found no owner; canonical external report https://github.com/unbraind/pm-cli/issues/982"
+  "2026-08-11T22:18:18.503Z","harness:codex","Evidence 2026-08-12: linked-test removal now preserves comma and equals characters, supports repeatable 1-based --remove-index, reports removed only for effective removals, and refuses zero matches with linked_test_remove_no_match instead of false success. CLI, SDK, MCP schema, help, completion, and background safety contracts are aligned. Exact 100/100/100/100 coverage, contract snapshot, packed dogfood, packed npx, and all external package smokes passed. Temporary acceptance added command=printf a,b=c, removed it exactly with removed:1, removed a second entry by index with removed:1, and observed the typed zero-match refusal."
+  "2026-08-11T22:23:34.873Z","harness:codex","Packed Bun acceptance 2026-08-12: npm pack produced unbrained-pm-cli-2026.8.11.tgz and bunx --silent --bun --package <tarball> pm --json --no-extensions contracts --summary exited 0 with schema_version 4.7.0 and 56 command summaries. Registry-backed package-default bunx remains assigned to the post-publish verifier, because Bun does not accept a tarball path in its package-default shorthand."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T22:18:19.011Z","harness:codex","Lossless evidence mutation requires selectors that never reinterpret stored command delimiters, an index escape hatch tied to stable list order, and receipts that distinguish effective removal from a no-op refusal."
+files[10]{path,scope,note}:
+  sdk/public-surface.json,project,Versioned public SDK surface contract
+  src/cli/register-operations.ts,project,CLI remove-index registration and mutation routing
+  src/sdk/cli-contracts/flag-contracts.ts,project,Command flag contract
+  src/sdk/cli-contracts/registration-helpers.ts,project,Background mutation safety
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,SDK and MCP parameter parity
+  src/sdk/cli-contracts/tool-schema.ts,project,Strict tool schema version and removal fields
+  src/sdk/completion.ts,project,Shell completion parity
+  src/sdk/test/execution.ts,project,Lossless selectors removed count and stable index removal
+  tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot
+  tests/unit/commands/test-command.spec.ts,project,Delimiter index and zero-match coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,1200
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msp621ks-ckrlr9,test,passed,"2026-08-11T21:21:56.916Z","2026-08-11T21:22:22.972Z","2026-08-11T21:22:22.972Z",1,0,0
+  test-local-msp85lvf-q59e9i,test,passed,"2026-08-11T22:20:42.399Z","2026-08-11T22:21:08.475Z","2026-08-11T22:21:08.475Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/README.md,project,Documentation map entry
+  docs/TRUSTWORTHY_CONTEXT_EVIDENCE.md,project,Lossless linked-test mutation guide
+close_reason: "Implemented and verified lossless delimiter-safe linked-test removal, stable index addressing, observable receipts, and typed zero-match refusal."
+body: ""

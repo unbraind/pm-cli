@@ -2,8 +2,17 @@
 
 ## Unreleased
 
+### Added
+
+- Annotation transposition recovery: detect pm <collection\> add <id\> before the item id is consumed as text ([pm-rncuf7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rncuf7.toon))
+- The relationship ratchet bounds every edge kind that carries meaning and leaves the one kind that carries none unbounded, so the cheapest way to satisfy every graph guarantee is to add edges no algorithm can traverse ([pm-q6n8sj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q6n8sj.toon))
+
 ### Fixed
 
+- Linked-test removal must be lossless and observable for commands containing comma or equals delimiters ([pm-m0b7h8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m0b7h8.toon))
+- Health result contract parity: every checks\[\] row exposes a boolean ok beside its tri-state status ([pm-h97qxd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h97qxd.toon))
+- Assurance registry mutations and gate verdicts record author unknown while carrying the full detected provenance in the same entry, so the audit artifact fails the question it exists to answer ([pm-33mjrw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-33mjrw.toon))
+- Two assurance measurement sources answer from a projection that omits the fields they read, so a completeness gate reports zero missing evidence on a workspace with 874 items lacking it ([pm-py7qv2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-py7qv2.toon))
 - Assurance mutation refusals cross the CLI as unclassified Sentry faults (PM-CLI-2Y/2Z/30) ([pm-v0a0un](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v0a0un.toon))
 - GH-976: version history hashes so repeated tests_add streams verify across supported pm versions ([pm-2htk4p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2htk4p.toon))
 - GH-975: export isAlreadyClaimedError through a supported SDK subpath ([pm-hfqju5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hfqju5.toon))

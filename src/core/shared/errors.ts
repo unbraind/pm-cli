@@ -11,6 +11,8 @@ export interface PmCliErrorRecoveryPayload {
   attempted_command?: string;
   /** Value that configures or reports normalized args for this contract. */
   normalized_args?: string[];
+  /** Positional tokens paired with their parser roles for unambiguous recovery. */
+  parsed_positionals?: Array<{ role: string; value: string }>;
   /** Value that configures or reports provided fields for this contract. */
   provided_fields?: string[];
   /** Value that configures or reports missing for this contract. */

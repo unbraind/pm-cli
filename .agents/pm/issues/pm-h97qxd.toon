@@ -2,11 +2,13 @@ id: pm-h97qxd
 title: "Health result contract parity: every checks[] row exposes a boolean ok beside its tri-state status"
 description: "GitHub #980 shows that the public health result uses ok:boolean on the envelope but status:ok|warn|fail with no ok property on each checks[] row. Natural agent code reuses row.ok and can report every healthy check as failed or construct a gate that never fires. This is a public SDK result-schema consistency and compatibility issue, not a change to the established meaning of the aggregate health verdict. Duplicate check searched all statuses for health JSON, checks row ok/status, envelope boolean, and the linked GH-785/GH-815 verdict issues; no item owns row-level boolean parity."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[8]: agent-ux,"area:governance","area:sdk",contracts,health,json,safety,typed-output
 created_at: "2026-08-11T18:12:41.927Z"
-updated_at: "2026-08-11T18:17:09.039Z"
+updated_at: "2026-08-11T22:24:01.900Z"
+closed_at: "2026-08-11T22:24:01.122Z"
+completed_at: "2026-08-11T22:24:01.122Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "The public HealthCheck result type exposes ok:boolean on every checks[] row while preserving status:ok|warn|fail; ok has one documented derivation from status and aggregate advisory/blocking policy remains unchanged; SDK, CLI JSON, MCP, compact/full projections, contracts, fixtures, and docs agree; compatibility tests prove existing status consumers are unchanged and naive row.ok predicates identify failures correctly; packaged npm/npx/bun/bunx acceptance, exact 100/100/100/100 coverage, docstrings, and static gates pass"
@@ -20,6 +22,7 @@ reporter: GitHub #980
 severity: high
 environment: "@unbrained/pm-cli 2026.8.7, 2026.8.10, and 2026.8.11; Node 22; Linux"
 repro_steps: "Run pm health --json and compare top-level .ok with .checks[0].ok and .checks[0].status; .checks[0].ok is absent while status is ok"
+resolution: "Every HealthCheck row now exposes required ok:boolean derived compatibly from its tri-state status across SDK, CLI, MCP, assurance, and projections."
 expected_result: "Each checks[] entry carries a boolean ok compatible with the envelope spelling, alongside its existing tri-state status"
 actual_result: "The envelope has ok:boolean while each check has only status:string, allowing missing-key falsiness to invert or disable obvious agent gates"
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
@@ -30,12 +33,27 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-jezo,related,"2026-08-11T18:12:41.927Z","harness:codex","cli:create:dep",detected
   pm-oxrw,discovered_from,"2026-08-11T18:12:41.927Z","harness:codex","cli:create:dep",detected
   pm-r8u2g6,related,"2026-08-11T18:12:41.927Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-11T18:12:41.927Z","harness:codex","Duplicate-check evidence: all-status searches over health JSON checks row ok/status, envelope boolean, GH-785, and GH-815 found closed SDK health owner pm-oxrw, verdict-policy items pm-83ov2i/pm-r8u2g6/pm-jezo, remediation-map pm-0hnu, and token projection pm-du93sr. Full live metadata confirms those define aggregate semantics, remediation, or projection size; none owns the absent row-level boolean. Canonical external report: https://github.com/unbraind/pm-cli/issues/980."
-files[1]{path,scope,note}:
+  "2026-08-11T22:18:16.286Z","harness:codex","Evidence 2026-08-12: every SDK health check row now carries required ok:boolean alongside tri-state status, and CLI JSON, assurance, vector-provider, and projection tests enforce parity. Exact 100/100/100/100 coverage, docstrings/static quality, contracts, packed dogfood, npx, and external-package smoke passed. Temporary acceptance returned ten checks, all with boolean ok and ok === (status === 'ok')."
+  "2026-08-11T22:23:33.736Z","harness:codex","Packed Bun acceptance 2026-08-12: npm pack produced unbrained-pm-cli-2026.8.11.tgz and bunx --silent --bun --package <tarball> pm --json --no-extensions contracts --summary exited 0 with schema_version 4.7.0 and 56 command summaries. Registry-backed package-default bunx remains assigned to the post-publish verifier, because Bun does not accept a tarball path in its package-default shorthand."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T22:18:16.904Z","harness:codex",Aggregate health truth is insufficient for agents that gate on individual rows; each check must carry a transport-stable boolean while retaining tri-state status for diagnosis.
+files[4]{path,scope,note}:
+  src/sdk/governance/assurance-runtime.ts,project,Health assurance status and ok parity
   src/sdk/governance/health.ts,project,Public SDK health result producer and per-check contract owner
-tests[1]{command,scope,timeout_seconds}:
+  tests/unit/commands/health-command.spec.ts,project,Projection parity coverage
+  tests/unit/sdk/health-vector-boundary.spec.ts,project,Health row ok/status parity at provider boundary
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,300
-docs[1]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts tests/unit/sdk/assurance-runtime.spec.ts,project,600
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-vector-boundary.spec.ts,project,300
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msp60t63-58a1qu,test,passed,"2026-08-11T21:20:41.981Z","2026-08-11T21:21:25.419Z","2026-08-11T21:21:25.419Z",2,0,0
+  test-local-msp84a4z-ck18wt,test,passed,"2026-08-11T22:19:14.949Z","2026-08-11T22:20:06.611Z","2026-08-11T22:20:06.611Z",3,0,0
+docs[3]{path,scope,note}:
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Documents health projections and must define row-level ok/status compatibility
+  docs/SDK_CONTEXT_INTEGRITY.md,project,Cross-projection boolean ok compatibility contract
+  docs/TRUSTWORTHY_CONTEXT_EVIDENCE.md,project,Health row compatibility contract
+close_reason: Implemented and verified row-level health ok/status parity across all public transports and packaged execution.
 body: ""

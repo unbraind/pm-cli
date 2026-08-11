@@ -14,7 +14,7 @@ const ITEMS_FIELD_CONDITIONAL_SCHEMA: Record<string, unknown> = {
 // Keep the JSON Schema keyword visible while avoiding unicorn/no-thenable,
 // which intentionally rejects object literals with a `then` property.
 Reflect.set(ITEMS_FIELD_CONDITIONAL_SCHEMA, "then", {
-  required: ["equals"],
+  oneOf: [{ required: ["equals"] }, { required: ["state"] }],
 });
 
 /** JSON Schema for measurement, assertion, and gate assurance definitions. */
@@ -42,6 +42,7 @@ export const ASSURANCE_DEFINITION_SCHEMA = {
                 tags: { type: "array", items: { type: "string" } },
                 field: { type: "string" },
                 equals: { type: ["string", "number", "boolean", "null"] },
+                state: { enum: ["present", "missing"] },
               },
             },
             {

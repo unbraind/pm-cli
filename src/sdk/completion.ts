@@ -818,7 +818,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(`ancestors descendants predecessors successors paths impact analyze audit communities redundancy dominators slack centrality articulation plan index ${GRAPH_FLAGS}`)})`,
     "      ;;",
     "    test)",
-    `      COMPREPLY=(${compgen("--add --add-json --remove --list --run --match --only-index --only-last --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-json --remove --remove-index --list --run --match --only-index --only-last --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    test-all)",
     `      COMPREPLY=(${compgen("--status --limit --offset --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1676,6 +1676,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--add[Add linked test entry]:entry' \\
             '--add-json[Add linked test entry from JSON object/array]:json' \\
             '--remove[Remove linked test entry by command/path]:entry' \\
+            '--remove-index[Remove linked test entry by 1-based index]:index' \\
             '--list[List linked tests without mutating]' \\
             '--run[Run linked tests]' \\
             '--match[Run linked tests whose command/path contains substring]:substring' \\
@@ -2680,6 +2681,7 @@ complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l forc
 complete -c pm -n '__fish_seen_subcommand_from test' -l add -d 'Add linked test entry' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l add-json -d 'Add linked test entry from JSON object/array' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l remove -d 'Remove linked test entry' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l remove-index -d 'Remove linked test entry by 1-based index' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l list -d 'List linked tests without mutating'
 complete -c pm -n '__fish_seen_subcommand_from test' -l run -d 'Run linked tests'
 complete -c pm -n '__fish_seen_subcommand_from test' -l match -d 'Run linked tests whose command/path contains substring' -r

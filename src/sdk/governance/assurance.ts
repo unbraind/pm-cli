@@ -6,6 +6,7 @@
  * external measurement adapters, keeping CLI, MCP, CI, and embedded callers on
  * one deterministic SDK path.
  */
+import { createHash } from "node:crypto";
 import path from "node:path";
 
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -15,11 +16,13 @@ import {
   mutateWorkspaceJsonWithHistory,
   readFileIfExists,
   readHistoryEntries,
+  readSettings,
   resolveAuthor,
   stableStringify,
   WORKSPACE_HISTORY_ID,
   getWorkspaceHistoryPath,
 } from "../runtime-primitives.js";
+import { resolveCanonicalRelationshipKind } from "../relationships.js";
 import { MAX_ASSURANCE_VERDICT_LIMIT } from "./assurance-limits.js";
 import { AssuranceMutationRefusalError } from "./assurance-mutation-error.js";
 
@@ -74,11 +77,11 @@ export interface AssuranceItemRecord {
   /** Typed relationships. */
   dependencies?: AssuranceDependencyRecord[];
   /** Linked files. */
-  files?: Array<Record<string, unknown>>;
+  files?: object[];
   /** Linked tests. */
-  tests?: Array<Record<string, unknown>>;
+  tests?: object[];
   /** Linked docs. */
-  docs?: Array<Record<string, unknown>>;
+  docs?: object[];
   /** Extension-owned metadata remains filterable. */
   [key: string]: unknown;
 }
@@ -111,6 +114,8 @@ export interface AssuranceItemsSource {
   field?: string;
   /** Required exact value for field. */
   equals?: string | number | boolean | null;
+  /** Presence predicate for the selected field. */
+  state?: "present" | "missing";
 }
 
 /** Typed relationship-count source. */
@@ -382,6 +387,8 @@ export interface AssuranceMeasurementCost {
 export interface AssuranceMeasurementResult {
   /** Measurement id. */
   id: string;
+  /** Stable fingerprint of the exact declaration that produced this result. */
+  definition_fingerprint: string;
   /** Observed value. */
   value: AssuranceValue;
   /** Population denominator. */
@@ -413,6 +420,8 @@ export interface AssuranceAssertionVerdict {
   assertion_id: string;
   /** Stable observation key used to obtain the evaluated value. */
   measurement_id: string;
+  /** Stable fingerprint of the measurement declaration used for this verdict. */
+  measurement_definition_fingerprint: string;
   /** Explicit scope. */
   scope: AssuranceScope;
   /** Population denominator. */
@@ -538,7 +547,10 @@ function valuesEqual(left: AssuranceValue, right: AssuranceValue): boolean {
   return stableStringify(left) === stableStringify(right);
 }
 
-function compareBound(observed: AssuranceValue, bound: AssuranceBound): boolean {
+function compareBound(
+  observed: AssuranceValue,
+  bound: AssuranceBound,
+): boolean {
   if (bound.polarity === "equals") return valuesEqual(observed, bound.value);
   if (bound.polarity === "subset_of") {
     if (!Array.isArray(observed) || !Array.isArray(bound.value)) return false;
@@ -549,16 +561,24 @@ function compareBound(observed: AssuranceValue, bound: AssuranceBound): boolean 
     return false;
   }
   const numericBound = bound.value as number;
-  if (bound.polarity === "ceiling" || bound.polarity === "monotone_nonincreasing") {
+  if (
+    bound.polarity === "ceiling" ||
+    bound.polarity === "monotone_nonincreasing"
+  ) {
     return observed <= numericBound;
   }
-  if (bound.polarity === "floor" || bound.polarity === "monotone_nondecreasing") {
+  if (
+    bound.polarity === "floor" ||
+    bound.polarity === "monotone_nondecreasing"
+  ) {
     return observed >= numericBound;
   }
   return observed === 0;
 }
 
-function proveNegativeControl(assertion: AssuranceAssertionDefinition): boolean {
+function proveNegativeControl(
+  assertion: AssuranceAssertionDefinition,
+): boolean {
   const bound = boundFor(assertion);
   const cases = assertion.negative_control.cases;
   return (
@@ -576,14 +596,17 @@ function boundUpdateIsLoosening(
   afterBound: AssuranceBound,
 ): boolean {
   if (beforeBound.polarity !== afterBound.polarity) return true;
-  if (typeof beforeBound.value === "number" && typeof afterBound.value === "number") {
-    return (
-      beforeBound.polarity === "ceiling" || beforeBound.polarity === "monotone_nonincreasing"
-        ? afterBound.value > beforeBound.value
-        : beforeBound.polarity === "floor" || beforeBound.polarity === "monotone_nondecreasing"
-          ? afterBound.value < beforeBound.value
-          : afterBound.value !== beforeBound.value
-    );
+  if (
+    typeof beforeBound.value === "number" &&
+    typeof afterBound.value === "number"
+  ) {
+    return beforeBound.polarity === "ceiling" ||
+      beforeBound.polarity === "monotone_nonincreasing"
+      ? afterBound.value > beforeBound.value
+      : beforeBound.polarity === "floor" ||
+          beforeBound.polarity === "monotone_nondecreasing"
+        ? afterBound.value < beforeBound.value
+        : afterBound.value !== beforeBound.value;
   }
   if (beforeBound.polarity === "subset_of") {
     const beforeValues = beforeBound.value;
@@ -615,7 +638,8 @@ export function assuranceAssertionUpdateIsLoosening(
     block: 2,
   };
   const lifetimeLoosened =
-    (before.lifetime ?? "hold") === "hold" && (after.lifetime ?? "hold") === "retire";
+    (before.lifetime ?? "hold") === "hold" &&
+    (after.lifetime ?? "hold") === "retire";
   return (
     boundUpdateIsLoosening(boundFor(before), boundFor(after)) ||
     enforcementRank[after.enforcement] < enforcementRank[before.enforcement] ||
@@ -632,10 +656,23 @@ export function validateMeasurementDefinition(
     requireFiniteNonNegative(definition.max_cost, "measurement.max_cost");
   }
   const source = definition.source;
-  if (source.kind === "items" && source.field !== undefined && source.equals === undefined) {
-    throw new AssuranceMutationRefusalError(
-      "items source with field requires equals",
-    );
+  if (source.kind === "items") {
+    const hasEquals = Object.hasOwn(source, "equals");
+    const hasState = source.state !== undefined;
+    const predicateCount = Number(hasEquals) + Number(hasState);
+    const predicateContractErrors: Record<string, string> = {
+      "1:0": "items source with field requires exactly one of equals or state",
+      "1:2": "items source with field requires exactly one of equals or state",
+      "0:1": "items source equals/state requires field",
+      "0:2": "items source equals/state requires field",
+    };
+    const predicateContractError =
+      predicateContractErrors[
+        `${Number(source.field !== undefined)}:${predicateCount}`
+      ];
+    if (predicateContractError !== undefined) {
+      throw new AssuranceMutationRefusalError(predicateContractError);
+    }
   }
   if (
     source.kind === "dependency_kind" &&
@@ -693,10 +730,17 @@ export function validateAssertionDefinition(
     );
   }
   if (definition.scope.kind === "filter") {
-    requireStableId(definition.scope.measurement_id, "assertion.scope.measurement_id");
+    requireStableId(
+      definition.scope.measurement_id,
+      "assertion.scope.measurement_id",
+    );
   }
   const cases = definition.negative_control?.cases;
-  if (!Array.isArray(cases) || !cases.some((entry) => entry.expected === "pass") || !cases.some((entry) => entry.expected === "fail")) {
+  if (
+    !Array.isArray(cases) ||
+    !cases.some((entry) => entry.expected === "pass") ||
+    !cases.some((entry) => entry.expected === "fail")
+  ) {
     throw new AssuranceMutationRefusalError(
       "assertion negative control requires pass and fail cases",
     );
@@ -719,7 +763,8 @@ export function validateGateDefinition(
       "gate requires at least one assertion",
     );
   }
-  for (const id of definition.assertion_ids) requireStableId(id, "gate.assertion_id");
+  for (const id of definition.assertion_ids)
+    requireStableId(id, "gate.assertion_id");
   if (definition.triggers.length === 0) {
     throw new AssuranceMutationRefusalError(
       "gate requires at least one trigger",
@@ -759,7 +804,10 @@ export function validateAssuranceDocument(
   for (const definition of document.gates) {
     validateGateDefinition(definition);
     const missing = definition.assertion_ids.filter(
-      (id) => !document.assertions.some((assertionDefinition) => assertionDefinition.id === id),
+      (id) =>
+        !document.assertions.some(
+          (assertionDefinition) => assertionDefinition.id === id,
+        ),
     );
     if (missing.length > 0) {
       throw new AssuranceMutationRefusalError(
@@ -767,12 +815,18 @@ export function validateAssuranceDocument(
       );
     }
     if (ids.has(`gate:${definition.id}`)) {
-      throw new AssuranceMutationRefusalError(`duplicate gate ${definition.id}`);
+      throw new AssuranceMutationRefusalError(
+        `duplicate gate ${definition.id}`,
+      );
     }
     ids.add(`gate:${definition.id}`);
   }
-  const measurementIds = new Set(document.measurements.map((entry) => entry.id));
-  for (const [measurementId, consumers] of collectMeasurementReferences(document)) {
+  const measurementIds = new Set(
+    document.measurements.map((entry) => entry.id),
+  );
+  for (const [measurementId, consumers] of collectMeasurementReferences(
+    document,
+  )) {
     if (!measurementIds.has(measurementId)) {
       throw new AssuranceMutationRefusalError(
         `${consumers.join(", ")} references missing measurement ${measurementId}`,
@@ -807,7 +861,10 @@ function collectMeasurementReferences(
     references.set(measurementId, consumers);
   };
   for (const assertionDefinition of document.assertions) {
-    add(assertionDefinition.measurement_id, `assertion ${assertionDefinition.id}`);
+    add(
+      assertionDefinition.measurement_id,
+      `assertion ${assertionDefinition.id}`,
+    );
     if (assertionDefinition.scope.kind === "filter") {
       add(
         assertionDefinition.scope.measurement_id,
@@ -831,7 +888,12 @@ function collectMeasurementReferences(
 
 /** Create an empty, valid assurance registry. */
 export function createEmptyAssuranceDocument(): AssuranceDocument {
-  return { version: ASSURANCE_DOCUMENT_VERSION, measurements: [], assertions: [], gates: [] };
+  return {
+    version: ASSURANCE_DOCUMENT_VERSION,
+    measurements: [],
+    assertions: [],
+    gates: [],
+  };
 }
 
 function itemsSourceResult(
@@ -840,15 +902,27 @@ function itemsSourceResult(
 ): AssuranceExternalMeasurementResult {
   const matches = context.items.filter(
     (item) =>
-      (source.statuses === undefined || source.statuses.includes(item.status)) &&
+      (source.statuses === undefined ||
+        source.statuses.includes(item.status)) &&
       (source.types === undefined || source.types.includes(item.type)) &&
       (source.tags === undefined ||
         source.tags.every((tag) => item.tags?.includes(tag))) &&
       (source.field === undefined ||
-        valuesEqual(
-          item[source.field] as AssuranceValue,
-          source.equals as AssuranceValue,
-        )),
+        (() => {
+          const value = item[source.field];
+          if (source.state !== undefined) {
+            const missing =
+              value === undefined ||
+              value === null ||
+              value === "" ||
+              (Array.isArray(value) && value.length === 0);
+            return source.state === "missing" ? missing : !missing;
+          }
+          return valuesEqual(
+            value as AssuranceValue,
+            source.equals as AssuranceValue,
+          );
+        })()),
   );
   return {
     value: matches.length,
@@ -863,9 +937,15 @@ function dependencyKindSourceResult(
   context: AssuranceEvaluationContext,
 ): AssuranceExternalMeasurementResult {
   const contributors: string[] = [];
+  const requestedKind =
+    resolveCanonicalRelationshipKind(source.dependency_kind) ??
+    source.dependency_kind.trim().toLowerCase();
   for (const item of context.items) {
     for (const dependency of item.dependencies ?? []) {
-      if (dependency.kind === source.dependency_kind) {
+      const dependencyKind =
+        resolveCanonicalRelationshipKind(dependency.kind) ??
+        dependency.kind.trim().toLowerCase();
+      if (dependencyKind === requestedKind) {
         contributors.push(`${item.id}->${dependency.id}`);
       }
     }
@@ -928,7 +1008,10 @@ function sourceResult(
   return null;
 }
 
-function sumCosts(costs: AssuranceMeasurementCost[], durationMs: number): AssuranceMeasurementCost {
+function sumCosts(
+  costs: AssuranceMeasurementCost[],
+  durationMs: number,
+): AssuranceMeasurementCost {
   return costs.reduce<AssuranceMeasurementCost>(
     (total, cost) => ({
       units: total.units + cost.units,
@@ -937,17 +1020,30 @@ function sumCosts(costs: AssuranceMeasurementCost[], durationMs: number): Assura
       provider_calls: total.provider_calls + cost.provider_calls,
       duration_ms: durationMs,
     }),
-    { units: 0, items_scanned: 0, history_entries: 0, provider_calls: 0, duration_ms: durationMs },
+    {
+      units: 0,
+      items_scanned: 0,
+      history_entries: 0,
+      provider_calls: 0,
+      duration_ms: durationMs,
+    },
   );
 }
 
-function arithmeticValue(operator: AssuranceArithmeticExpression["operator"], values: number[]): number {
-  if (values.length === 0) throw new TypeError(`derived ${operator} requires operands`);
+function arithmeticValue(
+  operator: AssuranceArithmeticExpression["operator"],
+  values: number[],
+): number {
+  if (values.length === 0)
+    throw new TypeError(`derived ${operator} requires operands`);
   if (operator === "add") return values.reduce((sum, value) => sum + value, 0);
-  if (operator === "subtract") return values.slice(1).reduce((result, value) => result - value, values[0]);
-  if (operator === "multiply") return values.reduce((result, value) => result * value, 1);
+  if (operator === "subtract")
+    return values.slice(1).reduce((result, value) => result - value, values[0]);
+  if (operator === "multiply")
+    return values.reduce((result, value) => result * value, 1);
   if (operator === "divide") {
-    if (values.slice(1).includes(0)) throw new TypeError("derived divide cannot divide by zero");
+    if (values.slice(1).includes(0))
+      throw new TypeError("derived divide cannot divide by zero");
     return values.slice(1).reduce((result, value) => result / value, values[0]);
   }
   return operator === "min" ? Math.min(...values) : Math.max(...values);
@@ -985,11 +1081,27 @@ async function evaluateExpression(
   definitions: AssuranceMeasurementDefinition[],
   stack: string[],
   state: AssuranceEvaluationState,
-): Promise<{ value: number; costs: AssuranceMeasurementCost[]; population_size: number; contributors: string[] }> {
-  if ("literal" in expression) return { value: expression.literal, costs: [], population_size: 0, contributors: [] };
+): Promise<{
+  value: number;
+  costs: AssuranceMeasurementCost[];
+  population_size: number;
+  contributors: string[];
+}> {
+  if ("literal" in expression)
+    return {
+      value: expression.literal,
+      costs: [],
+      population_size: 0,
+      contributors: [],
+    };
   if ("measurement" in expression) {
-    const definition = definitions.find((entry) => entry.id === expression.measurement);
-    if (!definition) throw new TypeError(`derived measurement references missing ${expression.measurement}`);
+    const definition = definitions.find(
+      (entry) => entry.id === expression.measurement,
+    );
+    if (!definition)
+      throw new TypeError(
+        `derived measurement references missing ${expression.measurement}`,
+      );
     const result = await evaluateMeasurementCached(
       definition,
       context,
@@ -997,20 +1109,35 @@ async function evaluateExpression(
       stack,
       state,
     );
-    if (typeof result.value !== "number") throw new TypeError(`derived measurement ${definition.id} is not numeric`);
+    if (typeof result.value !== "number")
+      throw new TypeError(
+        `derived measurement ${definition.id} is not numeric`,
+      );
     const costs = state.charged.has(definition.id) ? [] : [result.cost];
     state.charged.add(definition.id);
-    return { value: result.value, costs, population_size: result.population_size, contributors: result.contributors };
+    return {
+      value: result.value,
+      costs,
+      population_size: result.population_size,
+      contributors: result.contributors,
+    };
   }
   const operands = await mapWithConcurrency(
     expression.operands,
     EVALUATION_CONCURRENCY,
-    (operand) => evaluateExpression(operand, context, definitions, stack, state),
+    (operand) =>
+      evaluateExpression(operand, context, definitions, stack, state),
   );
   return {
-    value: arithmeticValue(expression.operator, operands.map((entry) => entry.value)),
+    value: arithmeticValue(
+      expression.operator,
+      operands.map((entry) => entry.value),
+    ),
     costs: operands.flatMap((entry) => entry.costs),
-    population_size: Math.max(0, ...operands.map((entry) => entry.population_size)),
+    population_size: Math.max(
+      0,
+      ...operands.map((entry) => entry.population_size),
+    ),
     contributors: [...new Set(operands.flatMap((entry) => entry.contributors))],
   };
 }
@@ -1035,7 +1162,12 @@ async function evaluateMeasurementInternal(
       [...stack, definition.id],
       state,
     );
-    result = { value: derived.value, population_size: derived.population_size, cost: 0, contributors: derived.contributors };
+    result = {
+      value: derived.value,
+      population_size: derived.population_size,
+      cost: 0,
+      contributors: derived.contributors,
+    };
     nestedCosts = derived.costs;
   } else {
     const builtin = sourceResult(definition, context);
@@ -1050,21 +1182,40 @@ async function evaluateMeasurementInternal(
       result = await context.external(definition.source);
       providerCalls = 1;
     } else {
-      throw new TypeError(`unsupported assurance source ${definition.source.kind}`);
+      throw new TypeError(
+        `unsupported assurance source ${definition.source.kind}`,
+      );
     }
   }
   const ownCost: AssuranceMeasurementCost = {
     units: result.cost,
-    items_scanned: definition.source.kind === "items" || definition.source.kind === "dependency_kind" || definition.source.kind === "links" ? context.items.length : 0,
-    history_entries: definition.source.kind === "history" ? context.history.length : 0,
+    items_scanned:
+      definition.source.kind === "items" ||
+      definition.source.kind === "dependency_kind" ||
+      definition.source.kind === "links"
+        ? context.items.length
+        : 0,
+    history_entries:
+      definition.source.kind === "history" ? context.history.length : 0,
     provider_calls: providerCalls,
     duration_ms: Date.now() - startedAt,
   };
   const cost = sumCosts([...nestedCosts, ownCost], Date.now() - startedAt);
   if (definition.max_cost !== undefined && cost.units > definition.max_cost) {
-    throw new TypeError(`measurement ${definition.id} exceeded cost ceiling ${definition.max_cost} with ${cost.units}`);
+    throw new TypeError(
+      `measurement ${definition.id} exceeded cost ceiling ${definition.max_cost} with ${cost.units}`,
+    );
   }
-  return { id: definition.id, value: result.value, population_size: result.population_size, cost, contributors: result.contributors ?? [] };
+  return {
+    id: definition.id,
+    definition_fingerprint: `sha256:${createHash("sha256")
+      .update(stableStringify(definition))
+      .digest("hex")}`,
+    value: result.value,
+    population_size: result.population_size,
+    cost,
+    contributors: result.contributors ?? [],
+  };
 }
 
 function evaluateMeasurementCached(
@@ -1104,10 +1255,19 @@ export async function evaluateMeasurement(
   });
 }
 
-function assertionDistance(observed: AssuranceValue, bound: AssuranceBound): number | null {
-  if (typeof observed !== "number" || typeof bound.value !== "number") return null;
-  if (bound.polarity === "ceiling" || bound.polarity === "monotone_nonincreasing") return bound.value - observed;
-  if (bound.polarity === "floor" || bound.polarity === "monotone_nondecreasing") return observed - bound.value;
+function assertionDistance(
+  observed: AssuranceValue,
+  bound: AssuranceBound,
+): number | null {
+  if (typeof observed !== "number" || typeof bound.value !== "number")
+    return null;
+  if (
+    bound.polarity === "ceiling" ||
+    bound.polarity === "monotone_nonincreasing"
+  )
+    return bound.value - observed;
+  if (bound.polarity === "floor" || bound.polarity === "monotone_nondecreasing")
+    return observed - bound.value;
   return observed - bound.value;
 }
 
@@ -1115,20 +1275,28 @@ function assertionDistance(observed: AssuranceValue, bound: AssuranceBound): num
 export function evaluateAssuranceAssertion(
   definition: AssuranceAssertionDefinition,
   measurement: AssuranceMeasurementResult,
-  options: { /** Whether the owning item is terminal. */ owner_terminal?: boolean } = {},
+  options: {
+    /** Whether the owning item is terminal. */ owner_terminal?: boolean;
+  } = {},
 ): AssuranceAssertionVerdict {
   validateAssertionDefinition(definition);
   const bound = boundFor(definition);
-  const retired = definition.lifetime === "retire" && options.owner_terminal === true;
+  const retired =
+    definition.lifetime === "retire" && options.owner_terminal === true;
   return {
     assertion_id: definition.id,
     measurement_id: definition.measurement_id,
+    measurement_definition_fingerprint: measurement.definition_fingerprint,
     scope: definition.scope,
     population_size: measurement.population_size,
     observed: measurement.value,
     bound,
     distance: assertionDistance(measurement.value, bound),
-    verdict: retired ? "retired" : compareBound(measurement.value, bound) ? "pass" : "fail",
+    verdict: retired
+      ? "retired"
+      : compareBound(measurement.value, bound)
+        ? "pass"
+        : "fail",
     enforcement: definition.enforcement,
     negative_control_proven: proveNegativeControl(definition),
     cost: measurement.cost,
@@ -1141,52 +1309,82 @@ export async function evaluateAssuranceGate(
   gateId: string,
   document: AssuranceDocument,
   context: AssuranceEvaluationContext,
-  options: { /** Trigger being evaluated. */ trigger: AssuranceGateTrigger; /** Skip persistence in the caller. */ dry_run?: boolean },
+  options: {
+    /** Trigger being evaluated. */ trigger: AssuranceGateTrigger;
+    /** Skip persistence in the caller. */ dry_run?: boolean;
+  },
 ): Promise<AssuranceGateVerdict> {
   validateAssuranceDocument(document);
   const gateDefinition = document.gates.find((entry) => entry.id === gateId);
-  if (!gateDefinition) throw new TypeError(`assurance gate ${gateId} not found`);
+  if (!gateDefinition)
+    throw new TypeError(`assurance gate ${gateId} not found`);
   if (!gateDefinition.triggers.includes(options.trigger)) {
-    throw new TypeError(`assurance gate ${gateId} does not declare trigger ${options.trigger}`);
+    throw new TypeError(
+      `assurance gate ${gateId} does not declare trigger ${options.trigger}`,
+    );
   }
   const assertions = await mapWithConcurrency(
     gateDefinition.assertion_ids,
     EVALUATION_CONCURRENCY,
     async (id) => {
-      const assertionDefinition = document.assertions.find((entry) => entry.id === id)!;
-      const measurementDefinition = document.measurements.find((entry) => entry.id === assertionDefinition.measurement_id)!;
+      const assertionDefinition = document.assertions.find(
+        (entry) => entry.id === id,
+      )!;
+      const measurementDefinition = document.measurements.find(
+        (entry) => entry.id === assertionDefinition.measurement_id,
+      )!;
       let scopedContext = context;
       if (assertionDefinition.scope.kind === "active") {
-        const terminalStatuses = new Set(context.terminal_statuses ?? ["closed", "canceled"]);
+        const terminalStatuses = new Set(
+          context.terminal_statuses ?? ["closed", "canceled"],
+        );
         scopedContext = {
           ...context,
-          items: context.items.filter((item) => !terminalStatuses.has(item.status)),
+          items: context.items.filter(
+            (item) => !terminalStatuses.has(item.status),
+          ),
         };
       } else if (assertionDefinition.scope.kind === "filter") {
         const scopeMeasurementId = assertionDefinition.scope.measurement_id;
         const scopeDefinition = document.measurements.find(
           (entry) => entry.id === scopeMeasurementId,
         )!;
-        const scope = await evaluateMeasurement(scopeDefinition, context, document.measurements);
+        const scope = await evaluateMeasurement(
+          scopeDefinition,
+          context,
+          document.measurements,
+        );
         const contributorIds = new Set(scope.contributors);
         scopedContext = {
           ...context,
           items: context.items.filter((item) => contributorIds.has(item.id)),
         };
       }
-      const owner = context.items.find((item) => item.id === assertionDefinition.owner_item_id);
+      const owner = context.items.find(
+        (item) => item.id === assertionDefinition.owner_item_id,
+      );
       const ownerTerminal =
         owner !== undefined &&
-        new Set(context.terminal_statuses ?? ["closed", "canceled"]).has(owner.status);
+        new Set(context.terminal_statuses ?? ["closed", "canceled"]).has(
+          owner.status,
+        );
       return evaluateAssuranceAssertion(
         assertionDefinition,
-        await evaluateMeasurement(measurementDefinition, scopedContext, document.measurements),
+        await evaluateMeasurement(
+          measurementDefinition,
+          scopedContext,
+          document.measurements,
+        ),
         { owner_terminal: ownerTerminal },
       );
     },
   );
-  const blocking = assertions.some((entry) => entry.verdict === "fail" && entry.enforcement === "block");
-  const warning = assertions.some((entry) => entry.verdict === "fail" && entry.enforcement === "warn");
+  const blocking = assertions.some(
+    (entry) => entry.verdict === "fail" && entry.enforcement === "block",
+  );
+  const warning = assertions.some(
+    (entry) => entry.verdict === "fail" && entry.enforcement === "warn",
+  );
   return {
     gate_id: gateDefinition.id,
     tree_id: context.tree_id,
@@ -1196,7 +1394,10 @@ export async function evaluateAssuranceGate(
     verdict: blocking ? "block" : warning ? "warn" : "pass",
     exit_code: blocking ? 1 : 0,
     assertions,
-    cost: sumCosts(assertions.map((entry) => entry.cost), Math.max(0, ...assertions.map((entry) => entry.cost.duration_ms))),
+    cost: sumCosts(
+      assertions.map((entry) => entry.cost),
+      Math.max(0, ...assertions.map((entry) => entry.cost.duration_ms)),
+    ),
   };
 }
 
@@ -1238,9 +1439,14 @@ function collectionFor(
   return document.gates;
 }
 
-function validateForKind(kind: AssuranceDeclarationKind, definition: AssuranceDeclaration): void {
-  if (kind === "measurement") validateMeasurementDefinition(definition as AssuranceMeasurementDefinition);
-  else if (kind === "assertion") validateAssertionDefinition(definition as AssuranceAssertionDefinition);
+function validateForKind(
+  kind: AssuranceDeclarationKind,
+  definition: AssuranceDeclaration,
+): void {
+  if (kind === "measurement")
+    validateMeasurementDefinition(definition as AssuranceMeasurementDefinition);
+  else if (kind === "assertion")
+    validateAssertionDefinition(definition as AssuranceAssertionDefinition);
   else validateGateDefinition(definition as AssuranceGateDefinition);
 }
 
@@ -1248,9 +1454,19 @@ function validateForKind(kind: AssuranceDeclarationKind, definition: AssuranceDe
 export async function listAssuranceDeclarations(
   pmRoot: string,
   kind: AssuranceDeclarationKind,
-): Promise<{ items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: ["items"]; jq_selector: ".items[]" } }> {
-  const items = structuredClone(collectionFor(await readDocument(pmRoot), kind));
-  return { items, count: items.length, row_contract: { row_keys: ["items"], jq_selector: ".items[]" } };
+): Promise<{
+  items: AssuranceDeclaration[];
+  count: number;
+  row_contract: { row_keys: ["items"]; jq_selector: ".items[]" };
+}> {
+  const items = structuredClone(
+    collectionFor(await readDocument(pmRoot), kind),
+  );
+  return {
+    items,
+    count: items.length,
+    row_contract: { row_keys: ["items"], jq_selector: ".items[]" },
+  };
 }
 
 /** Read one named declaration or fail loudly. */
@@ -1259,7 +1475,9 @@ export async function getAssuranceDeclaration(
   kind: AssuranceDeclarationKind,
   id: string,
 ): Promise<AssuranceDeclaration> {
-  const found = collectionFor(await readDocument(pmRoot), kind).find((entry) => entry.id === id);
+  const found = collectionFor(await readDocument(pmRoot), kind).find(
+    (entry) => entry.id === id,
+  );
   if (!found) throw new TypeError(`assurance ${kind} ${id} not found`);
   return structuredClone(found);
 }
@@ -1272,44 +1490,55 @@ export async function putAssuranceDeclaration(
   options: AssuranceMutationOptions = {},
 ): Promise<AssuranceMutationReceipt> {
   validateForKind(kind, definition);
-  const author = resolveAuthor(options.author, "unknown");
-  const mutation = await mutateWorkspaceJsonWithHistory<AssuranceMutationReceipt>({
-    pmRoot,
-    filePath: assurancePath(pmRoot),
-    op: `assurance:${kind}:put`,
-    author,
-    message: options.message,
-    lockTtlSeconds: LOCK_TTL_SECONDS,
-    lockWaitMs: LOCK_WAIT_MS,
-    mutate: (beforeRaw) => {
-      const document = beforeRaw === null ? createEmptyAssuranceDocument() : parseAssuranceDocument(beforeRaw);
-      const collection = collectionFor(document, kind);
-      const index = collection.findIndex((entry) => entry.id === definition.id);
-      const action = index < 0 ? "created" : "updated";
-      if (
-        kind === "assertion" &&
-        index >= 0 &&
-        assuranceAssertionUpdateIsLoosening(
-          collection[index] as AssuranceAssertionDefinition,
-          definition as AssuranceAssertionDefinition,
-        )
-      ) {
-        const decision = (definition as AssuranceAssertionDefinition).authorization_decision;
-        if (!decision || !options.authorized_decision_ids?.includes(decision)) {
-          throw new AssuranceMutationRefusalError(
-            `loosening assertion ${definition.id} requires a verified authorization_decision`,
-          );
+  const settings = await readSettings(pmRoot);
+  const author = resolveAuthor(options.author, settings.author_default);
+  const mutation =
+    await mutateWorkspaceJsonWithHistory<AssuranceMutationReceipt>({
+      pmRoot,
+      filePath: assurancePath(pmRoot),
+      op: `assurance:${kind}:put`,
+      author,
+      message: options.message,
+      lockTtlSeconds: LOCK_TTL_SECONDS,
+      lockWaitMs: LOCK_WAIT_MS,
+      mutate: (beforeRaw) => {
+        const document =
+          beforeRaw === null
+            ? createEmptyAssuranceDocument()
+            : parseAssuranceDocument(beforeRaw);
+        const collection = collectionFor(document, kind);
+        const index = collection.findIndex(
+          (entry) => entry.id === definition.id,
+        );
+        const action = index < 0 ? "created" : "updated";
+        if (
+          kind === "assertion" &&
+          index >= 0 &&
+          assuranceAssertionUpdateIsLoosening(
+            collection[index] as AssuranceAssertionDefinition,
+            definition as AssuranceAssertionDefinition,
+          )
+        ) {
+          const decision = (definition as AssuranceAssertionDefinition)
+            .authorization_decision;
+          if (
+            !decision ||
+            !options.authorized_decision_ids?.includes(decision)
+          ) {
+            throw new AssuranceMutationRefusalError(
+              `loosening assertion ${definition.id} requires a verified authorization_decision`,
+            );
+          }
         }
-      }
-      if (index < 0) collection.push(structuredClone(definition));
-      else collection[index] = structuredClone(definition);
-      validateAssuranceDocument(document);
-      return {
-        raw: `${JSON.stringify(document, null, 2)}\n`,
-        result: { changed: true, action, kind, id: definition.id },
-      };
-    },
-  });
+        if (index < 0) collection.push(structuredClone(definition));
+        else collection[index] = structuredClone(definition);
+        validateAssuranceDocument(document);
+        return {
+          raw: `${JSON.stringify(document, null, 2)}\n`,
+          result: { changed: true, action, kind, id: definition.id },
+        };
+      },
+    });
   return { ...mutation.result, changed: mutation.changed };
 }
 
@@ -1320,45 +1549,53 @@ export async function removeAssuranceDeclaration(
   id: string,
   options: AssuranceMutationOptions = {},
 ): Promise<AssuranceMutationReceipt> {
-  const author = resolveAuthor(options.author, "unknown");
-  const mutation = await mutateWorkspaceJsonWithHistory<AssuranceMutationReceipt>({
-    pmRoot,
-    filePath: assurancePath(pmRoot),
-    op: `assurance:${kind}:remove`,
-    author,
-    message: options.message,
-    lockTtlSeconds: LOCK_TTL_SECONDS,
-    lockWaitMs: LOCK_WAIT_MS,
-    mutate: (beforeRaw) => {
-      const document = beforeRaw === null ? createEmptyAssuranceDocument() : parseAssuranceDocument(beforeRaw);
-      if (kind === "measurement") {
-        const consumers = collectMeasurementReferences(document).get(id);
-        if (consumers && consumers.length > 0) {
+  const settings = await readSettings(pmRoot);
+  const author = resolveAuthor(options.author, settings.author_default);
+  const mutation =
+    await mutateWorkspaceJsonWithHistory<AssuranceMutationReceipt>({
+      pmRoot,
+      filePath: assurancePath(pmRoot),
+      op: `assurance:${kind}:remove`,
+      author,
+      message: options.message,
+      lockTtlSeconds: LOCK_TTL_SECONDS,
+      lockWaitMs: LOCK_WAIT_MS,
+      mutate: (beforeRaw) => {
+        const document =
+          beforeRaw === null
+            ? createEmptyAssuranceDocument()
+            : parseAssuranceDocument(beforeRaw);
+        if (kind === "measurement") {
+          const consumers = collectMeasurementReferences(document).get(id);
+          if (consumers && consumers.length > 0) {
+            throw new AssuranceMutationRefusalError(
+              `assurance measurement ${id} is referenced by ${consumers.join(", ")}`,
+            );
+          }
+        }
+        if (
+          kind === "assertion" &&
+          document.gates.some((entry) => entry.assertion_ids.includes(id))
+        ) {
           throw new AssuranceMutationRefusalError(
-            `assurance measurement ${id} is referenced by ${consumers.join(", ")}`,
+            `assurance assertion ${id} is referenced by gate`,
           );
         }
-      }
-      if (kind === "assertion" && document.gates.some((entry) => entry.assertion_ids.includes(id))) {
-        throw new AssuranceMutationRefusalError(
-          `assurance assertion ${id} is referenced by gate`,
-        );
-      }
-      const collection = collectionFor(document, kind);
-      const index = collection.findIndex((entry) => entry.id === id);
-      if (index < 0) {
-        throw new AssuranceMutationRefusalError(
-          `assurance ${kind} ${id} not found`,
-        );
-      }
-      collection.splice(index, 1);
-      validateAssuranceDocument(document);
-      return {
-        raw: `${JSON.stringify(document, null, 2)}\n`,
-        result: { changed: true, action: "removed", kind, id },
-      };
-    },
-  });
+        const collection = collectionFor(document, kind);
+        const index = collection.findIndex((entry) => entry.id === id);
+        if (index < 0) {
+          throw new AssuranceMutationRefusalError(
+            `assurance ${kind} ${id} not found`,
+          );
+        }
+        collection.splice(index, 1);
+        validateAssuranceDocument(document);
+        return {
+          raw: `${JSON.stringify(document, null, 2)}\n`,
+          result: { changed: true, action: "removed", kind, id },
+        };
+      },
+    });
   return { ...mutation.result, changed: mutation.changed };
 }
 
@@ -1368,13 +1605,17 @@ export async function recordAssuranceVerdict(
   verdict: AssuranceGateVerdict,
   options: AssuranceMutationOptions = {},
 ): Promise<void> {
-  if (verdict.dry_run) throw new TypeError("dry-run assurance verdicts are not persisted");
+  if (verdict.dry_run)
+    throw new TypeError("dry-run assurance verdicts are not persisted");
+  const settings = await readSettings(pmRoot);
   await appendWorkspaceAuditEvent({
     pmRoot,
     op: "assurance:gate:verdict",
-    author: resolveAuthor(options.author, "unknown"),
+    author: resolveAuthor(options.author, settings.author_default),
     context: { assurance_verdict: verdict },
-    message: options.message ?? `Assurance gate ${verdict.gate_id} returned ${verdict.verdict}`,
+    message:
+      options.message ??
+      `Assurance gate ${verdict.gate_id} returned ${verdict.verdict}`,
     lockTtlSeconds: LOCK_TTL_SECONDS,
     lockWaitMs: LOCK_WAIT_MS,
   });
@@ -1398,12 +1639,21 @@ export async function listAssuranceVerdicts(
       `assurance verdict limit must be an integer from 1 through ${MAX_ASSURANCE_VERDICT_LIMIT}`,
     );
   }
-  const entries = await readHistoryEntries(getWorkspaceHistoryPath(pmRoot), WORKSPACE_HISTORY_ID);
+  const entries = await readHistoryEntries(
+    getWorkspaceHistoryPath(pmRoot),
+    WORKSPACE_HISTORY_ID,
+  );
   return entries
     .reverse()
     .filter((entry) => entry.op === "assurance:gate:verdict")
     .map((entry) => entry.context?.assurance_verdict)
-    .filter((value): value is AssuranceGateVerdict => typeof value === "object" && value !== null && "gate_id" in value)
-    .filter((verdict) => options.gate_id === undefined || verdict.gate_id === options.gate_id)
+    .filter(
+      (value): value is AssuranceGateVerdict =>
+        typeof value === "object" && value !== null && "gate_id" in value,
+    )
+    .filter(
+      (verdict) =>
+        options.gate_id === undefined || verdict.gate_id === options.gate_id,
+    )
     .slice(0, limit);
 }

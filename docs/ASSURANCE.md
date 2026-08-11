@@ -1,6 +1,6 @@
 # Project Assurance Primitives
 
-Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon)
+Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon)
 
 ## Agent Quick Context
 
@@ -22,19 +22,21 @@ The assurance SDK keeps those semantics independent from presentation. Commander
 
 Measurements support these built-in sources:
 
-| Source | Purpose |
-| --- | --- |
-| `items` | Count items matching status, type, tags, or an exact metadata field. |
-| `dependency_kind` | Count typed relationship edges such as `blocked_by` or `verifies`. |
-| `graph` | Select a numeric or labelled-set field from a public graph SDK result. |
-| `validate` | Select a validator check status or numeric detail. |
-| `health` | Select a health check status, numeric detail, or labelled set. |
-| `history` | Count immutable events by operation, author, harness, or model. |
-| `links` | Count items with present or missing file, test, or documentation evidence. |
-| `derived` | Combine numeric measurements with deterministic arithmetic and cycle detection. |
-| `provider` | Delegate a measurement to an explicitly supplied host/package resolver. |
+| Source            | Purpose                                                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `items`           | Count authoritative full item records matching status, type, tags, an exact metadata field, or a field `state` of `present`/`missing`.   |
+| `dependency_kind` | Count typed relationship edges such as `blocked_by` or `verifies`; accepted aliases and canonical spellings measure the same population. |
+| `graph`           | Select a numeric or labelled-set field from a public graph SDK result.                                                                   |
+| `validate`        | Select a validator check status or numeric detail.                                                                                       |
+| `health`          | Select a health check status, numeric detail, or labelled set.                                                                           |
+| `history`         | Count immutable events by operation, author, harness, or model.                                                                          |
+| `links`           | Count items with present or missing file, test, or documentation evidence.                                                               |
+| `derived`         | Combine numeric measurements with deterministic arithmetic and cycle detection.                                                          |
+| `provider`        | Delegate a measurement to an explicitly supplied host/package resolver.                                                                  |
 
 Each measurement may declare `max_cost`. Evaluation fails closed when the total abstract compute units exceed that ceiling. Every result reports units, scanned items, scanned history rows, provider calls, duration, population size, and contributors.
+
+An `items` source with `field` must declare exactly one predicate: `equals` (including an explicit `null`) or `state`. `state: missing` treats an absent property, `null`, an empty string, or an empty array as missing; `state: present` selects the complement. Workspace evaluation loads full item metadata, so `files`, `tests`, and `docs` selectors measure stored evidence rather than a light projection that omitted those collections.
 
 Assertions require exactly one polarity:
 
@@ -117,9 +119,12 @@ A gate emits one object containing:
 - gate id, evaluated tree, trigger, timestamp, and dry-run status;
 - overall `pass`, `warn`, or `block` plus stable exit code;
 - every assertion's measurement, scope, population, observed value, structured bound, signed distance, enforcement, negative-control proof, cost, and contributors;
+- every assertion's `measurement_definition_fingerprint`, a SHA-256 identity for the exact declaration that produced the observation;
 - an aggregate compute receipt.
 
 Dry runs never write history. Non-dry verdicts are immutable workspace audit events and remain queryable after ordinary registry changes. Verdict reads return newest entries first and default to a bounded result; use `--limit` to select up to 1,000 matching records. A blocking verdict exits non-zero; warnings and observations remain successful while preserving their failed assertion rows.
+
+Verdicts persisted before definition fingerprints were introduced remain readable and are identifiable by the absence of `measurement_definition_fingerprint`. Registry mutations and verdict writes use the same explicit-author, configured-author, and detected-harness precedence as other SDK mutations; they do not manufacture an `unknown` author when a harness identity is available.
 
 ## Safety and Evolution
 

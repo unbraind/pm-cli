@@ -382,6 +382,7 @@ export function buildBackgroundTestCommandArgs(
   pushRepeatableValueFlag(args, "--add", options.add);
   pushRepeatableValueFlag(args, "--add-json", options.addJson);
   pushRepeatableValueFlag(args, "--remove", options.remove);
+  pushRepeatableValueFlag(args, "--remove-index", options.removeIndex);
   pushOptionalValueFlag(args, "--match", options.match);
   pushOptionalValueFlag(args, "--only-index", options.onlyIndex);
   pushOptionalBooleanFlag(args, "--only-last", options.onlyLast);

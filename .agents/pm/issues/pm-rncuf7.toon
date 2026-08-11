@@ -2,11 +2,13 @@ id: pm-rncuf7
 title: "Annotation transposition recovery: detect pm <collection> add <id> before the item id is consumed as text"
 description: "GitHub #979 reproduces a cross-collection agent grammar mistake: noun-verb-object input is parsed as id=add and text=<real item id>, then reported as a duplicate text-source collision. The refusal must recognize the resolvable item id, name the transposed subcommand, render role-labeled recovery data, and make the accepted --note alias discoverable or reject it. Duplicate check searched all statuses for notes add, transposed subcommand, annotation collision, item-id-as-text, and --note help; closed pm-185870 owns general unknown positional subcommands but not this annotation parser collision."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[7]: agent-ux,annotations,"area:cli","area:sdk",contracts,error-recovery,token-efficiency
 created_at: "2026-08-11T18:12:18.364Z"
-updated_at: "2026-08-11T18:17:08.543Z"
+updated_at: "2026-08-11T22:24:03.100Z"
+closed_at: "2026-08-11T22:24:02.510Z"
+completed_at: "2026-08-11T22:24:02.510Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "When an annotation collection receives id=add and its text positional resolves to a real item, the typed SDK/CLI refusal names the transposed subcommand and supplies the canonical pm <collection> <id> --add form; the machine-readable recovery bundle labels parsed positional roles rather than flattening them; notes, learnings, files, docs, comments, and test share the behavior; the accepted --note alias is declared in help/contracts or removed with a typed migration refusal; focused unit, integration, packaged npm/npx/bun/bunx acceptance, exact 100/100/100/100 coverage, and docstring gates pass"
@@ -20,6 +22,7 @@ reporter: GitHub #979
 severity: medium
 environment: "@unbrained/pm-cli 2026.8.7, 2026.8.10, and 2026.8.11; Node 22/26; Linux"
 repro_steps: "In a temporary workspace with item tst-y0bb, run pm notes add tst-y0bb --note hello; observe id=add/text=tst-y0bb collision guidance instead of transposed-subcommand recovery"
+resolution: "Annotation transposition is recognized before mutation, recovery labels parser roles and supplies object-first syntax, --note is visible, and the generated error catalog is deterministically partitioned."
 expected_result: "A typed refusal says add is not an annotation subcommand, identifies tst-y0bb as the item id, and shows pm notes tst-y0bb --add hello"
 actual_result: The CLI reports that note text was supplied twice and emits a flat normalized_args receipt that hides which token filled each positional slot
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
@@ -30,10 +33,32 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-pbyu,implements,"2026-08-11T18:12:18.364Z","harness:codex","cli:create:dep",detected
   pm-vcu7,related,"2026-08-11T18:12:18.364Z","harness:codex","cli:create:dep",detected
   pm-ya7x55,related,"2026-08-11T18:12:18.364Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-11T18:12:18.364Z","harness:codex","Duplicate-check evidence: all-status searches over annotation transposition, notes add, positional subcommand, item-id-as-text, collision, and alias help found closed pm-185870, pm-vcu7, pm-a2h3, pm-8nyc and open grammar owners pm-n7rr/pm-ya7x55. Their full live metadata confirms none owns the resolvable-id transposition diagnosis or hidden --note alias. Canonical external report: https://github.com/unbraind/pm-cli/issues/979."
-files[1]{path,scope,note}:
-  src/cli/commands/annotation-command.ts,project,Shared annotation input parser and transposition detection boundary
-tests[1]{command,scope,timeout_seconds}:
+  "2026-08-11T22:18:17.370Z","harness:codex","Evidence 2026-08-12: annotation noun-verb-object transposition now returns typed role-labelled recovery, notes visibly declares --note, and the generated error catalog is deterministically partitioned under repository line/directory limits. Exact 100/100/100/100 coverage, catalog freshness, surface replication, docstrings/static quality, packed dogfood, npx, and external-package smoke passed. Temporary acceptance confirmed pm notes --note succeeds and pm notes add <id> fails with annotation_transposed_subcommand plus parsed positional roles."
+  "2026-08-11T22:23:34.343Z","harness:codex","Packed Bun acceptance 2026-08-12: npm pack produced unbrained-pm-cli-2026.8.11.tgz and bunx --silent --bun --package <tarball> pm --json --no-extensions contracts --summary exited 0 with schema_version 4.7.0 and 56 command summaries. Registry-backed package-default bunx remains assigned to the post-publish verifier, because Bun does not accept a tarball path in its package-default shorthand."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T22:18:17.978Z","harness:codex","Recovery payloads must preserve parser roles, not only normalized token order; generated public catalogs also need deterministic partitioning so strict source-size gates remain meaningful rather than waived."
+files[11]{path,scope,note}:
+  scripts/generate-error-code-catalog.mjs,project,Size-bounded generated catalog partitioning
+  scripts/release/surface-replication-sets.json,project,Governed CLI refusal inventory for transposed annotation syntax
+  src/cli/error-guidance.ts,project,Role-labelled structured recovery
+  src/cli/register-annotations.ts,project,Transposed command detection and visible notes alias
+  src/core/shared/errors.ts,project,Parsed positional recovery receipt
+  src/sdk/generated-error-code-catalog.ts,project,Generated recovery code catalog
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated typed error vocabulary partition
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated typed error vocabulary partition
+  tests/unit/cli/error-guidance.spec.ts,project,Generic collection recovery coverage
+  tests/unit/commands/register-commands.spec.ts,project,Annotation command recovery coverage
+  tests/unit/scripts/generate-error-code-catalog.spec.ts,project,Partition generation and stale-check coverage
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/notes-learnings-command.spec.ts tests/unit/commands/comments-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/commands/register-commands.spec.ts,project,600
+  node scripts/run-tests.mjs test -- tests/unit/scripts/generate-error-code-catalog.spec.ts tests/unit/sdk/error-code-catalog.spec.ts,project,300
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msp61h4l-b5eopp,test,passed,"2026-08-11T21:21:25.845Z","2026-08-11T21:21:56.469Z","2026-08-11T21:21:56.469Z",2,0,0
+  test-local-msp851fj-k6vqul,test,passed,"2026-08-11T22:20:07.060Z","2026-08-11T22:20:41.983Z","2026-08-11T22:20:41.983Z",3,0,0
+docs[1]{path,scope,note}:
+  docs/TRUSTWORTHY_CONTEXT_EVIDENCE.md,project,Canonical annotation recovery examples
+close_reason: "Implemented and verified typed annotation transposition recovery, visible notes alias, and deterministic generated catalog partitions."
 body: ""
