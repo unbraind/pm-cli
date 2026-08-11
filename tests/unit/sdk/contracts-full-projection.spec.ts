@@ -35,4 +35,17 @@ describe("full contracts projection monotonicity", () => {
       ]),
     );
   });
+
+  it("publishes strict assurance lifetime and bounded integer metadata", async () => {
+    const full = await runContracts({ full: true }, GLOBAL);
+    const schema = JSON.stringify(full.schema);
+
+    expect(schema).toContain(
+      '"description":"Maximum number of newest assurance verdicts returned.","examples":[10,25]',
+    );
+    expect(schema).toContain('"required":["lifetime","retire_reason"]');
+    expect(schema).toContain(
+      '"retire_reason":{"type":"string","minLength":1}',
+    );
+  });
 });

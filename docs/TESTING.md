@@ -242,12 +242,12 @@ baseline, scorer tests, and SDK documentation together.
 Tracked by [pm-k6t4yb](../.agents/pm/tasks/pm-k6t4yb.toon) and
 [pm-b2hc4x](../.agents/pm/tasks/pm-b2hc4x.toon).
 
-Every named workflow step that makes a build, test, quality, security, package,
-or release claim is discovered and matched exactly against
-`scripts/release/gate-registry.json`. Each registry entry declares:
+Every workflow job is discovered by its stable `workflow-file#job-id` identity
+and matched exactly against `scripts/release/gate-registry.json`; human-facing
+step names never define the inventory. Each registry entry declares:
 
 - a canonical pm owner;
-- the enforced workflow steps it owns;
+- the enforced workflow jobs it participates in;
 - actionable failure taxonomy;
 - explicit bypass policy and audit rationale;
 - an executable negative-control test and assertion.
@@ -259,11 +259,14 @@ pnpm quality:gate-registry
 node scripts/release/gate-registry.mjs --inventory
 ```
 
-`pnpm quality:static` includes the registry. A newly named workflow gate fails
-until it has an owner and negative-control proof; a removed or renamed workflow
-step also fails until stale policy is reconciled. Public source claims are
-mapped to exact evidence strings and an enforced registry entry so
-documentation cannot silently advertise advisory behavior.
+`pnpm quality:static` includes the registry. A new workflow job fails until it
+is declared under at least one canonical gate, and a removed or renamed job id
+fails until stale policy is reconciled. Display-name edits do not mutate gate
+identity. Public source claims are mapped to exact evidence strings and an
+enforced registry entry so documentation cannot silently advertise advisory
+behavior.
+The inventory output lists registry-derived `registered` job IDs beside the
+parsed `workflow_jobs`; validation requires the two sets to match exactly.
 
 ## Tracker Context-Quality Ratchets
 

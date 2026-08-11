@@ -3,7 +3,7 @@
 /**
  * Machine-checkable ownership and negative-control registry for hosted gates.
  *
- * Tracker: pm-k6t4yb. Workflow step discovery is derived from enforced YAML,
+ * Tracker: pm-k6t4yb. Hosted inventory uses stable workflow job identifiers,
  * while ownership, bypass, taxonomy, and negative-control evidence remain
  * explicit reviewable policy.
  */
@@ -19,12 +19,7 @@ const DEFAULT_REGISTRY_PATH = path.join(
   "release",
   "gate-registry.json",
 );
-const GATE_STEP_PATTERN =
-  /\b(build|typecheck|test|gates?|check|scan|analysis|benchmark|verify|dogfood|release pipeline|enforce|coverage|quality)\b/i;
-const NON_GATE_STEP_PATTERN =
-  /^(setup|install|checkout|download|upload|restore|record|resolve|alert|create github release)/i;
-
-function gateNamesFromWorkflow(source, file) {
+function gateIdsFromWorkflow(source, file) {
   const document = parseDocument(source);
   if (document.errors.length > 0) {
     throw new Error(
@@ -39,28 +34,10 @@ function gateNamesFromWorkflow(source, file) {
     workflow.jobs !== null
       ? workflow.jobs
       : {};
-  const names = [];
-  for (const job of Object.values(jobs)) {
-    const steps =
-      typeof job === "object" && job !== null && Array.isArray(job.steps)
-        ? job.steps
-        : [];
-    for (const step of steps) {
-      if (
-        typeof step === "object" &&
-        step !== null &&
-        typeof step.name === "string" &&
-        GATE_STEP_PATTERN.test(step.name) &&
-        !NON_GATE_STEP_PATTERN.test(step.name)
-      ) {
-        names.push(step.name);
-      }
-    }
-  }
-  return names;
+  return Object.keys(jobs);
 }
 
-/** Discover enforced workflow steps that make a build, quality, or release claim. */
+/** Discover every hosted workflow job by its stable machine identifier. */
 export async function discoverWorkflowGates(workflowsRoot) {
   const files = (await readdir(workflowsRoot))
     .filter((file) => file.endsWith(".yml") || file.endsWith(".yaml"))
@@ -68,8 +45,8 @@ export async function discoverWorkflowGates(workflowsRoot) {
   const discovered = [];
   for (const file of files) {
     const source = await readFile(path.join(workflowsRoot, file), "utf8");
-    for (const name of gateNamesFromWorkflow(source, file)) {
-      discovered.push(`${file}#${name}`);
+    for (const id of gateIdsFromWorkflow(source, file)) {
+      discovered.push(`${file}#${id}`);
     }
   }
   return [...new Set(discovered)].sort();
@@ -128,14 +105,16 @@ async function validateGatePolicy(
   if (typeof gate.owner !== "string" || !/^pm-[a-z0-9]+$/.test(gate.owner)) {
     violations.push(`gate:${gate.id}:owner_invalid`);
   }
+  const gatePipelines = new Set();
   for (const pipeline of requiredStrings(
     gate.pipelines,
     `gate:${gate.id}:pipelines`,
     violations,
   )) {
-    if (registeredPipelines.has(pipeline)) {
-      violations.push(`pipeline:${pipeline}:duplicate_owner`);
+    if (gatePipelines.has(pipeline)) {
+      violations.push(`gate:${gate.id}:pipeline:${pipeline}:duplicate`);
     }
+    gatePipelines.add(pipeline);
     registeredPipelines.add(pipeline);
   }
   requiredStrings(
@@ -282,8 +261,8 @@ export async function validateGateRegistry(registry, options = {}) {
     options.discovered ??
     (await discoverWorkflowGates(path.join(root, ".github", "workflows")));
   const violations = [];
-  if (registry.version !== 1 || !Array.isArray(registry.gates)) {
-    return ["registry:requires_version_1_gates_array"];
+  if (registry.version !== 2 || !Array.isArray(registry.gates)) {
+    return ["registry:requires_version_2_gates_array"];
   }
   const ids = new Set();
   const registeredPipelines = new Set();
@@ -310,23 +289,28 @@ export async function validateGateRegistry(registry, options = {}) {
 /** Print discovered inventory or enforce the committed registry. */
 export async function main(argv = process.argv.slice(2)) {
   const { flags } = parseFlags(argv);
-  const discovered = await discoverWorkflowGates(
-    path.join(repoRoot, ".github", "workflows"),
-  );
-  if (flags.has("inventory")) {
-    return { discovered };
-  }
   const registryFlag = flags.get("registry");
   const registryPath =
     registryFlag === undefined || registryFlag === true
       ? DEFAULT_REGISTRY_PATH
       : path.resolve(String(registryFlag));
   const registry = JSON.parse(await readFile(registryPath, "utf8"));
+  const discovered = await discoverWorkflowGates(
+    path.join(repoRoot, ".github", "workflows"),
+  );
   const violations = await validateGateRegistry(registry, { discovered });
   if (violations.length > 0) {
     throw new Error(
       `Gate registry validation failed:\n${violations.join("\n")}`,
     );
+  }
+  const registered = [
+    ...new Set(
+      registry.gates.flatMap((gate) => gate.pipelines),
+    ),
+  ].sort();
+  if (flags.has("inventory")) {
+    return { registered, workflow_jobs: discovered };
   }
   return {
     ok: true,

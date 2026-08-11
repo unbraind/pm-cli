@@ -49772,6 +49772,39 @@
               },
               {
                 "additionalProperties": false,
+                "allOf": [
+                  {
+                    "oneOf": [
+                      {
+                        "not": {
+                          "properties": {
+                            "lifetime": {
+                              "const": "retire"
+                            }
+                          },
+                          "required": [
+                            "lifetime"
+                          ]
+                        }
+                      },
+                      {
+                        "properties": {
+                          "lifetime": {
+                            "const": "retire"
+                          },
+                          "retire_reason": {
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "lifetime",
+                          "retire_reason"
+                        ]
+                      }
+                    ]
+                  }
+                ],
                 "oneOf": [
                   {
                     "required": [
@@ -49907,6 +49940,7 @@
                     "type": "string"
                   },
                   "retire_reason": {
+                    "minLength": 1,
                     "type": "string"
                   },
                   "scope": {
@@ -50058,10 +50092,10 @@
             "type": "string"
           },
           "limit": {
-            "description": "Maximum number of rows returned by the selected action.",
+            "description": "Maximum number of newest assurance verdicts returned.",
             "examples": [
               10,
-              "25"
+              25
             ],
             "maximum": 1000,
             "minimum": 1,

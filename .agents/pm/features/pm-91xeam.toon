@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:sdk",assurance,history,immutability,provenance
 created_at: "2026-08-10T20:56:29.731Z"
-updated_at: "2026-08-11T00:55:58.723Z"
-closed_at: "2026-08-11T00:55:58.162Z"
-completed_at: "2026-08-11T00:55:58.162Z"
+updated_at: "2026-08-11T02:02:30.198Z"
+closed_at: "2026-08-11T02:02:29.614Z"
+completed_at: "2026-08-11T02:02:29.614Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "A verdict entry records the judged commit or tree, per-assertion observed and declared values, the verdict, compute cost, and detected harness and model provenance without any identity flag being passed; Loosening a bound is recorded as its own entry linked to the authorising Decision item, and the pair is discoverable by graph traversal from either side; Verdict history is queryable through existing read surfaces to answer when a bound started holding, how often it blocked, and what was open when it last failed; Verdict entries survive history-compact and remain addressable after checkpointing, so enforcement history is not silently truncated; Every non-dry gate evaluation appends a verdict entry to the immutable history and the entry verifies as part of the hash chain, while dry runs are an explicit non-persisting preview"
@@ -25,23 +25,27 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-o0sqz5,implements,"2026-08-10T20:56:29.731Z","harness:claude-code","cli:create:dep",detected
   pm-o2kc,related,"2026-08-10T20:56:29.731Z","harness:claude-code","cli:create:dep",detected
   pm-wn6wot,blocked_by,"2026-08-10T21:22:57.937Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-10T21:22:58.543Z","harness:codex","Start evidence 2026-08-10: reused canonical verdict item after all-status duplicate search. This tranche appends structured gate evaluations to the verified _workspace history stream and exposes queryable receipts without caller-supplied identity."
   "2026-08-10T23:01:06.034Z","harness:codex","Completion evidence 2026-08-11: persisted gate evaluations append structured assurance_verdict records to the verified workspace history stream with gate, trigger, judged tree or commit, per-assertion values, verdict, compute cost, and detected provenance. The SDK exposes bounded durable verdict queries, dry runs do not append, and integration acceptance proved a persisted verdict remains queryable in a fresh process. History verification and the full exact-coverage suite passed."
   "2026-08-10T23:31:46.122Z","harness:codex","Exact-head review work 2026-08-11 Europe/Vienna (PM event timestamps remain UTC): actively reconciling the non-dry verdict persistence contract, bounding verdict reads, and extending durable-history integration proof."
   "2026-08-11T00:55:43.625Z","harness:codex","Exact-head completion evidence 2026-08-11: reconciled the contract to persist every non-dry evaluation while dry runs remain non-persisting; verdict reads are newest-first and bounded to 50 by default with a 1,000 maximum. Packed npx dry-run acceptance preserved the verdict count and bunx persisted a passing verdict whose --limit 1 query returned exactly one newest record."
+  "2026-08-11T02:02:17.710Z","harness:codex","Exact-head review completion 2026-08-11: verdict limits outside 1..1000 now fail at the transport boundary with the same usage exit class as non-integer input, while the direct SDK retains its typed range guard. Manual isolated CLI acceptance confirmed invalid limit exit 2 and valid bounded reads."
 learnings[2]{created_at,author,text}:
   "2026-08-10T23:01:06.703Z","harness:codex","Workspace-level assurance evidence belongs in the same verified append-only substrate as item history but under a dedicated workspace stream, so durable non-item records gain replay integrity without inventing synthetic work items."
   "2026-08-11T00:55:44.123Z","harness:codex",Durable verdict APIs should bound and order at the storage boundary; dry-run receipts remain useful evidence only when their non-persistence is explicit and tested across fresh processes.
-files[3]{path,scope,note}:
+files[6]{path,scope,note}:
+  src/sdk/governance/assurance-action.ts,project,Usage-safe verdict limit transport validation
+  src/sdk/governance/assurance-limits.ts,project,Shared internal verdict history ceiling
   src/sdk/governance/assurance.ts,project,append-only verdict persistence and query
   src/sdk/runtime-primitives.ts,project,public verified history reader
   tests/integration/assurance-cli.integration.spec.ts,project,Durable verdict append and query acceptance coverage
+  tests/unit/sdk/assurance-action.spec.ts,project,Out-of-range verdict limit usage error coverage
 tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/integration/assurance-cli.integration.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/integration/assurance-cli.integration.spec.ts tests/integration/assurance-runtime.integration.spec.ts,project,300
-  "pnpm test:coverage",project,1200
-test_runs[3]:
+  node scripts/run-tests.mjs coverage,project,1200
+test_runs[5]:
   - run_id: test-local-msnt3hbk-4ltcxc
     kind: test
     status: passed
@@ -74,7 +78,29 @@ test_runs[3]:
     skipped: 1
     items: 1
     linked_tests: 3
+  - run_id: test-all-local-msnzhmyh-ziminc
+    kind: test-all
+    status: passed
+    started_at: "2026-08-11T01:30:46.974Z"
+    finished_at: "2026-08-11T01:41:15.229Z"
+    recorded_at: "2026-08-11T01:41:15.229Z"
+    passed: 2
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 3
+  - run_id: test-all-local-mso04t6j-c5je2r
+    kind: test-all
+    status: passed
+    started_at: "2026-08-11T01:48:48.122Z"
+    finished_at: "2026-08-11T01:59:11.380Z"
+    recorded_at: "2026-08-11T01:59:11.380Z"
+    passed: 2
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 3
 docs[1]{path,scope,note}:
   docs/ASSURANCE.md,project,public assurance contracts and workflows
-close_reason: "Exact-head review fixes complete: non-dry durable verdicts, explicit non-persisting dry runs, and bounded newest-first queries."
+close_reason: Verdict-limit usage semantics and isolated CLI acceptance complete.
 body: ""

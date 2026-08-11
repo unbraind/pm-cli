@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import {
   runAssuranceAction,
   runAssuranceDispatch,
@@ -136,6 +137,12 @@ describe("assurance action transport", () => {
           global,
         ),
       ).rejects.toThrow("finite integer");
+      await expect(
+        runAssuranceAction({ action: "verdicts", limit: 0 }, global),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runAssuranceAction({ action: "verdicts", limit: 1001 }, global),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
     });
   });
 

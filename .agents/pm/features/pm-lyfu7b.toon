@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:sdk",assurance,configurability,enforcement,measurement-ratchet
 created_at: "2026-08-10T20:55:45.036Z"
-updated_at: "2026-08-11T00:55:57.647Z"
-closed_at: "2026-08-11T00:55:57.094Z"
-completed_at: "2026-08-11T00:55:57.094Z"
+updated_at: "2026-08-11T02:02:27.905Z"
+closed_at: "2026-08-11T02:02:27.376Z"
+completed_at: "2026-08-11T02:02:27.376Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "An assertion declares exactly one polarity, is refused when it declares none or several, and names its measurement by id; Scope is explicit and a bound that would silently cover only active items must say so, with the population size reported alongside the observed value; Lifetime defaults to hold, retire requires a recorded reason, and an out-of-domain lifetime fails rather than falling back to the default; Automatic tightening is monotone in the good direction; any loosening is refused unless a Decision item is linked, and the refusal names the missing decision; Each assertion carries a negative control that fails in every direction its polarity admits, and an assertion whose control has never failed is reported as unproven"
@@ -26,22 +26,25 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-rtn5h6,related,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-10T20:55:45.036Z","harness:claude-code","cli:create:dep",detected
   pm-2lex4r,blocked_by,"2026-08-10T21:22:50.593Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-10T21:22:55.185Z","harness:codex","Start evidence 2026-08-10: reused canonical assertion item after all-status duplicate search. This tranche implements assertion declaration validation and evaluation on the measurement substrate, including mandatory proven controls and explicit lifecycle/enforcement semantics."
   "2026-08-10T23:01:03.730Z","harness:codex","Completion evidence 2026-08-11: assertions now require exactly one polarity, explicit all/active/filter scope, hold-or-reasoned-retire lifetime, enforcement level, owner linkage, and a proven negative control. Evaluation reports population and observed/bound data; monotone tightening is automatic, while weakening is refused unless a live linked Decision authorizes it. Unit and action tests passed inside the 7,201-test exact-coverage run and the packed CLI acceptance exercised a passing assertion end to end."
   "2026-08-10T23:31:46.619Z","harness:codex","Exact-head review work 2026-08-11 Europe/Vienna (PM event timestamps remain UTC): actively removing synthesized Decision authorization, completing measurement-reference integrity, signed-bound coverage, and negative-control proof."
   "2026-08-11T00:55:42.604Z","harness:codex","Exact-head completion evidence 2026-08-11: weakening now accepts only an explicitly named terminal Decision item, never a synthesized or arbitrary Decision; filter and derived measurement references participate in the same integrity checks; signed finite assertion bounds and a numeric negative control are covered. Focused action/assertion tests and the exact 100/100/100/100 suite passed."
+  "2026-08-11T02:02:16.297Z","harness:codex","Exact-head review completion 2026-08-11: the strict transport schema now requires a non-empty retire_reason exactly when lifetime is retire, matching runtime assertion validation; full-contract regression coverage and the exact suite passed."
 learnings[2]{created_at,author,text}:
   "2026-08-10T23:01:04.318Z","harness:codex","A weakening authorization must be resolved against the live workspace item graph, not accepted as a caller string; this keeps a Decision auditable and prevents transport-specific policy bypasses."
   "2026-08-11T00:55:43.154Z","harness:codex","Authorization is provenance, not type presence: a weakening must name exactly one terminal Decision so replay can prove which decision granted the exception."
-files[3]{path,scope,note}:
+files[5]{path,scope,note}:
+  src/sdk/cli-contracts/schemas/assurance-definition.ts,project,Retired assertion reason contract parity
   src/sdk/governance/assurance-action.ts,project,shared assertion registry transport
   src/sdk/governance/assurance.ts,project,assertion polarity scope lifetime and loosening authorization
   tests/unit/sdk/assurance.spec.ts,project,"Assertion lifecycle,scope,negative-control,and decision-authorization coverage"
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Retired assertion schema regression
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-action.spec.ts,project,240
-  "pnpm test:coverage",project,1200
-test_runs[3]:
+  node scripts/run-tests.mjs coverage,project,1200
+test_runs[5]:
   - run_id: test-local-msnt2w1z-njvahs
     kind: test
     status: passed
@@ -74,7 +77,29 @@ test_runs[3]:
     skipped: 1
     items: 1
     linked_tests: 2
+  - run_id: test-all-local-msnzhmyh-ziminc
+    kind: test-all
+    status: passed
+    started_at: "2026-08-11T01:30:46.974Z"
+    finished_at: "2026-08-11T01:41:24.520Z"
+    recorded_at: "2026-08-11T01:41:24.520Z"
+    passed: 1
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 2
+  - run_id: test-all-local-mso04t6j-c5je2r
+    kind: test-all
+    status: passed
+    started_at: "2026-08-11T01:48:48.122Z"
+    finished_at: "2026-08-11T01:59:20.720Z"
+    recorded_at: "2026-08-11T01:59:20.720Z"
+    passed: 1
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 2
 docs[1]{path,scope,note}:
   docs/ASSURANCE.md,project,public assurance contracts and workflows
-close_reason: "Exact-head review fixes complete: explicit terminal Decision authorization, complete references, signed bounds, and proven negative controls."
+close_reason: Retired-assertion schema parity and full contract coverage complete.
 body: ""

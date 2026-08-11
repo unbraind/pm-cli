@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[3]: code-quality,dependencies,security
 created_at: "2026-08-08T09:58:16.116Z"
-updated_at: "2026-08-11T00:56:01.043Z"
-closed_at: "2026-08-11T00:56:00.481Z"
-completed_at: "2026-08-11T00:56:00.481Z"
+updated_at: "2026-08-11T02:02:31.404Z"
+closed_at: "2026-08-11T02:02:30.824Z"
+completed_at: "2026-08-11T02:02:30.824Z"
 author: "harness:codex"
 estimated_minutes: 45
 acceptance_criteria: @types/node and ESLint resolve to their current compatible releases; pnpm audit and GitHub dependency/secret/code scanning are triaged; Node typecheck lint full 100/100/100/100 coverage and packed npx/bunx consumers pass; incompatible majors remain linked to canonical open items without duplicate work
@@ -18,7 +18,7 @@ actual_result: "ESLint 10.8.1 and Node types 26.2.0 are locked; audit and GitHub
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-ksr40d,related,"2026-08-08T09:58:16.116Z","harness:codex","cli:create:dep",detected
   pm-qwoy,implements,"2026-08-08T09:58:16.116Z","harness:codex","cli:create:dep",detected
-comments[12]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-08-08T09:58:16.116Z","harness:codex","Duplicate-check evidence: all-status exact-title search returned zero items; broader @types/node and ESLint searches found closed historical refreshes and canonical npm-package-arg 14 deferment pm-ksr40d, but no item owns the 2026-08-08 compatible patch pair. Live outdated: @types/node 26.1.2 -> 26.2.0, eslint 10.8.0 -> 10.8.1; TypeScript 7 remains a separate major."
   "2026-08-08T10:00:11.492Z","harness:codex","Dependency disposition: @types/node 26.2.0 and ESLint 10.8.1 were published only about 19 hours ago. pnpm correctly required new minimumReleaseAgeExclude bypasses to install them; those generated exceptions and the dependency changes were removed rather than weakening the supply-chain gate. npm-package-arg 14 remains owned by pm-ksr40d and incompatible with the published Node 22 floor. pnpm audit is zero. Resume this item after the three-day cooldown."
   "2026-08-08T15:40:17.587Z","harness:codex","2026-08-08 refresh evidence: pnpm outdated has no compatible wanted-version updates; only the separately tracked npm-package-arg 14 and TypeScript 7 majors remain. GitHub Dependabot, code-scanning, and secret-scanning open-alert APIs all returned empty arrays; pnpm audit is 0/0/0/0/0."
@@ -31,6 +31,7 @@ comments[12]{created_at,author,text}:
   "2026-08-10T23:01:07.248Z","harness:codex","Completion evidence 2026-08-11: dependency policy now resolves eslint 10.8.1 and @types/node 26.2.0 after their mandatory age window without exclusions. pnpm audit reports no known vulnerabilities; GitHub Dependabot, code-scanning, and secret-scanning open inventories are empty. Typecheck, lint, exact 100/100/100/100 coverage, packed npx smoke, bunx acceptance, and 88-command package dogfood passed. npm-package-arg 14 and TypeScript 7 remain canonical major migrations, while esbuild 0.28.2 remains intentionally outside the accepted update set."
   "2026-08-10T23:31:45.639Z","harness:codex","Exact-head review work 2026-08-11 Europe/Vienna (PM event timestamps remain UTC): actively correcting structured verification links and evidence-date clarity while preserving the already verified dependency disposition."
   "2026-08-11T00:55:45.530Z","harness:codex","Exact-head completion evidence 2026-08-11: eslint 10.8.1 and @types/node 26.2.0 remain the only policy-cleared compatible refreshes. Both pnpm audit commands passed with zero known vulnerabilities; typecheck, lint/static quality, exact 100/100/100/100 coverage, package artifact, packed npx, bunx acceptance, and 88-command dogfood passed in the green pm test-all receipt. No minimum-age bypass was added."
+  "2026-08-11T02:02:18.162Z","harness:codex","Exact-head review completion 2026-08-11: dependency verification links now use the sandbox-safe coverage runner. Both audits, typecheck, lint/static gates, 7,211-test exact coverage, package artifact, packed npx smoke, and 88-command dogfood passed in one canonical tracker receipt."
 learnings[1]{created_at,author,text}:
   "2026-08-10T23:01:07.809Z","harness:codex","Dependency freshness must be evaluated together with release age and supported runtime floors: a compatible patch can land after policy age, while newer incompatible majors remain on their canonical migration items without supply-chain exceptions."
 files[2]{path,scope,note}:
@@ -41,9 +42,9 @@ tests[6]{command,scope,timeout_seconds}:
   pnpm audit --audit-level=low,project,240
   pnpm typecheck,project,300
   pnpm lint,project,600
-  "pnpm test:coverage",project,1200
   "pnpm quality:package-artifact && pnpm smoke:npx && pnpm dogfood:package-first",project,1200
-test_runs[4]:
+  node scripts/run-tests.mjs coverage,project,1200
+test_runs[6]:
   - run_id: test-local-mslifeeh-pm1g5v
     kind: test
     status: passed
@@ -85,5 +86,27 @@ test_runs[4]:
     skipped: 1
     items: 1
     linked_tests: 6
-close_reason: "Policy-cleared dependency refresh verified with zero vulnerabilities and all repo, package, npx, bunx, and dogfood gates green."
+  - run_id: test-all-local-msnzhmyh-ziminc
+    kind: test-all
+    status: passed
+    started_at: "2026-08-11T01:30:46.974Z"
+    finished_at: "2026-08-11T01:40:49.880Z"
+    recorded_at: "2026-08-11T01:40:49.880Z"
+    passed: 5
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 6
+  - run_id: test-all-local-mso04t6j-c5je2r
+    kind: test-all
+    status: passed
+    started_at: "2026-08-11T01:48:48.122Z"
+    finished_at: "2026-08-11T01:58:45.802Z"
+    recorded_at: "2026-08-11T01:58:45.802Z"
+    passed: 5
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 6
+close_reason: Sandboxed dependency verification and all package/security gates complete.
 body: ""

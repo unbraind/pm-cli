@@ -25,6 +25,7 @@ import {
   type AssuranceMeasurementDefinition,
   type AssuranceMutationReceipt,
 } from "./assurance.js";
+import { MAX_ASSURANCE_VERDICT_LIMIT } from "./assurance-limits.js";
 import { createAssuranceWorkspaceContext } from "./assurance-runtime.js";
 import { resolvePmRoot } from "../runtime-primitives.js";
 import { parseRuntimeInteger, readRuntimeString } from "../runtime-input.js";
@@ -202,6 +203,32 @@ async function authorizedDecisionIds(
   return [decision.id];
 }
 
+/** Validate and execute the bounded durable-verdict listing transport. */
+async function runVerdictsAction(
+  input: AssuranceActionInput,
+  pmRoot: string,
+): Promise<Extract<AssuranceActionResult, { items: AssuranceGateVerdict[] }>> {
+  const limit = parseRuntimeInteger(input.limit, "assurance verdict limit");
+  if (
+    limit !== undefined &&
+    (limit < 1 || limit > MAX_ASSURANCE_VERDICT_LIMIT)
+  ) {
+    throw new PmCliError(
+      `assurance verdict limit must be an integer from 1 through ${MAX_ASSURANCE_VERDICT_LIMIT}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const items = await listAssuranceVerdicts(pmRoot, {
+    gate_id: input.id ?? input.gate,
+    limit,
+  });
+  return {
+    items,
+    count: items.length,
+    row_contract: { row_keys: ["items"] as const, jq_selector: ".items[]" },
+  };
+}
+
 /** Execute one assurance request through the public assurance SDK primitives. */
 export async function runAssuranceAction(
   input: AssuranceActionInput,
@@ -210,15 +237,7 @@ export async function runAssuranceAction(
   const action = parseAction(input.action);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (action === "verdicts") {
-    const items = await listAssuranceVerdicts(pmRoot, {
-      gate_id: input.id ?? input.gate,
-      limit: parseRuntimeInteger(input.limit, "assurance verdict limit"),
-    });
-    return {
-      items,
-      count: items.length,
-      row_contract: { row_keys: ["items"] as const, jq_selector: ".items[]" },
-    };
+    return runVerdictsAction(input, pmRoot);
   }
   if (action === "run") {
     if (!input.id) {

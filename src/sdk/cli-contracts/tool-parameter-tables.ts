@@ -2065,6 +2065,10 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
         "Stable assurance declaration id or gate id, depending on subcommand.",
       examples: ["active-issues", "release-readiness"],
     },
+    limit: {
+      description: "Maximum number of newest assurance verdicts returned.",
+      examples: [10, 25],
+    },
   },
   update: {
     acceptanceCriteria: {

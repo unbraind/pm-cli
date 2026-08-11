@@ -20,6 +20,7 @@ import {
   WORKSPACE_HISTORY_ID,
   getWorkspaceHistoryPath,
 } from "../runtime-primitives.js";
+import { MAX_ASSURANCE_VERDICT_LIMIT } from "./assurance-limits.js";
 
 /** Current serialized assurance registry format. */
 export const ASSURANCE_DOCUMENT_VERSION = 1 as const;
@@ -500,7 +501,6 @@ const LOCK_TTL_SECONDS = 30;
 const LOCK_WAIT_MS = 5_000;
 const EVALUATION_CONCURRENCY = 4;
 const DEFAULT_VERDICT_LIMIT = 50;
-const MAX_VERDICT_LIMIT = 1_000;
 
 function requireStableId(value: string, field: string): void {
   if (!ID_PATTERN.test(value)) {
@@ -1326,9 +1326,13 @@ export async function listAssuranceVerdicts(
   } = {},
 ): Promise<AssuranceGateVerdict[]> {
   const limit = options.limit ?? DEFAULT_VERDICT_LIMIT;
-  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_VERDICT_LIMIT) {
+  if (
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > MAX_ASSURANCE_VERDICT_LIMIT
+  ) {
     throw new TypeError(
-      `assurance verdict limit must be an integer from 1 through ${MAX_VERDICT_LIMIT}`,
+      `assurance verdict limit must be an integer from 1 through ${MAX_ASSURANCE_VERDICT_LIMIT}`,
     );
   }
   const entries = await readHistoryEntries(getWorkspaceHistoryPath(pmRoot), WORKSPACE_HISTORY_ID);

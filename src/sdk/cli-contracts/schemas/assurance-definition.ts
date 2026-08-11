@@ -11,6 +11,8 @@ const ASSURANCE_VALUE_SCHEMA = {
 const ITEMS_FIELD_CONDITIONAL_SCHEMA: Record<string, unknown> = {
   if: { required: ["field"] },
 };
+// Keep the JSON Schema keyword visible while avoiding unicorn/no-thenable,
+// which intentionally rejects object literals with a `then` property.
 Reflect.set(ITEMS_FIELD_CONDITIONAL_SCHEMA, "then", {
   required: ["equals"],
 });
@@ -138,6 +140,25 @@ export const ASSURANCE_DEFINITION_SCHEMA = {
         { required: ["monotone_nonincreasing"] },
         { required: ["subset_of"] },
       ],
+      allOf: [
+        {
+          oneOf: [
+            {
+              not: {
+                required: ["lifetime"],
+                properties: { lifetime: { const: "retire" } },
+              },
+            },
+            {
+              required: ["lifetime", "retire_reason"],
+              properties: {
+                lifetime: { const: "retire" },
+                retire_reason: { type: "string", minLength: 1 },
+              },
+            },
+          ],
+        },
+      ],
       properties: {
         id: { type: "string", minLength: 1 },
         measurement_id: { type: "string", minLength: 1 },
@@ -169,7 +190,7 @@ export const ASSURANCE_DEFINITION_SCHEMA = {
         monotone_nonincreasing: { type: "number" },
         subset_of: { type: "array", items: { type: "string" } },
         lifetime: { enum: ["hold", "retire"] },
-        retire_reason: { type: "string" },
+        retire_reason: { type: "string", minLength: 1 },
         enforcement: { enum: ["block", "warn", "observe"] },
         authorization_decision: { type: "string", minLength: 1 },
         negative_control: {
