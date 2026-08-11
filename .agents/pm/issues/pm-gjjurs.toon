@@ -6,10 +6,10 @@ status: open
 priority: 1
 tags[5]: agent-ux,context-efficiency,output-contracts,row-contract,token-budget
 created_at: "2026-08-10T22:59:34.849Z"
-updated_at: "2026-08-10T23:08:12.036Z"
+updated_at: "2026-08-11T05:24:31.250Z"
 author: "harness:codex"
 estimated_minutes: 180
-acceptance_criteria: Agents can suppress or reference repeated row contracts without suppressing command results; The setting works consistently for TOON JSON CLI SDK and MCP transports through declared runtime contracts; Contract discovery remains available on demand and session behavior is deterministic and measured by the token-surface gate
+acceptance_criteria: "Agents can suppress or reference repeated row contracts without suppressing command results; The setting works consistently for TOON JSON CLI SDK and MCP transports through declared runtime contracts; Contract discovery remains available on demand and session behavior is deterministic and measured by the token-surface gate; The row contract is off by default on every read command that currently emits it and is restored by an explicit flag, so the default read pays for data only; Suppression is measured per command against the token-budget-gate corpus, with pm stats named as the reference instance at 285 of 745 default bytes"
 parent: pm-5t33or
 reporter: GitHub issue #970
 severity: medium
@@ -21,10 +21,12 @@ affected_version: 2026.8.10
 component: CLI and SDK output contracts
 regression: false
 customer_impact: Repeated static metadata consumes backlog-sweep context and reduces useful project information available to agents.
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,related,"2026-08-10T22:59:34.849Z","harness:codex","cli:create:dep",detected
   pm-hid9g1,discovered_from,"2026-08-10T22:59:34.849Z","harness:codex","cli:create:dep",detected
   pm-p258tx,related,"2026-08-10T22:59:34.849Z","harness:codex","cli:create:dep",detected
+  pm-5y05kq,related,"2026-08-11T05:24:31.129Z","harness:claude-code","cli:update:dep",detected
+  pm-7nqo6b,related,"2026-08-11T05:24:31.129Z","harness:claude-code","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-08-10T22:59:34.849Z","harness:codex","Duplicate-check evidence 2026-08-11: all-status search found pm-5t33or, pm-hid9g1, pm-p258tx, and the adaptive-context lineage, but no item owns GH-970 repeated row-contract suppression or reference semantics. Canonical source: https://github.com/unbraind/pm-cli/issues/970."
 body: ""
