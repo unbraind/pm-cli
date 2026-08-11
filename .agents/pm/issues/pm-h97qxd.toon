@@ -1,0 +1,41 @@
+id: pm-h97qxd
+title: "Health result contract parity: every checks[] row exposes a boolean ok beside its tri-state status"
+description: "GitHub #980 shows that the public health result uses ok:boolean on the envelope but status:ok|warn|fail with no ok property on each checks[] row. Natural agent code reuses row.ok and can report every healthy check as failed or construct a gate that never fires. This is a public SDK result-schema consistency and compatibility issue, not a change to the established meaning of the aggregate health verdict. Duplicate check searched all statuses for health JSON, checks row ok/status, envelope boolean, and the linked GH-785/GH-815 verdict issues; no item owns row-level boolean parity."
+type: Issue
+status: open
+priority: 1
+tags[8]: agent-ux,"area:governance","area:sdk",contracts,health,json,safety,typed-output
+created_at: "2026-08-11T18:12:41.927Z"
+updated_at: "2026-08-11T18:17:09.039Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "The public HealthCheck result type exposes ok:boolean on every checks[] row while preserving status:ok|warn|fail; ok has one documented derivation from status and aggregate advisory/blocking policy remains unchanged; SDK, CLI JSON, MCP, compact/full projections, contracts, fixtures, and docs agree; compatibility tests prove existing status consumers are unchanged and naive row.ok predicates identify failures correctly; packaged npm/npx/bun/bunx acceptance, exact 100/100/100/100 coverage, docstrings, and static gates pass"
+goal: project management = context management
+objective: Make the public SDK health result self-consistent and safe for naive automation at every nesting level
+value: Agents can inspect failing health checks without silently inverting or disabling their gate predicate
+impact: "SDK, CLI JSON, MCP, and extension consumers share one backward-compatible truth signal per check"
+why_now: The mismatch reproduces in current published packages and lies on the failure-investigation path used by release automation
+parent: pm-usfg
+reporter: GitHub #980
+severity: high
+environment: "@unbrained/pm-cli 2026.8.7, 2026.8.10, and 2026.8.11; Node 22; Linux"
+repro_steps: "Run pm health --json and compare top-level .ok with .checks[0].ok and .checks[0].status; .checks[0].ok is absent while status is ok"
+expected_result: "Each checks[] entry carries a boolean ok compatible with the envelope spelling, alongside its existing tri-state status"
+actual_result: "The envelope has ok:boolean while each check has only status:string, allowing missing-key falsiness to invert or disable obvious agent gates"
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0hnu,related,"2026-08-11T18:12:41.927Z","harness:codex","cli:create:dep",detected
+  pm-1jzupz,related,"2026-08-11T18:12:41.927Z","harness:codex","cli:create:dep",detected
+  pm-83ov2i,related,"2026-08-11T18:12:41.927Z","harness:codex","cli:create:dep",detected
+  pm-du93sr,related,"2026-08-11T18:12:41.927Z","harness:codex","cli:create:dep",detected
+  pm-jezo,related,"2026-08-11T18:12:41.927Z","harness:codex","cli:create:dep",detected
+  pm-oxrw,discovered_from,"2026-08-11T18:12:41.927Z","harness:codex","cli:create:dep",detected
+  pm-r8u2g6,related,"2026-08-11T18:12:41.927Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-11T18:12:41.927Z","harness:codex","Duplicate-check evidence: all-status searches over health JSON checks row ok/status, envelope boolean, GH-785, and GH-815 found closed SDK health owner pm-oxrw, verdict-policy items pm-83ov2i/pm-r8u2g6/pm-jezo, remediation-map pm-0hnu, and token projection pm-du93sr. Full live metadata confirms those define aggregate semantics, remediation, or projection size; none owns the absent row-level boolean. Canonical external report: https://github.com/unbraind/pm-cli/issues/980."
+files[1]{path,scope,note}:
+  src/sdk/governance/health.ts,project,Public SDK health result producer and per-check contract owner
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,300
+docs[1]{path,scope,note}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Documents health projections and must define row-level ok/status compatibility
+body: ""

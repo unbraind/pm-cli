@@ -2,13 +2,13 @@ id: pm-ajj4r7
 title: Deliver PR #981 context and evidence contract tranche through exact-head review
 description: "Coordinate exact-head GitHub checks, bot feedback acknowledgements, merge, immutable same-day release verification, telemetry evidence, and final tracker closeout for the coupled SDK and CLI contract tranche."
 type: Task
-status: in_progress
+status: closed
 priority: 1
-tags[6]: cli,delivery,github,release-verification,review-loop,sdk
+tags[7]: changelog-exclude,cli,delivery,github,release-verification,review-loop,sdk
 created_at: "2026-08-11T16:29:33.744Z"
-updated_at: "2026-08-11T17:56:33.612Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#ea0711001f053e8a2786b159"
+updated_at: "2026-08-11T18:30:41.431Z"
+closed_at: "2026-08-11T18:29:08.109Z"
+completed_at: "2026-08-11T18:29:08.109Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: PR #981 is reviewed on its exact final head; every bot comment review and inline thread is reacted to and answered; all required checks pass; the PR merges to main; no second 2026.8.11 auto-release is created; the existing immutable release plus npm npx bunx are independently verified; PM lineage is closed with exact evidence
@@ -22,6 +22,9 @@ parent: pm-usfg
 risk: medium
 confidence: high
 reporter: GitHub PR #981
+resolution: completed
+expected_result: "The exact final PR head is fully reviewed and green, merged to main, and independently verified without creating a second same-day release; all observability and tracker outcomes are explicit"
+actual_result: PR #981 merged at b02ee51f4 after exact-head green CI and complete bot-surface handling; immutable v2026.8.11 npm/npx/bunx release verified without publishing again; observability and tracker closeout recorded
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-2htk4p,verifies,"2026-08-11T16:29:33.744Z","harness:codex","cli:create:dep",detected
   pm-fb0lkg,related,"2026-08-11T16:29:33.744Z","harness:codex","cli:create:dep",detected
@@ -30,7 +33,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-qckpnq,verifies,"2026-08-11T16:29:33.744Z","harness:codex","cli:create:dep",detected
   pm-v0a0un,verifies,"2026-08-11T16:29:33.744Z","harness:codex","cli:create:dep",detected
   pm-zryb9d,verifies,"2026-08-11T16:29:33.744Z","harness:codex","cli:create:dep",detected
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-08-11T16:29:33.744Z","harness:codex","Duplicate check: searched all statuses for PR #981, sdk context evidence contracts, review, merge, and release; no existing item owns this new exact-head delivery lifecycle. Canonical PR: https://github.com/unbraind/pm-cli/pull/981."
   "2026-08-11T16:29:55.071Z","harness:codex","Publication evidence: implementation commit dc34b607a was pushed from an exact-current origin/main base and PR #981 was opened with canonical pm item links, GitHub issue closures, verification inventory, same-day release guard, and Sentry fail-closed disclosure."
   "2026-08-11T16:34:42.747Z","harness:codex","Exact-head preflight remediation: the first pushed run failed only the unweakened 3,400-line source ceiling because the new assurance producer made the generated error catalog 3,401 implementation lines. TDD first exposed an incorrect fixture expectation; the generator now deterministically keeps string arrays up to 100 columns on one line, shrinking the generated catalog by eight implementation lines. Focused 15 tests, catalog freshness, and the full static-quality gate now pass with all violations empty and 100% source/export/member docstrings."
@@ -41,6 +44,7 @@ comments[10]{created_at,author,text}:
   "2026-08-11T17:15:05.480Z","harness:codex","CI remediation: exact-head run 31515717965 failed only Gates (static) because the generated error-code catalog still attributed invalid_argument_value to assurance-action.ts after normalization moved into assurance-mutation-error.ts. Regenerated src/sdk/generated-error-code-catalog.ts and tests/fixtures/contracts/full.json. pnpm contracts:check now passes; secret scan reports no credential-like material; 19 focused catalog/generator/assurance tests pass. A later local import-cost sample was host-load noisy (including bare Node above ceiling), while the earlier full static gate and hosted benchmark job are green; no import-cost code changed."
   "2026-08-11T17:44:19.229Z","harness:codex","CodeRabbit TDD evidence: three focused regressions first failed at the exact reported boundaries: unsupported hash epoch 3 was accepted, numeric retire_reason escaped as a raw TypeError, and default unclaimed state was billed as claim_state. The producer now rejects unsupported epochs before hashing, assurance validation refuses non-string retire reasons through the typed usage boundary, and get materiality requires a non-empty source assignee. The 16-test focused suite passes. The request to reopen completed pm-hfqju5 and pm-zryb9d is intentionally declined: both are unclaimed implementation-complete records, while this claimed pm-ajj4r7 item exclusively owns PR review, merge, and merged-head verification, preserving the user-required rule that only actively worked items are in progress."
   "2026-08-11T17:56:33.612Z","harness:codex","Post-review verification: focused 16/16 passed; SDK surface snapshot reports zero classified changes; exact repository coverage passed 486 files and 7,235 tests at 100% statements (52,196/52,196), branches (38,355/38,355), functions (10,746/10,746), and lines (50,417/50,417). Strict build, static/docstring/package-boundary/replication/absence/token/context/tracker/gate-registry checks passed. One host-load sample measured untouched sdk/authoring at 155ms versus 133ms; the immediate isolated 10-entrypoint gate passed, as did the CLI transport floor and both graph-composition and record-integrity assurance gates. Package-first manual acceptance passed 88 commands in isolated temp root /tmp/pm-dogfood-kyos25 with no failures."
+  "2026-08-11T18:29:03.223Z","harness:codex","Final merged-state evidence: PR #981 exact reviewed source head c89368724ef7f69aaebec905299818f096d040bc merged by squash as b02ee51f448eecfb198d0c8523faad6a4b9b682d. Final inventory: 0 unresolved threads, 0 unreacted bot comments across 11, 0 unreacted bot reviews across 8, and 0 unreacted bot inline comments across 11. Every actionable CodeRabbit/Sourcery finding was answered and resolved; CodeRabbit confirmed the final fixes, while the final re-request was rate-limited and Greptile stayed silent, both recorded as provider limitations rather than approval. PR exact-head checks were 29 success, 0 failure, 3 expected skips; merged-main CI 31521206769, Docs, Security and Script Quality, CodeQL, OSSF Scorecard, and CodSpeed all completed successfully. Canonical local preflight after tracker repair passed build, typecheck, static quality, 100% docstrings, package/SDK parity, contracts, token/context/graph/record-integrity gates, 486 files and 7,235 tests at exact 52,196/52,196 statements, 38,355/38,355 branches, 10,746/10,746 functions, 50,417/50,417 lines, secret scan, packed npx smoke, and 88-command isolated dogfood. Auto Release run 31521208946 skipped under the same-day guard; the only tag, GitHub release, and npm latest remain immutable v2026.8.11, independently verified by release:verify-published including real npx/bunx CLI and MCP dispatch. Sentry REST access was current and helpful: 0 critical and 3 recent high issues PM-CLI-30/2Z/2Y still classify as unexpected in the published build, so publication remains fail-closed until a future eligible day; merged source owns typed refusal fixes. Telemetry was healthy in best-effort mode at 1.48% finish error rate with 0 failures missing error codes. GitHub #979/#980 now have canonical open, unclaimed pm links pm-rncuf7/pm-h97qxd; security alert APIs are empty and no open PR remains."
 files[13]{path,scope,note}:
   scripts/generate-error-code-catalog.mjs,project,Keep generated string arrays compact to preserve strict source file-length headroom without weakening the gate
   src/core/history/history.ts,project,Document byte-compatible legacy v1 linked-test comparator semantics
@@ -66,4 +70,5 @@ tests[7]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/PR_REVIEW_LOOP.md,project,"Exact-head inventory,reaction,acknowledgement,and wait contract used for PR #981"
   docs/RELEASING.md,project,Same-day immutable release and post-merge verification policy
+close_reason: "Merged PR #981 exact reviewed head into main with all required checks green, all bot surfaces handled, exact 100/100/100/100 coverage, isolated package-first acceptance, same-day auto-release correctly skipped, immutable npm/npx/bunx v2026.8.11 verified, and fail-closed Sentry limitation documented."
 body: ""
