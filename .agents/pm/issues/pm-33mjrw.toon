@@ -1,0 +1,28 @@
+id: pm-33mjrw
+title: "Assurance registry mutations and gate verdicts record author unknown while carrying the full detected provenance in the same entry, so the audit artifact fails the question it exists to answer"
+description: "Found 2026-08-11 by declaring the first real assurance contract on this workspace, hours after the primitives shipped in 2026.8.11.\n\nEvery assurance registry mutation and every persisted gate verdict is recorded with author \"unknown\" and author_source \"configured\". Measured on this workspace: 61 of 61 unknown-author entries in .agents/pm/history/_workspace.jsonl carry an assurance op, across all seven of them - measurement put and remove, assertion put and remove, gate put and remove, and gate verdict. No other op in the file is affected. In the same file, entries written by other paths in the same session by the same process carry author harness:claude-code with author_source detected.\n\nThe detection is not missing. It ran, and it succeeded. The assurance entries carry agent_harness claude-code, agent_model claude-opus-5, and a complete agent_provenance block with model from probe, effort from environment, version from probe, and both role and topic inferred at high confidence with their evidence listed. Everything needed to name the author is present in the entry that says the author is unknown.\n\nThe workspace configures no default: author_default in .agents/pm/settings.json is the empty string. So this is not the configured-default suppression closed as pm-6uxhe0. The assurance action passes its optional author input straight through to the writer, and an absent value normalizes to the literal \"unknown\" with source configured rather than being derived from the harness that the same code path already resolved.\n\nTwo consequences, and the second is the reason this is filed at this priority.\n\nFirst, it re-opens a warning class the project had driven to zero. pm validate reported five warning classes at the start of this session and six after the declarations landed, the new one being validate_history_unknown_author_events at 61. pm-demq owns the legacy versus actionable split for that class and is CLOSED, on the premise that the remaining unknown-author events were historical. A capability shipped after that closure now mints them at HEAD, so the closure is falsified by the newest write path rather than by any change to the old data.\n\nSecond, and worse, it degrades exactly the artifact assurance exists to produce. A gate verdict is the project's durable, immutable record of what was enforced, against which tree, under which bound. Its whole value is that it can be trusted later by someone who was not there. A verdict whose author field reads \"unknown\" while its provenance block names the harness, the model, the effort, the role and the topic is not merely inconsistent, it is an audit record that fails the one question an audit record exists to answer, while carrying the answer in an adjacent field.\n\nThis also contradicts a standing project rule: agents must never pass an identity flag, because detection is automatic. It is automatic here for four fields and not for the one the validator reads."
+type: Issue
+status: open
+priority: 1
+tags[4]: assurance,defect,governance,provenance
+created_at: "2026-08-11T14:14:29.124Z"
+updated_at: "2026-08-11T14:14:29.124Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "The assurance write path derives its author from the same resolver every other mutating verb uses, so an assurance entry and an item mutation made by the same process in the same session record the same author; A gate verdict names the principal that produced it without any identity flag being passed, and the author field agrees with the agent_harness and agent_provenance recorded beside it; validate_history_unknown_author_events returns to zero newly minted events, with the existing legacy population still distinguishable from anything written at HEAD; A negative control proves an entry written with no resolvable harness is recorded as unresolved rather than silently attributed, so the fix never invents an author; The 61 entries already written by this defect are dispositioned explicitly, either re-attributable from their own provenance block or recorded as a bounded residual with the reason they cannot be"
+parent: pm-1jzupz
+risk: medium
+confidence: 95
+dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0elqjj,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+  pm-1jzupz,implements,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+  pm-4ok4ex,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+  pm-6uxhe0,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+  pm-91xeam,discovered_from,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+  pm-9yfo,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+  pm-c0lrdm,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+  pm-demq,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+  pm-py7qv2,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+  pm-u14c,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+body: ""

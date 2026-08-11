@@ -1,0 +1,28 @@
+id: pm-q6n8sj
+title: "The relationship ratchet bounds every edge kind that carries meaning and leaves the one kind that carries none unbounded, so the cheapest way to satisfy every graph guarantee is to add edges no algorithm can traverse"
+description: "Measured 2026-08-11 against scripts/release/tracker-measurements.json and pm graph audit on this tracker.\n\nThe declared bounds over dependency_kind are six: floors on implements at 2551, discovered_from at 465, verifies at 239 and supersedes at 79, and ceilings on blocks at 243 and related_to at 50.\n\nThe live declared-row population is 10,211. related holds 5,980 of them, 58.6 percent, and is the largest kind by more than a factor of two over implements. It is also the only kind in the corpus that is undirected and carries no semantics: it states that two items are associated and says nothing about which came first, which caused which, or which replaced which.\n\nrelated is absent from the declaration set. The alias spelling related_to is ceiling-bounded at 50, while the canonical spelling that alias canonicalizes to on read is bounded in neither direction.\n\nThree consequences follow, and every one of them is reachable by an ordinary enrichment pass.\n\nFirst, the total-edge floor and the node floor both rise when related rows are added, so an enrichment that adds nothing but associative edges reports as graph growth on every governance surface the project has.\n\nSecond, the semantic bounds are floors, so they are structurally incapable of detecting dilution. Adding ten thousand related rows leaves implements at 2551 and supersedes at 79, both still satisfied, while the fraction of the graph any traversal can use falls.\n\nThird, the quantity the project actually cares about is the composition of the graph, not its size. Semantic share, defined as discovered_from plus supersedes plus incident_from plus verifies over total rows, is 7.9 percent today and is measured nowhere. A pass that halves it passes every gate and every audit.\n\nThis is the exact failure mode the deep-linking programme is most exposed to, because related is the cheapest edge to write and the only kind that never has to cite evidence."
+type: Issue
+status: open
+priority: 1
+tags[4]: assurance,governance,graph,ratchet
+created_at: "2026-08-11T13:51:17.661Z"
+updated_at: "2026-08-11T14:11:55.193Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "The canonical related kind carries a declared bound in the same registry as every other dependency kind, so the largest edge population is no longer the only unbounded one; The declared quantity is a composition ratio rather than a raw count, so semantic edge share is enforceable independently of how many edges the graph holds in total; The alias spelling and the canonical spelling resolve to one declaration, so a bound can never be satisfied by writing the spelling that is not bounded; A negative control proves the bound fails when an associative-only enrichment dilutes semantic share and passes when the same count of typed edges is added instead; Semantic share is reported by the graph audit profile, so dilution is visible from the governance surface without reading the ratchet declaration file"
+parent: pm-96h7
+risk: medium
+confidence: 90
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
+  pm-4020c5,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
+  pm-6olc95,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
+  pm-96h7,implements,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
+  pm-9gzr4r,discovered_from,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
+  pm-a8zm,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
+  pm-g4k74y,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
+  pm-wmf72c,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
+files[1]{path,scope,note}:
+  .agents/pm/assurance.json,project,"Declared assurance registry: the graph-composition measurements, assertions and gate that bound this item's finding"
+body: ""

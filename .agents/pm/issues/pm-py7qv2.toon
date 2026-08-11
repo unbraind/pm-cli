@@ -1,0 +1,32 @@
+id: pm-py7qv2
+title: "Two assurance measurement sources answer from a projection that omits the fields they read, so a completeness gate reports zero missing evidence on a workspace with 874 items lacking it"
+description: "Found 2026-08-11 by declaring the first real assurance contract on this workspace, hours after the primitives shipped in 2026.8.11.\n\nThe evaluator builds its item population with listAllItemMetadataLight in createAssuranceWorkspaceContext (src/sdk/governance/assurance-runtime.ts:141), then evaluates every declaration against that reduced record. Two source kinds read fields the light projection does not carry, and both answer with a confident number instead of refusing.\n\nDefect one, the links source is uniformly wrong in both polarities.\n\nlinksSourceResult (src/sdk/governance/assurance.ts:843) reads item[source.link] and treats a non-array or empty array as absent. The light record carries no files, tests or docs collection at all, so present is false for every item without exception. Measured on this workspace:\n\n  links tests missing   -> 2439   truth 874\n  links tests present   -> 0      truth 1565\n  links files present   -> 0      truth 1632\n\nTruth was taken two ways that agree: the full list projection, and pm test pm-doxj --list, which returns three linked tests on the very first item the measurement claims has none. All three link kinds and both polarities are affected, so all six link declarations the vocabulary advertises are unusable.\n\nDefect two, equals null never matches.\n\nvalidateMeasurementDefinition (src/sdk/governance/assurance.ts:630) rejects a field with equals undefined and accepts equals null. The comparison (src/sdk/governance/assurance.ts:790) then evaluates valuesEqual against a key the light record omits whenever the value is empty, so the match can never succeed. Measured:\n\n  items field release   equals null       -> 0     truth 655\n  items field closed_at equals null       -> 0     truth 1489\n\nNon-null matching on the same fields is correct, which is what makes this hard to notice: items field release equals v2026.5.1 returns 398, exactly the truth, and items field priority equals 1 returns the exact truth as well. So the source is trustworthy for present values and silently empty for absent ones.\n\nWhy this matters more than an ordinary wrong number. Count the items that are missing something is the single most useful shape for a completeness gate, and it is the shape both defects destroy. A project can today declare a ceiling of zero on items carrying no release stamp, prove a negative control against synthetic observations, persist a passing verdict against an immutable tree, and be wrong about 655 items forever. The verdict contract records population, contributors, cost and negative-control proof, so the artifact looks maximally trustworthy at exactly the moment it is maximally wrong.\n\nThe correct failure mode for both is refusal. A declaration naming a field or collection the loaded population cannot carry is not a measurement of zero, it is an unanswerable question, and the evaluator already has a fail-closed path for cost ceilings and absent providers that this can reuse."
+type: Issue
+status: open
+priority: 1
+tags[4]: assurance,defect,governance,measurement
+created_at: "2026-08-11T14:06:13.227Z"
+updated_at: "2026-08-11T14:11:56.779Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "A declaration naming a field or collection the loaded item population cannot carry is refused at evaluation time with the field named, rather than answered with a count; The links source resolves files, tests and docs for every item it judges, and both present and missing polarities match the values the corresponding read command returns for the same item; An items declaration can express field-is-absent-or-empty as a first-class predicate, so counting items missing a value is expressible without relying on equals null; A negative control proves each repaired source fails when the population genuinely lacks the evidence and passes when it has it, using a fixture whose truth is read back through the ordinary command surface rather than asserted; Any verdict already persisted from an affected declaration is identifiable after the fix, so a passing verdict produced by the defect is never mistaken for a passing verdict produced by the property"
+parent: pm-1jzupz
+risk: high
+confidence: 95
+dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,implements,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+  pm-2lex4r,discovered_from,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+  pm-4ok4ex,related,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+  pm-91xeam,related,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+  pm-9rgaal,implements,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+  pm-e96opw,related,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+  pm-htbetn,related,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+  pm-lyfu7b,related,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+  pm-pww8ax,related,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+  pm-q6n8sj,related,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+  pm-uhv1m5,related,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+  pm-wn6wot,related,"2026-08-11T14:06:13.227Z","harness:claude-code","cli:create:dep",detected
+files[2]{path,scope,note}:
+  src/sdk/governance/assurance-runtime.ts,project,createAssuranceWorkspaceContext builds the item population with listAllItemMetadataLight
+  src/sdk/governance/assurance.ts,project,linksSourceResult and the items field/equals comparison that answer from a projection lacking the fields they read
+body: ""

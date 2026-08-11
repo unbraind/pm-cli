@@ -1,0 +1,399 @@
+{
+  "version": 1,
+  "measurements": [
+    {
+      "id": "edges-related",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "related"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "edges-implements",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "implements"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "edges-discovered-from",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "discovered_from"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "edges-supersedes",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "supersedes"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "edges-verifies",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "verifies"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "edges-incident-from",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "incident_from"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "edges-blocked-by",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "blocked_by"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "edges-blocks",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "blocks"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "edges-parent-rows",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "parent"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "edges-child-rows",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "child"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "edges-semantic",
+      "description": "Derivation, replacement, verification and incident edges: the kinds a traversal can reason about",
+      "source": {
+        "kind": "derived",
+        "expression": {
+          "operator": "add",
+          "operands": [
+            {
+              "measurement": "edges-discovered-from"
+            },
+            {
+              "measurement": "edges-supersedes"
+            },
+            {
+              "measurement": "edges-verifies"
+            },
+            {
+              "measurement": "edges-incident-from"
+            }
+          ]
+        }
+      },
+      "max_cost": 80000
+    },
+    {
+      "id": "edges-declared-total",
+      "description": "All declared dependency rows across every kind",
+      "source": {
+        "kind": "derived",
+        "expression": {
+          "operator": "add",
+          "operands": [
+            {
+              "measurement": "edges-semantic"
+            },
+            {
+              "measurement": "edges-related"
+            },
+            {
+              "measurement": "edges-implements"
+            },
+            {
+              "measurement": "edges-blocked-by"
+            },
+            {
+              "measurement": "edges-blocks"
+            },
+            {
+              "measurement": "edges-parent-rows"
+            },
+            {
+              "measurement": "edges-child-rows"
+            }
+          ]
+        }
+      },
+      "max_cost": 200000
+    },
+    {
+      "id": "semantic-edge-share-permille",
+      "description": "Semantic edges per thousand declared rows: the composition the graph guarantees depend on, expressed so it can carry an integer floor",
+      "source": {
+        "kind": "derived",
+        "expression": {
+          "operator": "multiply",
+          "operands": [
+            {
+              "operator": "divide",
+              "operands": [
+                {
+                  "measurement": "edges-semantic"
+                },
+                {
+                  "measurement": "edges-declared-total"
+                }
+              ]
+            },
+            {
+              "literal": 1000
+            }
+          ]
+        }
+      },
+      "max_cost": 300000
+    },
+    {
+      "id": "edges-related-to-alias",
+      "description": "Rows stored with the alias spelling related_to, which canonicalizes to related only on read",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "related_to"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "edges-associative-declared",
+      "description": "All associative rows in declared-row units: canonical related plus the related_to alias. Declared-row units, not collapsed-undirected units - pm graph audit reports the latter and the two differ by the reciprocal pairs",
+      "source": {
+        "kind": "derived",
+        "expression": {
+          "operator": "add",
+          "operands": [
+            {
+              "measurement": "edges-related"
+            },
+            {
+              "measurement": "edges-related-to-alias"
+            }
+          ]
+        }
+      },
+      "max_cost": 80000
+    },
+    {
+      "id": "history-events-total",
+      "description": "Every immutable history entry across every stream. The record is append-only, so this number can never fall",
+      "source": {
+        "kind": "history"
+      },
+      "max_cost": 200000
+    }
+  ],
+  "assertions": [
+    {
+      "id": "semantic-edge-share-floor",
+      "measurement_id": "semantic-edge-share-permille",
+      "owner_item_id": "pm-q6n8sj",
+      "scope": {
+        "kind": "all"
+      },
+      "floor": 79,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 79,
+            "expected": "pass"
+          },
+          {
+            "observed": 78,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "supersedes-floor",
+      "measurement_id": "edges-supersedes",
+      "owner_item_id": "pm-wmf72c",
+      "scope": {
+        "kind": "all"
+      },
+      "floor": 84,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 84,
+            "expected": "pass"
+          },
+          {
+            "observed": 83,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "discovered-from-floor",
+      "measurement_id": "edges-discovered-from",
+      "owner_item_id": "pm-96h7",
+      "scope": {
+        "kind": "all"
+      },
+      "floor": 474,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 474,
+            "expected": "pass"
+          },
+          {
+            "observed": 473,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "verifies-floor",
+      "measurement_id": "edges-verifies",
+      "owner_item_id": "pm-96h7",
+      "scope": {
+        "kind": "all"
+      },
+      "floor": 245,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 245,
+            "expected": "pass"
+          },
+          {
+            "observed": 244,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "blocks-ceiling",
+      "measurement_id": "edges-blocks",
+      "owner_item_id": "pm-c90tfh",
+      "scope": {
+        "kind": "all"
+      },
+      "ceiling": 243,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 243,
+            "expected": "pass"
+          },
+          {
+            "observed": 244,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "associative-edge-ceiling",
+      "measurement_id": "edges-associative-declared",
+      "owner_item_id": "pm-q6n8sj",
+      "scope": {
+        "kind": "all"
+      },
+      "ceiling": 6200,
+      "lifetime": "hold",
+      "enforcement": "warn",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 6200,
+            "expected": "pass"
+          },
+          {
+            "observed": 6201,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "history-append-only",
+      "measurement_id": "history-events-total",
+      "owner_item_id": "pm-w7ccmv",
+      "scope": {
+        "kind": "all"
+      },
+      "monotone_nondecreasing": 47588,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 47588,
+            "expected": "pass"
+          },
+          {
+            "observed": 47587,
+            "expected": "fail"
+          }
+        ]
+      }
+    }
+  ],
+  "gates": [
+    {
+      "id": "graph-composition",
+      "description": "The relationship graph keeps a usable composition: semantic share cannot fall, recovered lineage cannot be lost, and the associative kinds are bounded across both spellings",
+      "assertion_ids": [
+        "semantic-edge-share-floor",
+        "associative-edge-ceiling",
+        "supersedes-floor",
+        "discovered-from-floor",
+        "verifies-floor",
+        "blocks-ceiling"
+      ],
+      "triggers": [
+        "ci",
+        "pre-release"
+      ]
+    },
+    {
+      "id": "record-integrity",
+      "description": "The immutable history is append-only: no maintenance operation, merge, or compaction may reduce the recorded entry count",
+      "assertion_ids": [
+        "history-append-only"
+      ],
+      "triggers": [
+        "ci",
+        "pre-release"
+      ]
+    }
+  ]
+}

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: "area:graph","area:sdk",context-management,governance,history,relationships,traceability
 created_at: "2026-07-27T04:08:01.532Z"
-updated_at: "2026-07-27T04:21:39.253Z"
+updated_at: "2026-08-11T13:58:02.136Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "Replacement, derivation and causation relationships stated in durable text such as resolutions, close reasons, duplicate closures and history messages are promotable to typed edges by an evidence rule, not by judgement per item; Promotion is auditable: every typed edge created this way records the evidence class that produced it and remains reversible without losing the prior version; A related edge that genuinely carries no direction stays related; the pass never retypes for the sake of the distribution; The typed-kind distribution is a reported governance metric, so a corpus where supersedes is vanishingly rare is a visible condition rather than an unexamined default; Traversal over the promoted kinds answers the question of what replaced what across releases without reading item prose"
@@ -23,16 +23,47 @@ environment: "pm 2026.7.27, this workspace at 2118 items, measured via pm graph 
 repro_steps: "Run pm graph audit --json and read profile.edges_by_kind; compare the supersedes, incident_from and discovered_from counts against by_status.closed from pm stats"
 expected_result: A tracker with 1799 closed items over 14 releases records many replacement and derivation relationships as typed edges
 actual_result: "supersedes 1, incident_from 2, discovered_from 161, against related 4437"
-dependencies[9]{id,kind,created_at,author,source_kind}:
-  pm-3dyec2,related,"2026-07-27T04:08:01.532Z",null,null
-  pm-4020c5,related,"2026-07-27T04:08:01.532Z",null,null
-  pm-96h7,implements,"2026-07-27T04:08:01.532Z",null,null
-  pm-gxs55a,related,"2026-07-27T04:08:01.532Z",null,null
-  pm-hnc9w7,related,"2026-07-27T04:08:01.532Z",null,null
-  pm-lnrk,related,"2026-07-27T04:08:01.532Z",null,null
-  pm-gxs55a,blocked_by,"2026-07-27T04:21:38.946Z",null,null
-  pm-qudvto,discovered_from,"2026-07-27T04:21:38.946Z",null,null
-  pm-w7ccmv,implements,"2026-07-27T04:21:38.946Z",null,null
-comments[1]{created_at,author,text}:
+dependencies[11]:
+  - id: pm-3dyec2
+    kind: related
+    created_at: "2026-07-27T04:08:01.532Z"
+  - id: pm-4020c5
+    kind: related
+    created_at: "2026-07-27T04:08:01.532Z"
+  - id: pm-96h7
+    kind: implements
+    created_at: "2026-07-27T04:08:01.532Z"
+  - id: pm-gxs55a
+    kind: related
+    created_at: "2026-07-27T04:08:01.532Z"
+  - id: pm-hnc9w7
+    kind: related
+    created_at: "2026-07-27T04:08:01.532Z"
+  - id: pm-lnrk
+    kind: related
+    created_at: "2026-07-27T04:08:01.532Z"
+  - id: pm-gxs55a
+    kind: blocked_by
+    created_at: "2026-07-27T04:21:38.946Z"
+  - id: pm-qudvto
+    kind: discovered_from
+    created_at: "2026-07-27T04:21:38.946Z"
+  - id: pm-w7ccmv
+    kind: implements
+    created_at: "2026-07-27T04:21:38.946Z"
+  - id: pm-cpzt82
+    kind: related
+    created_at: "2026-08-11T13:58:01.979Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-q6n8sj
+    kind: related
+    created_at: "2026-08-11T13:58:01.979Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[2]{created_at,author,text}:
   "2026-07-27T04:19:41.857Z","harness:claude-code","Evidence 2026-07-27: bounded lineage tranche executed under this item's evidence rules, with the method recorded so it is repeatable and auditable.\n\nScope. Two edge classes were recovered from durable text only, no inference, no heuristic similarity, no judgement per item. Both are explicit-identifier evidence, which this item's acceptance criteria name as an admissible class.\n\nClass one, supersedes, 39 edges. Extraction required a directional phrase immediately followed by an item identifier, in one of five forms: this item is superseded by X, folded into X, duplicate_of X, and the two forward spellings X supersedes Y and X replaces Y. The overwhelming majority, 32 of 39, come from a single machine-written pattern left by the 2026-04-04 dedupe pass, whose comments read verbatim that this item is superseded by pm-phpq for cluster release-loop::2026-03-07 and equivalents. Every referenced identifier was checked to resolve to an existing item file before any write; zero unresolved references. Corpus effect: supersedes 1 to 40.\n\nClass two, discovered_from, 28 edges. Extraction required one of sixteen derivation phrases within sixty characters of an identifier, the phrase set being discovered while, discovered during, discovered from, found while, surfaced while, filed while, filed from, filed during, split out of, split from, extracted from, carved out of, spun out of, follow-up to, follow-on to and uncovered while. Thirty-one candidates were produced; three were dropped by review because the sentence names the derived item rather than the source, which reverses the edge direction, and fabricating a reversed edge is precisely what this item's criteria forbid. Corpus effect: discovered_from 161 to 187.\n\nTotals. Edges 9262 to 9356 over 2121 nodes. No existing edge was removed or retyped in place; every write is additive and appears in each item's history with a message naming its evidence class, so each is individually reversible and explainable.\n\nWhat this deliberately did not do. No ordering edges were manufactured. The temptation is real, because the corpus has release cohorts and parent lineages from which a plausible sequence could be derived for hundreds of terminal items, and the resulting graph would look far deeper. That is fabrication under this item's rules and it was not done. The honest state is recorded instead as pm-gxs55a: 88.5 percent of sequenced nodes have no predecessor and the longest path is six hops, which on inspection turn out to be one item and five duplicates of it.\n\nResidual for this item. The extraction rules above are narrow by design and their yield is correspondingly small against 1799 closed items. Widening them is the work, and it needs the human review this item requires, because the next tier of evidence is prose that states a relationship without stating a direction.\n"
+  "2026-08-11T13:58:00.143Z","harness:claude-code","Negative result 2026-08-11: the lexical promotion surface this item's evidence rule harvests is exhausted, and the next looser threshold has zero precision.\n\nMethod. Over all 2,437 items I gathered description, acceptance criteria, and every comment, note and learning text, extracted every pm identifier mention that resolves to a real item, discarded any pair that already carries an edge in either direction or a parent relation, and required a directional cue immediately before the identifier inside the same sentence. Cue families were supersedes, verifies, discovered_from, blocked_by and incident_from.\n\nAt a 170-character cue window the rule proposed 120 edges. Inspection showed the great majority came from narrative roadmap logs, where a cue and an unrelated identifier merely co-occur, so that threshold is unusable.\n\nAt the tightest defensible threshold, cue ending immediately before the identifier inside one sentence, with the narrative log items excluded as sources, the rule proposed exactly 8 edges. All 8 are wrong, and all 8 are wrong the same way.\n\nThe failure mode is subject misattribution. A cue reliably identifies the relationship kind and its object, which is the identifier following it. It does not identify the subject. In tracker prose the subject is normally a third item the sentence is discussing, not the item whose field holds the text. Concretely:\n\n- three proposed supersedes edges pointing at pm-gxs55a, pm-wmf72c and pm-lnrk came from this item's own evidence comment, which quotes the 2026-04-04 dedupe pass phrasing \"this item is superseded by pm-phpq\" in order to describe the pattern. The quoting item is not the subject.\n- two proposed verifies edges came from a filing summary listing \"pm-qapjw5 (verifies pm-w7ccmv), pm-htbetn (verifies pm-xp1xsw)\". The subject of each cue is the identifier before it, not the holder.\n- one proposed verifies edge came from \"pm-lixy gained verifies pm-4k6b\", same shape.\n- two proposed blocked_by edges came from parenthetical asides whose subject was a catalog entry or a candidate lever, not the holder item.\n\nPrecision at the tightest threshold is therefore 0 of 8, and the 39-edge supersedes tranche recorded on this item on 2026-07-27 already took the class where the subject is explicit or is literally \"this item\".\n\nThe specification consequence is concrete and belongs in this item's evidence rule: promotion must extract subject, cue and object as a triple where the subject is either an explicit identifier in the same sentence or an anaphor that resolves to the holder. A rule keyed on cue and object alone cannot be made precise by tightening the window, because the error is grammatical rather than distance-based.\n\nDo not re-run a cue-and-object promotion over item prose on this corpus. The remaining 1,318 terminal items that carry only membership or associative edges do not name their lineage in prose at all, so their lineage has to come from the non-prose sources pm-s5e04g owns: immutable history streams, linked files and tests, and release epochs.\n"
 body: ""
