@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[2]: code-quality,codefactor
 created_at: "2026-07-12T07:36:30.261Z"
-updated_at: "2026-08-07T11:27:08.601Z"
+updated_at: "2026-08-11T14:18:51.174Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "eslint-suppressions.json total reduced from 180 back toward 104 as functions are decomposed; MAX_ESLINT_SUPPRESSIONS lowered in lockstep (never raised); worst offenders first (extension-command-options.ts cog 34, lock-gc.ts 29, checkpoint-gc.ts 28, lock.ts 27, fs-utils.ts 27); each refactor keeps the 100% coverage gate green"
@@ -57,7 +57,7 @@ dependencies[8]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[17]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-07-15T09:27:04.865Z",codex-root,"GitHub report coverage 2026-07-15: GH-569 reports a Complex Method in src/cli/bootstrap-args.ts. All-status exact search found no dedicated duplicate; this canonical complexity-baseline chore owns the report alongside the existing <=16 ratchet. The report is documented but remains open/unclaimed because PR #568 is actively limited to governance SDK review convergence."
   "2026-07-15T18:51:51.689Z",maintainer-agent,"GH-569 (CodeFactor Complex Method, src/cli/bootstrap-args.ts:94-169 parseBootstrapGlobalOptions) mapped here 2026-07-15 — file holds 2 grandfathered sonarjs/cognitive-complexity suppressions in eslint-suppressions.json. Close GH-569 when the bootstrap-args entries are burned down. No standalone item per baseline policy (GH-518/pm-2gvp precedent)."
   "2026-07-21T07:33:05.774Z",codex-root-20260721,"Progress evidence: decomposed both suppressed cli-bootstrap functions below cognitive complexity 16, pruned two suppressions, and ratcheted the repository maximum from 154 to 152. This advances but does not complete the broader 76-suppression burn-down item."
@@ -75,6 +75,7 @@ comments[17]{created_at,author,text}:
   "2026-07-30T11:54:24.653Z","harness:codex","Review correction: extension active-command context tests now mutate args/options/global snapshots and prove a second read is unchanged; CI doc links and generated error contracts are current."
   "2026-07-30T11:54:34.409Z","harness:codex","Evidence clarification: e53544cd1 identifies the implementation commit. Exact-head review and merge proof is maintained on PR #829 because every append-only PM evidence mutation necessarily creates a newer Git head."
   "2026-08-04T09:18:08.088Z","harness:codex","Fresh suppression census 2026-08-04: eslint-suppressions.json contains 114 counted suppressions across 70 keyed files; source and tests also contain 383 c8 ignore pragmas, 5 eslint-disable directives, and 18 TypeScript suppression directives. These are distinct populations and must be ratcheted separately; literal coverage and the current static gate pass do not make the maintenance debt disappear."
+  "2026-08-11T14:18:51.174Z","harness:claude-code","Ownership recorded 2026-08-11: open CodeFactor issues GH-569 (src/cli/bootstrap-args.ts:94-169) and GH-583 (src/sdk/cli-bootstrap.ts:94-171), both Complex Method, are members of this item's declared suppression population rather than separate items. Both GitHub issues now carry the canonical pm-link comment. Note the pairing - the two flagged ranges are near-identical line spans in two files that mirror each other, which is the bootstrap-args duplication this burndown will have to resolve structurally rather than by lowering complexity in each copy."
 notes[1]{created_at,author,text}:
   "2026-07-25T07:13:56.788Z","harness:claude-code","Complexity-suppression composition measured 2026-07-25 for the burn-down ledger. eslint-suppressions.json totals exactly 146 suppressions, at the hard MAX_ESLINT_SUPPRESSIONS = 146 budget in scripts/release/static-quality-gate.mts — zero headroom, so any new suppression fails the gate. Breakdown by rule: sonarjs/cognitive-complexity 52, complexity 38 (90 of 146, 62%, are the twin complexity gates this item owns), @typescript-eslint/no-unused-vars 22, no-useless-assignment 18, preserve-caught-error 16. Zero inline eslint-disable comments and zero broad disables (both budgets are 0 and both hold), and zero TODO/FIXME/HACK markers exist anywhere in src — the suppression file is the only debt ledger, which is the right shape; the ledger is simply full."
 files[9]{path,scope,note}:
