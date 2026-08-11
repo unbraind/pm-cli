@@ -252,10 +252,14 @@ export async function runAssuranceAction(
         EXIT_CODE.USAGE,
       );
     }
+    const [document, workspaceContext] = await Promise.all([
+      readDocument(pmRoot),
+      createAssuranceWorkspaceContext(pmRoot, { tree_id: input.tree }),
+    ]);
     const verdict = await evaluateAssuranceGate(
       input.id,
-      await readDocument(pmRoot),
-      await createAssuranceWorkspaceContext(pmRoot, { tree_id: input.tree }),
+      document,
+      workspaceContext,
       {
         trigger: input.trigger as AssuranceGateTrigger,
         dry_run: input.dry_run === true,

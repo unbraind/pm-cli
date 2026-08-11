@@ -4,8 +4,8 @@
 
 ### Added
 
-- Assurance verdicts are appended to the immutable record, so what was enforced when, and who relaxed a bound, is replayable and provable rather than reconstructed from CI logs ([pm-91xeam](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-91xeam.toon))
 - pm gate: named assertion bundles bound to lifecycle triggers, returning one structured verdict document instead of prose, so local and hosted enforcement run identical semantics ([pm-wn6wot](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-wn6wot.toon))
+- Assurance verdicts are appended to the immutable record, so what was enforced when, and who relaxed a bound, is replayable and provable rather than reconstructed from CI logs ([pm-91xeam](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-91xeam.toon))
 - pm assert: a bound over a measurement carrying polarity, scope, lifetime, enforcement level, and a required negative control, so every guarantee states which direction it can fail in ([pm-lyfu7b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-lyfu7b.toon))
 - pm measure: a named population over the workspace declared as data, with a composable source vocabulary and derived arithmetic so a bound can be denominated in the unit it actually means ([pm-2lex4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2lex4r.toon))
 - Refusal reachability: every error code declares the states it owns, and an entrypoint-level probe proves each state is still reachable as that typed code rather than as an untyped fault ([pm-elmpav](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-elmpav.toon))
