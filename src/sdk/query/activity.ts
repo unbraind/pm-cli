@@ -40,6 +40,8 @@ import {
 
 const DEFAULT_COMPACT_ACTIVITY_LIMIT = 20;
 const DEFAULT_FULL_ACTIVITY_LIMIT = 5;
+const DEFAULT_DIGEST_ACTIVITY_LIMIT = 15;
+const DEFAULT_DIGEST_WINDOW = "-24h";
 
 /** Documents the activity command options payload exchanged by command, SDK, and package integrations. */
 export interface ActivityCommandOptions {
@@ -57,6 +59,8 @@ export interface ActivityCommandOptions {
   limit?: string;
   /** Value that configures or reports compact for this contract. */
   compact?: boolean;
+  /** Return the legacy per-event stream instead of the item-centric digest. */
+  raw?: boolean;
   /** Explicitly disables the default activity bound. */
   unbounded?: boolean;
   /** Return patch-free provenance rows. */
@@ -69,6 +73,21 @@ export interface ActivityCommandOptions {
   agentInstance?: string | readonly string[];
   /** Exact provenance dimension predicates (`dimension=value`). */
   provenanceFilter?: string | readonly string[];
+}
+
+/** Normalize raw and full aliases into one explicit activity row projection. */
+export function normalizeActivityProjectionOptions(
+  options: ActivityCommandOptions & { full?: unknown },
+): ActivityCommandOptions {
+  const normalized = { ...options };
+  if (normalized.full === true) {
+    normalized.raw = true;
+    normalized.compact = false;
+  } else if (normalized.raw === true && normalized.compact === undefined) {
+    normalized.compact = true;
+  }
+  delete normalized.full;
+  return normalized;
 }
 
 /** Documents the activity entry payload exchanged by command, SDK, and package integrations. */
@@ -91,8 +110,30 @@ export interface CompactActivityEntry {
   msg?: string;
 }
 
+/** One item-centric summary of every matching immutable event for that item. */
+export interface ActivityDigestEntry {
+  /** Stable item identifier. */
+  id: string;
+  /** Current item type from the light metadata join. */
+  type: string;
+  /** Current lifecycle status from the light metadata join. */
+  status: string;
+  /** Current item title, bounded for predictable context cost. */
+  title: string;
+  /** Matching immutable events folded into this row. */
+  event_count: number;
+  /** Oldest matching event timestamp. */
+  first_ts: string;
+  /** Newest matching event timestamp. */
+  last_ts: string;
+  /** Bounded operation histogram encoded as comma-separated op:count pairs. */
+  operations: string;
+}
+
 /** Documents the activity result payload exchanged by command, SDK, and package integrations. */
 export interface ActivityResult {
+  /** Default item-centric workspace activity rows. */
+  activity_digest?: ActivityDigestEntry[];
   /** Value that configures or reports activity for this contract. */
   activity?: ActivityEntry[];
   /** Value that configures or reports compact activity for this contract. */
@@ -104,9 +145,13 @@ export interface ActivityResult {
   /** Explicit active row projection. */
   projection: {
     /** Stable projection mode. */
-    mode: "compact" | "provenance" | "full";
+    mode: "digest" | "compact" | "provenance" | "full";
     /** Active row collection key. */
-    row_key: "compact_activity" | "provenance_activity" | "activity";
+    row_key:
+      | "activity_digest"
+      | "compact_activity"
+      | "provenance_activity"
+      | "activity";
   };
   /** Constant-size disclosure of field groups withheld by the active mode. */
   omission_receipt: OutputOmissionReceipt;
@@ -125,6 +170,14 @@ export interface ActivityResult {
     kind: "limit" | "unbounded";
     source: "default" | "explicit";
     value: number | null;
+  };
+  /** Constant-size description of the selected time window and matching corpus. */
+  activity_summary?: {
+    window: { from: string | null; to: string | null };
+    event_count: number;
+    item_count: number;
+    author_count: number;
+    operation_counts: Record<string, number>;
   };
   /** Constant-size provenance completeness metrics. */
   provenance_summary?: HistoryProvenanceSummary;
@@ -147,6 +200,41 @@ interface ActivityRuntimeContext {
   pmRoot: string;
   settings: Awaited<ReturnType<typeof readSettings>>;
 }
+
+interface ActivityItemMetadata {
+  title: string;
+  type: string;
+  status: string;
+}
+
+interface PreparedActivityRead {
+  historyDir: string;
+  itemsById: Map<string, ActivityItemMetadata>;
+}
+
+type ActivityProjectionMode = ActivityResult["projection"]["mode"];
+
+interface ActivityRowsProjection {
+  rows: Pick<
+    ActivityResult,
+    | "activity_digest"
+    | "compact_activity"
+    | "provenance_activity"
+    | "activity"
+  >;
+  compact: boolean;
+  totalRows: number;
+  returnedRows: number;
+}
+
+const ACTIVITY_ROW_KEY_BY_MODE: Readonly<
+  Record<ActivityProjectionMode, ActivityResult["projection"]["row_key"]>
+> = {
+  digest: "activity_digest",
+  compact: "compact_activity",
+  provenance: "provenance_activity",
+  full: "activity",
+};
 
 function parseNonEmptyFilter(
   raw: string | undefined,
@@ -246,12 +334,54 @@ async function listHistoryFiles(historyDir: string): Promise<string[]> {
   }
 }
 
+function resolveActivityProjectionMode(
+  options: ActivityCommandOptions,
+): ActivityProjectionMode {
+  if (
+    options.raw !== true &&
+    options.compact !== true &&
+    options.provenance !== true
+  ) {
+    return "digest";
+  }
+  if (options.provenance === true) return "provenance";
+  if (
+    options.compact === true ||
+    (options.raw === true && options.compact !== false)
+  ) {
+    return "compact";
+  }
+  return "full";
+}
+
+function resolveActivityLimit(
+  options: ActivityCommandOptions,
+  explicitLimit: number | undefined,
+  projectionMode: ActivityProjectionMode,
+): number | undefined {
+  if (options.unbounded === true) return undefined;
+  if (explicitLimit !== undefined) return explicitLimit;
+  if (projectionMode === "digest") return DEFAULT_DIGEST_ACTIVITY_LIMIT;
+  if (projectionMode === "compact") return DEFAULT_COMPACT_ACTIVITY_LIMIT;
+  return DEFAULT_FULL_ACTIVITY_LIMIT;
+}
+
 function resolveActivityFilters(
   options: ActivityCommandOptions,
+  projectionMode: ActivityProjectionMode,
 ): ActivityFilters {
   const nowValue = nowIso();
-  const from = parseRangeBound(options.from, nowValue, "--from");
-  const to = parseRangeBound(options.to, nowValue, "--to");
+  const digest = projectionMode === "digest";
+  const to = parseRangeBound(
+    options.to ?? (digest ? nowValue : undefined),
+    nowValue,
+    "--to",
+  );
+  const from = parseRangeBound(
+    options.from ?? (digest ? DEFAULT_DIGEST_WINDOW : undefined),
+    options.from === undefined && digest ? to! : nowValue,
+    "--from",
+  );
   if (from && to && compareTimestampStrings(from, to) >= 0) {
     throw new PmCliError(
       "Activity --from must be before --to",
@@ -271,13 +401,7 @@ function resolveActivityFilters(
     author: parseNonEmptyFilter(options.author, "Activity --author"),
     from,
     to,
-    limit:
-      options.unbounded === true
-        ? undefined
-        : (explicitLimit ??
-          (options.compact === true
-            ? DEFAULT_COMPACT_ACTIVITY_LIMIT
-            : DEFAULT_FULL_ACTIVITY_LIMIT)),
+    limit: resolveActivityLimit(options, explicitLimit, projectionMode),
     limitSource:
       options.unbounded === true || explicitLimit !== undefined
         ? "explicit"
@@ -306,7 +430,7 @@ async function resolveActivityRuntimeContext(
 
 async function prepareActivityHistoryRead(
   context: ActivityRuntimeContext,
-): Promise<string> {
+): Promise<PreparedActivityRead> {
   const typeRegistry = resolveItemTypeRegistry(
     context.settings,
     getActiveExtensionRegistrations(),
@@ -329,7 +453,15 @@ async function prepareActivityHistoryRead(
     path: historyDir,
     scope: "project",
   });
-  return historyDir;
+  return {
+    historyDir,
+    itemsById: new Map(
+      items.map((item) => [
+        item.id,
+        { title: item.title, type: item.type, status: item.status },
+      ]),
+    ),
+  };
 }
 
 function includeActivityEntry(
@@ -383,6 +515,140 @@ function formatCompactActivity(
   );
 }
 
+function boundedOperationSummary(counts: ReadonlyMap<string, number>): string {
+  const ordered = [...counts.entries()].sort(
+    ([leftOp, leftCount], [rightOp, rightCount]) =>
+      rightCount - leftCount || leftOp.localeCompare(rightOp),
+  );
+  const visible = ordered.slice(0, 4).map(([op, count]) => `${op}:${count}`);
+  if (ordered.length > visible.length) {
+    visible.push(`+${ordered.length - visible.length}`);
+  }
+  return visible.join(",");
+}
+
+function buildActivityDigest(
+  activity: readonly ActivityEntry[],
+  itemsById: ReadonlyMap<string, ActivityItemMetadata>,
+): ActivityDigestEntry[] {
+  const grouped = new Map<
+    string,
+    {
+      firstTs: string;
+      lastTs: string;
+      eventCount: number;
+      operations: Map<string, number>;
+    }
+  >();
+  for (const entry of activity) {
+    const current = grouped.get(entry.id);
+    if (current === undefined) {
+      grouped.set(entry.id, {
+        firstTs: entry.ts,
+        lastTs: entry.ts,
+        eventCount: 1,
+        operations: new Map([[entry.op, 1]]),
+      });
+      continue;
+    }
+    current.eventCount += 1;
+    if (compareTimestampStrings(entry.ts, current.firstTs) < 0) {
+      current.firstTs = entry.ts;
+    }
+    if (compareTimestampStrings(entry.ts, current.lastTs) > 0) {
+      current.lastTs = entry.ts;
+    }
+    current.operations.set(
+      entry.op,
+      (current.operations.get(entry.op) ?? 0) + 1,
+    );
+  }
+  return [...grouped.entries()]
+    .map(([id, summary]): ActivityDigestEntry => {
+      const item = itemsById.get(id);
+      return {
+        id,
+        type: item?.type ?? "unknown",
+        status: item?.status ?? "unknown",
+        title: (item?.title ?? "(item metadata unavailable)").slice(0, 160),
+        event_count: summary.eventCount,
+        first_ts: summary.firstTs,
+        last_ts: summary.lastTs,
+        operations: boundedOperationSummary(summary.operations),
+      };
+    })
+    .sort(
+      (left, right) =>
+        compareTimestampStrings(right.last_ts, left.last_ts) ||
+        left.id.localeCompare(right.id),
+    );
+}
+
+function activityOperationCounts(
+  activity: readonly Pick<ActivityEntry, "op">[],
+): Record<string, number> {
+  const counts = new Map<string, number>();
+  for (const entry of activity) {
+    counts.set(entry.op, (counts.get(entry.op) ?? 0) + 1);
+  }
+  const ordered = [...counts.entries()].sort(
+    (left, right) =>
+      right[1] - left[1] || left[0].localeCompare(right[0]),
+  );
+  const visible = ordered.slice(0, 8);
+  if (visible.length < ordered.length) {
+    visible.push([
+      `+${String(ordered.length - visible.length)}`,
+      ordered
+        .slice(visible.length)
+        .reduce((total, [, count]) => total + count, 0),
+    ]);
+  }
+  return Object.fromEntries(visible);
+}
+
+function projectActivityRows(
+  projectionMode: ActivityProjectionMode,
+  matchingActivity: ActivityEntry[],
+  limit: number | undefined,
+  itemsById: ReadonlyMap<string, ActivityItemMetadata>,
+  projectProvenance: (entry: ActivityEntry) => HistoryProvenanceRow,
+): ActivityRowsProjection {
+  if (projectionMode === "digest") {
+    const matchingDigest = buildActivityDigest(matchingActivity, itemsById);
+    const activityDigest = limitEntries(matchingDigest, limit);
+    return {
+      rows: { activity_digest: activityDigest },
+      compact: false,
+      totalRows: matchingDigest.length,
+      returnedRows: activityDigest.length,
+    };
+  }
+  const activity = limitEntries(matchingActivity, limit);
+  if (projectionMode === "compact") {
+    return {
+      rows: { compact_activity: formatCompactActivity(activity) },
+      compact: true,
+      totalRows: matchingActivity.length,
+      returnedRows: activity.length,
+    };
+  }
+  if (projectionMode === "provenance") {
+    return {
+      rows: { provenance_activity: activity.map(projectProvenance) },
+      compact: false,
+      totalRows: matchingActivity.length,
+      returnedRows: activity.length,
+    };
+  }
+  return {
+    rows: { activity },
+    compact: false,
+    totalRows: matchingActivity.length,
+    returnedRows: activity.length,
+  };
+}
+
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   parseNonEmptyFilter,
@@ -393,6 +659,8 @@ export const _testOnly = {
   normalizeActivityEntry,
   sortActivity,
   listHistoryFiles,
+  buildActivityDigest,
+  activityOperationCounts,
 };
 
 /** Implements run activity for the public runtime surface of this module. */
@@ -401,8 +669,9 @@ export async function runActivity(
   global: GlobalOptions,
 ): Promise<ActivityResult> {
   const context = await resolveActivityRuntimeContext(global);
-  const filters = resolveActivityFilters(options);
-  const historyDir = await prepareActivityHistoryRead(context);
+  const projectionMode = resolveActivityProjectionMode(options);
+  const filters = resolveActivityFilters(options, projectionMode);
+  const prepared = await prepareActivityHistoryRead(context);
   const provenanceDimensions = resolveHistoryProvenanceDimensions(
     context.settings.agent_identity!.harness_signals,
   );
@@ -417,46 +686,46 @@ export async function runActivity(
     provenanceDimensions,
   );
   const matchingActivity = sortActivity(
-    await collectActivityEntries(historyDir, filters),
+    await collectActivityEntries(prepared.historyDir, filters),
   ).filter(matchesProvenance);
-  const activity = limitEntries(matchingActivity, filters.limit);
-  const compact = options.compact === true;
-  const compactActivity = compact ? formatCompactActivity(activity) : undefined;
-  const provenanceActivity =
-    options.provenance === true
-      ? activity.map((entry) =>
-          projectHistoryProvenance(entry, vocabulary, { itemId: entry.id }),
-        )
-      : undefined;
-  const omittedCount = matchingActivity.length - activity.length;
-  const projectionMode =
-    options.provenance === true ? "provenance" : compact ? "compact" : "full";
-  const rowProjection = {
-    compact: { compact_activity: compactActivity },
-    provenance: { provenance_activity: provenanceActivity },
-    full: { activity },
-  }[projectionMode];
+  const projected = projectActivityRows(
+    projectionMode,
+    matchingActivity,
+    filters.limit,
+    prepared.itemsById,
+    (entry) =>
+      projectHistoryProvenance(entry, vocabulary, { itemId: entry.id }),
+  );
+  const omittedCount = projected.totalRows - projected.returnedRows;
   return {
-    ...rowProjection,
-    compact,
+    ...projected.rows,
+    compact: projected.compact,
     projection: {
       mode: projectionMode,
-      row_key:
-        projectionMode === "compact"
-          ? "compact_activity"
-          : projectionMode === "provenance"
-            ? "provenance_activity"
-            : "activity",
+      row_key: ACTIVITY_ROW_KEY_BY_MODE[projectionMode],
     },
     omission_receipt: resolveModePairedOutputOmissionReceipt(
       "activity",
       projectionMode,
     ),
-    count: activity.length,
-    total_count: matchingActivity.length,
+    count: projected.returnedRows,
+    total_count: projected.totalRows,
     limit: filters.limit ?? null,
     omitted_count: omittedCount,
     has_more: omittedCount > 0,
+    ...(projectionMode === "digest"
+      ? {
+          activity_summary: {
+            window: { from: filters.from!, to: filters.to! },
+            event_count: matchingActivity.length,
+            item_count: projected.totalRows,
+            author_count: new Set(
+              matchingActivity.map((entry) => entry.author),
+            ).size,
+            operation_counts: activityOperationCounts(matchingActivity),
+          },
+        }
+      : {}),
     ...(options.provenanceSummary === true
       ? {
           provenance_summary: summarizeHistoryProvenance(

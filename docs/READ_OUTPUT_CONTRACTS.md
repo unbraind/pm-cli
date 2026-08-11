@@ -1,6 +1,6 @@
 # Universal Read Output Contracts
 
-Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), and [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon).
+Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), and [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon).
 
 ## Agent Quick Context
 
@@ -19,6 +19,10 @@ Row shaping follows each envelope's `row_contract.row_keys`, including
 dot-delimited nested arrays and object maps such as `graph.nodes`. Include,
 amount, repeat suppression, and cost compaction therefore operate on the same
 machine-declared rows; they do not rely on command-specific top-level keys.
+The runtime uses that declaration internally on every read but omits the
+repeated metadata from results by default. Request
+`--output-row-contract` / `outputRowContract: true` when a consumer needs the
+row paths, jq selector, and active TOON encoding contract.
 
 ## Cross-Call Context Sessions
 
@@ -69,12 +73,13 @@ tracker content.
 
 ## Precedence and Compatibility
 
-Resolution is deterministic: canonical controls win over command-local compatibility options, which win over intent defaults, which win over command defaults. Existing options such as `--fields`, `--limit`, `--token-budget`, `--format`, `--brief`, and `--full` remain accepted. Contract output marks them as hidden compatibility aliases and supplies a migration hint; traversal, cursor, side-effect, and streaming controls instead receive an explicit behavior-preservation hint because a static output control cannot replace their semantics. Callers that omit the canonical controls receive the byte-identical established result.
+Resolution is deterministic: canonical controls win over command-local compatibility options, which win over intent defaults, which win over command defaults. Existing options such as `--fields`, `--limit`, `--token-budget`, `--format`, `--brief`, and `--full` remain accepted. Contract output marks them as hidden compatibility aliases and supplies a migration hint; traversal, cursor, side-effect, and streaming controls instead receive an explicit behavior-preservation hint because a static output control cannot replace their semantics. Callers that omit the four shaping dimensions retain the established data projection; the one intentional envelope correction is that repeated `row_contract` metadata is now opt-in.
 
 ```bash
 pm list-open --output-include id,title,status --output-limit 10
 pm context --for orient --output-budget 900 --output-format toon
 pm search "runtime contracts" --output-limit 5 --output-format json
+pm stats --output-row-contract
 pm contracts --full --json
 ```
 
@@ -93,6 +98,7 @@ const result = await pm.list({
   outputInclude: "id,title,status",
   outputLimit: 10,
   outputBudget: 800,
+  outputRowContract: true,
   outputSession: {
     version: 1,
     id: "orientation",

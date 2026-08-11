@@ -205,20 +205,17 @@ describe("runStats", () => {
         history_streams: 0,
         history_entries: 0,
       });
-      expect(stats.by_type).toEqual({
-        Epic: 0,
-        Feature: 0,
-        Task: 0,
-        Chore: 0,
-        Issue: 0,
-        Decision: 0,
-        Event: 0,
-        Reminder: 0,
-        Milestone: 0,
-        Meeting: 0,
-        Plan: 0,
-      });
-      expect(stats.by_status).toEqual({
+      expect(stats.by_type).toEqual([]);
+      expect(stats.by_status).toEqual({});
+      expect(stats.omitted_zero_buckets).toBe(17);
+
+      const expanded = await runStats(
+        { path: context.pmPath },
+        { includeEmpty: true },
+      );
+      expect(expanded.by_type).toHaveLength(11);
+      expect(expanded.by_type.every((row) => row.total === 0)).toBe(true);
+      expect(expanded.by_status).toEqual({
         draft: 0,
         open: 0,
         in_progress: 0,
@@ -226,8 +223,25 @@ describe("runStats", () => {
         closed: 0,
         canceled: 0,
       });
+      expect(expanded.omitted_zero_buckets).toBe(0);
       expect(stats.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     });
+  });
+
+  it("retains an explicit label for legacy items without a type key", () => {
+    const distributions = statsInternals.projectStatsDistributions(
+      [{ id: "pm-untyped", type: "", status: "open" }],
+      [],
+      ["open"],
+      {
+        classify: () => "open",
+        isTerminal: () => false,
+      },
+      false,
+    );
+    expect(distributions.byType).toEqual([
+      expect.objectContaining({ type: "(untyped)", total: 1, open: 1 }),
+    ]);
   });
 
   it("fails in strict mode when required history streams are missing", async () => {
@@ -324,28 +338,67 @@ describe("runStats", () => {
         history_streams: 4,
         history_entries: 5,
       });
-      expect(stats.by_type).toEqual({
-        Epic: 1,
-        Feature: 0,
-        Task: 1,
-        Chore: 0,
-        Issue: 1,
-        Decision: 0,
-        Event: 0,
-        Reminder: 0,
-        Milestone: 0,
-        Meeting: 0,
-        Plan: 0,
-      });
+      expect(stats.by_type).toEqual([
+        {
+          type: "Epic",
+          total: 1,
+          open: 1,
+          in_progress: 0,
+          blocked: 0,
+          draft: 0,
+          closed: 0,
+          canceled: 0,
+          other: 0,
+        },
+        {
+          type: "Issue",
+          total: 1,
+          open: 0,
+          in_progress: 0,
+          blocked: 0,
+          draft: 0,
+          closed: 1,
+          canceled: 0,
+          other: 0,
+        },
+        {
+          type: "Task",
+          total: 1,
+          open: 0,
+          in_progress: 0,
+          blocked: 1,
+          draft: 0,
+          closed: 0,
+          canceled: 0,
+          other: 0,
+        },
+      ]);
       expect(stats.by_status).toEqual({
-        draft: 0,
         open: 1,
-        in_progress: 0,
         blocked: 1,
         closed: 1,
-        canceled: 0,
       });
+      expect(stats.omitted_zero_buckets).toBe(11);
       expect(stats.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+
+      const cliDefault = context.runCli(["stats", "--json"], {
+        expectJson: true,
+      });
+      expect(cliDefault.code).toBe(0);
+      expect(cliDefault.json).not.toHaveProperty("row_contract");
+
+      const cliContract = context.runCli(
+        ["stats", "--json", "--output-row-contract"],
+        { expectJson: true },
+      );
+      expect(cliContract.code).toBe(0);
+      expect(cliContract.json).toMatchObject({
+        row_contract: {
+          command: "stats",
+          row_keys: ["by_type", "by_status"],
+          toon_encoding: "tabular_when_uniform",
+        },
+      });
     });
   });
 
@@ -619,7 +672,9 @@ describe("runStats", () => {
 
       const stats = await runStats({ path: context.pmPath });
       expect(stats.totals.items).toBe(1);
-      expect(stats.by_type.Task).toBe(1);
+      expect(stats.by_type).toContainEqual(
+        expect.objectContaining({ type: "Task", total: 1, open: 1 }),
+      );
       expect(stats.by_status.open).toBe(1);
       expect(events).toContain("history");
       expect(events).toContain(`${itemId}.jsonl`);

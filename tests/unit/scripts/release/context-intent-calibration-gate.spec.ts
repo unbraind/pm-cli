@@ -49,6 +49,18 @@ describe("context intent calibration gate", () => {
         continuation_contract: { metadata: "reference" },
       }),
     ).toEqual([]);
+    expect(
+      _testOnly.countIntentRows({
+        ready: [{ id: "pm-ready" }],
+        blocked: [{ id: "pm-blocked" }],
+      }),
+    ).toBe(2);
+    expect(
+      _testOnly.countIntentRows({
+        row_contract: { row_keys: ["custom_rows"] },
+        custom_rows: [{ id: "pm-custom" }],
+      }),
+    ).toBe(1);
   });
 
   it("restores an existing usage setting and exercises both main output modes", async () => {

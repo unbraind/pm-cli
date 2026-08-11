@@ -13,6 +13,8 @@ type TokenBudgetMeasurement = {
   args: string[];
   bytes: number;
   estimated_tokens: number;
+  lines?: number;
+  max_lines?: number;
   kind?: "discovery" | "answer";
   scale_tier?: string;
   command?: string;
@@ -39,6 +41,8 @@ type TokenBudgetManifest = {
     scale_tier: string;
     baseline_bytes: number;
     baseline_estimated_tokens: number;
+    baseline_lines?: number;
+    max_lines?: number;
     command?: string;
     contract_max_estimated_tokens?: number;
     max_bytes?: number;
@@ -50,6 +54,7 @@ type TokenBudgetGateModule = {
   measureOutput: (stdout: string) => {
     bytes: number;
     estimated_tokens: number;
+    lines: number;
   };
   budgetForMeasurement: (
     measurement: TokenBudgetMeasurement,
@@ -88,6 +93,7 @@ const CORPUS_IDS = [
   "context-default",
   "next-default",
   "activity-default",
+  "stats-default",
   "deps-tree-default",
   "deps-tree-json",
   "graph-audit-summary",
@@ -114,6 +120,7 @@ function manifestForBudget(maxBytes: number): string {
     ["context-default", "context"],
     ["next-default", "next"],
     ["activity-default", "activity"],
+    ["stats-default", "stats"],
     ["deps-tree-default", "deps"],
     ["deps-tree-json", "deps"],
     ["graph-audit-summary", "graph"],
@@ -277,12 +284,23 @@ describe("scripts/release/token-budget-gate", () => {
     expect(mod.measureOutput("abcd")).toEqual({
       bytes: 4,
       estimated_tokens: 1,
+      lines: 1,
     });
     expect(mod.measureOutput("abcde")).toEqual({
       bytes: 5,
       estimated_tokens: 2,
+      lines: 1,
     });
-    expect(mod.measureOutput("é")).toEqual({ bytes: 2, estimated_tokens: 1 });
+    expect(mod.measureOutput("é")).toEqual({
+      bytes: 2,
+      estimated_tokens: 1,
+      lines: 1,
+    });
+    expect(mod.measureOutput("one\ntwo\n")).toEqual({
+      bytes: 8,
+      estimated_tokens: 2,
+      lines: 2,
+    });
   });
 
   it("builds budget entries with explicit headroom", async () => {
@@ -325,6 +343,8 @@ describe("scripts/release/token-budget-gate", () => {
       baseline_estimated_tokens: 26,
       command: "context",
       contract_max_estimated_tokens: 4_000,
+      max_bytes: 112,
+      max_estimated_tokens: 29,
     });
   });
 
@@ -359,7 +379,7 @@ describe("scripts/release/token-budget-gate", () => {
     );
 
     expect(manifest).toMatchObject({
-      version: 2,
+      version: 3,
       metric: "utf8_bytes",
       token_estimate: "ceil(bytes / 4)",
       budgets: [
@@ -416,6 +436,59 @@ describe("scripts/release/token-budget-gate", () => {
     expect(violations).toEqual([
       "root-help: 12 bytes exceeds budget 10 bytes (--help)",
       "context-default: missing budget entry",
+    ]);
+
+    expect(
+      mod.compareBudgets(
+        [
+          {
+            id: "root-help",
+            args: ["--help"],
+            kind: "discovery",
+            bytes: 9,
+            estimated_tokens: 4,
+          },
+        ],
+        manifest,
+      ),
+    ).toEqual([
+      "root-help: 4 estimated tokens exceeds budget 3 tokens (--help)",
+    ]);
+
+    expect(
+      mod.compareBudgets(
+        [
+          {
+            id: "stats-default",
+            args: ["stats"],
+            kind: "answer",
+            command: "stats",
+            contract_max_estimated_tokens: 4_000,
+            bytes: 500,
+            estimated_tokens: 125,
+            lines: 23,
+          },
+        ],
+        {
+          ...manifest,
+          budgets: [
+            {
+              id: "stats-default",
+              args: ["stats"],
+              kind: "answer",
+              scale_tier: "medium",
+              baseline_bytes: 480,
+              baseline_estimated_tokens: 120,
+              baseline_lines: 22,
+              max_lines: 22,
+              command: "stats",
+              contract_max_estimated_tokens: 4_000,
+            },
+          ],
+        },
+      ),
+    ).toEqual([
+      "stats-default: 23 lines exceeds screen ceiling 22 lines (stats)",
     ]);
 
     expect(
@@ -593,7 +666,7 @@ describe("scripts/release/token-budget-gate", () => {
       "scripts/release/token-budget-gate.mjs",
     );
 
-    expect(runtime.runCommand).toHaveBeenCalledTimes(71);
+    expect(runtime.runCommand).toHaveBeenCalledTimes(73);
     const runOptions = runtime.runCommand.mock.calls[0]?.[2] as
       | { env?: Record<string, string | undefined> }
       | undefined;
@@ -625,7 +698,7 @@ describe("scripts/release/token-budget-gate", () => {
     mod.main();
 
     expect(log).toHaveBeenCalledWith(
-      "Token budget gate passed (28 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
+      "Token budget gate passed (29 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
     );
   });
 
@@ -641,7 +714,7 @@ describe("scripts/release/token-budget-gate", () => {
       path.join("/repo", "scripts", "release", "token-budgets.json"),
     );
     expect(log).toHaveBeenCalledWith(
-      "Token budget gate passed (28 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
+      "Token budget gate passed (29 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
     );
   });
 
@@ -698,6 +771,34 @@ describe("scripts/release/token-budget-gate", () => {
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
       "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
     );
+
+    mockRuntime({
+      manifestText: JSON.stringify({
+        budgets: [
+          {
+            id: "stats-default",
+            kind: "answer",
+            command: "stats",
+            contract_max_estimated_tokens: 4_000,
+            max_bytes: 500,
+            max_lines: 0,
+          },
+        ],
+      }),
+    });
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
+    );
+  });
+
+  it("measures empty and multiline output with exact screen lines", async () => {
+    const mod = await loadModule();
+    expect(mod.measureOutput("")).toEqual({
+      bytes: 0,
+      estimated_tokens: 0,
+      lines: 0,
+    });
+    expect(mod.measureOutput("one\ntwo\n").lines).toBe(2);
   });
 
   it("fails closed for malformed answer contract manifest entries", async () => {
@@ -715,6 +816,82 @@ describe("scripts/release/token-budget-gate", () => {
     });
     process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
+    );
+
+    const mod = await loadModule();
+    const baseBudget = {
+      id: "answer",
+      args: ["stats"],
+      kind: "answer" as const,
+      scale_tier: "medium",
+      baseline_bytes: 500,
+      baseline_estimated_tokens: 125,
+      command: "stats",
+      contract_max_estimated_tokens: 4_000,
+      max_bytes: 500,
+      max_estimated_tokens: 125,
+    };
+    for (const budget of [
+      { ...baseBudget, max_lines: 0 },
+      { ...baseBudget, max_bytes: undefined },
+      { ...baseBudget, max_bytes: -1 },
+      { ...baseBudget, max_estimated_tokens: undefined },
+      { ...baseBudget, max_estimated_tokens: -1 },
+    ]) {
+      expect(() =>
+        mod.compareBudgets([], {
+          version: 3,
+          metric: "utf8_bytes",
+          token_estimate: "ceil(bytes / 4)",
+          fixture: "test",
+          budgets: [budget],
+        }),
+      ).toThrow(
+        "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
+      );
+    }
+    expect(() =>
+      mod.compareBudgets([], {
+        version: 3,
+        metric: "utf8_bytes",
+        token_estimate: "ceil(bytes / 4)",
+        fixture: "test",
+        budgets: [
+          {
+            id: "discovery",
+            args: ["--help"],
+            kind: "discovery",
+            scale_tier: "static",
+            baseline_bytes: 10,
+            baseline_estimated_tokens: 3,
+            max_bytes: 10,
+          },
+        ],
+      }),
+    ).toThrow(
+      "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
+    );
+    expect(() =>
+      mod.compareBudgets([], {
+        version: 3,
+        metric: "utf8_bytes",
+        token_estimate: "ceil(bytes / 4)",
+        fixture: "test",
+        budgets: [
+          {
+            id: "discovery",
+            args: ["--help"],
+            kind: "discovery",
+            scale_tier: "static",
+            baseline_bytes: 10,
+            baseline_estimated_tokens: 3,
+            max_bytes: -1,
+            max_estimated_tokens: 3,
+          },
+        ],
+      }),
+    ).toThrow(
       "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
     );
   });

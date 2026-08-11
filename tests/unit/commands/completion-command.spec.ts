@@ -31,6 +31,7 @@ describe("generateBashScript", () => {
       "output-budget",
       "output-format",
       "output-session",
+      "output-row-contract",
     ];
     for (const flag of expected) {
       expect(generateBashScript()).toContain(`--${flag}`);
@@ -327,8 +328,17 @@ describe("generateBashScript", () => {
   it("includes strict health flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--strict-directories --require-merge-drivers --strict-exit --fail-on-warn --check-only --check-telemetry --no-refresh --refresh-vectors --verbose-stale-items --verbose-author-events --brief --summary --skip-vectors --skip-integrity --skip-drift --full --json --lean --token-accounting --output-include --output-limit --output-budget --output-format --output-session --quiet --no-changed-fields --full-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help",
+      "--strict-directories --require-merge-drivers --strict-exit --fail-on-warn --check-only --check-telemetry --no-refresh --refresh-vectors --verbose-stale-items --verbose-author-events --brief --summary --skip-vectors --skip-integrity --skip-drift --full --json --lean --token-accounting --output-include --output-limit --output-budget --output-format --output-session --output-row-contract --quiet --no-changed-fields --full-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help",
     );
+  });
+
+  it("includes compact stats baseline controls across shells", () => {
+    expect(generateBashScript()).toContain("stats)");
+    expect(generateBashScript()).toContain("--include-empty");
+    expect(generateZshScript()).toContain(
+      "--include-empty[Include registered zero-count type and status buckets]",
+    );
+    expect(generateFishScript()).toContain("-l include-empty");
   });
 
   it("includes extension doctor strict flags in bash completion", () => {
@@ -429,15 +439,32 @@ describe("generateBashScript", () => {
     expect(script).toContain("--format");
   });
 
-  it("includes activity filtering and stream flags", () => {
-    const script = generateBashScript();
-    expect(script).toContain("activity)");
-    expect(script).toContain("--id");
-    expect(script).toContain("--op");
-    expect(script).toContain("--author");
-    expect(script).toContain("--from");
-    expect(script).toContain("--to");
-    expect(script).toContain("--stream");
+  it("includes activity filtering, raw projection, and stream contracts across shells", () => {
+    const bash = generateBashScript();
+    expect(bash).toContain("activity)");
+    expect(bash).toContain("--id");
+    expect(bash).toContain("--op");
+    expect(bash).toContain("--author");
+    expect(bash).toContain("--from");
+    expect(bash).toContain("--to");
+    expect(bash).toContain("--raw");
+    expect(bash).toContain("--stream");
+
+    const zsh = generateZshScript();
+    expect(zsh).toContain(
+      "--raw[Emit raw compact per-event activity output]",
+    );
+    expect(zsh).toContain(
+      "--stream[Emit line-delimited JSON rows (requires --json)]",
+    );
+
+    const fish = generateFishScript();
+    expect(fish).toContain(
+      "-l raw -d 'Emit raw compact per-event activity output'",
+    );
+    expect(fish).toContain(
+      "-l stream -d 'Emit line-delimited JSON rows (requires --json)'",
+    );
   });
 
   it("includes patch-free provenance reads across history, activity, and events in every shell", () => {

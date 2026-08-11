@@ -1057,6 +1057,7 @@ export const GC_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for stats flag contracts, shared by SDK and presentation-layer consumers. */
 export const STATS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--include-empty" },
   { flag: "--storage" },
   { flag: "--metadata-coverage" },
   { flag: "--field-utilization" },
@@ -1524,6 +1525,7 @@ export const ACTIVITY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--limit" },
   { flag: "--unbounded" },
   { flag: "--compact" },
+  { flag: "--raw" },
   { flag: "--full" },
   { flag: "--provenance" },
   { flag: "--provenance-summary" },

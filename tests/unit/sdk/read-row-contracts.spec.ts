@@ -16,6 +16,7 @@ describe("read row contracts", () => {
       row_keys: ["items"],
       fields: "supported",
       jq_selector: PM_READ_ROW_JQ_SELECTOR,
+      toon_encoding: "tabular_when_uniform",
     });
     expect(
       resolveReadRowContract("next", {
@@ -52,6 +53,7 @@ describe("read row contracts", () => {
       row_kind: "none",
       row_keys: [],
       fields: "unsupported",
+      toon_encoding: "tabular_when_uniform",
     });
   });
 
@@ -75,6 +77,7 @@ describe("read row contracts", () => {
         row_keys: rowKeys,
         fields: "unsupported",
         jq_selector: PM_READ_ROW_JQ_SELECTOR,
+        toon_encoding: "tabular_when_uniform",
       });
     }
   });
@@ -239,6 +242,7 @@ describe("read row contracts", () => {
       row_kind: "none",
       row_keys: [],
       fields: "supported",
+      toon_encoding: "tabular_when_uniform",
     });
   });
 

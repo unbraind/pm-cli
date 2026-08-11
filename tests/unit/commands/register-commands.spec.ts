@@ -865,12 +865,16 @@ describe("list-query command actions", () => {
     await expect(runCli("activity", "--compact", "--full")).rejects.toThrow(
       "mutually exclusive",
     );
+    await expect(runCli("activity", "--raw", "--full")).rejects.toThrow(
+      "mutually exclusive",
+    );
     await expect(runCli("activity", "--stream", "bogus")).rejects.toThrow(
       "accepts rows|ndjson|jsonl",
     );
     await expect(runCli("activity", "--stream", "rows")).rejects.toThrow(
       "--stream requires --json",
     );
+    expect(vi.mocked(runActivity)).not.toHaveBeenCalled();
     await runCliRaw(
       "--json",
       "activity",

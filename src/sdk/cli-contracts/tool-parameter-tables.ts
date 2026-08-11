@@ -60,6 +60,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
       },
     ],
   },
+  outputRowContract: { type: "boolean" },
   path: { type: "string" },
   pmExecutable: { type: "string" },
   timeoutMs: { type: "number" },
@@ -265,8 +266,10 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   semanticWeight: { anyOf: [{ type: "string" }, { type: "number" }] },
   op: { type: "string" },
   compact: { type: "boolean" },
+  raw: { type: "boolean" },
   brief: { type: "boolean" },
   full: { type: "boolean" },
+  includeEmpty: { type: "boolean" },
   view: { type: "string", enum: ["agenda", "day", "week", "month"] },
   date: { type: "string" },
   from: { type: "string" },
@@ -983,6 +986,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
         seen_item_ids: [],
       },
     ],
+  },
+  outputRowContract: {
+    description:
+      "Include the row selector and TOON row-encoding contract on a read result.",
   },
   profile: {
     description: "Emit deterministic timing diagnostics to stderr.",
@@ -1840,6 +1847,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Render compact projection output for search and list-family actions.",
   },
+  raw: {
+    description:
+      "For activity, restore the compact per-event stream instead of the default item digest.",
+  },
   brief: {
     description:
       "Emit compact low-token output for commands that support terse projections or health details.",
@@ -1848,6 +1859,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   full: {
     description:
       "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+  },
+  includeEmpty: {
+    description:
+      "For stats, restore zero-count registered type and lifecycle-status buckets.",
   },
   fields: {
     description:

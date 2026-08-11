@@ -19,7 +19,9 @@ pm contracts --command <command> --flags-only --json
 - Use `pm contracts --summary --json` for the cheapest command map, then narrow with command-scoped contracts.
 - Every mutation writes history.
 
-Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
+Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon),
+[pm-7nqo6b](../.agents/pm/issues/pm-7nqo6b.toon), and
+[pm-j1r8gl](../.agents/pm/issues/pm-j1r8gl.toon).
 
 ## Command Families
 
@@ -941,17 +943,25 @@ pm history-repair <id> --dry-run
 pm history-repair <id> --message "re-anchor legacy drift"
 pm history-repair --all --dry-run
 pm history-repair --all --message "bulk re-anchor drifted streams"
-pm activity --id <id> --limit 50
+pm activity                         # item digest for the last 24 hours
+pm activity --raw --id <id> --limit 50
 pm activity --full --id <id> --limit 50
 pm activity --full --unbounded
 pm restore <id> <timestamp-or-version>
 ```
 
 History is append-only. Restore appends a new restore event instead of rewriting old history.
-Bare `pm activity` is bounded to 20 compact rows; direct SDK calls default to
-five full rows. Every result reports total and omitted counts plus the applied
-bound. Use `--limit` for a deliberate cap, or `--unbounded` for an explicitly
-unlimited read; the two flags are mutually exclusive.
+Bare `pm activity` is an item-centric digest for the last 24 hours, bounded to
+15 most-recently-touched items. Each row joins current `id`, `type`, `status`,
+and title with the matching event count, first/last timestamps, and a bounded
+operation histogram. `activity_summary` states the effective window plus event,
+item, author, and operation counts, so an empty digest is distinguishable from
+a bounded one. Use `--raw` for the legacy compact per-event stream, `--compact`
+as its compatibility spelling, `--full` for events with patch payloads, or
+`--provenance` for patch-free provenance rows. Every mode reports total and
+omitted row counts plus the applied bound. Use `--limit` for a deliberate cap,
+or `--unbounded` for an explicitly unlimited read; the two flags are mutually
+exclusive.
 Workspace-scoped mutations to settings, schema, profiles, init state, and
 extension/package activation are recorded in
 `.agents/pm/history/_workspace.jsonl` using the same patch/hash format.
@@ -962,10 +972,21 @@ workspace auditing and is created on the first audited singleton mutation.
 
 `--diff` replays the history chain and emits, per entry, a `changes` array of `{ field, before, after }` field-level value transitions (alongside the `changed_fields` name list) — so you can see exactly what each field changed from and to without comparing snapshots. It is independent of the compact/full projection. `--field <name>` narrows the diff to a single field's transitions (implying `--diff`), answering "when did `<field>` change?" — e.g. `pm history <id> --diff --field status`.
 
-`pm stats` reports item and history totals plus per-type/per-status counts. Add `--storage` for aggregate history-stream metrics — `total_streams`, `total_lines`, `total_bytes`, the top streams by size (`largest_by_bytes`) and by depth (`deepest_by_lines`), and the global `oldest_entry`/`newest_entry` — to decide when to compact or redact streams and to plan storage:
+`pm stats` reports item and history totals plus a screen-sized lifecycle table.
+Every non-empty item type is one row with `total`, `open`, `in_progress`,
+`blocked`, `draft`, `closed`, `canceled`, and `other` counts. Empty registered
+types and statuses are suppressed and their combined count is retained in the
+`omitted_zero_buckets` scalar. The default TOON projection is gated at no more
+than 22 lines on the representative release fixture. Add `--include-empty` to
+restore every zero-filled type and status for schema-governance dashboards.
+Add `--storage` for aggregate history-stream metrics — `total_streams`,
+`total_lines`, `total_bytes`, the top streams by size (`largest_by_bytes`) and
+by depth (`deepest_by_lines`), and the global `oldest_entry`/`newest_entry` — to
+decide when to compact or redact streams and to plan storage:
 
 ```bash
 pm stats
+pm stats --include-empty
 pm stats --storage --json
 pm stats --metadata-coverage --json
 pm stats --field-utilization --json
@@ -973,7 +994,7 @@ pm stats --by-assignee --by-priority
 pm stats --by-tag --tag-prefix domain: --json
 ```
 
-For governance dashboards, `--metadata-coverage` adds a `metadata_coverage` block reporting per-field `present`/`applicable`/`percent` for `acceptance_criteria`, `estimated_minutes`, `resolution`, `tags`, and `parent` — overall and `by_type` (resolution coverage is scoped to terminal items, its only applicable population). `--field-utilization` adds a `field_utilization` block reporting `present`/`total`/`percent` for each content field (`notes`, `learnings`, `files`, `docs`, `tests`, `comments`, `deps`, `body`, `linked_command`) across all items, so under-documented content dimensions are visible at a glance and pair naturally with the `--has-*`/`--no-*` list filters for drill-down. `--by-assignee`, `--by-tag`, and `--by-priority` add a `breakdowns` block with lifecycle-bucketed rows (`open`/`in_progress`/`blocked`/`draft`/`closed`/`canceled`/`other` + `total`) per group; blank keys render an explicit `(unassigned)`/`(untagged)` label. `--by-tag` accepts `--tag-prefix` to restrict counting to a tag namespace (for example `domain:`). All of these sections are gated behind their flags so the default `pm stats` stays token-light; the per-status/per-type distributions (already in `by_status`/`by_type`) zero-fill every configured state so underutilized lifecycle states and item types are visible at a glance.
+For governance dashboards, `--metadata-coverage` adds a `metadata_coverage` block reporting per-field `present`/`applicable`/`percent` for `acceptance_criteria`, `estimated_minutes`, `resolution`, `tags`, and `parent` — overall and `by_type` (resolution coverage is scoped to terminal items, its only applicable population). `--field-utilization` adds a `field_utilization` block reporting `present`/`total`/`percent` for each content field (`notes`, `learnings`, `files`, `docs`, `tests`, `comments`, `deps`, `body`, `linked_command`) across all items, so under-documented content dimensions are visible at a glance and pair naturally with the `--has-*`/`--no-*` list filters for drill-down. `--by-assignee`, `--by-tag`, and `--by-priority` add a `breakdowns` block with lifecycle-bucketed rows (`open`/`in_progress`/`blocked`/`draft`/`closed`/`canceled`/`other` + `total`) per group; blank keys render an explicit `(unassigned)`/`(untagged)` label. `--by-tag` accepts `--tag-prefix` to restrict counting to a tag namespace (for example `domain:`). All of these sections are gated behind their flags so the default `pm stats` remains readable at first glance.
 `history-redact` rewrites matching history payloads deterministically, recomputes hash chains, and appends an auditable `history_redact` marker entry when changes are applied. Its result reports only `literal_count`, `regex_count`, `total_count`, and whether the default replacement was selected; literal values, regex source text, and replacement text are never echoed in CLI, SDK, MCP, recovery, profile, or telemetry output. Treat regex text as sensitive input because it can contain the exact material being removed.
 `history-compact` rewrites long streams into a synthetic checkpoint baseline plus a retained tail (`--before` accepts a 1-based version or ISO timestamp), re-anchors hashes, verifies integrity, and appends an auditable `history_compact` marker when applied.
 `history-compact` bulk mode (mutually exclusive with a positional `<id>`) compacts many streams in one audited pass. Select with `--ids <a,b,c>` (an explicit list — used on its own, not combined with the scan selectors below), or a scan: `--all-over <N>` (every stream with more than N entries) and/or a lifecycle filter `--closed` (terminal items only) or `--all-streams` (every stream). `--closed` and `--all-streams` are mutually exclusive. `--min-entries <N>` (default 3) skips already-compact streams; when `history.compact_policy` is enabled and `--all-over` is omitted, the policy's `max_entries` becomes the default threshold. `--before` is single-id only and is rejected in bulk mode. Each selected stream runs the same single-item compaction; one failing stream never aborts the rest — the result reports `totals` (`streams_considered`/`selected`/`items_compacted`/`items_skipped`/`items_errored`) plus one row per stream (`compacted`/`skipped` with a `skip_reason`/`errored`), and the command exits non-zero only if any stream errored.

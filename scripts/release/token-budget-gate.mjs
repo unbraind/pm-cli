@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { fail, parseFlags, repoRoot, runCommand } from "./utils.mjs";
 import { cleanupTempRoot } from "../smoke-cleanup.mjs";
 
-const MANIFEST_VERSION = 2;
+const MANIFEST_VERSION = 3;
 const SCALE_FIXTURE_ITEMS = 24;
 const DEFAULT_MANIFEST_PATH = path.join(
   repoRoot,
@@ -262,7 +262,15 @@ function commandCorpus(ids) {
       kind: "answer",
       command: "activity",
       scale_tier: "medium",
-      args: ["activity", "--json"],
+      args: ["activity"],
+    },
+    {
+      id: "stats-default",
+      kind: "answer",
+      command: "stats",
+      scale_tier: "medium",
+      max_lines: 22,
+      args: ["stats"],
     },
     {
       id: "deps-tree-default",
@@ -375,6 +383,7 @@ export function measureOutput(stdout) {
   return {
     bytes,
     estimated_tokens: Math.ceil(bytes / 4),
+    lines: stdout.length === 0 ? 0 : stdout.trimEnd().split(/\r?\n/u).length,
   };
 }
 
@@ -455,18 +464,23 @@ export function budgetForMeasurement(measurement, multiplier) {
     scale_tier: measurement.scale_tier ?? "static",
     baseline_bytes: measurement.bytes,
     baseline_estimated_tokens: measurement.estimated_tokens,
+    ...(Number.isInteger(measurement.lines)
+      ? { baseline_lines: measurement.lines }
+      : {}),
+    ...(Number.isInteger(measurement.max_lines)
+      ? { max_lines: measurement.max_lines }
+      : {}),
+    max_bytes: Math.ceil(measurement.bytes * multiplier),
+    max_estimated_tokens: Math.ceil(
+      measurement.estimated_tokens * multiplier,
+    ),
     ...(measurement.kind === "answer"
       ? {
           command: measurement.command,
           contract_max_estimated_tokens:
             measurement.contract_max_estimated_tokens,
         }
-      : {
-          max_bytes: Math.ceil(measurement.bytes * multiplier),
-          max_estimated_tokens: Math.ceil(
-            measurement.estimated_tokens * multiplier,
-          ),
-        }),
+      : {}),
   };
 }
 
@@ -486,14 +500,19 @@ export function buildManifest(measurements, multiplier) {
     token_estimate: "ceil(bytes / 4)",
     fixture: `isolated PM_PATH and PM_GLOBAL_PATH with ${SCALE_FIXTURE_ITEMS + 3} deterministic linked items`,
     policy:
-      "discovery surfaces use ratcheted byte ceilings; answer surfaces use live command contracts",
+      "all surfaces use ratcheted byte ceilings; answer surfaces also use live command contracts",
     budgets: measurements.map((measurement) =>
       budgetForMeasurement(measurement, multiplier),
     ),
   };
 }
 
-function isMalformedBudget(budget) {
+/** Return whether a manifest ceiling is finite and cannot disable enforcement through a negative value. */
+function isNonNegativeFinite(value) {
+  return Number.isFinite(value) && value >= 0;
+}
+
+function isMalformedBudget(budget, requireAnswerRatchet) {
   if (
     typeof budget !== "object" ||
     budget === null ||
@@ -503,10 +522,28 @@ function isMalformedBudget(budget) {
   ) {
     return true;
   }
-  return budget.kind === "discovery"
-    ? !Number.isFinite(budget.max_bytes) || budget.max_bytes < 0
-    : typeof budget.command !== "string" ||
-        !Number.isFinite(budget.contract_max_estimated_tokens);
+  if (
+    budget.max_lines !== undefined &&
+    (!Number.isInteger(budget.max_lines) || budget.max_lines < 1)
+  ) {
+    return true;
+  }
+  if (budget.kind === "discovery") {
+    if (!isNonNegativeFinite(budget.max_bytes)) {
+      return true;
+    }
+    return requireAnswerRatchet &&
+      !isNonNegativeFinite(budget.max_estimated_tokens);
+  }
+  if (
+    typeof budget.command !== "string" ||
+    !isNonNegativeFinite(budget.contract_max_estimated_tokens)
+  ) {
+    return true;
+  }
+  return requireAnswerRatchet &&
+    (!isNonNegativeFinite(budget.max_bytes) ||
+      !isNonNegativeFinite(budget.max_estimated_tokens));
 }
 
 function measurementViolation(measurement, budget) {
@@ -526,15 +563,23 @@ function measurementViolation(measurement, budget) {
     }
   }
   if (
+    Number.isInteger(budget.max_lines) &&
+    measurement.lines > budget.max_lines
+  ) {
+    return `${measurement.id}: ${measurement.lines} lines exceeds screen ceiling ${budget.max_lines} lines (${measurement.args.join(" ")})`;
+  }
+  if (
     measurement.kind === "answer" &&
     measurement.estimated_tokens > measurement.contract_max_estimated_tokens
   ) {
     return `${measurement.id}: ${measurement.estimated_tokens} estimated tokens exceeds ${measurement.command} contract ${measurement.contract_max_estimated_tokens} tokens (${measurement.args.join(" ")})`;
   }
   if (
-    measurement.kind === "discovery" &&
-    measurement.bytes > budget.max_bytes
+    measurement.estimated_tokens > budget.max_estimated_tokens
   ) {
+    return `${measurement.id}: ${measurement.estimated_tokens} estimated tokens exceeds budget ${budget.max_estimated_tokens} tokens (${measurement.args.join(" ")})`;
+  }
+  if (measurement.bytes > budget.max_bytes) {
     return `${measurement.id}: ${measurement.bytes} bytes exceeds budget ${budget.max_bytes} bytes (${measurement.args.join(" ")})`;
   }
   return undefined;
@@ -548,7 +593,7 @@ export function compareBudgets(measurements, manifest) {
   }
   const budgetById = new Map();
   for (const budget of manifest.budgets) {
-    if (isMalformedBudget(budget)) {
+    if (isMalformedBudget(budget, manifest.version >= MANIFEST_VERSION)) {
       fail(
         "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
       );

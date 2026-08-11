@@ -376,6 +376,7 @@ async function runStatsAction(
     readOptionString(options, "analytics"),
   );
   const result = await runStats(globalOptions, {
+    includeEmpty: options.includeEmpty === true,
     storage: options.storage === true,
     metadataCoverage: options.metadataCoverage === true,
     byAssignee: options.byAssignee === true,
@@ -995,6 +996,10 @@ export function registerOperationCommands(program: Command): void {
   program
     .command("stats")
     .description("Show project tracker statistics.")
+    .option(
+      "--include-empty",
+      "Restore zero-count registered item-type and lifecycle-status buckets",
+    )
     .option(
       "--storage",
       "Include aggregate history-stream storage metrics (total streams/lines/bytes, largest + deepest streams, oldest/newest entries)",

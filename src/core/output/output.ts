@@ -16,6 +16,7 @@ import { projectMutationResult } from "./mutation-projection.js";
 import { attachReadOutputContracts } from "../../sdk/context-intent-contracts.js";
 import { attachOutputTokenAccounting } from "../../sdk/output-token-accounting.js";
 import { resolveReadOutputEncoding } from "../../sdk/read-output-contracts.js";
+import { encode as encodeToon, type JsonValue } from "@toon-format/toon";
 
 const DECLARED_PROCESS_EXIT_CODES = new Set<number>(Object.values(EXIT_CODE));
 
@@ -45,6 +46,8 @@ export interface OutputOptions {
   outputFormat?: "toon" | "json";
   /** Caller-carried cross-call budget and served-item state. */
   outputSession?: string;
+  /** Include machine-readable row location and row-encoding metadata. */
+  outputRowContract?: boolean;
   /** Fallback output format used when callers do not provide an override. */
   defaultOutputFormat?: "toon" | "json";
   /** Value that configures or reports command for this contract. */
@@ -180,6 +183,60 @@ function renderScalar(value: unknown): string {
   return JSON.stringify(value);
 }
 
+function isToonPrimitive(value: unknown): value is JsonValue {
+  return (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  );
+}
+
+function tabularObjectArray(value: unknown[]): value is Record<string, JsonValue>[] {
+  if (value.length === 0 || !value.every(isPlainObject)) return false;
+  const keys = Object.keys(value[0]!);
+  return (
+    keys.length > 0 &&
+    value.every(
+      (entry) =>
+        Object.keys(entry).length === keys.length &&
+        keys.every(
+          (key) => Object.hasOwn(entry, key) && isToonPrimitive(entry[key]),
+        ),
+    )
+  );
+}
+
+function indentToon(encoded: string, depth: number): string {
+  const indent = "  ".repeat(depth);
+  return encoded
+    .split("\n")
+    .map((line) => `${indent}${line}`)
+    .join("\n");
+}
+
+/** Render one object field while preserving nested and tabular TOON structure. */
+function renderToonObjectEntry(
+  key: string,
+  entry: unknown,
+  depth: number,
+): string {
+  const indent = "  ".repeat(depth);
+  if (!isPlainObject(entry) && !Array.isArray(entry)) {
+    return `${indent}${key}: ${renderScalar(entry)}`;
+  }
+  if (Array.isArray(entry) && entry.length === 0) {
+    return `${indent}${key}: []`;
+  }
+  if (Array.isArray(entry) && tabularObjectArray(entry)) {
+    return indentToon(encodeToon({ [key]: entry }), depth);
+  }
+  if (isPlainObject(entry) && Object.keys(entry).length === 0) {
+    return `${indent}${key}: {}`;
+  }
+  return `${indent}${key}:\n${renderToonValue(entry, depth + 1)}`;
+}
+
 function compactToonValue(value: unknown): unknown | undefined {
   if (value === null || value === undefined) {
     return undefined;
@@ -219,6 +276,9 @@ function renderToonValue(value: unknown, depth: number): string {
 
   if (Array.isArray(value)) {
     if (value.length === 0) return "[]";
+    if (tabularObjectArray(value)) {
+      return indentToon(encodeToon(value), depth);
+    }
     return value
       .map((entry) => {
         if (!isPlainObject(entry) && !Array.isArray(entry)) {
@@ -239,18 +299,7 @@ function renderToonValue(value: unknown, depth: number): string {
     const entries = Object.entries(value);
     if (entries.length === 0) return "{}";
     return entries
-      .map(([key, entry]) => {
-        if (!isPlainObject(entry) && !Array.isArray(entry)) {
-          return `${indent}${key}: ${renderScalar(entry)}`;
-        }
-        if (Array.isArray(entry) && entry.length === 0) {
-          return `${indent}${key}: []`;
-        }
-        if (isPlainObject(entry) && Object.keys(entry).length === 0) {
-          return `${indent}${key}: {}`;
-        }
-        return `${indent}${key}:\n${renderToonValue(entry, depth + 1)}`;
-      })
+      .map(([key, entry]) => renderToonObjectEntry(key, entry, depth))
       .join("\n");
   }
 
@@ -453,7 +502,10 @@ function formatEffectiveOutput(
         ["outputBudget", options.outputBudget],
         ["outputFormat", options.outputFormat],
         ["outputSession", options.outputSession],
-      ].filter((entry): entry is [string, string] => entry[1] !== undefined),
+        ["outputRowContract", options.outputRowContract],
+      ].filter(
+        (entry): entry is [string, string | boolean] => entry[1] !== undefined,
+      ),
     ),
   };
   const format =

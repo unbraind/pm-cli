@@ -52,6 +52,7 @@ const PM_TOOL_READ_OUTPUT_PARAMETER_KEYS = [
   "outputBudget",
   "outputFormat",
   "outputSession",
+  "outputRowContract",
 ] as const;
 
 /** Canonical top-level MCP properties that take precedence over runtime custom fields. */
@@ -1131,6 +1132,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     stats: {
       optional: [
+        "includeEmpty",
         "storage",
         "metadataCoverage",
         "fieldUtilization",

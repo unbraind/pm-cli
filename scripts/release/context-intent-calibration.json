@@ -8,117 +8,117 @@
       "item_count": 2,
       "intents": {
         "context": {
-          "delivered_bytes": 2938,
-          "delivered_rows": 1,
+          "delivered_bytes": 2642,
+          "delivered_rows": 4,
           "declared_tokens": 2400,
-          "measured_tokens": 735,
+          "measured_tokens": 661,
           "degradation": "bounded_sections"
         },
         "get": {
-          "delivered_bytes": 2230,
+          "delivered_bytes": 1952,
           "delivered_rows": 0,
           "declared_tokens": 3200,
-          "measured_tokens": 558,
+          "measured_tokens": 488,
           "degradation": "standard_item"
         },
         "list": {
-          "delivered_bytes": 1769,
+          "delivered_bytes": 1493,
           "delivered_rows": 2,
           "declared_tokens": 3200,
-          "measured_tokens": 443,
+          "measured_tokens": 374,
           "degradation": "bounded_fields_and_rows"
         },
         "next": {
-          "delivered_bytes": 1580,
+          "delivered_bytes": 1243,
           "delivered_rows": 0,
           "declared_tokens": 1200,
-          "measured_tokens": 395,
+          "measured_tokens": 311,
           "degradation": "bounded_ranked_rows"
         },
         "search": {
-          "delivered_bytes": 1399,
+          "delivered_bytes": 1121,
           "delivered_rows": 2,
           "declared_tokens": 1800,
-          "measured_tokens": 350,
+          "measured_tokens": 281,
           "degradation": "bounded_ranked_rows"
         }
       },
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 3820,
-        "remaining_tokens": 16180,
+        "spent_tokens": 3435,
+        "remaining_tokens": 16565,
         "seen_item_count": 2,
-        "suppressed_repeat_count": 3,
-        "delivered_bytes": 15274
+        "suppressed_repeat_count": 4,
+        "delivered_bytes": 13731
       }
     },
     {
       "item_count": 2243,
       "intents": {
         "context": {
-          "delivered_bytes": 4109,
-          "delivered_rows": 3,
+          "delivered_bytes": 3812,
+          "delivered_rows": 6,
           "declared_tokens": 2400,
-          "measured_tokens": 1028,
+          "measured_tokens": 953,
           "degradation": "bounded_sections"
         },
         "get": {
-          "delivered_bytes": 2285,
+          "delivered_bytes": 2007,
           "delivered_rows": 0,
           "declared_tokens": 3200,
-          "measured_tokens": 572,
+          "measured_tokens": 502,
           "degradation": "standard_item"
         },
         "list": {
-          "delivered_bytes": 12755,
-          "delivered_rows": 69,
+          "delivered_bytes": 12316,
+          "delivered_rows": 68,
           "declared_tokens": 3200,
-          "measured_tokens": 3189,
+          "measured_tokens": 3079,
           "degradation": "budget_row_compaction"
         },
         "next": {
-          "delivered_bytes": 4682,
-          "delivered_rows": 14,
+          "delivered_bytes": 4345,
+          "delivered_rows": 9,
           "declared_tokens": 1200,
-          "measured_tokens": 1171,
+          "measured_tokens": 1087,
           "degradation": "budget_row_compaction"
         },
         "search": {
-          "delivered_bytes": 7041,
+          "delivered_bytes": 6763,
           "delivered_rows": 27,
           "declared_tokens": 1800,
-          "measured_tokens": 1761,
+          "measured_tokens": 1691,
           "degradation": "budget_row_compaction"
         }
       },
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 10156,
-        "remaining_tokens": 9844,
-        "seen_item_count": 106,
-        "suppressed_repeat_count": 7,
-        "delivered_bytes": 40614
+        "spent_tokens": 9807,
+        "remaining_tokens": 10193,
+        "seen_item_count": 110,
+        "suppressed_repeat_count": 8,
+        "delivered_bytes": 39221
       },
       "cursor_walks": {
         "list": {
           "rows": 1998,
           "pages": 31,
-          "bytes_per_row": 172.93,
-          "optimized_walk_bytes": 345519,
-          "repeated_metadata_control_bytes": 387489,
-          "unbounded_single_call_bytes": 1558741,
-          "optimized_to_unbounded_ratio": 0.2217
+          "bytes_per_row": 172.79,
+          "optimized_walk_bytes": 345243,
+          "repeated_metadata_control_bytes": 378933,
+          "unbounded_single_call_bytes": 1558465,
+          "optimized_to_unbounded_ratio": 0.2215
         },
         "search": {
           "rows": 1998,
           "pages": 66,
-          "bytes_per_row": 202.5,
-          "optimized_walk_bytes": 404591,
-          "repeated_metadata_control_bytes": 470046,
-          "unbounded_single_call_bytes": 1681847,
-          "optimized_to_unbounded_ratio": 0.2406
+          "bytes_per_row": 202.36,
+          "optimized_walk_bytes": 404313,
+          "repeated_metadata_control_bytes": 451698,
+          "unbounded_single_call_bytes": 1681569,
+          "optimized_to_unbounded_ratio": 0.2404
         }
       }
     }

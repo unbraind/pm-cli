@@ -35,6 +35,7 @@ import {
   PACKAGE_FLAG_CONTRACTS,
   PLAN_FLAG_CONTRACTS,
   SEARCH_FLAG_CONTRACTS,
+  STATS_FLAG_CONTRACTS,
   EVENTS_FLAG_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
   UPDATE_MANY_FLAG_CONTRACTS,
@@ -103,6 +104,7 @@ const DUPLICATES_FLAGS = toCompletionFlagString(DUPLICATES_FLAG_CONTRACTS);
 const GRAPH_FLAGS = toCompletionFlagString(GRAPH_FLAG_CONTRACTS);
 const GUIDE_FLAGS = toCompletionFlagString(GUIDE_FLAG_CONTRACTS);
 const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
+const STATS_FLAGS = toCompletionFlagString(STATS_FLAG_CONTRACTS);
 const HEALTH_FLAGS = toCompletionFlagString(HEALTH_FLAG_CONTRACTS);
 const INIT_FLAGS = toCompletionFlagString(INIT_FLAG_CONTRACTS);
 const CONTRACTS_FLAGS = toCompletionFlagString(CONTRACTS_FLAG_CONTRACTS);
@@ -870,7 +872,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--dry-run --scope --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    stats)",
-    `      COMPREPLY=(${compgen("--storage --metadata-coverage --field-utilization --by-assignee --by-tag --by-priority --tag-prefix --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen(STATS_FLAGS)})`,
     "      ;;",
     "    close|close-task)",
     `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
@@ -999,6 +1001,7 @@ _pm() {
     '--output-budget[Set the universal estimated-token ceiling]:tokens' \\
     '--output-format[Select the universal read encoding]:(toon json)' \\
     '--output-session[Carry cross-call read budget and served-item state]:state' \\
+    '--output-row-contract[Include row schema metadata in read output]' \\
     '--no-changed-fields[Omit changed_fields array from mutation output]' \\
     '--pm-path[Explicit tracker storage path for this command]:path:_files -/' \\
     '--path[Compatibility alias for --pm-path]:path:_files -/' \\
@@ -1515,13 +1518,14 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--to[Upper timestamp bound (ISO/date string or relative)]:date' \\
             '--limit[Max entries]:number' \\
             '--compact[Condensed activity projection]' \\
+            '--raw[Emit raw compact per-event activity output]' \\
             '--full[Show full activity entries]' \\
             '--provenance[Patch-free identity and agent provenance projection]' \\
             '--provenance-summary[Include bounded provenance completeness counts]' \\
             '*--harness[Filter by recorded or vocabulary-resolved harness]:harness' \\
             '*--agent-instance[Filter by privacy-safe agent instance]:instance' \\
             '*--provenance-filter[Filter by exact declared provenance value]:dimension=value' \\
-            '--stream[Emit line-delimited JSON rows]:mode' \\
+            '--stream[Emit line-delimited JSON rows (requires --json)]:mode' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1547,6 +1551,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         stats)
           _arguments \\
+            '--include-empty[Include registered zero-count type and status buckets]' \\
             '--storage[Include aggregate history-stream storage metrics]' \\
             '--metadata-coverage[Include metadata coverage percentages overall and by type]' \\
             '--field-utilization[Include content-field utilization rates across all items]' \\
@@ -2059,6 +2064,7 @@ complete -c pm -l output-limit -d 'Set the universal read row ceiling' -r
 complete -c pm -l output-budget -d 'Set the universal estimated-token ceiling' -r
 complete -c pm -l output-format -d 'Select the universal read encoding' -r -a 'toon json'
 complete -c pm -l output-session -d 'Carry cross-call read budget and served-item state' -r
+complete -c pm -l output-row-contract -d 'Include row schema metadata in read output'
 complete -c pm -l no-changed-fields -d 'Omit changed_fields array from mutation output'
 complete -c pm -l id-only -d 'Print only id and status for single-item mutation output'
 complete -c pm -l pm-path -d 'Explicit tracker storage path for this command' -r
@@ -2609,13 +2615,14 @@ complete -c pm -n '__fish_seen_subcommand_from activity' -l from -d 'Lower times
 complete -c pm -n '__fish_seen_subcommand_from activity' -l to -d 'Upper timestamp bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l limit -d 'Max activity entries' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l compact -d 'Condensed activity projection'
+complete -c pm -n '__fish_seen_subcommand_from activity' -l raw -d 'Emit raw compact per-event activity output'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l full -d 'Show full activity entries'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance -d 'Patch-free identity and agent provenance projection'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance-summary -d 'Include bounded provenance completeness counts'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l agent-instance -d 'Filter by privacy-safe agent instance' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance-filter -d 'Filter by exact declared provenance value' -r
-complete -c pm -n '__fish_seen_subcommand_from activity' -l stream -d 'Emit line-delimited JSON rows'
+complete -c pm -n '__fish_seen_subcommand_from activity' -l stream -d 'Emit line-delimited JSON rows (requires --json)'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l action -d 'Filter schema by tool action' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l command -d 'Scope output to one command (narrow-by-default)' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l summary -d 'Return compact command intent summary'
@@ -2729,6 +2736,7 @@ complete -c pm -n '__fish_seen_subcommand_from gc' -l dry-run -d 'Preview cleanu
 complete -c pm -n '__fish_seen_subcommand_from gc' -l scope -d 'Limit cleanup to index/embeddings/runtime/locks scopes' -r
 
 # stats flags
+complete -c pm -n '__fish_seen_subcommand_from stats' -l include-empty -d 'Include registered zero-count type and status buckets'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l storage -d 'Include aggregate history-stream storage metrics'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l metadata-coverage -d 'Include metadata coverage percentages overall and by type'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l field-utilization -d 'Include content-field utilization rates across all items'

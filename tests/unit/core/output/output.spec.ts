@@ -117,7 +117,7 @@ describe("core/output/output", () => {
     expect(rendered).toContain("  - 2");
     expect(rendered).toContain("  - true");
     expect(rendered).not.toContain("  - null");
-    expect(rendered).toContain('  - key: "value"');
+    expect(rendered).toContain("arr_single_nested[1]{key}:\n  value");
     expect(rendered).toContain("arr_multi_line:");
     expect(rendered).toContain("- nested:");
     expect(rendered).toContain("- deep: 1");
@@ -144,9 +144,18 @@ describe("core/output/output", () => {
     );
 
     expect(rendered).toContain(
-      'items:\n  - id: "pm-a1b2"\n    title: "Compact output"\n',
+      "items[1]{id,title}:\n  pm-a1b2,Compact output\n",
     );
-    expect(rendered).not.toContain('\n      title: "Compact output"');
+    expect(rendered).not.toContain("\n      title:");
+    expect(
+      outputTestOnly.renderToonValue(
+        [
+          { id: "pm-a1b2", status: "open" },
+          { id: "pm-c3d4", status: "closed" },
+        ],
+        0,
+      ),
+    ).toBe("[2]{id,status}:\n  pm-a1b2,open\n  pm-c3d4,closed");
   });
 
   it("covers raw TOON renderer empty collection branches", () => {

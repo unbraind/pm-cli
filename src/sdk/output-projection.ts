@@ -46,6 +46,8 @@ export interface ReadRowContract {
   fields: "supported" | "unsupported";
   /** Universal jq expression that iterates every declared collection path. */
   jq_selector?: string;
+  /** TOON row encoding selected whenever every row is a flat object with one shared key set. */
+  toon_encoding?: "tabular_when_uniform";
 }
 
 /** Universal selector for results carrying a {@link ReadRowContract}. */
@@ -69,7 +71,12 @@ export const PM_READ_ROW_CONTRACTS = {
   },
   search: { row_keys: ["items"], fields: "supported" },
   activity: {
-    row_keys: ["compact_activity", "provenance_activity", "activity"],
+    row_keys: [
+      "activity_digest",
+      "compact_activity",
+      "provenance_activity",
+      "activity",
+    ],
     fields: "unsupported",
   },
   history: {
@@ -122,6 +129,12 @@ export const PM_MODE_PAIRED_OUTPUT_PROJECTION_CONTRACTS = [
     command: "activity",
     complete_mode: "full",
     omissions_by_mode: {
+      digest: [
+        {
+          name: "event_rows",
+          restore_with: "--raw",
+        },
+      ],
       compact: [
         {
           name: "provenance",
@@ -228,19 +241,27 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+const READ_ROW_TOON_ENCODINGS = new Set<unknown>([
+  undefined,
+  "tabular_when_uniform",
+]);
+const READ_ROW_KINDS = new Set<unknown>(["collection", "none"]);
+const READ_ROW_FIELD_MODES = new Set<unknown>(["supported", "unsupported"]);
+
 /** Return whether an unknown value is a structurally valid row declaration. */
 export function isReadRowContract(value: unknown): value is ReadRowContract {
   return (
     isRecord(value) &&
     typeof value.command === "string" &&
     value.command.trim().length > 0 &&
-    (value.row_kind === "collection" || value.row_kind === "none") &&
+    READ_ROW_KINDS.has(value.row_kind) &&
     Array.isArray(value.row_keys) &&
     value.row_keys.every(
       (key): key is string => typeof key === "string" && key.length > 0,
     ) &&
     new Set(value.row_keys).size === value.row_keys.length &&
-    (value.fields === "supported" || value.fields === "unsupported") &&
+    READ_ROW_FIELD_MODES.has(value.fields) &&
+    READ_ROW_TOON_ENCODINGS.has(value.toon_encoding) &&
     (value.row_kind === "collection"
       ? value.row_keys.length > 0 &&
         typeof value.jq_selector === "string" &&
@@ -278,7 +299,12 @@ const READ_RESULT_SENTINEL_KEYS: Readonly<Record<string, readonly string[]>> = {
     "held_by_others",
   ],
   search: ["items", "projection"],
-  activity: ["compact_activity", "provenance_activity", "activity"],
+  activity: [
+    "activity_digest",
+    "compact_activity",
+    "provenance_activity",
+    "activity",
+  ],
   history: ["compact_history", "provenance_history", "history"],
   deps: ["tree", "graph", "projection"],
   health: ["checks"],
@@ -320,6 +346,7 @@ export function resolveReadRowContract(
       ...(activeRowKeys.length > 0
         ? { jq_selector: PM_READ_ROW_JQ_SELECTOR }
         : {}),
+      toon_encoding: "tabular_when_uniform",
     };
   }
   const declaration = (
@@ -357,6 +384,7 @@ export function resolveReadRowContract(
           ...(rowKeys.length > 0
             ? { jq_selector: PM_READ_ROW_JQ_SELECTOR }
             : {}),
+          toon_encoding: "tabular_when_uniform",
         };
       })();
 }

@@ -6,6 +6,15 @@ import { writeTestExtension } from "../helpers/extensions.js";
 import { assertPmContextDepthProjection } from "../helpers/mcp-context-depth.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
+function mcpStructuredResult<Result>(response: unknown): Result | undefined {
+  return (
+    response as
+      | { structuredContent?: { result?: Result } }
+      | null
+      | undefined
+  )?.structuredContent?.result;
+}
+
 describe("MCP dynamic package actions", () => {
   it("routes config positional value through the MCP action runner", async () => {
     await withTempPmPath(async (context) => {
@@ -1101,7 +1110,7 @@ describe("MCP dynamic package actions", () => {
     });
   });
 
-  it("defaults pm_run activity output to compact for token efficiency", async () => {
+  it("defaults pm_run activity to a digest and restores raw/full rows", async () => {
     await withTempPmPath(async (context) => {
       const create = context.runCli(["create", "--json", "--title", "Activity seed", "--description", "d", "--type", "Task", "--author", "a"], {
         expectJson: true,
@@ -1118,32 +1127,35 @@ describe("MCP dynamic package actions", () => {
         },
       });
       expect(activity?.isError).not.toBe(true);
-      const activityResult = (activity?.structuredContent as {
-        result?: {
-          compact?: boolean;
-          activity?: unknown[];
-          compact_activity?: unknown[];
-          omission_receipt?: { omitted_field_group_count?: number };
-        };
-      } | undefined)?.result;
-      expect(activityResult?.compact).toBe(true);
+      const activityResult = mcpStructuredResult<{
+        compact?: boolean;
+        activity_digest?: unknown[];
+        activity?: unknown[];
+        compact_activity?: unknown[];
+        omission_receipt?: { omitted_field_group_count?: number };
+      }>(activity);
+      expect(activityResult?.compact).toBe(false);
       expect(activityResult?.activity).toBeUndefined();
-      expect(Array.isArray(activityResult?.compact_activity)).toBe(true);
+      expect(Array.isArray(activityResult?.activity_digest)).toBe(true);
       expect(
         activityResult?.omission_receipt?.omitted_field_group_count,
       ).toBe(1);
 
-      const verbose = await handleRequest({
+      const raw = await handleRequest({
         jsonrpc: "2.0",
         id: 10,
         method: "tools/call",
         params: {
           name: "pm_run",
-          arguments: { path: context.pmPath, action: "activity", options: { compact: false } },
+          arguments: { path: context.pmPath, action: "activity", options: { raw: true } },
         },
       });
-      const verboseResult = (verbose?.structuredContent as { result?: { compact?: boolean } } | undefined)?.result;
-      expect(verboseResult?.compact).toBe(false);
+      const rawResult = mcpStructuredResult<{
+        compact?: boolean;
+        compact_activity?: unknown[];
+      }>(raw);
+      expect(rawResult?.compact).toBe(true);
+      expect(Array.isArray(rawResult?.compact_activity)).toBe(true);
 
       const full = await handleRequest({
         jsonrpc: "2.0",
@@ -1154,8 +1166,12 @@ describe("MCP dynamic package actions", () => {
           arguments: { path: context.pmPath, action: "activity", options: { full: true } },
         },
       });
-      const fullResult = (full?.structuredContent as { result?: { compact?: boolean } } | undefined)?.result;
+      const fullResult = mcpStructuredResult<{
+        compact?: boolean;
+        activity?: unknown[];
+      }>(full);
       expect(fullResult?.compact).toBe(false);
+      expect(Array.isArray(fullResult?.activity)).toBe(true);
     });
   });
 

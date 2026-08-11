@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1504,
+    "covered_symbols": 1505,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1505
+    "required_symbols": 1506
   },
   "breaking_acknowledgements": [
     {
@@ -302,6 +302,33 @@
       ],
       "package_version": "2026.8.10",
       "reason": "Expose public assurance action transport types while preserving the PmClient method contract"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ActivityCommandOptions",
+        "signature ./sdk:ActivityResult",
+        "signature ./sdk:BootstrapGlobalOptions",
+        "signature ./sdk:GlobalOptions",
+        "signature ./sdk:PM_MODE_PAIRED_OUTPUT_PROJECTION_CONTRACTS",
+        "signature ./sdk:PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
+        "signature ./sdk:PM_READ_ROW_CONTRACTS",
+        "signature ./sdk:PmReadOutputOptions",
+        "signature ./sdk:ReadRowContract",
+        "signature ./sdk:StatsCommandOptions",
+        "signature ./sdk:StatsResult",
+        "signature ./sdk/contracts:PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
+        "signature ./sdk/contracts:PmReadOutputOptions",
+        "signature ./sdk/core:PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
+        "signature ./sdk/core:PmReadOutputOptions",
+        "signature ./sdk/query:ActivityCommandOptions",
+        "signature ./sdk/query:ActivityResult",
+        "signature ./sdk/runtime:GlobalOptions",
+        "signature ./sdk/runtime:PmReadOutputOptions",
+        "signature ./sdk/runtime:StatsCommandOptions",
+        "signature ./sdk/runtime:StatsResult"
+      ],
+      "package_version": "2026.8.11",
+      "reason": "stats now returns compact lifecycle rows by default; activity defaults to item digests; row contracts are explicit opt-in"
     }
   ],
   "entrypoints": {
@@ -498,7 +525,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ActivityCommandOptions",
-          "signature": "export interface ActivityCommandOptions { id?: string; op?: string; author?: string; from?: string; to?: string; limit?: string; compact?: boolean; unbounded?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; }"
+          "signature": "export interface ActivityCommandOptions { id?: string; op?: string; author?: string; from?: string; to?: string; limit?: string; compact?: boolean; raw?: boolean; unbounded?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; }"
         },
         {
           "classification": "supported",
@@ -510,7 +537,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ActivityResult",
-          "signature": "export interface ActivityResult { activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"compact\" | \"provenance\" | \"full\"; row_key: \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; provenance_summary?: HistoryProvenanceSummary; }"
+          "signature": "export interface ActivityResult { activity_digest?: ActivityDigestEntry[]; activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"digest\" | \"compact\" | \"provenance\" | \"full\"; row_key: \"activity_digest\" | \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; activity_summary?: { window: { from: string | null; to: string | null; }; event_count: number; item_count: number; author_count: number; operation_counts: Record<string, number>; }; provenance_summary?: HistoryProvenanceSummary; }"
         },
         {
           "classification": "advanced_export",
@@ -1548,7 +1575,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "BootstrapGlobalOptions",
-          "signature": "export interface BootstrapGlobalOptions { path?: string; noExtensions: boolean; noPager: boolean; json: boolean; quiet: boolean; lean: boolean; tokenAccounting: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; author?: string; authorMissingValue?: true; }"
+          "signature": "export interface BootstrapGlobalOptions { path?: string; noExtensions: boolean; noPager: boolean; json: boolean; quiet: boolean; lean: boolean; tokenAccounting: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; outputRowContract?: boolean; author?: string; authorMissingValue?: true; }"
         },
         {
           "classification": "advanced_export",
@@ -5184,7 +5211,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "GlobalOptions",
-          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
+          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; outputRowContract?: boolean; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
         },
         {
           "classification": "supported",
@@ -8238,7 +8265,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_MODE_PAIRED_OUTPUT_PROJECTION_CONTRACTS",
-          "signature": "readonly [{ readonly command: \"activity\"; readonly complete_mode: \"full\"; readonly omissions_by_mode: { readonly compact: readonly [{ readonly name: \"provenance\"; readonly restore_with: \"--full\"; }]; readonly provenance: readonly [{ readonly name: \"patch_and_hashes\"; readonly restore_with: \"--full\"; }]; }; }, { readonly command: \"history\"; readonly complete_mode: \"full\"; readonly omissions_by_mode: { readonly compact: readonly [{ readonly name: \"raw_history\"; readonly restore_with: \"--full\"; }]; readonly provenance: readonly [{ readonly name: \"patch_and_hashes\"; readonly restore_with: \"--full\"; }]; }; }]"
+          "signature": "readonly [{ readonly command: \"activity\"; readonly complete_mode: \"full\"; readonly omissions_by_mode: { readonly digest: readonly [{ readonly name: \"event_rows\"; readonly restore_with: \"--raw\"; }]; readonly compact: readonly [{ readonly name: \"provenance\"; readonly restore_with: \"--full\"; }]; readonly provenance: readonly [{ readonly name: \"patch_and_hashes\"; readonly restore_with: \"--full\"; }]; }; }, { readonly command: \"history\"; readonly complete_mode: \"full\"; readonly omissions_by_mode: { readonly compact: readonly [{ readonly name: \"raw_history\"; readonly restore_with: \"--full\"; }]; readonly provenance: readonly [{ readonly name: \"patch_and_hashes\"; readonly restore_with: \"--full\"; }]; }; }]"
         },
         {
           "classification": "supported",
@@ -8292,7 +8319,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
-          "signature": "readonly [\"--output-session\"]"
+          "signature": "readonly [\"--output-session\", \"--output-row-contract\"]"
         },
         {
           "classification": "supported",
@@ -8334,7 +8361,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_READ_ROW_CONTRACTS",
-          "signature": "{ readonly context: { readonly row_keys: readonly [\"high_level\", \"low_level\"]; readonly fields: \"supported\"; }; readonly get: { readonly row_keys: readonly [\"children\"]; readonly fields: \"supported\"; }; readonly list: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly next: { readonly row_keys: readonly [\"recommended\", \"ready\", \"decision_needed\", \"blocked\", \"held_by_others\"]; readonly fields: \"unsupported\"; }; readonly search: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly activity: { readonly row_keys: readonly [\"compact_activity\", \"provenance_activity\", \"activity\"]; readonly fields: \"unsupported\"; }; readonly history: { readonly row_keys: readonly [\"compact_history\", \"provenance_history\", \"history\"]; readonly fields: \"unsupported\"; }; readonly deps: { readonly row_keys: readonly [\"graph.nodes\", \"graph.edges\", \"context.nodes\", \"context.edges\"]; readonly fields: \"unsupported\"; }; readonly health: { readonly row_keys: readonly [\"checks\"]; readonly fields: \"unsupported\"; }; readonly aggregate: { readonly row_keys: readonly [\"groups\"]; readonly fields: \"unsupported\"; }; readonly duplicates: { readonly row_keys: readonly [\"clusters\"]; readonly fields: \"unsupported\"; }; readonly stats: { readonly row_keys: readonly [\"by_type\", \"by_status\"]; readonly fields: \"unsupported\"; }; readonly comments: { readonly row_keys: readonly [\"comments\"]; readonly fields: \"unsupported\"; }; readonly notes: { readonly row_keys: readonly [\"notes\"]; readonly fields: \"unsupported\"; }; readonly learnings: { readonly row_keys: readonly [\"learnings\"]; readonly fields: \"unsupported\"; }; readonly files: { readonly row_keys: readonly [\"files\"]; readonly fields: \"unsupported\"; }; readonly docs: { readonly row_keys: readonly [\"docs\"]; readonly fields: \"unsupported\"; }; readonly validate: { readonly row_keys: readonly [\"checks\", \"warnings\"]; readonly fields: \"unsupported\"; }; readonly contracts: { readonly row_keys: readonly [\"command_summaries\", \"commands\"]; readonly fields: \"unsupported\"; }; }"
+          "signature": "{ readonly context: { readonly row_keys: readonly [\"high_level\", \"low_level\"]; readonly fields: \"supported\"; }; readonly get: { readonly row_keys: readonly [\"children\"]; readonly fields: \"supported\"; }; readonly list: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly next: { readonly row_keys: readonly [\"recommended\", \"ready\", \"decision_needed\", \"blocked\", \"held_by_others\"]; readonly fields: \"unsupported\"; }; readonly search: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly activity: { readonly row_keys: readonly [\"activity_digest\", \"compact_activity\", \"provenance_activity\", \"activity\"]; readonly fields: \"unsupported\"; }; readonly history: { readonly row_keys: readonly [\"compact_history\", \"provenance_history\", \"history\"]; readonly fields: \"unsupported\"; }; readonly deps: { readonly row_keys: readonly [\"graph.nodes\", \"graph.edges\", \"context.nodes\", \"context.edges\"]; readonly fields: \"unsupported\"; }; readonly health: { readonly row_keys: readonly [\"checks\"]; readonly fields: \"unsupported\"; }; readonly aggregate: { readonly row_keys: readonly [\"groups\"]; readonly fields: \"unsupported\"; }; readonly duplicates: { readonly row_keys: readonly [\"clusters\"]; readonly fields: \"unsupported\"; }; readonly stats: { readonly row_keys: readonly [\"by_type\", \"by_status\"]; readonly fields: \"unsupported\"; }; readonly comments: { readonly row_keys: readonly [\"comments\"]; readonly fields: \"unsupported\"; }; readonly notes: { readonly row_keys: readonly [\"notes\"]; readonly fields: \"unsupported\"; }; readonly learnings: { readonly row_keys: readonly [\"learnings\"]; readonly fields: \"unsupported\"; }; readonly files: { readonly row_keys: readonly [\"files\"]; readonly fields: \"unsupported\"; }; readonly docs: { readonly row_keys: readonly [\"docs\"]; readonly fields: \"unsupported\"; }; readonly validate: { readonly row_keys: readonly [\"checks\", \"warnings\"]; readonly fields: \"unsupported\"; }; readonly contracts: { readonly row_keys: readonly [\"command_summaries\", \"commands\"]; readonly fields: \"unsupported\"; }; }"
         },
         {
           "classification": "advanced_export",
@@ -8838,7 +8865,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
         },
         {
           "classification": "supported",
@@ -9594,7 +9621,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ReadRowContract",
-          "signature": "export interface ReadRowContract { command: string; row_kind: \"collection\" | \"none\"; row_keys: string[]; fields: \"supported\" | \"unsupported\"; jq_selector?: string; }"
+          "signature": "export interface ReadRowContract { command: string; row_kind: \"collection\" | \"none\"; row_keys: string[]; fields: \"supported\" | \"unsupported\"; jq_selector?: string; toon_encoding?: \"tabular_when_uniform\"; }"
         },
         {
           "classification": "advanced_export",
@@ -13035,6 +13062,12 @@
           "signature": "(content: string) => { frontMatter: string; body: string; } | calls: (content: string) => { frontMatter: string; body: string; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "stabilizeReadOutputReceiptEstimates",
+          "signature": "(result: Record<string, unknown>, options: Record<string, unknown>) => Record<string, unknown> | calls: (result: Record<string, unknown>, options: Record<string, unknown>) => Record<string, unknown>"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "stableStringify",
@@ -13116,13 +13149,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StatsCommandOptions",
-          "signature": "export interface StatsCommandOptions { storage?: boolean; metadataCoverage?: boolean; byAssignee?: boolean; byTag?: boolean; byPriority?: boolean; tagPrefix?: string; fieldUtilization?: boolean; measurements?: boolean; metric?: string; measurementLimit?: number; observe?: string[]; direction?: ImprovementDirection; measurementSource?: string; measurementItem?: string; measurementRevision?: string; author?: string; message?: string; provenanceCoverage?: boolean; fleetAttribution?: boolean; since?: string; eventLimit?: number; minimumSample?: number; }"
+          "signature": "export interface StatsCommandOptions { includeEmpty?: boolean; storage?: boolean; metadataCoverage?: boolean; byAssignee?: boolean; byTag?: boolean; byPriority?: boolean; tagPrefix?: string; fieldUtilization?: boolean; measurements?: boolean; metric?: string; measurementLimit?: number; observe?: string[]; direction?: ImprovementDirection; measurementSource?: string; measurementItem?: string; measurementRevision?: string; author?: string; message?: string; provenanceCoverage?: boolean; fleetAttribution?: boolean; since?: string; eventLimit?: number; minimumSample?: number; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StatsResult",
-          "signature": "export interface StatsResult { totals: { items: number; history_streams: number; history_entries: number; }; by_type: Record<ItemType, number>; by_status: Record<ItemStatus, number>; metadata_coverage?: MetadataCoverageReport; breakdowns?: { assignee?: GroupedBreakdown; tag?: GroupedBreakdown; priority?: GroupedBreakdown; }; storage?: HistoryStorageStats; field_utilization?: ContentFieldUtilizationReport; improvement_ledger?: ImprovementLedgerResult; recorded_observations?: RecordImprovementObservationResult[]; provenance_coverage?: ProvenanceCoverageAnalytics; fleet_attribution?: FleetAttributionAnalytics; generated_at: string; }"
+          "signature": "export interface StatsResult { totals: { items: number; history_streams: number; history_entries: number; }; by_type: StatsTypeBreakdown; by_status: Partial<Record<ItemStatus, number>>; omitted_zero_buckets: number; metadata_coverage?: MetadataCoverageReport; breakdowns?: { assignee?: GroupedBreakdown; tag?: GroupedBreakdown; priority?: GroupedBreakdown; }; storage?: HistoryStorageStats; field_utilization?: ContentFieldUtilizationReport; improvement_ledger?: ImprovementLedgerResult; recorded_observations?: RecordImprovementObservationResult[]; provenance_coverage?: ProvenanceCoverageAnalytics; fleet_attribution?: FleetAttributionAnalytics; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -16632,7 +16665,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
-          "signature": "readonly [\"--output-session\"]"
+          "signature": "readonly [\"--output-session\", \"--output-row-contract\"]"
         },
         {
           "classification": "contract_data",
@@ -16986,7 +17019,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -17239,6 +17272,12 @@
           "kind": "value",
           "name": "SEARCH_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "stabilizeReadOutputReceiptEstimates",
+          "signature": "(result: Record<string, unknown>, options: Record<string, unknown>) => Record<string, unknown> | calls: (result: Record<string, unknown>, options: Record<string, unknown>) => Record<string, unknown>"
         },
         {
           "classification": "contract_data",
@@ -18192,7 +18231,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
-          "signature": "readonly [\"--output-session\"]"
+          "signature": "readonly [\"--output-session\", \"--output-row-contract\"]"
         },
         {
           "classification": "supported",
@@ -18270,7 +18309,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
         },
         {
           "classification": "supported",
@@ -20772,7 +20811,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ActivityCommandOptions",
-          "signature": "export interface ActivityCommandOptions { id?: string; op?: string; author?: string; from?: string; to?: string; limit?: string; compact?: boolean; unbounded?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; }"
+          "signature": "export interface ActivityCommandOptions { id?: string; op?: string; author?: string; from?: string; to?: string; limit?: string; compact?: boolean; raw?: boolean; unbounded?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; }"
         },
         {
           "classification": "supported",
@@ -20784,7 +20823,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ActivityResult",
-          "signature": "export interface ActivityResult { activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"compact\" | \"provenance\" | \"full\"; row_key: \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; provenance_summary?: HistoryProvenanceSummary; }"
+          "signature": "export interface ActivityResult { activity_digest?: ActivityDigestEntry[]; activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"digest\" | \"compact\" | \"provenance\" | \"full\"; row_key: \"activity_digest\" | \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; activity_summary?: { window: { from: string | null; to: string | null; }; event_count: number; item_count: number; author_count: number; operation_counts: Record<string, number>; }; provenance_summary?: HistoryProvenanceSummary; }"
         },
         {
           "classification": "supported",
@@ -22986,7 +23025,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "GlobalOptions",
-          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
+          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; outputRowContract?: boolean; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
         },
         {
           "classification": "supported",
@@ -23658,7 +23697,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
         },
         {
           "classification": "supported",
@@ -24522,13 +24561,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StatsCommandOptions",
-          "signature": "export interface StatsCommandOptions { storage?: boolean; metadataCoverage?: boolean; byAssignee?: boolean; byTag?: boolean; byPriority?: boolean; tagPrefix?: string; fieldUtilization?: boolean; measurements?: boolean; metric?: string; measurementLimit?: number; observe?: string[]; direction?: ImprovementDirection; measurementSource?: string; measurementItem?: string; measurementRevision?: string; author?: string; message?: string; provenanceCoverage?: boolean; fleetAttribution?: boolean; since?: string; eventLimit?: number; minimumSample?: number; }"
+          "signature": "export interface StatsCommandOptions { includeEmpty?: boolean; storage?: boolean; metadataCoverage?: boolean; byAssignee?: boolean; byTag?: boolean; byPriority?: boolean; tagPrefix?: string; fieldUtilization?: boolean; measurements?: boolean; metric?: string; measurementLimit?: number; observe?: string[]; direction?: ImprovementDirection; measurementSource?: string; measurementItem?: string; measurementRevision?: string; author?: string; message?: string; provenanceCoverage?: boolean; fleetAttribution?: boolean; since?: string; eventLimit?: number; minimumSample?: number; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "StatsResult",
-          "signature": "export interface StatsResult { totals: { items: number; history_streams: number; history_entries: number; }; by_type: Record<ItemType, number>; by_status: Record<ItemStatus, number>; metadata_coverage?: MetadataCoverageReport; breakdowns?: { assignee?: GroupedBreakdown; tag?: GroupedBreakdown; priority?: GroupedBreakdown; }; storage?: HistoryStorageStats; field_utilization?: ContentFieldUtilizationReport; improvement_ledger?: ImprovementLedgerResult; recorded_observations?: RecordImprovementObservationResult[]; provenance_coverage?: ProvenanceCoverageAnalytics; fleet_attribution?: FleetAttributionAnalytics; generated_at: string; }"
+          "signature": "export interface StatsResult { totals: { items: number; history_streams: number; history_entries: number; }; by_type: StatsTypeBreakdown; by_status: Partial<Record<ItemStatus, number>>; omitted_zero_buckets: number; metadata_coverage?: MetadataCoverageReport; breakdowns?: { assignee?: GroupedBreakdown; tag?: GroupedBreakdown; priority?: GroupedBreakdown; }; storage?: HistoryStorageStats; field_utilization?: ContentFieldUtilizationReport; improvement_ledger?: ImprovementLedgerResult; recorded_observations?: RecordImprovementObservationResult[]; provenance_coverage?: ProvenanceCoverageAnalytics; fleet_attribution?: FleetAttributionAnalytics; generated_at: string; }"
         },
         {
           "classification": "supported",

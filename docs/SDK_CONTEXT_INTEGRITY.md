@@ -1,6 +1,6 @@
 # SDK Context Integrity
 
-Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), and [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon).
+Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), and [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon).
 
 ## Agent Quick Context
 
@@ -30,6 +30,28 @@ an array. `--output-include item.collection_counts` therefore uses the same
 selector grammar and omission receipts as any other SDK-owned item field.
 
 The same SDK-owned read-output registry now declares `package manage` as a first-class read surface. Package authors can resolve either `package manage` or `package-manage` to its canonical contract and discover the universal include, amount, cost, and encoding dimensions without copying CLI knowledge.
+
+## Row discovery and exact output receipts
+
+Row locations and encoding capabilities remain part of the SDK-owned read
+contract, but the `row_contract` discovery block is opt-in on rendered command
+results. Use `--output-row-contract` in the CLI or `outputRowContract: true` in
+SDK and MCP options when a generic consumer must discover row selectors. Normal
+agent reads omit the repeated metadata and retain the same internal projections.
+
+Uniform flat object arrays use canonical tabular TOON when TOON output is
+selected. Mixed, nested, or scalar collections retain the general recursive
+encoding, so package authors can add richer shapes without pretending they are
+tabular. The optional row contract declares
+`toon_encoding: tabular_when_uniform` for consumers that negotiate this
+optimization.
+
+When discovery metadata is omitted, every `context_intent`, `read_output`, and
+`read_session` estimate is stabilized against the final serialized envelope.
+Consequently `estimated_tokens` and `spent_this_call_tokens` never charge an
+agent for hidden row metadata, and a caller-carried output session remains an
+exact cross-command budget rather than an approximation of an intermediate
+shape.
 
 ## Bounded annotation mutations
 

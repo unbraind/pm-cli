@@ -180,7 +180,7 @@ export function getGlobalOptions(command: Command): GlobalOptions {
       : typeof reader.opts === "function"
         ? reader.opts()
         : {};
-  return {
+  const normalized: GlobalOptions = {
     json: opts.json === true ? true : undefined,
     quiet: Boolean(opts.quiet),
     noChangedFields: opts.changedFields === false,
@@ -192,21 +192,20 @@ export function getGlobalOptions(command: Command): GlobalOptions {
     outputLimit: readStringCommandOption(opts, "outputLimit"),
     outputBudget: readStringCommandOption(opts, "outputBudget"),
     outputSession: readStringCommandOption(opts, "outputSession"),
+    ...(opts.outputRowContract === true ? { outputRowContract: true } : {}),
     ...(opts.outputFormat === "toon" || opts.outputFormat === "json"
       ? { outputFormat: opts.outputFormat }
       : {}),
     path:
-      typeof opts.pmPath === "string"
-        ? opts.pmPath
-        : typeof opts.path === "string"
-          ? opts.path
-          : undefined,
+      readStringCommandOption(opts, "pmPath") ??
+      readStringCommandOption(opts, "path"),
     noExtensions: opts.extensions === false,
     noPager: Boolean(opts.noPager),
     profile: Boolean(opts.profile),
     ...(commandPath.length > 0 ? { command: commandPath } : {}),
     ...(typeof opts.author === "string" ? { author: opts.author } : {}),
   };
+  return normalized;
 }
 
 /** Implements get command path for the public runtime surface of this module. */
@@ -1096,22 +1095,42 @@ export function normalizeSearchKeywordsInput(keywords: string[]): string {
   return query;
 }
 
-/** Implements normalize activity options for the public runtime surface of this module. */
-export function normalizeActivityOptions(options: Record<string, unknown>): {
+/** Canonical Commander-normalized activity query options. */
+export interface NormalizedActivityOptions {
+  /** Exact item identifier filter. */
   id?: string;
+  /** Exact immutable history operation filter. */
   op?: string;
+  /** Exact recorded author filter. */
   author?: string;
+  /** Inclusive activity window lower bound. */
   from?: string;
+  /** Inclusive activity window upper bound. */
   to?: string;
+  /** Maximum projected row count encoded as Commander text. */
   limit?: string;
+  /** Select the compact raw-event projection. */
   compact?: boolean;
+  /** Select a raw event projection instead of the item digest. */
+  raw?: boolean;
+  /** Disable the default projection row bound. */
   unbounded?: boolean;
+  /** Select privacy-safe provenance event rows. */
   provenance?: boolean;
+  /** Include constant-size provenance completeness metrics. */
   provenanceSummary?: boolean;
+  /** Canonical harness filters supplied by Commander. */
   harness?: string[];
+  /** Privacy-safe agent invocation fingerprint filters. */
   agentInstance?: string[];
+  /** Exact provenance dimension predicates. */
   provenanceFilter?: string[];
-} {
+}
+
+/** Implements normalize activity options for the public runtime surface of this module. */
+export function normalizeActivityOptions(
+  options: Record<string, unknown>,
+): NormalizedActivityOptions {
   const readActivityString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       options,
@@ -1120,7 +1139,7 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
         target,
       ),
     );
-  return {
+  const normalized: NormalizedActivityOptions = {
     id: readActivityString("id"),
     op: readActivityString("op"),
     author: readActivityString("author"),
@@ -1130,9 +1149,14 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
     compact:
       options.full === true || options.provenance === true
         ? false
-        : options.compact === false
-          ? false
-          : true,
+        : options.compact === true || options.raw === true
+          ? true
+          : undefined,
+    ...(options.raw === true ||
+    options.compact === true ||
+    options.full === true
+      ? { raw: true }
+      : {}),
     unbounded: optionTrue(options, "unbounded"),
     provenance: optionTrue(options, "provenance"),
     provenanceSummary: optionTrue(options, "provenanceSummary"),
@@ -1146,6 +1170,9 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
       ? (options.provenanceFilter as string[])
       : undefined,
   };
+  return Object.fromEntries(
+    Object.entries(normalized).filter(([, value]) => value !== undefined),
+  ) as typeof normalized;
 }
 
 const ACTIVITY_STREAM_ENABLED_VALUES = new Set([
