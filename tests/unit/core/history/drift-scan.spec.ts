@@ -17,6 +17,7 @@ interface DriftCacheFixtureEntry {
   content_hash: string;
   latest_after_hash: string;
   chain_ok: boolean;
+  item_hash_version: 1 | 2;
 }
 
 interface DriftCacheFixture {
@@ -51,7 +52,7 @@ async function seedStaleMetadataMatchedCache(
   await mutateStream(historyPath);
   const mutatedStat = await fs.stat(historyPath);
   const forgedCache: DriftCacheFixture = {
-    version: 3,
+    version: 4,
     entries: {
       [created.id]: {
         ...staleEntry,
@@ -102,7 +103,7 @@ describe("core/history/drift-scan", () => {
       expect(first.driftedItems).toEqual([]);
 
       const cache = await readDriftCache(context.pmPath);
-      expect(cache.version).toBe(3);
+      expect(cache.version).toBe(4);
       expect(Object.keys(cache.entries)).toHaveLength(items.length);
       const firstEntry = Object.values(cache.entries)[0];
       expect(typeof firstEntry.content_hash).toBe("string");
@@ -111,6 +112,32 @@ describe("core/history/drift-scan", () => {
       // Second scan: every stream is a cache hit (stat unchanged) and stays clean.
       const second = await scanHistoryDrift(context.pmPath, items);
       expect(second.driftedItems).toEqual([]);
+    });
+  });
+
+  it("defaults pre-epoch cache rows to the current hash algorithm", async () => {
+    await withTempPmPath(async (context) => {
+      createTestItem(context, { title: "Legacy cache row" });
+      const items = await listAllItemMetadataWithBody(context.pmPath);
+      await scanHistoryDrift(context.pmPath, items);
+      const cache = await readDriftCache(context.pmPath);
+      const entries = Object.fromEntries(
+        Object.entries(cache.entries).map(([id, entry]) => {
+          const { item_hash_version: _itemHashVersion, ...legacyEntry } = entry;
+          return [id, legacyEntry];
+        }),
+      );
+      await fs.writeFile(
+        path.join(context.pmPath, DRIFT_CACHE_RELATIVE),
+        `${JSON.stringify({ ...cache, entries }, null, 2)}\n`,
+        "utf8",
+      );
+
+      expect(
+        await scanHistoryDrift(context.pmPath, items, {
+          cacheHitVerification: "metadata",
+        }),
+      ).toMatchObject({ driftedItems: [] });
     });
   });
 
@@ -194,8 +221,8 @@ describe("core/history/drift-scan", () => {
       for (const corrupt of [
         "{ not json",
         JSON.stringify({ version: 999, entries: {} }),
-        JSON.stringify({ version: 3, entries: null }),
-        JSON.stringify({ version: 3, entries: "not-an-object" }),
+        JSON.stringify({ version: 4, entries: null }),
+        JSON.stringify({ version: 4, entries: "not-an-object" }),
       ]) {
         await fs.writeFile(cachePath, corrupt, "utf8");
         const result = await scanHistoryDrift(context.pmPath, items);

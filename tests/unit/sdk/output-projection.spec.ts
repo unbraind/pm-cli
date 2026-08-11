@@ -4,8 +4,13 @@ import {
   attachOutputOmissionReceipt,
   createOutputOmissionReceipt,
   isReadRowContract,
+  registerOutputMaterialFieldGroups,
   resolveModePairedOutputOmissionReceipt,
 } from "../../../src/sdk/output-projection.js";
+import { runClaim } from "../../../src/sdk/lifecycle/claim.js";
+import { runCreate } from "../../../src/sdk/lifecycle/create.js";
+import { runGet } from "../../../src/sdk/query/get.js";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("output projection omission contracts", () => {
   it("rejects undeclared TOON encodings in caller-supplied row contracts", () => {
@@ -325,5 +330,51 @@ describe("output projection omission contracts", () => {
     });
     expect(attachOutputOmissionReceipt(undefined, {})).toEqual({});
     expect(attachOutputOmissionReceipt("get", [])).toEqual([]);
+  });
+
+  it("charges get receipts only for material omitted groups", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      const created = await runCreate(
+        { title: "Material omission source", type: "Task" },
+        { ...global, json: true, quiet: true },
+      );
+      const unclaimedBrief = await runGet(
+        created.item.id,
+        global,
+        { depth: "brief" },
+      );
+      expect(attachOutputOmissionReceipt("get", unclaimedBrief)).toMatchObject({
+        omission_receipt: {
+          omitted_field_groups: expect.not.arrayContaining([
+            { name: "claim_state", restore_with: "--fields claim_state" },
+          ]),
+        },
+      });
+
+      await runClaim(created.item.id, false, global, {
+        author: "projection-test",
+      });
+      const claimedBrief = await runGet(
+        created.item.id,
+        global,
+        { depth: "brief" },
+      );
+      expect(attachOutputOmissionReceipt("get", claimedBrief)).toMatchObject({
+        omission_receipt: {
+          omitted_field_groups: expect.arrayContaining([
+            { name: "claim_state", restore_with: "--fields claim_state" },
+          ]),
+        },
+      });
+    });
+
+    const bodyIncluded = {
+      item: { id: "pm-body", body: "material context" },
+    };
+    registerOutputMaterialFieldGroups(bodyIncluded, ["body"]);
+    expect(attachOutputOmissionReceipt("get", bodyIncluded)).toMatchObject({
+      omission_receipt: { has_omissions: false },
+    });
   });
 });

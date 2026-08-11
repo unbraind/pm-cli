@@ -25,6 +25,7 @@ import type {
   HistoryEntry,
   HistoryPatchOp,
   ItemDocument,
+  LinkedTest,
 } from "../../types/index.js";
 import {
   removeHistoryEventIndexForHistoryPath,
@@ -36,6 +37,62 @@ const EMPTY_LEGACY_HASH_DOCUMENT = {
   front_matter: {},
   body: "",
 };
+
+/** Hash epoch that preserves linked-test insertion order in immutable history. */
+export const CURRENT_HISTORY_ITEM_HASH_VERSION = 2 as const;
+/** Hash epochs understood by this runtime. */
+export const SUPPORTED_HISTORY_ITEM_HASH_VERSIONS = [1, 2] as const;
+/** Restricts item hash versions accepted by history replay. */
+export type HistoryItemHashVersion =
+  (typeof SUPPORTED_HISTORY_ITEM_HASH_VERSIONS)[number];
+
+function compareOptionalStrings(
+  left: string | undefined,
+  right: string | undefined,
+): number {
+  return (left ?? "").localeCompare(right ?? "");
+}
+
+function compareOptionalNumbers(
+  left: number | undefined,
+  right: number | undefined,
+): number {
+  return (left ?? 0) - (right ?? 0);
+}
+
+function compareJsonValues(
+  left: unknown,
+  right: unknown,
+  fallback: unknown,
+): number {
+  // Preserve the original v1 comparator byte-for-byte: replacing JSON.stringify
+  // with stableStringify would invalidate immutable hashes from legacy streams.
+  return JSON.stringify(left ?? fallback).localeCompare(
+    JSON.stringify(right ?? fallback),
+  );
+}
+
+function compareLegacyLinkedTests(left: LinkedTest, right: LinkedTest): number {
+  const comparisons = [
+    left.scope.localeCompare(right.scope),
+    compareOptionalStrings(left.path, right.path),
+    compareOptionalStrings(left.command, right.command),
+    compareOptionalNumbers(left.timeout_seconds, right.timeout_seconds),
+    compareOptionalStrings(left.pm_context_mode, right.pm_context_mode),
+    Number(Boolean(left.shared_host_safe)) - Number(Boolean(right.shared_host_safe)),
+    compareJsonValues(left.env_clear, right.env_clear, []),
+    compareJsonValues(left.env_set, right.env_set, {}),
+    compareJsonValues(left.assert_stdout_contains, right.assert_stdout_contains, []),
+    compareJsonValues(left.assert_stdout_regex, right.assert_stdout_regex, []),
+    compareJsonValues(left.assert_stderr_contains, right.assert_stderr_contains, []),
+    compareJsonValues(left.assert_stderr_regex, right.assert_stderr_regex, []),
+    compareOptionalNumbers(left.assert_stdout_min_lines, right.assert_stdout_min_lines),
+    compareJsonValues(left.assert_json_field_equals, right.assert_json_field_equals, {}),
+    compareJsonValues(left.assert_json_field_gte, right.assert_json_field_gte, {}),
+    compareOptionalStrings(left.note, right.note),
+  ];
+  return comparisons.find((comparison) => comparison !== 0) ?? 0;
+}
 
 function decodeJsonPointer(path: string): string[] {
   if (!path || path === "/") {
@@ -110,7 +167,10 @@ function normalizeHistoryPatchOps(
   return normalized;
 }
 
-function canonicalHashDocument(document: ItemDocument): {
+function canonicalHashDocument(
+  document: ItemDocument,
+  version: HistoryItemHashVersion,
+): {
   front_matter: Record<string, unknown>;
   body: string;
 } {
@@ -123,8 +183,15 @@ function canonicalHashDocument(document: ItemDocument): {
     };
   }
   const canonical = canonicalDocument(document);
+  const metadata =
+    version === 1 && canonical.metadata.tests
+      ? {
+          ...canonical.metadata,
+          tests: [...canonical.metadata.tests].sort(compareLegacyLinkedTests),
+        }
+      : canonical.metadata;
   const orderedMetadata = orderObject(
-    toItemRecord(canonical.metadata),
+    toItemRecord(metadata),
     ITEM_METADATA_KEY_ORDER,
   );
   return {
@@ -158,7 +225,22 @@ function canonicalPatchDocument(document: ItemDocument): {
 
 /** Implements hash document for the public runtime surface of this module. */
 export function hashDocument(document: ItemDocument): string {
-  return sha256Hex(stableStringify(canonicalHashDocument(document)));
+  return hashDocumentForVersion(document, CURRENT_HISTORY_ITEM_HASH_VERSION);
+}
+
+/** Hash an item with an explicit canonicalization epoch for replay compatibility. */
+export function hashDocumentForVersion(
+  document: ItemDocument,
+  version: HistoryItemHashVersion,
+): string {
+  if (
+    !SUPPORTED_HISTORY_ITEM_HASH_VERSIONS.some(
+      (supportedVersion) => supportedVersion === version,
+    )
+  ) {
+    throw new TypeError(`unsupported_item_hash_version:${String(version)}`);
+  }
+  return sha256Hex(stableStringify(canonicalHashDocument(document, version)));
 }
 
 /** Implements hash empty document for the public runtime surface of this module. */
@@ -177,8 +259,14 @@ export function createHistoryEntry(params: {
   message?: string;
   context?: Record<string, unknown>;
 }): HistoryEntry {
-  const beforeHashCanonical = canonicalHashDocument(params.before);
-  const afterHashCanonical = canonicalHashDocument(params.after);
+  const beforeHashCanonical = canonicalHashDocument(
+    params.before,
+    CURRENT_HISTORY_ITEM_HASH_VERSION,
+  );
+  const afterHashCanonical = canonicalHashDocument(
+    params.after,
+    CURRENT_HISTORY_ITEM_HASH_VERSION,
+  );
   const beforePatchCanonical = canonicalPatchDocument(params.before);
   const afterPatchCanonical = canonicalPatchDocument(params.after);
   const rawPatch = jsonPatch.compare(
@@ -225,6 +313,7 @@ export function createHistoryEntry(params: {
     patch,
     before_hash: sha256Hex(stableStringify(beforeHashCanonical)),
     after_hash: sha256Hex(stableStringify(afterHashCanonical)),
+    item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
     message: params.message === undefined ? undefined : params.message,
     ...(context === undefined ? {} : { context }),
   };

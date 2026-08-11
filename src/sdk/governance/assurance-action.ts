@@ -26,6 +26,7 @@ import {
   type AssuranceMutationReceipt,
 } from "./assurance.js";
 import { MAX_ASSURANCE_VERDICT_LIMIT } from "./assurance-limits.js";
+import { normalizeAssuranceMutation } from "./assurance-mutation-error.js";
 import { createAssuranceWorkspaceContext } from "./assurance-runtime.js";
 import { resolvePmRoot } from "../runtime-primitives.js";
 import { parseRuntimeInteger, readRuntimeString } from "../runtime-input.js";
@@ -278,22 +279,25 @@ export async function runAssuranceAction(
   if (!input.id) {
     throw new PmCliError(`assurance ${action} requires an id`, EXIT_CODE.USAGE);
   }
+  const id = input.id;
   if (action === "show") {
-    return getAssuranceDeclaration(pmRoot, kind, input.id);
+    return getAssuranceDeclaration(pmRoot, kind, id);
   }
   if (action === "remove") {
-    const receipt = await removeAssuranceDeclaration(
-      pmRoot,
-      kind,
-      input.id,
-      { author: input.author, message: input.message },
+    const receipt = await normalizeAssuranceMutation(() =>
+      removeAssuranceDeclaration(
+        pmRoot,
+        kind,
+        id,
+        { author: input.author, message: input.message },
+      ),
     );
     return projectMutationReceipt(receipt, input.idOnly);
   }
   const definition = parseDefinition(kind, input.definition);
-  if (definition.id !== input.id) {
+  if (definition.id !== id) {
     throw new PmCliError(
-      `Assurance definition id ${definition.id} does not match requested id ${input.id}`,
+      `Assurance definition id ${definition.id} does not match requested id ${id}`,
       EXIT_CODE.USAGE,
     );
   }
@@ -309,11 +313,13 @@ export async function runAssuranceAction(
         }
       : {}),
   };
-  const receipt = await putAssuranceDeclaration(
-    pmRoot,
-    kind,
-    definition,
-    mutationOptions,
+  const receipt = await normalizeAssuranceMutation(() =>
+    putAssuranceDeclaration(
+      pmRoot,
+      kind,
+      definition,
+      mutationOptions,
+    ),
   );
   return projectMutationReceipt(receipt, input.idOnly);
 }

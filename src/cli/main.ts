@@ -1211,19 +1211,33 @@ function activationCommandMatchesProbe(command: string, probe: RuntimeExtensionA
 }
 
 function extensionActivationCommands(extension: ExtensionDiscoveryResult["effective"][number]): string[] {
-  return (
-    extension.activation?.commands ??
-    [
-      ...(extension.contributions?.commands ?? []),
-      ...(extension.contributions?.command_handlers ?? []),
-      ...(extension.contributions?.command_overrides ?? []),
-      ...(extension.contributions?.flag_commands ?? []),
-      ...(extension.contributions?.parser_overrides ?? []),
-      ...(extension.contributions?.renderer_ownership?.flatMap(
-        (entry) => entry.commands,
-      ) ?? []),
-    ]
-  );
+  const explicitCommands = extension.activation?.commands;
+  if (explicitCommands) {
+    return explicitCommands;
+  }
+  const contributions = extension.contributions;
+  if (!contributions) {
+    return [];
+  }
+  return [
+    ...entriesOrEmpty(contributions.commands),
+    ...entriesOrEmpty(contributions.command_handlers),
+    ...entriesOrEmpty(contributions.command_overrides),
+    ...entriesOrEmpty(contributions.flag_commands),
+    ...entriesOrEmpty(contributions.parser_overrides),
+    ...ownershipCommands(contributions.preflight_ownership),
+    ...ownershipCommands(contributions.renderer_ownership),
+  ];
+}
+
+function entriesOrEmpty<T>(entries: readonly T[] | undefined): readonly T[] {
+  return entries ?? [];
+}
+
+function ownershipCommands(
+  entries: readonly { commands: readonly string[] }[] | undefined,
+): string[] {
+  return entriesOrEmpty(entries).flatMap((entry) => entry.commands);
 }
 
 function extensionCapabilities(extension: ExtensionDiscoveryResult["effective"][number]): Set<string> {
@@ -1304,14 +1318,15 @@ function hasGlobalExtensionContributions(
   >,
 ): boolean {
   const contributionCounts = [
-    contributions.hooks?.length ?? 0,
-    contributions.preflight_overrides ?? 0,
-    contributions.item_types?.length ?? 0,
-    contributions.item_fields?.length ?? 0,
-    contributions.relationship_kinds?.length ?? 0,
-    contributions.service_overrides?.length ?? 0,
-    (contributions.renderer_overrides?.length ?? 0) -
-      (contributions.renderer_ownership?.length ?? 0),
+    entriesOrEmpty(contributions.hooks).length,
+    (contributions.preflight_overrides ?? 0) -
+      entriesOrEmpty(contributions.preflight_ownership).length,
+    entriesOrEmpty(contributions.item_types).length,
+    entriesOrEmpty(contributions.item_fields).length,
+    entriesOrEmpty(contributions.relationship_kinds).length,
+    entriesOrEmpty(contributions.service_overrides).length,
+    entriesOrEmpty(contributions.renderer_overrides).length -
+      entriesOrEmpty(contributions.renderer_ownership).length,
   ];
   return contributionCounts.some((count) => count > 0);
 }

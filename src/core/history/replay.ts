@@ -12,7 +12,12 @@ import {
   sha256Hex,
   stableStringify,
 } from "../shared/serialization.js";
-import { hashDocument } from "./history.js";
+import {
+  CURRENT_HISTORY_ITEM_HASH_VERSION,
+  SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
+  hashDocumentForVersion,
+  type HistoryItemHashVersion,
+} from "./history.js";
 import type {
   HistoryEntry,
   HistoryPatchOp,
@@ -48,13 +53,16 @@ export function cloneEmptyReplayDocument(): ReplayDocument {
 }
 
 /** Implements replay hash for the public runtime surface of this module. */
-export function replayHash(document: ReplayDocument): string {
+export function replayHash(
+  document: ReplayDocument,
+  version: HistoryItemHashVersion = CURRENT_HISTORY_ITEM_HASH_VERSION,
+): string {
   if (
     Object.keys(document.metadata).length === 0 ||
     Array.isArray(document.metadata.tags)
   ) {
     try {
-      return hashDocument(replayToItemDocument(document));
+      return hashDocumentForVersion(replayToItemDocument(document), version);
     } catch {
       // Fall through when another malformed legacy field cannot be canonicalized.
     }
@@ -190,17 +198,28 @@ export function tryApplyReplayPatch(
 }
 
 /** Deterministically verify a history chain: each entry's before_hash must equal the prior replayed after_hash, the patch must strictly apply, and the recorded after_hash must equal the replayed result. */
-export function verifyHistoryChain(entries: HistoryEntry[]): {
+/** Verify a chain and report the explicit or auto-detected item hash epoch. */
+export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
   ok: boolean;
   errors: string[];
+  item_hash_version?: HistoryItemHashVersion;
 } {
   let replay = cloneEmptyReplayDocument();
+  let detectedVersion: HistoryItemHashVersion | undefined;
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
-    if (replayHash(replay) !== entry.before_hash) {
+    const explicitVersion = entry.item_hash_version;
+    if (
+      explicitVersion !== undefined &&
+      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
+        explicitVersion,
+      )
+    ) {
       return {
         ok: false,
-        errors: [`verify_failed:before_hash_mismatch:entry_${index + 1}`],
+        errors: [
+          `verify_failed:unsupported_item_hash_version:${String(explicitVersion)}:entry_${index + 1}`,
+        ],
       };
     }
     const applied = tryApplyReplayPatch(replay, entry.patch);
@@ -210,15 +229,48 @@ export function verifyHistoryChain(entries: HistoryEntry[]): {
         errors: [`verify_failed:patch_apply_failed:entry_${index + 1}`],
       };
     }
-    replay = applied.document;
-    if (replayHash(replay) !== entry.after_hash) {
+    const candidates: HistoryItemHashVersion[] =
+      explicitVersion === undefined
+        ? [CURRENT_HISTORY_ITEM_HASH_VERSION, 1]
+        : [explicitVersion as HistoryItemHashVersion];
+    const beforeMatches = candidates.filter(
+      (version) => replayHash(replay, version) === entry.before_hash,
+    );
+    if (beforeMatches.length === 0) {
+      return {
+        ok: false,
+        errors: [`verify_failed:before_hash_mismatch:entry_${index + 1}`],
+      };
+    }
+    const version = beforeMatches.find(
+      (candidate) =>
+        replayHash(applied.document, candidate) === entry.after_hash,
+    );
+    if (version === undefined) {
       return {
         ok: false,
         errors: [`verify_failed:after_hash_mismatch:entry_${index + 1}`],
       };
     }
+    replay = applied.document;
+    detectedVersion = version;
   }
-  return { ok: true, errors: [] };
+  return {
+    ok: true,
+    errors: [],
+    ...(detectedVersion === undefined
+      ? {}
+      : { item_hash_version: detectedVersion }),
+  };
+}
+
+/** Deterministically verify a history chain while preserving the legacy result shape. */
+export function verifyHistoryChain(entries: HistoryEntry[]): {
+  ok: boolean;
+  errors: string[];
+} {
+  const result = verifyHistoryChainWithVersion(entries);
+  return { ok: result.ok, errors: result.errors };
 }
 
 /** Documents the lenient apply result payload exchanged by command, SDK, and package integrations. */
@@ -321,6 +373,18 @@ export interface ReanchorResult {
 export function reanchorHistoryEntries(
   entries: HistoryEntry[],
 ): ReanchorResult {
+  const unsupportedIndex = entries.findIndex(
+    (entry) =>
+      entry.item_hash_version !== undefined &&
+      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
+        entry.item_hash_version,
+      ),
+  );
+  if (unsupportedIndex >= 0) {
+    throw new TypeError(
+      `unsupported_item_hash_version:${String(entries[unsupportedIndex]?.item_hash_version)}:entry_${unsupportedIndex + 1}`,
+    );
+  }
   let replay = cloneEmptyReplayDocument();
   const rewritten: HistoryEntry[] = [];
   const details: ReanchorEntryDetail[] = [];
@@ -331,7 +395,7 @@ export function reanchorHistoryEntries(
 
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
-    const beforeHash = replayHash(replay);
+    const beforeHash = replayHash(replay, CURRENT_HISTORY_ITEM_HASH_VERSION);
     const strict = tryApplyReplayPatch(replay, entry.patch);
 
     let next: ReplayDocument;
@@ -355,7 +419,7 @@ export function reanchorHistoryEntries(
       entriesPatchRepaired += 1;
     }
 
-    const afterHash = replayHash(next);
+    const afterHash = replayHash(next, CURRENT_HISTORY_ITEM_HASH_VERSION);
     const rehashed =
       beforeHash !== entry.before_hash || afterHash !== entry.after_hash;
     if (rehashed) {
@@ -367,6 +431,7 @@ export function reanchorHistoryEntries(
       patch: outPatch,
       before_hash: beforeHash,
       after_hash: afterHash,
+      item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
     });
     details.push({
       index: index + 1,

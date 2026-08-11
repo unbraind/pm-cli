@@ -2,11 +2,13 @@ id: pm-2htk4p
 title: "GH-976: version history hashes so repeated tests_add streams verify across supported pm versions"
 description: "Track GitHub issue #976: identical history streams with two or more tests_add events verify under pm 2026.8.10 but drift under 2026.8.7, and history-repair alternates which reader accepts the stream instead of converging."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: compatibility,format-version,github,history-integrity
 created_at: "2026-08-11T08:34:09.403Z"
-updated_at: "2026-08-11T08:51:03.804Z"
+updated_at: "2026-08-11T16:29:52.249Z"
+closed_at: "2026-08-11T16:21:49.080Z"
+completed_at: "2026-08-11T16:21:49.080Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: History/item hash epochs are explicit and backward-safe; two-plus tests_add cross-version fixtures never report false corruption; repair refuses incompatible epochs or converges; strict validation distinguishes format incompatibility from drift
@@ -16,13 +18,42 @@ confidence: high
 severity: high
 environment: global pm 2026.8.10 with repository-local @unbrained/pm-cli 2026.8.7
 repro_steps: "Append two tests_add operations to one item with 2026.8.10, compare health/strict history drift under 2026.8.10 and 2026.8.7, then run history-repair under each version."
+resolution: "Introduced explicit item-hash epochs with legacy auto-detection, order-preserving epoch 2 writes, epoch-aware drift caching, and fail-closed unknown-version repair."
 expected_result: Supported readers either verify the same immutable stream or report a precise unsupported format epoch; repair converges to one canonical representation.
-actual_result: The same bytes alternate between clean and three item-hash mismatches depending on reader version; repair for one reader breaks the other.
+actual_result: "Current readers validate isolated history streams produced by published 2026.8.7 and 2026.8.10 after repeated test additions; new events declare epoch 2, supported legacy streams auto-detect, and unsupported explicit epochs refuse precise repair."
 component: history hashing and format compatibility
 customer_impact: "Pinned CI and global developer pm can permanently disagree, blocking releases and encouraging destructive repair loops."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-ae1u,supersedes,"2026-08-11T08:34:09.403Z","harness:codex","cli:create:dep",detected
   pm-x2vx,verifies,"2026-08-11T08:34:09.403Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-11T08:34:09.403Z","harness:codex","Duplicate check (all statuses): searched GH-976, history_drift, repeated tests_add, cross-version hashes, history-repair, and reviewed GitHub #955 plus closed pm-x2vx. #955/pm-x2vx fixed insertion-order drift within one current format; #976 uniquely reproduces incompatible verification across supported reader versions and a non-convergent repair loop. This new open issue is canonical for #976."
+  "2026-08-11T15:05:49.530Z","harness:codex","TDD evidence 2026-08-11: cross-version fixtures first failed because history item hashes had no epoch. New events declare epoch 2, unversioned streams auto-detect legacy sorted-test or order-preserving canonicalization, drift caching compares with the detected epoch, and repair refuses unknown explicit epochs. The focused history/repair suites pass."
+  "2026-08-11T15:25:12.283Z","harness:codex","Full coverage TDD evidence: the 7,229-test repository run found one exact history-object assertion that correctly rejected the new explicit item_hash_version field. Updated that behavioral assertion to require epoch 2; the focused 16-test runtime-provenance suite now passes."
+  "2026-08-11T15:37:20.021Z","harness:codex","Cross-version manual acceptance: in isolated temporary trackers, published @unbrained/pm-cli 2026.8.7 created an item then added two linked tests in separate mutations, and published 2026.8.10 created an item with two ordered tests. The current built CLI validated both history streams with history_drift status=ok, zero missing/unreadable/hash/chain mismatches. No real tracker data was touched. Full repository coverage also passed: 486 files, 7,230 tests, 52,175 statements, 38,340 branches, 10,740 functions, and 50,393 lines at exact 100/100/100/100."
+  "2026-08-11T16:20:46.371Z","harness:codex","Final acceptance 2026-08-11: linked history hashing, replay, drift, and repair suites passed 55 tests in an isolated schema tracker. Separate temporary trackers created by actual published 2026.8.7 and 2026.8.10 CLIs validated with zero current-reader drift. Exact repository coverage passed 7,234 tests at 100/100/100/100; all contract, package, plugin, compatibility, audit, and security gates passed."
+  "2026-08-11T16:25:26.802Z","harness:codex","Release-candidate evidence: installed managed pm-changelog 2026.8.9 matches the latest npm version; replace-mode generation added this closed item to Unreleased with its canonical GitHub item link."
+  "2026-08-11T16:29:52.249Z","harness:codex","Delivery lineage: included in broad PR #981 (https://github.com/unbraind/pm-cli/pull/981), coordinated by pm-ajj4r7 through exact-head review, merge, and immutable release verification."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T16:20:45.864Z","harness:codex","Hash canonicalization is a persisted format contract even when the serialized item schema is unchanged. Version it at the event boundary, preserve exact legacy comparators, and include the detected epoch in drift-cache identity."
+files[10]{path,scope,note}:
+  CHANGELOG.md,project,Generated Unreleased entry through installed pm-changelog 2026.8.9
+  sdk/public-surface.json,project,public versioned history hash primitive snapshot
+  src/core/history/drift-scan.ts,project,epoch-aware item drift comparison and cache
+  src/core/history/history.ts,project,legacy and order-preserving item hash epochs
+  src/core/history/replay.ts,project,legacy auto-detection and unsupported epoch refusal
+  src/sdk/runtime-primitives.ts,project,public history hash compatibility primitives
+  src/types.ts,project,versioned history entry contract
+  tests/unit/core/history/drift-scan.spec.ts,project,epoch-aware drift cache coverage
+  tests/unit/core/history/history-hash-version.spec.ts,project,cross-epoch fixtures and refusal coverage
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Updates exact history-entry assertions for the explicit current hash epoch
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/history-hash-version.spec.ts tests/unit/core/history/history-replay.spec.ts tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msov8xyi-dmqdxk,test,passed,"2026-08-11T16:19:37.796Z","2026-08-11T16:19:49.098Z","2026-08-11T16:19:49.098Z",1,0,0
+docs[3]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,history hash epoch and repair safety
+  docs/README.md,project,documentation route to coupled SDK evidence contracts
+  docs/SDK_CONTEXT_EVIDENCE_CONTRACTS.md,project,history compatibility SDK contract
+close_reason: Versioned history item hashes and proved backward-safe validation across published legacy producers.
 body: "Source: https://github.com/unbraind/pm-cli/issues/976"

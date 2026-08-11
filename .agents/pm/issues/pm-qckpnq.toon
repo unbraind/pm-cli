@@ -2,11 +2,13 @@ id: pm-qckpnq
 title: "GH-974: merge receipt preferred contradicts retained side under stable_value_order"
 description: "Track GitHub issue #974: merge receipts emit top-level preferred=ours even when deterministic stable_value_order retains theirs, so structured agent consumers receive a self-contradictory outcome despite retained/discarded values being truthful."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-context,github,merge-safety
 created_at: "2026-08-11T08:33:30.091Z"
-updated_at: "2026-08-11T08:33:30.091Z"
+updated_at: "2026-08-11T16:29:51.345Z"
+closed_at: "2026-08-11T16:21:46.413Z"
+completed_at: "2026-08-11T16:21:46.413Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: SDK and CLI receipts expose truthful requested preference and per-decision retained side; both merge directions converge and report the same value without contradictory fields; compatibility and merge-safety tests cover scalar equality and unequal values
@@ -16,13 +18,39 @@ confidence: high
 severity: high
 environment: @unbrained/pm-cli 2026.8.10
 repro_steps: "Create two branches that assign different priority values, merge in both directions, and compare preferred against decisions[].ours/theirs/retained/discarded."
+resolution: Replaced ambiguous preferred receipt fields with requested_preference while preserving authoritative retained and discarded decisions and backward-compatible ingestion.
 expected_result: Receipts distinguish requested preference from the actual retained side and remain internally consistent for direction-independent resolution.
-actual_result: preferred is always ours while stable_value_order can retain theirs.
+actual_result: "Both merge directions converge under stable_value_order without claiming that the requested side survived; current receipts emit requested_preference only, while legacy preferred and pre-preference schema-v1 receipts remain readable."
 component: SDK merge receipts
 customer_impact: Agents can wrongly conclude their branch value survived and act on false merge context.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-g5sx,verifies,"2026-08-11T08:33:30.091Z","harness:codex","cli:create:dep",detected
   pm-jtwsct,supersedes,"2026-08-11T08:33:30.091Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-11T08:33:30.091Z","harness:codex","Duplicate check (all statuses): searched GH-974, preferred/retained/discarded, stable_value_order, and merge receipts. Closed pm-g5sx, pm-jtwsct, pm-rh98vo, and pm-dlx7v7 establish the merge/receipt lineage but none owns this exact self-contradictory preferred-side contract. This new open issue is canonical for #974."
+  "2026-08-11T15:05:43.201Z","harness:codex","TDD evidence 2026-08-11: direction coverage first failed because stable-value results exposed only preferred=ours. New item/driver/receipt outputs expose requested_preference while retained/discarded remains authoritative; legacy receipts normalize without re-emitting preferred, and 27 merge/reconciliation tests pass."
+  "2026-08-11T15:07:30.187Z","harness:codex","Public contract evidence: sdk/public-surface.json records the intentional GH-974 correction from ambiguous preferred to requested_preference across item, driver, receipt, and summary types. The breaking-change acknowledgement names the reason; persisted legacy schema-v1 receipts remain readable and normalize at ingestion."
+  "2026-08-11T15:37:21.443Z","harness:codex","Repository-wide verification evidence: exact coverage gate passed 486 files / 7,230 tests at 100% statements, branches, functions, and lines. Added explicit compatibility coverage for legacy receipts that have preferred and older receipts with neither preference key; current outputs remain requested_preference-only."
+  "2026-08-11T16:20:43.116Z","harness:codex","Final acceptance 2026-08-11: the linked 27-test merge direction, receipt, safety, and reconciliation run passed, including legacy and pre-preference receipts. The acknowledged public SDK snapshot, exact 7,234-test 100/100/100/100 gate, package artifact, packed npx, plugin, external-package, contract, docs, audit, and security gates all passed."
+  "2026-08-11T16:25:25.887Z","harness:codex","Release-candidate evidence: installed managed pm-changelog 2026.8.9 matches the latest npm version; replace-mode generation added this closed item to Unreleased with its canonical GitHub item link."
+  "2026-08-11T16:29:51.345Z","harness:codex","Delivery lineage: included in broad PR #981 (https://github.com/unbraind/pm-cli/pull/981), coordinated by pm-ajj4r7 through exact-head review, merge, and immutable release verification."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T16:20:42.587Z","harness:codex","A merge policy request and a merge outcome are different facts. Persist the request as requested_preference and make per-decision retained/discarded values the sole outcome evidence; compatibility belongs at ingestion, not in new output."
+files[7]{path,scope,note}:
+  CHANGELOG.md,project,Generated Unreleased entry through installed pm-changelog 2026.8.9
+  sdk/public-surface.json,project,acknowledged truthful merge result and receipt contract change
+  src/sdk/merge/driver.ts,project,truthful requested preference on driver results
+  src/sdk/merge/receipts.ts,project,new receipt key and legacy receipt normalization
+  src/sdk/merge/three-way.ts,project,truthful requested preference on stable item merge results
+  tests/unit/sdk/merge-direction-contract.spec.ts,project,direction convergence and retained decision coverage
+  tests/unit/sdk/merge-receipts.spec.ts,project,new and legacy receipt compatibility coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-direction-contract.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msov8fi8-ubppyt,test,passed,"2026-08-11T16:19:08.787Z","2026-08-11T16:19:25.184Z","2026-08-11T16:19:25.184Z",1,0,0
+docs[3]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,requested versus retained merge semantics
+  docs/README.md,project,documentation route to coupled SDK evidence contracts
+  docs/SDK_CONTEXT_EVIDENCE_CONTRACTS.md,project,merge evidence SDK contract
+close_reason: Shipped truthful requested-preference merge evidence with backward-compatible receipt ingestion.
 body: "Source: https://github.com/unbraind/pm-cli/issues/974"

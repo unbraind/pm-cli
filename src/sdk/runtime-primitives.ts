@@ -95,9 +95,13 @@ export {
 } from "../core/history/history-stream-policy.js";
 export {
   appendHistoryEntry,
+  CURRENT_HISTORY_ITEM_HASH_VERSION,
   createHistoryEntry,
   hashDocument,
+  hashDocumentForVersion,
   hashEmptyDocument,
+  SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
+  type HistoryItemHashVersion,
 } from "../core/history/history.js";
 export { readHistoryEntries } from "../core/history/read.js";
 export {
@@ -119,6 +123,7 @@ export {
   replayToItemDocument,
   toReplayDocument,
   verifyHistoryChain,
+  verifyHistoryChainWithVersion,
 } from "../core/history/replay.js";
 export { resolveBodyFileContent } from "../core/io/body-file.js";
 export {

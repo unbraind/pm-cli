@@ -9,8 +9,12 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import { getHistoryPath } from "../store/paths.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
-import { hashDocument } from "./history.js";
-import { verifyHistoryChain } from "./replay.js";
+import {
+  CURRENT_HISTORY_ITEM_HASH_VERSION,
+  hashDocumentForVersion,
+  type HistoryItemHashVersion,
+} from "./history.js";
+import { verifyHistoryChainWithVersion } from "./replay.js";
 import {
   getWorkspaceHistoryPath,
   WORKSPACE_HISTORY_ID,
@@ -31,7 +35,7 @@ export interface DriftScanResult {
   driftedItems: string[];
 }
 
-const DRIFT_CACHE_VERSION = 3;
+const DRIFT_CACHE_VERSION = 4;
 const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
 
 /** Controls how cached history stream verification is trusted when the file stat tuple still matches a previous scan. */
@@ -50,6 +54,7 @@ interface DriftCacheEntry {
   content_hash: string;
   latest_after_hash: string;
   chain_ok: boolean;
+  item_hash_version: HistoryItemHashVersion;
 }
 
 interface DriftCacheEnvelope {
@@ -93,6 +98,7 @@ interface StreamVerification {
   latestAfterHash: string;
   chainOk: boolean;
   contentHash: string;
+  itemHashVersion: HistoryItemHashVersion;
 }
 
 interface DriftScanAccumulator {
@@ -141,6 +147,7 @@ async function scanWorkspaceHistory(
     content_hash: resolved.verification.contentHash,
     latest_after_hash: resolved.verification.latestAfterHash,
     chain_ok: resolved.verification.chainOk,
+    item_hash_version: resolved.verification.itemHashVersion,
   };
   return resolved.cacheDirty;
 }
@@ -185,10 +192,13 @@ async function verifyHistoryStream(
     return null;
   }
   /* c8 ignore stop */
+  const verification = verifyHistoryChainWithVersion(entries);
   return {
     latestAfterHash,
-    chainOk: verifyHistoryChain(entries).ok,
+    chainOk: verification.ok,
     contentHash,
+    itemHashVersion:
+      verification.item_hash_version ?? CURRENT_HISTORY_ITEM_HASH_VERSION,
   };
 }
 
@@ -269,6 +279,8 @@ async function resolveStreamVerification(params: {
         latestAfterHash: params.cached.latest_after_hash,
         chainOk: params.cached.chain_ok,
         contentHash: currentContentHash,
+        itemHashVersion:
+          params.cached.item_hash_version ?? CURRENT_HISTORY_ITEM_HASH_VERSION,
       },
       cacheDirty: false,
     };
@@ -352,13 +364,17 @@ export async function scanHistoryDrift(
       content_hash: resolved.verification.contentHash,
       latest_after_hash: resolved.verification.latestAfterHash,
       chain_ok: resolved.verification.chainOk,
+      item_hash_version: resolved.verification.itemHashVersion,
     };
 
     const { body, ...itemMetadata } = item;
-    const currentHash = hashDocument({
-      metadata: itemMetadata as ItemMetadata,
-      body,
-    });
+    const currentHash = hashDocumentForVersion(
+      {
+        metadata: itemMetadata as ItemMetadata,
+        body,
+      },
+      resolved.verification.itemHashVersion,
+    );
     if (currentHash !== resolved.verification.latestAfterHash) {
       accumulator.hashMismatches.push(item.id);
     }

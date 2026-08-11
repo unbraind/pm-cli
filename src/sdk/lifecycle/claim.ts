@@ -88,8 +88,15 @@ export type ClaimNextResult =
 
 /** Returns whether a failed claim lost the atomic test-and-set race. */
 export function isAlreadyClaimedError(error: unknown): boolean {
+  if (!(error instanceof Error) || error.name !== "PmCliError") {
+    return false;
+  }
+  const context = (error as Error & { context?: unknown }).context;
   return (
-    error instanceof PmCliError && error.context?.code === "already_claimed_by"
+    typeof context === "object" &&
+    context !== null &&
+    "code" in context &&
+    context.code === "already_claimed_by"
   );
 }
 

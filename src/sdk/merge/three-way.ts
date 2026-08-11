@@ -440,8 +440,8 @@ export interface ItemDocumentMergeResult {
   union_fields: string[];
   /** Scalar conflict decisions; callers choose a privacy-appropriate persistence boundary. */
   conflict_decisions: ItemMergeConflictDecision[];
-  /** Which side unresolvable conflicts were resolved toward. */
-  preferred: MergePreferredSide;
+  /** Side requested by the caller; stable-value decisions can retain either side. */
+  requested_preference: MergePreferredSide;
   /** Scalar-conflict selection contract used for this merge. */
   conflict_resolution: "preferred_side" | "stable_value_order";
 }
@@ -719,7 +719,7 @@ export function mergeItemDocuments(
     fields_from_theirs: fieldsFromTheirs,
     union_fields: unionFields,
     conflict_decisions: conflictDecisions,
-    preferred,
+    requested_preference: preferred,
     conflict_resolution: conflictResolution,
   };
 }

@@ -2,11 +2,13 @@ id: pm-zryb9d
 title: "GH-971: health preflight collision diagnostics ignore declared command ownership"
 description: "The runtime honors ScopedPreflightOverrideDefinition command ownership, but health collision analysis compares every registered preflight as global. Make diagnostics use the same effective ownership semantics so disjoint scoped preflights do not form an unresolvable warning clique."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:sdk",extensions,health,ownership,preflight
 created_at: "2026-08-10T22:59:56.197Z"
-updated_at: "2026-08-10T23:08:12.534Z"
+updated_at: "2026-08-11T16:29:50.924Z"
+closed_at: "2026-08-11T16:21:45.191Z"
+completed_at: "2026-08-11T16:21:45.191Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Two scoped preflight overrides collide only when their normalized command sets intersect; An unscoped override collides with every scoped or unscoped override because it is global; Health and runtime dispatch consume one shared ownership contract with fleet and negative-control coverage
@@ -15,8 +17,9 @@ reporter: GitHub issue #971
 severity: high
 environment: pm 2026.8.10 with multiple installed extensions registering scoped preflight overrides
 repro_steps: Install extensions with disjoint preflight command declarations and run pm health --full; observe a complete pairwise collision clique.
+resolution: Aligned lazy activation and global collision inventory with ScopedPreflightOverrideDefinition command ownership.
 expected_result: Health reports only preflight registrations that can contend for the same command.
-actual_result: Seven preflight extensions produce 21 pairwise warnings even when command ownership is disjoint.
+actual_result: Disjoint scoped preflights activate only for their normalized commands and are excluded from global ownership; unscoped preflights remain global and conflict wherever applicable.
 affected_version: 2026.8.10
 component: Extension SDK health diagnostics
 regression: true
@@ -25,6 +28,25 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-6mjxgq,related,"2026-08-10T22:59:56.197Z","harness:codex","cli:create:dep",detected
   pm-fk84,related,"2026-08-10T22:59:56.197Z","harness:codex","cli:create:dep",detected
   pm-miy5k6,discovered_from,"2026-08-10T22:59:56.197Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-10T22:59:56.197Z","harness:codex","Duplicate-check evidence 2026-08-11: all-status search found the closed GH-907 ownership implementation pm-miy5k6 and renderer collision lineage pm-6mjxgq, but no item owns the GH-971 health/runtime parity regression. Canonical source: https://github.com/unbraind/pm-cli/issues/971."
+  "2026-08-11T15:05:33.659Z","harness:codex","TDD evidence 2026-08-11: two focused tests first failed because scoped preflight commands were absent from static activation and every preflight override counted as global. Static activation now consumes preflight_ownership and subtracts scoped registrations from global counts; 91 focused CLI/inventory/compose tests pass."
+  "2026-08-11T15:37:20.948Z","harness:codex","Repository-wide verification evidence: exact coverage gate passed 486 files / 7,230 tests at 100% statements, branches, functions, and lines. Static quality, ESLint, jscpd zero clones, SDK snapshot, token-budget, context calibration, tracker measurement, graph composition, and record integrity gates passed."
+  "2026-08-11T16:20:41.424Z","harness:codex","Final acceptance 2026-08-11: the linked 91-test activation, inventory, and SDK composition run passed in an isolated schema tracker. The repo-wide exact gate passed 7,234 tests at 100/100/100/100, and packed npx, package artifact, real Codex/Claude plugins, 10 external packages, contracts, docs, audit, and credential scan all passed."
+  "2026-08-11T16:25:25.355Z","harness:codex","Release-candidate evidence: installed managed pm-changelog 2026.8.9 matches the latest npm version; replace-mode generation added this closed item to Unreleased with its canonical GitHub item link."
+  "2026-08-11T16:29:50.924Z","harness:codex","Delivery lineage: included in broad PR #981 (https://github.com/unbraind/pm-cli/pull/981), coordinated by pm-ajj4r7 through exact-head review, merge, and immutable release verification."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T16:20:40.952Z","harness:codex",Extension diagnostics are trustworthy only when static inventories and runtime dispatch share the same ownership semantics. A declared scoped contribution must be subtracted from the global bucket as well as added to its command bucket.
+files[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated Unreleased entry through installed pm-changelog 2026.8.9
+  src/cli/main.ts,project,lazy activation parity for scoped preflight ownership
+  tests/unit/cli/extension-preflight-activation.spec.ts,project,scoped and global preflight activation controls
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/extension-preflight-activation.spec.ts tests/unit/core/extensions/activation-summary.spec.ts tests/unit/extensions/contribution-inventory.spec.ts tests/unit/sdk/sdk-compose.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msov82hp-cckddh,test,passed,"2026-08-11T16:18:56.763Z","2026-08-11T16:19:08.317Z","2026-08-11T16:19:08.317Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/README.md,project,documentation route to coupled SDK evidence contracts
+  docs/SDK_CONTEXT_EVIDENCE_CONTRACTS.md,project,preflight ownership activation contract
+close_reason: "Aligned scoped preflight activation and collision ownership, with linked and repo-wide verification green."
 body: ""

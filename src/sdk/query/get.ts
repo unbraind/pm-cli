@@ -44,6 +44,7 @@ import type {
   LinkedTest,
 } from "../../types/index.js";
 import { runList } from "./list.js";
+import { registerOutputMaterialFieldGroups } from "../output-projection.js";
 
 interface ClaimHistoryContext {
   ts: string;
@@ -153,6 +154,27 @@ function itemCollectionCounts(item: ItemMetadata): NonNullable<
     ]),
   );
   return lengths as NonNullable<GetItemProjection["collection_counts"]>;
+}
+
+function itemMaterialFieldGroups(
+  item: ItemMetadata,
+  body: string,
+): string[] {
+  const collectionCounts = itemCollectionCounts(item);
+  return [
+    ...(body.length > 0 ? ["body"] : []),
+    ...Object.entries(collectionCounts).flatMap(([name, count]) =>
+      count > 0 ? [name] : [],
+    ),
+    ...(collectionCounts.files + collectionCounts.tests + collectionCounts.docs > 0
+      ? ["linked"]
+      : []),
+    "children",
+    ...(typeof item.assignee === "string" && item.assignee.trim().length > 0
+      ? ["claim_state"]
+      : []),
+    ...(buildItemSchedule(item) ? ["schedule"] : []),
+  ];
 }
 
 /** Decide whether a normal read should pay for a workspace-wide child projection. */
@@ -736,6 +758,10 @@ export async function runGet(
       // Derived usage feedback must never make the source-of-truth read fail.
     }
   }
+  registerOutputMaterialFieldGroups(
+    result,
+    itemMaterialFieldGroups(context.metadata, context.body),
+  );
   return result;
 }
 

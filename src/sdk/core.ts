@@ -106,6 +106,7 @@ export {
 } from "./runtime.js";
 export * from "./core-governance.js";
 export * from "./agent-session-context.js";
+export { isAlreadyClaimedError } from "./lifecycle/claim.js";
 export {
   PM_READ_OUTPUT_DIMENSIONS,
   PM_READ_OUTPUT_OPTION_FLAGS,

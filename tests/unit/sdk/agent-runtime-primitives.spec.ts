@@ -772,6 +772,7 @@ describe("agent runtime SDK primitives", () => {
           patch: expect.any(Array),
           before_hash: expect.any(String),
           after_hash: expect.any(String),
+          item_hash_version: 2,
         },
         {
           op: "close",
@@ -789,6 +790,7 @@ describe("agent runtime SDK primitives", () => {
           patch: expect.any(Array),
           before_hash: expect.any(String),
           after_hash: expect.any(String),
+          item_hash_version: 2,
         },
       ]);
     });

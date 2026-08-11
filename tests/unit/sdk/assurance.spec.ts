@@ -169,12 +169,25 @@ describe("assurance SDK", () => {
         source: { kind: "dependency_kind", dependency_kind: " " },
       }),
     ).toThrow("requires dependency_kind");
+    expect(() =>
+      validateMeasurementDefinition({
+        id: "deps",
+        source: { kind: "dependency_kind" },
+      } as unknown as AssuranceMeasurementDefinition),
+    ).toThrow("requires dependency_kind");
     for (const kind of ["graph", "validate", "health"] as const) {
       expect(() =>
         validateMeasurementDefinition(
           kind === "graph"
             ? { id: kind, source: { kind, operation: "audit", field: " " } }
             : { id: kind, source: { kind, check: "check", field: " " } },
+        ),
+      ).toThrow("requires field");
+      expect(() =>
+        validateMeasurementDefinition(
+          (kind === "graph"
+            ? { id: kind, source: { kind, operation: "audit" } }
+            : { id: kind, source: { kind, check: "check" } }) as unknown as AssuranceMeasurementDefinition,
         ),
       ).toThrow("requires field");
     }

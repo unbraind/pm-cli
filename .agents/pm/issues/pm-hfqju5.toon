@@ -2,11 +2,13 @@ id: pm-hfqju5
 title: "GH-975: export isAlreadyClaimedError through a supported SDK subpath"
 description: "Track GitHub issue #975: the shipped claim typings declare the sanctioned lost-race predicate, but no package export exposes it, forcing extensions to hard-code the internal already_claimed_by error code."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: concurrency,github,package-exports,sdk
 created_at: "2026-08-11T08:33:49.248Z"
-updated_at: "2026-08-11T08:33:49.248Z"
+updated_at: "2026-08-11T16:29:51.797Z"
+closed_at: "2026-08-11T16:21:47.737Z"
+completed_at: "2026-08-11T16:21:47.737Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Export isAlreadyClaimedError from the canonical SDK lifecycle surface; packed ESM and TypeScript consumers can import it; public-surface and package-boundary gates cover the export; no extension must duplicate the internal code predicate
@@ -16,13 +18,37 @@ confidence: high
 severity: medium
 environment: @unbrained/pm-cli 2026.8.10 packed consumer
 repro_steps: "Import sdk, sdk/core, and sdk/runtime from the packed package and inspect isAlreadyClaimedError; direct sdk/lifecycle/claim import is rejected by package exports."
+resolution: Exported a bundle-safe isAlreadyClaimedError predicate from the supported SDK and SDK core entrypoints.
 expected_result: "The documented predicate is reachable from a supported SDK subpath beside claim/release, with runtime/type/public-surface parity."
-actual_result: The declaration ships but every supported subpath returns undefined and the implementation module is not exported.
+actual_result: "Packed ESM and strict TypeScript consumers import the predicate successfully, and it recognizes the canonical cross-bundle PmCliError shape without accepting unrelated errors."
 component: SDK lifecycle exports
 customer_impact: Extension concurrency guards couple to an internal error code and may fail open after an error-code rename.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-8t5x,supersedes,"2026-08-11T08:33:49.248Z","harness:codex","cli:create:dep",detected
   pm-9x6e,verifies,"2026-08-11T08:33:49.248Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-11T08:33:49.248Z","harness:codex","Duplicate check (all statuses): searched GH-975, isAlreadyClaimedError, already_claimed_by, claim race, and SDK exports. pm-8t5x owns the closed atomic-claim behavior and pm-9x6e owns the closed public-boundary capstone, but no item owns the missing predicate export. This new open issue is canonical for #975."
+  "2026-08-11T15:05:38.328Z","harness:codex","TDD evidence 2026-08-11: the public-surface test first failed with isAlreadyClaimedError not a function. The predicate is now exported from @unbrained/pm-cli/sdk and /sdk/core and 25 focused lifecycle tests pass; packed-consumer proof remains in the release gate."
+  "2026-08-11T15:14:10.280Z","harness:codex","Packed-consumer acceptance evidence: a tarball-installed ESM consumer exposed that instanceof PmCliError is false across duplicated SDK bundle identities. Added a cross-bundle regression, changed isAlreadyClaimedError to require Error + exact PmCliError name + context.code=already_claimed_by, repacked, and verified both node index.mjs execution and strict TypeScript 6 compilation with skipLibCheck=false. The packed consumer also completed npm audit with zero vulnerabilities."
+  "2026-08-11T15:37:21.897Z","harness:codex","Repository-wide verification evidence: exact coverage gate passed 486 files / 7,230 tests at 100% statements, branches, functions, and lines. Packed ESM runtime and strict downstream TypeScript consumer checks passed independently."
+  "2026-08-11T16:20:44.732Z","harness:codex","Final acceptance 2026-08-11: the linked 25-test claim lifecycle run passed. A tarball-installed ESM consumer and strict TypeScript 6 NodeNext consumer passed with skipLibCheck disabled; the exact 7,234-test 100/100/100/100 gate, public snapshot, package, npx, plugin, external-package, contract, audit, and security gates all passed."
+  "2026-08-11T16:25:26.366Z","harness:codex","Release-candidate evidence: installed managed pm-changelog 2026.8.9 matches the latest npm version; replace-mode generation added this closed item to Unreleased with its canonical GitHub item link."
+  "2026-08-11T16:29:51.797Z","harness:codex","Delivery lineage: included in broad PR #981 (https://github.com/unbraind/pm-cli/pull/981), coordinated by pm-ajj4r7 through exact-head review, merge, and immutable release verification."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T16:20:44.263Z","harness:codex",Public predicates crossing independently bundled entrypoints cannot rely on instanceof identity. Structural checks should retain strict name and stable context-code guards while still requiring a genuine Error object.
+files[6]{path,scope,note}:
+  CHANGELOG.md,project,Generated Unreleased entry through installed pm-changelog 2026.8.9
+  sdk/public-surface.json,project,supported lifecycle predicate export snapshot
+  src/sdk/core.ts,project,compact SDK lifecycle predicate export
+  src/sdk/index.ts,project,top-level SDK lifecycle predicate export
+  src/sdk/lifecycle/claim.ts,project,Implements bundle-safe structural recognition for the public already-claimed predicate
+  tests/unit/sdk/claim-public-surface.spec.ts,project,supported entrypoint and predicate behavior coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/claim-public-surface.spec.ts tests/unit/commands/claim-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msov8ow7-dfc8dk,test,passed,"2026-08-11T16:19:25.680Z","2026-08-11T16:19:37.351Z","2026-08-11T16:19:37.351Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/README.md,project,documentation route to coupled SDK evidence contracts
+  docs/SDK_CONTEXT_EVIDENCE_CONTRACTS.md,project,claim race public import contract
+close_reason: Published the bundle-safe already-claimed predicate through supported SDK entrypoints with packed-consumer proof.
 body: "Source: https://github.com/unbraind/pm-cli/issues/975"
