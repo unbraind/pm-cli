@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: assurance,defect,governance,provenance
 created_at: "2026-08-11T14:14:29.124Z"
-updated_at: "2026-08-11T14:14:29.124Z"
+updated_at: "2026-08-11T14:33:59.739Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "The assurance write path derives its author from the same resolver every other mutating verb uses, so an assurance entry and an item mutation made by the same process in the same session record the same author; A gate verdict names the principal that produced it without any identity flag being passed, and the author field agrees with the agent_harness and agent_provenance recorded beside it; validate_history_unknown_author_events returns to zero newly minted events, with the existing legacy population still distinguishable from anything written at HEAD; A negative control proves an entry written with no resolvable harness is recorded as unresolved rather than silently attributed, so the fix never invents an author; The 61 entries already written by this defect are dispositioned explicitly, either re-attributable from their own provenance block or recorded as a bounded residual with the reason they cannot be"
@@ -25,4 +25,6 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-py7qv2,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
   pm-u14c,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-11T14:33:59.739Z","harness:claude-code","Disposition of the 61 pre-existing entries, 2026-08-11 (this item's fifth criterion). The defect turned CI red on the commit that introduced it, and not through the assurance gates themselves: the 61 unknown-author entries were classified actionable, which flipped the storage health check from ok to warn and tripped tracker-measurement-gate twice at once - health_check:storage declared 0 observed 1 (ceiling_exceeded) and validate_warning:validate_history_unknown_author_events declared null observed 61 (undeclared_population). An A/B against the pre-commit tracker isolated it exactly: actionable_unknown_event_count 0 to 61, with provenance_invalid_values and tombstone counts byte-identical on both sides, so no legacy data was involved. Resolved with the supported mechanism rather than by weakening a bound: pm history-author-acknowledge --all-actionable attributed all 61 to harness:claude-code, which is read directly from each event's own agent_harness field rather than inferred. Storage returned to ok, validate returned to its original five warning classes, and the ratchet passed at 30 enforced. That closes the residual half only. Recurrence is still open: the next assurance write will mint another unknown-author entry and re-break the same two bounds, which is why this item stays open on the write-path fix."
 body: ""
