@@ -184,6 +184,20 @@ describe("assurance action transport", () => {
           global,
         ),
         () => runAssuranceAction(
+          {
+            action: "put",
+            kind: "assertion",
+            id: "numeric-retire-reason",
+            definition: {
+              ...assertion,
+              id: "numeric-retire-reason",
+              lifetime: "retire",
+              retire_reason: 42,
+            },
+          },
+          global,
+        ),
+        () => runAssuranceAction(
           { action: "remove", kind: "assertion", id: assertion.id },
           global,
         ),

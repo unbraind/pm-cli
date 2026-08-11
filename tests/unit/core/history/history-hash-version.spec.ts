@@ -7,6 +7,7 @@ import {
   CURRENT_HISTORY_ITEM_HASH_VERSION,
   createHistoryEntry,
   hashDocumentForVersion,
+  type HistoryItemHashVersion,
 } from "../../../../src/core/history/history.js";
 import {
   EMPTY_REPLAY_DOCUMENT,
@@ -83,6 +84,9 @@ describe("history item hash versions", () => {
 
   it("auto-detects unversioned legacy streams and rejects unknown epochs precisely", () => {
     const insertionOrder = document([first, second]);
+    expect(() =>
+      hashDocumentForVersion(insertionOrder, 3 as HistoryItemHashVersion),
+    ).toThrow("unsupported_item_hash_version:3");
     expect(verifyHistoryChainWithVersion([unversionedEntry(insertionOrder, 1)])).toMatchObject({
       ok: true,
       item_hash_version: 1,

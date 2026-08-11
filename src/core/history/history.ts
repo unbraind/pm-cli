@@ -233,6 +233,13 @@ export function hashDocumentForVersion(
   document: ItemDocument,
   version: HistoryItemHashVersion,
 ): string {
+  if (
+    !SUPPORTED_HISTORY_ITEM_HASH_VERSIONS.some(
+      (supportedVersion) => supportedVersion === version,
+    )
+  ) {
+    throw new TypeError(`unsupported_item_hash_version:${String(version)}`);
+  }
   return sha256Hex(stableStringify(canonicalHashDocument(document, version)));
 }
 

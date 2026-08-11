@@ -683,7 +683,11 @@ export function validateAssertionDefinition(
       `assertion.${bound.polarity} must be a finite number`,
     );
   }
-  if (definition.lifetime === "retire" && !definition.retire_reason?.trim()) {
+  if (
+    definition.lifetime === "retire" &&
+    (typeof definition.retire_reason !== "string" ||
+      definition.retire_reason.trim().length === 0)
+  ) {
     throw new AssuranceMutationRefusalError(
       "retired assertion requires retire_reason",
     );

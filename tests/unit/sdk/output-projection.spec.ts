@@ -7,6 +7,10 @@ import {
   registerOutputMaterialFieldGroups,
   resolveModePairedOutputOmissionReceipt,
 } from "../../../src/sdk/output-projection.js";
+import { runClaim } from "../../../src/sdk/lifecycle/claim.js";
+import { runCreate } from "../../../src/sdk/lifecycle/create.js";
+import { runGet } from "../../../src/sdk/query/get.js";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("output projection omission contracts", () => {
   it("rejects undeclared TOON encodings in caller-supplied row contracts", () => {
@@ -328,32 +332,41 @@ describe("output projection omission contracts", () => {
     expect(attachOutputOmissionReceipt("get", [])).toEqual([]);
   });
 
-  it("charges get receipts only for material omitted groups", () => {
-    const brief = {
-      item: {
-        id: "pm-empty",
-        collection_counts: {
-          comments: 0,
-          notes: 0,
-          learnings: 0,
-          files: 0,
-          tests: 0,
-          docs: 0,
-          reminders: 0,
-          events: 0,
+  it("charges get receipts only for material omitted groups", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      const created = await runCreate(
+        { title: "Material omission source", type: "Task" },
+        { ...global, json: true, quiet: true },
+      );
+      const unclaimedBrief = await runGet(
+        created.item.id,
+        global,
+        { depth: "brief" },
+      );
+      expect(attachOutputOmissionReceipt("get", unclaimedBrief)).toMatchObject({
+        omission_receipt: {
+          omitted_field_groups: expect.not.arrayContaining([
+            { name: "claim_state", restore_with: "--fields claim_state" },
+          ]),
         },
-      },
-    };
-    registerOutputMaterialFieldGroups(brief, ["claim_state", "children"]);
+      });
 
-    expect(attachOutputOmissionReceipt("get", brief)).toMatchObject({
-      omission_receipt: {
-        omitted_field_group_count: 2,
-        omitted_field_groups: [
-          { name: "children", restore_with: "--fields children" },
-          { name: "claim_state", restore_with: "--fields claim_state" },
-        ],
-      },
+      await runClaim(created.item.id, false, global, {
+        author: "projection-test",
+      });
+      const claimedBrief = await runGet(
+        created.item.id,
+        global,
+        { depth: "brief" },
+      );
+      expect(attachOutputOmissionReceipt("get", claimedBrief)).toMatchObject({
+        omission_receipt: {
+          omitted_field_groups: expect.arrayContaining([
+            { name: "claim_state", restore_with: "--fields claim_state" },
+          ]),
+        },
+      });
     });
 
     const bodyIncluded = {

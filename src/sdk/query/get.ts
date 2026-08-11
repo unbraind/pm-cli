@@ -170,7 +170,9 @@ function itemMaterialFieldGroups(
       ? ["linked"]
       : []),
     "children",
-    "claim_state",
+    ...(typeof item.assignee === "string" && item.assignee.trim().length > 0
+      ? ["claim_state"]
+      : []),
     ...(buildItemSchedule(item) ? ["schedule"] : []),
   ];
 }
