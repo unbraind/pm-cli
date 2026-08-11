@@ -973,6 +973,7 @@ export function attachReadOutputContracts(
     : disclosedResult;
   if (
     options.outputRowContract === true ||
+    options.output_row_contract === true ||
     typeof projected !== "object" ||
     projected === null ||
     Array.isArray(projected) ||

@@ -2316,6 +2316,15 @@ describe("runHistory and runActivity", () => {
       );
       expect(openEndedWindow.activity_summary?.window.to).toBeTruthy();
 
+      const pastUpperBound = await runActivity(
+        { to: "2026-01-03T00:00:00.000Z" },
+        { path: context.pmPath },
+      );
+      expect(pastUpperBound.activity_summary?.window).toEqual({
+        from: "2026-01-02T00:00:00.000Z",
+        to: "2026-01-03T00:00:00.000Z",
+      });
+
       const bareAgoWindow = await runActivity(
         {
           from: "7d",

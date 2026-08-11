@@ -507,6 +507,11 @@ export function buildManifest(measurements, multiplier) {
   };
 }
 
+/** Return whether a manifest ceiling is finite and cannot disable enforcement through a negative value. */
+function isNonNegativeFinite(value) {
+  return Number.isFinite(value) && value >= 0;
+}
+
 function isMalformedBudget(budget, requireAnswerRatchet) {
   if (
     typeof budget !== "object" ||
@@ -523,12 +528,22 @@ function isMalformedBudget(budget, requireAnswerRatchet) {
   ) {
     return true;
   }
-  return budget.kind === "discovery"
-    ? !Number.isFinite(budget.max_bytes) || budget.max_bytes < 0
-    : typeof budget.command !== "string" ||
-        !Number.isFinite(budget.contract_max_estimated_tokens) ||
-        (requireAnswerRatchet &&
-          (!Number.isFinite(budget.max_bytes) || budget.max_bytes < 0));
+  if (budget.kind === "discovery") {
+    if (!isNonNegativeFinite(budget.max_bytes)) {
+      return true;
+    }
+    return requireAnswerRatchet &&
+      !isNonNegativeFinite(budget.max_estimated_tokens);
+  }
+  if (
+    typeof budget.command !== "string" ||
+    !isNonNegativeFinite(budget.contract_max_estimated_tokens)
+  ) {
+    return true;
+  }
+  return requireAnswerRatchet &&
+    (!isNonNegativeFinite(budget.max_bytes) ||
+      !isNonNegativeFinite(budget.max_estimated_tokens));
 }
 
 function measurementViolation(measurement, budget) {
@@ -559,7 +574,12 @@ function measurementViolation(measurement, budget) {
   ) {
     return `${measurement.id}: ${measurement.estimated_tokens} estimated tokens exceeds ${measurement.command} contract ${measurement.contract_max_estimated_tokens} tokens (${measurement.args.join(" ")})`;
   }
-  if (Number.isFinite(budget.max_bytes) && measurement.bytes > budget.max_bytes) {
+  if (
+    measurement.estimated_tokens > budget.max_estimated_tokens
+  ) {
+    return `${measurement.id}: ${measurement.estimated_tokens} estimated tokens exceeds budget ${budget.max_estimated_tokens} tokens (${measurement.args.join(" ")})`;
+  }
+  if (measurement.bytes > budget.max_bytes) {
     return `${measurement.id}: ${measurement.bytes} bytes exceeds budget ${budget.max_bytes} bytes (${measurement.args.join(" ")})`;
   }
   return undefined;

@@ -1096,20 +1096,34 @@ export function normalizeSearchKeywordsInput(keywords: string[]): string {
 }
 
 /** Canonical Commander-normalized activity query options. */
-interface NormalizedActivityOptions {
+export interface NormalizedActivityOptions {
+  /** Exact item identifier filter. */
   id?: string;
+  /** Exact immutable history operation filter. */
   op?: string;
+  /** Exact recorded author filter. */
   author?: string;
+  /** Inclusive activity window lower bound. */
   from?: string;
+  /** Inclusive activity window upper bound. */
   to?: string;
+  /** Maximum projected row count encoded as Commander text. */
   limit?: string;
+  /** Select the compact raw-event projection. */
   compact?: boolean;
+  /** Select a raw event projection instead of the item digest. */
   raw?: boolean;
+  /** Disable the default projection row bound. */
   unbounded?: boolean;
+  /** Select privacy-safe provenance event rows. */
   provenance?: boolean;
+  /** Include constant-size provenance completeness metrics. */
   provenanceSummary?: boolean;
+  /** Canonical harness filters supplied by Commander. */
   harness?: string[];
+  /** Privacy-safe agent invocation fingerprint filters. */
   agentInstance?: string[];
+  /** Exact provenance dimension predicates. */
   provenanceFilter?: string[];
 }
 

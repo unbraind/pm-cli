@@ -3,10 +3,24 @@ import {
   PM_MODE_PAIRED_OUTPUT_PROJECTION_CONTRACTS,
   attachOutputOmissionReceipt,
   createOutputOmissionReceipt,
+  isReadRowContract,
   resolveModePairedOutputOmissionReceipt,
 } from "../../../src/sdk/output-projection.js";
 
 describe("output projection omission contracts", () => {
+  it("rejects undeclared TOON encodings in caller-supplied row contracts", () => {
+    expect(
+      isReadRowContract({
+        command: "list",
+        row_kind: "collection",
+        row_keys: ["items"],
+        fields: "supported",
+        jq_selector: ".items[]",
+        toon_encoding: "expanded",
+      }),
+    ).toBe(false);
+  });
+
   it("derives explicit complete and incomplete receipts from contract data", () => {
     for (const contract of PM_MODE_PAIRED_OUTPUT_PROJECTION_CONTRACTS) {
       expect(

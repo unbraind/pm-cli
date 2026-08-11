@@ -31,6 +31,7 @@ describe("generateBashScript", () => {
       "output-budget",
       "output-format",
       "output-session",
+      "output-row-contract",
     ];
     for (const flag of expected) {
       expect(generateBashScript()).toContain(`--${flag}`);

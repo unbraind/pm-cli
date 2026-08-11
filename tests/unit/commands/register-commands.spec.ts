@@ -874,6 +874,7 @@ describe("list-query command actions", () => {
     await expect(runCli("activity", "--stream", "rows")).rejects.toThrow(
       "--stream requires --json",
     );
+    expect(vi.mocked(runActivity)).not.toHaveBeenCalled();
     await runCliRaw(
       "--json",
       "activity",

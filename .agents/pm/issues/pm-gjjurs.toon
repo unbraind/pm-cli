@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: agent-ux,context-efficiency,output-contracts,row-contract,token-budget
 created_at: "2026-08-10T22:59:34.849Z"
-updated_at: "2026-08-11T09:18:25.557Z"
+updated_at: "2026-08-11T09:59:55.771Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f016837593b4e6bc7293988d"
 author: "harness:codex"
@@ -29,10 +29,11 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-p258tx,related,"2026-08-10T22:59:34.849Z","harness:codex","cli:create:dep",detected
   pm-5y05kq,related,"2026-08-11T05:24:31.129Z","harness:claude-code","cli:update:dep",detected
   pm-7nqo6b,related,"2026-08-11T05:24:31.129Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-10T22:59:34.849Z","harness:codex","Duplicate-check evidence 2026-08-11: all-status search found pm-5t33or, pm-hid9g1, pm-p258tx, and the adaptive-context lineage, but no item owns GH-970 repeated row-contract suppression or reference semantics. Canonical source: https://github.com/unbraind/pm-cli/issues/970."
   "2026-08-11T09:18:22.601Z","harness:codex","Evidence 2026-08-11: row contracts remain available to internal projection shaping but are hidden from default CLI, SDK, and MCP answers; --output-row-contract restores discovery metadata. Final-envelope context/read/session token receipts are recalculated after suppression. Contracts, generated fixtures, SDK surface, calibration, completion, packed consumer, and 100% coverage checks pass."
   "2026-08-11T09:18:25.557Z","harness:codex","Observability evidence 2026-08-11: Sentry has zero unresolved issues in 14 days and zero total/unresolved/unhandled issues in 24 hours; the canonical Sentry/telemetry gate passed with critical=0 high=0. Local telemetry contains valid schema-v1 command start/finish, success, latency, and resolution events with zero malformed rows. The collector was independently unreachable during final flush, so 146+ retryable events remain queued without loss; no endpoint, identifiers, or raw payloads are recorded here."
+  "2026-08-11T09:59:55.771Z","harness:codex","Review-loop evidence 2026-08-11: row-contract restoration now accepts camelCase and canonical snake_case SDK keys, caller-supplied toon_encoding is validated, NormalizedActivityOptions is nameable by consumers, Zsh/Fish discover the global flag, and stale row-contract suppression has an explicit assertion. Focused CLI/SDK/contract tests pass. The requested pre-merge PM close was declined because canonical lifecycle policy requires keeping actively reviewed work in_progress until exact-head merge evidence exists."
 learnings[1]{created_at,author,text}:
   "2026-08-11T09:18:23.253Z","harness:codex","Metadata used to shape a response does not need to be repeated in every response. Suppress it at the final composition boundary, then stabilize all token receipts against the actual envelope so observability stays truthful."
 files[30]{path,scope,note}:

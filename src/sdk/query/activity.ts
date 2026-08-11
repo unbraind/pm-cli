@@ -372,15 +372,15 @@ function resolveActivityFilters(
 ): ActivityFilters {
   const nowValue = nowIso();
   const digest = projectionMode === "digest";
-  const from = parseRangeBound(
-    options.from ?? (digest ? DEFAULT_DIGEST_WINDOW : undefined),
-    nowValue,
-    "--from",
-  );
   const to = parseRangeBound(
     options.to ?? (digest ? nowValue : undefined),
     nowValue,
     "--to",
+  );
+  const from = parseRangeBound(
+    options.from ?? (digest ? DEFAULT_DIGEST_WINDOW : undefined),
+    options.from === undefined && digest ? (to ?? nowValue) : nowValue,
+    "--from",
   );
   if (from && to && compareTimestampStrings(from, to) >= 0) {
     throw new PmCliError(
@@ -552,8 +552,12 @@ function buildActivityDigest(
       continue;
     }
     current.eventCount += 1;
-    if (entry.ts < current.firstTs) current.firstTs = entry.ts;
-    if (entry.ts > current.lastTs) current.lastTs = entry.ts;
+    if (compareTimestampStrings(entry.ts, current.firstTs) < 0) {
+      current.firstTs = entry.ts;
+    }
+    if (compareTimestampStrings(entry.ts, current.lastTs) > 0) {
+      current.lastTs = entry.ts;
+    }
     current.operations.set(
       entry.op,
       (current.operations.get(entry.op) ?? 0) + 1,
@@ -575,26 +579,32 @@ function buildActivityDigest(
     })
     .sort(
       (left, right) =>
-        right.last_ts.localeCompare(left.last_ts) ||
+        compareTimestampStrings(right.last_ts, left.last_ts) ||
         left.id.localeCompare(right.id),
     );
 }
 
 function activityOperationCounts(
-  activity: readonly ActivityEntry[],
+  activity: readonly Pick<ActivityEntry, "op">[],
 ): Record<string, number> {
   const counts = new Map<string, number>();
   for (const entry of activity) {
     counts.set(entry.op, (counts.get(entry.op) ?? 0) + 1);
   }
-  return Object.fromEntries(
-    [...counts.entries()]
-      .sort(
-        (left, right) =>
-          right[1] - left[1] || left[0].localeCompare(right[0]),
-      )
-      .slice(0, 8),
+  const ordered = [...counts.entries()].sort(
+    (left, right) =>
+      right[1] - left[1] || left[0].localeCompare(right[0]),
   );
+  const visible = ordered.slice(0, 8);
+  if (visible.length < ordered.length) {
+    visible.push([
+      `+${String(ordered.length - visible.length)}`,
+      ordered
+        .slice(visible.length)
+        .reduce((total, [, count]) => total + count, 0),
+    ]);
+  }
+  return Object.fromEntries(visible);
 }
 
 function projectActivityRows(
@@ -650,6 +660,7 @@ export const _testOnly = {
   sortActivity,
   listHistoryFiles,
   buildActivityDigest,
+  activityOperationCounts,
 };
 
 /** Implements run activity for the public runtime surface of this module. */

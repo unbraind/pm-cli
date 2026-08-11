@@ -203,21 +203,28 @@ describe("SDK read contract integrity", () => {
     expect(disclosed.read_session.spent_this_call_tokens).toBe(
       disclosedEstimate,
     );
-    expect(
-      attachReadOutputContracts(
-        "list",
-        {},
-        {
-          items: [],
-          row_contract: {},
-          context_intent: [],
-          read_output: { estimated_tokens: "stale" },
-        },
-      ),
-    ).toMatchObject({
+    const staleMetadata = attachReadOutputContracts(
+      "list",
+      {},
+      {
+        items: [],
+        row_contract: {},
+        context_intent: [],
+        read_output: { estimated_tokens: "stale" },
+      },
+    ) as Record<string, unknown>;
+    expect(staleMetadata).not.toHaveProperty("row_contract");
+    expect(staleMetadata).toMatchObject({
       context_intent: [],
       read_output: { estimated_tokens: expect.any(Number) },
     });
+    expect(
+      attachReadOutputContracts(
+        "list",
+        { output_row_contract: true },
+        { items: [{ id: "pm-1" }] },
+      ),
+    ).toHaveProperty("row_contract");
   });
 
   it("returns bounded mutation receipts independently of annotation history size", async () => {

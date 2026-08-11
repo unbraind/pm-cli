@@ -140,4 +140,33 @@ describe("context-efficient read primitives", () => {
       },
     ]);
   });
+
+  it("discloses operation-count truncation and the omitted event count", () => {
+    expect(
+      activityInternals.activityOperationCounts([
+        { op: "a" },
+        { op: "a" },
+        { op: "b" },
+        { op: "c" },
+        { op: "d" },
+        { op: "e" },
+        { op: "f" },
+        { op: "g" },
+        { op: "h" },
+        { op: "i" },
+        { op: "i" },
+        { op: "j" },
+      ]),
+    ).toEqual({
+      a: 2,
+      i: 2,
+      b: 1,
+      c: 1,
+      d: 1,
+      e: 1,
+      f: 1,
+      g: 1,
+      "+2": 2,
+    });
+  });
 });

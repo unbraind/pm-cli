@@ -853,6 +853,12 @@ async function runActivityAction(
     );
   }
   const streamMode = resolveActivityStreamMode(options.stream);
+  if (streamMode && !globalOptions.json) {
+    throw new PmCliError(
+      "--stream requires --json output mode.",
+      EXIT_CODE.USAGE,
+    );
+  }
   const normalized = normalizeActivityOptions(options);
   const result = await runActivity(
     streamMode && options.full !== true && options.provenance !== true
@@ -860,12 +866,6 @@ async function runActivityAction(
       : normalized,
     globalOptions,
   );
-  if (streamMode && !globalOptions.json) {
-    throw new PmCliError(
-      "--stream requires --json output mode.",
-      EXIT_CODE.USAGE,
-    );
-  }
   if (streamMode) {
     printActivityJsonStream(result, normalized, globalOptions);
   } else {

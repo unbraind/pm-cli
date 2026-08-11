@@ -241,19 +241,27 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+const READ_ROW_TOON_ENCODINGS = new Set<unknown>([
+  undefined,
+  "tabular_when_uniform",
+]);
+const READ_ROW_KINDS = new Set<unknown>(["collection", "none"]);
+const READ_ROW_FIELD_MODES = new Set<unknown>(["supported", "unsupported"]);
+
 /** Return whether an unknown value is a structurally valid row declaration. */
 export function isReadRowContract(value: unknown): value is ReadRowContract {
   return (
     isRecord(value) &&
     typeof value.command === "string" &&
     value.command.trim().length > 0 &&
-    (value.row_kind === "collection" || value.row_kind === "none") &&
+    READ_ROW_KINDS.has(value.row_kind) &&
     Array.isArray(value.row_keys) &&
     value.row_keys.every(
       (key): key is string => typeof key === "string" && key.length > 0,
     ) &&
     new Set(value.row_keys).size === value.row_keys.length &&
-    (value.fields === "supported" || value.fields === "unsupported") &&
+    READ_ROW_FIELD_MODES.has(value.fields) &&
+    READ_ROW_TOON_ENCODINGS.has(value.toon_encoding) &&
     (value.row_kind === "collection"
       ? value.row_keys.length > 0 &&
         typeof value.jq_selector === "string" &&

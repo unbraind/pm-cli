@@ -442,6 +442,23 @@ describe("scripts/release/token-budget-gate", () => {
       mod.compareBudgets(
         [
           {
+            id: "root-help",
+            args: ["--help"],
+            kind: "discovery",
+            bytes: 9,
+            estimated_tokens: 4,
+          },
+        ],
+        manifest,
+      ),
+    ).toEqual([
+      "root-help: 4 estimated tokens exceeds budget 3 tokens (--help)",
+    ]);
+
+    expect(
+      mod.compareBudgets(
+        [
+          {
             id: "stats-default",
             args: ["stats"],
             kind: "answer",
@@ -813,11 +830,14 @@ describe("scripts/release/token-budget-gate", () => {
       command: "stats",
       contract_max_estimated_tokens: 4_000,
       max_bytes: 500,
+      max_estimated_tokens: 125,
     };
     for (const budget of [
       { ...baseBudget, max_lines: 0 },
       { ...baseBudget, max_bytes: undefined },
       { ...baseBudget, max_bytes: -1 },
+      { ...baseBudget, max_estimated_tokens: undefined },
+      { ...baseBudget, max_estimated_tokens: -1 },
     ]) {
       expect(() =>
         mod.compareBudgets([], {
@@ -831,6 +851,49 @@ describe("scripts/release/token-budget-gate", () => {
         "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
       );
     }
+    expect(() =>
+      mod.compareBudgets([], {
+        version: 3,
+        metric: "utf8_bytes",
+        token_estimate: "ceil(bytes / 4)",
+        fixture: "test",
+        budgets: [
+          {
+            id: "discovery",
+            args: ["--help"],
+            kind: "discovery",
+            scale_tier: "static",
+            baseline_bytes: 10,
+            baseline_estimated_tokens: 3,
+            max_bytes: 10,
+          },
+        ],
+      }),
+    ).toThrow(
+      "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
+    );
+    expect(() =>
+      mod.compareBudgets([], {
+        version: 3,
+        metric: "utf8_bytes",
+        token_estimate: "ceil(bytes / 4)",
+        fixture: "test",
+        budgets: [
+          {
+            id: "discovery",
+            args: ["--help"],
+            kind: "discovery",
+            scale_tier: "static",
+            baseline_bytes: 10,
+            baseline_estimated_tokens: 3,
+            max_bytes: -1,
+            max_estimated_tokens: 3,
+          },
+        ],
+      }),
+    ).toThrow(
+      "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
+    );
   });
 
   it("fails when the unbounded negative control no longer exceeds the default contract", async () => {
