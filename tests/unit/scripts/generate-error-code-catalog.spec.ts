@@ -63,6 +63,17 @@ describe("generate error code catalog", () => {
       'const duplicate = { code: "item_not_found" };',
       "utf8",
     );
+    await writeFile(
+      path.join(
+        root,
+        "src",
+        "cli",
+        "nested",
+        "another-extremely-long-generated-runtime-error-declarations.ts",
+      ),
+      'const duplicate = { code: "lock_conflict" };',
+      "utf8",
+    );
     await main(root, []);
     const output = await readFile(
       path.join(root, "src", "sdk", "generated-error-code-catalog.ts"),
