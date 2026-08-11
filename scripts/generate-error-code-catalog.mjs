@@ -77,7 +77,7 @@ function renderGeneratedStringProperty(name, value) {
 function renderGeneratedStringArray(name, values) {
   const literals = values.map((value) => JSON.stringify(value));
   const oneLine = `    ${name}: [${literals.join(", ")}],`;
-  return oneLine.length <= 80
+  return oneLine.length <= 100
     ? [oneLine]
     : [
         `    ${name}: [`,

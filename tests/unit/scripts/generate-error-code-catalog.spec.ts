@@ -31,7 +31,7 @@ describe("generate error code catalog", () => {
     );
     await writeFile(
       path.join(root, "src", "cli", "nested", "more.ts"),
-      'const duplicate = { code: "item_not_found" };',
+      'const duplicate = { code: "lock_conflict" };',
       "utf8",
     );
     await mkdir(path.join(root, "scripts"), { recursive: true });
@@ -84,6 +84,9 @@ describe("generate error code catalog", () => {
     expect(output).toContain('emitting_commands: ["*"]');
     expect(output).toContain('canonical_code: "item_not_found"');
     expect(output).toContain("aliases: []");
+    expect(output).toContain(
+      '    sources: ["cli/errors.ts", "cli/nested/extremely-long-generated-runtime-error-declarations.ts"],',
+    );
     expect(output).toContain('state: "unknown_option_on_selected_path"');
     expect(output).toContain('probe_id: "unknown-option"');
     expect(output).toContain('code: "ambiguous_list_all"');

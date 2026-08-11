@@ -1607,11 +1607,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     class: "conflict",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: [
-      "cli/error-guidance.ts",
-      "core/lock/lock.ts",
-      "core/telemetry/observability.ts",
-    ],
+    sources: ["cli/error-guidance.ts", "core/lock/lock.ts", "core/telemetry/observability.ts"],
     emitting_commands: ["*"],
     canonical_code: "lock_conflict",
     aliases: [],
@@ -1936,11 +1932,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     class: "conflict",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: [
-      "cli/error-guidance.ts",
-      "core/telemetry/observability.ts",
-      "sdk/annotations.ts",
-    ],
+    sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts", "sdk/annotations.ts"],
     emitting_commands: ["*"],
     canonical_code: "ownership_conflict",
     aliases: [],
