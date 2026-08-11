@@ -290,6 +290,7 @@ describe("output projection omission contracts", () => {
         row_kind: "none",
         row_keys: [],
         fields: "unsupported",
+        toon_encoding: "tabular_when_uniform",
       },
     });
     expect(
@@ -304,6 +305,7 @@ describe("output projection omission contracts", () => {
         row_kind: "none",
         row_keys: [],
         fields: "supported",
+        toon_encoding: "tabular_when_uniform",
       },
       omission_receipt: { has_omissions: false },
     });

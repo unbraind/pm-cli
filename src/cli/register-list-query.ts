@@ -699,7 +699,7 @@ async function runHistoryAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   if (
-    [options.compact, options.full, options.provenance].filter(
+    [options.compact, options.raw, options.full, options.provenance].filter(
       (value) => value === true,
     ).length > 1
   ) {
@@ -843,18 +843,23 @@ async function runActivityAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   if (
-    [options.compact, options.full, options.provenance].filter(
+    [options.raw, options.compact, options.full, options.provenance].filter(
       (value) => value === true,
     ).length > 1
   ) {
     throw new PmCliError(
-      "Activity projection options are mutually exclusive. Use --compact, --provenance, or --full.",
+      "Activity projection options are mutually exclusive. Use --raw, --compact, --provenance, or --full.",
       EXIT_CODE.USAGE,
     );
   }
-  const normalized = normalizeActivityOptions(options);
-  const result = await runActivity(normalized, globalOptions);
   const streamMode = resolveActivityStreamMode(options.stream);
+  const normalized = normalizeActivityOptions(options);
+  const result = await runActivity(
+    streamMode && options.full !== true && options.provenance !== true
+      ? { ...normalized, raw: true, compact: true }
+      : normalized,
+    globalOptions,
+  );
   if (streamMode && !globalOptions.json) {
     throw new PmCliError(
       "--stream requires --json output mode.",
@@ -1523,6 +1528,10 @@ export function registerListQueryCommands(
       .option(
         "--compact",
         "Condensed output: show only id, op, ts, author, msg per entry",
+      )
+      .option(
+        "--raw",
+        "Show the legacy compact per-event stream instead of the item digest",
       )
       .option("--full", "Show full activity entries with JSON Patch payloads")
       .option(

@@ -497,7 +497,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const listResult = context.runCli(["list-open", "--limit", "10"]);
       expect(listResult.code).toBe(0);
-      expect(listResult.stdout).toContain("items:");
+      expect(listResult.stdout).toContain(
+        "items[1]{id,status,type,title}:",
+      );
       expect(listResult.stdout).toContain("filters:");
       expect(listResult.stdout).toContain('status: "open"');
       expect(listResult.stdout).not.toContain("summary:");
@@ -3109,12 +3111,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(stats.code).toBe(0);
       const statsJson = stats.json as {
         totals: { items: number; history_streams: number; history_entries: number };
-        by_type: { Task: number };
+        by_type: Array<{ type: string; total: number }>;
       };
       expect(statsJson.totals.items).toBeGreaterThanOrEqual(1);
       expect(statsJson.totals.history_streams).toBeGreaterThanOrEqual(1);
       expect(statsJson.totals.history_entries).toBeGreaterThanOrEqual(1);
-      expect(statsJson.by_type.Task).toBeGreaterThanOrEqual(1);
+      expect(
+        statsJson.by_type.find((row) => row.type === "Task")?.total,
+      ).toBeGreaterThanOrEqual(1);
 
       const configSet = context.runCli(
         [

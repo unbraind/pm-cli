@@ -2,11 +2,13 @@ id: pm-gjjurs
 title: "GH-970: repeated row contracts consume half of agent read output without a suppression contract"
 description: "Every read repeats a mostly static row_contract and jq selector in TOON and JSON, consuming 49 to 62 percent of small responses. Add a contract-safe session or invocation mechanism that preserves discoverability while avoiding repeated context spend."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[5]: agent-ux,context-efficiency,output-contracts,row-contract,token-budget
 created_at: "2026-08-10T22:59:34.849Z"
-updated_at: "2026-08-11T05:24:31.250Z"
+updated_at: "2026-08-11T09:18:25.557Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#f016837593b4e6bc7293988d"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Agents can suppress or reference repeated row contracts without suppressing command results; The setting works consistently for TOON JSON CLI SDK and MCP transports through declared runtime contracts; Contract discovery remains available on demand and session behavior is deterministic and measured by the token-surface gate; The row contract is off by default on every read command that currently emits it and is restored by an explicit flag, so the default read pays for data only; Suppression is measured per command against the token-budget-gate corpus, with pm stats named as the reference instance at 285 of 745 default bytes"
@@ -27,6 +29,48 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-p258tx,related,"2026-08-10T22:59:34.849Z","harness:codex","cli:create:dep",detected
   pm-5y05kq,related,"2026-08-11T05:24:31.129Z","harness:claude-code","cli:update:dep",detected
   pm-7nqo6b,related,"2026-08-11T05:24:31.129Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-10T22:59:34.849Z","harness:codex","Duplicate-check evidence 2026-08-11: all-status search found pm-5t33or, pm-hid9g1, pm-p258tx, and the adaptive-context lineage, but no item owns GH-970 repeated row-contract suppression or reference semantics. Canonical source: https://github.com/unbraind/pm-cli/issues/970."
+  "2026-08-11T09:18:22.601Z","harness:codex","Evidence 2026-08-11: row contracts remain available to internal projection shaping but are hidden from default CLI, SDK, and MCP answers; --output-row-contract restores discovery metadata. Final-envelope context/read/session token receipts are recalculated after suppression. Contracts, generated fixtures, SDK surface, calibration, completion, packed consumer, and 100% coverage checks pass."
+  "2026-08-11T09:18:25.557Z","harness:codex","Observability evidence 2026-08-11: Sentry has zero unresolved issues in 14 days and zero total/unresolved/unhandled issues in 24 hours; the canonical Sentry/telemetry gate passed with critical=0 high=0. Local telemetry contains valid schema-v1 command start/finish, success, latency, and resolution events with zero malformed rows. The collector was independently unreachable during final flush, so 146+ retryable events remain queued without loss; no endpoint, identifiers, or raw payloads are recorded here."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T09:18:23.253Z","harness:codex","Metadata used to shape a response does not need to be repeated in every response. Suppress it at the final composition boundary, then stabilize all token receipts against the actual envelope so observability stays truthful."
+files[30]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY.md,project,documents final-envelope receipt stabilization
+  scripts/release/context-intent-calibration-gate.mjs,project,calibrates hidden-contract row/token estimates
+  scripts/release/context-intent-calibration.json,project,generated context calibration baseline
+  scripts/release/token-budgets.json,project,answer-surface byte ratchets
+  sdk/public-surface.json,project,generated SDK surface proof
+  src/cli/register-operations.ts,project,global row-contract restoration flag integration
+  src/core/extensions/reserved-host-flags.ts,project,reserves universal output contract flag
+  src/core/output/output.ts,project,transport rendering consumes explicit outputRowContract option
+  src/core/shared/command-types.ts,project,shared output row-contract option typing
+  src/sdk/cli-bootstrap.ts,project,bootstrap parsing for universal row-contract output
+  src/sdk/cli-contracts/completeness.ts,project,CLI/MCP option completeness gate
+  src/sdk/cli-contracts/flag-contracts.ts,project,canonical global flag declaration
+  src/sdk/cli-contracts/registration-helpers.ts,project,shared projection option normalization
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,SDK tool option contract parity
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,MCP parameter documentation parity
+  src/sdk/cli-contracts/tool-schema.ts,project,strict MCP schema parity
+  src/sdk/cli-program.ts,project,global CLI discovery flag
+  src/sdk/completion.ts,project,bash zsh fish completion discovery
+  src/sdk/context-intent-contracts.ts,project,internally apply row metadata then suppress it unless explicitly requested
+  src/sdk/output-projection.ts,project,row-contract metadata projection and omission receipt
+  src/sdk/read-output-contracts.ts,project,universal outputRowContract SDK and transport option
+  tests/fixtures/contracts/full.json,project,generated CLI SDK MCP contract proof
+  tests/integration/release-readiness-runtime.spec.ts,project,release readiness validates compact contracts
+  tests/unit/cli/bootstrap-args.spec.ts,project,global flag parsing coverage
+  tests/unit/commands/completion-command.spec.ts,project,completion surface coverage
+  tests/unit/scripts/release/context-intent-calibration-gate.spec.ts,project,calibration regression coverage
+  tests/unit/sdk/context-efficient-read-primitives.spec.ts,project,default suppression and explicit restoration TDD
+  tests/unit/sdk/read-contract-integrity.spec.ts,project,final envelope receipt integrity coverage
+  tests/unit/sdk/read-output-contracts.spec.ts,project,SDK option and receipt stabilization coverage
+  tests/unit/sdk/read-row-contracts.spec.ts,project,row contract suppression/restoration coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/sdk/context-efficient-read-primitives.spec.ts,project,240
+  "pnpm contracts:check",project,240
+docs[3]{path,scope,note}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,explicit row-contract discovery and default suppression
+  docs/READ_OUTPUT_CONTRACTS.md,project,CLI SDK MCP outputRowContract composition control
+  docs/SDK_CONTEXT_INTEGRITY.md,project,final-envelope token receipt stabilization contract
 body: ""

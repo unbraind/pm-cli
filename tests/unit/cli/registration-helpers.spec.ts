@@ -105,6 +105,7 @@ describe("registration helpers", () => {
         outputBudget: "800",
         outputFormat: "toon",
         outputSession: '{"version":1}',
+        outputRowContract: true,
       }),
     } as unknown as Command;
     expect(getGlobalOptions(command)).toEqual({
@@ -123,6 +124,7 @@ describe("registration helpers", () => {
       outputBudget: "800",
       outputFormat: "toon",
       outputSession: '{"version":1}',
+      outputRowContract: true,
     });
 
     // A primitive (non-object) command yields an empty options reader so every option resolves to its default.
@@ -832,13 +834,20 @@ describe("registration helpers", () => {
     }
   });
 
-  it("resolves activity compact mode across full/compact/default inputs", () => {
-    // --full forces compact:false.
-    expect(normalizeActivityOptions({ full: true }).compact).toBe(false);
-    // --no-compact (compact===false) forces compact:false.
-    expect(normalizeActivityOptions({ compact: false }).compact).toBe(false);
-    // Neither flag: compact defaults to true.
-    expect(normalizeActivityOptions({}).compact).toBe(true);
+  it("resolves activity digest, raw, full, and provenance modes", () => {
+    expect(normalizeActivityOptions({ full: true })).toMatchObject({
+      compact: false,
+      raw: true,
+    });
+    expect(normalizeActivityOptions({ raw: true })).toMatchObject({
+      compact: true,
+      raw: true,
+    });
+    expect(
+      normalizeActivityOptions({ raw: true, full: true }),
+    ).toMatchObject({ compact: false, raw: true });
+    expect(normalizeActivityOptions({ compact: false }).compact).toBeUndefined();
+    expect(normalizeActivityOptions({}).compact).toBeUndefined();
     expect(
       normalizeActivityOptions({
         provenance: true,
@@ -1300,10 +1309,8 @@ describe("registration helpers", () => {
       id: "pm-w13j",
       op: "comment",
       author: "agent",
-      from: undefined,
-      to: undefined,
-      limit: undefined,
       compact: false,
+      raw: true,
     });
 
     expect(

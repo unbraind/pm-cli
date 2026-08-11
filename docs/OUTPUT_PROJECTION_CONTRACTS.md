@@ -12,7 +12,10 @@ cursor-chain amortization are tracked by
 [pm-yekkvt](../.agents/pm/issues/pm-yekkvt.toon), and
 [pm-sf31yl](../.agents/pm/issues/pm-sf31yl.toon). Trustworthy collection
 selectors are tracked by
-[pm-x710qm](../.agents/pm/issues/pm-x710qm.toon).
+[pm-x710qm](../.agents/pm/issues/pm-x710qm.toon). Default contract suppression
+and canonical TOON tables are tracked by
+[pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon) and
+[pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon).
 
 ## Agent Quick Context
 
@@ -38,12 +41,13 @@ explicit receipt with `has_omissions: false`,
 
 Mutually exclusive output modes emit only their active row collection:
 
-| Command mode                | Active row key     | Withheld group | Restore          |
-| --------------------------- | ------------------ | -------------- | ---------------- |
-| `activity --compact`        | `compact_activity` | `provenance`   | `--full`         |
-| `activity --full`           | `activity`         | none           | already complete |
-| `history` (compact default) | `compact_history`  | `raw_history`  | `--full`         |
-| `history --full`            | `history`          | none           | already complete |
+| Command mode                | Active row key        | Withheld group | Restore          |
+| --------------------------- | --------------------- | -------------- | ---------------- |
+| `activity` (digest default) | `activity_digest`     | `event_rows`   | `--raw`          |
+| `activity --raw/--compact`  | `compact_activity`    | `provenance`   | `--full`         |
+| `activity --full`           | `activity`            | none           | already complete |
+| `history` (compact default) | `compact_history`     | `raw_history`  | `--full`         |
+| `history --full`            | `history`             | none           | already complete |
 
 Inactive row keys are omitted, not zero-filled. This makes a wrong parser loud:
 reading `.activity` from compact activity now yields a missing key instead of a
@@ -57,8 +61,11 @@ integrations and built-in output cannot drift independently.
 
 ## Universal Read Rows
 
-Core read results expose a `row_contract` whether or not the current page has
-rows:
+Core read results expose `row_contract` only when callers request
+`--output-row-contract` / `outputRowContract: true`. Keeping discovery metadata
+off by default makes ordinary reads pay for project data rather than repeating
+the same selector declaration. The explicit contract remains available whether
+or not the current page has rows:
 
 ```json
 {
@@ -67,7 +74,8 @@ rows:
     "row_kind": "collection",
     "row_keys": ["items"],
     "fields": "supported",
-    "jq_selector": ".row_contract.row_keys[] as $key | getpath($key | split(\".\")) | if type == \"array\" then .[] else if type == \"object\" then to_entries[] else empty end end"
+    "jq_selector": ".row_contract.row_keys[] as $key | getpath($key | split(\".\")) | if type == \"array\" then .[] else if type == \"object\" then to_entries[] else empty end end",
+    "toon_encoding": "tabular_when_uniform"
   }
 }
 ```
@@ -80,7 +88,12 @@ collections declare every active dot-delimited path. This keeps
 nested dependency graph and relationship-context rows addressable as
 `graph.nodes`, `graph.edges`, `context.nodes`, and `context.edges` without
 duplicating them at the envelope root. Array collections produce their
-elements; object maps such as stats counts produce jq `to_entries` rows.
+elements; object maps produce jq `to_entries` rows.
+`toon_encoding: "tabular_when_uniform"` declares that an array of flat objects
+with one shared key set renders as a length-marked TOON table; mixed, nested,
+or heterogeneous arrays retain the expanded representation. Quoted,
+separator-bearing, and multiline values use the canonical TOON encoder and
+round-trip through the strict decoder.
 Commands without a row collection, including a dependency tree or leaf `get`,
 declare `row_kind: "none"`, an empty `row_keys` array, and omit `jq_selector`.
 The absence is therefore distinguishable from a legitimate empty collection.
@@ -94,8 +107,8 @@ publish a row contract.
 SDK and package authors can import `PM_READ_ROW_CONTRACTS`,
 `PM_READ_ROW_JQ_SELECTOR`, and `resolveReadRowContract` from
 `@unbrained/pm-cli/sdk`. Existing package declarations are preserved only
-when `command`, `row_kind`, `row_keys`, `fields`, and the conditional
-`jq_selector` form a structurally valid row contract; malformed declarations
+when `command`, `row_kind`, `row_keys`, `fields`, the conditional
+`jq_selector`, and any supplied `toon_encoding` form a structurally valid row contract; malformed declarations
 are replaced by the canonical built-in contract when one applies.
 
 ## Self-Describing SDK Projections

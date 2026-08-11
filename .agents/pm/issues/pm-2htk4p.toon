@@ -1,0 +1,28 @@
+id: pm-2htk4p
+title: "GH-976: version history hashes so repeated tests_add streams verify across supported pm versions"
+description: "Track GitHub issue #976: identical history streams with two or more tests_add events verify under pm 2026.8.10 but drift under 2026.8.7, and history-repair alternates which reader accepts the stream instead of converging."
+type: Issue
+status: open
+priority: 1
+tags[4]: compatibility,format-version,github,history-integrity
+created_at: "2026-08-11T08:34:09.403Z"
+updated_at: "2026-08-11T08:51:03.804Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: History/item hash epochs are explicit and backward-safe; two-plus tests_add cross-version fixtures never report false corruption; repair refuses incompatible epochs or converges; strict validation distinguishes format incompatibility from drift
+parent: pm-4jk8kx
+risk: high
+confidence: high
+severity: high
+environment: global pm 2026.8.10 with repository-local @unbrained/pm-cli 2026.8.7
+repro_steps: "Append two tests_add operations to one item with 2026.8.10, compare health/strict history drift under 2026.8.10 and 2026.8.7, then run history-repair under each version."
+expected_result: Supported readers either verify the same immutable stream or report a precise unsupported format epoch; repair converges to one canonical representation.
+actual_result: The same bytes alternate between clean and three item-hash mismatches depending on reader version; repair for one reader breaks the other.
+component: history hashing and format compatibility
+customer_impact: "Pinned CI and global developer pm can permanently disagree, blocking releases and encouraging destructive repair loops."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ae1u,supersedes,"2026-08-11T08:34:09.403Z","harness:codex","cli:create:dep",detected
+  pm-x2vx,verifies,"2026-08-11T08:34:09.403Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-11T08:34:09.403Z","harness:codex","Duplicate check (all statuses): searched GH-976, history_drift, repeated tests_add, cross-version hashes, history-repair, and reviewed GitHub #955 plus closed pm-x2vx. #955/pm-x2vx fixed insertion-order drift within one current format; #976 uniquely reproduces incompatible verification across supported reader versions and a non-convergent repair loop. This new open issue is canonical for #976."
+body: "Source: https://github.com/unbraind/pm-cli/issues/976"

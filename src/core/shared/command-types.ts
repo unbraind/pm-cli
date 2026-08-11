@@ -29,6 +29,8 @@ export interface GlobalOptions {
   outputFormat?: "toon" | "json";
   /** Caller-carried cross-call budget and served-item state. */
   outputSession?: string;
+  /** Include the machine-readable row selector and TOON encoding contract. */
+  outputRowContract?: boolean;
   /** Filesystem path used for path resolution. */
   path?: string;
   /** Value that configures or reports no extensions for this contract. */

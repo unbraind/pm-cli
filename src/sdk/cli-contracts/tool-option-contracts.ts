@@ -397,6 +397,7 @@ export const TOOL_ACTIVITY_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "limit", flag: "--limit" },
   { param: "unbounded", flag: "--unbounded" },
   { param: "compact", flag: "--compact" },
+  { param: "raw", flag: "--raw" },
   { param: "full", flag: "--full" },
   { param: "provenance", flag: "--provenance" },
   { param: "provenanceSummary", flag: "--provenance-summary" },

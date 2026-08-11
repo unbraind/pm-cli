@@ -2,11 +2,13 @@ id: pm-j1r8gl
 title: "pm activity answers what happened to one item in the last half hour when the agent asked what changed in the workspace: 20 rows cover 5 of the 272 items touched in 24 hours and none carries a title"
 description: "Measured on the live tracker: the default bound is 20 rows over an unfiltered reverse-chronological merge of all 2443 history streams. Those 20 rows resolve to 5 distinct items spanning 27 minutes, while 757 events across 272 distinct items landed in the preceding 24 hours - so the default names 1.8 percent of the items touched in a day. Rows carry id, op, ts and author only, so rebuilding context costs one pm get per id, and 18 of the 20 carry no message at all. The op vocabulary is dominated by mechanical sub-mutations: update 25.1 percent, comment_add 18.8, files_add 15.4, tests_add 7.1, claim 6.4, release 5.4 - more than half the window is attachment and lock churn rather than lifecycle change, and the lock verb release reads as a version release. An item-centric digest over a time window (one row per item touched, carrying type, status, event count, last timestamp, a bounded op summary and the title) covers 15 items in 2426 bytes against the current 2918 bytes for 5. The join is already paid for: prepareActivityHistoryRead already reads every item light metadata record to enforce the history-stream policy and then discards everything except the ids."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[6]: activity,agent-ux,context-efficiency,history,output-contracts,token-budget
 created_at: "2026-08-11T05:24:00.618Z"
-updated_at: "2026-08-11T05:26:15.172Z"
+updated_at: "2026-08-11T09:18:20.503Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#f016837593b4e6bc7293988d"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Default pm activity returns one row per item touched inside a declared time window, carrying id, type, status, event count, first and last timestamp, a bounded op summary and the title, ordered by recency or event count; The envelope declares the window plus event, item and author totals and a bounded op histogram, so an agent can distinguish a quiet period from a truncated one; The raw per-event stream stays reachable behind an explicit flag with the compact row shape unchanged, and --full, --provenance and the existing filters are unaffected; Item metadata is joined from the light metadata read the command already performs, adding no second traversal, and the digest cost is asserted by the token-budget-gate corpus; Contracts snapshot, completion scripts, MCP surface and docs are regenerated in the same change"
@@ -18,11 +20,29 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,related,"2026-08-11T05:24:00.618Z","harness:claude-code","cli:create:dep",detected
   pm-5t33or,related,"2026-08-11T05:24:00.618Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-08-11T05:24:00.618Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-11T05:25:45.574Z","harness:claude-code","Measurement and implementation map, taken on the live tracker at 2026-08-11 over all 47448 history entries in 2443 streams.\n\nWhat the default actually returns\n- 20 rows, resolving to 5 distinct items and 8 op kinds, spanning 27 minutes.\n- 2 of those 20 rows carry a message; the other 18 carry id, op, ts and author only.\n- Widening the row bound does not help: the last 50 entries still resolve to 5 items, the last 100 to 5, the last 200 to 8. The stream is bursty per item, so a row-denominated bound is the wrong unit for a workspace question.\n\nWhat the same period actually contains\n- last 24 hours: 757 events, 272 distinct items, 2 authors.\n- last 72 hours: 1841 events, 327 items.\n- last 7 days: 3354 events, 432 items.\n- Daily volume over the last week runs 223 to 746 events.\n\nOp distribution over the whole corpus\nupdate 25.1 percent, comment_add 18.8, files_add 15.4, tests_add 7.1, claim 6.4, release 5.4, close 5.2, create 5.1, docs_add 3.5, test_run_track 2.4, note_add 1.7, learning_add 1.5, then a long tail. More than half of every window is attachment and lock churn. The two ops that carry lifecycle meaning, create and close, are 10.3 percent combined. The lock verb release is also the word for a version release, which is a second reason the raw op column misleads on sight.\n\nProposed default, measured\nOne row per item touched in a declared window, carrying id, type, status, event count, last timestamp, a bounded op summary and a truncated title, plus a header declaring the window, event, item and author totals and a top-N op histogram. Rendered at 15 rows this is 2426 bytes against the current 2918 bytes, so it names three times as many items for 17 percent fewer bytes, and each row is actionable without a follow-up pm get.\n\nImplementation map\n- The item join is already paid for. prepareActivityHistoryRead in the activity module already calls the light item-metadata reader to enforce the history-stream policy, then keeps only the ids and discards the titles, types and statuses the digest needs. No second traversal is required.\n- The folding is a group-by over entries already collected by collectActivityEntries, before the row bound is applied. Today the bound is applied to entries; the digest applies it to items.\n- The default bound constants live beside the command as separate compact and full values, so a third digest default fits the existing shape.\n- The projection block already declares mode and row_key for compact, provenance and full, so a fourth mode is an extension of a declared contract rather than a new concept.\n- The read-output projection table already lists the three activity row keys, and a digest row key has to be added there or the published selector will not find the rows.\n- The token-budget-gate corpus already carries an activity-default entry, so the digest cost is measurable against an existing baseline instead of a new one.\n\nScope boundary\nThis is not the delta-read feature. pm-tuadp2 owns --since cursor deltas for list, search, context and get. This item owns only what pm activity returns by default. pm-tqel owns the eventual consolidation of the history verbs under one noun and is unaffected by the row shape chosen here.\n"
-files[4]{path,scope,note}:
+  "2026-08-11T08:31:43.143Z","harness:codex","Manual packed-artifact acceptance found that combining --raw and --full silently selected compact mode because the CLI normalizer prioritized raw while the SDK normalizer prioritized full. This activity-UX finding is folded into the canonical activity-digest item rather than duplicated: the CLI now rejects mixed activity projection flags and the normalization primitive retains deterministic full precedence for programmatic callers; focused Commander/helper tests pass."
+  "2026-08-11T09:18:19.723Z","harness:codex","Evidence 2026-08-11: activity now defaults to a last-24-hour item digest capped at 15 items, including item title, event count, time bounds, and operation histogram. --raw preserves compact event rows while --full and --provenance retain their richer projections. Packed real-entrypoint acceptance verified digest, raw, full, SDK query consumption, and Commander rejection of conflicting --raw --full flags."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T09:18:20.503Z","harness:codex","Activity context is more useful when grouped by item and summarized by operation than when a global event slice allows one noisy item to crowd out the rest. Projection conflicts must be rejected at the real Commander boundary, not only normalized inside helpers."
+files[13]{path,scope,note}:
   docs/COMMANDS.md,project,activity default output documentation
+  scripts/release/token-budgets.json,project,activity digest byte ratchet
   src/cli/register-list-query.ts,project,activity command registration and the raw-stream flag
+  src/sdk/cli-contracts/registration-helpers.ts,project,shared CLI activity projection normalization and conflict semantics
   src/sdk/output-projection.ts,project,activity row keys and the mode-paired omission receipt
   src/sdk/query/activity.ts,project,prepareActivityHistoryRead already reads item metadata and discards all but the ids
+  src/sdk/runtime.ts,project,MCP activity projection normalization
+  tests/fixtures/contracts/full.json,project,generated raw activity CLI and MCP schema
+  tests/integration/cli.integration.spec.ts,project,real CLI activity digest and raw-mode acceptance
+  tests/unit/cli/registration-helpers.spec.ts,project,raw/full normalization precedence acceptance
+  tests/unit/commands/history-activity-command.spec.ts,project,digest raw full and filters compatibility acceptance
+  tests/unit/commands/register-commands.spec.ts,project,real Commander rejection of mixed activity projection flags
+  tests/unit/core/history/workspace-history.spec.ts,project,activity event aggregation fixture coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/history-activity-command.spec.ts tests/unit/sdk/context-efficient-read-primitives.spec.ts,project,240
+  node scripts/release/token-budget-gate.mjs,project,240
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,item digest default and raw/full/provenance restoration modes
 body: ""

@@ -1,0 +1,28 @@
+id: pm-hfqju5
+title: "GH-975: export isAlreadyClaimedError through a supported SDK subpath"
+description: "Track GitHub issue #975: the shipped claim typings declare the sanctioned lost-race predicate, but no package export exposes it, forcing extensions to hard-code the internal already_claimed_by error code."
+type: Issue
+status: open
+priority: 1
+tags[4]: concurrency,github,package-exports,sdk
+created_at: "2026-08-11T08:33:49.248Z"
+updated_at: "2026-08-11T08:33:49.248Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Export isAlreadyClaimedError from the canonical SDK lifecycle surface; packed ESM and TypeScript consumers can import it; public-surface and package-boundary gates cover the export; no extension must duplicate the internal code predicate
+parent: pm-doxj
+risk: medium
+confidence: high
+severity: medium
+environment: @unbrained/pm-cli 2026.8.10 packed consumer
+repro_steps: "Import sdk, sdk/core, and sdk/runtime from the packed package and inspect isAlreadyClaimedError; direct sdk/lifecycle/claim import is rejected by package exports."
+expected_result: "The documented predicate is reachable from a supported SDK subpath beside claim/release, with runtime/type/public-surface parity."
+actual_result: The declaration ships but every supported subpath returns undefined and the implementation module is not exported.
+component: SDK lifecycle exports
+customer_impact: Extension concurrency guards couple to an internal error code and may fail open after an error-code rename.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8t5x,supersedes,"2026-08-11T08:33:49.248Z","harness:codex","cli:create:dep",detected
+  pm-9x6e,verifies,"2026-08-11T08:33:49.248Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-11T08:33:49.248Z","harness:codex","Duplicate check (all statuses): searched GH-975, isAlreadyClaimedError, already_claimed_by, claim race, and SDK exports. pm-8t5x owns the closed atomic-claim behavior and pm-9x6e owns the closed public-boundary capstone, but no item owns the missing predicate export. This new open issue is canonical for #975."
+body: "Source: https://github.com/unbraind/pm-cli/issues/975"

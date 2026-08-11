@@ -43,6 +43,10 @@ export function createPmCliProgram(version: string): Command {
       "--output-session <state>",
       "Carry a JSON session budget and served-item ledger across read calls",
     )
+    .option(
+      "--output-row-contract",
+      "Include the machine-readable row selector and TOON encoding contract",
+    )
     .option("--quiet", "Suppress stdout output")
     .option(
       "--no-changed-fields",

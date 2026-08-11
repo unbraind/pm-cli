@@ -7,7 +7,10 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { attachOutputOmissionReceipt } from "./output-projection.js";
 import { encodeQueryCursor } from "./pagination.js";
-import { applyReadOutputDimensions } from "./read-output-contracts.js";
+import {
+  applyReadOutputDimensions,
+  stabilizeReadOutputReceiptEstimates,
+} from "./read-output-contracts.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 
@@ -894,6 +897,57 @@ function collapseContinuationMetadata(
   return projected;
 }
 
+/** Return whether one projected value is a mutable output record. */
+function isOutputRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/** Read one numeric fixed-point estimate from an optional receipt. */
+function receiptEstimate(value: unknown, field: string): number | undefined {
+  if (!isOutputRecord(value)) return undefined;
+  return typeof value[field] === "number" ? value[field] : undefined;
+}
+
+/** Stabilize every token receipt after suppressing discovery-only metadata. */
+function stabilizeSuppressedRowContractReceipts(
+  result: Record<string, unknown>,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  let finalized = result;
+  for (let iteration = 0; iteration < 8; iteration += 1) {
+    const previousContextEstimate = receiptEstimate(
+      finalized.context_intent,
+      "estimated_tokens",
+    );
+    const previousReadEstimate = receiptEstimate(
+      finalized.read_output,
+      "estimated_tokens",
+    );
+    const previousSessionEstimate = receiptEstimate(
+      finalized.read_session,
+      "spent_this_call_tokens",
+    );
+    if (isOutputRecord(finalized.context_intent)) {
+      updateContextIntentEstimate(
+        finalized,
+        finalized.context_intent as unknown as PmContextIntentReceipt,
+      );
+    }
+    finalized = stabilizeReadOutputReceiptEstimates(finalized, options);
+    if (
+      receiptEstimate(finalized.context_intent, "estimated_tokens") ===
+        previousContextEstimate &&
+      receiptEstimate(finalized.read_output, "estimated_tokens") ===
+        previousReadEstimate &&
+      receiptEstimate(finalized.read_session, "spent_this_call_tokens") ===
+        previousSessionEstimate
+    ) {
+      break;
+    }
+  }
+  return finalized;
+}
+
 /** Attach universal row, omission, and optional intent-budget contracts in rendering order. */
 export function attachReadOutputContracts(
   command: string | undefined,
@@ -901,7 +955,7 @@ export function attachReadOutputContracts(
   result: unknown,
 ): unknown {
   const disclosedResult = attachOutputOmissionReceipt(command, result);
-  return typeof disclosedResult === "object" &&
+  const projected = typeof disclosedResult === "object" &&
     disclosedResult !== null &&
     !Array.isArray(disclosedResult)
     ? applyReadOutputDimensions(
@@ -917,4 +971,19 @@ export function attachReadOutputContracts(
         ),
       )
     : disclosedResult;
+  if (
+    options.outputRowContract === true ||
+    typeof projected !== "object" ||
+    projected === null ||
+    Array.isArray(projected) ||
+    !Object.hasOwn(projected, "row_contract")
+  ) {
+    return projected;
+  }
+  return stabilizeSuppressedRowContractReceipts(
+    Object.fromEntries(
+      Object.entries(projected).filter(([key]) => key !== "row_contract"),
+    ),
+    options,
+  );
 }

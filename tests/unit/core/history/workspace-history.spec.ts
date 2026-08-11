@@ -93,7 +93,7 @@ describe("workspace history", () => {
       );
       expect(history.verification).toMatchObject({ ok: true, entries: 2 });
       const activity = await runActivity(
-        { id: WORKSPACE_HISTORY_ID },
+        { id: WORKSPACE_HISTORY_ID, raw: true, compact: false },
         { path: context.pmPath },
       );
       expect(activity.activity).toHaveLength(2);

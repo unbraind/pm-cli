@@ -13,6 +13,7 @@ import {
   applyReadOutputDimensions,
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
 } from "../../../src/sdk/read-output-contracts.js";
+import { attachReadOutputContracts } from "../../../src/sdk/context-intent-contracts.js";
 
 describe("SDK read contract integrity", () => {
   it("declares package manage through the shared read-output registry", () => {
@@ -161,6 +162,62 @@ describe("SDK read contract integrity", () => {
     expect(() =>
       applyReadOutputDimensions("get", { outputInclude: "item,id" }, result),
     ).toThrow(/cannot mix a full item with projected item fields/u);
+  });
+
+  it("keeps row discovery opt-in and measures the final read envelope exactly", () => {
+    const session = {
+      version: 1 as const,
+      id: "read-contract-integrity",
+      token_budget: 2_000,
+      spent_tokens: 0,
+      seen_item_ids: [],
+    };
+    const hidden = attachReadOutputContracts(
+      "list",
+      { outputSession: session },
+      { items: [{ id: "pm-1", title: "One" }], count: 1 },
+    ) as Record<string, unknown> & {
+      read_output: { estimated_tokens: number };
+      read_session: { spent_this_call_tokens: number };
+    };
+    const hiddenEstimate = Math.ceil(
+      Buffer.byteLength(JSON.stringify(hidden), "utf8") / 4,
+    );
+    expect(hidden).not.toHaveProperty("row_contract");
+    expect(hidden.read_output.estimated_tokens).toBe(hiddenEstimate);
+    expect(hidden.read_session.spent_this_call_tokens).toBe(hiddenEstimate);
+
+    const disclosed = attachReadOutputContracts(
+      "list",
+      { outputRowContract: true, outputSession: session },
+      { items: [{ id: "pm-1", title: "One" }], count: 1 },
+    ) as Record<string, unknown> & {
+      read_output: { estimated_tokens: number };
+      read_session: { spent_this_call_tokens: number };
+    };
+    const disclosedEstimate = Math.ceil(
+      Buffer.byteLength(JSON.stringify(disclosed), "utf8") / 4,
+    );
+    expect(disclosed).toHaveProperty("row_contract");
+    expect(disclosed.read_output.estimated_tokens).toBe(disclosedEstimate);
+    expect(disclosed.read_session.spent_this_call_tokens).toBe(
+      disclosedEstimate,
+    );
+    expect(
+      attachReadOutputContracts(
+        "list",
+        {},
+        {
+          items: [],
+          row_contract: {},
+          context_intent: [],
+          read_output: { estimated_tokens: "stale" },
+        },
+      ),
+    ).toMatchObject({
+      context_intent: [],
+      read_output: { estimated_tokens: expect.any(Number) },
+    });
   });
 
   it("returns bounded mutation receipts independently of annotation history size", async () => {

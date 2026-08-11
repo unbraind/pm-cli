@@ -75,6 +75,8 @@ export interface PmReadOutputOptions {
   outputFormat?: "json" | "toon";
   /** Caller-carried cross-call budget and served-fact state. */
   outputSession?: string | PmReadOutputSessionState;
+  /** Include row selector and encoding discovery metadata. */
+  outputRowContract?: boolean;
 }
 
 /** Compatibility spelling retained for a command-specific output control. */
@@ -227,6 +229,7 @@ export const PM_READ_OUTPUT_OPTION_FLAGS: readonly string[] = Object.freeze(
 /** Canonical control that composes the four per-call dimensions across reads. */
 export const PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS = Object.freeze([
   "--output-session",
+  "--output-row-contract",
 ] as const);
 
 const LEGACY_FLAGS_BY_COMMAND: Readonly<
@@ -422,6 +425,8 @@ const CANONICAL_OPTION_KEYS = [
   "output_format",
   "outputSession",
   "output_session",
+  "outputRowContract",
+  "output_row_contract",
 ] as const;
 
 const HYBRID_READ_MUTATION_KEYS: Readonly<
@@ -937,6 +942,23 @@ function attachReadOutputSessionContracts(
     }
   }
   return withSession;
+}
+
+/** Recompute read and optional session receipts after a final envelope projection. */
+export function stabilizeReadOutputReceiptEstimates(
+  result: Record<string, unknown>,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  if (!isRecord(result.read_output)) return result;
+  const receipt = result.read_output as unknown as PmReadOutputReceipt;
+  const session = parseReadOutputSession(
+    options.outputSession ?? options.output_session,
+  );
+  if (session === undefined) {
+    updateReadOutputReceiptEstimate(result, receipt);
+    return result;
+  }
+  return attachReadOutputSessionContracts(result, session, receipt);
 }
 
 /** Apply field, amount, and repeat projections to every declared row path. */

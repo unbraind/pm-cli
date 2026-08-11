@@ -35,6 +35,7 @@ import {
   PACKAGE_FLAG_CONTRACTS,
   PLAN_FLAG_CONTRACTS,
   SEARCH_FLAG_CONTRACTS,
+  STATS_FLAG_CONTRACTS,
   EVENTS_FLAG_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
   UPDATE_MANY_FLAG_CONTRACTS,
@@ -103,6 +104,7 @@ const DUPLICATES_FLAGS = toCompletionFlagString(DUPLICATES_FLAG_CONTRACTS);
 const GRAPH_FLAGS = toCompletionFlagString(GRAPH_FLAG_CONTRACTS);
 const GUIDE_FLAGS = toCompletionFlagString(GUIDE_FLAG_CONTRACTS);
 const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
+const STATS_FLAGS = toCompletionFlagString(STATS_FLAG_CONTRACTS);
 const HEALTH_FLAGS = toCompletionFlagString(HEALTH_FLAG_CONTRACTS);
 const INIT_FLAGS = toCompletionFlagString(INIT_FLAG_CONTRACTS);
 const CONTRACTS_FLAGS = toCompletionFlagString(CONTRACTS_FLAG_CONTRACTS);
@@ -870,7 +872,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--dry-run --scope --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    stats)",
-    `      COMPREPLY=(${compgen("--storage --metadata-coverage --field-utilization --by-assignee --by-tag --by-priority --tag-prefix --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen(STATS_FLAGS)})`,
     "      ;;",
     "    close|close-task)",
     `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
@@ -1547,6 +1549,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         stats)
           _arguments \\
+            '--include-empty[Include registered zero-count type and status buckets]' \\
             '--storage[Include aggregate history-stream storage metrics]' \\
             '--metadata-coverage[Include metadata coverage percentages overall and by type]' \\
             '--field-utilization[Include content-field utilization rates across all items]' \\
@@ -2729,6 +2732,7 @@ complete -c pm -n '__fish_seen_subcommand_from gc' -l dry-run -d 'Preview cleanu
 complete -c pm -n '__fish_seen_subcommand_from gc' -l scope -d 'Limit cleanup to index/embeddings/runtime/locks scopes' -r
 
 # stats flags
+complete -c pm -n '__fish_seen_subcommand_from stats' -l include-empty -d 'Include registered zero-count type and status buckets'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l storage -d 'Include aggregate history-stream storage metrics'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l metadata-coverage -d 'Include metadata coverage percentages overall and by type'
 complete -c pm -n '__fish_seen_subcommand_from stats' -l field-utilization -d 'Include content-field utilization rates across all items'

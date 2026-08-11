@@ -46,6 +46,8 @@ export interface ReadRowContract {
   fields: "supported" | "unsupported";
   /** Universal jq expression that iterates every declared collection path. */
   jq_selector?: string;
+  /** TOON row encoding selected whenever every row is a flat object with one shared key set. */
+  toon_encoding?: "tabular_when_uniform";
 }
 
 /** Universal selector for results carrying a {@link ReadRowContract}. */
@@ -69,7 +71,12 @@ export const PM_READ_ROW_CONTRACTS = {
   },
   search: { row_keys: ["items"], fields: "supported" },
   activity: {
-    row_keys: ["compact_activity", "provenance_activity", "activity"],
+    row_keys: [
+      "activity_digest",
+      "compact_activity",
+      "provenance_activity",
+      "activity",
+    ],
     fields: "unsupported",
   },
   history: {
@@ -122,6 +129,12 @@ export const PM_MODE_PAIRED_OUTPUT_PROJECTION_CONTRACTS = [
     command: "activity",
     complete_mode: "full",
     omissions_by_mode: {
+      digest: [
+        {
+          name: "event_rows",
+          restore_with: "--raw",
+        },
+      ],
       compact: [
         {
           name: "provenance",
@@ -278,7 +291,12 @@ const READ_RESULT_SENTINEL_KEYS: Readonly<Record<string, readonly string[]>> = {
     "held_by_others",
   ],
   search: ["items", "projection"],
-  activity: ["compact_activity", "provenance_activity", "activity"],
+  activity: [
+    "activity_digest",
+    "compact_activity",
+    "provenance_activity",
+    "activity",
+  ],
   history: ["compact_history", "provenance_history", "history"],
   deps: ["tree", "graph", "projection"],
   health: ["checks"],
@@ -320,6 +338,7 @@ export function resolveReadRowContract(
       ...(activeRowKeys.length > 0
         ? { jq_selector: PM_READ_ROW_JQ_SELECTOR }
         : {}),
+      toon_encoding: "tabular_when_uniform",
     };
   }
   const declaration = (
@@ -357,6 +376,7 @@ export function resolveReadRowContract(
           ...(rowKeys.length > 0
             ? { jq_selector: PM_READ_ROW_JQ_SELECTOR }
             : {}),
+          toon_encoding: "tabular_when_uniform",
         };
       })();
 }

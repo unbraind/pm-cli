@@ -51,6 +51,19 @@ const INVARIANT_CONTINUATION_KEYS = Object.freeze([
   "total",
   "truncated",
 ]);
+const CALIBRATED_INTENT_ROW_KEYS = Object.freeze([
+  "activity",
+  "blocked",
+  "blocked_fallback",
+  "children",
+  "decision_needed",
+  "hierarchy",
+  "high_level",
+  "low_level",
+  "ready",
+  "recently_created",
+  "unparented",
+]);
 
 function serializedBytes(value) {
   return Buffer.byteLength(JSON.stringify(value), "utf8");
@@ -205,11 +218,11 @@ async function runSessionOrientation(
 function countIntentRows(result) {
   if (Array.isArray(result.items)) return result.items.length;
   return (
-    result.row_contract?.row_keys?.reduce(
-      (count, key) =>
-        count + (Array.isArray(result[key]) ? result[key].length : 0),
-      0,
-    ) ?? 0
+    result.row_contract?.row_keys ?? CALIBRATED_INTENT_ROW_KEYS
+  ).reduce(
+    (count, key) =>
+      count + (Array.isArray(result[key]) ? result[key].length : 0),
+    0,
   );
 }
 
@@ -570,6 +583,7 @@ export function assertCalibrationWithinApprovedCeilings(
 /** Exposes deterministic validation seams for exhaustive gate testing. */
 export const _testOnly = {
   assertCursorRowParity,
+  countIntentRows,
   intentReceiptViolation,
   measureTier,
   runSessionOrientation,

@@ -98,7 +98,11 @@ export type {
 export type { PmContextIntentContract } from "./context-intent-contracts.js";
 export type { PmErrorCodeContract } from "./error-code-catalog.js";
 export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
-import { runActivity } from "./query/activity.js";
+import {
+  normalizeActivityProjectionOptions,
+  runActivity,
+  type ActivityCommandOptions,
+} from "./query/activity.js";
 import { runAssuranceDispatch, type AssuranceActionInput, type AssuranceActionResult } from "./governance/assurance-action.js";
 export type * from "./governance/assurance-action-contracts.js";
 import {
@@ -3130,14 +3134,8 @@ function runMcpConfigAction(ctx: McpActionDispatchContext): Promise<unknown> {
 }
 
 function runMcpActivityAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const activityOptions = { ...ctx.options } as Parameters<
-    typeof runActivity
-  >[0] & { full?: unknown };
-  if (activityOptions.compact === undefined) {
-    activityOptions.compact = activityOptions.full === true ? false : true;
-  }
-  delete activityOptions.full;
-  return runActivity(activityOptions, ctx.global);
+  const options = ctx.options as ActivityCommandOptions & { full?: unknown };
+  return runActivity(normalizeActivityProjectionOptions(options), ctx.global);
 }
 
 function parseMcpIntegerPrefix(

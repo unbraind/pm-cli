@@ -327,8 +327,17 @@ describe("generateBashScript", () => {
   it("includes strict health flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--strict-directories --require-merge-drivers --strict-exit --fail-on-warn --check-only --check-telemetry --no-refresh --refresh-vectors --verbose-stale-items --verbose-author-events --brief --summary --skip-vectors --skip-integrity --skip-drift --full --json --lean --token-accounting --output-include --output-limit --output-budget --output-format --output-session --quiet --no-changed-fields --full-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help",
+      "--strict-directories --require-merge-drivers --strict-exit --fail-on-warn --check-only --check-telemetry --no-refresh --refresh-vectors --verbose-stale-items --verbose-author-events --brief --summary --skip-vectors --skip-integrity --skip-drift --full --json --lean --token-accounting --output-include --output-limit --output-budget --output-format --output-session --output-row-contract --quiet --no-changed-fields --full-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help",
     );
+  });
+
+  it("includes compact stats baseline controls across shells", () => {
+    expect(generateBashScript()).toContain("stats)");
+    expect(generateBashScript()).toContain("--include-empty");
+    expect(generateZshScript()).toContain(
+      "--include-empty[Include registered zero-count type and status buckets]",
+    );
+    expect(generateFishScript()).toContain("-l include-empty");
   });
 
   it("includes extension doctor strict flags in bash completion", () => {

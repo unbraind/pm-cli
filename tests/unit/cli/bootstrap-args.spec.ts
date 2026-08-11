@@ -92,6 +92,7 @@ describe("parseBootstrapGlobalOptions", () => {
         "--output-format=json",
         "--output-session",
         '{"version":1}',
+        "--output-row-contract",
       ]),
     ).toMatchObject({
       outputInclude: "id,title",
@@ -99,6 +100,7 @@ describe("parseBootstrapGlobalOptions", () => {
       outputBudget: "800",
       outputFormat: "json",
       outputSession: '{"version":1}',
+      outputRowContract: true,
     });
     expect(
       parseBootstrapGlobalOptions([

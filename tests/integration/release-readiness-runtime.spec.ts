@@ -1657,7 +1657,6 @@ describe("release readiness runtime coverage", () => {
         "has_more",
         "mutation_receipt",
         "omission_receipt",
-        "row_contract",
       ]);
 
       const notesResult = context.runCli(
@@ -1676,7 +1675,6 @@ describe("release readiness runtime coverage", () => {
         "has_more",
         "mutation_receipt",
         "omission_receipt",
-        "row_contract",
       ]);
 
       const learningsResult = context.runCli(
@@ -1695,7 +1693,6 @@ describe("release readiness runtime coverage", () => {
         "has_more",
         "mutation_receipt",
         "omission_receipt",
-        "row_contract",
       ]);
 
       const commentsPositionalResult = context.runCli(
@@ -1721,7 +1718,6 @@ describe("release readiness runtime coverage", () => {
         "has_more",
         "mutation_receipt",
         "omission_receipt",
-        "row_contract",
       ]);
 
       const filesResult = context.runCli(
@@ -1740,7 +1736,6 @@ describe("release readiness runtime coverage", () => {
         "files",
         "changed",
         "count",
-        "row_contract",
       ]);
 
       const docsResult = context.runCli(
@@ -1759,7 +1754,6 @@ describe("release readiness runtime coverage", () => {
         "docs",
         "changed",
         "count",
-        "row_contract",
       ]);
 
       const depsTreeResult = context.runCli(["deps", createdId, "--json"], {
@@ -1776,7 +1770,6 @@ describe("release readiness runtime coverage", () => {
         "tree",
         "legacy_alias_counts",
         "projection",
-        "row_contract",
         "omission_receipt",
       ]);
 
@@ -1795,7 +1788,6 @@ describe("release readiness runtime coverage", () => {
         "graph",
         "legacy_alias_counts",
         "projection",
-        "row_contract",
         "omission_receipt",
       ]);
 
@@ -1822,7 +1814,6 @@ describe("release readiness runtime coverage", () => {
         "missing_count",
         "legacy_alias_counts",
         "projection",
-        "row_contract",
         "omission_receipt",
       ]);
 
@@ -1858,7 +1849,6 @@ describe("release readiness runtime coverage", () => {
         "projection",
         "sorting",
         "now",
-        "row_contract",
         "omission_receipt",
       ]);
 
@@ -1913,7 +1903,6 @@ describe("release readiness runtime coverage", () => {
         "agenda",
         "applied_limit",
         "extension_health",
-        "row_contract",
         "omission_receipt",
       ]);
 
@@ -1931,7 +1920,6 @@ describe("release readiness runtime coverage", () => {
         "count",
         "applied_limit",
         "filters",
-        "row_contract",
         "omission_receipt",
       ]);
       expect((searchResult.json as { mode?: string }).mode).toBe("keyword");
@@ -1955,7 +1943,6 @@ describe("release readiness runtime coverage", () => {
         "item",
         "linked",
         "claim_state",
-        "row_contract",
         "omission_receipt",
       ]);
       const getJson = getResult.json as {
@@ -2180,7 +2167,6 @@ describe("release readiness runtime coverage", () => {
         "omission_receipt",
         "count",
         "limit",
-        "row_contract",
       ]);
 
       const activityResult = context.runCli(
@@ -2189,7 +2175,7 @@ describe("release readiness runtime coverage", () => {
       );
       expect(activityResult.code).toBe(0);
       expectTopLevelKeyOrder(activityResult.json, [
-        "compact_activity",
+        "activity_digest",
         "compact",
         "projection",
         "omission_receipt",
@@ -2198,8 +2184,8 @@ describe("release readiness runtime coverage", () => {
         "limit",
         "omitted_count",
         "has_more",
+        "activity_summary",
         "applied_bound",
-        "row_contract",
       ]);
 
       const statsResult = context.runCli(["stats", "--json"], {
@@ -2210,8 +2196,8 @@ describe("release readiness runtime coverage", () => {
         "totals",
         "by_type",
         "by_status",
+        "omitted_zero_buckets",
         "generated_at",
-        "row_contract",
       ]);
 
       const healthResult = context.runCli(["health", "--json"], {
@@ -2223,7 +2209,6 @@ describe("release readiness runtime coverage", () => {
         "checks",
         "warnings",
         "generated_at",
-        "row_contract",
         "omission_receipt",
       ]);
 

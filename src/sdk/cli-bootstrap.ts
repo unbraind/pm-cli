@@ -77,6 +77,8 @@ export interface BootstrapGlobalOptions {
   outputFormat?: "toon" | "json";
   /** Caller-carried cross-call budget and served-item state. */
   outputSession?: string;
+  /** Whether machine-readable row discovery metadata is requested. */
+  outputRowContract?: boolean;
   /** Invocation-wide mutation author override. */
   author?: string;
   /** Whether `--author` was present without its required value. */
@@ -90,6 +92,7 @@ const BOOTSTRAP_BOOLEAN_FLAGS = new Set([
   "--quiet",
   "--lean",
   "--token-accounting",
+  "--output-row-contract",
 ]);
 
 interface BootstrapGlobalParseState {
@@ -157,6 +160,9 @@ export function parseBootstrapGlobalOptions(
     quiet: state.booleanFlags.has("--quiet"),
     lean: state.booleanFlags.has("--lean"),
     tokenAccounting: state.booleanFlags.has("--token-accounting"),
+    ...(state.booleanFlags.has("--output-row-contract")
+      ? { outputRowContract: true }
+      : {}),
     ...(state.outputValues.get("--output-include") === undefined
       ? {}
       : { outputInclude: state.outputValues.get("--output-include") }),

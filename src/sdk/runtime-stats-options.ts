@@ -12,6 +12,7 @@ export function statsCommandOptionsFromRuntime(
   options: Record<string, unknown>,
 ): StatsCommandOptions {
   return {
+    includeEmpty: options.includeEmpty === true,
     storage: options.storage === true,
     metadataCoverage: options.metadataCoverage === true,
     fieldUtilization: options.fieldUtilization === true,

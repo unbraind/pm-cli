@@ -1806,7 +1806,10 @@ describe("runHistory and runActivity", () => {
       const historyDir = path.join(context.pmPath, "history");
       await writeFile(path.join(historyDir, "ignore-me.txt"), "noop", "utf8");
 
-      const allActivity = await runActivity({}, { path: context.pmPath });
+      const allActivity = await runActivity(
+        { raw: true, compact: false },
+        { path: context.pmPath },
+      );
       expect(allActivity.count).toBeGreaterThanOrEqual(3);
       expect(allActivity.activity.some((entry) => entry.id === firstId)).toBe(
         true,
@@ -1829,7 +1832,7 @@ describe("runHistory and runActivity", () => {
       }
 
       const limited = await runActivity(
-        { limit: "1" },
+        { raw: true, limit: "1" },
         { path: context.pmPath },
       );
       expect(limited.count).toBe(1);
@@ -1841,7 +1844,7 @@ describe("runHistory and runActivity", () => {
       });
 
       const unbounded = await runActivity(
-        { unbounded: true },
+        { raw: true, unbounded: true },
         { path: context.pmPath },
       );
       expect(unbounded).toMatchObject({
@@ -1857,10 +1860,32 @@ describe("runHistory and runActivity", () => {
         { expectJson: true },
       );
       expect(cliDefault.code).toBe(0);
-      expect(cliDefault.json).toMatchObject({ compact: true });
+      expect(cliDefault.json).toMatchObject({
+        compact: false,
+        projection: { mode: "digest", row_key: "activity_digest" },
+        activity_summary: {
+          event_count: expect.any(Number),
+          item_count: expect.any(Number),
+        },
+      });
       expect(cliDefault.json).not.toHaveProperty("activity");
       expect(
-        (cliDefault.json as { compact_activity?: unknown[] }).compact_activity
+        (cliDefault.json as { activity_digest?: unknown[] }).activity_digest
+          ?.length,
+      ).toBeGreaterThan(0);
+
+      const cliRaw = context.runCli(
+        ["activity", "--json", "--raw", "--limit", "5"],
+        { expectJson: true },
+      );
+      expect(cliRaw.code).toBe(0);
+      expect(cliRaw.json).toMatchObject({
+        compact: true,
+        projection: { mode: "compact", row_key: "compact_activity" },
+      });
+      expect(cliRaw.json).not.toHaveProperty("activity_digest");
+      expect(
+        (cliRaw.json as { compact_activity?: unknown[] }).compact_activity
           ?.length,
       ).toBeGreaterThan(0);
 
@@ -1908,7 +1933,10 @@ describe("runHistory and runActivity", () => {
         force: true,
       });
 
-      const activity = await runActivity({}, { path: context.pmPath });
+      const activity = await runActivity(
+        { raw: true, compact: false },
+        { path: context.pmPath },
+      );
       expect(activity).toEqual({
         activity: [],
         compact: false,
@@ -2014,6 +2042,37 @@ describe("runHistory and runActivity", () => {
       after_hash: "",
     });
 
+    const digest = activityInternals.buildActivityDigest(
+      [
+        ...["create", "update", "comment", "claim", "close"].map(
+          (op, index) => ({
+            ...baseEntry,
+            id: "pm-missing",
+            op,
+            ts: `2026-01-0${String(index + 1)}T00:00:00.000Z`,
+          }),
+        ),
+        {
+          ...baseEntry,
+          id: "pm-z",
+          op: "create",
+          ts: "2026-01-05T00:00:00.000Z",
+        },
+      ],
+      new Map(),
+    );
+    expect(digest[0]).toMatchObject({
+      id: "pm-missing",
+      type: "unknown",
+      status: "unknown",
+      title: "(item metadata unavailable)",
+      event_count: 5,
+      first_ts: "2026-01-01T00:00:00.000Z",
+      last_ts: "2026-01-05T00:00:00.000Z",
+    });
+    expect(digest[0]?.operations).toContain("+1");
+    expect(digest[1]?.id).toBe("pm-z");
+
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-activity-files-"));
     try {
       expect(
@@ -2072,7 +2131,10 @@ describe("runHistory and runActivity", () => {
       };
       setActiveExtensionHooks(hooks);
 
-      const activity = await runActivity({}, { path: context.pmPath });
+      const activity = await runActivity(
+        { raw: true, compact: false },
+        { path: context.pmPath },
+      );
       expect(activity.count).toBeGreaterThanOrEqual(1);
       expect(events).toContain("history");
       expect(events).toContain(`${id}.jsonl`);
@@ -2119,7 +2181,10 @@ describe("runHistory and runActivity", () => {
         "utf8",
       );
 
-      const activity = await runActivity({}, { path: context.pmPath });
+      const activity = await runActivity(
+        { raw: true, compact: false },
+        { path: context.pmPath },
+      );
       expect(activity.count).toBe(3);
 
       const expectedOrder =
@@ -2179,18 +2244,21 @@ describe("runHistory and runActivity", () => {
         "utf8",
       );
 
-      const byId = await runActivity({ id: firstId }, { path: context.pmPath });
+      const byId = await runActivity(
+        { raw: true, compact: false, id: firstId },
+        { path: context.pmPath },
+      );
       expect(byId.count).toBe(2);
       expect(byId.activity.every((entry) => entry.id === firstId)).toBe(true);
 
       const byOp = await runActivity(
-        { op: "update" },
+        { raw: true, compact: false, op: "update" },
         { path: context.pmPath },
       );
       expect(byOp.activity.map((entry) => entry.op)).toEqual(["update"]);
 
       const byAuthor = await runActivity(
-        { author: "author-c" },
+        { raw: true, compact: false, author: "author-c" },
         { path: context.pmPath },
       );
       expect(byAuthor.activity.map((entry) => entry.author)).toEqual([
@@ -2199,6 +2267,8 @@ describe("runHistory and runActivity", () => {
 
       const byWindow = await runActivity(
         {
+          raw: true,
+          compact: false,
           from: "2026-01-02T00:00:00.000Z",
           to: "2026-01-03T00:00:00.000Z",
         },
@@ -2238,6 +2308,13 @@ describe("runHistory and runActivity", () => {
         { path: context.pmPath },
       );
       expect(relativeWindow.count).toBeGreaterThanOrEqual(1);
+      expect(relativeWindow.activity_summary?.window.to).toBeTruthy();
+
+      const openEndedWindow = await runActivity(
+        { from: "-1d" },
+        { path: context.pmPath },
+      );
+      expect(openEndedWindow.activity_summary?.window.to).toBeTruthy();
 
       const bareAgoWindow = await runActivity(
         {

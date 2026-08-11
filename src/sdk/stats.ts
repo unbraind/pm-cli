@@ -17,7 +17,9 @@ import {
   computeMetadataCoverage,
   groupItemsByDimension,
   lifecycleClassifierFromStatusRegistry,
+  type CoverageItem,
   type GroupedBreakdown,
+  type LifecycleClassifier,
   type MetadataCoverageReport,
 } from "../core/governance/metadata-coverage.js";
 import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
@@ -57,6 +59,8 @@ import { parseTestRunMeasurements } from "./test/measurements.js";
 
 /** Documents the stats command options payload exchanged by command, SDK, and package integrations. */
 export interface StatsCommandOptions {
+  /** Restore zero-count item-type and status buckets for schema-governance dashboards. */
+  includeEmpty?: boolean;
   /** Include aggregate per-stream history storage metrics (sizes, depth, oldest/newest). */
   storage?: boolean;
   /** Include metadata coverage percentages (AC, estimates, resolution, tags, parent) overall and by type. */
@@ -103,6 +107,31 @@ export interface StatsCommandOptions {
   minimumSample?: number;
 }
 
+/** Compact, tabular lifecycle row used by the default stats type distribution. */
+export interface StatsTypeLifecycleRow {
+  /** Item type represented by this row. */
+  type: string;
+  /** Total items of this type across every lifecycle bucket. */
+  total: number;
+  /** Items in the default open lifecycle bucket. */
+  open: number;
+  /** Items in active non-default lifecycle states. */
+  in_progress: number;
+  /** Items in blocked lifecycle states. */
+  blocked: number;
+  /** Items in draft lifecycle states. */
+  draft: number;
+  /** Items in completed lifecycle states. */
+  closed: number;
+  /** Items in canceled lifecycle states. */
+  canceled: number;
+  /** Items whose custom status is outside the recognized lifecycle buckets. */
+  other: number;
+}
+
+/** Screen-sized type distribution rendered as one canonical TOON table. */
+export type StatsTypeBreakdown = StatsTypeLifecycleRow[];
+
 /** Documents the stats result payload exchanged by command, SDK, and package integrations. */
 export interface StatsResult {
   /** Value that configures or reports totals for this contract. */
@@ -112,9 +141,11 @@ export interface StatsResult {
     history_entries: number;
   };
   /** Schema type that determines the shape and validation rules for this value. */
-  by_type: Record<ItemType, number>;
+  by_type: StatsTypeBreakdown;
   /** Item counts grouped by lifecycle status. */
-  by_status: Record<ItemStatus, number>;
+  by_status: Partial<Record<ItemStatus, number>>;
+  /** Total zero-count type and status buckets omitted from the default projection. */
+  omitted_zero_buckets: number;
   /** Present only with --metadata-coverage: per-field coverage overall and by type. */
   metadata_coverage?: MetadataCoverageReport;
   /** Present only with --by-assignee/--by-tag/--by-priority: lifecycle-bucketed group breakdowns. */
@@ -157,6 +188,65 @@ function zeroByStatus(statuses: string[]): Record<ItemStatus, number> {
     },
     {} as Record<ItemStatus, number>,
   );
+}
+
+function projectStatsDistributions(
+  items: readonly CoverageItem[],
+  itemTypes: readonly string[],
+  statuses: readonly string[],
+  classifier: LifecycleClassifier,
+  includeEmpty: boolean,
+): {
+  byType: StatsTypeBreakdown;
+  byStatus: Partial<Record<ItemStatus, number>>;
+  omitted: number;
+} {
+  const grouped = groupItemsByDimension(items, "type", classifier);
+  const presentTypes = new Set(grouped.rows.map((row) => row.key));
+  const missingTypes = itemTypes.filter((type) => !presentTypes.has(type));
+  const groupedRows = includeEmpty
+    ? [
+        ...grouped.rows,
+        ...missingTypes.map((type) => ({
+          label: type,
+          key: type,
+          total: 0,
+          buckets: {
+            open: 0,
+            in_progress: 0,
+            blocked: 0,
+            draft: 0,
+            closed: 0,
+            canceled: 0,
+            other: 0,
+          },
+        })),
+      ]
+    : grouped.rows;
+  const byType: StatsTypeBreakdown = groupedRows.map((row) => ({
+      type: row.key ?? row.label,
+      total: row.total,
+      open: row.buckets.open,
+      in_progress: row.buckets.in_progress,
+      blocked: row.buckets.blocked,
+      draft: row.buckets.draft,
+      closed: row.buckets.closed,
+      canceled: row.buckets.canceled,
+      other: row.buckets.other,
+    }));
+  const counts = zeroByStatus([...statuses]);
+  for (const item of items) counts[item.status] += 1;
+  const byStatus = Object.fromEntries(
+    Object.entries(counts).filter(([, count]) => includeEmpty || count > 0),
+  ) as Partial<Record<ItemStatus, number>>;
+  return {
+    byType,
+    byStatus,
+    omitted: includeEmpty
+      ? 0
+      : missingTypes.length +
+        Object.values(counts).filter((count) => count === 0).length,
+  };
 }
 
 function countNonEmptyLines(raw: string): number {
@@ -205,6 +295,7 @@ export const _testOnly = {
   zeroByStatus,
   countNonEmptyLines,
   readHistoryStreamContents,
+  projectStatsDistributions,
 };
 
 async function recordStatsObservations(
@@ -303,6 +394,7 @@ function assembleStatsResult(
   totals: StatsResult["totals"],
   byType: StatsResult["by_type"],
   byStatus: StatsResult["by_status"],
+  omittedZeroBuckets: StatsResult["omitted_zero_buckets"],
   optional: {
     metadataCoverage: MetadataCoverageReport | undefined;
     breakdowns: NonNullable<StatsResult["breakdowns"]>;
@@ -319,6 +411,7 @@ function assembleStatsResult(
     totals,
     by_type: byType,
     by_status: byStatus,
+    omitted_zero_buckets: omittedZeroBuckets,
     ...(optional.metadataCoverage
       ? { metadata_coverage: optional.metadataCoverage }
       : {}),
@@ -388,18 +481,14 @@ export async function runStats(
     commandLabel: "stats",
   });
 
-  const byType = zeroByType(typeRegistry.types);
-  const byStatus = zeroByStatus(
+  const classifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
+  const distributions = projectStatsDistributions(
+    items,
+    typeRegistry.types,
     statusRegistry.definitions.map((definition) => definition.id),
+    classifier,
+    options.includeEmpty === true,
   );
-  // zeroByType/zeroByStatus pre-seed a bucket for every registry type/status, and
-  // the light item-metadata reader drops any item whose type/status falls outside
-  // the active registry (parse rejects them) — so every item's bucket is already
-  // present here and no on-the-fly initialization is reachable.
-  for (const item of items) {
-    byType[item.type] += 1;
-    byStatus[item.status] += 1;
-  }
 
   const streams = await readHistoryStreamContents(pmRoot);
   let historyEntries = 0;
@@ -410,7 +499,6 @@ export async function runStats(
     ? computeHistoryStorageStats(streams)
     : undefined;
 
-  const classifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
   const metadataCoverage = options.metadataCoverage
     ? computeMetadataCoverage(items, classifier)
     : undefined;
@@ -442,8 +530,9 @@ export async function runStats(
       history_streams: streams.length,
       history_entries: historyEntries,
     },
-    byType,
-    byStatus,
+    distributions.byType,
+    distributions.byStatus,
+    distributions.omitted,
     {
       metadataCoverage,
       breakdowns,

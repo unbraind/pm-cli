@@ -42,6 +42,7 @@ describe("read output contracts", () => {
     ]);
     expect(PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS).toEqual([
       "--output-session",
+      "--output-row-contract",
     ]);
     for (const contract of PM_READ_OUTPUT_SURFACE_CONTRACTS) {
       expect(Object.keys(contract.dimensions).sort()).toEqual(

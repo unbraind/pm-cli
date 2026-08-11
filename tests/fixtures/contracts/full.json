@@ -1283,6 +1283,9 @@
           "flag": "--compact"
         },
         {
+          "flag": "--raw"
+        },
+        {
           "flag": "--full"
         },
         {
@@ -7254,6 +7257,9 @@
     {
       "command": "stats",
       "flags": [
+        {
+          "flag": "--include-empty"
+        },
         {
           "flag": "--storage"
         },
@@ -19133,6 +19139,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -19543,6 +19553,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -20010,6 +20024,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -20946,6 +20964,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -21207,6 +21229,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -21455,6 +21481,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -21842,6 +21872,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -22183,6 +22217,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -22531,6 +22569,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -22781,6 +22823,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -23433,6 +23479,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -23869,6 +23919,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -24219,6 +24273,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -26291,6 +26349,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -27525,6 +27587,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -28947,16 +29013,6 @@
       "ordering": false
     }
   ],
-  "row_contract": {
-    "command": "contracts",
-    "fields": "unsupported",
-    "jq_selector": ".row_contract.row_keys[] as $key | getpath($key | split(\".\")) | if type == \"array\" then .[] else if type == \"object\" then to_entries[] else empty end end",
-    "row_keys": [
-      "command_summaries",
-      "commands"
-    ],
-    "row_kind": "collection"
-  },
   "runtime_schema": {
     "canceled_status": "canceled",
     "close_status": "closed",
@@ -31054,6 +31110,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -34118,6 +34178,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -34744,6 +34808,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -35372,6 +35440,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -35998,6 +36070,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -36626,6 +36702,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -37252,6 +37332,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -37880,6 +37964,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -38507,6 +38595,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -38855,6 +38947,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -39194,6 +39290,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -39580,6 +39680,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -39913,6 +40017,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -40254,6 +40362,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -40696,6 +40808,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -41243,6 +41359,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -41559,6 +41679,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -41848,6 +41972,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -43410,6 +43538,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -43514,6 +43646,10 @@
           },
           "quiet": {
             "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "raw": {
+            "description": "For activity, restore the compact per-event stream instead of the default item digest.",
             "type": "boolean"
           },
           "stream": {
@@ -45842,6 +45978,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -46135,6 +46275,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -46619,6 +46763,10 @@
               "unbounded"
             ]
           },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
           "outputSession": {
             "anyOf": [
               {
@@ -46883,6 +47031,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -47169,6 +47321,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -48610,6 +48766,10 @@
             ],
             "type": "string"
           },
+          "includeEmpty": {
+            "description": "For stats, restore zero-count registered type and lifecycle-status buckets.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -48738,6 +48898,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -48947,6 +49111,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -49265,6 +49433,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
@@ -50669,6 +50841,10 @@
               10,
               "unbounded"
             ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
           },
           "outputSession": {
             "anyOf": [
