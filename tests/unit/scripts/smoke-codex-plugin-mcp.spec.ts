@@ -43,7 +43,11 @@ describe("smoke-codex-plugin-mcp", () => {
     });
     const callTool = vi.fn(async (tool: string) => {
       if (tool === "pm_create") {
-        return { item: { id: "pm-smoke-1" } };
+        return {
+          changed_field_count: 10,
+          id: "pm-smoke-1",
+          status: "open",
+        };
       }
       if (tool === "pm_get") {
         return {
@@ -75,13 +79,53 @@ describe("smoke-codex-plugin-mcp", () => {
     expect(dispose).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects a stale create mutation envelope", async () => {
+    const request = vi.fn(async (method: string) =>
+      method === "tools/list"
+        ? { tools: FULL_TOOLS.map((name) => ({ name })) }
+        : { ok: true },
+    );
+    const callTool = vi.fn(async (tool: string) =>
+      tool === "pm_create" ? { item: { id: "pm-stale" } } : { ok: true },
+    );
+    const dispose = mockHarness(request, callTool);
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow(
+      /lean mutation envelope/,
+    );
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects an id-less lean create mutation envelope", async () => {
+    const request = vi.fn(async (method: string) =>
+      method === "tools/list"
+        ? { tools: FULL_TOOLS.map((name) => ({ name })) }
+        : { ok: true },
+    );
+    const callTool = vi.fn(async (tool: string) =>
+      tool === "pm_create"
+        ? { changed_field_count: 10, id: "", status: "open" }
+        : { ok: true },
+    );
+    const dispose = mockHarness(request, callTool);
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow(
+      /missing a non-empty id/,
+    );
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
   it("throws when the smoke item does not persist the expected status/links", async () => {
     const request = vi.fn(async (method: string) => {
       if (method === "tools/list") return { tools: FULL_TOOLS.map((name) => ({ name })) };
       return { ok: true };
     });
     const callTool = vi.fn(async (tool: string) => {
-      if (tool === "pm_create") return { item: { id: "pm-smoke-bad" } };
+      if (tool === "pm_create") {
+        return {
+          changed_field_count: 10,
+          id: "pm-smoke-bad",
+          status: "open",
+        };
+      }
       if (tool === "pm_get") return { item: { status: "open" }, linked: { files: [], tests: [] } };
       return { ok: true };
     });

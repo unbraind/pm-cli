@@ -1254,6 +1254,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "cli/error-guidance.ts",
       "core/telemetry/observability.ts",
       "sdk/context-intent-contracts.ts",
+      "sdk/governance/assurance-action.ts",
       "sdk/lifecycle/create.ts",
     ],
     emitting_commands: ["*", "create"],

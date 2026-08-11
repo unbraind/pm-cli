@@ -630,10 +630,19 @@ export function validateMeasurementDefinition(
   if (source.kind === "items" && source.field !== undefined && source.equals === undefined) {
     throw new TypeError("items source with field requires equals");
   }
-  if (source.kind === "dependency_kind" && source.dependency_kind.trim().length === 0) {
+  if (
+    source.kind === "dependency_kind" &&
+    (typeof source.dependency_kind !== "string" ||
+      source.dependency_kind.trim().length === 0)
+  ) {
     throw new TypeError("dependency_kind source requires dependency_kind");
   }
-  if ((source.kind === "graph" || source.kind === "validate" || source.kind === "health") && source.field.trim().length === 0) {
+  if (
+    (source.kind === "graph" ||
+      source.kind === "validate" ||
+      source.kind === "health") &&
+    (typeof source.field !== "string" || source.field.trim().length === 0)
+  ) {
     throw new TypeError(`${source.kind} source requires field`);
   }
   if (source.kind === "provider") {
@@ -649,7 +658,10 @@ export function validateAssertionDefinition(
 ): AssuranceAssertionDefinition {
   requireStableId(definition.id, "assertion.id");
   requireStableId(definition.measurement_id, "assertion.measurement_id");
-  if (definition.owner_item_id.trim().length === 0) {
+  if (
+    typeof definition.owner_item_id !== "string" ||
+    definition.owner_item_id.trim().length === 0
+  ) {
     throw new TypeError("assertion.owner_item_id is required");
   }
   const bound = boundFor(definition);

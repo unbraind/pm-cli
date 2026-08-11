@@ -81,6 +81,8 @@ describe("clone-local merge decision receipts", () => {
     await writeFile(path.join(receiptDirectory, "README"), "local only\n");
 
     expect(receipt).not.toBeNull();
+    expect(receipt).toMatchObject({ requested_preference: "ours" });
+    expect(receipt).not.toHaveProperty("preferred");
     expect(laterReceipt).not.toBeNull();
     expect(shellQuotedReceipt).toMatchObject({
       item_path: ".agents/pm/tasks/pm-shell-quoted.toon",
@@ -99,6 +101,7 @@ describe("clone-local merge decision receipts", () => {
     const summary = summarizeMergeReceipt(receipt!);
     expect(summary).toMatchObject({
       item_id: "pm-merge",
+      requested_preference: "ours",
       conflict_fields: ["title"],
       decisions: [
         {
@@ -109,6 +112,20 @@ describe("clone-local merge decision receipts", () => {
       ],
     });
     expect(JSON.stringify(summary)).not.toContain('"discarded"');
+    expect(
+      summarizeMergeReceipt({
+        ...receipt!,
+        requested_preference: undefined,
+        preferred: "theirs",
+      }).requested_preference,
+    ).toBe("theirs");
+    expect(
+      summarizeMergeReceipt({
+        ...receipt!,
+        requested_preference: undefined,
+        preferred: undefined,
+      }).requested_preference,
+    ).toBe("ours");
     expect(
       summarizeMergeReceipt({
         ...receipt!,
@@ -203,9 +220,36 @@ describe("clone-local merge decision receipts", () => {
       }),
       "utf8",
     );
+    await writeFile(
+      path.join(receiptDirectory, "pre-preference.json"),
+      JSON.stringify({
+        version: 1,
+        id: "pre-preference",
+        item_path: ".agents/pm/tasks/pm-pre-preference.toon",
+        item_id: "pm-pre-preference",
+        fields_from_theirs: [],
+        union_fields: [],
+        decisions: [],
+        state: "pending",
+        created_at: "2026-07-26T00:00:00.000Z",
+      }),
+      "utf8",
+    );
     expect(await listMergeReceipts(workspace)).toMatchObject([
-      { id: "legacy", conflict_resolution: "preferred_side" },
+      {
+        id: "pre-preference",
+        requested_preference: "ours",
+        conflict_resolution: "preferred_side",
+      },
+      {
+        id: "legacy",
+        requested_preference: "ours",
+        conflict_resolution: "preferred_side",
+      },
     ]);
+    expect((await listMergeReceipts(workspace))[0]).not.toHaveProperty(
+      "preferred",
+    );
     await rm(receiptDirectory, { recursive: true });
     await writeFile(
       path.join(workspace, ".git", "pm-merge-receipts"),

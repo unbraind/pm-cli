@@ -34,6 +34,16 @@ export interface OutputProjectionDeclaration {
   included_field_groups: string[];
 }
 
+const MATERIAL_FIELD_GROUPS_BY_RESULT = new WeakMap<object, ReadonlySet<string>>();
+
+/** Register non-serialized materiality evidence used to keep omission receipts token-proportional. */
+export function registerOutputMaterialFieldGroups(
+  result: object,
+  fieldGroups: readonly string[],
+): void {
+  MATERIAL_FIELD_GROUPS_BY_RESULT.set(result, new Set(fieldGroups));
+}
+
 /** Machine-readable location and field-projection support for read-result rows. */
 export interface ReadRowContract {
   /** Canonical read command that owns the result. */
@@ -466,17 +476,22 @@ function resolveGetReceipt(
     "linked",
     "schedule",
   ];
-  const groups = ["body", ...itemGroups, ...resultGroups.slice(1)].map(
-    (name) => ({
+  const materialGroups = MATERIAL_FIELD_GROUPS_BY_RESULT.get(result);
+  const groups = ["body", ...itemGroups, ...resultGroups.slice(1)]
+    .filter((name) =>
+      materialGroups === undefined ||
+      materialGroups.has(name) ||
+      Object.hasOwn(itemGroups.includes(name) || name === "body" ? item : result, name),
+    )
+    .map((name) => ({
       name,
       restore_with: `--fields ${name}`,
-    }),
-  );
+    }));
   return createOutputOmissionReceipt(
     groups,
     new Set(
       groups.flatMap(({ name }) =>
-        !Object.hasOwn(itemGroups.includes(name) ? item : result, name)
+        !Object.hasOwn(itemGroups.includes(name) || name === "body" ? item : result, name)
           ? []
           : [name],
       ),
@@ -558,6 +573,7 @@ export function attachOutputOmissionReceipt(
     return result;
   }
 
+  const receipt = resolveOutputOmissionReceipt(command, result);
   const declaredRowContract = result.row_contract;
   const rowContract = isReadRowContract(declaredRowContract)
     ? declaredRowContract
@@ -571,7 +587,6 @@ export function attachOutputOmissionReceipt(
           )
         : result;
   if (isRecord(disclosedResult.omission_receipt)) return disclosedResult;
-  const receipt = resolveOutputOmissionReceipt(command, disclosedResult);
   return receipt === undefined
     ? disclosedResult
     : { ...disclosedResult, omission_receipt: receipt };

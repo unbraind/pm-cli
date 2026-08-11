@@ -15432,6 +15432,7 @@
         "cli/error-guidance.ts",
         "core/telemetry/observability.ts",
         "sdk/context-intent-contracts.ts",
+        "sdk/governance/assurance-action.ts",
         "sdk/lifecycle/create.ts"
       ],
       "stability": "stable"

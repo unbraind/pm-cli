@@ -69,8 +69,8 @@ export interface MergeDriverResult {
   artifact: MergeDriverArtifact;
   /** Path the merged content was written to. */
   output_path: string;
-  /** Invocation-side preference retained for non-item artifact compatibility. */
-  preferred: MergePreferredSide;
+  /** Invocation-side preference; per-decision retained values remain authoritative. */
+  requested_preference: MergePreferredSide;
   /** Unresolvable conflict labels: metadata field names (item), dotted key paths (json). Empty for history merges. */
   conflicts: string[];
   /** History-merge strategy and entry accounting; present only for the history artifact. */
@@ -292,7 +292,7 @@ export async function runMergeDriver(
     ok: conflicts.length === 0,
     artifact,
     output_path: outputPath,
-    preferred,
+    requested_preference: preferred,
     conflicts,
     ...result,
     guidance,

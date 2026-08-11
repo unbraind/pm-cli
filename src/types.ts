@@ -1019,6 +1019,8 @@ export interface HistoryEntry {
   before_hash: string;
   /** Value that configures or reports after hash for this contract. */
   after_hash: string;
+  /** Version of the item canonicalization used by before_hash and after_hash. Absent on legacy streams. */
+  item_hash_version?: number;
   /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
   /** Structured audit metadata that does not alter replayed item state. */

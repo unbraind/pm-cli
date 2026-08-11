@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- Assurance mutation refusals cross the CLI as unclassified Sentry faults (PM-CLI-2Y/2Z/30) ([pm-v0a0un](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v0a0un.toon))
+- GH-976: version history hashes so repeated tests_add streams verify across supported pm versions ([pm-2htk4p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2htk4p.toon))
+- GH-975: export isAlreadyClaimedError through a supported SDK subpath ([pm-hfqju5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hfqju5.toon))
+- GH-974: merge receipt preferred contradicts retained side under stable_value_order ([pm-qckpnq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qckpnq.toon))
+- GH-971: health preflight collision diagnostics ignore declared command ownership ([pm-zryb9d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zryb9d.toon))
+- GH-969: brief item reads can exceed standard output because omission receipts bill empty fields ([pm-gok2km](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gok2km.toon))
 - GH-970: repeated row contracts consume half of agent read output without a suppression contract ([pm-gjjurs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gjjurs.toon))
 - The output encoding named toon has no tabular array form, so every row collection pays three to five lines per row while the storage format beside it uses the encoding correctly ([pm-5y05kq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5y05kq.toon))
 - pm activity answers what happened to one item in the last half hour when the agent asked what changed in the workspace: 20 rows cover 5 of the 272 items touched in 24 hours and none carries a title ([pm-j1r8gl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-j1r8gl.toon))
@@ -11,6 +17,7 @@
 
 ### Other
 
+- Evaluate and refresh @sentry/node 10.70 with packed-consumer proof ([pm-fb0lkg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fb0lkg.toon))
 - Refresh compatible tsx 4.23.12 and esbuild 0.28.2 patches ([pm-67b84b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-67b84b.toon))
 
 ## 2026.8.11 - 2026-08-11

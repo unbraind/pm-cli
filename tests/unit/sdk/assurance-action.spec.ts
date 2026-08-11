@@ -1,3 +1,6 @@
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
@@ -143,6 +146,88 @@ describe("assurance action transport", () => {
       await expect(
         runAssuranceAction({ action: "verdicts", limit: 1001 }, global),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("types malformed, referenced, and unauthorized mutations as usage refusals", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      await seedRegistry(pmPath);
+      await expect(
+        runAssuranceAction(
+          {
+            action: "put",
+            kind: "assertion",
+            id: "malformed-floor",
+            definition: {
+              ...assertion,
+              id: "malformed-floor",
+              owner_item_id: undefined,
+            },
+          },
+          global,
+        ),
+      ).rejects.toThrow("assertion.owner_item_id is required");
+      const refusals = [
+        () => runAssuranceAction(
+          {
+            action: "put",
+            kind: "assertion",
+            id: "malformed-floor",
+            definition: {
+              ...assertion,
+              id: "malformed-floor",
+              owner_item_id: undefined,
+            },
+          },
+          global,
+        ),
+        () => runAssuranceAction(
+          { action: "remove", kind: "assertion", id: assertion.id },
+          global,
+        ),
+        () => runAssuranceAction(
+          {
+            action: "put",
+            kind: "assertion",
+            id: assertion.id,
+            definition: {
+              ...assertion,
+              floor: -1,
+              negative_control: {
+                cases: [
+                  { observed: -1, expected: "pass" },
+                  { observed: -2, expected: "fail" },
+                ],
+              },
+            },
+          },
+          global,
+        ),
+      ];
+
+      for (const refusal of refusals) {
+        await expect(refusal()).rejects.toMatchObject({
+          name: "PmCliError",
+          exitCode: EXIT_CODE.USAGE,
+        });
+      }
+    });
+  });
+
+  it("preserves non-validation mutation failures without reclassification", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeFile(path.join(pmPath, "assurance.json"), "{");
+
+      await expect(
+        runAssuranceAction(
+          { action: "remove", kind: "measurement", id: measurement.id },
+          { path: pmPath },
+        ),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        context: { code: "assurance_registry_invalid" },
+      });
     });
   });
 

@@ -660,7 +660,12 @@ export type { UpdateManyOperationOptions } from "./lifecycle/update-many.js";
 export { runCreate } from "./lifecycle/create.js";
 export { runPlan } from "./lifecycle/plan.js";
 export { runAppend } from "./lifecycle/append.js";
-export { runClaim, runClaimNext, runRelease } from "./lifecycle/claim.js";
+export {
+  isAlreadyClaimedError,
+  runClaim,
+  runClaimNext,
+  runRelease,
+} from "./lifecycle/claim.js";
 export { runCloseMany } from "./lifecycle/close-many.js";
 export { runUpdateMany } from "./lifecycle/update-many.js";
 export { runComments } from "./comments.js";

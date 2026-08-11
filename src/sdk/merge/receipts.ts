@@ -35,8 +35,10 @@ export interface MergeDecisionReceipt {
   item_path: string;
   /** Item id derived from the merged document path. */
   item_id: string;
-  /** Preferred side used for scalar conflicts. */
-  preferred: MergePreferredSide;
+  /** Side requested by the caller; stable-value decisions can retain either side. */
+  requested_preference?: MergePreferredSide;
+  /** Legacy schema-v1 key accepted while reading older clone-local receipts. */
+  preferred?: MergePreferredSide;
   /** Scalar-conflict selection contract used by the item driver. */
   conflict_resolution: "preferred_side" | "stable_value_order";
   /** Fields selected cleanly from the other branch. */
@@ -69,8 +71,8 @@ export interface MergeDecisionReceiptSummary {
   fields_from_theirs: string[];
   /** Collections combined from both branches. */
   union_fields: string[];
-  /** Preferred side used for scalar conflicts. */
-  preferred: MergePreferredSide;
+  /** Side requested by the caller; decision hashes prove the actual retained values. */
+  requested_preference: MergePreferredSide;
   /** Scalar-conflict selection contract used by the item driver. */
   conflict_resolution: "preferred_side" | "stable_value_order";
   /** Hashes proving the retained and discarded values without publishing them. */
@@ -145,7 +147,8 @@ export function summarizeMergeReceipt(
     conflict_fields: receipt.decisions.map((decision) => decision.field),
     fields_from_theirs: receipt.fields_from_theirs,
     union_fields: receipt.union_fields,
-    preferred: receipt.preferred,
+    requested_preference:
+      receipt.requested_preference ?? receipt.preferred ?? "ours",
     conflict_resolution: receipt.conflict_resolution,
     decisions: receipt.decisions.map((decision) => ({
       field: decision.field,
@@ -201,7 +204,7 @@ export async function writeMergeReceipt(params: {
     id: randomUUID(),
     item_path: itemPath.replaceAll("\\", "/"),
     item_id: itemId,
-    preferred: params.preferred,
+    requested_preference: params.preferred,
     conflict_resolution: params.conflictResolution ?? "preferred_side",
     fields_from_theirs: [...params.fieldsFromTheirs],
     union_fields: [...params.unionFields],
@@ -261,8 +264,11 @@ async function readReceiptsFromDirectory(
       const parsed = JSON.parse(
         await readFile(path.join(directory, name), "utf8"),
       ) as MergeDecisionReceipt;
+      const { preferred: legacyPreference, ...receiptWithoutLegacyKey } = parsed;
       const normalizedReceipt: MergeDecisionReceipt = {
-        ...parsed,
+        ...receiptWithoutLegacyKey,
+        requested_preference:
+          parsed.requested_preference ?? legacyPreference ?? "ours",
         conflict_resolution: parsed.conflict_resolution ?? "preferred_side",
       };
       if (

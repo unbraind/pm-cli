@@ -57,6 +57,17 @@ describe("item merge direction contract", () => {
     expect(forward.merged).toBe(reversed.merged);
     expect(forward.conflict_fields).toContain("title");
     expect(forward.conflict_resolution).toBe("stable_value_order");
+    expect(forward.requested_preference).toBe("ours");
+    expect(forward).not.toHaveProperty("preferred");
+    expect(forward.conflict_decisions).toContainEqual(
+      expect.objectContaining({
+        field: "title",
+        ours: "alpha",
+        theirs: "zeta",
+        retained: "alpha",
+        discarded: "zeta",
+      }),
+    );
     expect(JSON.parse(forward.merged).title).toBe("alpha");
   });
 });

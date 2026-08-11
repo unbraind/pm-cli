@@ -4,6 +4,7 @@ import {
   attachOutputOmissionReceipt,
   createOutputOmissionReceipt,
   isReadRowContract,
+  registerOutputMaterialFieldGroups,
   resolveModePairedOutputOmissionReceipt,
 } from "../../../src/sdk/output-projection.js";
 
@@ -325,5 +326,42 @@ describe("output projection omission contracts", () => {
     });
     expect(attachOutputOmissionReceipt(undefined, {})).toEqual({});
     expect(attachOutputOmissionReceipt("get", [])).toEqual([]);
+  });
+
+  it("charges get receipts only for material omitted groups", () => {
+    const brief = {
+      item: {
+        id: "pm-empty",
+        collection_counts: {
+          comments: 0,
+          notes: 0,
+          learnings: 0,
+          files: 0,
+          tests: 0,
+          docs: 0,
+          reminders: 0,
+          events: 0,
+        },
+      },
+    };
+    registerOutputMaterialFieldGroups(brief, ["claim_state", "children"]);
+
+    expect(attachOutputOmissionReceipt("get", brief)).toMatchObject({
+      omission_receipt: {
+        omitted_field_group_count: 2,
+        omitted_field_groups: [
+          { name: "children", restore_with: "--fields children" },
+          { name: "claim_state", restore_with: "--fields claim_state" },
+        ],
+      },
+    });
+
+    const bodyIncluded = {
+      item: { id: "pm-body", body: "material context" },
+    };
+    registerOutputMaterialFieldGroups(bodyIncluded, ["body"]);
+    expect(attachOutputOmissionReceipt("get", bodyIncluded)).toMatchObject({
+      omission_receipt: { has_omissions: false },
+    });
   });
 });

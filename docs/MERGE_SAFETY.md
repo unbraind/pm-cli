@@ -61,7 +61,7 @@ pm merge install --dry-run --json
 | tracker `**/*.jsonl` except the later `history/*.jsonl` override | `pm-relationship`                   | Covers default and package-owned custom relationship event paths, unions divergent suffixes by `eventId` (timestamp-ordered, ours-first on ties), and renumbers `sequence` consecutively so the strict-sequence store loader accepts the merged stream. |
 | root `settings.json` and nested `**/*.json`                      | `pm-json`                           | Recursively merges objects per key. Arrays compose when both branches preserve the base and add distinct entries, so independent extension installs and evaluation additions merge without weakening edit/removal conflict detection.                   |
 
-When both sides change the same item scalar differently, the driver writes the same stable value regardless of which branch Git labels ours or theirs, but exits nonzero. JSON leaf conflicts retain the explicit preferred-side policy. Git keeps either path conflicted so a human or coordinating agent must review the discarded value and explicitly `git add` the resolution.
+When both sides change the same item scalar differently, the driver writes the same stable value regardless of which branch Git labels ours or theirs, but exits nonzero. Item results and receipts expose the caller's `requested_preference`; the per-decision `retained` and `discarded` values or hashes are authoritative because stable value order can retain either side. Readers normalize the legacy receipt key `preferred`, while new receipts no longer emit it. JSON leaf conflicts retain the explicit preferred-side policy. Git keeps either path conflicted so a human or coordinating agent must review the discarded value and explicitly `git add` the resolution. This correction is tracked by [pm-qckpnq](../.agents/pm/issues/pm-qckpnq.toon).
 
 The driver result's `guidance` always points unresolved conflicts to `pm merge report`. When a clone-local receipt exists, guidance includes its privacy-safe receipt and item ids for exact correlation; discarded values remain confined to the local receipt and never appear in generic logs or tracker history. Tracked by [pm-fbrz7p](../.agents/pm/issues/pm-fbrz7p.toon).
 
@@ -132,6 +132,8 @@ pm merge reconcile --dry-run --json
 ```
 
 `history-repair` records the reconciliation patch and classifies its changed fields against the final item. Append-only collection unions and deterministic reordering are reported as preserved context without a data-loss warning. Fields whose replayed values are actually removed or replaced remain loud with discarded event authors/operations and recovery guidance. Re-apply any intended losing mutation as a normal `pm update` so it remains explicit and auditable.
+
+History events now declare an item-hash epoch. The current epoch preserves linked-test insertion order; unversioned streams are verified against both the legacy sorted-test canonicalization and the order-preserving canonicalization. An unknown explicit epoch is reported as `unsupported_item_hash_version` and repair refuses to guess. This keeps version incompatibility distinct from item corruption and is tracked by [pm-2htk4p](../.agents/pm/issues/pm-2htk4p.toon).
 
 ## Delete versus modify policy
 

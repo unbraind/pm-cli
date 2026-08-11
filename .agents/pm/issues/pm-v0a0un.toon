@@ -1,0 +1,55 @@
+id: pm-v0a0un
+title: Assurance mutation refusals cross the CLI as unclassified Sentry faults (PM-CLI-2Y/2Z/30)
+description: "Three fresh handled assurance CRUD failures are emitted as high unclassified_runtime_error events: malformed definitions can dereference missing fields with raw TypeError, removing a gate-owned assertion throws raw TypeError, and weakening an assertion without an authorized terminal Decision throws raw TypeError. These are deterministic user-facing mutation refusals, so they must cross CLI/SDK/MCP hosts as typed usage errors while evaluator and storage faults remain fail-closed."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:assurance","area:observability",error-taxonomy,release-gate,sentry
+created_at: "2026-08-11T15:52:37.247Z"
+updated_at: "2026-08-11T16:25:27.201Z"
+closed_at: "2026-08-11T16:21:50.348Z"
+completed_at: "2026-08-11T16:21:50.348Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Assurance put/remove definition and reference refusals return PmCliError with usage exit semantics across the shared action transport; malformed nested definitions never crash on trim; genuine evaluator/storage faults remain unexpected; regression tests cover the three live fault classes; the live reliability limitation is recorded without resolving external Sentry state prematurely
+outcome: "Assurance user refusals are typed, machine-classifiable, host-consistent, and absent from unexpected-error capture."
+why_now: The final live Sentry gate found three fresh unresolved high issues after the broad SDK tranche passed all local gates.
+parent: pm-1jzupz
+risk: high
+confidence: high
+severity: high
+environment: published 2026.8.11 assurance CLI dogfood
+repro_steps: "Run assurance put with a malformed assertion definition, remove an assertion referenced by a gate, or loosen an assertion without a verified authorization Decision; observe a raw handled TypeError tagged unclassified_runtime_error."
+resolution: Classified assurance declaration and reference TypeError refusals at the shared action boundary as canonical invalid_argument_value usage errors while preserving unexpected non-TypeError failures.
+expected_result: "Malformed definitions, referenced removals, and unauthorized weakening return host-consistent typed usage refusals without entering unexpected-error capture; registry, evaluator, and storage faults remain fail-closed."
+actual_result: "All three live fault classes now return PmCliError exit 2 through the shared CLI/SDK/MCP path; nested assurance fields are checked before string operations, and a deliberately corrupt registry still returns the original generic assurance_registry_invalid failure."
+component: SDK assurance action transport
+customer_impact: Fresh high issues block the fail-closed reliability gate and would block the next publication until fixed or aged out.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-c8qa,implements,"2026-08-11T15:52:37.247Z","harness:codex","cli:create:dep",detected
+  pm-dqtzva,related,"2026-08-11T15:52:37.247Z","harness:codex","cli:create:dep",detected
+  pm-qxo5iu,related,"2026-08-11T15:52:37.247Z","harness:codex","cli:create:dep",detected
+  pm-wn6wot,discovered_from,"2026-08-11T15:52:37.247Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-11T15:52:45.472Z","harness:codex","Duplicate and live-evidence record 2026-08-11: all-status searches across Sentry classification, assurance authorization, assertion references, and undefined trim found the closed observability contracts pm-c8qa/pm-dqtzva/pm-qxo5iu and assurance parent pm-1jzupz, but no item owns PM-CLI-2Y/2Z/30. The authenticated reliability gate reported critical=0/high=3. Each latest event is handled, release 2026.8.11, count 1/2/1, tagged unclassified_runtime_error exit 1; no private payload, endpoint, token, event id, or host detail is recorded here."
+  "2026-08-11T15:57:56.755Z","harness:codex","TDD evidence: the new action-transport regression failed red with raw TypeError for missing owner_item_id and also exposed concurrent raw reference/authorization rejections. The implementation now normalizes TypeError only around assurance put/remove into canonical invalid_argument_value usage errors, leaving non-TypeError evaluator/storage failures untouched; nested dependency_kind, graph, validate, health, and owner fields are type-checked before trim. Green evidence: 58 focused assurance/Sentry/CLI integration tests, focused ESLint, and full typecheck pass. Manual isolated CLI acceptance returns urn:pm-cli:error:invalid_argument_value, title assertion.owner_item_id is required, and exit_code=2 with Sentry disabled and no real tracker mutation."
+  "2026-08-11T16:20:48.094Z","harness:codex","Final acceptance 2026-08-11: the linked 59-test assurance, Sentry-helper, and CLI integration run passed, including malformed, referenced, unauthorized, and corrupt-registry controls. Manual isolated CLI acceptance returned invalid_argument_value and exit 2 with Sentry disabled. The final exact gate passed 7,234 tests at 100/100/100/100, and contracts, generated error catalog, package, npx, real plugins, 10 external packages, audit, and credential scan passed. The three already-recorded external Sentry high issues remain unresolved historical live state and are not being misrepresented as cleared."
+  "2026-08-11T16:25:27.201Z","harness:codex","Release-candidate evidence: installed managed pm-changelog 2026.8.9 matches the latest npm version; replace-mode generation added this closed item to Unreleased with its canonical GitHub item link."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T16:20:47.572Z","harness:codex",Normalize only at the narrow transport boundary where user-caused validation TypeErrors are distinguishable from infrastructure failures. Pair that normalization with field guards and a negative-control test proving non-validation failures keep their original taxonomy.
+files[7]{path,scope,note}:
+  CHANGELOG.md,project,Generated Unreleased entry through installed pm-changelog 2026.8.9
+  src/sdk/generated-error-code-catalog.ts,project,Generated public error-code catalog updated for the canonical assurance invalid_argument_value refusal surface
+  src/sdk/governance/assurance-action.ts,project,Normalizes assurance CRUD TypeErrors at the shared CLI SDK MCP action boundary
+  src/sdk/governance/assurance.ts,project,Validates malformed owner and measurement source fields before string operations
+  tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot records assurance as a canonical invalid_argument_value producer
+  tests/unit/sdk/assurance-action.spec.ts,project,Regression coverage for the three live typed-refusal classes
+  tests/unit/sdk/assurance.spec.ts,project,Malformed nested assurance definition coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-action.spec.ts tests/unit/core/sentry/sentry-helpers.spec.ts tests/integration/assurance-cli.integration.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msov98v8-vh915m,test,passed,"2026-08-11T16:19:49.535Z","2026-08-11T16:20:03.236Z","2026-08-11T16:20:03.236Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_EVIDENCE_CONTRACTS.md,project,Documents host-consistent typed assurance mutation refusals and fail-closed boundaries
+close_reason: Converted assurance user refusals to typed usage errors while preserving unexpected registry failures and recording the unresolved external Sentry limitation.
+body: ""
