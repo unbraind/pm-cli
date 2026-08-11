@@ -379,7 +379,7 @@ function resolveActivityFilters(
   );
   const from = parseRangeBound(
     options.from ?? (digest ? DEFAULT_DIGEST_WINDOW : undefined),
-    options.from === undefined && digest ? (to ?? nowValue) : nowValue,
+    options.from === undefined && digest ? to! : nowValue,
     "--from",
   );
   if (from && to && compareTimestampStrings(from, to) >= 0) {
