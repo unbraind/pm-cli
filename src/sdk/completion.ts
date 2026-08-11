@@ -1518,13 +1518,14 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--to[Upper timestamp bound (ISO/date string or relative)]:date' \\
             '--limit[Max entries]:number' \\
             '--compact[Condensed activity projection]' \\
+            '--raw[Emit raw compact per-event activity output]' \\
             '--full[Show full activity entries]' \\
             '--provenance[Patch-free identity and agent provenance projection]' \\
             '--provenance-summary[Include bounded provenance completeness counts]' \\
             '*--harness[Filter by recorded or vocabulary-resolved harness]:harness' \\
             '*--agent-instance[Filter by privacy-safe agent instance]:instance' \\
             '*--provenance-filter[Filter by exact declared provenance value]:dimension=value' \\
-            '--stream[Emit line-delimited JSON rows]:mode' \\
+            '--stream[Emit line-delimited JSON rows (requires --json)]:mode' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -2614,13 +2615,14 @@ complete -c pm -n '__fish_seen_subcommand_from activity' -l from -d 'Lower times
 complete -c pm -n '__fish_seen_subcommand_from activity' -l to -d 'Upper timestamp bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l limit -d 'Max activity entries' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l compact -d 'Condensed activity projection'
+complete -c pm -n '__fish_seen_subcommand_from activity' -l raw -d 'Emit raw compact per-event activity output'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l full -d 'Show full activity entries'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance -d 'Patch-free identity and agent provenance projection'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance-summary -d 'Include bounded provenance completeness counts'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l agent-instance -d 'Filter by privacy-safe agent instance' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance-filter -d 'Filter by exact declared provenance value' -r
-complete -c pm -n '__fish_seen_subcommand_from activity' -l stream -d 'Emit line-delimited JSON rows'
+complete -c pm -n '__fish_seen_subcommand_from activity' -l stream -d 'Emit line-delimited JSON rows (requires --json)'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l action -d 'Filter schema by tool action' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l command -d 'Scope output to one command (narrow-by-default)' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l summary -d 'Return compact command intent summary'

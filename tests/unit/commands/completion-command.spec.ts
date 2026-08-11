@@ -439,15 +439,32 @@ describe("generateBashScript", () => {
     expect(script).toContain("--format");
   });
 
-  it("includes activity filtering and stream flags", () => {
-    const script = generateBashScript();
-    expect(script).toContain("activity)");
-    expect(script).toContain("--id");
-    expect(script).toContain("--op");
-    expect(script).toContain("--author");
-    expect(script).toContain("--from");
-    expect(script).toContain("--to");
-    expect(script).toContain("--stream");
+  it("includes activity filtering, raw projection, and stream contracts across shells", () => {
+    const bash = generateBashScript();
+    expect(bash).toContain("activity)");
+    expect(bash).toContain("--id");
+    expect(bash).toContain("--op");
+    expect(bash).toContain("--author");
+    expect(bash).toContain("--from");
+    expect(bash).toContain("--to");
+    expect(bash).toContain("--raw");
+    expect(bash).toContain("--stream");
+
+    const zsh = generateZshScript();
+    expect(zsh).toContain(
+      "--raw[Emit raw compact per-event activity output]",
+    );
+    expect(zsh).toContain(
+      "--stream[Emit line-delimited JSON rows (requires --json)]",
+    );
+
+    const fish = generateFishScript();
+    expect(fish).toContain(
+      "-l raw -d 'Emit raw compact per-event activity output'",
+    );
+    expect(fish).toContain(
+      "-l stream -d 'Emit line-delimited JSON rows (requires --json)'",
+    );
   });
 
   it("includes patch-free provenance reads across history, activity, and events in every shell", () => {
