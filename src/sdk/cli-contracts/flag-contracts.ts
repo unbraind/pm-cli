@@ -1127,6 +1127,18 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--full" },
 ];
 
+/** Public assurance registry and gate-evaluation flag contracts. */
+export const ASSURANCE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--definition", value_name: "json" },
+  { flag: "--trigger", value_name: "value" },
+  { flag: "--tree", value_name: "value" },
+  { flag: "--gate", value_name: "id" },
+  { flag: "--limit", value_name: "number" },
+  { flag: "--dry-run" },
+  { flag: "--author", value_name: "value" },
+  { flag: "--message", value_name: "value" },
+];
+
 const ITEM_OWNERSHIP_AND_ISSUE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--assignee" },
   { flag: "--parent" },
@@ -1858,6 +1870,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["test-all", TEST_ALL_FLAG_CONTRACTS],
     ["telemetry", TELEMETRY_FLAG_CONTRACTS],
     ["health", HEALTH_FLAG_CONTRACTS],
+    ["assurance", ASSURANCE_FLAG_CONTRACTS],
     ["validate", VALIDATE_FLAG_CONTRACTS],
     ["gc", GC_FLAG_CONTRACTS],
     ["stats", STATS_FLAG_CONTRACTS],

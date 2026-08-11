@@ -143,6 +143,13 @@ describe("action-scoped MCP schema parity", () => {
         disposition: "shared",
       }),
     );
+    expect(
+      coverage
+        .find(({ action }) => action === "assurance")
+        ?.cli.find(({ input }) => input === "--pm-path"),
+    ).toEqual(
+      expect.objectContaining({ counterpart: "path", disposition: "shared" }),
+    );
   });
 
   it("fails closed when a new CLI flag lacks a schema mapping or waiver", () => {

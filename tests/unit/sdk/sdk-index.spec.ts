@@ -736,6 +736,28 @@ describe("public sdk entrypoint", () => {
       properties: expect.objectContaining({ action: { const: "history-repair", description: expect.any(String) } }),
       oneOf: expect.arrayContaining([expect.objectContaining({ properties: { all: { const: true } } })]),
     });
+    expect(schemaForAction("assurance")).toMatchObject({
+      properties: expect.objectContaining({
+        definition: expect.objectContaining({
+          oneOf: expect.arrayContaining([
+            expect.objectContaining({ required: ["id", "source"] }),
+            expect.objectContaining({
+              required: expect.arrayContaining([
+                "id",
+                "measurement_id",
+                "owner_item_id",
+                "scope",
+                "enforcement",
+                "negative_control",
+              ]),
+            }),
+            expect.objectContaining({
+              required: ["id", "assertion_ids", "triggers"],
+            }),
+          ]),
+        }),
+      }),
+    });
     expect(schemaForAction("schema")).toMatchObject({
       properties: expect.objectContaining({ action: { const: "schema", description: expect.any(String) } }),
       allOf: expect.any(Array),

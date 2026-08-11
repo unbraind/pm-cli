@@ -99,6 +99,7 @@ export {
   hashDocument,
   hashEmptyDocument,
 } from "../core/history/history.js";
+export { readHistoryEntries } from "../core/history/read.js";
 export {
   appendWorkspaceAuditEvent,
   appendWorkspaceHistoryChange,

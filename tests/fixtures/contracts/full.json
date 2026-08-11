@@ -31,6 +31,16 @@
       "requires_extension": false
     },
     {
+      "action": "assurance",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "assurance",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "claim",
       "available": true,
       "cli_exposed": true,
@@ -935,6 +945,7 @@
     "activity",
     "aggregate",
     "append",
+    "assurance",
     "claim",
     "close",
     "close-many",
@@ -1049,6 +1060,7 @@
           "activity",
           "aggregate",
           "append",
+          "assurance",
           "claim",
           "close",
           "close-task",
@@ -1387,6 +1399,43 @@
         },
         {
           "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "assurance",
+      "flags": [
+        {
+          "flag": "--definition",
+          "value_name": "json"
+        },
+        {
+          "flag": "--trigger",
+          "value_name": "value"
+        },
+        {
+          "flag": "--tree",
+          "value_name": "value"
+        },
+        {
+          "flag": "--gate",
+          "value_name": "id"
+        },
+        {
+          "flag": "--limit",
+          "value_name": "number"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--author",
+          "value_name": "value"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
         }
       ],
       "provider": "core"
@@ -8489,6 +8538,33 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "assurance",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
         "command": "claim",
         "default_max_estimated_tokens": 2000,
@@ -11668,6 +11744,14 @@
       "intent": "Append body."
     },
     {
+      "command": "assurance",
+      "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--limit"
+      ],
+      "intent": "Inspect flags."
+    },
+    {
       "command": "claim",
       "default_max_estimated_tokens": 2000,
       "flags": [
@@ -13490,6 +13574,7 @@
     "activity",
     "aggregate",
     "append",
+    "assurance",
     "claim",
     "close",
     "close-many",
@@ -13843,6 +13928,23 @@
         "sdk/lifecycle/append.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "assurance_registry_invalid",
+      "class": "generic_failure",
+      "code": "assurance_registry_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Assurance registry invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/governance/assurance.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -25203,7 +25305,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, gc, workspace, contracts, claim, release, start-task, pause-task, close-task, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, assurance, gc, workspace, contracts, claim, release, start-task, pause-task, close-task, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
             "enum": [
               "init",
               "config",
@@ -25287,6 +25389,7 @@
               "stats",
               "health",
               "validate",
+              "assurance",
               "gc",
               "workspace",
               "contracts",
@@ -49304,6 +49407,801 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "list"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "show"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "kind",
+                "id"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "put"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "kind",
+                "id",
+                "definition"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "remove"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "kind",
+                "id"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "run"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "id",
+                "trigger"
+              ]
+            }
+          }
+        ],
+        "properties": {
+          "action": {
+            "const": "assurance",
+            "description": "Tool action to execute."
+          },
+          "author": {
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+            "type": "string"
+          },
+          "definition": {
+            "description": "Structured measurement, assertion, or gate declaration used by assurance put.",
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "description": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "max_cost": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "source": {
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "allOf": [
+                          {
+                            "if": {
+                              "required": [
+                                "field"
+                              ]
+                            },
+                            "then": {
+                              "required": [
+                                "equals"
+                              ]
+                            }
+                          }
+                        ],
+                        "properties": {
+                          "equals": {
+                            "type": [
+                              "string",
+                              "number",
+                              "boolean",
+                              "null"
+                            ]
+                          },
+                          "field": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "items"
+                          },
+                          "statuses": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "types": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "dependency_kind": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "dependency_kind"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "dependency_kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "field": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "graph"
+                          },
+                          "operation": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "parameters": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "operation",
+                          "field"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "check": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "field": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "validate"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "check",
+                          "field"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "check": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "field": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "health"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "check",
+                          "field"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "author": {
+                            "type": "string"
+                          },
+                          "harness": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "history"
+                          },
+                          "model": {
+                            "type": "string"
+                          },
+                          "op": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "links"
+                          },
+                          "link": {
+                            "enum": [
+                              "files",
+                              "tests",
+                              "docs"
+                            ]
+                          },
+                          "state": {
+                            "enum": [
+                              "present",
+                              "missing"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "link",
+                          "state"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "key": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "provider"
+                          },
+                          "parameters": {
+                            "type": "object"
+                          },
+                          "provider": {
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "provider",
+                          "key"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "expression": {
+                            "minProperties": 1,
+                            "type": "object"
+                          },
+                          "kind": {
+                            "const": "derived"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "expression"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "source"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "allOf": [
+                  {
+                    "oneOf": [
+                      {
+                        "not": {
+                          "properties": {
+                            "lifetime": {
+                              "const": "retire"
+                            }
+                          },
+                          "required": [
+                            "lifetime"
+                          ]
+                        }
+                      },
+                      {
+                        "properties": {
+                          "lifetime": {
+                            "const": "retire"
+                          },
+                          "retire_reason": {
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "lifetime",
+                          "retire_reason"
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "oneOf": [
+                  {
+                    "required": [
+                      "ceiling"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "floor"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "equals"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "zero"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "monotone_nondecreasing"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "monotone_nonincreasing"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "subset_of"
+                    ]
+                  }
+                ],
+                "properties": {
+                  "authorization_decision": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "ceiling": {
+                    "type": "number"
+                  },
+                  "enforcement": {
+                    "enum": [
+                      "block",
+                      "warn",
+                      "observe"
+                    ]
+                  },
+                  "equals": {
+                    "oneOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "floor": {
+                    "type": "number"
+                  },
+                  "id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "lifetime": {
+                    "enum": [
+                      "hold",
+                      "retire"
+                    ]
+                  },
+                  "measurement_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "monotone_nondecreasing": {
+                    "type": "number"
+                  },
+                  "monotone_nonincreasing": {
+                    "type": "number"
+                  },
+                  "negative_control": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "cases": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "expected": {
+                              "enum": [
+                                "pass",
+                                "fail"
+                              ]
+                            },
+                            "observed": {
+                              "oneOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "observed",
+                            "expected"
+                          ],
+                          "type": "object"
+                        },
+                        "minItems": 2,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "cases"
+                    ],
+                    "type": "object"
+                  },
+                  "owner_item_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "retire_reason": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "scope": {
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "enum": [
+                              "all",
+                              "active"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "filter"
+                          },
+                          "measurement_id": {
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "measurement_id"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "subset_of": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "zero": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "measurement_id",
+                  "owner_item_id",
+                  "scope",
+                  "enforcement",
+                  "negative_control"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "assertion_ids": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "triggers": {
+                    "items": {
+                      "enum": [
+                        "pre-commit",
+                        "pre-push",
+                        "pre-merge",
+                        "ci",
+                        "pre-release",
+                        "post-release",
+                        "scheduled",
+                        "on-claim",
+                        "on-close"
+                      ]
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "id",
+                  "assertion_ids",
+                  "triggers"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "gate": {
+            "description": "Stable assurance gate id used to filter durable verdict history.",
+            "examples": [
+              "release-readiness"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "id": {
+            "description": "Stable assurance declaration id or gate id, depending on subcommand.",
+            "examples": [
+              "active-issues",
+              "release-readiness"
+            ],
+            "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "kind": {
+            "description": "Assurance declaration kind for registry operations: measurement, assertion, or gate.",
+            "enum": [
+              "measurement",
+              "assertion",
+              "gate"
+            ],
+            "examples": [
+              "measurement",
+              "assertion",
+              "gate"
+            ],
+            "type": "string"
+          },
+          "limit": {
+            "description": "Maximum number of newest assurance verdicts returned.",
+            "examples": [
+              10,
+              25
+            ],
+            "maximum": 1000,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "message": {
+            "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "subcommand": {
+            "description": "Assurance operation: list, show, put, remove, run, or verdicts.",
+            "enum": [
+              "list",
+              "show",
+              "put",
+              "remove",
+              "run",
+              "verdicts"
+            ],
+            "examples": [
+              "list",
+              "run",
+              "verdicts"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
+          "treeId": {
+            "description": "Commit, tree, snapshot, or immutable workspace identity judged by an assurance gate.",
+            "examples": [
+              "0123456789abcdef",
+              "release-candidate-3"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "trigger": {
+            "description": "Lifecycle trigger used to evaluate an assurance gate.",
+            "enum": [
+              "pre-commit",
+              "pre-push",
+              "pre-merge",
+              "ci",
+              "pre-release",
+              "post-release",
+              "scheduled",
+              "on-claim",
+              "on-close"
+            ],
+            "examples": [
+              "ci",
+              "pre-release"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "subcommand"
+        ],
+        "title": "pm action \"assurance\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
         "properties": {
           "action": {
             "const": "gc",
@@ -50910,10 +51808,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.5.0"
+    "x-schema-version": "4.6.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.5.0",
+  "schema_version": "4.6.0",
   "selected": {
     "action": null,
     "availability_only": false,

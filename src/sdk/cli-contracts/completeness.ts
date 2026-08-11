@@ -143,6 +143,11 @@ const CLI_POSITIONAL_PARAMETERS = new Set([
 const ACTION_POSITIONAL_PARAMETERS: Readonly<
   Partial<Record<PmToolAction, Readonly<Record<string, string>>>>
 > = {
+  assurance: {
+    id: "<id>",
+    kind: "<kind>",
+    subcommand: "<action>",
+  },
   event: { title: "<title>" },
   files: { lookupPath: "lookup <path...>" },
   meet: { title: "<title>" },
@@ -159,6 +164,7 @@ const ACTION_POSITIONAL_PARAMETERS: Readonly<
 const ACTION_FLAG_PARAMETER_OVERRIDES: Readonly<
   Partial<Record<PmToolAction, Readonly<Record<string, string>>>>
 > = {
+  assurance: { "--tree": "treeId" },
   init: {
     "--id-prefix": "idPrefix",
     "--no-merge-fence": "mergeFence",
@@ -214,6 +220,10 @@ const ACTION_FLAG_PARAMETER_OVERRIDES: Readonly<
   install: { "--gh": "github" },
 };
 
+const GLOBAL_FLAG_PARAMETER_OVERRIDES: Readonly<Record<string, string>> = {
+  "--pm-path": "path",
+};
+
 const ACTION_STRUCTURED_FLAG_PARAMETERS: Readonly<
   Partial<Record<PmToolAction, Readonly<Record<string, readonly string[]>>>>
 > = {
@@ -249,7 +259,9 @@ function actionCommand(action: PmToolAction): string {
 }
 
 function parameterForFlag(action: PmToolAction, flag: string): string {
-  const override = ACTION_FLAG_PARAMETER_OVERRIDES[action]?.[flag];
+  const override =
+    ACTION_FLAG_PARAMETER_OVERRIDES[action]?.[flag] ??
+    GLOBAL_FLAG_PARAMETER_OVERRIDES[flag];
   if (override !== undefined) return override;
   return flag
     .replace(/^--/, "")

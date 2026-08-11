@@ -2126,6 +2126,27 @@ describe("contracts command runtime", () => {
         expect.objectContaining({ flag: "--file" }),
       ]),
     );
+
+    const assuranceAction = await runContracts(
+      { action: "assurance", flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
+    expect(assuranceAction.command_flags).toEqual([
+      expect.objectContaining({
+        command: "assurance",
+        provider: "core",
+        flags: expect.arrayContaining([
+          expect.objectContaining({ flag: "--definition", value_name: "json" }),
+          expect.objectContaining({ flag: "--trigger", value_name: "value" }),
+          expect.objectContaining({ flag: "--tree", value_name: "value" }),
+          expect.objectContaining({ flag: "--gate", value_name: "id" }),
+          expect.objectContaining({ flag: "--limit", value_name: "number" }),
+          expect.objectContaining({ flag: "--dry-run" }),
+          expect.objectContaining({ flag: "--author", value_name: "value" }),
+          expect.objectContaining({ flag: "--message", value_name: "value" }),
+        ]),
+      }),
+    ]);
   });
 
   it("rejects conflicting contracts projection flags", async () => {

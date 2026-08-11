@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "local_preflight": {
     "command": "pnpm verify:preflight",
     "steps": [
@@ -162,14 +162,14 @@
       "id": "compilation",
       "owner": "pm-k6t4yb",
       "pipelines": [
-        "auto-release.yml#Build",
-        "ci.yml#Build",
-        "ci.yml#Run typecheck gate",
-        "docs.yml#Build",
-        "nightly.yml#Build",
-        "nightly.yml#Typecheck",
-        "release.yml#Build",
-        "release.yml#Typecheck"
+        "auto-release.yml#auto-release",
+        "ci.yml#build-foundation",
+        "ci.yml#build-test",
+        "ci.yml#gates",
+        "ci.yml#windows-regression",
+        "docs.yml#docs",
+        "nightly.yml#nightly",
+        "release.yml#release"
       ],
       "failure_taxonomy": [
         "build_failed",
@@ -189,12 +189,12 @@
       "id": "test-coverage",
       "owner": "pm-k6t4yb",
       "pipelines": [
-        "ci.yml#Merge coverage and enforce global thresholds",
-        "ci.yml#Run coverage shard",
-        "ci.yml#Run Windows packed-npm-extension install regression test",
-        "nightly.yml#Test",
-        "nightly.yml#Test with coverage gate",
-        "release.yml#Test with coverage gate"
+        "ci.yml#build-test",
+        "ci.yml#coverage",
+        "ci.yml#coverage-shards",
+        "ci.yml#windows-regression",
+        "nightly.yml#nightly",
+        "release.yml#release"
       ],
       "failure_taxonomy": [
         "test_failed",
@@ -215,10 +215,7 @@
     {
       "id": "harness-environment-isolation",
       "owner": "pm-631t9p",
-      "pipelines": [
-        "ci.yml#Verify test isolation inside a Claude Code host",
-        "ci.yml#Verify test isolation inside a Codex host"
-      ],
+      "pipelines": ["ci.yml#gates"],
       "failure_taxonomy": [
         "ambient_harness_leak",
         "author_attribution_mismatch",
@@ -237,10 +234,13 @@
       "id": "static-quality",
       "owner": "pm-k6t4yb",
       "pipelines": [
-        "ci.yml#Enforce discovery and answer token budgets",
-        "ci.yml#Run static + secret + version gates",
-        "nightly.yml#Static quality gate",
-        "release.yml#Static quality gate"
+        "ci.yml#gates",
+        "codspeed.yml#benchmarks",
+        "nightly.yml#nightly",
+        "release.yml#release",
+        "security.yml#actionlint",
+        "security.yml#psscriptanalyzer",
+        "security.yml#shellcheck"
       ],
       "failure_taxonomy": [
         "lint_failed",
@@ -252,7 +252,9 @@
         "continuation_metadata_regression",
         "sdk_contract_drift",
         "replication_contract_drift",
-        "cli_refusal_inventory_drift"
+        "cli_refusal_inventory_drift",
+        "performance_regression",
+        "workflow_or_script_quality_failed"
       ],
       "bypass": {
         "allowed": false,
@@ -266,7 +268,7 @@
     {
       "id": "tracker-integrity",
       "owner": "pm-k6t4yb",
-      "pipelines": ["ci.yml#Run tracker merge-safety gates"],
+      "pipelines": ["ci.yml#gates"],
       "failure_taxonomy": [
         "tracker_validation_failed",
         "history_drift",
@@ -285,9 +287,9 @@
       "id": "compatibility",
       "owner": "pm-k6t4yb",
       "pipelines": [
-        "ci.yml#Run compatibility migration gate",
-        "nightly.yml#Compatibility migration gate",
-        "release.yml#Compatibility migration gate"
+        "ci.yml#gates",
+        "nightly.yml#nightly",
+        "release.yml#release"
       ],
       "failure_taxonomy": [
         "legacy_read_failed",
@@ -306,7 +308,7 @@
     {
       "id": "tracker-context-quality",
       "owner": "pm-kpftft",
-      "pipelines": ["ci.yml#Run tracker context-quality ratchets"],
+      "pipelines": ["ci.yml#gates"],
       "failure_taxonomy": [
         "tracker_population_regressed",
         "tracker_population_undeclared",
@@ -326,8 +328,8 @@
       "id": "context-retrieval",
       "owner": "pm-b2hc4x",
       "pipelines": [
-        "ci.yml#Run required context relevance evaluation gate",
-        "release.yml#Context quality and token-entitlement gate"
+        "ci.yml#gates",
+        "release.yml#release"
       ],
       "failure_taxonomy": [
         "context_metric_regressed",
@@ -352,9 +354,8 @@
       "id": "documentation",
       "owner": "pm-k6t4yb",
       "pipelines": [
-        "docs.yml#Docs and skills gate",
-        "docs.yml#Docs relative-link check",
-        "release.yml#Docs and skills gate"
+        "docs.yml#docs",
+        "release.yml#release"
       ],
       "failure_taxonomy": [
         "documentation_contract_failed",
@@ -374,12 +375,15 @@
       "id": "security",
       "owner": "pm-k6t4yb",
       "pipelines": [
-        "codeql.yml#Perform CodeQL Analysis",
-        "nightly.yml#Secret leak scan",
-        "release.yml#Secret leak scan",
-        "scorecard.yml#Run Scorecard analysis",
-        "security.yml#Trivy repository scan",
-        "security.yml#TruffleHog scan"
+        "codeql.yml#analyze",
+        "nightly.yml#nightly",
+        "release.yml#release",
+        "scorecard.yml#analysis",
+        "security.yml#actionlint",
+        "security.yml#psscriptanalyzer",
+        "security.yml#shellcheck",
+        "security.yml#trivy",
+        "security.yml#trufflehog"
       ],
       "failure_taxonomy": [
         "secret_detected",
@@ -400,10 +404,9 @@
       "id": "package-consumer",
       "owner": "pm-k6t4yb",
       "pipelines": [
-        "ci.yml#Run npx + plugin smoke gates",
-        "release.yml#Package-first dogfood",
-        "release.yml#Packaging smoke check",
-        "release.yml#npx tarball smoke check"
+        "ci.yml#build-test",
+        "ci.yml#gates",
+        "release.yml#release"
       ],
       "failure_taxonomy": [
         "pack_failed",
@@ -424,12 +427,9 @@
       "id": "release-integrity",
       "owner": "pm-k6t4yb",
       "pipelines": [
-        "auto-release.yml#Run auto release pipeline",
-        "nightly.yml#Version policy check",
-        "release.yml#Reliability threshold gate",
-        "release.yml#Verify GitHub release metadata",
-        "release.yml#Verify generated pm changelog",
-        "release.yml#Verify published package on npm, npx, and bunx"
+        "auto-release.yml#auto-release",
+        "nightly.yml#nightly",
+        "release.yml#release"
       ],
       "failure_taxonomy": [
         "version_policy_failed",

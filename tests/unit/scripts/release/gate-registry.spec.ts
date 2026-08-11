@@ -42,7 +42,7 @@ async function fixtureRoot(): Promise<string> {
 
 function registry() {
   return {
-    version: 1,
+    version: 2,
     local_preflight: {
       command: "pnpm verify:preflight",
       steps: [
@@ -59,7 +59,7 @@ function registry() {
       {
         id: "quality",
         owner: "pm-k6t4yb",
-        pipelines: ["ci.yml#Build", "ci.yml#Run quality gate"],
+        pipelines: ["ci.yml#test"],
         failure_taxonomy: ["build_failed"],
         bypass: { allowed: false, audit: "Mandatory." },
         negative_control: {
@@ -80,7 +80,7 @@ function registry() {
 }
 
 describe("gate registry", () => {
-  it("discovers named gates while excluding setup and duplicate steps", async () => {
+  it("discovers every stable workflow job without reading display names", async () => {
     const root = await fixtureRoot();
     await writeFile(
       path.join(root, ".github", "workflows", "other.yaml"),
@@ -102,10 +102,10 @@ describe("gate registry", () => {
     await expect(
       discoverWorkflowGates(path.join(root, ".github", "workflows")),
     ).resolves.toEqual([
-      "ci.yml#Build",
-      "ci.yml#Run quality gate",
-      "other.yaml#Build",
-      "other.yaml#Security scan",
+      "ci.yml#test",
+      "nonsteps.yml#empty",
+      "nonsteps.yml#reusable",
+      "other.yaml#quality",
     ]);
   });
 
@@ -120,14 +120,14 @@ describe("gate registry", () => {
     const root = await fixtureRoot();
     await expect(
       validateGateRegistry({ version: 2 }, { repoRoot: root }),
-    ).resolves.toEqual(["registry:requires_version_1_gates_array"]);
+    ).resolves.toEqual(["registry:requires_version_2_gates_array"]);
 
     const invalid = registry();
     invalid.gates.push({
       ...invalid.gates[0],
       id: "quality",
       owner: "invalid",
-      pipelines: ["ci.yml#Build", "ci.yml#Ghost check"],
+      pipelines: ["ci.yml#test", "ci.yml#test", "ci.yml#ghost"],
       failure_taxonomy: [],
       bypass: { allowed: false, audit: "" },
       negative_control: {
@@ -150,8 +150,8 @@ describe("gate registry", () => {
         "gate:quality:failure_taxonomy:requires_non_empty_strings",
         "gate:quality:bypass_invalid",
         "gate:quality:negative_control_test_missing",
-        "pipeline:ci.yml#Build:duplicate_owner",
-        "pipeline:ci.yml#Ghost check:not_enforced",
+        "gate:quality:pipeline:ci.yml#test:duplicate",
+        "pipeline:ci.yml#ghost:not_enforced",
         "claim:invalid",
       ]),
     );
@@ -223,7 +223,7 @@ describe("gate registry", () => {
     invalid.gates[0] = {
       ...invalid.gates[0],
       id: "-invalid",
-      pipelines: ["ci.yml#Build"],
+      pipelines: ["ci.yml#ghost"],
       negative_control: {
         test: "tests/negative.spec.ts",
         assertion: "absent",
@@ -234,8 +234,7 @@ describe("gate registry", () => {
     expect(violations).toEqual(
       expect.arrayContaining([
         "gate:id_invalid",
-        "pipeline:ci.yml#Build:unregistered",
-        "pipeline:ci.yml#Run quality gate:unregistered",
+        "pipeline:ci.yml#test:unregistered",
         "claim:invalid",
       ]),
     );
@@ -294,12 +293,16 @@ describe("gate registry", () => {
       registered_gate_count: committed.gates.length,
       claim_count: committed.claims.length,
     });
-    expect(result.enforced_pipeline_count).toBe(inventory.discovered.length);
-    expect(inventory.discovered.length).toBe(
-      committed.gates.flatMap((gate: { pipelines: string[] }) => gate.pipelines)
-        .length,
+    expect(result.enforced_pipeline_count).toBe(inventory.workflow_jobs.length);
+    expect(inventory.registered).toEqual(inventory.workflow_jobs);
+    expect(inventory.registered.length).toBe(
+      new Set(
+        committed.gates.flatMap(
+          (gate: { pipelines: string[] }) => gate.pipelines,
+        ),
+      ).size,
     );
-    expect(committed.version).toBe(1);
+    expect(committed.version).toBe(2);
     const root = await fixtureRoot();
     const claimsFreePath = path.join(root, "claims-free.json");
     delete committed.claims;
@@ -315,7 +318,7 @@ describe("gate registry", () => {
     const invalidPath = path.join(root, "invalid.json");
     await writeFile(
       invalidPath,
-      JSON.stringify({ version: 1, gates: [], claims: [] }),
+      JSON.stringify({ version: 2, gates: [], claims: [] }),
     );
     await expect(main(["--registry", invalidPath])).rejects.toThrow(
       "Gate registry validation failed",

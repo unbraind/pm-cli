@@ -10,6 +10,7 @@ import {
   PLAN_STEP_STATUS_VALUES,
 } from "../../types/index.js";
 import { PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS } from "../read-output-session.js";
+import { ASSURANCE_DEFINITION_SCHEMA } from "./schemas/assurance-definition.js";
 import type { PmToolAction } from "./enum-contracts.js";
 
 /** Public contract for pm tool parameter properties, shared by SDK and presentation-layer consumers. */
@@ -497,6 +498,23 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   sum: { type: "string" },
   avg: { type: "string" },
   tree: { type: "boolean" },
+  treeId: { type: "string", minLength: 1 },
+  definition: { type: "object" },
+  trigger: {
+    type: "string",
+    enum: [
+      "pre-commit",
+      "pre-push",
+      "pre-merge",
+      "ci",
+      "pre-release",
+      "post-release",
+      "scheduled",
+      "on-claim",
+      "on-close",
+    ],
+  },
+  gate: { type: "string", minLength: 1 },
   treeDepth: { anyOf: [{ type: "string" }, { type: "number" }] },
   includeUnparented: { type: "boolean" },
   gcScope: {
@@ -621,6 +639,18 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
 export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
   Record<PmToolAction, Record<string, unknown>>
 > = {
+  assurance: {
+    definition: ASSURANCE_DEFINITION_SCHEMA,
+    kind: {
+      type: "string",
+      enum: ["measurement", "assertion", "gate"],
+    },
+    subcommand: {
+      type: "string",
+      enum: ["list", "show", "put", "remove", "run", "verdicts"],
+    },
+    limit: { type: "integer", minimum: 1, maximum: 1000 },
+  },
   activity: {
     harness: {
       anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
@@ -964,6 +994,23 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   id: {
     description: "Item identifier for read or mutation actions.",
     examples: ["pm-a1b2"],
+  },
+  treeId: {
+    description:
+      "Commit, tree, snapshot, or immutable workspace identity judged by an assurance gate.",
+    examples: ["0123456789abcdef", "release-candidate-3"],
+  },
+  definition: {
+    description:
+      "Structured measurement, assertion, or gate declaration used by assurance put.",
+  },
+  trigger: {
+    description: "Lifecycle trigger used to evaluate an assurance gate.",
+    examples: ["ci", "pre-release"],
+  },
+  gate: {
+    description: "Stable assurance gate id used to filter durable verdict history.",
+    examples: ["release-readiness"],
   },
   runId: {
     description: "Background test run identifier.",
@@ -2002,6 +2049,27 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     Record<string, { description: string; examples?: unknown[] }>
   >
 > = {
+  assurance: {
+    subcommand: {
+      description:
+        "Assurance operation: list, show, put, remove, run, or verdicts.",
+      examples: ["list", "run", "verdicts"],
+    },
+    kind: {
+      description:
+        "Assurance declaration kind for registry operations: measurement, assertion, or gate.",
+      examples: ["measurement", "assertion", "gate"],
+    },
+    id: {
+      description:
+        "Stable assurance declaration id or gate id, depending on subcommand.",
+      examples: ["active-issues", "release-readiness"],
+    },
+    limit: {
+      description: "Maximum number of newest assurance verdicts returned.",
+      examples: [10, 25],
+    },
+  },
   update: {
     acceptanceCriteria: {
       description:
