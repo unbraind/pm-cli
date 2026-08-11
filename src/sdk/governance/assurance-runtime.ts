@@ -39,11 +39,16 @@ export type AssuranceProviderResolver = (
 export interface CreateAssuranceWorkspaceContextOptions {
   /** Explicit tree identity; otherwise the current Git commit is used. */
   tree_id?: string;
+  /** Load immutable item history for history-backed measurements. */
+  include_history?: boolean;
+  /** Resolve a Git identity; item-only callers can skip this subprocess. */
+  resolve_tree?: boolean;
   /** Provider resolvers keyed by stable provider id. */
   providers?: Readonly<Record<string, AssuranceProviderResolver>>;
 }
 
 const execFileAsync = promisify(execFile);
+const HISTORY_READ_CONCURRENCY = 16;
 
 function valueAtPath(input: unknown, field: string): AssuranceValue {
   let current: unknown = input;
@@ -82,6 +87,8 @@ async function resolveTreeId(pmRoot: string, explicit: string | undefined): Prom
     const { stdout } = await execFileAsync("git", ["rev-parse", "HEAD^{commit}"], {
       cwd: pmRoot,
       encoding: "utf8",
+      timeout: 5_000,
+      windowsHide: true,
     });
     return stdout.trim();
   } catch {
@@ -93,17 +100,30 @@ async function readWorkspaceHistory(
   pmRoot: string,
   items: AssuranceItemRecord[],
 ): Promise<AssuranceHistoryRecord[]> {
-  const streams = await Promise.all(
-    items.map((item) => readHistoryEntries(getHistoryPath(pmRoot, item.id), item.id)),
+  const streams = new Array<AssuranceHistoryRecord[]>(items.length);
+  let nextIndex = 0;
+  const workers = Array.from(
+    { length: Math.min(HISTORY_READ_CONCURRENCY, items.length) },
+    async () => {
+      while (nextIndex < items.length) {
+        const index = nextIndex;
+        nextIndex += 1;
+        const item = items[index];
+        const entries = await readHistoryEntries(
+          getHistoryPath(pmRoot, item.id),
+          item.id,
+        );
+        streams[index] = entries.map((entry) => ({
+          op: entry.op,
+          author: entry.author,
+          agent_harness: entry.agent_harness,
+          agent_model: entry.agent_model,
+        }));
+      }
+    },
   );
-  return streams.flatMap((entries) =>
-    entries.map((entry) => ({
-      op: entry.op,
-      author: entry.author,
-      agent_harness: entry.agent_harness,
-      agent_model: entry.agent_model,
-    })),
-  );
+  await Promise.all(workers);
+  return streams.flat();
 }
 
 /**
@@ -133,9 +153,15 @@ export async function createAssuranceWorkspaceContext(
   }));
   const global = { path: pmRoot };
   return {
-    tree_id: await resolveTreeId(pmRoot, options.tree_id),
+    tree_id:
+      options.resolve_tree === false
+        ? (options.tree_id ?? "working-copy")
+        : await resolveTreeId(pmRoot, options.tree_id),
     items,
-    history: await readWorkspaceHistory(pmRoot, items),
+    history:
+      options.include_history === false
+        ? []
+        : await readWorkspaceHistory(pmRoot, items),
     terminal_statuses: [...statusRegistry.terminal_statuses],
     external: async (
       source:

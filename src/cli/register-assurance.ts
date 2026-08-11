@@ -32,6 +32,7 @@ async function runAssuranceCliAction(
       trigger: readOptionString(options, "trigger"),
       tree: readOptionString(options, "tree"),
       gate: readOptionString(options, "gate"),
+      limit: readOptionString(options, "limit"),
       dry_run: options.dryRun === true,
       fullChangedFields: global.fullChangedFields,
       idOnly: global.idOnly,
@@ -66,6 +67,7 @@ export function registerAssuranceCommand(program: Command): void {
     .option("--trigger <value>", "Gate lifecycle trigger")
     .option("--tree <value>", "Commit, tree, or snapshot identity being judged")
     .option("--gate <id>", "Filter verdict history by gate id")
+    .option("--limit <number>", "Maximum newest verdicts returned")
     .option("--dry-run", "Evaluate a gate without appending a verdict")
     .option("--author <value>", "Mutation author override")
     .option("--message <value>", "Audited mutation rationale")

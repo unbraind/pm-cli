@@ -8,6 +8,8 @@
  */
 import path from "node:path";
 
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { PmCliError } from "../../core/shared/errors.js";
 import {
   appendWorkspaceAuditEvent,
   mutateWorkspaceJsonWithHistory,
@@ -350,7 +352,7 @@ export interface AssuranceEvaluationContext {
   history: AssuranceHistoryRecord[];
   /** Status ids that make an assertion owner terminal. */
   terminal_statuses?: string[];
-  /** External source adapter. */
+  /** External source adapter. Implementations must enforce an appropriate timeout. */
   external: (
     source:
       | AssuranceGraphSource
@@ -496,6 +498,9 @@ const POLARITY_KEYS = [
 const ID_PATTERN = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 const LOCK_TTL_SECONDS = 30;
 const LOCK_WAIT_MS = 5_000;
+const EVALUATION_CONCURRENCY = 4;
+const DEFAULT_VERDICT_LIMIT = 50;
+const MAX_VERDICT_LIMIT = 1_000;
 
 function requireStableId(value: string, field: string): void {
   if (!ID_PATTERN.test(value)) {
@@ -535,14 +540,15 @@ function compareBound(observed: AssuranceValue, bound: AssuranceBound): boolean 
     const allowed = bound.value;
     return observed.every((entry) => allowed.includes(entry));
   }
-  if (typeof observed !== "number" || typeof bound.value !== "number") {
+  if (typeof observed !== "number") {
     return false;
   }
+  const numericBound = bound.value as number;
   if (bound.polarity === "ceiling" || bound.polarity === "monotone_nonincreasing") {
-    return observed <= bound.value;
+    return observed <= numericBound;
   }
   if (bound.polarity === "floor" || bound.polarity === "monotone_nondecreasing") {
-    return observed >= bound.value;
+    return observed >= numericBound;
   }
   return observed === 0;
 }
@@ -621,6 +627,9 @@ export function validateMeasurementDefinition(
     requireFiniteNonNegative(definition.max_cost, "measurement.max_cost");
   }
   const source = definition.source;
+  if (source.kind === "items" && source.field !== undefined && source.equals === undefined) {
+    throw new TypeError("items source with field requires equals");
+  }
   if (source.kind === "dependency_kind" && source.dependency_kind.trim().length === 0) {
     throw new TypeError("dependency_kind source requires dependency_kind");
   }
@@ -644,8 +653,8 @@ export function validateAssertionDefinition(
     throw new TypeError("assertion.owner_item_id is required");
   }
   const bound = boundFor(definition);
-  if (typeof bound.value === "number") {
-    requireFiniteNonNegative(bound.value, `assertion.${bound.polarity}`);
+  if (typeof bound.value === "number" && !Number.isFinite(bound.value)) {
+    throw new TypeError(`assertion.${bound.polarity} must be a finite number`);
   }
   if (definition.lifetime === "retire" && !definition.retire_reason?.trim()) {
     throw new TypeError("retired assertion requires retire_reason");
@@ -693,9 +702,6 @@ export function validateAssuranceDocument(
   }
   for (const definition of document.assertions) {
     validateAssertionDefinition(definition);
-    if (!document.measurements.some((measurement) => measurement.id === definition.measurement_id)) {
-      throw new TypeError(`assertion ${definition.id} references missing measurement ${definition.measurement_id}`);
-    }
     if (ids.has(`assertion:${definition.id}`)) throw new TypeError(`duplicate assertion ${definition.id}`);
     ids.add(`assertion:${definition.id}`);
   }
@@ -708,7 +714,62 @@ export function validateAssuranceDocument(
     if (ids.has(`gate:${definition.id}`)) throw new TypeError(`duplicate gate ${definition.id}`);
     ids.add(`gate:${definition.id}`);
   }
+  const measurementIds = new Set(document.measurements.map((entry) => entry.id));
+  for (const [measurementId, consumers] of collectMeasurementReferences(document)) {
+    if (!measurementIds.has(measurementId)) {
+      throw new TypeError(
+        `${consumers.join(", ")} references missing measurement ${measurementId}`,
+      );
+    }
+  }
   return document;
+}
+
+function collectExpressionMeasurementReferences(
+  expression: AssuranceDerivedExpression,
+  references: string[],
+): void {
+  if ("measurement" in expression) {
+    references.push(expression.measurement);
+    return;
+  }
+  if ("operator" in expression) {
+    for (const operand of expression.operands) {
+      collectExpressionMeasurementReferences(operand, references);
+    }
+  }
+}
+
+function collectMeasurementReferences(
+  document: AssuranceDocument,
+): Map<string, string[]> {
+  const references = new Map<string, string[]>();
+  const add = (measurementId: string, consumer: string): void => {
+    const consumers = references.get(measurementId) ?? [];
+    consumers.push(consumer);
+    references.set(measurementId, consumers);
+  };
+  for (const assertionDefinition of document.assertions) {
+    add(assertionDefinition.measurement_id, `assertion ${assertionDefinition.id}`);
+    if (assertionDefinition.scope.kind === "filter") {
+      add(
+        assertionDefinition.scope.measurement_id,
+        `assertion ${assertionDefinition.id} scope`,
+      );
+    }
+  }
+  for (const measurementDefinition of document.measurements) {
+    if (measurementDefinition.source.kind !== "derived") continue;
+    const derivedReferences: string[] = [];
+    collectExpressionMeasurementReferences(
+      measurementDefinition.source.expression,
+      derivedReferences,
+    );
+    for (const measurementId of derivedReferences) {
+      add(measurementId, `derived measurement ${measurementDefinition.id}`);
+    }
+  }
+  return references;
 }
 
 /** Create an empty, valid assurance registry. */
@@ -716,50 +777,97 @@ export function createEmptyAssuranceDocument(): AssuranceDocument {
   return { version: ASSURANCE_DOCUMENT_VERSION, measurements: [], assertions: [], gates: [] };
 }
 
+function itemsSourceResult(
+  source: AssuranceItemsSource,
+  context: AssuranceEvaluationContext,
+): AssuranceExternalMeasurementResult {
+  const matches = context.items.filter(
+    (item) =>
+      (source.statuses === undefined || source.statuses.includes(item.status)) &&
+      (source.types === undefined || source.types.includes(item.type)) &&
+      (source.tags === undefined ||
+        source.tags.every((tag) => item.tags?.includes(tag))) &&
+      (source.field === undefined ||
+        valuesEqual(
+          item[source.field] as AssuranceValue,
+          source.equals as AssuranceValue,
+        )),
+  );
+  return {
+    value: matches.length,
+    population_size: context.items.length,
+    cost: context.items.length,
+    contributors: matches.map((item) => item.id),
+  };
+}
+
+function dependencyKindSourceResult(
+  source: AssuranceDependencyKindSource,
+  context: AssuranceEvaluationContext,
+): AssuranceExternalMeasurementResult {
+  const contributors: string[] = [];
+  for (const item of context.items) {
+    for (const dependency of item.dependencies ?? []) {
+      if (dependency.kind === source.dependency_kind) {
+        contributors.push(`${item.id}->${dependency.id}`);
+      }
+    }
+  }
+  return {
+    value: contributors.length,
+    population_size: context.items.length,
+    cost: context.items.length,
+    contributors,
+  };
+}
+
+function historySourceResult(
+  source: AssuranceHistorySource,
+  context: AssuranceEvaluationContext,
+): AssuranceExternalMeasurementResult {
+  const matches = context.history.filter(
+    (entry) =>
+      (source.op === undefined || entry.op === source.op) &&
+      (source.author === undefined || entry.author === source.author) &&
+      (source.harness === undefined ||
+        entry.agent_harness === source.harness) &&
+      (source.model === undefined || entry.agent_model === source.model),
+  );
+  return {
+    value: matches.length,
+    population_size: context.history.length,
+    cost: context.history.length,
+  };
+}
+
+function linksSourceResult(
+  source: AssuranceLinksSource,
+  context: AssuranceEvaluationContext,
+): AssuranceExternalMeasurementResult {
+  const matches = context.items.filter((item) => {
+    const links = item[source.link];
+    const present = Array.isArray(links) && links.length > 0;
+    return source.state === "present" ? present : !present;
+  });
+  return {
+    value: matches.length,
+    population_size: context.items.length,
+    cost: context.items.length,
+    contributors: matches.map((item) => item.id),
+  };
+}
+
 function sourceResult(
   definition: AssuranceMeasurementDefinition,
   context: AssuranceEvaluationContext,
 ): AssuranceExternalMeasurementResult | null {
   const source = definition.source;
-  if (source.kind === "items") {
-    const matches = context.items.filter((item) => {
-      if (source.statuses && !source.statuses.includes(item.status)) return false;
-      if (source.types && !source.types.includes(item.type)) return false;
-      if (source.tags && !source.tags.every((tag) => item.tags?.includes(tag))) return false;
-      return source.field === undefined || valuesEqual(item[source.field] as AssuranceValue, source.equals as AssuranceValue);
-    });
-    return { value: matches.length, population_size: matches.length, cost: context.items.length, contributors: matches.map((item) => item.id) };
-  }
+  if (source.kind === "items") return itemsSourceResult(source, context);
   if (source.kind === "dependency_kind") {
-    const contributors: string[] = [];
-    let count = 0;
-    for (const item of context.items) {
-      for (const dependency of item.dependencies ?? []) {
-        if (dependency.kind === source.dependency_kind) {
-          count += 1;
-          contributors.push(`${item.id}->${dependency.id}`);
-        }
-      }
-    }
-    return { value: count, population_size: context.items.length, cost: context.items.length, contributors };
+    return dependencyKindSourceResult(source, context);
   }
-  if (source.kind === "history") {
-    const matches = context.history.filter((entry) =>
-      (source.op === undefined || entry.op === source.op) &&
-      (source.author === undefined || entry.author === source.author) &&
-      (source.harness === undefined || entry.agent_harness === source.harness) &&
-      (source.model === undefined || entry.agent_model === source.model),
-    );
-    return { value: matches.length, population_size: context.history.length, cost: context.history.length };
-  }
-  if (source.kind === "links") {
-    const matches = context.items.filter((item) => {
-      const links = item[source.link];
-      const present = Array.isArray(links) && links.length > 0;
-      return source.state === "present" ? present : !present;
-    });
-    return { value: matches.length, population_size: context.items.length, cost: context.items.length, contributors: matches.map((item) => item.id) };
-  }
+  if (source.kind === "history") return historySourceResult(source, context);
+  if (source.kind === "links") return linksSourceResult(source, context);
   return null;
 }
 
@@ -788,22 +896,59 @@ function arithmeticValue(operator: AssuranceArithmeticExpression["operator"], va
   return operator === "min" ? Math.min(...values) : Math.max(...values);
 }
 
+interface AssuranceEvaluationState {
+  cache: Map<string, Promise<AssuranceMeasurementResult>>;
+  charged: Set<string>;
+}
+
+async function mapWithConcurrency<Input, Output>(
+  values: readonly Input[],
+  limit: number,
+  transform: (value: Input, index: number) => Promise<Output>,
+): Promise<Output[]> {
+  const results = new Array<Output>(values.length);
+  let nextIndex = 0;
+  const workers = Array.from(
+    { length: Math.min(limit, values.length) },
+    async () => {
+      while (nextIndex < values.length) {
+        const index = nextIndex;
+        nextIndex += 1;
+        results[index] = await transform(values[index], index);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
+}
+
 async function evaluateExpression(
   expression: AssuranceDerivedExpression,
   context: AssuranceEvaluationContext,
   definitions: AssuranceMeasurementDefinition[],
   stack: string[],
+  state: AssuranceEvaluationState,
 ): Promise<{ value: number; costs: AssuranceMeasurementCost[]; population_size: number; contributors: string[] }> {
   if ("literal" in expression) return { value: expression.literal, costs: [], population_size: 0, contributors: [] };
   if ("measurement" in expression) {
     const definition = definitions.find((entry) => entry.id === expression.measurement);
     if (!definition) throw new TypeError(`derived measurement references missing ${expression.measurement}`);
-    const result = await evaluateMeasurementInternal(definition, context, definitions, stack);
+    const result = await evaluateMeasurementCached(
+      definition,
+      context,
+      definitions,
+      stack,
+      state,
+    );
     if (typeof result.value !== "number") throw new TypeError(`derived measurement ${definition.id} is not numeric`);
-    return { value: result.value, costs: [result.cost], population_size: result.population_size, contributors: result.contributors };
+    const costs = state.charged.has(definition.id) ? [] : [result.cost];
+    state.charged.add(definition.id);
+    return { value: result.value, costs, population_size: result.population_size, contributors: result.contributors };
   }
-  const operands = await Promise.all(
-    expression.operands.map((operand) => evaluateExpression(operand, context, definitions, stack)),
+  const operands = await mapWithConcurrency(
+    expression.operands,
+    EVALUATION_CONCURRENCY,
+    (operand) => evaluateExpression(operand, context, definitions, stack, state),
   );
   return {
     value: arithmeticValue(expression.operator, operands.map((entry) => entry.value)),
@@ -818,15 +963,21 @@ async function evaluateMeasurementInternal(
   context: AssuranceEvaluationContext,
   definitions: AssuranceMeasurementDefinition[],
   stack: string[],
+  state: AssuranceEvaluationState,
 ): Promise<AssuranceMeasurementResult> {
   validateMeasurementDefinition(definition);
-  if (stack.includes(definition.id)) throw new TypeError(`derived measurement cycle: ${[...stack, definition.id].join(" -> ")}`);
   const startedAt = Date.now();
   let result: AssuranceExternalMeasurementResult;
   let nestedCosts: AssuranceMeasurementCost[] = [];
   let providerCalls = 0;
   if (definition.source.kind === "derived") {
-    const derived = await evaluateExpression(definition.source.expression, context, definitions, [...stack, definition.id]);
+    const derived = await evaluateExpression(
+      definition.source.expression,
+      context,
+      definitions,
+      [...stack, definition.id],
+      state,
+    );
     result = { value: derived.value, population_size: derived.population_size, cost: 0, contributors: derived.contributors };
     nestedCosts = derived.costs;
   } else {
@@ -859,13 +1010,41 @@ async function evaluateMeasurementInternal(
   return { id: definition.id, value: result.value, population_size: result.population_size, cost, contributors: result.contributors ?? [] };
 }
 
+function evaluateMeasurementCached(
+  definition: AssuranceMeasurementDefinition,
+  context: AssuranceEvaluationContext,
+  definitions: AssuranceMeasurementDefinition[],
+  stack: string[],
+  state: AssuranceEvaluationState,
+): Promise<AssuranceMeasurementResult> {
+  if (stack.includes(definition.id)) {
+    throw new TypeError(
+      `derived measurement cycle: ${[...stack, definition.id].join(" -> ")}`,
+    );
+  }
+  const cached = state.cache.get(definition.id);
+  if (cached) return cached;
+  const evaluation = evaluateMeasurementInternal(
+    definition,
+    context,
+    definitions,
+    stack,
+    state,
+  );
+  state.cache.set(definition.id, evaluation);
+  return evaluation;
+}
+
 /** Evaluate one measurement with cycle detection and a complete cost receipt. */
 export async function evaluateMeasurement(
   definition: AssuranceMeasurementDefinition,
   context: AssuranceEvaluationContext,
   definitions: AssuranceMeasurementDefinition[] = [definition],
 ): Promise<AssuranceMeasurementResult> {
-  return evaluateMeasurementInternal(definition, context, definitions, []);
+  return evaluateMeasurementCached(definition, context, definitions, [], {
+    cache: new Map(),
+    charged: new Set(),
+  });
 }
 
 function assertionDistance(observed: AssuranceValue, bound: AssuranceBound): number | null {
@@ -913,8 +1092,10 @@ export async function evaluateAssuranceGate(
   if (!gateDefinition.triggers.includes(options.trigger)) {
     throw new TypeError(`assurance gate ${gateId} does not declare trigger ${options.trigger}`);
   }
-  const assertions = await Promise.all(
-    gateDefinition.assertion_ids.map(async (id) => {
+  const assertions = await mapWithConcurrency(
+    gateDefinition.assertion_ids,
+    EVALUATION_CONCURRENCY,
+    async (id) => {
       const assertionDefinition = document.assertions.find((entry) => entry.id === id)!;
       const measurementDefinition = document.measurements.find((entry) => entry.id === assertionDefinition.measurement_id)!;
       let scopedContext = context;
@@ -928,12 +1109,7 @@ export async function evaluateAssuranceGate(
         const scopeMeasurementId = assertionDefinition.scope.measurement_id;
         const scopeDefinition = document.measurements.find(
           (entry) => entry.id === scopeMeasurementId,
-        );
-        if (!scopeDefinition) {
-          throw new TypeError(
-            `assertion ${assertionDefinition.id} scope references missing measurement ${scopeMeasurementId}`,
-          );
-        }
+        )!;
         const scope = await evaluateMeasurement(scopeDefinition, context, document.measurements);
         const contributorIds = new Set(scope.contributors);
         scopedContext = {
@@ -950,7 +1126,7 @@ export async function evaluateAssuranceGate(
         await evaluateMeasurement(measurementDefinition, scopedContext, document.measurements),
         { owner_terminal: ownerTerminal },
       );
-    }),
+    },
   );
   const blocking = assertions.some((entry) => entry.verdict === "fail" && entry.enforcement === "block");
   const warning = assertions.some((entry) => entry.verdict === "fail" && entry.enforcement === "warn");
@@ -974,7 +1150,26 @@ function assurancePath(pmRoot: string): string {
 async function readDocument(pmRoot: string): Promise<AssuranceDocument> {
   const raw = await readFileIfExists(assurancePath(pmRoot));
   if (raw === null) return createEmptyAssuranceDocument();
-  return validateAssuranceDocument(JSON.parse(raw) as AssuranceDocument);
+  return parseAssuranceDocument(raw);
+}
+
+function parseAssuranceDocument(raw: string): AssuranceDocument {
+  try {
+    return validateAssuranceDocument(JSON.parse(raw) as AssuranceDocument);
+  } catch (error: unknown) {
+    throw new PmCliError(
+      "The assurance registry is invalid. Repair or restore .agents/pm/assurance.json and retry.",
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: "assurance_registry_invalid",
+        reason: String(error),
+        nextSteps: [
+          "Restore a valid assurance.json from version control or repair its declaration references.",
+          "Run pm assurance list measurement after the repair.",
+        ],
+      },
+    );
+  }
 }
 
 function collectionFor(
@@ -1030,7 +1225,7 @@ export async function putAssuranceDeclaration(
     lockTtlSeconds: LOCK_TTL_SECONDS,
     lockWaitMs: LOCK_WAIT_MS,
     mutate: (beforeRaw) => {
-      const document = beforeRaw === null ? createEmptyAssuranceDocument() : validateAssuranceDocument(JSON.parse(beforeRaw) as AssuranceDocument);
+      const document = beforeRaw === null ? createEmptyAssuranceDocument() : parseAssuranceDocument(beforeRaw);
       const collection = collectionFor(document, kind);
       const index = collection.findIndex((entry) => entry.id === definition.id);
       const action = index < 0 ? "created" : "updated";
@@ -1078,9 +1273,14 @@ export async function removeAssuranceDeclaration(
     lockTtlSeconds: LOCK_TTL_SECONDS,
     lockWaitMs: LOCK_WAIT_MS,
     mutate: (beforeRaw) => {
-      const document = beforeRaw === null ? createEmptyAssuranceDocument() : validateAssuranceDocument(JSON.parse(beforeRaw) as AssuranceDocument);
-      if (kind === "measurement" && document.assertions.some((entry) => entry.measurement_id === id || (entry.scope.kind === "filter" && entry.scope.measurement_id === id))) {
-        throw new TypeError(`assurance measurement ${id} is referenced by assertion`);
+      const document = beforeRaw === null ? createEmptyAssuranceDocument() : parseAssuranceDocument(beforeRaw);
+      if (kind === "measurement") {
+        const consumers = collectMeasurementReferences(document).get(id);
+        if (consumers && consumers.length > 0) {
+          throw new TypeError(
+            `assurance measurement ${id} is referenced by ${consumers.join(", ")}`,
+          );
+        }
       }
       if (kind === "assertion" && document.gates.some((entry) => entry.assertion_ids.includes(id))) {
         throw new TypeError(`assurance assertion ${id} is referenced by gate`);
@@ -1120,12 +1320,23 @@ export async function recordAssuranceVerdict(
 /** Query durable assurance verdicts from the verified workspace stream. */
 export async function listAssuranceVerdicts(
   pmRoot: string,
-  options: { /** Optional gate filter. */ gate_id?: string } = {},
+  options: {
+    /** Optional gate filter. */ gate_id?: string;
+    /** Maximum newest matching verdicts returned. */ limit?: number;
+  } = {},
 ): Promise<AssuranceGateVerdict[]> {
+  const limit = options.limit ?? DEFAULT_VERDICT_LIMIT;
+  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_VERDICT_LIMIT) {
+    throw new TypeError(
+      `assurance verdict limit must be an integer from 1 through ${MAX_VERDICT_LIMIT}`,
+    );
+  }
   const entries = await readHistoryEntries(getWorkspaceHistoryPath(pmRoot), WORKSPACE_HISTORY_ID);
   return entries
+    .reverse()
     .filter((entry) => entry.op === "assurance:gate:verdict")
     .map((entry) => entry.context?.assurance_verdict)
     .filter((value): value is AssuranceGateVerdict => typeof value === "object" && value !== null && "gate_id" in value)
-    .filter((verdict) => options.gate_id === undefined || verdict.gate_id === options.gate_id);
+    .filter((verdict) => options.gate_id === undefined || verdict.gate_id === options.gate_id)
+    .slice(0, limit);
 }

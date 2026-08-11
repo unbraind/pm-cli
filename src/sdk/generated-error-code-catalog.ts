@@ -125,6 +125,19 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     aliases: [],
   },
   {
+    code: "assurance_registry_invalid",
+    meaning: "Assurance registry invalid condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/governance/assurance.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "assurance_registry_invalid",
+    aliases: [],
+  },
+  {
     code: "body_file_conflicts_with_body",
     meaning: "Body file conflicts with body condition.",
     stability: "stable",

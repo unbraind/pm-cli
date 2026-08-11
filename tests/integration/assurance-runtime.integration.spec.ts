@@ -6,6 +6,11 @@ import {
   runAction,
 } from "../../src/sdk/runtime.js";
 import { runAssuranceAction } from "../../src/sdk/governance/assurance-action.js";
+import {
+  getWorkspaceHistoryPath,
+  readHistoryEntries,
+  WORKSPACE_HISTORY_ID,
+} from "../../src/sdk/runtime-primitives.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const measurement = {
@@ -25,6 +30,14 @@ describe("assurance runtime parity", () => {
           definition: measurement,
         }),
       ).resolves.toMatchObject({ action: "created", changed: true });
+      expect(
+        (
+          await readHistoryEntries(
+            getWorkspaceHistoryPath(pmPath),
+            WORKSPACE_HISTORY_ID,
+          )
+        )[0]?.author,
+      ).toBe("runtime-test");
 
       await expect(
         runAssuranceAction(

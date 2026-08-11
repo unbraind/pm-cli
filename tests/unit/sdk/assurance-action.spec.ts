@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   runAssuranceAction,
   runAssuranceDispatch,
 } from "../../../src/sdk/governance/assurance-action.js";
+import { runClose } from "../../../src/sdk/lifecycle/close.js";
 import { runCreate } from "../../../src/sdk/lifecycle/create.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -31,14 +32,40 @@ const gate = {
   triggers: ["ci"],
 };
 
+async function seedRegistry(pmPath: string): Promise<void> {
+  const global = { path: pmPath };
+  await runAssuranceAction(
+    {
+      action: "put",
+      kind: "measurement",
+      id: measurement.id,
+      definition: measurement,
+    },
+    global,
+  );
+  await runAssuranceAction(
+    {
+      action: "put",
+      kind: "assertion",
+      id: assertion.id,
+      definition: assertion,
+    },
+    global,
+  );
+  await runAssuranceAction(
+    { action: "put", kind: "gate", id: gate.id, definition: gate },
+    global,
+  );
+}
+
 describe("assurance action transport", () => {
-  it("normalizes CRUD, evaluation, and errors for every host", async () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("normalizes validation errors for every host", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const global = { path: pmPath };
-      await runCreate(
-        { title: "Authorize assurance updates", type: "Decision" },
-        { path: pmPath, json: true, quiet: true },
-      );
       await expect(
         runAssuranceAction({ action: "unknown" }, global),
       ).rejects.toThrow("Unknown assurance action");
@@ -57,7 +84,7 @@ describe("assurance action transport", () => {
           global,
         ),
       ).rejects.toThrow("valid JSON");
-      const parse = vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
+      vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
         throw "invalid";
       });
       await expect(
@@ -66,7 +93,6 @@ describe("assurance action transport", () => {
           global,
         ),
       ).rejects.toThrow("valid JSON");
-      parse.mockRestore();
       for (const definition of [undefined, [], "  "]) {
         await expect(
           runAssuranceAction(
@@ -86,7 +112,36 @@ describe("assurance action transport", () => {
           global,
         ),
       ).rejects.toThrow("does not match requested id");
+      await expect(runAssuranceDispatch({}, {}, global)).rejects.toThrow(
+        "Unknown assurance action",
+      );
+      await expect(
+        runAssuranceAction({ action: "show", kind: "gate" }, global),
+      ).rejects.toThrow("requires an id");
+      await expect(
+        runAssuranceAction({ action: "run" }, global),
+      ).rejects.toThrow("gate id");
+      await expect(
+        runAssuranceAction({ action: "run", id: gate.id }, global),
+      ).rejects.toThrow("requires a trigger");
+      await expect(
+        runAssuranceAction(
+          { action: "run", id: gate.id, trigger: "continuous" },
+          global,
+        ),
+      ).rejects.toThrow("Unknown assurance trigger continuous");
+      await expect(
+        runAssuranceAction(
+          { action: "verdicts", limit: "not-a-number" },
+          global,
+        ),
+      ).rejects.toThrow("finite integer");
+    });
+  });
 
+  it("keeps CRUD and generic dispatch projections aligned", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
       await expect(
         runAssuranceAction(
           {
@@ -112,20 +167,6 @@ describe("assurance action transport", () => {
           global,
         ),
       ).resolves.toEqual({ id: measurement.id });
-      await runAssuranceAction(
-        {
-          action: "put",
-          kind: "assertion",
-          id: assertion.id,
-          definition: assertion,
-        },
-        global,
-      );
-      await runAssuranceAction(
-        { action: "put", kind: "gate", id: gate.id, definition: gate },
-        global,
-      );
-
       await expect(
         runAssuranceAction({ action: "list", kind: "measurement" }, global),
       ).resolves.toMatchObject({ count: 1, items: [measurement] });
@@ -143,25 +184,19 @@ describe("assurance action transport", () => {
           global,
         ),
       ).resolves.toMatchObject({ count: 1 });
-      await expect(runAssuranceDispatch({}, {}, global)).rejects.toThrow(
-        "Unknown assurance action",
-      );
       await expect(
         runAssuranceAction(
-          { action: "show", kind: "assertion", id: assertion.id },
+          { action: "show", kind: "measurement", id: measurement.id },
           global,
         ),
-      ).resolves.toEqual(assertion);
-      await expect(
-        runAssuranceAction({ action: "show", kind: "gate" }, global),
-      ).rejects.toThrow("requires an id");
-      await expect(
-        runAssuranceAction({ action: "run" }, global),
-      ).rejects.toThrow("gate id");
-      await expect(
-        runAssuranceAction({ action: "run", id: gate.id }, global),
-      ).rejects.toThrow("requires a trigger");
+      ).resolves.toEqual(measurement);
+    });
+  });
 
+  it("evaluates dry and durable gates and bounds verdict output", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      await seedRegistry(pmPath);
       await expect(
         runAssuranceAction(
           { action: "run", id: gate.id, trigger: "ci", dry_run: true },
@@ -173,9 +208,118 @@ describe("assurance action transport", () => {
         global,
       );
       await expect(
-        runAssuranceAction({ action: "verdicts", gate: gate.id }, global),
-      ).resolves.toMatchObject({ count: 1, items: [{ tree_id: "known-tree" }] });
+        runAssuranceDispatch(
+          { subcommand: "verdicts", gate: gate.id, limit: 1 },
+          {},
+          global,
+        ),
+      ).resolves.toMatchObject({
+        count: 1,
+        items: [{ tree_id: "known-tree" }],
+      });
+    });
+  });
 
+  it("requires an explicit terminal Decision for assertion weakening", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      await seedRegistry(pmPath);
+      const missingDecisionLoosening = {
+        ...assertion,
+        floor: -1,
+        authorization_decision: "pm-missing",
+        negative_control: {
+          cases: [
+            { observed: -1, expected: "pass" },
+            { observed: -2, expected: "fail" },
+          ],
+        },
+      };
+      await expect(
+        runAssuranceAction(
+          {
+            action: "put",
+            kind: "assertion",
+            id: assertion.id,
+            definition: missingDecisionLoosening,
+          },
+          global,
+        ),
+      ).rejects.toThrow("terminal Decision item");
+      const task = await runCreate(
+        { title: "Not an authorization Decision", type: "Task" },
+        { path: pmPath, json: true, quiet: true },
+      );
+      await runClose(
+        task.item.id,
+        "Terminal but not a Decision",
+        { author: "transport-test" },
+        global,
+      );
+      await expect(
+        runAssuranceAction(
+          {
+            action: "put",
+            kind: "assertion",
+            id: assertion.id,
+            definition: {
+              ...missingDecisionLoosening,
+              authorization_decision: task.item.id,
+            },
+          },
+          global,
+        ),
+      ).rejects.toThrow("terminal Decision item");
+      const created = await runCreate(
+        { title: "Authorize assertion weakening", type: "Decision" },
+        { path: pmPath, json: true, quiet: true },
+      );
+      const loosened = {
+        ...assertion,
+        floor: -1,
+        authorization_decision: created.item.id,
+        negative_control: {
+          cases: [
+            { observed: -1, expected: "pass" },
+            { observed: -2, expected: "fail" },
+          ],
+        },
+      };
+      await expect(
+        runAssuranceAction(
+          {
+            action: "put",
+            kind: "assertion",
+            id: assertion.id,
+            definition: loosened,
+          },
+          global,
+        ),
+      ).rejects.toThrow("terminal Decision item");
+      await runClose(
+        created.item.id,
+        "Approved assurance weakening",
+        { author: "transport-test" },
+        global,
+      );
+      await expect(
+        runAssuranceAction(
+          {
+            action: "put",
+            kind: "assertion",
+            id: assertion.id,
+            definition: loosened,
+          },
+          global,
+        ),
+      ).resolves.toMatchObject({ action: "updated" });
+    });
+  });
+
+  it("removes declarations only after their dependants", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      await seedRegistry(pmPath);
       await runAssuranceAction(
         { action: "remove", kind: "gate", id: gate.id },
         global,

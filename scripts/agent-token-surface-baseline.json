@@ -4,13 +4,13 @@
   "headroom": 1.1,
   "surfaces": {
     "root_help": 15456,
-    "per_command_total": 228467,
-    "full_help_surface": 243922,
+    "per_command_total": 228529,
+    "full_help_surface": 243984,
     "contracts": {
-      "summary_toon": 11493,
-      "summary_json": 14595,
-      "json": 14595,
-      "full": 1395083
+      "summary_toon": 11525,
+      "summary_json": 14644,
+      "json": 14644,
+      "full": 1407171
     },
     "mcp_tools_list": 47517,
     "required_commands": [
@@ -140,8 +140,8 @@
       "remind": 1063,
       "install": 1030,
       "comments-audit": 1009,
+      "assurance": 954,
       "reindex": 927,
-      "assurance": 893,
       "test-runs": 852,
       "history-redact": 850,
       "append": 832,

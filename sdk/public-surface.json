@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1502,
+    "covered_symbols": 1504,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1503
+    "required_symbols": 1505
   },
   "breaking_acknowledgements": [
     {
@@ -275,6 +275,33 @@
       ],
       "package_version": "2026.8.10",
       "reason": "Assurance action projections and canonical CLI flag contracts extend the additive SDK surface"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AssuranceActionInput",
+        "signature ./sdk:CreateAssuranceWorkspaceContextOptions",
+        "signature ./sdk:listAssuranceVerdicts"
+      ],
+      "package_version": "2026.8.10",
+      "reason": "Assurance is an unreleased API added by this PR; exact-head review expanded its optional bounds and runtime controls before first publication."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmClient",
+        "signature ./sdk/core:PmClient",
+        "signature ./sdk/runtime:PmClient"
+      ],
+      "package_version": "2026.8.10",
+      "reason": "Normalize PmClient assurance signatures to newly exported public transport types without changing runtime behavior"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmClient",
+        "signature ./sdk/core:PmClient",
+        "signature ./sdk/runtime:PmClient"
+      ],
+      "package_version": "2026.8.10",
+      "reason": "Expose public assurance action transport types while preserving the PmClient method contract"
     }
   ],
   "entrypoints": {
@@ -1152,13 +1179,13 @@
           "signature": "export type AssuranceAction = (typeof ASSURANCE_ACTIONS)[number];"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceActionInput",
-          "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; }"
+          "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; limit?: number | string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
           "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
@@ -2955,7 +2982,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "CreateAssuranceWorkspaceContextOptions",
-          "signature": "export interface CreateAssuranceWorkspaceContextOptions { tree_id?: string; providers?: Readonly<Record<string, AssuranceProviderResolver>>; }"
+          "signature": "export interface CreateAssuranceWorkspaceContextOptions { tree_id?: string; include_history?: boolean; resolve_tree?: boolean; providers?: Readonly<Record<string, AssuranceProviderResolver>>; }"
         },
         {
           "classification": "advanced_export",
@@ -6579,7 +6606,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "listAssuranceVerdicts",
-          "signature": "(pmRoot: string, options?: { gate_id?: string; }) => Promise<AssuranceGateVerdict[]> | calls: (pmRoot: string, options?: { gate_id?: string; }) => Promise<AssuranceGateVerdict[]>"
+          "signature": "(pmRoot: string, options?: { gate_id?: string; limit?: number; }) => Promise<AssuranceGateVerdict[]> | calls: (pmRoot: string, options?: { gate_id?: string; limit?: number; }) => Promise<AssuranceGateVerdict[]>"
         },
         {
           "classification": "advanced_export",
@@ -17599,6 +17626,18 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceActionInput",
+          "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; limit?: number | string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceActionResult",
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "attachReadOutputSessionReceipt",
           "signature": "(result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown> | calls: (result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown>"
@@ -22303,6 +22342,18 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceActionInput",
+          "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; limit?: number | string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceActionResult",
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "BASELINE_ITEM_FORMAT_VERSION",
           "signature": "1"
@@ -25381,6 +25432,7 @@
     "annotation_flag_like_value",
     "annotation_message_without_text",
     "append_empty_body",
+    "assurance_registry_invalid",
     "body_file_conflicts_with_body",
     "body_file_missing_path",
     "body_file_unreadable",

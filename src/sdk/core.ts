@@ -57,6 +57,8 @@ export {
   type AggregateOptions,
   type AggregateResult,
   type AggregateRow,
+  type AssuranceActionInput,
+  type AssuranceActionResult,
   type AppendCommandOptions,
   type AppendResult,
   type ClaimNextOptions,

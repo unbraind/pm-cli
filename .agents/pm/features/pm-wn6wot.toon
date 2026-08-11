@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:ci","area:sdk",assurance,configurability,enforcement
 created_at: "2026-08-10T20:56:25.997Z"
-updated_at: "2026-08-10T23:02:40.542Z"
-closed_at: "2026-08-10T23:01:20.305Z"
-completed_at: "2026-08-10T23:01:20.305Z"
+updated_at: "2026-08-11T00:55:59.907Z"
+closed_at: "2026-08-11T00:55:59.314Z"
+completed_at: "2026-08-11T00:55:59.314Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A gate is declared as data, names its assertions and triggers, and is evaluated identically by the SDK from the CLI, from MCP, and from a hosted runner; The verdict is a structured document with no prose classification anywhere in the decision path, and every consumer reads declared fields rather than matching messages; A dry-run answers which bounds would block a candidate change before it is made, including the distance to each bound; The same declaration produces the same verdict for the same commit whether run locally or hosted, and a difference between the two is itself a reportable failure; Gate inventory is derived from the registry, never by pattern-matching workflow step names, and a gate missing from the registry is a failure rather than an omission"
@@ -26,21 +26,27 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,implements,"2026-08-10T20:56:25.997Z","harness:claude-code","cli:create:dep",detected
   pm-2lex4r,blocked_by,"2026-08-10T21:22:56.281Z","harness:codex","cli:update:dep",detected
   pm-lyfu7b,blocked_by,"2026-08-10T21:22:56.281Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-10T20:58:39.011Z","harness:claude-code","Evidence for the registry-not-prose acceptance criterion: scripts/release/gate-registry.mjs discovers the gate inventory by regex over GitHub workflow step NAMES — GATE_STEP_PATTERN matches /\\b(build|typecheck|test|gates?|check|scan|analysis|benchmark|verify|dogfood|release pipeline|enforce|coverage|quality)\\b/i and NON_GATE_STEP_PATTERN excludes steps beginning setup|install|checkout|download|upload|restore|record|resolve|alert|create github release. A gate's identity is therefore its human-written title, so renaming a step silently changes the inventory and adding a gate whose step name avoids the vocabulary makes it invisible to its own ownership registry. Same failure shape as pm-dqtzva (release gate classifying production errors by message prose) on a different surface: enforcement reading prose rather than a declared contract."
   "2026-08-10T21:22:56.873Z","harness:codex","Start evidence 2026-08-10: reused canonical gate item after all-status duplicate search and fully read the closed registry, message-classification, and deterministic commit-view lineages. This tranche makes registry identity and machine verdicts first-class SDK/CLI contracts."
   "2026-08-10T23:01:04.880Z","harness:codex","Completion evidence 2026-08-11: assurance is a first-class core CLI command and shared SDK action, PmClient method, one-shot runtime action, and MCP transport with registry CRUD, trigger-bound gate runs, dry-run semantics, bounded mutation projections, deterministic verdicts, and exit codes. Runtime contracts expose all seven canonical flags and generated CLI/MCP/public-surface snapshots were refreshed. Lint, typecheck, contract, token-surface, package, dogfood, and 7,201-test exact-coverage gates passed. The aggregate release pipeline stopped only at hosted-analysis because DeepScan cannot have an exact-head result before this branch is committed and pushed; that provider result remains required on the PR head."
-learnings[1]{created_at,author,text}:
+  "2026-08-10T23:31:47.103Z","harness:codex","Exact-head review work 2026-08-11 Europe/Vienna (PM event timestamps remain UTC): actively tightening trigger/schema/runtime contracts, SDK type exports, concurrency limits, malformed-registry recovery, and focused contract coverage."
+  "2026-08-11T00:17:04.046Z","harness:codex","Review follow-up architecture evidence: extracted strict assurance JSON Schema and public action transport type exports into focused modules; this restores the file-length, directory-load, and inline-disable budgets without weakening any gate."
+  "2026-08-11T00:55:44.575Z","harness:codex","Exact-head completion evidence 2026-08-11: added strict kind-specific mutation schemas, items.field/equals coupling, complete trigger validation, public Runtime/Core action types, typed malformed-registry recovery, bounded newest verdict limit, and focused contract modules that preserve file-length/directory/lint budgets. Contracts, SDK surface, 92 token surfaces, package artifact, packed npx, bunx, and 88-command dogfood all passed."
+learnings[2]{created_at,author,text}:
   "2026-08-10T23:01:05.479Z","harness:codex","Registering a new core command is incomplete until runtime-contract enumeration, aggregate SDK exports, tool schemas, generated fixtures, and token-surface baselines all identify the same command; a working parser alone is not contract completeness."
-files[16]{path,scope,note}:
+  "2026-08-11T00:55:45.068Z","harness:codex",A universal extension surface needs its transport schema to discriminate declaration kinds before runtime; strict machine contracts make invalid package automation recoverable without duplicating CLI-only validation.
+files[18]{path,scope,note}:
   scripts/agent-token-surface-baseline.json,project,Measured bounded help and contract-token baseline for the new assurance command
   src/cli/register-assurance.ts,project,thin CLI gate adapter
   src/sdk/cli-contracts.ts,project,Public contracts entrypoint export for assurance flags
   src/sdk/cli-contracts/completeness.ts,project,Global pm-path equivalence and assurance positional/flag parity
   src/sdk/cli-contracts/flag-contracts.ts,project,"Canonical assurance CLI flag vocabulary shared by contracts,completion,and parity analysis"
   src/sdk/cli-contracts/runtime-contracts.ts,project,Core assurance command discovery and machine-readable flag surface
+  src/sdk/cli-contracts/schemas/assurance-definition.ts,project,"Strict kind-specific JSON Schema for assurance mutations,extracted to preserve contract-table architecture limits"
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,assurance transport parameter contracts
   src/sdk/cli-contracts/tool-schema.ts,project,strict assurance action schema
+  src/sdk/governance/assurance-action-contracts.ts,project,Public assurance action transport type exports for Runtime and Core SDK consumers
   src/sdk/index.ts,project,Aggregate SDK export for assurance primitives and contracts
   src/sdk/runtime.ts,project,PmClient and MCP assurance dispatch
   tests/integration/assurance-cli.integration.spec.ts,project,"CLI registry,gate,dry-run,and durable verdict acceptance coverage"
@@ -49,13 +55,47 @@ files[16]{path,scope,note}:
   tests/unit/commands/contracts-command.spec.ts,project,Packed-contract regression proving assurance is a core command with complete flags
   tests/unit/sdk/action-schema-parity.spec.ts,project,Shrinking-only bidirectional CLI and SDK action-contract ratchet
   tests/unit/sdk/assurance-action.spec.ts,project,Transport-neutral action normalization and CRUD error coverage
-tests[1]{command,scope,timeout_seconds}:
+tests[4]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/cli/register-assurance.spec.ts tests/integration/assurance-cli.integration.spec.ts tests/integration/assurance-runtime.integration.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
-  test-local-msnt36xh-r8zt19,test,passed,"2026-08-10T22:31:21.728Z","2026-08-10T22:31:35.381Z","2026-08-10T22:31:35.381Z",1,0,0
+  node scripts/run-tests.mjs test -- tests/unit/cli/register-assurance.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/integration/assurance-cli.integration.spec.ts tests/integration/assurance-runtime.integration.spec.ts,project,360
+  "pnpm contracts:check && pnpm sdk:surface:check && pnpm quality:token-surface",project,600
+  "pnpm test:coverage",project,1200
+test_runs[3]:
+  - run_id: test-local-msnt36xh-r8zt19
+    kind: test
+    status: passed
+    started_at: "2026-08-10T22:31:21.728Z"
+    finished_at: "2026-08-10T22:31:35.381Z"
+    recorded_at: "2026-08-10T22:31:35.381Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-all-local-msnxc1yl-sgg1w0
+    kind: test-all
+    status: failed
+    started_at: "2026-08-11T00:30:27.260Z"
+    finished_at: "2026-08-11T00:42:19.693Z"
+    recorded_at: "2026-08-11T00:42:19.693Z"
+    passed: 3
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 4
+    fail_on_skipped_triggered: true
+  - run_id: test-all-local-msnxrr08-mr4d1z
+    kind: test-all
+    status: passed
+    started_at: "2026-08-11T00:42:39.551Z"
+    finished_at: "2026-08-11T00:54:16.044Z"
+    recorded_at: "2026-08-11T00:54:16.044Z"
+    passed: 3
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 4
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated by pm-changelog 2026.8.9 from the closed assurance tranche
   docs/ASSURANCE.md,project,public assurance contracts and workflows
   docs/README.md,project,documentation routing
-close_reason: "Delivered first-class trigger-bound assurance gates across core CLI, SDK, PmClient, one-shot actions, MCP, runtime discovery, generated contracts, token baselines, docs, package dogfood, and exact coverage; hosted analysis remains an exact-PR-head merge gate."
+close_reason: "Exact-head review fixes complete: strict transport schemas, public SDK types, bounded runtime behavior, and green contracts/package acceptance."
 body: ""

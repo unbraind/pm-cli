@@ -44,7 +44,7 @@ Assertions require exactly one polarity:
 
 Scopes are `all`, `active`, or `filter`. A filter names another measurement whose contributors define the item population. `lifetime: hold` keeps the guarantee after its owner item becomes terminal. `lifetime: retire` retires it only after owner termination and requires `retire_reason`.
 
-Enforcement is `block`, `warn`, or `observe`. Weakening a bound, scope, lifetime, owner, source measurement, or enforcement requires `authorization_decision` naming a real Decision item verified by the host. Tightening does not require authorization.
+Enforcement is `block`, `warn`, or `observe`. Weakening a bound, scope, lifetime, owner, source measurement, or enforcement requires `authorization_decision` naming a terminal Decision item verified by the host. The transport verifies only that explicitly named item; it never treats unrelated workspace Decisions as authorization. Tightening does not require authorization.
 
 ## CLI Workflow
 
@@ -71,7 +71,7 @@ pm assurance put gate release-readiness \
 
 pm assurance run release-readiness --trigger ci --dry-run --json
 pm assurance run release-readiness --trigger pre-release --tree "$(git rev-parse HEAD)" --json
-pm assurance verdicts release-readiness --json
+pm assurance verdicts release-readiness --limit 20 --json
 ```
 
 Registry reads and removals use the same nouns:
@@ -101,7 +101,7 @@ await pm.assurance({
 });
 ```
 
-For direct host composition, use `evaluateMeasurement`, `evaluateAssuranceGate`, `createAssuranceWorkspaceContext`, and the audited declaration/verdict helpers exported from `@unbrained/pm-cli/sdk`. A host contributes provider measurements by passing stable resolver ids to `createAssuranceWorkspaceContext`; an absent resolver fails loudly.
+For direct host composition, use `evaluateMeasurement`, `evaluateAssuranceGate`, `createAssuranceWorkspaceContext`, and the audited declaration/verdict helpers exported from `@unbrained/pm-cli/sdk`. A host contributes provider measurements by passing stable resolver ids to `createAssuranceWorkspaceContext`; an absent resolver fails loudly. External adapters must enforce an appropriate timeout. The core evaluator bounds concurrent assertions and expression operands, and workspace history loading uses bounded concurrency; item-only callers can explicitly skip history and Git identity resolution.
 
 Generic SDK and MCP dispatch use `action: "assurance"` with `subcommand` set to `list`, `show`, `put`, `remove`, `run`, or `verdicts`. Discover the current machine contract instead of copying parameter lists:
 
@@ -119,7 +119,7 @@ A gate emits one object containing:
 - every assertion's measurement, scope, population, observed value, structured bound, signed distance, enforcement, negative-control proof, cost, and contributors;
 - an aggregate compute receipt.
 
-Dry runs never write history. Non-dry verdicts are immutable workspace audit events and remain queryable after ordinary registry changes. A blocking verdict exits non-zero; warnings and observations remain successful while preserving their failed assertion rows.
+Dry runs never write history. Non-dry verdicts are immutable workspace audit events and remain queryable after ordinary registry changes. Verdict reads return newest entries first and default to a bounded result; use `--limit` to select up to 1,000 matching records. A blocking verdict exits non-zero; warnings and observations remain successful while preserving their failed assertion rows.
 
 ## Safety and Evolution
 

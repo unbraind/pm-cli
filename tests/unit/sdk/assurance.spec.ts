@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -194,19 +194,40 @@ describe("assurance SDK", () => {
       validateAssertionDefinition({ ...assertion, owner_item_id: " " }),
     ).toThrow("owner_item_id");
     expect(() =>
-      validateAssertionDefinition({ ...assertion, ceiling: -1 }),
-    ).toThrow("finite non-negative");
+      validateAssertionDefinition({
+        ...assertion,
+        ceiling: -1,
+        negative_control: {
+          cases: [
+            { observed: -1, expected: "pass" },
+            { observed: 0, expected: "fail" },
+          ],
+        },
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validateAssertionDefinition({
+        ...assertion,
+        ceiling: Number.NaN,
+      }),
+    ).toThrow("finite number");
     expect(() =>
       validateAssertionDefinition({
         ...assertion,
         negative_control: {
           cases: [
-            { observed: [], expected: "fail" },
+            { observed: 2, expected: "fail" },
             { observed: 1, expected: "pass" },
           ],
         },
       }),
     ).not.toThrow();
+    expect(() =>
+      validateMeasurementDefinition({
+        id: "field-without-value",
+        source: { kind: "items", field: "priority" },
+      }),
+    ).toThrow("requires equals");
     expect(() =>
       validateAssertionDefinition({
         ...assertion,
@@ -247,6 +268,47 @@ describe("assurance SDK", () => {
         assertions: [{ ...assertion, measurement_id: "missing" }],
       }),
     ).toThrow("references missing measurement");
+    expect(() =>
+      validateAssuranceDocument({
+        ...document,
+        assertions: [
+          {
+            ...assertion,
+            scope: { kind: "filter", measurement_id: "missing-scope" },
+          },
+        ],
+      }),
+    ).toThrow("scope references missing measurement");
+    expect(() =>
+      validateAssuranceDocument({
+        ...document,
+        measurements: [
+          itemsMeasurement,
+          {
+            id: "dangling-derived",
+            source: {
+              kind: "derived",
+              expression: {
+                operator: "add",
+                operands: [{ measurement: "missing-derived" }],
+              },
+            },
+          },
+        ],
+      }),
+    ).toThrow("derived measurement dangling-derived references missing measurement");
+    expect(() =>
+      validateAssuranceDocument({
+        ...document,
+        measurements: [
+          itemsMeasurement,
+          {
+            id: "literal-derived",
+            source: { kind: "derived", expression: { literal: -1 } },
+          },
+        ],
+      }),
+    ).not.toThrow();
     expect(() =>
       validateAssuranceDocument({
         ...document,
@@ -383,7 +445,7 @@ describe("assurance SDK", () => {
     await expect(evaluateMeasurement(itemsMeasurement, context)).resolves.toMatchObject({
       id: "active-issues",
       value: 1,
-      population_size: 1,
+      population_size: 2,
       cost: { units: 2 },
     });
     await expect(
@@ -437,6 +499,38 @@ describe("assurance SDK", () => {
     await expect(
       evaluateMeasurement(measurements[2], context, measurements),
     ).resolves.toMatchObject({ value: 0, cost: { provider_calls: 2 } });
+    let providerCalls = 0;
+    const memoizedContext: AssuranceEvaluationContext = {
+      ...context,
+      external: async (source) => {
+        providerCalls += 1;
+        return context.external(source);
+      },
+    };
+    const sharedLeaf: AssuranceMeasurementDefinition = {
+      id: "shared-leaf",
+      source: { kind: "provider", provider: "coverage", key: "lines" },
+    };
+    const memoizedRoot: AssuranceMeasurementDefinition = {
+      id: "memoized-root",
+      source: {
+        kind: "derived",
+        expression: {
+          operator: "add",
+          operands: [
+            { measurement: sharedLeaf.id },
+            { measurement: sharedLeaf.id },
+          ],
+        },
+      },
+    };
+    await expect(
+      evaluateMeasurement(memoizedRoot, memoizedContext, [
+        memoizedRoot,
+        sharedLeaf,
+      ]),
+    ).resolves.toMatchObject({ value: 197, cost: { provider_calls: 1 } });
+    expect(providerCalls).toBe(1);
     await expect(
       evaluateMeasurement(
         {
@@ -649,6 +743,9 @@ describe("assurance SDK", () => {
     expect(evaluateAssuranceAssertion(subsetDefinition, result)).toMatchObject({
       verdict: "fail",
     });
+    expect(
+      evaluateAssuranceAssertion(assertion, { ...result, value: ["not-numeric"] }),
+    ).toMatchObject({ verdict: "fail" });
   });
 
   it("returns one deterministic structured gate verdict and proves dry-run behavior", async () => {
@@ -758,6 +855,7 @@ describe("assurance SDK", () => {
       tags: ["quality"],
     });
     for (const [enforcement, verdict] of [
+      ["block", "block"],
       ["warn", "warn"],
       ["observe", "pass"],
     ] as const) {
@@ -773,7 +871,10 @@ describe("assurance SDK", () => {
           failingContext,
           { trigger: "ci" },
         ),
-      ).resolves.toMatchObject({ verdict, exit_code: 0 });
+      ).resolves.toMatchObject({
+        verdict,
+        exit_code: enforcement === "block" ? 1 : 0,
+      });
     }
     await expect(
       evaluateAssuranceGate("missing", {
@@ -907,6 +1008,26 @@ describe("assurance SDK", () => {
       expect(await listAssuranceVerdicts(pmPath, { gate_id: gate.id })).toEqual([
         verdict,
       ]);
+      expect(await listAssuranceVerdicts(pmPath)).toEqual([verdict]);
+      const newerVerdict = {
+        ...verdict,
+        tree_id: "tree-456",
+        evaluated_at: new Date(Date.now() + 1).toISOString(),
+      };
+      await recordAssuranceVerdict(pmPath, newerVerdict, {
+        author: "test-author",
+      });
+      expect(
+        await listAssuranceVerdicts(pmPath, { gate_id: gate.id, limit: 1 }),
+      ).toEqual([newerVerdict]);
+      await expect(
+        listAssuranceVerdicts(pmPath, { limit: 0 }),
+      ).rejects.toThrow("integer from 1 through 1000");
+      for (const limit of [1.5, 1_001]) {
+        await expect(
+          listAssuranceVerdicts(pmPath, { limit }),
+        ).rejects.toThrow("integer from 1 through 1000");
+      }
       const history = await readHistoryEntries(
         getWorkspaceHistoryPath(pmPath),
         WORKSPACE_HISTORY_ID,
@@ -917,6 +1038,7 @@ describe("assurance SDK", () => {
         "assurance:gate:put",
         "assurance:measurement:put",
         "assurance:assertion:put",
+        "assurance:gate:verdict",
         "assurance:gate:verdict",
       ]);
       expect(verifyHistoryChain(history)).toEqual({ ok: true, errors: [] });
@@ -940,6 +1062,30 @@ describe("assurance SDK", () => {
       await putAssuranceDeclaration(pmPath, "measurement", itemsMeasurement, {
         author: "test-author",
       });
+      const derivedReference: AssuranceMeasurementDefinition = {
+        id: "derived-reference",
+        source: {
+          kind: "derived",
+          expression: { measurement: itemsMeasurement.id },
+        },
+      };
+      await putAssuranceDeclaration(
+        pmPath,
+        "measurement",
+        derivedReference,
+        { author: "test-author" },
+      );
+      await expect(
+        removeAssuranceDeclaration(pmPath, "measurement", itemsMeasurement.id, {
+          author: "test-author",
+        }),
+      ).rejects.toThrow("referenced by derived measurement");
+      await removeAssuranceDeclaration(
+        pmPath,
+        "measurement",
+        derivedReference.id,
+        { author: "test-author" },
+      );
       const scopeMeasurement: AssuranceMeasurementDefinition = {
         id: "scope-only",
         source: { kind: "items", statuses: ["open"] },
@@ -964,6 +1110,20 @@ describe("assurance SDK", () => {
       await expect(
         getAssuranceDeclaration(pmPath, "measurement", "missing"),
       ).rejects.toThrow("not found");
+
+      await writeFile(path.join(pmPath, "assurance.json"), "{", "utf8");
+      await expect(
+        listAssuranceDeclarations(pmPath, "measurement"),
+      ).rejects.toMatchObject({
+        exitCode: 1,
+        context: { code: "assurance_registry_invalid" },
+      });
+      await expect(
+        putAssuranceDeclaration(pmPath, "measurement", itemsMeasurement),
+      ).rejects.toMatchObject({ context: { code: "assurance_registry_invalid" } });
+      await expect(
+        removeAssuranceDeclaration(pmPath, "measurement", itemsMeasurement.id),
+      ).rejects.toMatchObject({ context: { code: "assurance_registry_invalid" } });
     });
   });
 });

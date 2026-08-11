@@ -100,6 +100,7 @@ export type { PmErrorCodeContract } from "./error-code-catalog.js";
 export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
 import { runActivity } from "./query/activity.js";
 import { runAssuranceDispatch, type AssuranceActionInput, type AssuranceActionResult } from "./governance/assurance-action.js";
+export type * from "./governance/assurance-action-contracts.js";
 import {
   runAggregate,
   type AggregateOptions,

@@ -1423,6 +1423,10 @@
           "value_name": "id"
         },
         {
+          "flag": "--limit",
+          "value_name": "number"
+        },
+        {
           "flag": "--dry-run"
         },
         {
@@ -11742,6 +11746,9 @@
     {
       "command": "assurance",
       "default_max_estimated_tokens": 4000,
+      "flags": [
+        "--limit"
+      ],
       "intent": "Inspect flags."
     },
     {
@@ -13921,6 +13928,23 @@
         "sdk/lifecycle/append.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "assurance_registry_invalid",
+      "class": "generic_failure",
+      "code": "assurance_registry_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Assurance registry invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/governance/assurance.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -49486,7 +49510,505 @@
           },
           "definition": {
             "description": "Structured measurement, assertion, or gate declaration used by assurance put.",
-            "type": "object"
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "description": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "max_cost": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "source": {
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "allOf": [
+                          {
+                            "if": {
+                              "required": [
+                                "field"
+                              ]
+                            },
+                            "then": {
+                              "required": [
+                                "equals"
+                              ]
+                            }
+                          }
+                        ],
+                        "properties": {
+                          "equals": {
+                            "type": [
+                              "string",
+                              "number",
+                              "boolean",
+                              "null"
+                            ]
+                          },
+                          "field": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "items"
+                          },
+                          "statuses": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "types": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "dependency_kind": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "dependency_kind"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "dependency_kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "field": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "graph"
+                          },
+                          "operation": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "parameters": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "operation",
+                          "field"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "check": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "field": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "validate"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "check",
+                          "field"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "check": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "field": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "health"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "check",
+                          "field"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "author": {
+                            "type": "string"
+                          },
+                          "harness": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "history"
+                          },
+                          "model": {
+                            "type": "string"
+                          },
+                          "op": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "links"
+                          },
+                          "link": {
+                            "enum": [
+                              "files",
+                              "tests",
+                              "docs"
+                            ]
+                          },
+                          "state": {
+                            "enum": [
+                              "present",
+                              "missing"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "link",
+                          "state"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "key": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "const": "provider"
+                          },
+                          "parameters": {
+                            "type": "object"
+                          },
+                          "provider": {
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "provider",
+                          "key"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "expression": {
+                            "minProperties": 1,
+                            "type": "object"
+                          },
+                          "kind": {
+                            "const": "derived"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "expression"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "source"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "oneOf": [
+                  {
+                    "required": [
+                      "ceiling"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "floor"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "equals"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "zero"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "monotone_nondecreasing"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "monotone_nonincreasing"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "subset_of"
+                    ]
+                  }
+                ],
+                "properties": {
+                  "authorization_decision": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "ceiling": {
+                    "type": "number"
+                  },
+                  "enforcement": {
+                    "enum": [
+                      "block",
+                      "warn",
+                      "observe"
+                    ]
+                  },
+                  "equals": {
+                    "oneOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "floor": {
+                    "type": "number"
+                  },
+                  "id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "lifetime": {
+                    "enum": [
+                      "hold",
+                      "retire"
+                    ]
+                  },
+                  "measurement_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "monotone_nondecreasing": {
+                    "type": "number"
+                  },
+                  "monotone_nonincreasing": {
+                    "type": "number"
+                  },
+                  "negative_control": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "cases": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "expected": {
+                              "enum": [
+                                "pass",
+                                "fail"
+                              ]
+                            },
+                            "observed": {
+                              "oneOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "observed",
+                            "expected"
+                          ],
+                          "type": "object"
+                        },
+                        "minItems": 2,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "cases"
+                    ],
+                    "type": "object"
+                  },
+                  "owner_item_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "retire_reason": {
+                    "type": "string"
+                  },
+                  "scope": {
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "enum": [
+                              "all",
+                              "active"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "filter"
+                          },
+                          "measurement_id": {
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "measurement_id"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "subset_of": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "zero": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "measurement_id",
+                  "owner_item_id",
+                  "scope",
+                  "enforcement",
+                  "negative_control"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "assertion_ids": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "triggers": {
+                    "items": {
+                      "enum": [
+                        "pre-commit",
+                        "pre-push",
+                        "pre-merge",
+                        "ci",
+                        "pre-release",
+                        "post-release",
+                        "scheduled",
+                        "on-claim",
+                        "on-close"
+                      ]
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "id",
+                  "assertion_ids",
+                  "triggers"
+                ],
+                "type": "object"
+              }
+            ]
           },
           "dryRun": {
             "description": "Preview command effects without mutating storage artifacts.",
@@ -49534,6 +50056,16 @@
               "gate"
             ],
             "type": "string"
+          },
+          "limit": {
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ],
+            "maximum": 1000,
+            "minimum": 1,
+            "type": "integer"
           },
           "message": {
             "description": "History message for mutation audit trail.",

@@ -1216,6 +1216,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "trigger",
         "treeId",
         "gate",
+        "limit",
         "dryRun",
         "author",
         "message",

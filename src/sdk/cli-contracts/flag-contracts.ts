@@ -1133,6 +1133,7 @@ export const ASSURANCE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--trigger", value_name: "value" },
   { flag: "--tree", value_name: "value" },
   { flag: "--gate", value_name: "id" },
+  { flag: "--limit", value_name: "number" },
   { flag: "--dry-run" },
   { flag: "--author", value_name: "value" },
   { flag: "--message", value_name: "value" },

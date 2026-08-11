@@ -2136,9 +2136,14 @@ describe("contracts command runtime", () => {
         command: "assurance",
         provider: "core",
         flags: expect.arrayContaining([
-          expect.objectContaining({ flag: "--definition" }),
-          expect.objectContaining({ flag: "--trigger" }),
+          expect.objectContaining({ flag: "--definition", value_name: "json" }),
+          expect.objectContaining({ flag: "--trigger", value_name: "value" }),
+          expect.objectContaining({ flag: "--tree", value_name: "value" }),
+          expect.objectContaining({ flag: "--gate", value_name: "id" }),
+          expect.objectContaining({ flag: "--limit", value_name: "number" }),
           expect.objectContaining({ flag: "--dry-run" }),
+          expect.objectContaining({ flag: "--author", value_name: "value" }),
+          expect.objectContaining({ flag: "--message", value_name: "value" }),
         ]),
       }),
     ]);

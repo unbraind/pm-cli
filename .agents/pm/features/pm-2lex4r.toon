@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:sdk",assurance,configurability,measurement,query
 created_at: "2026-08-10T20:55:41.413Z"
-updated_at: "2026-08-10T23:02:39.632Z"
-closed_at: "2026-08-10T23:01:19.007Z"
-completed_at: "2026-08-10T23:01:19.007Z"
+updated_at: "2026-08-11T00:55:56.592Z"
+closed_at: "2026-08-11T00:55:56.103Z"
+completed_at: "2026-08-11T00:55:56.103Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "A measurement is created, listed, read, updated and removed through pm commands, persisted as workspace data, and recorded in the immutable history like any other mutation; The source vocabulary covers items, dependency_kind, graph analytics, validate, health, history, links, and extension-contributed providers, and each source declares its own key schema so a declaration naming a removed field fails loudly instead of reading as zero; derived measurements evaluate arithmetic over other measurements, with cycle detection, so denomination is expressible without code; Every evaluation reports its own compute cost and honours an explicit bound on it, so a measurement remains affordable at a million items; Measurement results are addressable in json and toon and stable enough to pipe into jq, with the selector documented in the row contract"
@@ -24,21 +24,57 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-96h7,related,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
   pm-9gzr4r,related,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
   pm-o87av6,implements,"2026-08-10T20:55:41.413Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-10T21:22:49.577Z","harness:codex","Start evidence 2026-08-10: all-status duplicate search found the canonical assurance family pm-1jzupz and its direct children; this item remains canonical for stored measurement declarations and source evaluation. Active tranche implements SDK-first persistence, derived arithmetic, built-in source adapters, cost receipts, CLI access, docs, and tests."
   "2026-08-10T23:01:02.643Z","harness:codex","Completion evidence 2026-08-11: shipped a persisted SDK-first measurement registry with item, dependency-kind, graph, validate, health, history, links, provider, and derived arithmetic sources; strict declaration validation, cycle/non-numeric/divide-by-zero failures, and per-evaluation cost receipts with caller ceilings. Focused linked tests passed, packed CLI manual acceptance persisted and queried a real measurement in an isolated project, and the repo-wide release pipeline reached exact 100/100/100/100 coverage with 7,201 passing tests."
-learnings[1]{created_at,author,text}:
+  "2026-08-10T23:20:18.965Z","harness:codex","Exact-head review finding 2026-08-11: CI CodeFactor parity measured sourceResult at cognitive complexity 25 against the mandatory 16 ceiling after the hosted analysis refreshed. Refactor built-in source evaluation into typed, nontrivial source-specific functions while keeping the shared dispatch and behavior unchanged; rerun exact coverage and static gates before closing again."
+  "2026-08-11T00:55:41.750Z","harness:codex","Exact-head completion evidence 2026-08-11: refactored built-in source evaluation below the hosted complexity ceiling; fixed item population denominators; memoized shared measurement references per evaluation; bounded expression/gate concurrency at 4 and item-history reads at 16; added a 5-second Git identity timeout and explicit item-only context flags. The green tracker test-all receipt includes 7,210 tests with exact 100/100/100/100 coverage and zero failures."
+learnings[2]{created_at,author,text}:
   "2026-08-10T23:01:03.175Z","harness:codex","Measurement affordability is part of the data contract: built-in and contributed adapters must return cost with value, while derived measurements aggregate child cost and fail cycles or invalid arithmetic explicitly."
+  "2026-08-11T00:55:42.196Z","harness:codex","A reusable measurement graph needs one promise memo per evaluation: this preserves cost accounting, prevents repeated provider/history work, and makes derived/filter/assertion consumers observe the same snapshot."
 files[4]{path,scope,note}:
   src/sdk/governance/assurance-runtime.ts,project,authoritative workspace measurement adapters
   src/sdk/governance/assurance.ts,project,measurement vocabulary evaluation and cost receipts
   tests/unit/sdk/assurance-runtime.spec.ts,project,Live workspace adapter coverage for built-in and contributed measurement sources
   tests/unit/sdk/assurance.spec.ts,project,Unit coverage for composable measurements and arithmetic semantics
-tests[1]{command,scope,timeout_seconds}:
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-runtime.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
-  test-local-msnt2o42-4fhiv4,test,passed,"2026-08-10T22:30:57.666Z","2026-08-10T22:31:10.994Z","2026-08-10T22:31:10.994Z",1,0,0
-docs[1]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-runtime.spec.ts tests/unit/sdk/assurance-action.spec.ts,project,300
+  "pnpm test:coverage",project,1200
+test_runs[3]:
+  - run_id: test-local-msnt2o42-4fhiv4
+    kind: test
+    status: passed
+    started_at: "2026-08-10T22:30:57.666Z"
+    finished_at: "2026-08-10T22:31:10.994Z"
+    recorded_at: "2026-08-10T22:31:10.994Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-all-local-msnxc1yl-sgg1w0
+    kind: test-all
+    status: passed
+    started_at: "2026-08-11T00:30:27.260Z"
+    finished_at: "2026-08-11T00:35:19.863Z"
+    recorded_at: "2026-08-11T00:35:19.863Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 3
+  - run_id: test-all-local-msnxrr08-mr4d1z
+    kind: test-all
+    status: passed
+    started_at: "2026-08-11T00:42:39.551Z"
+    finished_at: "2026-08-11T00:47:34.820Z"
+    recorded_at: "2026-08-11T00:47:34.820Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 3
+docs[2]{path,scope,note}:
   docs/ASSURANCE.md,project,public assurance contracts and workflows
-close_reason: "Delivered persisted composable measurement declarations, all required source adapters, derived arithmetic, cost bounds, strict failures, public SDK/CLI contracts, docs, packed acceptance, and exact coverage."
+  docs/README.md,project,Documentation index routing for project assurance primitives
+close_reason: "Exact-head review fixes complete: typed low-complexity source evaluators, correct populations, memoized/bounded evaluation, and exact 100% coverage."
 body: ""

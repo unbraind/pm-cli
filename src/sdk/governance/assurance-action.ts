@@ -7,6 +7,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import {
+  ASSURANCE_GATE_TRIGGERS,
   evaluateAssuranceGate,
   getAssuranceDeclaration,
   listAssuranceDeclarations,
@@ -26,7 +27,7 @@ import {
 } from "./assurance.js";
 import { createAssuranceWorkspaceContext } from "./assurance-runtime.js";
 import { resolvePmRoot } from "../runtime-primitives.js";
-import { readRuntimeString } from "../runtime-input.js";
+import { parseRuntimeInteger, readRuntimeString } from "../runtime-input.js";
 
 /** Assurance registry and evaluation verbs shared by every transport. */
 export const ASSURANCE_ACTIONS = [
@@ -64,6 +65,8 @@ export interface AssuranceActionInput {
   tree?: string;
   /** Verdict-history gate filter when id is used by another host field. */
   gate?: string;
+  /** Maximum newest durable verdicts returned. */
+  limit?: number | string;
   /** Evaluate without appending an immutable verdict. */
   dry_run?: boolean;
   /** Retain the complete mutation receipt; assurance receipts are complete by default. */
@@ -174,6 +177,31 @@ function projectMutationReceipt(
   return idOnly === true ? { id: receipt.id } : receipt;
 }
 
+async function authorizedDecisionIds(
+  pmRoot: string,
+  definition: AssuranceAssertionDefinition,
+): Promise<string[]> {
+  const decisionId = definition.authorization_decision;
+  if (!decisionId) return [];
+  const context = await createAssuranceWorkspaceContext(pmRoot, {
+    include_history: false,
+    resolve_tree: false,
+  });
+  const decision = context.items.find((item) => item.id === decisionId);
+  const terminalStatuses = new Set(context.terminal_statuses!);
+  if (
+    !decision ||
+    decision.type.toLowerCase() !== "decision" ||
+    !terminalStatuses.has(decision.status)
+  ) {
+    throw new PmCliError(
+      `Assurance authorization ${decisionId} must name a terminal Decision item`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return [decision.id];
+}
+
 /** Execute one assurance request through the public assurance SDK primitives. */
 export async function runAssuranceAction(
   input: AssuranceActionInput,
@@ -184,6 +212,7 @@ export async function runAssuranceAction(
   if (action === "verdicts") {
     const items = await listAssuranceVerdicts(pmRoot, {
       gate_id: input.id ?? input.gate,
+      limit: parseRuntimeInteger(input.limit, "assurance verdict limit"),
     });
     return {
       items,
@@ -197,6 +226,12 @@ export async function runAssuranceAction(
     }
     if (!input.trigger) {
       throw new PmCliError("assurance run requires a trigger", EXIT_CODE.USAGE);
+    }
+    if (!ASSURANCE_GATE_TRIGGERS.includes(input.trigger as AssuranceGateTrigger)) {
+      throw new PmCliError(
+        `Unknown assurance trigger ${input.trigger}. Expected: ${ASSURANCE_GATE_TRIGGERS.join(", ")}`,
+        EXIT_CODE.USAGE,
+      );
     }
     const verdict = await evaluateAssuranceGate(
       input.id,
@@ -223,25 +258,12 @@ export async function runAssuranceAction(
   if (action === "show") {
     return getAssuranceDeclaration(pmRoot, kind, input.id);
   }
-  const mutationOptions = {
-    author: input.author,
-    message: input.message,
-    ...(action === "put" && kind === "assertion"
-      ? {
-          authorized_decision_ids: (
-            await createAssuranceWorkspaceContext(pmRoot)
-          ).items
-            .filter((item) => item.type.toLowerCase() === "decision")
-            .map((item) => item.id),
-        }
-      : {}),
-  };
   if (action === "remove") {
     const receipt = await removeAssuranceDeclaration(
       pmRoot,
       kind,
       input.id,
-      mutationOptions,
+      { author: input.author, message: input.message },
     );
     return projectMutationReceipt(receipt, input.idOnly);
   }
@@ -252,6 +274,18 @@ export async function runAssuranceAction(
       EXIT_CODE.USAGE,
     );
   }
+  const mutationOptions = {
+    author: input.author,
+    message: input.message,
+    ...(kind === "assertion"
+      ? {
+          authorized_decision_ids: await authorizedDecisionIds(
+            pmRoot,
+            definition as AssuranceAssertionDefinition,
+          ),
+        }
+      : {}),
+  };
   const receipt = await putAssuranceDeclaration(
     pmRoot,
     kind,
@@ -283,6 +317,7 @@ export function runAssuranceDispatch(
         readRuntimeString(merged, "treeId") ??
         readRuntimeString(merged, "tree"),
       gate: readRuntimeString(merged, "gate"),
+      limit: parseRuntimeInteger(merged.limit, "assurance verdict limit"),
       dry_run: merged.dryRun === true || merged.dry_run === true,
       fullChangedFields: merged.fullChangedFields === true,
       idOnly: merged.idOnly === true,

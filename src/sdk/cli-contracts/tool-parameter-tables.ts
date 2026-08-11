@@ -10,6 +10,7 @@ import {
   PLAN_STEP_STATUS_VALUES,
 } from "../../types/index.js";
 import { PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS } from "../read-output-session.js";
+import { ASSURANCE_DEFINITION_SCHEMA } from "./schemas/assurance-definition.js";
 import type { PmToolAction } from "./enum-contracts.js";
 
 /** Public contract for pm tool parameter properties, shared by SDK and presentation-layer consumers. */
@@ -639,6 +640,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
   Record<PmToolAction, Record<string, unknown>>
 > = {
   assurance: {
+    definition: ASSURANCE_DEFINITION_SCHEMA,
     kind: {
       type: "string",
       enum: ["measurement", "assertion", "gate"],
@@ -647,6 +649,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
       type: "string",
       enum: ["list", "show", "put", "remove", "run", "verdicts"],
     },
+    limit: { type: "integer", minimum: 1, maximum: 1000 },
   },
   activity: {
     harness: {
