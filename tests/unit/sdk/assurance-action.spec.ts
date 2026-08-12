@@ -8,7 +8,11 @@ import {
   runAssuranceAction,
   runAssuranceDispatch,
 } from "../../../src/sdk/governance/assurance-action.js";
-import { normalizeAssuranceMutation } from "../../../src/sdk/governance/assurance-mutation-error.js";
+import {
+  AssuranceEvaluationRefusalError,
+  normalizeAssuranceEvaluation,
+  normalizeAssuranceMutation,
+} from "../../../src/sdk/governance/assurance-mutation-error.js";
 import { runClose } from "../../../src/sdk/lifecycle/close.js";
 import { runCreate } from "../../../src/sdk/lifecycle/create.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -256,6 +260,93 @@ describe("assurance action transport", () => {
     await expect(
       normalizeAssuranceMutation(() => Promise.reject(unexpected)),
     ).rejects.toBe(unexpected);
+    await expect(
+      normalizeAssuranceEvaluation(() => Promise.reject(unexpected)),
+    ).rejects.toBe(unexpected);
+  });
+
+  it("types provider-policy evaluation refusals without hiding runtime faults", async () => {
+    const refusal = new AssuranceEvaluationRefusalError(
+      "assurance provider quality has no declared capabilities",
+    );
+
+    await expect(
+      normalizeAssuranceEvaluation(() => Promise.reject(refusal)),
+    ).rejects.toMatchObject({
+      name: "PmCliError",
+      exitCode: EXIT_CODE.USAGE,
+      context: {
+        code: "invalid_argument_value",
+        reason: "assurance_evaluation_refused",
+      },
+    });
+
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "measurement",
+          id: "provider-score",
+          definition: {
+            id: "provider-score",
+            source: { kind: "provider", provider: "quality", key: "score" },
+          },
+        },
+        global,
+      );
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "assertion",
+          id: "provider-score-floor",
+          definition: {
+            ...assertion,
+            id: "provider-score-floor",
+            measurement_id: "provider-score",
+          },
+        },
+        global,
+      );
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "gate",
+          id: "provider-quality",
+          definition: {
+            id: "provider-quality",
+            assertion_ids: ["provider-score-floor"],
+            triggers: ["ci"],
+            provider_policy: {
+              allowed_providers: ["quality"],
+              triggers: {
+                ci: { max_cost_class: "low", allow_network: false },
+              },
+            },
+          },
+        },
+        global,
+      );
+
+      await expect(
+        runAssuranceAction(
+          {
+            action: "run",
+            id: "provider-quality",
+            trigger: "ci",
+            dry_run: true,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          code: "invalid_argument_value",
+          reason: "assurance_evaluation_refused",
+        },
+      });
+    });
   });
 
   it("keeps CRUD and generic dispatch projections aligned", async () => {

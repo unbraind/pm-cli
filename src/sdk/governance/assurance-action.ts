@@ -38,7 +38,10 @@ import {
   type AssurancePresetId,
 } from "./assurance-presets.js";
 import { MAX_ASSURANCE_VERDICT_LIMIT } from "./assurance-limits.js";
-import { normalizeAssuranceMutation } from "./assurance-mutation-error.js";
+import {
+  normalizeAssuranceEvaluation,
+  normalizeAssuranceMutation,
+} from "./assurance-mutation-error.js";
 import { createAssuranceWorkspaceContext } from "./assurance-runtime.js";
 import { resolvePmRoot } from "../runtime-primitives.js";
 import { parseRuntimeInteger, readRuntimeString } from "../runtime-input.js";
@@ -380,6 +383,7 @@ async function runGateAction(
   if (!input.id) {
     throw new PmCliError("assurance run requires a gate id", EXIT_CODE.USAGE);
   }
+  const gateId = input.id;
   if (!input.trigger) {
     throw new PmCliError("assurance run requires a trigger", EXIT_CODE.USAGE);
   }
@@ -399,11 +403,11 @@ async function runGateAction(
       trigger,
     }),
   ]);
-  const verdict = await evaluateAssuranceGate(
-    input.id,
-    document,
-    workspaceContext,
-    { trigger, dry_run: input.dry_run === true },
+  const verdict = await normalizeAssuranceEvaluation(() =>
+    evaluateAssuranceGate(gateId, document, workspaceContext, {
+      trigger,
+      dry_run: input.dry_run === true,
+    }),
   );
   if (!verdict.dry_run) {
     await recordAssuranceVerdict(pmRoot, verdict, {

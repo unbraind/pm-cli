@@ -24,7 +24,10 @@ import {
 } from "../runtime-primitives.js";
 import { resolveCanonicalRelationshipKind } from "../relationships.js";
 import { MAX_ASSURANCE_VERDICT_LIMIT } from "./assurance-limits.js";
-import { AssuranceMutationRefusalError } from "./assurance-mutation-error.js";
+import {
+  AssuranceEvaluationRefusalError,
+  AssuranceMutationRefusalError,
+} from "./assurance-mutation-error.js";
 
 /** Current serialized assurance registry format. */
 export const ASSURANCE_DOCUMENT_VERSION = 1 as const;
@@ -1334,7 +1337,7 @@ async function evaluateMeasurementInternal(
   };
   const cost = sumCosts([...nestedCosts, ownCost], Date.now() - startedAt);
   if (definition.max_cost !== undefined && cost.units > definition.max_cost) {
-    throw new TypeError(
+    throw new AssuranceEvaluationRefusalError(
       `measurement ${definition.id} exceeded cost ceiling ${definition.max_cost} with ${cost.units}`,
     );
   }
@@ -1447,7 +1450,7 @@ function enforceGateProviderPolicy(
   const policy = gate.provider_policy;
   const triggerPolicy = policy?.triggers[trigger];
   if (!policy || !triggerPolicy) {
-    throw new TypeError(
+    throw new AssuranceEvaluationRefusalError(
       `assurance gate ${gate.id} refuses provider execution at trigger ${trigger} without an explicit provider policy`,
     );
   }
@@ -1459,25 +1462,25 @@ function enforceGateProviderPolicy(
   };
   for (const providerId of providerIds) {
     if (!allowedProviders.has(providerId)) {
-      throw new TypeError(
+      throw new AssuranceEvaluationRefusalError(
         `assurance gate ${gate.id} refuses provider ${providerId}`,
       );
     }
     const capability = context.provider_capabilities?.[providerId];
     if (!capability) {
-      throw new TypeError(
+      throw new AssuranceEvaluationRefusalError(
         `assurance provider ${providerId} has no declared capabilities`,
       );
     }
     if (
       costRank[capability.cost_class] > costRank[triggerPolicy.max_cost_class]
     ) {
-      throw new TypeError(
+      throw new AssuranceEvaluationRefusalError(
         `assurance gate ${gate.id} refuses ${capability.cost_class}-cost provider ${providerId} at trigger ${trigger}`,
       );
     }
     if (capability.network && !triggerPolicy.allow_network) {
-      throw new TypeError(
+      throw new AssuranceEvaluationRefusalError(
         `assurance gate ${gate.id} refuses network provider ${providerId} at trigger ${trigger}`,
       );
     }
