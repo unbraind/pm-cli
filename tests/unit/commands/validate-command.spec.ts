@@ -1,5 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -16,11 +23,17 @@ import {
   runValidate,
   type ValidateResult,
 } from "../../../src/cli/commands/validate.js";
-import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
+import {
+  EXIT_CODE,
+  SETTINGS_DEFAULTS,
+} from "../../../src/core/shared/constants.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { getActiveExtensionRegistrations } from "../../../src/core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../../src/core/item/type-registry.js";
-import { listAllDocumentCandidatesCached } from "../../../src/core/store/item-metadata-cache.js";
+import {
+  clearItemMetadataEnvelopeMemo,
+  listAllDocumentCandidatesCached,
+} from "../../../src/core/store/item-metadata-cache.js";
 import { readSettings } from "../../../src/core/store/settings.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
@@ -122,10 +135,57 @@ function createTask(context: TempPmContext, title: string): string {
   });
 }
 
+async function seedTrackedWorkspaceWithPmInternal(
+  context: TempPmContext,
+  title: string,
+): Promise<{ id: string; workspaceRoot: string }> {
+  const id = createTask(context, title);
+  const workspaceRoot = path.dirname(path.dirname(context.pmPath));
+  const srcDir = path.join(workspaceRoot, "src");
+  await mkdir(srcDir, { recursive: true });
+  await writeFile(
+    path.join(srcDir, "tracked.ts"),
+    "export const tracked = true;\n",
+    "utf8",
+  );
+
+  const linked = context.runCli(
+    [
+      "files",
+      id,
+      "--json",
+      "--add",
+      "path=src/tracked.ts,scope=project,note=tracked",
+    ],
+    { expectJson: true },
+  );
+  expect(linked.code).toBe(0);
+
+  const gitInit = spawnSync("git", ["init"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+  expect(gitInit.status).toBe(0);
+  const internalTaskPath = path
+    .relative(workspaceRoot, path.join(context.pmPath, "tasks", `${id}.toon`))
+    .replaceAll("\\", "/");
+  const gitAdd = spawnSync("git", ["add", "src/tracked.ts", internalTaskPath], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+  expect(gitAdd.status).toBe(0);
+  return { id, workspaceRoot };
+}
+
 it("selects storage integrity explicitly", async () => {
   await withTempPmPath(async (context) => {
-    const result = await runValidate({ checkStorageIntegrity: true }, { path: context.pmPath });
-    expect(result.checks.map((check) => check.name)).toEqual(["storage_integrity"]);
+    const result = await runValidate(
+      { checkStorageIntegrity: true },
+      { path: context.pmPath },
+    );
+    expect(result.checks.map((check) => check.name)).toEqual([
+      "storage_integrity",
+    ]);
   });
 });
 
@@ -141,11 +201,20 @@ it("flags duplicate item ids and merge-fence drift in storage integrity (pm-pibw
       '# pm-cli:merge-drivers:start\n".agents/pm/ghosts/*.toon" merge=pm-item-toon\n# pm-cli:merge-drivers:end\n',
       "utf8",
     );
-    const drifted = await runValidate({ checkStorageIntegrity: true }, { path: context.pmPath });
+    const drifted = await runValidate(
+      { checkStorageIntegrity: true },
+      { path: context.pmPath },
+    );
     const driftCheck = checkByName(drifted, "storage_integrity");
     expect(driftCheck.status).toBe("warn");
-    expect(drifted.warnings.some((warning) => warning.startsWith("validate_merge_fence_drift:"))).toBe(true);
-    const fence = driftCheck.details as { merge_fence: { status: string; stale_patterns: string[] } };
+    expect(
+      drifted.warnings.some((warning) =>
+        warning.startsWith("validate_merge_fence_drift:"),
+      ),
+    ).toBe(true);
+    const fence = driftCheck.details as {
+      merge_fence: { status: string; stale_patterns: string[] };
+    };
     expect(fence.merge_fence.status).toBe("drift");
     expect(fence.merge_fence.stale_patterns.join("\n")).toContain("ghosts");
 
@@ -157,11 +226,18 @@ it("flags duplicate item ids and merge-fence drift in storage integrity (pm-pibw
       await readFile(sourcePath, "utf8"),
       "utf8",
     );
-    const collided = await runValidate({ checkStorageIntegrity: true }, { path: context.pmPath });
+    const collided = await runValidate(
+      { checkStorageIntegrity: true },
+      { path: context.pmPath },
+    );
     const collidedCheck = checkByName(collided, "storage_integrity");
     expect(collidedCheck.status).toBe("error");
-    expect(collided.warnings).toContain("validate_storage_duplicate_item_ids:1");
-    const details = collidedCheck.details as { duplicate_item_ids: Array<{ id: string; paths: string[] }> };
+    expect(collided.warnings).toContain(
+      "validate_storage_duplicate_item_ids:1",
+    );
+    const details = collidedCheck.details as {
+      duplicate_item_ids: Array<{ id: string; paths: string[] }>;
+    };
     expect(details.duplicate_item_ids).toEqual([
       { id, paths: [`features/${id}.toon`, `tasks/${id}.toon`] },
     ]);
@@ -198,7 +274,10 @@ function seedDependencyCycle(context: TempPmContext): [string, string, string] {
 function seedParentCycle(context: TempPmContext, length: 2 | 3 = 3): string[] {
   const ids =
     length === 2
-      ? [createTask(context, "validate-parent-cycle-a"), createTask(context, "validate-parent-cycle-b")]
+      ? [
+          createTask(context, "validate-parent-cycle-a"),
+          createTask(context, "validate-parent-cycle-b"),
+        ]
       : [
           createTask(context, "validate-parent-cycle-a"),
           createTask(context, "validate-parent-cycle-b"),
@@ -210,7 +289,15 @@ function seedParentCycle(context: TempPmContext, length: 2 | 3 = 3): string[] {
     const child = ids[index]!;
     const parent = ids[(index + 1) % ids.length]!;
     const updated = context.runCli(
-      ["update", child, "--parent", parent, "--json", "--message", "Seed parent-hierarchy cycle edge"],
+      [
+        "update",
+        child,
+        "--parent",
+        parent,
+        "--json",
+        "--message",
+        "Seed parent-hierarchy cycle edge",
+      ],
       { expectJson: true },
     );
     expect(updated.code).toBe(0);
@@ -218,7 +305,10 @@ function seedParentCycle(context: TempPmContext, length: 2 | 3 = 3): string[] {
   return ids;
 }
 
-function checkByName(result: Awaited<ReturnType<typeof runValidate>>, name: string): Record<string, unknown> {
+function checkByName(
+  result: Awaited<ReturnType<typeof runValidate>>,
+  name: string,
+): Record<string, unknown> {
   const found = result.checks.find((entry) => entry.name === name);
   expect(found).toBeDefined();
   return found as unknown as Record<string, unknown>;
@@ -235,6 +325,9 @@ describe("runValidate", () => {
         ],
         included_field_groups: ["diagnostic_rows"],
       });
+      expect(
+        full.checks.every((check) => check.ok === (check.status === "ok")),
+      ).toBe(true);
 
       const counts = await runValidate(
         { counts: true },
@@ -247,11 +340,11 @@ describe("runValidate", () => {
         ],
         included_field_groups: [],
       });
+      expect(
+        counts.checks.every((check) => check.ok === (check.status === "ok")),
+      ).toBe(true);
       await expect(
-        runValidate(
-          { counts: true, full: true },
-          { path: context.pmPath },
-        ),
+        runValidate({ counts: true, full: true }, { path: context.pmPath }),
       ).rejects.toMatchObject<Partial<PmCliError>>({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -259,9 +352,13 @@ describe("runValidate", () => {
   });
 
   it("fails when tracker is not initialized", async () => {
-    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-validate-not-init-"));
+    const tempDir = await mkdtemp(
+      path.join(os.tmpdir(), "pm-validate-not-init-"),
+    );
     try {
-      await expect(runValidate({}, { path: tempDir })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runValidate({}, { path: tempDir }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
     } finally {
@@ -288,12 +385,24 @@ describe("runValidate", () => {
   });
 
   it("covers metadata summary helper defensive fallback branches", () => {
-    type MetadataPolicy = Parameters<typeof validateInternals.buildMissingFieldOccurrences>[0];
-    type MissingByField = Parameters<typeof validateInternals.buildMissingFieldOccurrences>[1];
-    type ItemsById = Parameters<typeof validateInternals.buildMissingFieldOccurrences>[2];
-    type ItemForValidate = ItemsById extends Map<string, infer Item> ? Item : never;
+    type MetadataPolicy = Parameters<
+      typeof validateInternals.buildMissingFieldOccurrences
+    >[0];
+    type MissingByField = Parameters<
+      typeof validateInternals.buildMissingFieldOccurrences
+    >[1];
+    type ItemsById = Parameters<
+      typeof validateInternals.buildMissingFieldOccurrences
+    >[2];
+    type ItemForValidate =
+      ItemsById extends Map<string, infer Item> ? Item : never;
     const metadataPolicy = {
-      required_fields: ["author", "acceptance_criteria", "close_reason", "estimated_minutes"],
+      required_fields: [
+        "author",
+        "acceptance_criteria",
+        "close_reason",
+        "estimated_minutes",
+      ],
     } as MetadataPolicy;
     const missingByField = {
       acceptance_criteria: ["pm-known", "pm-unknown-type"],
@@ -307,13 +416,21 @@ describe("runValidate", () => {
       ["pm-estimate", { type: "Task" } as ItemForValidate],
     ]);
 
-    expect(validateInternals.buildMissingFieldOccurrences(metadataPolicy, missingByField, itemsById)).toEqual([
+    expect(
+      validateInternals.buildMissingFieldOccurrences(
+        metadataPolicy,
+        missingByField,
+        itemsById,
+      ),
+    ).toEqual([
       { item_type: "Bug", field: "acceptance_criteria" },
       { item_type: "Unknown", field: "acceptance_criteria" },
       { item_type: "Unknown", field: "close_reason" },
       { item_type: "Task", field: "estimated_minutes" },
     ]);
-    expect(validateInternals.buildMetadataCounts(metadataPolicy, missingByField)).toMatchObject({
+    expect(
+      validateInternals.buildMetadataCounts(metadataPolicy, missingByField),
+    ).toMatchObject({
       missing_acceptance_criteria: 2,
       closed_missing_close_reason: 1,
       missing_estimated_minutes: 1,
@@ -332,9 +449,13 @@ describe("runValidate", () => {
         itemsById,
       ),
     ).toEqual([]);
-    expect(validateInternals.buildCloseReasonBackfillRows(metadataPolicy, missingByField, itemsById)).toEqual([
-      { id: "pm-closed", resolution: "Fixed" },
-    ]);
+    expect(
+      validateInternals.buildCloseReasonBackfillRows(
+        metadataPolicy,
+        missingByField,
+        itemsById,
+      ),
+    ).toEqual([{ id: "pm-closed", resolution: "Fixed" }]);
     expect(
       validateInternals.buildEstimateBackfillRows(
         { required_fields: ["author"] } as MetadataPolicy,
@@ -349,9 +470,13 @@ describe("runValidate", () => {
         itemsById,
       ),
     ).toEqual([]);
-    expect(validateInternals.buildEstimateBackfillRows(metadataPolicy, missingByField, itemsById)).toEqual([
-      { id: "pm-estimate", type: "Task" },
-    ]);
+    expect(
+      validateInternals.buildEstimateBackfillRows(
+        metadataPolicy,
+        missingByField,
+        itemsById,
+      ),
+    ).toEqual([{ id: "pm-estimate", type: "Task" }]);
   });
 
   it("reports a clean format-version check for a baseline tracker", async () => {
@@ -365,7 +490,11 @@ describe("runValidate", () => {
         outdated_items_count: 0,
         ahead_items_count: 0,
       });
-      expect(result.warnings.some((warning) => warning.startsWith("validate_format_version_"))).toBe(false);
+      expect(
+        result.warnings.some((warning) =>
+          warning.startsWith("validate_format_version_"),
+        ),
+      ).toBe(false);
     });
   });
 
@@ -395,16 +524,24 @@ describe("runValidate", () => {
       const result = await runValidate({}, { path: context.pmPath });
       const check = checkByName(result, "format_version");
       expect(check.status).toBe("error");
-      expect(check.details).toMatchObject({ ahead_items_count: 1, ahead_items: ["pm-ahead"] });
+      expect(check.details).toMatchObject({
+        ahead_items_count: 1,
+        ahead_items: ["pm-ahead"],
+      });
       expect(result.ok).toBe(false);
-      expect(result.warnings).toEqual(expect.arrayContaining(["validate_format_version_ahead_items:1"]));
+      expect(result.warnings).toEqual(
+        expect.arrayContaining(["validate_format_version_ahead_items:1"]),
+      );
     });
   });
 
   it("supports command-reference-only scoped checks", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-command-reference-only");
-      const result = await runValidate({ checkCommandReferences: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkCommandReferences: true },
+        { path: context.pmPath },
+      );
       expect(result.checks).toHaveLength(1);
       expect(result.checks[0]?.name).toBe("command_references");
       expect(result.checks[0]?.status).toBe("ok");
@@ -414,7 +551,10 @@ describe("runValidate", () => {
   it("supports lifecycle-only scoped checks", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-lifecycle-only");
-      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkLifecycle: true },
+        { path: context.pmPath },
+      );
       expect(result.checks).toHaveLength(2);
       expect(result.checks[0]?.name).toBe("lifecycle");
       expect(result.checks[0]?.status).toBe("ok");
@@ -429,7 +569,9 @@ describe("runValidate", () => {
       };
       expect(details.stale_blocker_checks_enabled).toBe(false);
       expect(details.stale_blocker_reason_pattern_source).toBe("default");
-      expect(details.closure_like_blocked_reason_pattern_source).toBe("default");
+      expect(details.closure_like_blocked_reason_pattern_source).toBe(
+        "default",
+      );
       expect(details.closure_like_resolution_pattern_source).toBe("default");
       expect(details.closure_like_actual_result_pattern_source).toBe("default");
     });
@@ -438,30 +580,61 @@ describe("runValidate", () => {
   it("reports dangling structured dependency references with remediation", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "dangling-dependency");
-      context.runCli(["update", id, "--allow-unresolved-deps", "--dep", "id=pm-ghost,kind=blocked_by", "--json"], { expectJson: true });
+      context.runCli(
+        [
+          "update",
+          id,
+          "--allow-unresolved-deps",
+          "--dep",
+          "id=pm-ghost,kind=blocked_by",
+          "--json",
+        ],
+        { expectJson: true },
+      );
       const secondId = createTask(context, "second-dangling-dependency");
-      context.runCli(["update", secondId, "--allow-unresolved-deps", "--dep", "id=pm-phantom,kind=blocked_by", "--json"], { expectJson: true });
-      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      context.runCli(
+        [
+          "update",
+          secondId,
+          "--allow-unresolved-deps",
+          "--dep",
+          "id=pm-phantom,kind=blocked_by",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const result = await runValidate(
+        { checkLifecycle: true },
+        { path: context.pmPath },
+      );
       const check = checkByName(result, "dependency_references");
       expect(check.status).toBe("warn");
       expect(check.details).toMatchObject({ dangling_reference_count: 2 });
-      expect((check.details.remediation_hints as string[])[0]).toContain("--replace-deps");
-      const sourceAwareCheck = validateInternals.buildDependencyReferencesCheck([
-        {
-          id: "pm-source-aware",
-          status: "open",
-          blocked_by: "pm-scalar-missing",
-          dependencies: [{ id: "pm-edge-missing", kind: "blocked_by" }],
-        },
-      ] as never, true).check;
+      expect((check.details.remediation_hints as string[])[0]).toContain(
+        "--replace-deps",
+      );
+      const sourceAwareCheck = validateInternals.buildDependencyReferencesCheck(
+        [
+          {
+            id: "pm-source-aware",
+            status: "open",
+            blocked_by: "pm-scalar-missing",
+            dependencies: [{ id: "pm-edge-missing", kind: "blocked_by" }],
+          },
+        ] as never,
+        true,
+      ).check;
       expect(sourceAwareCheck.details.remediation_hints).toEqual([
         "pm update pm-source-aware --replace-deps '<correct dependency edges>'",
         "pm update pm-source-aware --unset blocked_by",
       ]);
-      const multiRowCheck = validateInternals.buildDependencyReferencesCheck([
-        { id: "pm-b", parent: "pm-missing-b", dependencies: [] },
-        { id: "pm-a", parent: "pm-missing-a", dependencies: [] },
-      ] as never, true).check;
+      const multiRowCheck = validateInternals.buildDependencyReferencesCheck(
+        [
+          { id: "pm-b", parent: "pm-missing-b", dependencies: [] },
+          { id: "pm-a", parent: "pm-missing-a", dependencies: [] },
+        ] as never,
+        true,
+      ).check;
       expect(multiRowCheck.details.dangling_reference_rows).toEqual([
         "pm-a:pm-missing-a:parent",
         "pm-b:pm-missing-b:parent",
@@ -470,15 +643,23 @@ describe("runValidate", () => {
         "pm update pm-a --unset parent",
         "pm update pm-b --unset parent",
       ]);
-      const partitionedCheck = validateInternals.buildDependencyReferencesCheck([
-        { id: "pm-active", status: "open", parent: "pm-active-missing", dependencies: [] },
-        {
-          id: "pm-closed",
-          status: "closed",
-          blocked_by: "no-active-blocker",
-          dependencies: [{ id: "pm-legacy-missing", kind: "related" }],
-        },
-      ] as never, true).check;
+      const partitionedCheck = validateInternals.buildDependencyReferencesCheck(
+        [
+          {
+            id: "pm-active",
+            status: "open",
+            parent: "pm-active-missing",
+            dependencies: [],
+          },
+          {
+            id: "pm-closed",
+            status: "closed",
+            blocked_by: "no-active-blocker",
+            dependencies: [{ id: "pm-legacy-missing", kind: "related" }],
+          },
+        ] as never,
+        true,
+      ).check;
       expect(partitionedCheck.status).toBe("warn");
       expect(partitionedCheck.details).toMatchObject({
         dangling_reference_count: 3,
@@ -491,14 +672,18 @@ describe("runValidate", () => {
         "pm update pm-active --unset parent",
       ]);
 
-      const historicalOnlyCheck = validateInternals.buildDependencyReferencesCheck([
-        {
-          id: "pm-closed",
-          status: "closed",
-          blocked_by: "no-active-blocker",
-          dependencies: [],
-        },
-      ] as never, true).check;
+      const historicalOnlyCheck =
+        validateInternals.buildDependencyReferencesCheck(
+          [
+            {
+              id: "pm-closed",
+              status: "closed",
+              blocked_by: "no-active-blocker",
+              dependencies: [],
+            },
+          ] as never,
+          true,
+        ).check;
       expect(historicalOnlyCheck.status).toBe("ok");
       expect(historicalOnlyCheck.details).toMatchObject({
         dangling_reference_count: 1,
@@ -507,27 +692,35 @@ describe("runValidate", () => {
       });
       expect(historicalOnlyCheck.details.remediation_hints).toEqual([]);
 
-      const activeSentinelCheck = validateInternals.buildDependencyReferencesCheck([
-        {
-          id: "pm-active-sentinel",
-          status: "open",
-          blocked_by: "no-active-blocker",
-          dependencies: [],
-        },
-      ] as never, true).check;
+      const activeSentinelCheck =
+        validateInternals.buildDependencyReferencesCheck(
+          [
+            {
+              id: "pm-active-sentinel",
+              status: "open",
+              blocked_by: "no-active-blocker",
+              dependencies: [],
+            },
+          ] as never,
+          true,
+        ).check;
       expect(activeSentinelCheck.details).toMatchObject({
         active_dangling_reference_count: 1,
         no_active_blocker_sentinel_count: 1,
       });
 
-      const canceledOnlyCheck = validateInternals.buildDependencyReferencesCheck([
-        {
-          id: "pm-canceled",
-          status: "canceled",
-          parent: "pm-historical-missing",
-          dependencies: [],
-        },
-      ] as never, true).check;
+      const canceledOnlyCheck =
+        validateInternals.buildDependencyReferencesCheck(
+          [
+            {
+              id: "pm-canceled",
+              status: "canceled",
+              parent: "pm-historical-missing",
+              dependencies: [],
+            },
+          ] as never,
+          true,
+        ).check;
       expect(canceledOnlyCheck.details).toMatchObject({
         legacy_terminal_dangling_reference_count: 1,
         legacy_closed_dangling_reference_count: 0,
@@ -536,15 +729,37 @@ describe("runValidate", () => {
   });
 
   it("covers validate helper edge branches for lifecycle, files, and fix application", async () => {
-    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const statusRegistry = resolveRuntimeStatusRegistry(
+      SETTINGS_DEFAULTS.schema,
+    );
     expect(validateInternals.toMeaningfulString(" none ")).toBeUndefined();
     expect(validateInternals.toMeaningfulString("value")).toBe("value");
-    expect(validateInternals.linkedArtifactPathExceedsFilesystemLimits(`src/${"a".repeat(5000)}.ts`)).toBe(true);
-    expect(validateInternals.linkedArtifactPathExceedsFilesystemLimits(`src/${"a".repeat(256)}.ts`)).toBe(true);
-    expect(validateInternals.linkedArtifactPathExceedsFilesystemLimits(`src\\${"a".repeat(256)}.ts`)).toBe(true);
-    expect(validateInternals.linkedArtifactPathExceedsFilesystemLimits("src/normal.ts")).toBe(false);
-    expect(validateInternals.resolveValidateMetadataProfile("   ")).toBe("core");
-    expect(validateInternals.resolveDependencyCycleSeverity("   ")).toBe("warn");
+    expect(
+      validateInternals.linkedArtifactPathExceedsFilesystemLimits(
+        `src/${"a".repeat(5000)}.ts`,
+      ),
+    ).toBe(true);
+    expect(
+      validateInternals.linkedArtifactPathExceedsFilesystemLimits(
+        `src/${"a".repeat(256)}.ts`,
+      ),
+    ).toBe(true);
+    expect(
+      validateInternals.linkedArtifactPathExceedsFilesystemLimits(
+        `src\\${"a".repeat(256)}.ts`,
+      ),
+    ).toBe(true);
+    expect(
+      validateInternals.linkedArtifactPathExceedsFilesystemLimits(
+        "src/normal.ts",
+      ),
+    ).toBe(false);
+    expect(validateInternals.resolveValidateMetadataProfile("   ")).toBe(
+      "core",
+    );
+    expect(validateInternals.resolveDependencyCycleSeverity("   ")).toBe(
+      "warn",
+    );
     expect(
       validateInternals.isMetadataFieldMissing(
         { id: "pm-confidence", confidence: Number.POSITIVE_INFINITY } as never,
@@ -553,10 +768,12 @@ describe("runValidate", () => {
         false,
       ),
     ).toBe(true);
-    expect([...validateInternals.resolveRequestedChecks({ checkMetadata: true, pruneMissing: true })]).toEqual([
-      "metadata",
-      "files",
-    ]);
+    expect([
+      ...validateInternals.resolveRequestedChecks({
+        checkMetadata: true,
+        pruneMissing: true,
+      }),
+    ]).toEqual(["metadata", "files"]);
     const checkWithoutHints = {
       name: "resolution",
       status: "warn",
@@ -575,9 +792,10 @@ describe("runValidate", () => {
     validateInternals.attachValidateFixHints(metadataCheckWithDuplicates, [
       "validate_metadata_duplicate_issue_codes:2",
     ]);
-    expect((metadataCheckWithDuplicates.details as { fix_hints?: string[] }).fix_hints).toEqual([
-      'pm update <id> --title "<distinct title>"',
-    ]);
+    expect(
+      (metadataCheckWithDuplicates.details as { fix_hints?: string[] })
+        .fix_hints,
+    ).toEqual(['pm update <id> --title "<distinct title>"']);
 
     const graph = validateInternals.buildLifecycleDependencyGraph([
       {
@@ -673,21 +891,45 @@ describe("runValidate", () => {
     expect(hierarchyGraph.get("pm-a")).toEqual(["pm-b", "pm-c"]);
     expect(hierarchyGraph.get("pm-b")).toEqual(["pm-a"]);
     expect(hierarchyGraph.get("pm-c")).toEqual([]);
-    expect(validateInternals.extractItemIds("Ready after work-2 and pm-3.", "work")).toEqual(["work-2"]);
-    expect(validateInternals.extractItemIds("Ready after x.pm-2", "x.pm")).toEqual(["x.pm-2"]);
-    expect(validateInternals.extractItemIds("Ready after (x.pm-2), not ax.pm-3", "x.pm")).toEqual(["x.pm-2"]);
-    expect(validateInternals.extractItemIds("Ready after pm-2", " ")).toEqual(["pm-2"]);
-    expect(validateInternals.extractItemIds("Ready after pm-2", "pm-")).toEqual(["pm-2"]);
+    expect(
+      validateInternals.extractItemIds("Ready after work-2 and pm-3.", "work"),
+    ).toEqual(["work-2"]);
+    expect(
+      validateInternals.extractItemIds("Ready after x.pm-2", "x.pm"),
+    ).toEqual(["x.pm-2"]);
+    expect(
+      validateInternals.extractItemIds(
+        "Ready after (x.pm-2), not ax.pm-3",
+        "x.pm",
+      ),
+    ).toEqual(["x.pm-2"]);
+    expect(validateInternals.extractItemIds("Ready after pm-2", " ")).toEqual([
+      "pm-2",
+    ]);
+    expect(validateInternals.extractItemIds("Ready after pm-2", "pm-")).toEqual(
+      ["pm-2"],
+    );
     const customPrefixGraph = validateInternals.buildLifecycleDependencyGraph(
       [
-        { id: "work-1", status: "open", definition_of_ready: "Ready after work-2" },
+        {
+          id: "work-1",
+          status: "open",
+          definition_of_ready: "Ready after work-2",
+        },
         { id: "work-2", status: "open", blocked_by: "work-1" },
       ] as never,
       "work",
     );
     expect(customPrefixGraph.get("work-1")).toEqual(["work-2"]);
-    expect(validateInternals.findLifecycleDependencyCycleComponents(graph)).toEqual([["pm-a", "pm-b"], ["pm-c"]]);
-    expect(validateInternals.resolveLifecycleDependencyCycleSamplePath(["pm-c"], graph)).toEqual(["pm-c", "pm-c"]);
+    expect(
+      validateInternals.findLifecycleDependencyCycleComponents(graph),
+    ).toEqual([["pm-a", "pm-b"], ["pm-c"]]);
+    expect(
+      validateInternals.resolveLifecycleDependencyCycleSamplePath(
+        ["pm-c"],
+        graph,
+      ),
+    ).toEqual(["pm-c", "pm-c"]);
     expect(
       validateInternals.resolveLifecycleDependencyCycleSamplePath(
         ["pm-a", "pm-z"],
@@ -763,13 +1005,28 @@ describe("runValidate", () => {
       lifecyclePolicy,
       true,
     );
-    expect(lifecycleResult.warnings).toContain("validate_lifecycle_stale_blockers:1");
+    expect(lifecycleResult.warnings).toContain(
+      "validate_lifecycle_stale_blockers:1",
+    );
 
-    expect(validateInternals.classifyOrphanedPath("src/demo.ts")).toBe("source_unowned");
-    expect(validateInternals.classifyOrphanedPath("src/README.md")).toBe("source_unowned");
-    expect(validateInternals.classifyOrphanedPath("tests/fixtures.md")).toBe("tests_unowned");
-    expect(validateInternals.classifyOrphanedPath("README.md")).toBe("docs_unowned");
-    expect(validateInternals.sharedDirectoryPrefixLength("docs/a/b/orphan.md", "docs/a/c/owned.md")).toBe(2);
+    expect(validateInternals.classifyOrphanedPath("src/demo.ts")).toBe(
+      "source_unowned",
+    );
+    expect(validateInternals.classifyOrphanedPath("src/README.md")).toBe(
+      "source_unowned",
+    );
+    expect(validateInternals.classifyOrphanedPath("tests/fixtures.md")).toBe(
+      "tests_unowned",
+    );
+    expect(validateInternals.classifyOrphanedPath("README.md")).toBe(
+      "docs_unowned",
+    );
+    expect(
+      validateInternals.sharedDirectoryPrefixLength(
+        "docs/a/b/orphan.md",
+        "docs/a/c/owned.md",
+      ),
+    ).toBe(2);
     const orphanRows = validateInternals.buildOrphanedPathRows(
       ["docs/ops/nested/orphan.md", "docs/tie/orphan.md"],
       [
@@ -800,42 +1057,42 @@ describe("runValidate", () => {
         },
       ] as never,
     );
-    expect(orphanRows[0]?.owner_candidate).toMatchObject({ id: "pm-owner", confidence: "path_prefix" });
-    expect(orphanRows[1]?.owner_candidate).toMatchObject({ id: "pm-tie-a", confidence: "same_directory" });
+    expect(orphanRows[0]?.owner_candidate).toMatchObject({
+      id: "pm-owner",
+      confidence: "path_prefix",
+    });
+    expect(orphanRows[1]?.owner_candidate).toMatchObject({
+      id: "pm-tie-a",
+      confidence: "same_directory",
+    });
     expect(
-      validateInternals.buildOrphanedPathRows(
-        ["docs/ops/new/orphan.md"],
-        [
-          {
-            id: "pm-shared",
-            type: "Task",
-            title: "Shared prefix owner",
-            status: "open",
-            docs: [{ path: "docs/ops/owned/guide.md", scope: "project" }],
-          },
-        ] as never,
-      )[0]?.owner_candidate,
+      validateInternals.buildOrphanedPathRows(["docs/ops/new/orphan.md"], [
+        {
+          id: "pm-shared",
+          type: "Task",
+          title: "Shared prefix owner",
+          status: "open",
+          docs: [{ path: "docs/ops/owned/guide.md", scope: "project" }],
+        },
+      ] as never)[0]?.owner_candidate,
     ).toMatchObject({ id: "pm-shared", confidence: "shared_directory" });
     expect(
-      validateInternals.buildOrphanedPathRows(
-        ["docs/ops/new/orphan.md"],
-        [
-          {
-            id: "pm-a-shared",
-            type: "Task",
-            title: "Sibling owner",
-            status: "open",
-            docs: [{ path: "docs/ops/owned/guide.md", scope: "project" }],
-          },
-          {
-            id: "pm-z-same",
-            type: "Task",
-            title: "Same directory owner",
-            status: "open",
-            docs: [{ path: "docs/ops/new/owned.md", scope: "project" }],
-          },
-        ] as never,
-      )[0]?.owner_candidate,
+      validateInternals.buildOrphanedPathRows(["docs/ops/new/orphan.md"], [
+        {
+          id: "pm-a-shared",
+          type: "Task",
+          title: "Sibling owner",
+          status: "open",
+          docs: [{ path: "docs/ops/owned/guide.md", scope: "project" }],
+        },
+        {
+          id: "pm-z-same",
+          type: "Task",
+          title: "Same directory owner",
+          status: "open",
+          docs: [{ path: "docs/ops/new/owned.md", scope: "project" }],
+        },
+      ] as never)[0]?.owner_candidate,
     ).toMatchObject({ id: "pm-z-same", confidence: "same_directory" });
     expect(
       validateInternals.summarizeOrphanedPathRows([
@@ -843,7 +1100,8 @@ describe("runValidate", () => {
           path: "docs/quote.md",
           classification: "docs_unowned",
           owner_candidate: null,
-          remediation_hint: 'pm docs <id> --add path=docs/quote.md,note="backslash \\\\ and quote"',
+          remediation_hint:
+            'pm docs <id> --add path=docs/quote.md,note="backslash \\\\ and quote"',
         },
       ]),
     ).toEqual([
@@ -868,24 +1126,42 @@ describe("runValidate", () => {
         false,
         false,
       );
-      expect(filesResult.warnings).toContain("validate_files_missing_linked_paths:1");
+      expect(filesResult.warnings).toContain(
+        "validate_files_missing_linked_paths:1",
+      );
     });
 
     await expect(
       validateInternals.applyValidateFix(
-        { kind: "prune_file_link", item_id: "pm-a", path: "missing.ts", gate: "files" } as never,
+        {
+          kind: "prune_file_link",
+          item_id: "pm-a",
+          path: "missing.ts",
+          gate: "files",
+        } as never,
         {},
       ),
     ).rejects.toThrow("Unsupported non-batched fix kind: prune_file_link");
     await expect(
       validateInternals.applyValidateFix(
-        { kind: "prune_doc_link", item_id: "pm-a", path: "missing.md", gate: "files" } as never,
+        {
+          kind: "prune_doc_link",
+          item_id: "pm-a",
+          path: "missing.md",
+          gate: "files",
+        } as never,
         {},
       ),
     ).rejects.toThrow("Unsupported non-batched fix kind: prune_doc_link");
 
-    const missingWorkspace = path.join(os.tmpdir(), `pm-validate-missing-${Date.now()}`, "workspace");
-    expect(validateInternals.resolveWorkspaceRoot(missingWorkspace).length).toBeGreaterThan(0);
+    const missingWorkspace = path.join(
+      os.tmpdir(),
+      `pm-validate-missing-${Date.now()}`,
+      "workspace",
+    );
+    expect(
+      validateInternals.resolveWorkspaceRoot(missingWorkspace).length,
+    ).toBeGreaterThan(0);
   });
 
   it("treats remote (URL) doc/file references as a benign category, never missing or prunable (pm-k2n4)", async () => {
@@ -919,24 +1195,47 @@ describe("runValidate", () => {
       };
       // Both remote references are surfaced in the benign remote category.
       expect(details.remote_linked_paths_count).toBe(2);
-      expect(details.remote_linked_paths).toEqual([remoteUrl, "ssh://git@example.com/repo.git"]);
+      expect(details.remote_linked_paths).toEqual([
+        remoteUrl,
+        "ssh://git@example.com/repo.git",
+      ]);
       // The genuinely-missing local file is still flagged; the URLs are not.
-      expect(details.missing_linked_paths).toEqual(["does-not-exist-local-xyz.ts"]);
+      expect(details.missing_linked_paths).toEqual([
+        "does-not-exist-local-xyz.ts",
+      ]);
       expect(details.missing_linked_paths_count).toBe(1);
       expect(details.missing_linked_paths).not.toContain(remoteUrl);
       // --prune-missing must never target a remote reference (no data loss).
-      expect(filesResult.staleLinkPruneRows.map((row) => row.path)).toEqual(["does-not-exist-local-xyz.ts"]);
+      expect(filesResult.staleLinkPruneRows.map((row) => row.path)).toEqual([
+        "does-not-exist-local-xyz.ts",
+      ]);
     });
   });
 
   it("summarizes duplicate logical issue codes as advisory warnings with truncation (GH-235)", () => {
     // No duplicates → empty projection, no warning.
-    expect(validateInternals.summarizeDuplicateIssueCodes([], false)).toEqual({ rows: [], truncated: false, warnings: [] });
+    expect(validateInternals.summarizeDuplicateIssueCodes([], false)).toEqual({
+      rows: [],
+      truncated: false,
+      warnings: [],
+    });
 
-    const oneDuplicate = [{ code: "ISSUE-4", count: 2, ids: ["pm-a", "pm-b"], titles: ["ISSUE-4: a", "ISSUE-4: b"] }];
-    const summarized = validateInternals.summarizeDuplicateIssueCodes(oneDuplicate, false);
+    const oneDuplicate = [
+      {
+        code: "ISSUE-4",
+        count: 2,
+        ids: ["pm-a", "pm-b"],
+        titles: ["ISSUE-4: a", "ISSUE-4: b"],
+      },
+    ];
+    const summarized = validateInternals.summarizeDuplicateIssueCodes(
+      oneDuplicate,
+      false,
+    );
     expect(summarized.truncated).toBe(false);
-    expect(summarized.warnings).toEqual(["validate_metadata_duplicate_issue_codes:1"]);
+    expect(summarized.warnings).toEqual([
+      "validate_metadata_duplicate_issue_codes:1",
+    ]);
     expect(summarized.rows[0]).toMatchObject({
       code: "ISSUE-4",
       count: 2,
@@ -954,7 +1253,9 @@ describe("runValidate", () => {
     const compact = validateInternals.summarizeDuplicateIssueCodes(many, false);
     expect(compact.rows).toHaveLength(5);
     expect(compact.truncated).toBe(true);
-    expect(compact.warnings).toEqual(["validate_metadata_duplicate_issue_codes:7"]);
+    expect(compact.warnings).toEqual([
+      "validate_metadata_duplicate_issue_codes:7",
+    ]);
 
     const verbose = validateInternals.summarizeDuplicateIssueCodes(many, true);
     expect(verbose.rows).toHaveLength(7);
@@ -962,7 +1263,9 @@ describe("runValidate", () => {
   });
 
   it("exempts terminal items from planning-field gaps unless strict enforcement is requested (GH-276)", () => {
-    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const statusRegistry = resolveRuntimeStatusRegistry(
+      SETTINGS_DEFAULTS.schema,
+    );
     const closedBare = { id: "pm-closed", status: "closed" } as never;
     const canceledBare = { id: "pm-canceled", status: "canceled" } as never;
     const openBare = { id: "pm-open", status: "open" } as never;
@@ -970,28 +1273,74 @@ describe("runValidate", () => {
     for (const field of ["acceptance_criteria", "estimated_minutes"] as const) {
       // core profile (enforcePlanningFieldsOnTerminal = false): closed + canceled
       // items short-circuit to "not missing" — terminal_done AND terminal_canceled.
-      expect(validateInternals.isMetadataFieldMissing(closedBare, field, statusRegistry, false)).toBe(false);
-      expect(validateInternals.isMetadataFieldMissing(canceledBare, field, statusRegistry, false)).toBe(false);
+      expect(
+        validateInternals.isMetadataFieldMissing(
+          closedBare,
+          field,
+          statusRegistry,
+          false,
+        ),
+      ).toBe(false);
+      expect(
+        validateInternals.isMetadataFieldMissing(
+          canceledBare,
+          field,
+          statusRegistry,
+          false,
+        ),
+      ).toBe(false);
       // strict profile (enforcePlanningFieldsOnTerminal = true): the short-circuit
       // is skipped, so a terminal item missing the field IS still reported.
-      expect(validateInternals.isMetadataFieldMissing(closedBare, field, statusRegistry, true)).toBe(true);
+      expect(
+        validateInternals.isMetadataFieldMissing(
+          closedBare,
+          field,
+          statusRegistry,
+          true,
+        ),
+      ).toBe(true);
       // open/active items are never exempt regardless of enforcement flag.
-      expect(validateInternals.isMetadataFieldMissing(openBare, field, statusRegistry, false)).toBe(true);
+      expect(
+        validateInternals.isMetadataFieldMissing(
+          openBare,
+          field,
+          statusRegistry,
+          false,
+        ),
+      ).toBe(true);
     }
 
     // A NON-exempt field (author) on a terminal item is still reported under core:
     // TERMINAL_EXEMPT_PLANNING_FIELDS.has("author") is false, so the short-circuit
     // never fires.
-    expect(validateInternals.isMetadataFieldMissing(closedBare, "author", statusRegistry, false)).toBe(true);
+    expect(
+      validateInternals.isMetadataFieldMissing(
+        closedBare,
+        "author",
+        statusRegistry,
+        false,
+      ),
+    ).toBe(true);
   });
 
   it("does not flag closed/canceled items for missing planning fields under the core profile (GH-276)", async () => {
     await withTempPmPath(async (context) => {
       const closedId = createTask(context, "validate-terminal-exempt-closed");
-      const canceledId = createTask(context, "validate-terminal-exempt-canceled");
+      const canceledId = createTask(
+        context,
+        "validate-terminal-exempt-canceled",
+      );
       await runClose(closedId, "done", {}, { path: context.pmPath });
       const canceled = context.runCli(
-        ["update", canceledId, "--json", "--status", "canceled", "--message", "Cancel for terminal-exempt test"],
+        [
+          "update",
+          canceledId,
+          "--json",
+          "--status",
+          "canceled",
+          "--message",
+          "Cancel for terminal-exempt test",
+        ],
         { expectJson: true },
       );
       expect(canceled.code).toBe(0);
@@ -1007,12 +1356,19 @@ describe("runValidate", () => {
         await writeFile(itemPath, after, "utf8");
       }
 
-      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true },
+        { path: context.pmPath },
+      );
       expect(
-        result.warnings.some((warning) => warning.startsWith("validate_metadata_missing_estimate:")),
+        result.warnings.some((warning) =>
+          warning.startsWith("validate_metadata_missing_estimate:"),
+        ),
       ).toBe(false);
       expect(
-        result.warnings.some((warning) => warning.startsWith("validate_metadata_missing_acceptance_criteria:")),
+        result.warnings.some((warning) =>
+          warning.startsWith("validate_metadata_missing_acceptance_criteria:"),
+        ),
       ).toBe(false);
       const metadataCheck = checkByName(result, "metadata");
       const details = metadataCheck.details as {
@@ -1022,10 +1378,18 @@ describe("runValidate", () => {
       };
       expect(details.counts.missing_estimated_minutes).toBeUndefined();
       expect(details.counts.missing_acceptance_criteria).toBeUndefined();
-      expect(details.missing_estimated_minutes_item_ids ?? []).not.toContain(closedId);
-      expect(details.missing_estimated_minutes_item_ids ?? []).not.toContain(canceledId);
-      expect(details.missing_acceptance_criteria_item_ids ?? []).not.toContain(closedId);
-      expect(details.missing_acceptance_criteria_item_ids ?? []).not.toContain(canceledId);
+      expect(details.missing_estimated_minutes_item_ids ?? []).not.toContain(
+        closedId,
+      );
+      expect(details.missing_estimated_minutes_item_ids ?? []).not.toContain(
+        canceledId,
+      );
+      expect(details.missing_acceptance_criteria_item_ids ?? []).not.toContain(
+        closedId,
+      );
+      expect(details.missing_acceptance_criteria_item_ids ?? []).not.toContain(
+        canceledId,
+      );
     });
   });
 
@@ -1046,9 +1410,14 @@ describe("runValidate", () => {
         { path: context.pmPath },
       );
       expect(result.warnings).toContain("validate_metadata_missing_estimate:1");
-      expect(result.warnings).toContain("validate_metadata_missing_acceptance_criteria:1");
+      expect(result.warnings).toContain(
+        "validate_metadata_missing_acceptance_criteria:1",
+      );
       const details = checkByName(result, "metadata").details as {
-        counts: { missing_estimated_minutes: number; missing_acceptance_criteria: number };
+        counts: {
+          missing_estimated_minutes: number;
+          missing_acceptance_criteria: number;
+        };
         missing_estimated_minutes_item_ids: string[];
         missing_acceptance_criteria_item_ids: string[];
       };
@@ -1070,9 +1439,14 @@ describe("runValidate", () => {
       expect(after).not.toBe(before);
       await writeFile(itemPath, after, "utf8");
 
-      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true },
+        { path: context.pmPath },
+      );
       expect(result.warnings).toContain("validate_metadata_missing_estimate:1");
-      expect(result.warnings).toContain("validate_metadata_missing_acceptance_criteria:1");
+      expect(result.warnings).toContain(
+        "validate_metadata_missing_acceptance_criteria:1",
+      );
       const details = checkByName(result, "metadata").details as {
         missing_estimated_minutes_item_ids: string[];
         missing_acceptance_criteria_item_ids: string[];
@@ -1084,7 +1458,10 @@ describe("runValidate", () => {
 
   it("reports lifecycle drift for active closure-like metadata and terminal parents", async () => {
     await withTempPmPath(async (context) => {
-      const parentId = createTask(context, "validate-lifecycle-terminal-parent");
+      const parentId = createTask(
+        context,
+        "validate-lifecycle-terminal-parent",
+      );
       const childId = createTask(context, "validate-lifecycle-active-child");
       await runClose(parentId, "done", {}, { path: context.pmPath });
 
@@ -1106,11 +1483,18 @@ describe("runValidate", () => {
       );
       expect(seeded.code).toBe(0);
 
-      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkLifecycle: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_lifecycle_active_closure_like_metadata:1");
-      expect(result.warnings).toContain("validate_lifecycle_active_terminal_parent:1");
+      expect(result.warnings).toContain(
+        "validate_lifecycle_active_closure_like_metadata:1",
+      );
+      expect(result.warnings).toContain(
+        "validate_lifecycle_active_terminal_parent:1",
+      );
       const lifecycleCheck = checkByName(result, "lifecycle");
       expect(lifecycleCheck.status).toBe("warn");
       const details = lifecycleCheck.details as {
@@ -1146,7 +1530,10 @@ describe("runValidate", () => {
       );
       expect(seeded.code).toBe(0);
 
-      const result = await runValidate({ checkStaleBlockers: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkStaleBlockers: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_lifecycle_stale_blockers:1");
@@ -1195,15 +1582,28 @@ describe("runValidate", () => {
           lifecycle_closure_like_actual_result_patterns: string[];
         };
       };
-      settings.validation.lifecycle_stale_blocker_reason_patterns = ["awaiting legal review"];
-      settings.validation.lifecycle_closure_like_resolution_patterns = ["handoff review pending"];
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      settings.validation.lifecycle_stale_blocker_reason_patterns = [
+        "awaiting legal review",
+      ];
+      settings.validation.lifecycle_closure_like_resolution_patterns = [
+        "handoff review pending",
+      ];
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify(settings, null, 2)}\n`,
+        "utf8",
+      );
 
-      const result = await runValidate({ checkStaleBlockers: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkStaleBlockers: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_lifecycle_stale_blockers:1");
-      expect(result.warnings).toContain("validate_lifecycle_active_closure_like_metadata:1");
+      expect(result.warnings).toContain(
+        "validate_lifecycle_active_closure_like_metadata:1",
+      );
 
       const lifecycleCheck = checkByName(result, "lifecycle");
       const details = lifecycleCheck.details as {
@@ -1214,11 +1614,17 @@ describe("runValidate", () => {
         closure_like_blocked_reason_pattern_source: string;
         closure_like_actual_result_pattern_source: string;
       };
-      expect(details.stale_blocker_reason_patterns).toEqual(["awaiting legal review"]);
+      expect(details.stale_blocker_reason_patterns).toEqual([
+        "awaiting legal review",
+      ]);
       expect(details.stale_blocker_reason_pattern_source).toBe("settings");
-      expect(details.closure_like_resolution_patterns).toEqual(["handoff review pending"]);
+      expect(details.closure_like_resolution_patterns).toEqual([
+        "handoff review pending",
+      ]);
       expect(details.closure_like_resolution_pattern_source).toBe("settings");
-      expect(details.closure_like_blocked_reason_pattern_source).toBe("default");
+      expect(details.closure_like_blocked_reason_pattern_source).toBe(
+        "default",
+      );
       expect(details.closure_like_actual_result_pattern_source).toBe("default");
     });
   });
@@ -1226,10 +1632,15 @@ describe("runValidate", () => {
   it("reports dependency-cycle diagnostics in lifecycle checks by default", async () => {
     await withTempPmPath(async (context) => {
       const [first, second, third] = seedDependencyCycle(context);
-      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkLifecycle: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_lifecycle_dependency_cycles:1");
+      expect(result.warnings).toContain(
+        "validate_lifecycle_dependency_cycles:1",
+      );
       const lifecycleCheck = checkByName(result, "lifecycle");
       expect(lifecycleCheck.status).toBe("warn");
       const details = lifecycleCheck.details as {
@@ -1242,7 +1653,9 @@ describe("runValidate", () => {
       expect(details.dependency_cycle_severity_policy).toBe("warn");
       expect(details.dependency_cycle_count).toBe(1);
       expect(details.dependency_cycle_item_count).toBe(3);
-      expect(details.dependency_cycle_item_ids).toEqual([first, second, third].sort((left, right) => left.localeCompare(right)));
+      expect(details.dependency_cycle_item_ids).toEqual(
+        [first, second, third].sort((left, right) => left.localeCompare(right)),
+      );
       expect(details.dependency_cycle_sample_paths).toHaveLength(1);
       const cyclePath = details.dependency_cycle_sample_paths[0] ?? "";
       const cycleSegments = cyclePath.split("->");
@@ -1255,10 +1668,24 @@ describe("runValidate", () => {
 
   it("reports cycles that cross blocked_by and definition_of_ready references", async () => {
     await withTempPmPath(async (context) => {
-      const blockedId = createTask(context, "validate-lifecycle-logical-cycle-blocked");
-      const blockerId = createTask(context, "validate-lifecycle-logical-cycle-blocker");
+      const blockedId = createTask(
+        context,
+        "validate-lifecycle-logical-cycle-blocked",
+      );
+      const blockerId = createTask(
+        context,
+        "validate-lifecycle-logical-cycle-blocker",
+      );
       const blocked = context.runCli(
-        ["update", blockedId, "--blocked-by", blockerId, "--status", "blocked", "--json"],
+        [
+          "update",
+          blockedId,
+          "--blocked-by",
+          blockerId,
+          "--status",
+          "blocked",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(blocked.code).toBe(0);
@@ -1274,13 +1701,20 @@ describe("runValidate", () => {
       );
       expect(ready.code).toBe(0);
 
-      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
-      expect(result.warnings).toContain("validate_lifecycle_dependency_cycles:1");
+      const result = await runValidate(
+        { checkLifecycle: true },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toContain(
+        "validate_lifecycle_dependency_cycles:1",
+      );
       const details = checkByName(result, "lifecycle").details as {
         dependency_cycle_item_ids: string[];
         dependency_cycle_sample_paths: string[];
       };
-      expect(details.dependency_cycle_item_ids).toEqual([blockedId, blockerId].sort((left, right) => left.localeCompare(right)));
+      expect(details.dependency_cycle_item_ids).toEqual(
+        [blockedId, blockerId].sort((left, right) => left.localeCompare(right)),
+      );
       expect(details.dependency_cycle_sample_paths[0]).toContain(blockedId);
       expect(details.dependency_cycle_sample_paths[0]).toContain(blockerId);
     });
@@ -1296,8 +1730,12 @@ describe("runValidate", () => {
       );
       expect(warnResult.ok).toBe(false);
       expect(warnResult.has_warnings).toBe(true);
-      expect(warnResult.warnings).toContain("validate_lifecycle_dependency_cycles_error:1");
-      expect(warnResult.warnings.some((warning) => warning.endsWith("_error:1"))).toBe(true);
+      expect(warnResult.warnings).toContain(
+        "validate_lifecycle_dependency_cycles_error:1",
+      );
+      expect(
+        warnResult.warnings.some((warning) => warning.endsWith("_error:1")),
+      ).toBe(true);
       const errorLifecycleCheck = checkByName(warnResult, "lifecycle");
       expect(errorLifecycleCheck.status).toBe("error");
       const errorDetails = errorLifecycleCheck.details as {
@@ -1312,7 +1750,11 @@ describe("runValidate", () => {
         { path: context.pmPath },
       );
       expect(offResult.ok).toBe(true);
-      expect(offResult.warnings.some((warning) => warning.startsWith("validate_lifecycle_dependency_cycles"))).toBe(false);
+      expect(
+        offResult.warnings.some((warning) =>
+          warning.startsWith("validate_lifecycle_dependency_cycles"),
+        ),
+      ).toBe(false);
       const offLifecycleCheck = checkByName(offResult, "lifecycle");
       expect(offLifecycleCheck.status).toBe("ok");
       const offDetails = offLifecycleCheck.details as {
@@ -1328,7 +1770,10 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-lifecycle-invalid-cycle-severity");
       await expect(
-        runValidate({ checkLifecycle: true, dependencyCycleSeverity: "invalid" }, { path: context.pmPath }),
+        runValidate(
+          { checkLifecycle: true, dependencyCycleSeverity: "invalid" },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -1338,7 +1783,10 @@ describe("runValidate", () => {
   it("reports a two-item parent-hierarchy cycle (A->B->A) in lifecycle checks", async () => {
     await withTempPmPath(async (context) => {
       const [first, second] = seedParentCycle(context, 2);
-      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkLifecycle: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_hierarchy_parent_cycle:1");
@@ -1356,7 +1804,9 @@ describe("runValidate", () => {
       expect(details.parent_cycle_severity_policy).toBe("warn");
       expect(details.parent_cycle_count).toBe(1);
       expect(details.parent_cycle_item_count).toBe(2);
-      expect(details.parent_cycle_item_ids).toEqual([first, second].sort((left, right) => left.localeCompare(right)));
+      expect(details.parent_cycle_item_ids).toEqual(
+        [first, second].sort((left, right) => left.localeCompare(right)),
+      );
       expect(details.parent_cycle_item_ids_truncated).toBe(false);
       expect(details.parent_cycle_sample_paths).toHaveLength(1);
       expect(details.parent_cycle_sample_paths_truncated).toBe(false);
@@ -1371,7 +1821,10 @@ describe("runValidate", () => {
   it("reports a three-item parent-hierarchy cycle (A->B->C->A)", async () => {
     await withTempPmPath(async (context) => {
       const ids = seedParentCycle(context, 3);
-      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkLifecycle: true },
+        { path: context.pmPath },
+      );
       expect(result.warnings).toContain("validate_hierarchy_parent_cycle:1");
       const details = checkByName(result, "lifecycle").details as {
         parent_cycle_count: number;
@@ -1381,7 +1834,9 @@ describe("runValidate", () => {
       };
       expect(details.parent_cycle_count).toBe(1);
       expect(details.parent_cycle_item_count).toBe(3);
-      expect(details.parent_cycle_item_ids).toEqual([...ids].sort((left, right) => left.localeCompare(right)));
+      expect(details.parent_cycle_item_ids).toEqual(
+        [...ids].sort((left, right) => left.localeCompare(right)),
+      );
       const cyclePath = details.parent_cycle_sample_paths[0] ?? "";
       for (const id of ids) {
         expect(cyclePath).toContain(id);
@@ -1437,7 +1892,9 @@ describe("runValidate", () => {
       );
       expect(errorResult.ok).toBe(false);
       expect(errorResult.has_warnings).toBe(true);
-      expect(errorResult.warnings).toContain("validate_hierarchy_parent_cycle_error:1");
+      expect(errorResult.warnings).toContain(
+        "validate_hierarchy_parent_cycle_error:1",
+      );
       const errorLifecycleCheck = checkByName(errorResult, "lifecycle");
       expect(errorLifecycleCheck.status).toBe("error");
       const errorDetails = errorLifecycleCheck.details as {
@@ -1452,7 +1909,11 @@ describe("runValidate", () => {
         { path: context.pmPath },
       );
       expect(offResult.ok).toBe(true);
-      expect(offResult.warnings.some((warning) => warning.startsWith("validate_hierarchy_parent_cycle"))).toBe(false);
+      expect(
+        offResult.warnings.some((warning) =>
+          warning.startsWith("validate_hierarchy_parent_cycle"),
+        ),
+      ).toBe(false);
       const offLifecycleCheck = checkByName(offResult, "lifecycle");
       expect(offLifecycleCheck.status).toBe("ok");
       const offDetails = offLifecycleCheck.details as {
@@ -1468,19 +1929,37 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       const root = createTask(context, "validate-parent-acyclic-root");
       const child = createTask(context, "validate-parent-acyclic-child");
-      const grandchild = createTask(context, "validate-parent-acyclic-grandchild");
+      const grandchild = createTask(
+        context,
+        "validate-parent-acyclic-grandchild",
+      );
       for (const edge of [
         { child, parent: root },
         { child: grandchild, parent: child },
       ]) {
         const updated = context.runCli(
-          ["update", edge.child, "--parent", edge.parent, "--json", "--message", "Seed acyclic parent edge"],
+          [
+            "update",
+            edge.child,
+            "--parent",
+            edge.parent,
+            "--json",
+            "--message",
+            "Seed acyclic parent edge",
+          ],
           { expectJson: true },
         );
         expect(updated.code).toBe(0);
       }
-      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
-      expect(result.warnings.some((warning) => warning.startsWith("validate_hierarchy_parent_cycle"))).toBe(false);
+      const result = await runValidate(
+        { checkLifecycle: true },
+        { path: context.pmPath },
+      );
+      expect(
+        result.warnings.some((warning) =>
+          warning.startsWith("validate_hierarchy_parent_cycle"),
+        ),
+      ).toBe(false);
       const details = checkByName(result, "lifecycle").details as {
         parent_cycle_count: number;
         parent_cycle_item_count: number;
@@ -1496,7 +1975,10 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-lifecycle-invalid-parent-cycle-severity");
       await expect(
-        runValidate({ checkLifecycle: true, parentCycleSeverity: "invalid" }, { path: context.pmPath }),
+        runValidate(
+          { checkLifecycle: true, parentCycleSeverity: "invalid" },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -1518,10 +2000,15 @@ describe("runValidate", () => {
       );
       expect(linked.code).toBe(0);
 
-      const result = await runValidate({ checkCommandReferences: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkCommandReferences: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_command_references_stale_pm_ids:1");
+      expect(result.warnings).toContain(
+        "validate_command_references_stale_pm_ids:1",
+      );
       const commandCheck = checkByName(result, "command_references");
       expect(commandCheck.status).toBe("warn");
       const details = commandCheck.details as {
@@ -1543,7 +2030,10 @@ describe("runValidate", () => {
         "command=pm get pm-zref1,scope=project,note=stale-z",
         "command=pm get pm-aref1,scope=project,note=stale-a",
       ]) {
-        const linked = context.runCli(["test", ownerId, "--json", "--add", addEntry], { expectJson: true });
+        const linked = context.runCli(
+          ["test", ownerId, "--json", "--add", addEntry],
+          { expectJson: true },
+        );
         expect(linked.code).toBe(0);
       }
 
@@ -1579,7 +2069,10 @@ describe("runValidate", () => {
       expect(after).not.toBe(before);
       await writeFile(itemPath, after, "utf8");
 
-      const result = await runValidate({ checkCommandReferences: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkCommandReferences: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
       const commandCheck = checkByName(result, "command_references");
@@ -1612,8 +2105,12 @@ describe("runValidate", () => {
         expect(linked.code).toBe(0);
       }
 
-      const compact = await runValidate({ checkCommandReferences: true }, { path: context.pmPath });
-      const compactDetails = checkByName(compact, "command_references").details as {
+      const compact = await runValidate(
+        { checkCommandReferences: true },
+        { path: context.pmPath },
+      );
+      const compactDetails = checkByName(compact, "command_references")
+        .details as {
         stale_pm_ids: string[];
         stale_pm_ids_truncated: boolean;
         stale_pm_id_reference_rows: string[];
@@ -1628,7 +2125,8 @@ describe("runValidate", () => {
         { checkCommandReferences: true, verboseDiagnostics: true },
         { path: context.pmPath },
       );
-      const verboseDetails = checkByName(verbose, "command_references").details as {
+      const verboseDetails = checkByName(verbose, "command_references")
+        .details as {
         stale_pm_ids: string[];
         stale_pm_ids_truncated: boolean;
         stale_pm_id_reference_rows: string[];
@@ -1644,7 +2142,10 @@ describe("runValidate", () => {
   it("returns ok for requested metadata-only checks when fields are complete", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-metadata-only");
-      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.warnings).toEqual([]);
       expect(result.checks).toHaveLength(1);
@@ -1665,7 +2166,10 @@ describe("runValidate", () => {
       expect(after).not.toBe(before);
       await writeFile(itemPath, after, "utf8");
 
-      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
       // GH-276: estimated_minutes is a planning field exempt on terminal items
@@ -1673,13 +2177,20 @@ describe("runValidate", () => {
       // reported. close_reason is closure metadata (not a planning field) and is
       // still flagged.
       expect(
-        result.warnings.some((warning) => warning.startsWith("validate_metadata_missing_estimate:")),
+        result.warnings.some((warning) =>
+          warning.startsWith("validate_metadata_missing_estimate:"),
+        ),
       ).toBe(false);
-      expect(result.warnings).toContain("validate_metadata_missing_close_reason:1");
+      expect(result.warnings).toContain(
+        "validate_metadata_missing_close_reason:1",
+      );
       const metadataCheck = checkByName(result, "metadata");
       expect(metadataCheck.status).toBe("warn");
       const details = metadataCheck.details as {
-        counts: { missing_estimated_minutes?: number; closed_missing_close_reason: number };
+        counts: {
+          missing_estimated_minutes?: number;
+          closed_missing_close_reason: number;
+        };
       };
       expect(details.counts.missing_estimated_minutes).toBeUndefined();
       expect(details.counts.closed_missing_close_reason).toBe(1);
@@ -1696,11 +2207,16 @@ describe("runValidate", () => {
       expect(after).not.toBe(before);
       await writeFile(itemPath, after, "utf8");
 
-      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_metadata_missing_author:1");
-      expect(result.warnings).toContain("validate_metadata_missing_acceptance_criteria:1");
+      expect(result.warnings).toContain(
+        "validate_metadata_missing_acceptance_criteria:1",
+      );
       const metadataCheck = checkByName(result, "metadata");
       expect(metadataCheck.status).toBe("warn");
       const details = metadataCheck.details as {
@@ -1714,12 +2230,17 @@ describe("runValidate", () => {
   it("supports strict metadata profile requirements", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-metadata-strict-profile");
-      const result = await runValidate({ checkMetadata: true, metadataProfile: "strict" }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true, metadataProfile: "strict" },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_metadata_missing_reviewer:1");
       expect(result.warnings).toContain("validate_metadata_missing_risk:1");
-      expect(result.warnings).toContain("validate_metadata_missing_confidence:1");
+      expect(result.warnings).toContain(
+        "validate_metadata_missing_confidence:1",
+      );
       expect(result.warnings).toContain("validate_metadata_missing_sprint:1");
       expect(result.warnings).toContain("validate_metadata_missing_release:1");
       const metadataCheck = checkByName(result, "metadata");
@@ -1729,7 +2250,17 @@ describe("runValidate", () => {
       };
       expect(details.metadata_profile).toBe("strict");
       expect(details.required_fields).toEqual(
-        expect.arrayContaining(["author", "acceptance_criteria", "estimated_minutes", "close_reason", "reviewer", "risk", "confidence", "sprint", "release"]),
+        expect.arrayContaining([
+          "author",
+          "acceptance_criteria",
+          "estimated_minutes",
+          "close_reason",
+          "reviewer",
+          "risk",
+          "confidence",
+          "sprint",
+          "release",
+        ]),
       );
     });
   });
@@ -1739,7 +2270,10 @@ describe("runValidate", () => {
       createTask(context, "validate-metadata-custom-profile");
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        validation: { metadata_profile: string; metadata_required_fields: string[] };
+        validation: {
+          metadata_profile: string;
+          metadata_required_fields: string[];
+        };
         governance?: { preset?: string; metadata_profile?: string };
       };
       settings.validation.metadata_profile = "custom";
@@ -1749,14 +2283,25 @@ describe("runValidate", () => {
         preset: "custom",
         metadata_profile: "custom",
       };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify(settings, null, 2)}\n`,
+        "utf8",
+      );
 
-      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_metadata_missing_sprint:1");
       expect(result.warnings).toContain("validate_metadata_missing_release:1");
-      expect(result.warnings.some((warning) => warning.startsWith("validate_metadata_missing_reviewer:"))).toBe(false);
+      expect(
+        result.warnings.some((warning) =>
+          warning.startsWith("validate_metadata_missing_reviewer:"),
+        ),
+      ).toBe(false);
 
       const metadataCheck = checkByName(result, "metadata");
       const details = metadataCheck.details as {
@@ -1775,7 +2320,10 @@ describe("runValidate", () => {
       createTask(context, "validate-metadata-custom-empty");
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        validation: { metadata_profile: string; metadata_required_fields: string[] };
+        validation: {
+          metadata_profile: string;
+          metadata_required_fields: string[];
+        };
         governance?: { preset?: string; metadata_profile?: string };
       };
       settings.validation.metadata_profile = "custom";
@@ -1785,12 +2333,21 @@ describe("runValidate", () => {
         preset: "custom",
         metadata_profile: "custom",
       };
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify(settings, null, 2)}\n`,
+        "utf8",
+      );
 
-      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_metadata_custom_profile_missing_required_fields:0");
+      expect(result.warnings).toContain(
+        "validate_metadata_custom_profile_missing_required_fields:0",
+      );
 
       const metadataCheck = checkByName(result, "metadata");
       const details = metadataCheck.details as {
@@ -1800,7 +2357,12 @@ describe("runValidate", () => {
       };
       expect(details.metadata_profile).toBe("custom");
       expect(details.metadata_profile_fallback_to_core).toBe(true);
-      expect(details.required_fields).toEqual(["author", "acceptance_criteria", "estimated_minutes", "close_reason"]);
+      expect(details.required_fields).toEqual([
+        "author",
+        "acceptance_criteria",
+        "estimated_minutes",
+        "close_reason",
+      ]);
     });
   });
 
@@ -1812,13 +2374,23 @@ describe("runValidate", () => {
         validation: { metadata_profile: string };
       };
       settings.validation.metadata_profile = "strict";
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify(settings, null, 2)}\n`,
+        "utf8",
+      );
 
-      const result = await runValidate({ checkMetadata: true, metadataProfile: "core" }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true, metadataProfile: "core" },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.warnings).toEqual([]);
       const metadataCheck = checkByName(result, "metadata");
-      const details = metadataCheck.details as { metadata_profile: string; metadata_profile_source: string };
+      const details = metadataCheck.details as {
+        metadata_profile: string;
+        metadata_profile_source: string;
+      };
       expect(details.metadata_profile).toBe("core");
       expect(details.metadata_profile_source).toBe("option");
     });
@@ -1827,9 +2399,12 @@ describe("runValidate", () => {
   it("rejects unknown --metadata-profile values", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-metadata-profile-invalid");
-      await expect(runValidate({ checkMetadata: true, metadataProfile: "invalid" }, { path: context.pmPath })).rejects.toMatchObject<
-        PmCliError
-      >({
+      await expect(
+        runValidate(
+          { checkMetadata: true, metadataProfile: "invalid" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -1840,7 +2415,10 @@ describe("runValidate", () => {
       const id = createTask(context, "validate-resolution-gap");
       await runClose(id, "done", {}, { path: context.pmPath });
 
-      const result = await runValidate({ checkResolution: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkResolution: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_resolution_missing_fields:1");
@@ -1854,10 +2432,18 @@ describe("runValidate", () => {
       expect(details.checked_closed_items).toBe(1);
       expect(details.missing_resolution_items).toBe(1);
       expect(details.missing_resolution_remediation_hints).toHaveLength(1);
-      expect(details.missing_resolution_remediation_hints[0]).toContain(`pm update ${id}`);
-      expect(details.missing_resolution_remediation_hints[0]).toContain("--resolution");
-      expect(details.missing_resolution_remediation_hints[0]).toContain("--expected-result");
-      expect(details.missing_resolution_remediation_hints[0]).toContain("--actual-result");
+      expect(details.missing_resolution_remediation_hints[0]).toContain(
+        `pm update ${id}`,
+      );
+      expect(details.missing_resolution_remediation_hints[0]).toContain(
+        "--resolution",
+      );
+      expect(details.missing_resolution_remediation_hints[0]).toContain(
+        "--expected-result",
+      );
+      expect(details.missing_resolution_remediation_hints[0]).toContain(
+        "--actual-result",
+      );
     });
   });
 
@@ -1869,15 +2455,22 @@ describe("runValidate", () => {
         await runClose(id, "done", {}, { path: context.pmPath });
       }
 
-      const compact = await runValidate({ checkResolution: true }, { path: context.pmPath });
+      const compact = await runValidate(
+        { checkResolution: true },
+        { path: context.pmPath },
+      );
       const compactDetails = checkByName(compact, "resolution").details as {
         missing_resolution_items: number;
         missing_resolution_remediation_hints: string[];
         missing_resolution_remediation_hints_truncated: boolean;
       };
       expect(compactDetails.missing_resolution_items).toBe(7);
-      expect(compactDetails.missing_resolution_remediation_hints).toHaveLength(5);
-      expect(compactDetails.missing_resolution_remediation_hints_truncated).toBe(true);
+      expect(compactDetails.missing_resolution_remediation_hints).toHaveLength(
+        5,
+      );
+      expect(
+        compactDetails.missing_resolution_remediation_hints_truncated,
+      ).toBe(true);
 
       const verbose = await runValidate(
         { checkResolution: true, verboseDiagnostics: true },
@@ -1887,8 +2480,12 @@ describe("runValidate", () => {
         missing_resolution_remediation_hints: string[];
         missing_resolution_remediation_hints_truncated: boolean;
       };
-      expect(verboseDetails.missing_resolution_remediation_hints).toHaveLength(closedItemCount);
-      expect(verboseDetails.missing_resolution_remediation_hints_truncated).toBe(false);
+      expect(verboseDetails.missing_resolution_remediation_hints).toHaveLength(
+        closedItemCount,
+      );
+      expect(
+        verboseDetails.missing_resolution_remediation_hints_truncated,
+      ).toBe(false);
     });
   });
 
@@ -1914,7 +2511,10 @@ describe("runValidate", () => {
       expect(updated.code).toBe(0);
       await runClose(id, "done", {}, { path: context.pmPath });
 
-      const result = await runValidate({ checkResolution: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkResolution: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.warnings).toEqual([]);
       const resolutionCheck = checkByName(result, "resolution");
@@ -1932,18 +2532,31 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "validate-missing-file-link");
       const linked = context.runCli(
-        ["files", id, "--json", "--add", "path=src/never-created.ts,scope=project,note=missing-link"],
+        [
+          "files",
+          id,
+          "--json",
+          "--add",
+          "path=src/never-created.ts,scope=project,note=missing-link",
+        ],
         { expectJson: true },
       );
       expect(linked.code).toBe(0);
 
-      const result = await runValidate({ checkFiles: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkFiles: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_files_missing_linked_paths:1");
+      expect(result.warnings).toContain(
+        "validate_files_missing_linked_paths:1",
+      );
       const filesCheck = checkByName(result, "files");
       expect(filesCheck.status).toBe("warn");
-      const details = filesCheck.details as { missing_linked_paths_count: number };
+      const details = filesCheck.details as {
+        missing_linked_paths_count: number;
+      };
       expect(details.missing_linked_paths_count).toBe(1);
     });
   });
@@ -1965,12 +2578,24 @@ describe("runValidate", () => {
         mkdir(ignoredDir, { recursive: true }),
       ]);
       await Promise.all([
-        writeFile(path.join(srcDir, "linked.ts"), "export const linked = true;\n", "utf8"),
+        writeFile(
+          path.join(srcDir, "linked.ts"),
+          "export const linked = true;\n",
+          "utf8",
+        ),
         writeFile(path.join(srcDir, ".hidden.ts"), "hidden\n", "utf8"),
-        writeFile(path.join(nestedDir, "nested.ts"), "export const nested = true;\n", "utf8"),
+        writeFile(
+          path.join(nestedDir, "nested.ts"),
+          "export const nested = true;\n",
+          "utf8",
+        ),
         writeFile(path.join(ignoredDir, "ignored.ts"), "ignored\n", "utf8"),
         writeFile(path.join(docsDir, "guide.md"), "# guide\n", "utf8"),
-        writeFile(path.join(testsDir, "sample.spec.ts"), "export {};\n", "utf8"),
+        writeFile(
+          path.join(testsDir, "sample.spec.ts"),
+          "export {};\n",
+          "utf8",
+        ),
       ]);
       const absoluteLinkedPath = path.join(srcDir, "linked.ts");
       const addedFiles = context.runCli(
@@ -1993,11 +2618,20 @@ describe("runValidate", () => {
       );
       expect(addedFiles.code).toBe(0);
 
-      const result = await runValidate({ checkFiles: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkFiles: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_files_missing_linked_paths:1");
-      expect(result.warnings.some((warning) => warning.startsWith("validate_files_orphaned_paths:"))).toBe(true);
+      expect(result.warnings).toContain(
+        "validate_files_missing_linked_paths:1",
+      );
+      expect(
+        result.warnings.some((warning) =>
+          warning.startsWith("validate_files_orphaned_paths:"),
+        ),
+      ).toBe(true);
       const filesCheck = checkByName(result, "files");
       expect(filesCheck.status).toBe("warn");
       const details = filesCheck.details as {
@@ -2015,7 +2649,10 @@ describe("runValidate", () => {
   it("returns ok for file checks when no project candidates or links exist", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-files-empty");
-      const result = await runValidate({ checkFiles: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkFiles: true },
+        { path: context.pmPath },
+      );
       const filesCheck = checkByName(result, "files");
       expect(filesCheck.status).toBe("ok");
       const details = filesCheck.details as {
@@ -2039,9 +2676,16 @@ describe("runValidate", () => {
       const workspaceRoot = path.dirname(path.dirname(context.pmPath));
       const srcDir = path.join(workspaceRoot, "src");
       const miscDir = path.join(workspaceRoot, "misc");
-      await Promise.all([mkdir(srcDir, { recursive: true }), mkdir(miscDir, { recursive: true })]);
       await Promise.all([
-        writeFile(path.join(srcDir, "tracked.ts"), "export const tracked = true;\n", "utf8"),
+        mkdir(srcDir, { recursive: true }),
+        mkdir(miscDir, { recursive: true }),
+      ]);
+      await Promise.all([
+        writeFile(
+          path.join(srcDir, "tracked.ts"),
+          "export const tracked = true;\n",
+          "utf8",
+        ),
         writeFile(path.join(miscDir, "audit.txt"), "audit\n", "utf8"),
       ]);
 
@@ -2059,12 +2703,22 @@ describe("runValidate", () => {
       );
       expect(linked.code).toBe(0);
 
-      const gitInit = spawnSync("git", ["init"], { cwd: workspaceRoot, encoding: "utf8" });
+      const gitInit = spawnSync("git", ["init"], {
+        cwd: workspaceRoot,
+        encoding: "utf8",
+      });
       expect(gitInit.status).toBe(0);
-      const gitAdd = spawnSync("git", ["add", "src/tracked.ts", "misc/audit.txt"], { cwd: workspaceRoot, encoding: "utf8" });
+      const gitAdd = spawnSync(
+        "git",
+        ["add", "src/tracked.ts", "misc/audit.txt"],
+        { cwd: workspaceRoot, encoding: "utf8" },
+      );
       expect(gitAdd.status).toBe(0);
 
-      const result = await runValidate({ checkFiles: true, scanMode: "tracked-all" }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkFiles: true, scanMode: "tracked-all" },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       const filesCheck = checkByName(result, "files");
       expect(filesCheck.status).toBe("ok");
@@ -2090,18 +2744,27 @@ describe("runValidate", () => {
   });
 
   it("uses tracker-root workspace when cwd is nested under tracker root", async () => {
-    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-validate-workspace-root-"));
+    const tempDir = await mkdtemp(
+      path.join(os.tmpdir(), "pm-validate-workspace-root-"),
+    );
     const trackerRoot = path.join(tempDir, "tracker-root");
     const nestedCwd = path.join(trackerRoot, "extensions", "nested");
     const previousCwd = process.cwd();
     try {
       await runInit(undefined, { path: trackerRoot });
       await mkdir(path.join(trackerRoot, "src"), { recursive: true });
-      await writeFile(path.join(trackerRoot, "src", "root.ts"), "export const root = true;\n", "utf8");
+      await writeFile(
+        path.join(trackerRoot, "src", "root.ts"),
+        "export const root = true;\n",
+        "utf8",
+      );
       await mkdir(nestedCwd, { recursive: true });
       process.chdir(nestedCwd);
 
-      const result = await runValidate({ checkFiles: true }, { path: trackerRoot });
+      const result = await runValidate(
+        { checkFiles: true },
+        { path: trackerRoot },
+      );
       const filesCheck = checkByName(result, "files");
       const details = filesCheck.details as {
         workspace_root: string;
@@ -2118,7 +2781,9 @@ describe("runValidate", () => {
   });
 
   it("uses cwd fallback for non-standard PM root layouts", async () => {
-    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-validate-workspace-fallback-"));
+    const tempDir = await mkdtemp(
+      path.join(os.tmpdir(), "pm-validate-workspace-fallback-"),
+    );
     const workspaceRoot = path.join(tempDir, "workspace");
     const customPmRoot = path.join(workspaceRoot, "pm-data");
     const previousCwd = process.cwd();
@@ -2127,12 +2792,22 @@ describe("runValidate", () => {
       process.chdir(workspaceRoot);
       await runInit(undefined, { path: customPmRoot });
       await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
-      await writeFile(path.join(workspaceRoot, "src", "fallback.ts"), "export const fallback = true;\n", "utf8");
+      await writeFile(
+        path.join(workspaceRoot, "src", "fallback.ts"),
+        "export const fallback = true;\n",
+        "utf8",
+      );
 
-      const result = await runValidate({ checkFiles: true }, { path: customPmRoot });
+      const result = await runValidate(
+        { checkFiles: true },
+        { path: customPmRoot },
+      );
       const filesCheck = checkByName(result, "files");
       expect(filesCheck.status).toBe("warn");
-      const details = filesCheck.details as { candidate_total: number; candidate_scan_source: string };
+      const details = filesCheck.details as {
+        candidate_total: number;
+        candidate_scan_source: string;
+      };
       expect(details.candidate_scan_source).toBe("default-curated");
       expect(details.candidate_total).toBe(1);
     } finally {
@@ -2145,8 +2820,14 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-files-readdir-error");
       const workspaceRoot = path.dirname(path.dirname(context.pmPath));
-      await writeFile(path.join(workspaceRoot, "src"), "not-a-directory\n", "utf8");
-      await expect(runValidate({ checkFiles: true }, { path: context.pmPath })).rejects.toMatchObject<{ code: string }>({
+      await writeFile(
+        path.join(workspaceRoot, "src"),
+        "not-a-directory\n",
+        "utf8",
+      );
+      await expect(
+        runValidate({ checkFiles: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject<{ code: string }>({
         code: "ENOTDIR",
       });
     });
@@ -2162,10 +2843,16 @@ describe("runValidate", () => {
       await writeFile(realFile, "export const real = true;\n", "utf8");
       await symlink(realFile, path.join(srcDir, "real-link.ts"));
 
-      const result = await runValidate({ checkFiles: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkFiles: true },
+        { path: context.pmPath },
+      );
       const filesCheck = checkByName(result, "files");
       expect(filesCheck.status).toBe("warn");
-      const details = filesCheck.details as { candidate_total: number; scanned_candidate_files: number };
+      const details = filesCheck.details as {
+        candidate_total: number;
+        scanned_candidate_files: number;
+      };
       expect(details.candidate_total).toBe(1);
       expect(details.scanned_candidate_files).toBe(1);
     });
@@ -2173,22 +2860,15 @@ describe("runValidate", () => {
 
   it("excludes PM internals from tracked-all by default and supports explicit inclusion", async () => {
     await withTempPmPath(async (context) => {
-      const id = createTask(context, "validate-files-tracked-all-pm-internals");
-      const workspaceRoot = path.dirname(path.dirname(context.pmPath));
-      const srcDir = path.join(workspaceRoot, "src");
-      await mkdir(srcDir, { recursive: true });
-      await writeFile(path.join(srcDir, "tracked.ts"), "export const tracked = true;\n", "utf8");
+      const { id } = await seedTrackedWorkspaceWithPmInternal(
+        context,
+        "validate-files-tracked-all-pm-internals",
+      );
 
-      const linked = context.runCli(["files", id, "--json", "--add", "path=src/tracked.ts,scope=project,note=tracked"], { expectJson: true });
-      expect(linked.code).toBe(0);
-
-      const gitInit = spawnSync("git", ["init"], { cwd: workspaceRoot, encoding: "utf8" });
-      expect(gitInit.status).toBe(0);
-      const internalTaskPath = path.relative(workspaceRoot, path.join(context.pmPath, "tasks", `${id}.toon`)).replaceAll("\\", "/");
-      const gitAdd = spawnSync("git", ["add", "src/tracked.ts", internalTaskPath], { cwd: workspaceRoot, encoding: "utf8" });
-      expect(gitAdd.status).toBe(0);
-
-      const defaultResult = await runValidate({ checkFiles: true, scanMode: "tracked-all" }, { path: context.pmPath });
+      const defaultResult = await runValidate(
+        { checkFiles: true, scanMode: "tracked-all" },
+        { path: context.pmPath },
+      );
       const defaultDetails = checkByName(defaultResult, "files").details as {
         file_list_detail_mode: string;
         file_list_summary_limit: number;
@@ -2215,9 +2895,17 @@ describe("runValidate", () => {
       expect(defaultDetails.candidate_total).toBe(1);
       expect(defaultDetails.pm_internal_excluded_count).toBe(1);
       expect(defaultDetails.excluded_by_reason.pm_internals?.count).toBe(1);
-      expect(defaultDetails.excluded_by_reason.pm_internals?.paths_total).toBe(1);
-      expect(defaultDetails.excluded_by_reason.pm_internals?.paths_truncated).toBe(false);
-      expect(defaultDetails.excluded_by_reason.pm_internals?.paths.some((entry) => entry.endsWith(`${id}.toon`))).toBe(true);
+      expect(defaultDetails.excluded_by_reason.pm_internals?.paths_total).toBe(
+        1,
+      );
+      expect(
+        defaultDetails.excluded_by_reason.pm_internals?.paths_truncated,
+      ).toBe(false);
+      expect(
+        defaultDetails.excluded_by_reason.pm_internals?.paths.some((entry) =>
+          entry.endsWith(`${id}.toon`),
+        ),
+      ).toBe(true);
       expect(defaultDetails.orphaned_paths_count).toBe(0);
 
       const verboseResult = await runValidate(
@@ -2245,9 +2933,17 @@ describe("runValidate", () => {
       expect(verboseDetails.include_pm_internals).toBe(false);
       expect(verboseDetails.pm_internal_excluded_count).toBe(1);
       expect(verboseDetails.excluded_by_reason.pm_internals?.count).toBe(1);
-      expect(verboseDetails.excluded_by_reason.pm_internals?.paths_total).toBe(1);
-      expect(verboseDetails.excluded_by_reason.pm_internals?.paths_truncated).toBe(false);
-      expect(verboseDetails.excluded_by_reason.pm_internals?.paths.some((entry) => entry.endsWith(`${id}.toon`))).toBe(true);
+      expect(verboseDetails.excluded_by_reason.pm_internals?.paths_total).toBe(
+        1,
+      );
+      expect(
+        verboseDetails.excluded_by_reason.pm_internals?.paths_truncated,
+      ).toBe(false);
+      expect(
+        verboseDetails.excluded_by_reason.pm_internals?.paths.some((entry) =>
+          entry.endsWith(`${id}.toon`),
+        ),
+      ).toBe(true);
 
       const includeResult = await runValidate(
         {
@@ -2273,28 +2969,23 @@ describe("runValidate", () => {
       expect(includeDetails.pm_internal_excluded_count).toBe(0);
       expect(includeDetails.excluded_by_reason).toEqual({});
       expect(includeDetails.orphaned_paths_count).toBe(1);
-      expect(includeResult.warnings).toContain("validate_files_orphaned_paths:1");
+      expect(includeResult.warnings).toContain(
+        "validate_files_orphaned_paths:1",
+      );
     });
   });
 
   it("supports tracked-all-strict mode with explicit no-exclusion behavior", async () => {
     await withTempPmPath(async (context) => {
-      const id = createTask(context, "validate-files-tracked-all-strict");
-      const workspaceRoot = path.dirname(path.dirname(context.pmPath));
-      const srcDir = path.join(workspaceRoot, "src");
-      await mkdir(srcDir, { recursive: true });
-      await writeFile(path.join(srcDir, "tracked.ts"), "export const tracked = true;\n", "utf8");
+      await seedTrackedWorkspaceWithPmInternal(
+        context,
+        "validate-files-tracked-all-strict",
+      );
 
-      const linked = context.runCli(["files", id, "--json", "--add", "path=src/tracked.ts,scope=project,note=tracked"], { expectJson: true });
-      expect(linked.code).toBe(0);
-
-      const gitInit = spawnSync("git", ["init"], { cwd: workspaceRoot, encoding: "utf8" });
-      expect(gitInit.status).toBe(0);
-      const internalTaskPath = path.relative(workspaceRoot, path.join(context.pmPath, "tasks", `${id}.toon`)).replaceAll("\\", "/");
-      const gitAdd = spawnSync("git", ["add", "src/tracked.ts", internalTaskPath], { cwd: workspaceRoot, encoding: "utf8" });
-      expect(gitAdd.status).toBe(0);
-
-      const strictResult = await runValidate({ checkFiles: true, scanMode: "tracked-all-strict" }, { path: context.pmPath });
+      const strictResult = await runValidate(
+        { checkFiles: true, scanMode: "tracked-all-strict" },
+        { path: context.pmPath },
+      );
       const strictDetails = checkByName(strictResult, "files").details as {
         scan_mode_requested: string;
         scan_mode_applied: string;
@@ -2313,23 +3004,30 @@ describe("runValidate", () => {
       expect(strictDetails.scan_mode_applied).toBe("tracked-all-strict");
       expect(strictDetails.strict_tracked_all_mode).toBe(true);
       expect(strictDetails.strict_mode_forces_pm_internals).toBe(true);
-      expect(strictDetails.strict_mode_forces_pm_internals_notice).toContain("force-enables PM internals");
+      expect(strictDetails.strict_mode_forces_pm_internals_notice).toContain(
+        "force-enables PM internals",
+      );
       expect(strictDetails.include_pm_internals_requested).toBe(false);
       expect(strictDetails.include_pm_internals).toBe(true);
       expect(strictDetails.candidate_total_raw).toBe(2);
       expect(strictDetails.candidate_total).toBe(2);
       expect(strictDetails.pm_internal_excluded_count).toBe(0);
       expect(strictDetails.excluded_by_reason).toEqual({});
-      expect(strictResult.warnings).toContain("validate_files_tracked_all_strict_forces_pm_internals");
+      expect(strictResult.warnings).toContain(
+        "validate_files_tracked_all_strict_forces_pm_internals",
+      );
     });
   });
 
   it("rejects unknown scan-mode values", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-files-invalid-scan-mode");
-      await expect(runValidate({ checkFiles: true, scanMode: "unknown-mode" }, { path: context.pmPath })).rejects.toMatchObject<
-        PmCliError
-      >({
+      await expect(
+        runValidate(
+          { checkFiles: true, scanMode: "unknown-mode" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -2338,13 +3036,23 @@ describe("runValidate", () => {
   it("normalizes blank and explicit default scan-mode values", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-files-default-scan-mode-normalization");
-      const blankMode = await runValidate({ checkFiles: true, scanMode: "   " }, { path: context.pmPath });
-      const blankDetails = checkByName(blankMode, "files").details as { scan_mode_requested: string; scan_mode_applied: string };
+      const blankMode = await runValidate(
+        { checkFiles: true, scanMode: "   " },
+        { path: context.pmPath },
+      );
+      const blankDetails = checkByName(blankMode, "files").details as {
+        scan_mode_requested: string;
+        scan_mode_applied: string;
+      };
       expect(blankDetails.scan_mode_requested).toBe("default");
       expect(blankDetails.scan_mode_applied).toBe("default");
 
-      const explicitDefaultMode = await runValidate({ checkFiles: true, scanMode: "default" }, { path: context.pmPath });
-      const explicitDetails = checkByName(explicitDefaultMode, "files").details as {
+      const explicitDefaultMode = await runValidate(
+        { checkFiles: true, scanMode: "default" },
+        { path: context.pmPath },
+      );
+      const explicitDetails = checkByName(explicitDefaultMode, "files")
+        .details as {
         scan_mode_requested: string;
         scan_mode_applied: string;
       };
@@ -2356,15 +3064,24 @@ describe("runValidate", () => {
   it("reports history drift when streams are missing", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "validate-history-drift");
-      await rm(path.join(context.pmPath, "history", `${id}.jsonl`), { force: true });
+      await rm(path.join(context.pmPath, "history", `${id}.jsonl`), {
+        force: true,
+      });
 
-      const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkHistoryDrift: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_history_drift_missing_streams:1");
+      expect(result.warnings).toContain(
+        "validate_history_drift_missing_streams:1",
+      );
       const historyCheck = checkByName(result, "history_drift");
       expect(historyCheck.status).toBe("warn");
-      const details = historyCheck.details as { counts: { missing_streams: number } };
+      const details = historyCheck.details as {
+        counts: { missing_streams: number };
+      };
       expect(details.counts.missing_streams).toBe(1);
     });
   });
@@ -2373,30 +3090,64 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       const missingId = createTask(context, "validate-history-missing-stream");
       const emptyId = createTask(context, "validate-history-empty-stream");
-      const unreadableId = createTask(context, "validate-history-after-hash-missing");
+      const unreadableId = createTask(
+        context,
+        "validate-history-after-hash-missing",
+      );
       const mismatchId = createTask(context, "validate-history-hash-drift");
 
-      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), { force: true });
-      await writeFile(path.join(context.pmPath, "history", `${emptyId}.jsonl`), "", "utf8");
-      await writeFile(path.join(context.pmPath, "history", `${unreadableId}.jsonl`), "{\"after_hash\":\"\"}\n", "utf8");
+      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), {
+        force: true,
+      });
+      await writeFile(
+        path.join(context.pmPath, "history", `${emptyId}.jsonl`),
+        "",
+        "utf8",
+      );
+      await writeFile(
+        path.join(context.pmPath, "history", `${unreadableId}.jsonl`),
+        '{"after_hash":""}\n',
+        "utf8",
+      );
 
-      const mismatchPath = path.join(context.pmPath, "tasks", `${mismatchId}.toon`);
+      const mismatchPath = path.join(
+        context.pmPath,
+        "tasks",
+        `${mismatchId}.toon`,
+      );
       const mismatchBefore = await readFile(mismatchPath, "utf8");
-      const mismatchAfter = mismatchBefore.replace(/^title:.*$/m, "title: validate-history-hash-drift-mutated");
+      const mismatchAfter = mismatchBefore.replace(
+        /^title:.*$/m,
+        "title: validate-history-hash-drift-mutated",
+      );
       expect(mismatchAfter).not.toBe(mismatchBefore);
       await writeFile(mismatchPath, mismatchAfter, "utf8");
 
-      const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkHistoryDrift: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_history_drift_missing_streams:2");
-      expect(result.warnings).toContain("validate_history_drift_unreadable_streams:1");
-      expect(result.warnings).toContain("validate_history_drift_hash_mismatches:1");
+      expect(result.warnings).toContain(
+        "validate_history_drift_missing_streams:2",
+      );
+      expect(result.warnings).toContain(
+        "validate_history_drift_unreadable_streams:1",
+      );
+      expect(result.warnings).toContain(
+        "validate_history_drift_hash_mismatches:1",
+      );
       const historyCheck = checkByName(result, "history_drift");
       expect(historyCheck.status).toBe("warn");
       const details = historyCheck.details as {
         drifted_items_count: number;
-        counts: { missing_streams: number; unreadable_streams: number; hash_mismatches: number; chain_mismatches: number };
+        counts: {
+          missing_streams: number;
+          unreadable_streams: number;
+          hash_mismatches: number;
+          chain_mismatches: number;
+        };
       };
       expect(details.drifted_items_count).toBe(4);
       expect(details.counts).toEqual({
@@ -2414,13 +3165,20 @@ describe("runValidate", () => {
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       await writeFile(historyPath, "{not-json}\n", "utf8");
 
-      const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkHistoryDrift: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_history_drift_unreadable_streams:1");
+      expect(result.warnings).toContain(
+        "validate_history_drift_unreadable_streams:1",
+      );
       const historyCheck = checkByName(result, "history_drift");
       expect(historyCheck.status).toBe("warn");
-      const details = historyCheck.details as { counts: { unreadable_streams: number } };
+      const details = historyCheck.details as {
+        counts: { unreadable_streams: number };
+      };
       expect(details.counts.unreadable_streams).toBe(1);
     });
   });
@@ -2430,11 +3188,24 @@ describe("runValidate", () => {
       const id = createTask(context, "validate-history-redact-drift");
       const leakedPath = "/home/steve/private/drift";
       context.runCli(
-        ["append", id, "--json", "--body", `drift ${leakedPath}`, "--author", "seed-author", "--message", "append drift payload"],
+        [
+          "append",
+          id,
+          "--json",
+          "--body",
+          `drift ${leakedPath}`,
+          "--author",
+          "seed-author",
+          "--message",
+          "append drift payload",
+        ],
         { expectJson: true },
       );
       const settings = await readSettings(context.pmPath);
-      const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+      const typeRegistry = resolveItemTypeRegistry(
+        settings,
+        getActiveExtensionRegistrations(),
+      );
       await listAllDocumentCandidatesCached(
         context.pmPath,
         settings.item_format,
@@ -2452,7 +3223,10 @@ describe("runValidate", () => {
         runValidate({ checkHistoryDrift: true }, { path: context.pmPath }),
       ).resolves.toMatchObject({ warnings: [] });
       await expect(
-        readFile(path.join(context.pmPath, "runtime", "history-drift-cache.json"), "utf8"),
+        readFile(
+          path.join(context.pmPath, "runtime", "history-drift-cache.json"),
+          "utf8",
+        ),
       ).resolves.toContain(`"${id}"`);
 
       const redaction = await runHistoryRedact(
@@ -2473,10 +3247,106 @@ describe("runValidate", () => {
         ),
       ).rejects.toMatchObject({ code: "ENOENT" });
 
-      const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkHistoryDrift: true },
+        { path: context.pmPath },
+      );
       const historyCheck = checkByName(result, "history_drift");
       expect(historyCheck.status).toBe("ok");
-      expect(result.warnings).not.toEqual(expect.arrayContaining(["validate_history_drift_hash_mismatches:1"]));
+      expect(result.warnings).not.toEqual(
+        expect.arrayContaining(["validate_history_drift_hash_mismatches:1"]),
+      );
+    });
+  });
+
+  it("re-reads authoritative linked-test order instead of reporting drift from a stat-matched collection cache", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(
+        context,
+        "validate-history-authoritative-test-order",
+      );
+      for (const command of ["npm test", "npm run release:check"]) {
+        const linked = context.runCli(
+          ["test", id, "--json", "--add", `command=${command},scope=project`],
+          { expectJson: true },
+        );
+        expect(linked.code).toBe(0);
+      }
+      const settings = await readSettings(context.pmPath);
+      const typeRegistry = resolveItemTypeRegistry(
+        settings,
+        getActiveExtensionRegistrations(),
+      );
+      const candidates = await listAllDocumentCandidatesCached(
+        context.pmPath,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+        undefined,
+        settings.schema,
+        { includeBody: true, includeCollections: true },
+      );
+      const authoritativeCommands = candidates
+        .find((candidate) => candidate.metadata.id === id)
+        ?.metadata.tests?.map((test) => test.command);
+      expect(authoritativeCommands).toEqual([
+        "npm test",
+        "npm run release:check",
+      ]);
+
+      const collectionsPath = path.join(
+        context.pmPath,
+        "runtime",
+        "metadata-cache-collections.json",
+      );
+      const collectionsCache = JSON.parse(
+        await readFile(collectionsPath, "utf8"),
+      ) as {
+        collections: Record<
+          string,
+          { collections: { tests?: Array<{ command?: string }> } }
+        >;
+      };
+      const cachedTests =
+        collectionsCache.collections[`tasks/${id}.toon`]?.collections.tests;
+      expect(cachedTests).toHaveLength(2);
+      cachedTests?.reverse();
+      await writeFile(
+        collectionsPath,
+        JSON.stringify(collectionsCache),
+        "utf8",
+      );
+      clearItemMetadataEnvelopeMemo();
+
+      const staleCandidates = await listAllDocumentCandidatesCached(
+        context.pmPath,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+        undefined,
+        settings.schema,
+        { includeBody: true, includeCollections: true },
+      );
+      expect(
+        staleCandidates
+          .find((candidate) => candidate.metadata.id === id)
+          ?.metadata.tests?.map((test) => test.command),
+      ).toEqual(["npm run release:check", "npm test"]);
+
+      const result = await runValidate(
+        { checkHistoryDrift: true },
+        { path: context.pmPath },
+      );
+      expect(checkByName(result, "history_drift").status).toBe("ok");
+      expect(result.warnings).toEqual([]);
+
+      clearItemMetadataEnvelopeMemo();
+      const repairedCache = JSON.parse(
+        await readFile(collectionsPath, "utf8"),
+      ) as typeof collectionsCache;
+      expect(
+        repairedCache.collections[`tasks/${id}.toon`]?.collections.tests?.map(
+          (test) => test.command,
+        ),
+      ).toEqual(authoritativeCommands);
     });
   });
 
@@ -2485,17 +3355,27 @@ describe("runValidate", () => {
       const id = createTask(context, "validate-history-hash-mismatch");
       const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
       const before = await readFile(itemPath, "utf8");
-      const after = before.replace(/^title:.*$/m, "title: validate-history-hash-mismatch-mutated");
+      const after = before.replace(
+        /^title:.*$/m,
+        "title: validate-history-hash-mismatch-mutated",
+      );
       expect(after).not.toBe(before);
       await writeFile(itemPath, after, "utf8");
 
-      const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkHistoryDrift: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_history_drift_hash_mismatches:1");
+      expect(result.warnings).toContain(
+        "validate_history_drift_hash_mismatches:1",
+      );
       const historyCheck = checkByName(result, "history_drift");
       expect(historyCheck.status).toBe("warn");
-      const details = historyCheck.details as { counts: { hash_mismatches: number } };
+      const details = historyCheck.details as {
+        counts: { hash_mismatches: number };
+      };
       expect(details.counts.hash_mismatches).toBe(1);
     });
   });
@@ -2530,11 +3410,18 @@ describe("runValidate", () => {
       lines[0] = JSON.stringify(firstEntry);
       await writeFile(historyPath, `${lines.join("\n")}\n`, "utf8");
 
-      const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkHistoryDrift: true },
+        { path: context.pmPath },
+      );
       expect(result.ok).toBe(true);
       expect(result.has_warnings).toBe(true);
-      expect(result.warnings).toContain("validate_history_drift_chain_mismatches:1");
-      expect(result.warnings).not.toContain("validate_history_drift_hash_mismatches:1");
+      expect(result.warnings).toContain(
+        "validate_history_drift_chain_mismatches:1",
+      );
+      expect(result.warnings).not.toContain(
+        "validate_history_drift_hash_mismatches:1",
+      );
       const historyCheck = checkByName(result, "history_drift");
       expect(historyCheck.status).toBe("warn");
       const details = historyCheck.details as {
@@ -2557,15 +3444,23 @@ describe("runValidate", () => {
       expect(after).not.toBe(before);
       await writeFile(itemPath, after, "utf8");
 
-      const result = await runValidate({ checkMetadata: true, fixHints: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true, fixHints: true },
+        { path: context.pmPath },
+      );
       expect(result.has_warnings).toBe(true);
       const metadataCheck = checkByName(result, "metadata");
       expect(metadataCheck.status).toBe("warn");
-      const fixHints = (metadataCheck.details as { fix_hints?: string[] }).fix_hints;
+      const fixHints = (metadataCheck.details as { fix_hints?: string[] })
+        .fix_hints;
       expect(Array.isArray(fixHints)).toBe(true);
       expect(fixHints?.length ?? 0).toBeGreaterThan(0);
       expect(fixHints?.every((hint) => typeof hint === "string")).toBe(true);
-      expect(fixHints?.some((hint) => hint.startsWith("pm update <id> --acceptance-criteria"))).toBe(true);
+      expect(
+        fixHints?.some((hint) =>
+          hint.startsWith("pm update <id> --acceptance-criteria"),
+        ),
+      ).toBe(true);
     });
   });
 
@@ -2574,7 +3469,10 @@ describe("runValidate", () => {
       const id = createTask(context, "validate-resolution-fix-hints");
       await runClose(id, "done", {}, { path: context.pmPath });
 
-      const result = await runValidate({ checkResolution: true, fixHints: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkResolution: true, fixHints: true },
+        { path: context.pmPath },
+      );
       expect(result.has_warnings).toBe(true);
       const resolutionCheck = checkByName(result, "resolution");
       expect(resolutionCheck.status).toBe("warn");
@@ -2584,7 +3482,9 @@ describe("runValidate", () => {
       };
       expect(Array.isArray(details.fix_hints)).toBe(true);
       // fix_hints aliases the existing per-row remediation commands verbatim.
-      expect(details.fix_hints).toEqual(details.missing_resolution_remediation_hints);
+      expect(details.fix_hints).toEqual(
+        details.missing_resolution_remediation_hints,
+      );
       expect(details.fix_hints?.length ?? 0).toBeGreaterThan(0);
       const firstHint = details.fix_hints?.[0] ?? "";
       expect(firstHint).toContain(id);
@@ -2603,32 +3503,60 @@ describe("runValidate", () => {
       expect(after).not.toBe(before);
       await writeFile(itemPath, after, "utf8");
 
-      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
-      expect(result.has_warnings).toBe(true);
-      expect(result.checks.every((check) => !Object.prototype.hasOwnProperty.call(check.details, "fix_hints"))).toBe(
-        true,
+      const result = await runValidate(
+        { checkMetadata: true },
+        { path: context.pmPath },
       );
+      expect(result.has_warnings).toBe(true);
+      expect(
+        result.checks.every(
+          (check) =>
+            !Object.prototype.hasOwnProperty.call(check.details, "fix_hints"),
+        ),
+      ).toBe(true);
     });
   });
 
   it("groups missing required-field counts per item type in metadata details", async () => {
     await withTempPmPath(async (context) => {
       // Bare creates leave acceptance_criteria and estimated_minutes unset.
-      const bareTask = context.runCli(["create", "--json", "--title", "missing-by-type-task", "--type", "Task"], {
-        expectJson: true,
-      });
+      const bareTask = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "missing-by-type-task",
+          "--type",
+          "Task",
+        ],
+        {
+          expectJson: true,
+        },
+      );
       expect(bareTask.code).toBe(0);
       const bareFeature = context.runCli(
-        ["create", "--json", "--title", "missing-by-type-feature", "--type", "Feature"],
+        [
+          "create",
+          "--json",
+          "--title",
+          "missing-by-type-feature",
+          "--type",
+          "Feature",
+        ],
         { expectJson: true },
       );
       expect(bareFeature.code).toBe(0);
       const completeTask = createTask(context, "missing-by-type-complete");
       expect(completeTask.length).toBeGreaterThan(0);
 
-      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true },
+        { path: context.pmPath },
+      );
       const metadataCheck = checkByName(result, "metadata");
-      const details = metadataCheck.details as { missing_by_type: Record<string, Record<string, number>> };
+      const details = metadataCheck.details as {
+        missing_by_type: Record<string, Record<string, number>>;
+      };
       expect(details.missing_by_type).toEqual({
         Feature: { acceptance_criteria: 1, estimated_minutes: 1 },
         Task: { acceptance_criteria: 1, estimated_minutes: 1 },
@@ -2638,14 +3566,19 @@ describe("runValidate", () => {
 
   it("rejects --dry-run without --auto-fix or --prune-missing and --fix-scope without --auto-fix", async () => {
     await withTempPmPath(async (context) => {
-      await expect(runValidate({ dryRun: true }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runValidate({ dryRun: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
         runValidate({ fixScope: ["lifecycle"] }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       await expect(
-        runValidate({ autoFix: true, fixScope: ["bogus"] }, { path: context.pmPath }),
+        runValidate(
+          { autoFix: true, fixScope: ["bogus"] },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
     });
   });
@@ -2655,11 +3588,22 @@ describe("runValidate", () => {
       const id = createTask(context, "auto-fix-resolution-backfill");
       await runClose(id, "verified in review", {}, { path: context.pmPath });
 
-      const preview = await runValidate({ autoFix: true, dryRun: true }, { path: context.pmPath });
-      expect(preview.checks.map((entry) => entry.name)).toEqual(["metadata", "resolution", "lifecycle", "dependency_references"]);
+      const preview = await runValidate(
+        { autoFix: true, dryRun: true },
+        { path: context.pmPath },
+      );
+      expect(preview.checks.map((entry) => entry.name)).toEqual([
+        "metadata",
+        "resolution",
+        "lifecycle",
+        "dependency_references",
+      ]);
       expect(preview.fixes).toBeDefined();
       expect(preview.fixes?.mode).toBe("dry_run");
-      expect(preview.fixes?.granted_fix_scopes).toEqual(["metadata", "resolution"]);
+      expect(preview.fixes?.granted_fix_scopes).toEqual([
+        "metadata",
+        "resolution",
+      ]);
       expect(preview.fixes?.applied_fixes).toEqual([]);
       expect(preview.fixes?.planned_fixes).toEqual([
         {
@@ -2671,18 +3615,28 @@ describe("runValidate", () => {
         },
       ]);
 
-      const applied = await runValidate({ autoFix: true }, { path: context.pmPath });
+      const applied = await runValidate(
+        { autoFix: true },
+        { path: context.pmPath },
+      );
       expect(applied.fixes?.mode).toBe("apply");
       expect(applied.fixes?.applied_count).toBe(1);
       expect(applied.fixes?.failed_count).toBe(0);
-      expect(applied.fixes?.applied_fixes).toEqual(applied.fixes?.planned_fixes);
+      expect(applied.fixes?.applied_fixes).toEqual(
+        applied.fixes?.planned_fixes,
+      );
 
       const after = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(after.code).toBe(0);
-      expect((after.json as { item: { resolution?: string } }).item.resolution).toBe("verified in review");
+      expect(
+        (after.json as { item: { resolution?: string } }).item.resolution,
+      ).toBe("verified in review");
 
       // Convergence: a re-run plans nothing.
-      const rerun = await runValidate({ autoFix: true }, { path: context.pmPath });
+      const rerun = await runValidate(
+        { autoFix: true },
+        { path: context.pmPath },
+      );
       expect(rerun.fixes?.planned_count).toBe(0);
     });
   });
@@ -2696,7 +3650,10 @@ describe("runValidate", () => {
         estimate: "15",
         parent: grandparentId,
       });
-      const missingGrandparentId = createTask(context, "auto-fix-missing-grandparent");
+      const missingGrandparentId = createTask(
+        context,
+        "auto-fix-missing-grandparent",
+      );
       const missingGrandparentParentId = createTestItemId(context, {
         title: "auto-fix-terminal-missing-grandparent",
         tags: "validate,unit",
@@ -2715,32 +3672,45 @@ describe("runValidate", () => {
         estimate: "15",
         parent: missingGrandparentParentId.toUpperCase(),
       });
-      const deletedGrandparent = context.runCli(["delete", missingGrandparentId, "--force", "--json"], { expectJson: true });
+      const deletedGrandparent = context.runCli(
+        ["delete", missingGrandparentId, "--force", "--json"],
+        { expectJson: true },
+      );
       expect(deletedGrandparent.code).toBe(0);
       await runClose(parentId, "parent done", {}, { path: context.pmPath });
-      await runClose(missingGrandparentParentId, "missing grandparent parent done", {}, { path: context.pmPath });
+      await runClose(
+        missingGrandparentParentId,
+        "missing grandparent parent done",
+        {},
+        { path: context.pmPath },
+      );
 
       const preview = await runValidate(
         { checkLifecycle: true, autoFix: true, dryRun: true },
         { path: context.pmPath },
       );
-      expect(preview.fixes?.planned_fixes).toEqual(expect.arrayContaining([
-        expect.objectContaining({
-          item_id: childId,
-          check: "lifecycle",
-          field: "parent",
-          command: `pm update ${childId} --parent ${grandparentId}`,
-          gate: "lifecycle",
-        }),
-        expect.objectContaining({
-          item_id: missingGrandparentChildId,
-          command: `pm update ${missingGrandparentChildId} --unset parent`,
-        }),
-      ]));
+      expect(preview.fixes?.planned_fixes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            item_id: childId,
+            check: "lifecycle",
+            field: "parent",
+            command: `pm update ${childId} --parent ${grandparentId}`,
+            gate: "lifecycle",
+          }),
+          expect.objectContaining({
+            item_id: missingGrandparentChildId,
+            command: `pm update ${missingGrandparentChildId} --unset parent`,
+          }),
+        ]),
+      );
       expect(preview.fixes?.gated_count).toBe(2);
 
       // Without the explicit lifecycle grant nothing is applied.
-      const withheld = await runValidate({ checkLifecycle: true, autoFix: true }, { path: context.pmPath });
+      const withheld = await runValidate(
+        { checkLifecycle: true, autoFix: true },
+        { path: context.pmPath },
+      );
       expect(withheld.fixes?.applied_count).toBe(0);
       expect(withheld.fixes?.gated_count).toBe(2);
       expect(withheld.fixes?.gated_fixes[0]).toMatchObject({
@@ -2756,10 +3726,20 @@ describe("runValidate", () => {
       expect(granted.fixes?.applied_count).toBe(2);
       expect(granted.fixes?.failed_count).toBe(0);
 
-      const after = context.runCli(["get", childId, "--json"], { expectJson: true });
-      expect((after.json as { item: { parent?: string } }).item.parent).toBe(grandparentId);
-      const missingGrandparentAfter = context.runCli(["get", missingGrandparentChildId, "--json"], { expectJson: true });
-      expect((missingGrandparentAfter.json as { item: { parent?: string } }).item.parent).toBeUndefined();
+      const after = context.runCli(["get", childId, "--json"], {
+        expectJson: true,
+      });
+      expect((after.json as { item: { parent?: string } }).item.parent).toBe(
+        grandparentId,
+      );
+      const missingGrandparentAfter = context.runCli(
+        ["get", missingGrandparentChildId, "--json"],
+        { expectJson: true },
+      );
+      expect(
+        (missingGrandparentAfter.json as { item: { parent?: string } }).item
+          .parent,
+      ).toBeUndefined();
     });
   });
 
@@ -2785,34 +3765,75 @@ describe("runValidate", () => {
       }
 
       // Default scopes do NOT grant estimates: both are planned but gated.
-      const preview = await runValidate({ autoFix: true, dryRun: true }, { path: context.pmPath });
-      const estimatePlans = (preview.fixes?.planned_fixes ?? []).filter((fix) => fix.field === "estimated_minutes");
+      const preview = await runValidate(
+        { autoFix: true, dryRun: true },
+        { path: context.pmPath },
+      );
+      const estimatePlans = (preview.fixes?.planned_fixes ?? []).filter(
+        (fix) => fix.field === "estimated_minutes",
+      );
       expect(estimatePlans).toEqual(
         expect.arrayContaining([
-          { item_id: taskId, check: "metadata", field: "estimated_minutes", command: `pm update ${taskId} --estimate 120`, gate: "estimates" },
-          { item_id: epicId, check: "metadata", field: "estimated_minutes", command: `pm update ${epicId} --estimate 2880`, gate: "estimates" },
+          {
+            item_id: taskId,
+            check: "metadata",
+            field: "estimated_minutes",
+            command: `pm update ${taskId} --estimate 120`,
+            gate: "estimates",
+          },
+          {
+            item_id: epicId,
+            check: "metadata",
+            field: "estimated_minutes",
+            command: `pm update ${epicId} --estimate 2880`,
+            gate: "estimates",
+          },
         ]),
       );
-      const gatedEstimates = (preview.fixes?.gated_fixes ?? []).filter((fix) => fix.field === "estimated_minutes");
+      const gatedEstimates = (preview.fixes?.gated_fixes ?? []).filter(
+        (fix) => fix.field === "estimated_minutes",
+      );
       expect(gatedEstimates).toHaveLength(2);
-      expect(gatedEstimates[0]).toMatchObject({ gate_hint: "Withheld: re-run with --fix-scope estimates to apply." });
+      expect(gatedEstimates[0]).toMatchObject({
+        gate_hint: "Withheld: re-run with --fix-scope estimates to apply.",
+      });
 
       // A per-type override from settings wins over the built-in default.
       const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as { validation?: Record<string, unknown> };
-      settings.validation = { ...settings.validation, estimate_defaults_by_type: { Epic: 999 } };
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        validation?: Record<string, unknown>;
+      };
+      settings.validation = {
+        ...settings.validation,
+        estimate_defaults_by_type: { Epic: 999 },
+      };
       await writeFile(settingsPath, JSON.stringify(settings, null, 2), "utf8");
 
-      const granted = await runValidate({ autoFix: true, fixScope: ["estimates"] }, { path: context.pmPath });
+      const granted = await runValidate(
+        { autoFix: true, fixScope: ["estimates"] },
+        { path: context.pmPath },
+      );
       expect(granted.fixes?.granted_fix_scopes).toEqual(["estimates"]);
-      const appliedEstimates = (granted.fixes?.applied_fixes ?? []).filter((fix) => fix.field === "estimated_minutes");
+      const appliedEstimates = (granted.fixes?.applied_fixes ?? []).filter(
+        (fix) => fix.field === "estimated_minutes",
+      );
       expect(appliedEstimates).toHaveLength(2);
       expect(granted.fixes?.failed_count).toBe(0);
 
-      const epicAfter = context.runCli(["get", epicId, "--json"], { expectJson: true });
-      expect((epicAfter.json as { item: { estimated_minutes?: number } }).item.estimated_minutes).toBe(999);
-      const taskAfter = context.runCli(["get", taskId, "--json"], { expectJson: true });
-      expect((taskAfter.json as { item: { estimated_minutes?: number } }).item.estimated_minutes).toBe(120);
+      const epicAfter = context.runCli(["get", epicId, "--json"], {
+        expectJson: true,
+      });
+      expect(
+        (epicAfter.json as { item: { estimated_minutes?: number } }).item
+          .estimated_minutes,
+      ).toBe(999);
+      const taskAfter = context.runCli(["get", taskId, "--json"], {
+        expectJson: true,
+      });
+      expect(
+        (taskAfter.json as { item: { estimated_minutes?: number } }).item
+          .estimated_minutes,
+      ).toBe(120);
     });
   });
 
@@ -2822,12 +3843,18 @@ describe("runValidate", () => {
       const workspaceRoot = path.dirname(path.dirname(context.pmPath));
       const stalePath = path.join(workspaceRoot, "goes-away.txt");
       await writeFile(stalePath, "temporary", "utf8");
-      const linked = context.runCli(["files", id, "--add", "goes-away.txt", "--json"], { expectJson: true });
+      const linked = context.runCli(
+        ["files", id, "--add", "goes-away.txt", "--json"],
+        { expectJson: true },
+      );
       expect(linked.code).toBe(0);
       await rm(stalePath, { force: true });
 
       // Default: token-efficient compact one-liners naming the owner.
-      const compact = await runValidate({ checkFiles: true }, { path: context.pmPath });
+      const compact = await runValidate(
+        { checkFiles: true },
+        { path: context.pmPath },
+      );
       const compactDetails = checkByName(compact, "files").details as {
         missing_linked_path_rows_count: number;
         missing_linked_path_rows: string[];
@@ -2838,19 +3865,36 @@ describe("runValidate", () => {
       );
 
       // Verbose: full structured rows (the GH-210 JSON shape).
-      const verbose = await runValidate({ checkFiles: true, verboseFileLists: true }, { path: context.pmPath });
+      const verbose = await runValidate(
+        { checkFiles: true, verboseFileLists: true },
+        { path: context.pmPath },
+      );
       const verboseDetails = checkByName(verbose, "files").details as {
         missing_linked_path_rows: Array<{
           path: string;
           classification: string;
-          items: Array<{ id: string; type: string; status: string; field: string; title: string }>;
+          items: Array<{
+            id: string;
+            type: string;
+            status: string;
+            field: string;
+            title: string;
+          }>;
         }>;
       };
       expect(verboseDetails.missing_linked_path_rows).toEqual([
         {
           path: "goes-away.txt",
           classification: "deleted",
-          items: [{ id, type: "Task", title: "owns-a-stale-link", status: "open", field: "files" }],
+          items: [
+            {
+              id,
+              type: "Task",
+              title: "owns-a-stale-link",
+              status: "open",
+              field: "files",
+            },
+          ],
         },
       ]);
     });
@@ -2861,9 +3905,16 @@ describe("runValidate", () => {
       createTask(context, "validate-files-orphan-unowned");
       const workspaceRoot = path.dirname(path.dirname(context.pmPath));
       await mkdir(path.join(workspaceRoot, "docs"), { recursive: true });
-      await writeFile(path.join(workspaceRoot, "docs", "orphan-guide.md"), "orphan", "utf8");
+      await writeFile(
+        path.join(workspaceRoot, "docs", "orphan-guide.md"),
+        "orphan",
+        "utf8",
+      );
 
-      const result = await runValidate({ checkFiles: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkFiles: true },
+        { path: context.pmPath },
+      );
       expect(result.warnings).toContain("validate_files_orphaned_paths:1");
       const details = checkByName(result, "files").details as {
         orphaned_path_classifications: string[];
@@ -2874,8 +3925,12 @@ describe("runValidate", () => {
         "docs/orphan-guide.md:docs_unowned:owner_candidate=unowned",
       ]);
       expect(details.orphaned_path_rows_count).toBe(1);
-      expect(details.orphaned_path_rows[0]).toContain("docs/orphan-guide.md:docs_unowned owner_candidate=unowned");
-      expect(details.orphaned_path_rows[0]).toContain("pm docs <id> --add path=docs/orphan-guide.md");
+      expect(details.orphaned_path_rows[0]).toContain(
+        "docs/orphan-guide.md:docs_unowned owner_candidate=unowned",
+      );
+      expect(details.orphaned_path_rows[0]).toContain(
+        "pm docs <id> --add path=docs/orphan-guide.md",
+      );
     });
   });
 
@@ -2884,9 +3939,20 @@ describe("runValidate", () => {
       const id = createTask(context, "validate-files-orphan-owner-candidate");
       const workspaceRoot = path.dirname(path.dirname(context.pmPath));
       await mkdir(path.join(workspaceRoot, "docs", "ops"), { recursive: true });
-      await writeFile(path.join(workspaceRoot, "docs", "ops", "owned.md"), "owned", "utf8");
-      await writeFile(path.join(workspaceRoot, "docs", "ops", "orphan.md"), "orphan", "utf8");
-      const linked = context.runCli(["docs", id, "--add", "docs/ops/owned.md", "--json"], { expectJson: true });
+      await writeFile(
+        path.join(workspaceRoot, "docs", "ops", "owned.md"),
+        "owned",
+        "utf8",
+      );
+      await writeFile(
+        path.join(workspaceRoot, "docs", "ops", "orphan.md"),
+        "orphan",
+        "utf8",
+      );
+      const linked = context.runCli(
+        ["docs", id, "--add", "docs/ops/owned.md", "--json"],
+        { expectJson: true },
+      );
       expect(linked.code).toBe(0);
 
       const result = await runValidate(
@@ -2897,7 +3963,13 @@ describe("runValidate", () => {
         orphaned_path_rows: Array<{
           path: string;
           classification: string;
-          owner_candidate: { id: string; type: string; title: string; status: string; confidence: string } | null;
+          owner_candidate: {
+            id: string;
+            type: string;
+            title: string;
+            status: string;
+            confidence: string;
+          } | null;
           remediation_hint: string;
         }>;
       };
@@ -2931,7 +4003,10 @@ describe("runValidate", () => {
 
       // --fix-scope lifecycle is an exact allowlist: the closed parent's own
       // missing-resolution backfill is planned but withheld as gated.
-      const result = await runValidate({ autoFix: true, fixScope: ["lifecycle"] }, { path: context.pmPath });
+      const result = await runValidate(
+        { autoFix: true, fixScope: ["lifecycle"] },
+        { path: context.pmPath },
+      );
       expect(result.fixes?.planned_fixes).toContainEqual({
         item_id: childId,
         check: "lifecycle",
@@ -2939,13 +4014,23 @@ describe("runValidate", () => {
         command: `pm update ${childId} --unset parent`,
         gate: "lifecycle",
       });
-      expect(result.fixes?.gated_fixes.map((row) => row.item_id)).toEqual([parentId]);
+      expect(result.fixes?.gated_fixes.map((row) => row.item_id)).toEqual([
+        parentId,
+      ]);
       expect(result.fixes?.applied_count).toBe(1);
 
-      const after = context.runCli(["get", childId, "--json"], { expectJson: true });
-      expect((after.json as { item: { parent?: string } }).item.parent).toBeUndefined();
-      const parentAfter = context.runCli(["get", parentId, "--json"], { expectJson: true });
-      expect((parentAfter.json as { item: { resolution?: string } }).item.resolution).toBeUndefined();
+      const after = context.runCli(["get", childId, "--json"], {
+        expectJson: true,
+      });
+      expect(
+        (after.json as { item: { parent?: string } }).item.parent,
+      ).toBeUndefined();
+      const parentAfter = context.runCli(["get", parentId, "--json"], {
+        expectJson: true,
+      });
+      expect(
+        (parentAfter.json as { item: { resolution?: string } }).item.resolution,
+      ).toBeUndefined();
     });
   });
 
@@ -2954,12 +4039,25 @@ describe("runValidate", () => {
       const id = createTask(context, "auto-fix-close-reason-backfill");
       await runClose(id, "done", {}, { path: context.pmPath });
       const seeded = context.runCli(
-        ["update", id, "--json", "--resolution", "shipped in v2", "--unset", "close-reason", "--message", "seed"],
+        [
+          "update",
+          id,
+          "--json",
+          "--resolution",
+          "shipped in v2",
+          "--unset",
+          "close-reason",
+          "--message",
+          "seed",
+        ],
         { expectJson: true },
       );
       expect(seeded.code).toBe(0);
 
-      const result = await runValidate({ checkMetadata: true, autoFix: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { checkMetadata: true, autoFix: true },
+        { path: context.pmPath },
+      );
       expect(result.fixes?.applied_fixes).toEqual([
         {
           item_id: id,
@@ -2970,7 +4068,9 @@ describe("runValidate", () => {
         },
       ]);
       const after = context.runCli(["get", id, "--json"], { expectJson: true });
-      expect((after.json as { item: { close_reason?: string } }).item.close_reason).toBe("shipped in v2");
+      expect(
+        (after.json as { item: { close_reason?: string } }).item.close_reason,
+      ).toBe("shipped in v2");
     });
   });
 
@@ -2980,7 +4080,11 @@ describe("runValidate", () => {
       const workspaceRoot = path.dirname(path.dirname(context.pmPath));
       const newDir = path.join(workspaceRoot, "src", "new");
       await mkdir(newDir, { recursive: true });
-      await writeFile(path.join(newDir, "moved-file.ts"), "export const moved = true;\n", "utf8");
+      await writeFile(
+        path.join(newDir, "moved-file.ts"),
+        "export const moved = true;\n",
+        "utf8",
+      );
 
       const linkedFiles = context.runCli(
         [
@@ -3013,7 +4117,10 @@ describe("runValidate", () => {
       );
       expect(linkedDocs.code).toBe(0);
 
-      const preview = await runValidate({ pruneMissing: true, dryRun: true }, { path: context.pmPath });
+      const preview = await runValidate(
+        { pruneMissing: true, dryRun: true },
+        { path: context.pmPath },
+      );
       expect(preview.checks.map((entry) => entry.name)).toEqual(["files"]);
       const filesCheck = checkByName(preview, "files");
       const details = filesCheck.details as {
@@ -3032,40 +4139,76 @@ describe("runValidate", () => {
       ]);
       expect(preview.fixes?.mode).toBe("dry_run");
       expect(preview.fixes?.planned_fixes).toEqual([
-        { item_id: id, check: "files", field: "docs", command: `pm docs ${id} --remove "docs/another-gone-doc.md"` },
-        { item_id: id, check: "files", field: "docs", command: `pm docs ${id} --remove "docs/gone-doc.md"` },
+        {
+          item_id: id,
+          check: "files",
+          field: "docs",
+          command: `pm docs ${id} --remove "docs/another-gone-doc.md"`,
+        },
+        {
+          item_id: id,
+          check: "files",
+          field: "docs",
+          command: `pm docs ${id} --remove "docs/gone-doc.md"`,
+        },
         {
           item_id: id,
           check: "files",
           field: "files",
           command: `pm files ${id} --remove "src/gone/another-deleted-file.ts"`,
         },
-        { item_id: id, check: "files", field: "files", command: `pm files ${id} --remove "src/gone/deleted-file.ts"` },
+        {
+          item_id: id,
+          check: "files",
+          field: "files",
+          command: `pm files ${id} --remove "src/gone/deleted-file.ts"`,
+        },
       ]);
 
       const filesSpy = vi.spyOn(filesCommand, "runFiles");
       const docsSpy = vi.spyOn(docsCommand, "runDocs");
       try {
-        const applied = await runValidate({ pruneMissing: true }, { path: context.pmPath });
+        const applied = await runValidate(
+          { pruneMissing: true },
+          { path: context.pmPath },
+        );
         expect(applied.fixes?.applied_count).toBe(4);
         expect(applied.fixes?.failed_count).toBe(0);
-        const removeFileCalls = filesSpy.mock.calls.filter((call) => call[1]?.remove !== undefined);
-        const removeDocCalls = docsSpy.mock.calls.filter((call) => call[1]?.remove !== undefined);
+        const removeFileCalls = filesSpy.mock.calls.filter(
+          (call) => call[1]?.remove !== undefined,
+        );
+        const removeDocCalls = docsSpy.mock.calls.filter(
+          (call) => call[1]?.remove !== undefined,
+        );
         expect(removeFileCalls).toHaveLength(1);
-        expect(removeFileCalls[0]?.[1]?.remove).toEqual(["src/gone/another-deleted-file.ts", "src/gone/deleted-file.ts"]);
+        expect(removeFileCalls[0]?.[1]?.remove).toEqual([
+          "src/gone/another-deleted-file.ts",
+          "src/gone/deleted-file.ts",
+        ]);
         expect(removeDocCalls).toHaveLength(1);
-        expect(removeDocCalls[0]?.[1]?.remove).toEqual(["docs/another-gone-doc.md", "docs/gone-doc.md"]);
+        expect(removeDocCalls[0]?.[1]?.remove).toEqual([
+          "docs/another-gone-doc.md",
+          "docs/gone-doc.md",
+        ]);
       } finally {
         filesSpy.mockRestore();
         docsSpy.mockRestore();
       }
 
-      const filesAfter = context.runCli(["files", id, "--json", "--list"], { expectJson: true });
+      const filesAfter = context.runCli(["files", id, "--json", "--list"], {
+        expectJson: true,
+      });
       expect(
-        ((filesAfter.json as { files: Array<{ path: string }> }).files ?? []).map((entry) => entry.path),
+        (
+          (filesAfter.json as { files: Array<{ path: string }> }).files ?? []
+        ).map((entry) => entry.path),
       ).toEqual(["src/old/moved-file.ts"]);
-      const docsAfter = context.runCli(["docs", id, "--json", "--list"], { expectJson: true });
-      expect((docsAfter.json as { docs: Array<{ path: string }> }).docs ?? []).toEqual([]);
+      const docsAfter = context.runCli(["docs", id, "--json", "--list"], {
+        expectJson: true,
+      });
+      expect(
+        (docsAfter.json as { docs: Array<{ path: string }> }).docs ?? [],
+      ).toEqual([]);
     });
   });
 
@@ -3073,10 +4216,16 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "unreadable-linked-artifact");
       const overlongPath = `src/${"a".repeat(5000)}.ts`;
-      const linkedFiles = context.runCli(["files", id, "--json", "--add", `path=${overlongPath},scope=project`], { expectJson: true });
+      const linkedFiles = context.runCli(
+        ["files", id, "--json", "--add", `path=${overlongPath},scope=project`],
+        { expectJson: true },
+      );
       expect(linkedFiles.code).toBe(0);
 
-      const result = await runValidate({ pruneMissing: true, dryRun: true }, { path: context.pmPath });
+      const result = await runValidate(
+        { pruneMissing: true, dryRun: true },
+        { path: context.pmPath },
+      );
       expect(checkByName(result, "files").details).toMatchObject({
         missing_linked_paths: [],
       });
@@ -3100,9 +4249,14 @@ describe("runValidate", () => {
       );
       expect(linkedFiles.code).toBe(0);
 
-      const filesSpy = vi.spyOn(filesCommand, "runFiles").mockRejectedValueOnce(new Error("files prune failed"));
+      const filesSpy = vi
+        .spyOn(filesCommand, "runFiles")
+        .mockRejectedValueOnce(new Error("files prune failed"));
       try {
-        const result = await runValidate({ pruneMissing: true }, { path: context.pmPath });
+        const result = await runValidate(
+          { pruneMissing: true },
+          { path: context.pmPath },
+        );
 
         expect(result.fixes?.mode).toBe("apply");
         expect(result.fixes?.planned_count).toBe(2);
@@ -3133,11 +4287,21 @@ describe("runValidate", () => {
   it("reports failed scalar auto-fixes without aborting validation", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "resolution-failure");
-      await runClose(id, "closed without resolution", {}, { path: context.pmPath });
+      await runClose(
+        id,
+        "closed without resolution",
+        {},
+        { path: context.pmPath },
+      );
 
-      const updateSpy = vi.spyOn(updateCommand, "runUpdate").mockRejectedValueOnce(new Error("update failed"));
+      const updateSpy = vi
+        .spyOn(updateCommand, "runUpdate")
+        .mockRejectedValueOnce(new Error("update failed"));
       try {
-        const result = await runValidate({ autoFix: true }, { path: context.pmPath });
+        const result = await runValidate(
+          { autoFix: true },
+          { path: context.pmPath },
+        );
 
         expect(result.fixes?.mode).toBe("apply");
         expect(result.fixes?.planned_count).toBeGreaterThanOrEqual(1);
@@ -3163,9 +4327,17 @@ describe("runValidate", () => {
 describe("validate fix planning core modules", () => {
   it("plans resolution backfills only for rows missing resolution, deriving from close_reason", () => {
     const fixes = planResolutionBackfillFixes([
-      { id: "pm-a", missing_fields: ["resolution"], close_reason: "merged PR #5" },
+      {
+        id: "pm-a",
+        missing_fields: ["resolution"],
+        close_reason: "merged PR #5",
+      },
       { id: "pm-b", missing_fields: ["resolution", "expected_result"] },
-      { id: "pm-c", missing_fields: ["expected_result", "actual_result"], close_reason: "irrelevant" },
+      {
+        id: "pm-c",
+        missing_fields: ["expected_result", "actual_result"],
+        close_reason: "irrelevant",
+      },
       { id: "pm-d", missing_fields: ["resolution"], close_reason: "   " },
     ]);
     expect(fixes).toEqual([
@@ -3201,9 +4373,15 @@ describe("validate fix planning core modules", () => {
 
   it("escapes quotes and backslashes in equivalent commands", () => {
     const fixes = planResolutionBackfillFixes([
-      { id: "pm-q", missing_fields: ["resolution"], close_reason: 'fixed "edge\\case"' },
+      {
+        id: "pm-q",
+        missing_fields: ["resolution"],
+        close_reason: 'fixed "edge\\case"',
+      },
     ]);
-    expect(fixes[0]?.command).toBe('pm update pm-q --resolution "fixed \\"edge\\\\case\\""');
+    expect(fixes[0]?.command).toBe(
+      'pm update pm-q --resolution "fixed \\"edge\\\\case\\""',
+    );
   });
 
   it("plans close_reason backfills only when a resolution source exists", () => {
@@ -3227,9 +4405,19 @@ describe("validate fix planning core modules", () => {
 
   it("plans reparent fixes toward active grandparents and unset-parent fixes otherwise", () => {
     const fixes = planTerminalParentFixes([
-      { id: "pm-a", parent_id: "pm-p", grandparent_id: "pm-g", grandparent_active: true },
+      {
+        id: "pm-a",
+        parent_id: "pm-p",
+        grandparent_id: "pm-g",
+        grandparent_active: true,
+      },
       { id: "pm-b", parent_id: "pm-p" },
-      { id: "pm-c", parent_id: "pm-p", grandparent_id: "pm-g", grandparent_active: false },
+      {
+        id: "pm-c",
+        parent_id: "pm-p",
+        grandparent_id: "pm-g",
+        grandparent_active: false,
+      },
     ]);
     expect(fixes).toEqual([
       {
@@ -3262,9 +4450,24 @@ describe("validate fix planning core modules", () => {
 
   it("plans link prunes for deleted classifications only, across files and docs", () => {
     const fixes = planStaleLinkPruneFixes([
-      { item_id: "pm-a", path: "src/gone.ts", link_kind: "files", classification: "deleted" },
-      { item_id: "pm-a", path: "docs/gone.md", link_kind: "docs", classification: "deleted" },
-      { item_id: "pm-b", path: "src/moved.ts", link_kind: "files", classification: "moved" },
+      {
+        item_id: "pm-a",
+        path: "src/gone.ts",
+        link_kind: "files",
+        classification: "deleted",
+      },
+      {
+        item_id: "pm-a",
+        path: "docs/gone.md",
+        link_kind: "docs",
+        classification: "deleted",
+      },
+      {
+        item_id: "pm-b",
+        path: "src/moved.ts",
+        link_kind: "files",
+        classification: "moved",
+      },
     ]);
     expect(fixes).toEqual([
       {
@@ -3287,14 +4490,16 @@ describe("validate fix planning core modules", () => {
   });
 
   it("resolves granted fix scopes from defaults, repeats, comma lists, and aliases", () => {
-    expect([...resolveGrantedFixScopes(undefined)].sort()).toEqual([...DEFAULT_GRANTED_FIX_SCOPES].sort());
-    expect([...resolveGrantedFixScopes([])].sort()).toEqual([...DEFAULT_GRANTED_FIX_SCOPES].sort());
+    expect([...resolveGrantedFixScopes(undefined)].sort()).toEqual(
+      [...DEFAULT_GRANTED_FIX_SCOPES].sort(),
+    );
+    expect([...resolveGrantedFixScopes([])].sort()).toEqual(
+      [...DEFAULT_GRANTED_FIX_SCOPES].sort(),
+    );
     expect([...resolveGrantedFixScopes(["lifecycle"])]).toEqual(["lifecycle"]);
-    expect([...resolveGrantedFixScopes(["metadata,LIFECYCLE", "resolution"])].sort()).toEqual([
-      "lifecycle",
-      "metadata",
-      "resolution",
-    ]);
+    expect(
+      [...resolveGrantedFixScopes(["metadata,LIFECYCLE", "resolution"])].sort(),
+    ).toEqual(["lifecycle", "metadata", "resolution"]);
     expect(() => resolveGrantedFixScopes(["bogus"])).toThrowError(PmCliError);
     expect(() => resolveGrantedFixScopes(["  "])).toThrowError(PmCliError);
   });
@@ -3316,10 +4521,16 @@ describe("validate fix planning core modules", () => {
       path: "src/gone.ts",
       command: 'pm files pm-b --remove "src/gone.ts"',
     };
-    const withheld = partitionFixesByGrant([gatedFix, ungatedFix], new Set(["metadata", "resolution"]));
+    const withheld = partitionFixesByGrant(
+      [gatedFix, ungatedFix],
+      new Set(["metadata", "resolution"]),
+    );
     expect(withheld.applicable).toEqual([ungatedFix]);
     expect(withheld.gated).toEqual([gatedFix]);
-    const granted = partitionFixesByGrant([gatedFix, ungatedFix], new Set(["lifecycle"]));
+    const granted = partitionFixesByGrant(
+      [gatedFix, ungatedFix],
+      new Set(["lifecycle"]),
+    );
     expect(granted.applicable).toEqual([gatedFix, ungatedFix]);
     expect(granted.gated).toEqual([]);
   });
@@ -3362,7 +4573,14 @@ describe("validate fix planning core modules", () => {
   it("classifies stale linked paths by basename with sorted, capped candidates", () => {
     const classified = classifyStaleLinkedPaths(
       ["src/old/app.ts", "docs/gone.md", "root-file.ts"],
-      ["src/z/app.ts", "src/a/app.ts", "src/b/app.ts", "src/c/app.ts", "root-file.ts", ""],
+      [
+        "src/z/app.ts",
+        "src/a/app.ts",
+        "src/b/app.ts",
+        "src/c/app.ts",
+        "root-file.ts",
+        "",
+      ],
       3,
     );
     expect(classified).toEqual([
@@ -3372,9 +4590,19 @@ describe("validate fix planning core modules", () => {
         candidates: ["src/a/app.ts", "src/b/app.ts", "src/c/app.ts"],
         candidates_truncated: true,
       },
-      { path: "docs/gone.md", classification: "deleted", candidates: [], candidates_truncated: false },
+      {
+        path: "docs/gone.md",
+        classification: "deleted",
+        candidates: [],
+        candidates_truncated: false,
+      },
       // The identical missing path itself never counts as a relink candidate.
-      { path: "root-file.ts", classification: "deleted", candidates: [], candidates_truncated: false },
+      {
+        path: "root-file.ts",
+        classification: "deleted",
+        candidates: [],
+        candidates_truncated: false,
+      },
     ]);
     expect(summarizeStaleLinkedPathClassifications(classified)).toEqual([
       "src/old/app.ts:moved:src/a/app.ts",
@@ -3384,7 +4612,9 @@ describe("validate fix planning core modules", () => {
   });
 
   it("classifies stale linked Windows-style paths by basename", () => {
-    expect(classifyStaleLinkedPaths(["src\\old\\app.ts"], ["src/new/app.ts"])).toEqual([
+    expect(
+      classifyStaleLinkedPaths(["src\\old\\app.ts"], ["src/new/app.ts"]),
+    ).toEqual([
       {
         path: "src\\old\\app.ts",
         classification: "moved",
@@ -3402,7 +4632,11 @@ describe("validate fix planning core modules", () => {
     );
     expect(moved[0]?.candidates).toHaveLength(3);
     expect(moved[0]?.candidates_truncated).toBe(true);
-    const floored = classifyStaleLinkedPaths(["lib/util.ts"], ["a/util.ts", "b/util.ts", "c/util.ts"], 2.7);
+    const floored = classifyStaleLinkedPaths(
+      ["lib/util.ts"],
+      ["a/util.ts", "b/util.ts", "c/util.ts"],
+      2.7,
+    );
     expect(floored[0]?.candidates).toEqual(["a/util.ts", "b/util.ts"]);
     expect(floored[0]?.candidates_truncated).toBe(true);
     const exact = classifyStaleLinkedPaths(["lib/util.ts"], ["a/util.ts"], 5);

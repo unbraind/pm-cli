@@ -2,17 +2,22 @@ id: pm-q6n8sj
 title: "The relationship ratchet bounds every edge kind that carries meaning and leaves the one kind that carries none unbounded, so the cheapest way to satisfy every graph guarantee is to add edges no algorithm can traverse"
 description: "Measured 2026-08-11 against scripts/release/tracker-measurements.json and pm graph audit on this tracker.\n\nThe declared bounds over dependency_kind are six: floors on implements at 2551, discovered_from at 465, verifies at 239 and supersedes at 79, and ceilings on blocks at 243 and related_to at 50.\n\nThe live declared-row population is 10,211. related holds 5,980 of them, 58.6 percent, and is the largest kind by more than a factor of two over implements. It is also the only kind in the corpus that is undirected and carries no semantics: it states that two items are associated and says nothing about which came first, which caused which, or which replaced which.\n\nrelated is absent from the declaration set. The alias spelling related_to is ceiling-bounded at 50, while the canonical spelling that alias canonicalizes to on read is bounded in neither direction.\n\nThree consequences follow, and every one of them is reachable by an ordinary enrichment pass.\n\nFirst, the total-edge floor and the node floor both rise when related rows are added, so an enrichment that adds nothing but associative edges reports as graph growth on every governance surface the project has.\n\nSecond, the semantic bounds are floors, so they are structurally incapable of detecting dilution. Adding ten thousand related rows leaves implements at 2551 and supersedes at 79, both still satisfied, while the fraction of the graph any traversal can use falls.\n\nThird, the quantity the project actually cares about is the composition of the graph, not its size. Semantic share, defined as discovered_from plus supersedes plus incident_from plus verifies over total rows, is 7.9 percent today and is measured nowhere. A pass that halves it passes every gate and every audit.\n\nThis is the exact failure mode the deep-linking programme is most exposed to, because related is the cheapest edge to write and the only kind that never has to cite evidence."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: assurance,governance,graph,ratchet
 created_at: "2026-08-11T13:51:17.661Z"
-updated_at: "2026-08-11T14:11:55.193Z"
+updated_at: "2026-08-11T22:48:25.627Z"
+closed_at: "2026-08-11T22:23:59.607Z"
+completed_at: "2026-08-11T22:23:59.607Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The canonical related kind carries a declared bound in the same registry as every other dependency kind, so the largest edge population is no longer the only unbounded one; The declared quantity is a composition ratio rather than a raw count, so semantic edge share is enforceable independently of how many edges the graph holds in total; The alias spelling and the canonical spelling resolve to one declaration, so a bound can never be satisfied by writing the spelling that is not bounded; A negative control proves the bound fails when an associative-only enrichment dilutes semantic share and passes when the same count of typed edges is added instead; Semantic share is reported by the graph audit profile, so dilution is visible from the governance surface without reading the ratchet declaration file"
 parent: pm-96h7
 risk: medium
 confidence: 90
+resolution: "Graph audit now reports canonical edge composition and semantic share, aliases cannot double count, and graph-composition assurance enforces semantic rather than associative-only density."
+expected_result: Canonical relationship composition exposes and enforces semantic edge share independently of total graph density and alias spelling.
+actual_result: "The largest associative related population was unbounded, so meaningless edges could satisfy density-oriented graph guarantees without adding traversable context."
 dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jzupz,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
   pm-4020c5,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
@@ -23,6 +28,25 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-g4k74y,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
   pm-wmf72c,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
-files[1]{path,scope,note}:
+comments[2]{created_at,author,text}:
+  "2026-08-11T22:18:15.322Z","harness:codex","Evidence 2026-08-12: graph audit now publishes canonical edges_by_kind, edge_share_by_kind, semantic_edges, and semantic_edge_share; alias spellings are counted once and durable legacy cache snapshots are normalized. The live graph-composition assurance now enforces semantic share rather than rewarding inert related edges. Exact 100/100/100/100 coverage, graph gates, contracts, packed dogfood, npx, and external-package smoke passed; empty-workspace acceptance returned explicit zero composition without NaN or omission."
+  "2026-08-11T22:48:25.627Z","harness:codex","Evidence chronology: the evidence execution date is recorded in Europe/Vienna local time, while PM history event timestamp fields remain UTC. The apparent August 12 versus August 11 difference is therefore timezone presentation, not contradictory execution evidence."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T22:18:15.799Z","harness:codex","Graph quality needs a denominator and a semantic numerator: canonical aliasing prevents double counting, while semantic share prevents a dense but algorithmically meaningless related-edge graph from satisfying context guarantees."
+files[5]{path,scope,note}:
   .agents/pm/assurance.json,project,"Declared assurance registry: the graph-composition measurements, assertions and gate that bound this item's finding"
+  src/sdk/graph/durable-cache.ts,project,Backward-compatible profile persistence validation
+  src/sdk/graph/governance.ts,project,Edge composition and semantic-density profile
+  tests/unit/sdk/graph/assembly-governance.spec.ts,project,Composition profile and delta coverage
+  tests/unit/sdk/graph/durable-cache.spec.ts,project,Legacy cache compatibility coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/graph/assembly-governance.spec.ts tests/unit/sdk/graph/durable-cache.spec.ts tests/unit/sdk/assurance-runtime.spec.ts,project,600
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msp5zvba-b1089k,test,passed,"2026-08-11T21:20:25.479Z","2026-08-11T21:20:41.542Z","2026-08-11T21:20:41.542Z",1,0,0
+  test-local-msp835wd-h9n6rg,test,passed,"2026-08-11T22:18:58.475Z","2026-08-11T22:19:14.461Z","2026-08-11T22:19:14.461Z",1,0,0
+docs[3]{path,scope,note}:
+  docs/ASSURANCE.md,project,Graph assurance source guidance
+  docs/DEPENDENCY_KIND_CONTRACT.md,project,Canonical relationship and composition contract
+  docs/TRUSTWORTHY_CONTEXT_EVIDENCE.md,project,Graph-quality primitive guide
+close_reason: "Implemented and verified canonical graph composition plus semantic-share governance across live assurance, cache compatibility, and empty/non-empty graph tests."
 body: ""

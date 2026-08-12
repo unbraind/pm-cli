@@ -3,8 +3,11 @@
 /**
  * Measures independently importable SDK entrypoints and enforces cost ratchets.
  *
- * Tracker: pm-38bskj. Each sample starts a fresh Node process so the report
- * includes loader and module-evaluation work instead of a warm module cache.
+ * Trackers: pm-38bskj and pm-cg1sjb. Each sample starts a fresh Node process
+ * so the report includes loader and module-evaluation work instead of a warm
+ * module cache. Admission uses the median measured run: one discarded warm-up
+ * absorbs cold-cache setup, while a majority of measured regressions must still
+ * fail the gate.
  */
 import { spawn } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -237,11 +240,11 @@ export function buildEntrypointBudgets(report, headroom = 1.35) {
 export function compareEntrypointBudgets(report, budgets) {
   const violations = [];
   if (
-    report.baseline.p95_ms >
+    report.baseline.p50_ms >
     budgets.baseline.max_import_ms + LATENCY_NOISE_MARGIN_MS
   ) {
     violations.push(
-      `bare node: ${report.baseline.p95_ms}ms > ${budgets.baseline.max_import_ms + LATENCY_NOISE_MARGIN_MS}ms`,
+      `bare node median of ${report.baseline.runs}: ${report.baseline.p50_ms}ms > ${budgets.baseline.max_import_ms + LATENCY_NOISE_MARGIN_MS}ms`,
     );
   }
   for (const [entrypoint, summary] of Object.entries(report.entrypoints)) {
@@ -250,9 +253,9 @@ export function compareEntrypointBudgets(report, budgets) {
       violations.push(`${entrypoint}: missing budget`);
       continue;
     }
-    if (summary.p95_ms > budget.max_import_ms + LATENCY_NOISE_MARGIN_MS) {
+    if (summary.p50_ms > budget.max_import_ms + LATENCY_NOISE_MARGIN_MS) {
       violations.push(
-        `${entrypoint}: ${summary.p95_ms}ms > ${budget.max_import_ms + LATENCY_NOISE_MARGIN_MS}ms`,
+        `${entrypoint} median of ${summary.runs}: ${summary.p50_ms}ms > ${budget.max_import_ms + LATENCY_NOISE_MARGIN_MS}ms`,
       );
     }
     if (
@@ -278,14 +281,18 @@ export function renderEntrypointCostMarkdown(report) {
     .join("\n");
   return `# SDK entrypoint import costs
 
-Tracked by [pm-38bskj](../../.agents/pm/tasks/pm-38bskj.toon).
+Tracked by [pm-38bskj](../../.agents/pm/tasks/pm-38bskj.toon) and
+[pm-cg1sjb](../../.agents/pm/issues/pm-cg1sjb.toon).
 
 This table measures fresh-process ESM import and module evaluation. The bare
 Node ${report.node_version} process floor on ${report.platform}/${report.architecture}
 was ${report.baseline.p50_ms} ms p50 (${report.baseline.p95_ms} ms p95) across
 ${report.iterations} measured runs after one warm-up. Focused entrypoints are
 compared with the compatibility aggregate; negative reduction means the focused
-entrypoint was slower in this sample.
+entrypoint was slower in this sample. The gate admits the median measured run
+against the unchanged upper-bound budget and 30 ms scheduler margin. A single
+cold or descheduled process therefore cannot fail the gate, while a majority of
+over-budget samples still does; p95 remains visible as diagnostic evidence.
 
 | Package export | p50 | p95 | p50 above Node | Reduction vs aggregate |
 |---|---:|---:|---:|---:|

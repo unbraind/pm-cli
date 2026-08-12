@@ -1,0 +1,34 @@
+id: pm-eax4y8
+title: History drift scan hashes reordered linked-test projections
+description: "Strict history-drift validation currently hashes the normalized bulk-enumeration projection, which can reorder linked tests relative to the authoritative item document and latest history snapshot. This produces a false hash mismatch even while pm history --verify reports a valid chain and current_matches_latest=true. Preserve authoritative collection order for integrity hashing and prove cached and source scans agree."
+type: Issue
+status: in_progress
+priority: 2
+tags: []
+created_at: "2026-08-11T23:47:01.395Z"
+updated_at: "2026-08-12T01:40:24.211Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#09d99a3d99ca542892066fe0"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: pm validate --check-history-drift agrees with pm history --verify for valid items whose linked tests are stored in noncanonical order; strict cached and force-source validation hash the authoritative item document rather than a reordered derived projection; regression coverage exercises the real document and history chain without coverage exemptions
+parent: pm-usfg
+severity: high
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ajaskl,related,"2026-08-11T23:47:01.395Z","harness:codex","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-08-11T23:47:01.395Z","harness:codex","cli:create:dep",detected
+  pm-wnbk2l,discovered_from,"2026-08-11T23:47:01.395Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-08-11T23:47:01.395Z","harness:codex","Duplicate check: searched all statuses for history drift, linked-test order, projection hashing, and pmc-874d. pm-wnbk2l covers stale projections after history-redact; this item tracks the distinct live false-positive caused by bulk enumeration reordering collections before hashing."
+  "2026-08-11T23:47:10.904Z","harness:codex","Evidence: pm history pmc-874d --verify --full reports ok=true and current_matches_latest=true, while pm validate --check-history-drift reports a current hash mismatch. Diagnostic comparison showed listAllItemMetadataWithBody returns linked tests in normalized order but readLocatedItem preserves the authoritative stored order used by history verification."
+  "2026-08-11T23:51:12.669Z","harness:codex","Focused regression: validate-command.spec.ts passes 94/94. Live acceptance in pm-changelog now reports history_drift status=ok with 132 checked items, zero mismatches, while pm history pmc-874d --verify --full remains ok=true and current_matches_latest=true. forceSourceScan now repairs the stale collection tier from authoritative item bytes."
+  "2026-08-12T00:06:44.958Z","harness:codex","Quality evidence: pnpm lint passed ESLint, zero jscpd clones, static 100% docstrings, package/SDK parity, replication and token/context gates; the SDK import-cost microbenchmark had one transient 157ms sample over 148ms then passed unchanged on immediate isolated rerun. Typecheck, contracts, secret scan, production audit, package artifact, 88-command package-first dogfood, npx packed smoke, and manual packed npx mutation plus bunx read all pass."
+  "2026-08-12T01:40:24.211Z","harness:codex","Verification evidence: forceSourceScan now bypasses metadata, body, and collection stat caches and rereads authoritative item state for drift validation. The regression poisons the cache before repair and proves validation observes the repaired source. Repository-wide coverage passed 7,242 tests at exact 100/100/100/100; lint, typecheck, contract generation, security, packed artifact, package-first dogfood, and npx smoke gates passed."
+files[3]{path,scope,note}:
+  src/core/store/item-metadata-cache.ts,project,Make forceSourceScan bypass stat-matched cache tiers
+  src/sdk/governance/validate-item-reader.ts,project,Route strict history validation through authoritative source reads
+  tests/unit/commands/validate-command.spec.ts,project,Executable stale-collection regression with real history hashes
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,project,240
+  node scripts/run-tests.mjs coverage,project,600
+body: ""

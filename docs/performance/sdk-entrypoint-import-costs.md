@@ -1,13 +1,17 @@
 # SDK entrypoint import costs
 
-Tracked by [pm-38bskj](../../.agents/pm/tasks/pm-38bskj.toon).
+Tracked by [pm-38bskj](../../.agents/pm/tasks/pm-38bskj.toon) and
+[pm-cg1sjb](../../.agents/pm/issues/pm-cg1sjb.toon).
 
 This table measures fresh-process ESM import and module evaluation. The bare
 Node v26.5.0 process floor on linux/x64
 was 41 ms p50 (48 ms p95) across
 5 measured runs after one warm-up. Focused entrypoints are
 compared with the compatibility aggregate; negative reduction means the focused
-entrypoint was slower in this sample.
+entrypoint was slower in this sample. The gate admits the median measured run
+against the unchanged upper-bound budget and 30 ms scheduler margin. A single
+cold or descheduled process therefore cannot fail the gate, while a majority of
+over-budget samples still does; p95 remains visible as diagnostic evidence.
 
 | Package export | p50 | p95 | p50 above Node | Reduction vs aggregate |
 |---|---:|---:|---:|---:|

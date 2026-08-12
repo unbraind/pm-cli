@@ -189,6 +189,9 @@ describe("durable graph cache primitives", () => {
           nodes: 1,
           edges: 0,
           edges_by_kind: {},
+          edge_share_by_kind: {},
+          semantic_edges: 0,
+          semantic_edge_share: 0,
           active_nodes: 1,
           missing_nodes: 0,
           isolated_active_nodes: 1,
@@ -223,6 +226,10 @@ describe("durable graph cache primitives", () => {
         }),
         JSON.stringify({
           ...snapshot,
+          fingerprint: 7,
+        }),
+        JSON.stringify({
+          ...snapshot,
           affected_subjects_by_code: { ordering_cycle: "invalid" },
         }),
         JSON.stringify({
@@ -251,6 +258,55 @@ describe("durable graph cache primitives", () => {
         JSON.stringify({
           ...snapshot,
           profile: { ...snapshot.profile, edges_by_kind: { related: -1 } },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            edges: 1,
+            edges_by_kind: { verifies: 1 },
+            edge_share_by_kind: { verifies: 0 },
+            semantic_edges: 1,
+            semantic_edge_share: 1,
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            edges: 1,
+            edges_by_kind: { verifies: 1 },
+            edge_share_by_kind: { verifies: 1 },
+            semantic_edges: 1,
+            semantic_edge_share: 0,
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            edges: 2,
+            edges_by_kind: { related: 1 },
+            edge_share_by_kind: { related: 0.5 },
+            semantic_edges: 0,
+            semantic_edge_share: 0,
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            edge_share_by_kind: { unexpected: 0 },
+            semantic_edges: 0,
+            semantic_edge_share: 0,
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            semantic_edges: undefined,
+          },
         }),
         JSON.stringify({
           ...snapshot,
@@ -295,8 +351,13 @@ describe("durable graph cache primitives", () => {
         expect(await loadGraphAuditBaseline(context.pmPath)).toBeUndefined();
       }
 
-      const { coverage_by_type: _legacyCoverage, ...legacyProfile } =
-        snapshot.profile;
+      const {
+        coverage_by_type: _legacyCoverage,
+        edge_share_by_kind: _legacyShares,
+        semantic_edges: _legacySemanticEdges,
+        semantic_edge_share: _legacySemanticShare,
+        ...legacyProfile
+      } = snapshot.profile;
       await writeFile(
         graphAuditBaselinePath(context.pmPath),
         JSON.stringify({ ...snapshot, profile: legacyProfile }),
@@ -304,7 +365,28 @@ describe("durable graph cache primitives", () => {
       );
       expect(await loadGraphAuditBaseline(context.pmPath)).toEqual({
         ...snapshot,
-        profile: { ...legacyProfile, coverage_by_type: {} },
+        profile: {
+          ...legacyProfile,
+          edge_share_by_kind: {},
+          semantic_edges: 0,
+          semantic_edge_share: 0,
+          coverage_by_type: {},
+        },
+      });
+
+      const zeroCountProfile = {
+        ...snapshot.profile,
+        edges_by_kind: { related: 0 },
+        edge_share_by_kind: { related: 0 },
+      };
+      await writeFile(
+        graphAuditBaselinePath(context.pmPath),
+        JSON.stringify({ ...snapshot, profile: zeroCountProfile }),
+        "utf8",
+      );
+      expect(await loadGraphAuditBaseline(context.pmPath)).toEqual({
+        ...snapshot,
+        profile: zeroCountProfile,
       });
     });
   });

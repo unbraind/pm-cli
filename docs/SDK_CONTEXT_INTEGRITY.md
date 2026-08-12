@@ -1,6 +1,6 @@
 # SDK Context Integrity
 
-Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), and [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon).
+Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), and [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon).
 
 ## Agent Quick Context
 
@@ -89,6 +89,11 @@ Brief and summary check-only health projections use the scalar-only metadata
 reader. Validation uses collection-bearing metadata for evidence and
 relationship checks and materializes bodies only when strict history-drift
 verification is requested.
+
+Every health check row exposes both its tri-state `status` and a required
+boolean `ok`. The boolean is exactly `status === "ok"` in full, brief, and
+summary projections, so generic SDK and package consumers can use a stable
+success predicate without discarding warning-versus-error detail.
 
 The storage check also reads at most 10,000 local immutable events for bounded
 agent-provenance resolver outcomes. This scan performs no network or provider

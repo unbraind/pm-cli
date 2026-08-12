@@ -1,0 +1,36 @@
+id: pm-c6urop
+title: Mixed linked-resource remove and add in one command silently favors removal
+description: "The linked files/docs command accepts --remove and --add for the same path in one invocation, reports success, and leaves the path removed. Define and enforce an explicit conflict or atomic replace contract so evidence-maintenance intent cannot be silently lost."
+type: Issue
+status: open
+priority: 1
+tags[6]: "area:cli","area:sdk",context-integrity,linked-resources,mutation-contract,ux
+created_at: "2026-08-12T01:40:00.500Z"
+updated_at: "2026-08-12T01:48:39.622Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Same-path remove-plus-add has an explicit public contract; CLI and SDK apply the same contract to files and docs; zero partial history transitions are written; focused and manual regressions cover conflicting and non-conflicting compound mutations
+goal: project management = context management
+objective: Make compound linked-resource mutations deterministic and lossless
+value: Agents can update evidence metadata without a successful command silently deleting the intended replacement
+impact: Prevents context loss during file and doc link maintenance
+outcome: Same-path remove-plus-add either atomically replaces the entry or fails with actionable guidance
+why_now: Observed while correcting linked evidence for pm-cg1sjb during PR #983
+parent: pm-doxj
+risk: medium
+confidence: high
+reporter: "harness:codex"
+severity: medium
+environment: pm-cli 2026.8.11 built from PR #983 checkout
+repro_steps: "Run pm files <id> --remove <path> --add path=<path>,scope=project,note=<new>; inspect pm get <id> and observe that the path is absent"
+expected_result: The command preserves the added replacement or rejects the contradictory mutation before writing history
+actual_result: The command succeeds but removal wins and the requested replacement is absent
+affected_version: 2026.8.11
+component: linked files/docs CLI and SDK mutation orchestration
+regression: false
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cg1sjb,discovered_from,"2026-08-12T01:40:00.500Z","harness:codex","cli:create:dep",detected
+  pm-f86lth,related,"2026-08-12T01:40:00.500Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-12T01:40:00.500Z","harness:codex","Duplicate-check evidence: searched all statuses for mixed remove/add, same-path linked-resource precedence, atomic replacement, and linked evidence repair. Closed pm-cstuys owns explicit replace-files/replace-docs but not the simultaneously accepted --remove plus --add ambiguity; related pm-cg1sjb is where the behavior was reproduced. This is new follow-up work and remains open/unclaimed."
+body: ""

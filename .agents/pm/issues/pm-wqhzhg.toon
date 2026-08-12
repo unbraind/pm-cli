@@ -1,0 +1,62 @@
+id: pm-wqhzhg
+title: "PR #983 exact-head hardening: shell-safe recovery, coherent graph evidence, and executable contract regressions"
+description: "Resolve every valid exact-head review finding on PR #983 without hand-editing generated or hash-chained evidence: make annotation recovery source-aware and shell-safe, reject alias conflicts, require verified collection targets, validate durable graph composition, align usage-error catalog metadata, strengthen health/assurance/catalog tests, correct documentation quoting, record timezone provenance, and route changelog classification to its owning package."
+type: Issue
+status: in_progress
+priority: 1
+tags[7]: "area:cli","area:graph","area:sdk","area:tests",changelog-exclude,pr-983,review-hardening
+created_at: "2026-08-11T22:48:17.505Z"
+updated_at: "2026-08-12T02:02:21.299Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#09d99a3d99ca542892066fe0"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: All 18 review findings are verified against the exact head; every valid finding has source and regression coverage or an owning external-package fix; every invalid or deferred finding has evidence; 100/100/100/100 coverage and all strict gates pass; every bot comment and review is reacted to and replied to; all review threads and required checks are terminal before merge.
+parent: pm-usfg
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-33mjrw,discovered_from,"2026-08-11T22:48:17.505Z","harness:codex","cli:create:dep",detected
+  pm-h97qxd,discovered_from,"2026-08-11T22:48:17.505Z","harness:codex","cli:create:dep",detected
+  pm-m0b7h8,discovered_from,"2026-08-11T22:48:17.505Z","harness:codex","cli:create:dep",detected
+  pm-py7qv2,discovered_from,"2026-08-11T22:48:17.505Z","harness:codex","cli:create:dep",detected
+  pm-q6n8sj,discovered_from,"2026-08-11T22:48:17.505Z","harness:codex","cli:create:dep",detected
+  pm-rncuf7,discovered_from,"2026-08-11T22:48:17.505Z","harness:codex","cli:create:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-08-11T22:48:17.505Z","harness:codex","Duplicate check: all-status search for PR 983 review hardening, CodeRabbit, retry shell quoting, durable cache, and changelog classifier found no canonical item for this exact-head finding set. The six closed feature items remain completed implementation owners; this distinct item owns post-PR review remediation and delivery evidence."
+  "2026-08-11T22:48:26.214Z","harness:codex","Review inventory: CodeRabbit posted 18 findings across PM chronology, changelog classification, documentation quoting, verified collection-target recovery, annotation input sources and shell quoting, alias conflicts, validate/health row parity, assurance validation clarity, durable graph-cache composition, catalog usage classification, and focused regression strength. Thread-aware GraphQL inventory was used because flat comments omit resolution state. PM history will remain append-only; generated changelog output will only change through pm-changelog."
+  "2026-08-11T23:24:53.147Z","harness:codex","Verification evidence: after refreshing the acknowledged public SDK surface for required ValidateCheck.ok, 486 test files and 7,241 tests pass under node scripts/run-tests.mjs coverage. Exact V8 totals are statements 52,338/52,338, branches 38,488/38,488, functions 10,769/10,769, and lines 50,576/50,576: 100/100/100/100 with zero uncovered counts. Focused review regression suite also passes 152/152 tests."
+  "2026-08-12T01:05:40.422Z","harness:codex","Companion package evidence: pm-changelog PR #138 merged at 55c4201; protected release metadata merged at 9d272d4; Daily Release run 31552058852 passed every build, release-check, protected-PR, exact-merge, provenance publish, tag, bun-install, and GitHub-release step. npm latest and tag v2026.8.12 both resolve to the released artifact. pm-cli now activates pm-changelog 2026.8.12 and regenerated CHANGELOG.md through pnpm changelog:pm."
+  "2026-08-12T01:40:24.738Z","harness:codex","Exact-head local acceptance evidence: full coverage passed 486 files and 7,242 tests at exact 100/100/100/100; pnpm lint, typecheck, contracts:check, changelog:pm:check with pm-changelog 2026.8.12, security scan, production dependency audit, package artifact validation, package-first dogfood, and packed npx smoke passed. A fresh unrelated temp root installed the tarball with npm and Bun; npx created and mutated a parent/child/dependency/evidence graph, bunx read the same state and closed/released the child, and both reported 2026.8.11. Semantic dogfood was explicitly skipped because PM_DOGFOOD_SEMANTIC was unset and is not counted as acceptance."
+  "2026-08-12T01:48:40.080Z","harness:codex","Hosted exact-head evidence: PR #983 head 36708c02 passed coverage, compatibility, smokes, Windows, benchmarks, CodeQL, Codecov, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, DeepScan, CodeFactor, Hound, docs, and actionlint. Static alone found two tracker-ratchet declarations on newly discovered open pm-c6urop: a terminal parent and missing estimate. Corrected its parent to active roadmap pm-doxj and recorded a 180-minute estimate; no source-quality gate failed."
+  "2026-08-12T02:02:21.299Z","harness:codex","CodeRabbit exact-head finding accepted: persisted/parsed assurance item-source declarations could bypass the TypeScript union and supply an unsupported state value. Added runtime present/missing validation in the item predicate contract plus an invalid-cast regression. The validation is grouped with the full item-source predicate contract to preserve strict complexity and docstring gates."
+files[24]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Consume released pm-changelog 2026.8.12 classifier fix
+  scripts/generate-error-code-catalog.mjs,project,PR #983 exact-head review hardening
+  scripts/release/surface-replication-sets.json,project,Own the fifth CLI annotation refusal introduced by alias conflict validation
+  sdk/public-surface.json,project,PR #983 exact-head review hardening
+  src/cli/commander-usage.ts,project,PR #983 exact-head review hardening
+  src/cli/error-guidance.ts,project,PR #983 exact-head review hardening
+  src/cli/register-annotations.ts,project,PR #983 exact-head review hardening
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,PR #983 exact-head review hardening
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,PR #983 exact-head review hardening
+  src/sdk/governance/assurance-runtime.ts,project,PR #983 exact-head review hardening
+  src/sdk/governance/assurance.ts,project,PR #983 exact-head review hardening
+  src/sdk/governance/validate.ts,project,PR #983 exact-head review hardening
+  src/sdk/graph/durable-cache.ts,project,PR #983 exact-head review hardening
+  src/sdk/graph/governance.ts,project,PR #983 exact-head review hardening
+  tests/fixtures/contracts/full.json,project,PR #983 exact-head review hardening
+  tests/unit/cli/cli-main-errors.spec.ts,project,PR #983 exact-head review hardening
+  tests/unit/cli/error-guidance.spec.ts,project,PR #983 exact-head review hardening
+  tests/unit/commands/health-command.spec.ts,project,PR #983 exact-head review hardening
+  tests/unit/commands/register-commands.spec.ts,project,PR #983 exact-head review hardening
+  tests/unit/commands/validate-command.spec.ts,project,PR #983 exact-head review hardening
+  tests/unit/scripts/generate-error-code-catalog.spec.ts,project,PR #983 exact-head review hardening
+  tests/unit/sdk/assurance-runtime.spec.ts,project,PR #983 exact-head review hardening
+  tests/unit/sdk/assurance.spec.ts,project,PR #983 exact-head review hardening
+  tests/unit/sdk/graph/durable-cache.spec.ts,project,PR #983 exact-head review hardening
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-runtime.spec.ts tests/unit/sdk/graph/durable-cache.spec.ts,project,240
+  node scripts/run-tests.mjs coverage,project,600
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Regenerate with released pm-changelog 2026.8.12
+  docs/TRUSTWORTHY_CONTEXT_EVIDENCE.md,project,Correct shell-safe linked-test removal example and document review item lineage
+body: ""

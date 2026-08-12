@@ -2,17 +2,22 @@ id: pm-33mjrw
 title: "Assurance registry mutations and gate verdicts record author unknown while carrying the full detected provenance in the same entry, so the audit artifact fails the question it exists to answer"
 description: "Found 2026-08-11 by declaring the first real assurance contract on this workspace, hours after the primitives shipped in 2026.8.11.\n\nEvery assurance registry mutation and every persisted gate verdict is recorded with author \"unknown\" and author_source \"configured\". Measured on this workspace: 61 of 61 unknown-author entries in .agents/pm/history/_workspace.jsonl carry an assurance op, across all seven of them - measurement put and remove, assertion put and remove, gate put and remove, and gate verdict. No other op in the file is affected. In the same file, entries written by other paths in the same session by the same process carry author harness:claude-code with author_source detected.\n\nThe detection is not missing. It ran, and it succeeded. The assurance entries carry agent_harness claude-code, agent_model claude-opus-5, and a complete agent_provenance block with model from probe, effort from environment, version from probe, and both role and topic inferred at high confidence with their evidence listed. Everything needed to name the author is present in the entry that says the author is unknown.\n\nThe workspace configures no default: author_default in .agents/pm/settings.json is the empty string. So this is not the configured-default suppression closed as pm-6uxhe0. The assurance action passes its optional author input straight through to the writer, and an absent value normalizes to the literal \"unknown\" with source configured rather than being derived from the harness that the same code path already resolved.\n\nTwo consequences, and the second is the reason this is filed at this priority.\n\nFirst, it re-opens a warning class the project had driven to zero. pm validate reported five warning classes at the start of this session and six after the declarations landed, the new one being validate_history_unknown_author_events at 61. pm-demq owns the legacy versus actionable split for that class and is CLOSED, on the premise that the remaining unknown-author events were historical. A capability shipped after that closure now mints them at HEAD, so the closure is falsified by the newest write path rather than by any change to the old data.\n\nSecond, and worse, it degrades exactly the artifact assurance exists to produce. A gate verdict is the project's durable, immutable record of what was enforced, against which tree, under which bound. Its whole value is that it can be trusted later by someone who was not there. A verdict whose author field reads \"unknown\" while its provenance block names the harness, the model, the effort, the role and the topic is not merely inconsistent, it is an audit record that fails the one question an audit record exists to answer, while carrying the answer in an adjacent field.\n\nThis also contradicts a standing project rule: agents must never pass an identity flag, because detection is automatic. It is automatic here for four fields and not for the one the validator reads."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: assurance,defect,governance,provenance
 created_at: "2026-08-11T14:14:29.124Z"
-updated_at: "2026-08-11T14:33:59.739Z"
+updated_at: "2026-08-11T22:23:59.018Z"
+closed_at: "2026-08-11T22:23:58.432Z"
+completed_at: "2026-08-11T22:23:58.432Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "The assurance write path derives its author from the same resolver every other mutating verb uses, so an assurance entry and an item mutation made by the same process in the same session record the same author; A gate verdict names the principal that produced it without any identity flag being passed, and the author field agrees with the agent_harness and agent_provenance recorded beside it; validate_history_unknown_author_events returns to zero newly minted events, with the existing legacy population still distinguishable from anything written at HEAD; A negative control proves an entry written with no resolvable harness is recorded as unresolved rather than silently attributed, so the fix never invents an author; The 61 entries already written by this defect are dispositioned explicitly, either re-attributable from their own provenance block or recorded as a bounded residual with the reason they cannot be"
 parent: pm-1jzupz
 risk: medium
 confidence: 95
+resolution: Assurance mutations and gate verdicts now use the shared settings-aware detected-author resolver while retaining an explicitly covered unresolved-author fallback.
+expected_result: "Assurance history author agrees with detected harness provenance when no explicit author is supplied, without inventing identity when none is resolvable."
+actual_result: Assurance entries recorded author unknown even when the same event carried complete detected harness and model provenance.
 dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-0elqjj,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
   pm-1jzupz,implements,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
@@ -25,6 +30,22 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-py7qv2,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
   pm-u14c,related,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-11T14:14:29.124Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-11T14:33:59.739Z","harness:claude-code","Disposition of the 61 pre-existing entries, 2026-08-11 (this item's fifth criterion). The defect turned CI red on the commit that introduced it, and not through the assurance gates themselves: the 61 unknown-author entries were classified actionable, which flipped the storage health check from ok to warn and tripped tracker-measurement-gate twice at once - health_check:storage declared 0 observed 1 (ceiling_exceeded) and validate_warning:validate_history_unknown_author_events declared null observed 61 (undeclared_population). An A/B against the pre-commit tracker isolated it exactly: actionable_unknown_event_count 0 to 61, with provenance_invalid_values and tombstone counts byte-identical on both sides, so no legacy data was involved. Resolved with the supported mechanism rather than by weakening a bound: pm history-author-acknowledge --all-actionable attributed all 61 to harness:claude-code, which is read directly from each event's own agent_harness field rather than inferred. Storage returned to ok, validate returned to its original five warning classes, and the ratchet passed at 30 enforced. That closes the residual half only. Recurrence is still open: the next assurance write will mint another unknown-author entry and re-break the same two bounds, which is why this item stays open on the write-path fix."
+  "2026-08-11T22:18:14.387Z","harness:codex","Evidence 2026-08-12: assurance registry writes and durable gate verdicts now use the settings-aware detected-author resolver. Full coverage passed at exact 100/100/100/100; static, contracts, packed dogfood, npx, and package ecosystem smoke passed. Temporary acceptance made an assurance mutation without --author and pm activity recorded harness:codex, proving author and provenance agree while the unresolved-author negative path remains covered."
+learnings[1]{created_at,author,text}:
+  "2026-08-11T22:18:14.875Z","harness:codex",Provenance beside an unknown author is not sufficient auditability; the canonical author field must be resolved by the same settings and harness precedence used by other mutations.
+files[3]{path,scope,note}:
+  src/sdk/governance/assurance-runtime.ts,project,Workspace-backed provenance evaluation
+  src/sdk/governance/assurance.ts,project,Settings-aware assurance mutation author resolution
+  tests/unit/sdk/assurance.spec.ts,project,Assurance mutation contract coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-runtime.spec.ts,project,600
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msp5zijh-3bu88p,test,passed,"2026-08-11T21:20:08.678Z","2026-08-11T21:20:24.989Z","2026-08-11T21:20:24.989Z",1,0,0
+  test-local-msp82t75-q1kpfc,test,passed,"2026-08-11T22:18:42.704Z","2026-08-11T22:18:58.001Z","2026-08-11T22:18:58.001Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/ASSURANCE.md,project,Author precedence and provenance receipts
+  docs/TRUSTWORTHY_CONTEXT_EVIDENCE.md,project,Detected author workflow
+close_reason: Implemented and verified detected-author assurance provenance with unresolved fallback coverage and live harness attribution evidence.
 body: ""

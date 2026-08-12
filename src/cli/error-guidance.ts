@@ -109,6 +109,8 @@ export interface CommanderGuidanceContext {
   unknownSubcommandAllowedValues?: string[];
   /** Value that configures or reports suggested retry command for this contract. */
   suggestedRetryCommand?: string;
+  /** Existing item id verified against the selected tracker for collection recovery. */
+  verifiedCollectionItemId?: string;
   /** Installed extensions whose activation failed for this invocation. */
   failedExtensions?: Array<{ name: string }>;
 }
@@ -264,10 +266,11 @@ function assignRecoveryString(
   }
 }
 
-function assignRecoveryStringArray(
+function assignRecoveryCollection(
   normalized: PmCliErrorRecoveryPayload,
   key:
     | "normalized_args"
+    | "parsed_positionals"
     | "provided_fields"
     | "missing"
     | "missing_required_fields"
@@ -276,6 +279,19 @@ function assignRecoveryStringArray(
     | "candidate_commands",
   value: unknown,
 ): void {
+  if (key === "parsed_positionals") {
+    if (!Array.isArray(value)) return;
+    const parsedPositionals = value
+      .map((entry) => ({
+        role: typeof entry?.role === "string" ? entry.role.trim() : "",
+        value: typeof entry?.value === "string" ? entry.value.trim() : "",
+      }))
+      .filter((entry) => entry.role.length > 0 && entry.value.length > 0);
+    if (parsedPositionals.length > 0) {
+      normalized.parsed_positionals = parsedPositionals;
+    }
+    return;
+  }
   const values = normalizeStringArray(value);
   if (values) {
     normalized[key] = values;
@@ -297,33 +313,38 @@ function normalizeRecoveryPayload(
     "attempted_command",
     payload.attempted_command,
   );
-  assignRecoveryStringArray(
+  assignRecoveryCollection(
     normalized,
     "normalized_args",
     payload.normalized_args,
   );
-  assignRecoveryStringArray(
+  assignRecoveryCollection(
+    normalized,
+    "parsed_positionals",
+    payload.parsed_positionals,
+  );
+  assignRecoveryCollection(
     normalized,
     "provided_fields",
     payload.provided_fields,
   );
-  assignRecoveryStringArray(normalized, "missing", payload.missing);
-  assignRecoveryStringArray(
+  assignRecoveryCollection(normalized, "missing", payload.missing);
+  assignRecoveryCollection(
     normalized,
     "missing_required_fields",
     payload.missing_required_fields,
   );
-  assignRecoveryStringArray(
+  assignRecoveryCollection(
     normalized,
     "suggested_flags",
     payload.suggested_flags,
   );
-  assignRecoveryStringArray(
+  assignRecoveryCollection(
     normalized,
     "allowed_values",
     payload.allowed_values,
   );
-  assignRecoveryStringArray(
+  assignRecoveryCollection(
     normalized,
     "candidate_commands",
     payload.candidate_commands,
@@ -400,6 +421,15 @@ function renderRecoveryBundle(
     normalized.normalized_args,
     " ",
   );
+  if (
+    normalized.parsed_positionals &&
+    normalized.parsed_positionals.length > 0
+  ) {
+    lines.push("  parsed_positionals:");
+    for (const positional of normalized.parsed_positionals) {
+      lines.push(`    - ${positional.role}: ${positional.value}`);
+    }
+  }
   appendRecoveryListLine(
     lines,
     "provided_fields",
@@ -1276,8 +1306,7 @@ function buildUnknownOptionGuidance(
   const otherCommands =
     normalizeContextList(guidanceContext.unknownOptionOtherCommands) ?? [];
   const candidateTotal =
-    guidanceContext.unknownOptionOtherCommandsTotal ??
-    otherCommands.length;
+    guidanceContext.unknownOptionOtherCommandsTotal ?? otherCommands.length;
   const proseCommands = otherCommands.slice(0, 3);
   const proseRemainder = candidateTotal - proseCommands.length;
   let proseRemainderText = "";
@@ -1296,9 +1325,10 @@ function buildUnknownOptionGuidance(
       ? `Replay with suggested correction: ${retryCommand}`
       : undefined,
   ].filter((entry): entry is string => typeof entry === "string");
-  const examples = [retryCommand, `pm ${commandName ?? "<command>"} --help`].filter(
-    (entry): entry is string => typeof entry === "string",
-  );
+  const examples = [
+    retryCommand,
+    `pm ${commandName ?? "<command>"} --help`,
+  ].filter((entry): entry is string => typeof entry === "string");
   return makeGuidanceMessage({
     code: "unknown_option",
     title: `Unknown option ${optionName}`,
@@ -1461,6 +1491,58 @@ function buildLinkedTestValueNotQuotedGuidance(
   });
 }
 
+const TRANSPOSED_COLLECTION_COMMANDS = new Set([
+  "comments",
+  "docs",
+  "files",
+  "learnings",
+  "notes",
+  "test",
+]);
+
+function buildTransposedCollectionActionGuidance(
+  message: string,
+  commandName: string | undefined,
+  context: CommanderGuidanceContext | undefined,
+): GuidanceMessage | null {
+  if (
+    !/too many arguments/i.test(message) ||
+    !TRANSPOSED_COLLECTION_COMMANDS.has(commandName ?? "")
+  ) {
+    return null;
+  }
+  const argv = context?.normalizedInvocationArgs ?? [];
+  const commandIndex = argv.findIndex((token) => token === commandName);
+  const action = argv[commandIndex + 1];
+  const parsedItemId = argv[commandIndex + 2];
+  const itemId = context?.verifiedCollectionItemId?.trim();
+  if (
+    action?.toLowerCase() !== "add" ||
+    !parsedItemId ||
+    parsedItemId.startsWith("-") ||
+    !itemId ||
+    itemId.toLowerCase() !== parsedItemId.toLowerCase()
+  ) {
+    return null;
+  }
+  const suggestedRetry = `pm ${commandName} ${itemId} --add <value>`;
+  return makeGuidanceMessage({
+    code: "collection_transposed_subcommand",
+    title: `Transposed ${commandName} add syntax`,
+    happened: `The positional token "add" occupied the item-id role and "${itemId}" occupied the next positional role. pm ${commandName} does not use an add subcommand.`,
+    required: `Place the item id immediately after ${commandName}, then use --add for the value.`,
+    why: "Collection mutations use object-first grammar: pm <collection> <item-id> --add <value>.",
+    examples: [suggestedRetry, `pm ${commandName} --help`],
+    recovery: buildCommanderRecoveryPayload(context, {
+      parsed_positionals: [
+        { role: "transposed_subcommand", value: action },
+        { role: "item_id", value: itemId },
+      ],
+      suggested_retry: suggestedRetry,
+    }),
+  });
+}
+
 const CONTEXT_GUIDANCE_VALUE_FLAGS = new Set([
   "--activity-limit",
   "--assignee",
@@ -1557,6 +1639,7 @@ function buildCommanderErrorGuidance(
     buildUnknownOptionGuidance(message, commandName, context) ??
     buildUnknownCommandGuidance(message, context) ??
     buildUnknownSubcommandGuidance(context) ??
+    buildTransposedCollectionActionGuidance(message, commandName, context) ??
     buildLinkedTestValueNotQuotedGuidance(message, commandName, context) ??
     buildContextItemArgumentGuidance(message, commandName, context);
   if (guidance) {

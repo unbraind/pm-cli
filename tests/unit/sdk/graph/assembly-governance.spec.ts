@@ -198,12 +198,17 @@ describe("workspace relationship graph assembly", () => {
       },
       { id: "pm-b", title: "B", status: "open" },
     ] as never);
-    expect(assembly.legacyAliasCounts).toEqual({ depends_on: 1, related_to: 1 });
+    expect(assembly.legacyAliasCounts).toEqual({
+      depends_on: 1,
+      related_to: 1,
+    });
     expect(collectLegacyDependencyAliasCounts([])).toEqual({});
-    expect(assembly.graph.edges().map(({ kind }) => kind).sort()).toEqual([
-      "blocked_by",
-      "related",
-    ]);
+    expect(
+      assembly.graph
+        .edges()
+        .map(({ kind }) => kind)
+        .sort(),
+    ).toEqual(["blocked_by", "related"]);
   });
 });
 describe("relationship graph governance", () => {
@@ -435,6 +440,9 @@ describe("relationship graph governance", () => {
         edges: 0,
         edge_basis: "deduplicated_directed",
         edges_by_kind: {},
+        edge_share_by_kind: {},
+        semantic_edges: 0,
+        semantic_edge_share: 0,
         active_nodes: 0,
         missing_nodes: 0,
         isolated_active_nodes: 0,
@@ -442,6 +450,39 @@ describe("relationship graph governance", () => {
         coverage_by_type: {},
       },
     });
+  });
+
+  it("reports deterministic relationship composition and semantic-context share", () => {
+    const report = auditWorkspaceRelationshipGraph(
+      assembleWorkspaceRelationshipGraph([
+        {
+          id: "pm-a",
+          title: "A",
+          status: "open",
+          parent: "pm-b",
+          dependencies: [
+            { id: "pm-b", kind: "discovered_from" },
+            { id: "pm-c", kind: "verifies" },
+          ],
+        },
+        { id: "pm-b", title: "B", status: "open" },
+        { id: "pm-c", title: "C", status: "open" },
+      ] as never),
+    );
+
+    expect(report.profile.edges).toBe(3);
+    expect(report.profile.edges_by_kind).toEqual({
+      discovered_from: 1,
+      parent: 1,
+      verifies: 1,
+    });
+    expect(report.profile.edge_share_by_kind).toEqual({
+      discovered_from: 1 / 3,
+      parent: 1 / 3,
+      verifies: 1 / 3,
+    });
+    expect(report.profile.semantic_edges).toBe(2);
+    expect(report.profile.semantic_edge_share).toBe(2 / 3);
   });
 
   it("orients default-precedence ordering kinds and sorts shared successors", () => {
@@ -943,6 +984,9 @@ describe("diffRelationshipAuditSnapshots", () => {
         nodes: 10,
         edges: 12,
         edges_by_kind: { related: 8, parent: 4 },
+        edge_share_by_kind: { related: 2 / 3, parent: 1 / 3 },
+        semantic_edges: 0,
+        semantic_edge_share: 0,
         active_nodes: 5,
         missing_nodes: 1,
         isolated_active_nodes: 2,
@@ -964,6 +1008,13 @@ describe("diffRelationshipAuditSnapshots", () => {
         nodes: 12,
         edges: 12,
         edges_by_kind: { related: 8, blocked_by: 2, parent: 2 },
+        edge_share_by_kind: {
+          related: 2 / 3,
+          blocked_by: 1 / 6,
+          parent: 1 / 6,
+        },
+        semantic_edges: 0,
+        semantic_edge_share: 0,
         active_nodes: 6,
         missing_nodes: 1,
         isolated_active_nodes: 0,
@@ -990,6 +1041,9 @@ describe("diffRelationshipAuditSnapshots", () => {
         isolated_active_nodes: -2,
         degree_leq_one_active_nodes: 0,
         edges_by_kind: { blocked_by: 2, parent: -2 },
+        edge_share_by_kind: { blocked_by: 1 / 6, parent: -1 / 6 },
+        semantic_edges: 0,
+        semantic_edge_share: 0,
         coverage_by_type: {
           Epic: { active: -2, isolated: -1, degree_leq_one: -1 },
           Feature: { active: 1, isolated: 0, degree_leq_one: 1 },

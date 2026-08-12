@@ -1,10 +1,26 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "../../../scripts/generate-error-code-catalog.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
 
 const harness = createScriptHarness();
+
+async function readGeneratedCatalog(root: string): Promise<string> {
+  const sdkRoot = path.join(root, "src", "sdk");
+  const generatedRoot = path.join(sdkRoot, "generated");
+  const generatedParts = (await readdir(generatedRoot))
+    .filter((name) => /^generated-error-code-catalog-part-\d+\.ts$/u.test(name))
+    .sort((left, right) => left.localeCompare(right))
+    .map((name) => path.join("generated", name));
+  return (
+    await Promise.all(
+      ["generated-error-code-catalog.ts", ...generatedParts].map((name) =>
+        readFile(path.join(sdkRoot, name), "utf8"),
+      ),
+    )
+  ).join("\n");
+}
 
 describe("generate error code catalog", () => {
   it("discovers, classifies, sorts, writes, and verifies literal codes", async () => {
@@ -75,10 +91,7 @@ describe("generate error code catalog", () => {
       "utf8",
     );
     await main(root, []);
-    const output = await readFile(
-      path.join(root, "src", "sdk", "generated-error-code-catalog.ts"),
-      "utf8",
-    );
+    const output = await readGeneratedCatalog(root);
     expect(output).toContain('code: "item_not_found"');
     expect(output).toContain("exit_code: 3");
     expect(output).toContain("exit_code: 4");
@@ -116,10 +129,7 @@ describe("generate error code catalog", () => {
       "utf8",
     );
     await main(root, []);
-    const expanded = await readFile(
-      path.join(root, "src", "sdk", "generated-error-code-catalog.ts"),
-      "utf8",
-    );
+    const expanded = await readGeneratedCatalog(root);
     expect(expanded).toContain('code: "new_create_failure"');
     expect(expanded).toContain('stability: "provisional"');
     expect(expanded).toContain('emitting_commands: ["create"]');
@@ -129,10 +139,7 @@ describe("generate error code catalog", () => {
       "utf8",
     );
     await main(root, []);
-    const shared = await readFile(
-      path.join(root, "src", "sdk", "generated-error-code-catalog.ts"),
-      "utf8",
-    );
+    const shared = await readGeneratedCatalog(root);
     expect(shared).toContain('emitting_commands: ["*", "create"]');
     await mkdir(path.join(root, "src", "sdk", "lifecycle"), {
       recursive: true,
@@ -143,10 +150,7 @@ describe("generate error code catalog", () => {
       "utf8",
     );
     await main(root, []);
-    const withBulkCaller = await readFile(
-      path.join(root, "src", "sdk", "generated-error-code-catalog.ts"),
-      "utf8",
-    );
+    const withBulkCaller = await readGeneratedCatalog(root);
     expect(withBulkCaller).toMatch(
       /code: "acceptance_criteria_mutation_conflict",[\s\S]*?emitting_commands: \["update", "update-many"\]/u,
     );
@@ -186,6 +190,19 @@ describe("generate error code catalog", () => {
       path.join(root, "src", "sdk", "generated-error-code-catalog.ts"),
       "stale\n",
       "utf8",
+    );
+    await expect(main(root, ["--check"])).rejects.toThrow(
+      "error-code catalog is stale",
+    );
+    await main(root, []);
+    await rm(
+      path.join(
+        root,
+        "src",
+        "sdk",
+        "generated",
+        "generated-error-code-catalog-part-1.ts",
+      ),
     );
     await expect(main(root, ["--check"])).rejects.toThrow(
       "error-code catalog is stale",
@@ -251,10 +268,7 @@ describe("generate error code catalog", () => {
       "utf8",
     );
     await main(root, []);
-    const output = await readFile(
-      path.join(root, "src", "sdk", "generated-error-code-catalog.ts"),
-      "utf8",
-    );
+    const output = await readGeneratedCatalog(root);
     expect(output).toMatch(
       /code: "unknown_command",[\s\S]*?canonical_code: "unknown_command",[\s\S]*?aliases: \["unknown_subcommand"\]/u,
     );

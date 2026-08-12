@@ -378,6 +378,10 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   verboseAuthorEvents: { type: "boolean" },
   match: { type: "string" },
   onlyIndex: { anyOf: [{ type: "string" }, { type: "number" }] },
+  removeIndex: {
+    type: "array",
+    items: { anyOf: [{ type: "string" }, { type: "number" }] },
+  },
   onlyLast: { type: "boolean" },
   envSet: { type: "array", items: { type: "string" } },
   envClear: { type: "array", items: { type: "string" } },
@@ -1016,7 +1020,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     examples: ["ci", "pre-release"],
   },
   gate: {
-    description: "Stable assurance gate id used to filter durable verdict history.",
+    description:
+      "Stable assurance gate id used to filter durable verdict history.",
     examples: ["release-readiness"],
   },
   runId: {
@@ -1413,6 +1418,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Run only the 1-based linked-test index from pm test <id> --list order.",
     examples: [1, "2"],
+  },
+  removeIndex: {
+    description:
+      "Remove linked tests by their 1-based positions from pm test <id> --list order; repeatable and lossless for commands containing commas or equals signs.",
+    examples: [[1], ["2", "4"]],
   },
   onlyLast: {
     description: "Run only the most recently added linked-test entry.",

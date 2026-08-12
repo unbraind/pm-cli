@@ -1751,6 +1751,7 @@ describe("runTest", () => {
 
       expect(added.changed).toBe(true);
       expect(added.count).toBe(3);
+      expect(added).not.toHaveProperty("removed");
       const commandEntry = added.tests.find(
         (entry) => entry.command === "node --version" && !entry.pm_context_mode,
       );
@@ -1789,16 +1790,19 @@ describe("runTest", () => {
         .split("\n").length;
       expect(historyAfterDuplicate).toBe(historyBeforeDuplicate);
 
-      const noOpRemoval = await runTest(
-        id,
-        {
-          remove: ["path=tests/does-not-exist.spec.ts"],
-          message: "attempt non-matching remove",
-        },
-        { path: context.pmPath },
-      );
-      expect(noOpRemoval.changed).toBe(false);
-      expect(noOpRemoval.count).toBe(3);
+      await expect(
+        runTest(
+          id,
+          {
+            remove: ["path=tests/does-not-exist.spec.ts"],
+            message: "attempt non-matching remove",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({
+        code: "linked_test_remove_no_match",
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
 
       const removed = await runTest(
         id,
@@ -1814,6 +1818,56 @@ describe("runTest", () => {
       );
       expect(removed.changed).toBe(true);
       expect(removed.count).toBe(0);
+      expect(removed.removed).toBe(3);
+    });
+  });
+
+  it("removes commands containing commas and equals signs losslessly by identity or index", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "lossless-test-removal");
+      const command = `node -e "console.log('left=right,still-command')"`;
+      const added = await runTest(
+        id,
+        {
+          addJson: [JSON.stringify({ command, scope: "project" })],
+          add: ["command=node --version,scope=project"],
+        },
+        { path: context.pmPath },
+      );
+      expect(added.tests.map((entry) => entry.command)).toEqual([
+        "node --version",
+        command,
+      ]);
+
+      const removedByCommand = await runTest(
+        id,
+        { remove: [`command=${command}`] },
+        { path: context.pmPath },
+      );
+      expect(removedByCommand).toMatchObject({ count: 1, removed: 1 });
+      expect(removedByCommand.tests[0]?.command).toBe("node --version");
+
+      const removedByIndex = await runTest(
+        id,
+        { removeIndex: [1] },
+        { path: context.pmPath },
+      );
+      expect(removedByIndex).toMatchObject({ count: 0, removed: 1 });
+      await expect(
+        runTest(id, { removeIndex: [1] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ code: "linked_test_remove_no_match" });
+      await expect(
+        runTest(id, { removeIndex: ["1.5"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runTest(id, { remove: ["owner=value"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runTest(id, { remove: ["path="] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runTest(id, { remove: ["path:"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
     });
   });
 

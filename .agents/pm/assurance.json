@@ -168,30 +168,11 @@
       "max_cost": 300000
     },
     {
-      "id": "edges-related-to-alias",
-      "description": "Rows stored with the alias spelling related_to, which canonicalizes to related only on read",
+      "id": "edges-associative-declared",
+      "description": "Canonical associative relationship rows. Legacy related_to spellings resolve to related before counting, so aliases never double count the same population.",
       "source": {
         "kind": "dependency_kind",
-        "dependency_kind": "related_to"
-      },
-      "max_cost": 40000
-    },
-    {
-      "id": "edges-associative-declared",
-      "description": "All associative rows in declared-row units: canonical related plus the related_to alias. Declared-row units, not collapsed-undirected units - pm graph audit reports the latter and the two differ by the reciprocal pairs",
-      "source": {
-        "kind": "derived",
-        "expression": {
-          "operator": "add",
-          "operands": [
-            {
-              "measurement": "edges-related"
-            },
-            {
-              "measurement": "edges-related-to-alias"
-            }
-          ]
-        }
+        "dependency_kind": "related"
       },
       "max_cost": 80000
     },
@@ -202,6 +183,16 @@
         "kind": "history"
       },
       "max_cost": 200000
+    },
+    {
+      "id": "graph-semantic-edge-share",
+      "description": "Share of deduplicated directed graph edges that preserve discovery, incident, supersession, or verification semantics.",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.semantic_edge_share"
+      },
+      "max_cost": 80000
     }
   ],
   "assertions": [
@@ -365,14 +356,38 @@
           }
         ]
       }
+    },
+    {
+      "id": "graph-semantic-edge-share-floor",
+      "measurement_id": "graph-semantic-edge-share",
+      "owner_item_id": "pm-q6n8sj",
+      "scope": {
+        "kind": "all"
+      },
+      "floor": 0.068,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0.068,
+            "expected": "pass"
+          },
+          {
+            "observed": 0.067999,
+            "expected": "fail"
+          }
+        ]
+      }
     }
   ],
   "gates": [
     {
       "id": "graph-composition",
-      "description": "The relationship graph keeps a usable composition: semantic share cannot fall, recovered lineage cannot be lost, and the associative kinds are bounded across both spellings",
+      "description": "The relationship graph keeps a usable composition: semantic share cannot fall, recovered lineage cannot be lost, and canonical associative edges remain bounded without alias double counting.",
       "assertion_ids": [
         "semantic-edge-share-floor",
+        "graph-semantic-edge-share-floor",
         "associative-edge-ceiling",
         "supersedes-floor",
         "discovered-from-floor",

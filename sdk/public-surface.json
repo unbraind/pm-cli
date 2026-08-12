@@ -343,6 +343,42 @@
       ],
       "package_version": "2026.8.11",
       "reason": "GH-974 corrects misleading merge preferred fields to requested_preference; retained decision evidence is authoritative and legacy stored receipts remain readable"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AssuranceAssertionVerdict",
+        "signature ./sdk:AssuranceItemRecord",
+        "signature ./sdk:AssuranceItemsSource",
+        "signature ./sdk:AssuranceMeasurementResult",
+        "signature ./sdk:HealthCheck",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:PmCliErrorRecoveryPayload",
+        "signature ./sdk:RelationshipAuditDelta",
+        "signature ./sdk:RelationshipCoverageProfile",
+        "signature ./sdk:TestCommandOptions",
+        "signature ./sdk:TestResult",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/governance:HealthCheck",
+        "signature ./sdk/graph:RelationshipAuditDelta",
+        "signature ./sdk/graph:RelationshipCoverageProfile"
+      ],
+      "package_version": "2026.8.11",
+      "reason": "pm-py7qv2 pm-33mjrw pm-q6n8sj pm-h97qxd pm-rncuf7 pm-m0b7h8: explicit truthful context and evidence contract tranche"
+    },
+    {
+      "changes": [
+        "signature ./sdk:TestResult"
+      ],
+      "package_version": "2026.8.11",
+      "reason": "pm-m0b7h8: removed count is present only for successful linked-test removals"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ValidateCheck",
+        "signature ./sdk/governance:ValidateCheck"
+      ],
+      "package_version": "2026.8.11",
+      "reason": "ValidateCheck now exposes the same required machine-readable ok predicate as HealthCheck, preventing consumers from re-deriving status semantics; review-hardened before release."
     }
   ],
   "entrypoints": {
@@ -1253,7 +1289,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "AssuranceAssertionVerdict",
-          "signature": "export interface AssuranceAssertionVerdict { assertion_id: string; measurement_id: string; scope: AssuranceScope; population_size: number; observed: AssuranceValue; bound: AssuranceBound; distance: number | null; verdict: \"pass\" | \"fail\" | \"retired\"; enforcement: AssuranceEnforcement; negative_control_proven: boolean; cost: AssuranceMeasurementCost; contributors: string[]; }"
+          "signature": "export interface AssuranceAssertionVerdict { assertion_id: string; measurement_id: string; measurement_definition_fingerprint: string; scope: AssuranceScope; population_size: number; observed: AssuranceValue; bound: AssuranceBound; distance: number | null; verdict: \"pass\" | \"fail\" | \"retired\"; enforcement: AssuranceEnforcement; negative_control_proven: boolean; cost: AssuranceMeasurementCost; contributors: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -1367,13 +1403,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "AssuranceItemRecord",
-          "signature": "export interface AssuranceItemRecord { id: string; status: string; type: string; tags?: string[]; priority?: string | number; dependencies?: AssuranceDependencyRecord[]; files?: Array<Record<string, unknown>>; tests?: Array<Record<string, unknown>>; docs?: Array<Record<string, unknown>>; [key: string]: unknown; }"
+          "signature": "export interface AssuranceItemRecord { id: string; status: string; type: string; tags?: string[]; priority?: string | number; dependencies?: AssuranceDependencyRecord[]; files?: object[]; tests?: object[]; docs?: object[]; [key: string]: unknown; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "AssuranceItemsSource",
-          "signature": "export interface AssuranceItemsSource { kind: \"items\"; statuses?: string[]; types?: string[]; tags?: string[]; field?: string; equals?: string | number | boolean | null; }"
+          "signature": "export interface AssuranceItemsSource { kind: \"items\"; statuses?: string[]; types?: string[]; tags?: string[]; field?: string; equals?: string | number | boolean | null; state?: \"present\" | \"missing\"; }"
         },
         {
           "classification": "advanced_export",
@@ -1415,7 +1451,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "AssuranceMeasurementResult",
-          "signature": "export interface AssuranceMeasurementResult { id: string; value: AssuranceValue; population_size: number; cost: AssuranceMeasurementCost; contributors: string[]; }"
+          "signature": "export interface AssuranceMeasurementResult { id: string; definition_fingerprint: string; value: AssuranceValue; population_size: number; cost: AssuranceMeasurementCost; contributors: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -5591,7 +5627,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthCheck",
-          "signature": "export interface HealthCheck { name: \"settings\" | \"directories\" | \"settings_values\" | \"telemetry\" | \"extensions\" | \"storage\" | \"locks\" | \"integrity\" | \"history_drift\" | \"vectorization\"; status: HealthStatus; details: Record<string, unknown>; }"
+          "signature": "export interface HealthCheck { name: \"settings\" | \"directories\" | \"settings_values\" | \"telemetry\" | \"extensions\" | \"storage\" | \"locks\" | \"integrity\" | \"history_drift\" | \"vectorization\"; status: HealthStatus; ok: boolean; details: Record<string, unknown>; }"
         },
         {
           "classification": "supported",
@@ -8441,7 +8477,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.6.0\""
+          "signature": "\"4.7.0\""
         },
         {
           "classification": "contract_data",
@@ -8555,7 +8591,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorRecoveryPayload",
-          "signature": "export interface PmCliErrorRecoveryPayload { recovery_mode?: \"compact\"; attempted_command?: string; normalized_args?: string[]; provided_fields?: string[]; missing?: string[]; missing_required_fields?: string[]; suggested_flags?: string[]; allowed_values?: string[]; candidate_commands?: string[]; candidate_commands_total?: number; candidate_commands_truncated?: boolean; suggested_retry?: string; retry_after_ms?: number; fallback_candidates?: Array<{ source: string; command: string; reason: string; }>; next_best_command?: string; }"
+          "signature": "export interface PmCliErrorRecoveryPayload { recovery_mode?: \"compact\"; attempted_command?: string; normalized_args?: string[]; parsed_positionals?: Array<{ role: string; value: string; }>; provided_fields?: string[]; missing?: string[]; missing_required_fields?: string[]; suggested_flags?: string[]; allowed_values?: string[]; candidate_commands?: string[]; candidate_commands_total?: number; candidate_commands_truncated?: boolean; suggested_retry?: string; retry_after_ms?: number; fallback_candidates?: Array<{ source: string; command: string; reason: string; }>; next_best_command?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -10061,7 +10097,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipAuditDelta",
-          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { nodes: number; edges: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
+          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { nodes: number; edges: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
         },
         {
           "classification": "supported",
@@ -10181,7 +10217,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }"
+          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }"
         },
         {
           "classification": "supported",
@@ -13511,7 +13547,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestCommandOptions",
-          "signature": "export interface TestCommandOptions { add?: string[]; addJson?: string[]; remove?: string[]; list?: boolean; run?: boolean; match?: string; onlyIndex?: string | number; onlyLast?: boolean; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; author?: string; message?: string; force?: boolean; measure?: string[]; metricBelow?: string; metricDiff?: string; }"
+          "signature": "export interface TestCommandOptions { add?: string[]; addJson?: string[]; remove?: string[]; removeIndex?: Array<string | number>; list?: boolean; run?: boolean; match?: string; onlyIndex?: string | number; onlyLast?: boolean; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; author?: string; message?: string; force?: boolean; measure?: string[]; metricBelow?: string; metricDiff?: string; }"
         },
         {
           "classification": "supported",
@@ -13523,7 +13559,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestResult",
-          "signature": "export interface TestResult { ok: boolean; id: string; tests: LinkedTest[]; run_results: TestRunResult[]; failure_categories: Record<LinkedTestFailureCategory, number>; selection?: Omit<LinkedTestRunSelection, \"selected\">; fail_on_skipped_triggered?: boolean; warnings?: string[]; changed: boolean; count: number; measurements?: TestRunMeasurement[]; metric_below?: Array<TestRunMeasurement & { run_id: string; }>; metric_diff?: TestRunMeasurementDiff; }"
+          "signature": "export interface TestResult { ok: boolean; id: string; tests: LinkedTest[]; run_results: TestRunResult[]; failure_categories: Record<LinkedTestFailureCategory, number>; selection?: Omit<LinkedTestRunSelection, \"selected\">; fail_on_skipped_triggered?: boolean; warnings?: string[]; changed: boolean; count: number; removed?: number; measurements?: TestRunMeasurement[]; metric_below?: Array<TestRunMeasurement & { run_id: string; }>; metric_diff?: TestRunMeasurementDiff; }"
         },
         {
           "classification": "advanced_export",
@@ -14027,7 +14063,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateCheck",
-          "signature": "export interface ValidateCheck { name: ValidateCheckName; status: ValidateStatus; details: Record<string, unknown>; }"
+          "signature": "export interface ValidateCheck { name: ValidateCheckName; status: ValidateStatus; ok: boolean; details: Record<string, unknown>; }"
         },
         {
           "classification": "supported",
@@ -16781,7 +16817,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.6.0\""
+          "signature": "\"4.7.0\""
         },
         {
           "classification": "contract_data",
@@ -18857,7 +18893,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthCheck",
-          "signature": "export interface HealthCheck { name: \"settings\" | \"directories\" | \"settings_values\" | \"telemetry\" | \"extensions\" | \"storage\" | \"locks\" | \"integrity\" | \"history_drift\" | \"vectorization\"; status: HealthStatus; details: Record<string, unknown>; }"
+          "signature": "export interface HealthCheck { name: \"settings\" | \"directories\" | \"settings_values\" | \"telemetry\" | \"extensions\" | \"storage\" | \"locks\" | \"integrity\" | \"history_drift\" | \"vectorization\"; status: HealthStatus; ok: boolean; details: Record<string, unknown>; }"
         },
         {
           "classification": "supported",
@@ -19235,7 +19271,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateCheck",
-          "signature": "export interface ValidateCheck { name: ValidateCheckName; status: ValidateStatus; details: Record<string, unknown>; }"
+          "signature": "export interface ValidateCheck { name: ValidateCheckName; status: ValidateStatus; ok: boolean; details: Record<string, unknown>; }"
         },
         {
           "classification": "supported",
@@ -19961,7 +19997,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipAuditDelta",
-          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { nodes: number; edges: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
+          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { nodes: number; edges: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
         },
         {
           "classification": "supported",
@@ -20081,7 +20117,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }"
+          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }"
         },
         {
           "classification": "supported",
@@ -25530,8 +25566,10 @@
     "already_claimed_by",
     "ambiguous_list_all",
     "ambiguous_option_combination",
+    "annotation_alias_conflict",
     "annotation_flag_like_value",
     "annotation_message_without_text",
+    "annotation_transposed_subcommand",
     "append_empty_body",
     "assurance_registry_invalid",
     "body_file_conflicts_with_body",
@@ -25545,6 +25583,7 @@
     "close_through_update",
     "close_validation_missing_fields",
     "collected_zero_items",
+    "collection_transposed_subcommand",
     "command_failed",
     "command_namespace",
     "command_override_conflict",
@@ -25642,6 +25681,7 @@
     "item_id_collision",
     "item_not_found",
     "likely_duplicate",
+    "linked_test_remove_no_match",
     "linked_test_value_not_quoted",
     "list_source_incomplete",
     "local_package_archive_unsafe",

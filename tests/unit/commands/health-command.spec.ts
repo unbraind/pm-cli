@@ -425,6 +425,10 @@ describe("runHealth", () => {
         "history_drift",
         "vectorization",
       ]);
+      expect(health.checks.every((check) => check.ok)).toBe(true);
+      expect(
+        health.checks.every((check) => check.ok === (check.status === "ok")),
+      ).toBe(true);
 
       const directoriesCheck = health.checks.find(
         (check) => check.name === "directories",
@@ -3041,6 +3045,9 @@ describe("runHealth", () => {
         warnings_truncated: false,
         detail_limit: 8,
       });
+      expect(
+        health.checks.every((check) => typeof check.ok === "boolean"),
+      ).toBe(true);
       const extensionCheck = health.checks.find((c) => c.name === "extensions");
       expect(extensionCheck?.details).toMatchObject({
         discovered: {
@@ -3317,6 +3324,11 @@ describe("runHealth", () => {
       );
 
       const health = await runHealth({ path: context.pmPath }, { brief: true });
+      expect(
+        health.checks.every(
+          (check) => check.ok === (check.status === "ok"),
+        ),
+      ).toBe(true);
       const locksCheck = health.checks.find((check) => check.name === "locks");
       expect(locksCheck?.status).toBe("warn");
       expect(locksCheck?.details).toEqual({

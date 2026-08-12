@@ -782,6 +782,77 @@ describe("CLI main error helpers", () => {
 });
 
 describe("CLI bootstrap and usage helper tails", () => {
+  it("verifies collection recovery item ids against the selected tracker", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Recovery target",
+          "--description",
+          "Existing item for usage recovery",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+        ],
+        { expectJson: true },
+      );
+      const itemId = (created.json as { item: { id: string } }).item.id;
+      const previousArgv = process.argv;
+      try {
+        process.argv = [
+          "node",
+          "pm",
+          "--pm-path",
+          context.pmPath,
+          "files",
+          "add",
+          itemId,
+        ];
+        const verified = await resolveCommanderUsageContext(
+          new Error(
+            "error: too many arguments for 'files'. Expected 1 argument but got 2.",
+          ),
+          new Command("pm"),
+          new Map(),
+        );
+        expect(verified.verifiedCollectionItemId).toBe(itemId);
+
+        process.argv[process.argv.length - 1] = "pm-missing";
+        const missing = await resolveCommanderUsageContext(
+          new Error(
+            "error: too many arguments for 'files'. Expected 1 argument but got 2.",
+          ),
+          new Command("pm"),
+          new Map(),
+        );
+        expect(missing.verifiedCollectionItemId).toBeUndefined();
+
+        process.argv[process.argv.length - 2] = "list";
+        const nonAdd = await resolveCommanderUsageContext(
+          new Error(
+            "error: too many arguments for 'files'. Expected 1 argument but got 2.",
+          ),
+          new Command("pm"),
+          new Map(),
+        );
+        expect(nonAdd.verifiedCollectionItemId).toBeUndefined();
+
+        process.argv = ["node", "pm", "--pm-path", context.pmPath];
+        const commandless = await resolveCommanderUsageContext(
+          new Error("error: too many arguments"),
+          new Command("pm"),
+          new Map(),
+        );
+        expect(commandless.verifiedCollectionItemId).toBeUndefined();
+      } finally {
+        process.argv = previousArgv;
+      }
+    });
+  });
+
   it("covers bootstrap normalization tie and value-consuming branches", () => {
     expect(listAliasPluralKeys("story")).toEqual(["storys", "stories"]);
 

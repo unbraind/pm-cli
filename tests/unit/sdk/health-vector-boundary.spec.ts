@@ -62,6 +62,9 @@ describe("health vector provider boundary", () => {
           { skipDrift: true },
         );
         expect(requests).toBe(0);
+        expect(
+          result.checks.every((check) => check.ok === (check.status === "ok")),
+        ).toBe(true);
         const storage = result.checks.find((check) => check.name === "storage");
         expect(storage).toBeDefined();
         expect(storage!.details).not.toHaveProperty(
@@ -69,7 +72,7 @@ describe("health vector provider boundary", () => {
         );
         expect(
           result.checks.find((check) => check.name === "integrity"),
-        ).toMatchObject({ name: "integrity", status: "ok" });
+        ).toMatchObject({ name: "integrity", status: "ok", ok: true });
         expect(
           result.checks.find((check) => check.name === "vectorization")
             ?.details,

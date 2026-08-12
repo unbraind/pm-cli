@@ -54,6 +54,7 @@ pm guide release --json
 - [SDK Agent Session and Episode Context](SDK_AGENT_SESSION_CONTEXT.md) - inherited role/topic context, cross-process episode identity, and deterministic history grouping.
 - [Improvement Ledger and History Analytics](IMPROVEMENT_ANALYTICS.md) - audited quantitative observations, live provenance coverage, and bounded observational fleet outcomes.
 - [Project Assurance Primitives](ASSURANCE.md) - SDK-owned measurements, assertions, lifecycle gates, cost receipts, and durable verdict history shared by CLI and MCP.
+- [Trustworthy Context and Evidence Contracts](TRUSTWORTHY_CONTEXT_EVIDENCE.md) - full-record assurance, graph composition, boolean health rows, lossless linked-test removal, and role-labelled recovery.
 - [SDK Evidence Traceability and Integrity](SDK_EVIDENCE_TRACEABILITY.md) - reverse source-to-item lookup, atomic evidence replacement, no-op history, linked-test collision classification, and telemetry drain receipts.
 - [SDK Context and Evidence Contracts](SDK_CONTEXT_EVIDENCE_CONTRACTS.md) - material omission receipts, scoped preflight activation, truthful merge preference, claim-race classification, and versioned history hashes.
 - [Reproducible Workspaces and Snapshots](REPRODUCIBLE_WORKSPACES.md) - deterministic SDK recipes and content-addressed authoritative tracker restore points.

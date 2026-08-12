@@ -446,7 +446,8 @@ async function loadBodyCache(
   };
   const cachePath = getBodyCachePath(pmRoot);
   const active = await loadEnvelopeMemoized(cachePath, parse);
-  return contextFingerprint && active?.context_fingerprint !== contextFingerprint
+  return contextFingerprint &&
+    active?.context_fingerprint !== contextFingerprint
     ? await loadEnvelopeMemoized(
         getContextCachePath(cachePath, contextFingerprint),
         parse,
@@ -472,7 +473,8 @@ async function loadCollectionsCache(
   };
   const cachePath = getCollectionsCachePath(pmRoot);
   const active = await loadEnvelopeMemoized(cachePath, parse);
-  return contextFingerprint && active?.context_fingerprint !== contextFingerprint
+  return contextFingerprint &&
+    active?.context_fingerprint !== contextFingerprint
     ? await loadEnvelopeMemoized(
         getContextCachePath(cachePath, contextFingerprint),
         parse,
@@ -713,6 +715,7 @@ interface DocumentCacheReadContext {
   extensionFieldNames: readonly string[];
   includeBody: boolean;
   includeCollections: boolean;
+  forceSourceRead: boolean;
   dispatchReadHooks: boolean;
   previousEntries: Record<string, CachedEntry>;
   previousBodies: Record<string, CachedBody>;
@@ -880,13 +883,17 @@ async function readCachedDocumentParts(
 
   const cachedEntry = context.previousEntries[relativePath];
   const metadataCached =
+    !context.forceSourceRead &&
     cachedEntry !== undefined &&
     statMatches(cachedEntry, mtimeMs, ctimeMs, size);
   const cachedBody = context.previousBodies[relativePath];
   const bodyCached =
-    cachedBody !== undefined && statMatches(cachedBody, mtimeMs, ctimeMs, size);
+    !context.forceSourceRead &&
+    cachedBody !== undefined &&
+    statMatches(cachedBody, mtimeMs, ctimeMs, size);
   const cachedCollections = context.previousCollections[relativePath];
   const collectionsCached =
+    !context.forceSourceRead &&
     cachedCollections !== undefined &&
     statMatches(cachedCollections, mtimeMs, ctimeMs, size);
   const needRead =
@@ -1465,7 +1472,7 @@ export interface ListCacheOptions {
   includeBody?: boolean;
   /** When false, heavy collection fields (comments/notes/learnings/files/tests/ test_runs/docs) are neither loaded from nor written to the separate collections cache, and are absent from the returned metadata. Light-only callers (`pm list` compact, stats, deps, activity, calendar, close) skip the large collections cache entirely. Defaults to true so any caller that does read those fields stays correct. */
   includeCollections?: boolean;
-  /** Force canonical item enumeration and stat validation even when a fresh derived index is available. Validation, repair, migration, and equivalence tests use this correctness path. */
+  /** Force canonical item enumeration and authoritative file reads even when stat-matched cache tiers or a fresh derived index are available. Validation, repair, migration, and equivalence tests use this correctness path. */
   forceSourceScan?: boolean;
   /** Minimum item count required before the directory-signature derived-index fast path is used. Defaults to 500 so small workspaces preserve per-file external-edit detection; tests and specialized SDK hosts may lower it explicitly. */
   derivedIndexMinimumItems?: number;
@@ -1715,6 +1722,7 @@ export async function listAllDocumentCandidatesCached(
     extensionFieldNames,
     includeBody,
     includeCollections,
+    forceSourceRead: options.forceSourceScan === true,
     dispatchReadHooks,
     previousEntries,
     previousBodies,

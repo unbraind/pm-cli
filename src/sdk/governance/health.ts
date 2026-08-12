@@ -125,6 +125,8 @@ export interface HealthCheck {
     | "vectorization";
   /** Lifecycle state reported for status. */
   status: HealthStatus;
+  /** Boolean companion to status for direct agent and assurance predicates. */
+  ok: boolean;
   /** Value that configures or reports details for this contract. */
   details: Record<string, unknown>;
 }
@@ -254,7 +256,7 @@ const TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS = [
   "x-pm-telemetry-max-version",
 ] as const;
 
-/** Advisory warnings are surfaced for visibility but never flip overall health to not-ok. Telemetry is opt-out, non-critical observability: a queued/unreachable telemetry endpoint or corrupt local telemetry state is not a project-health failure and must not block agents that gate on `pm health` `ok`. History over-compaction-threshold warnings are likewise advisory maintenance hints — a deep stream is healthy, just a candidate for `pm history-compact`. */
+/** Advisory warnings are surfaced for visibility but never flip overall health to not-ok. Telemetry is opt-out, non-critical observability: a queued/unreachable telemetry endpoint or corrupt local telemetry state is not a project-health failure and must not block agents that gate on `pm health` `ok`. History over-compaction-threshold warnings are likewise advisory maintenance hints — a deep stream is healthy, just a candidate for `pm history-compact`. Invalid legacy provenance values remain immutable diagnostic evidence: write-time resolvers reject new invalid values, while health reports the bounded aggregate without requiring truthful history to be rewritten. */
 function isAdvisoryHealthWarning(
   warning: string,
   requireMergeDrivers = false,
@@ -264,6 +266,7 @@ function isAdvisoryHealthWarning(
     warning.startsWith("history_stream_over_compact_threshold:") ||
     warning.startsWith("stale_in_progress_items:") ||
     warning.startsWith("provenance_resolver_zero_success:") ||
+    warning.startsWith("provenance_value_domain_invalid:") ||
     (!requireMergeDrivers &&
       warning.startsWith("merge_driver_configuration_missing:"))
   );
@@ -687,6 +690,7 @@ async function buildIntegrityCheck(
     check: {
       name: "integrity",
       status: normalizedWarnings.length === 0 ? "ok" : "warn",
+      ok: normalizedWarnings.length === 0,
       details: {
         checked_item_files: itemScan.paths.length,
         checked_history_streams: historyScan.files.length,
@@ -1157,6 +1161,7 @@ async function buildExtensionCheck(
     check: {
       name: "extensions",
       status: extensionWarnings.length === 0 ? "ok" : "warn",
+      ok: extensionWarnings.length === 0,
       details: {
         ...loadResult,
         loaded: loadedSummaries,
@@ -1472,6 +1477,7 @@ function applyBriefHealthProjection(result: HealthResult): HealthResult {
     checks: result.checks.map((check) => ({
       name: check.name,
       status: check.status,
+      ok: check.ok,
       details: summarizeHealthCheckDetails(check, BRIEF_HEALTH_DETAIL_LIMIT),
     })),
     warnings: warningsSummary.sample,
@@ -1504,6 +1510,7 @@ function applySummaryHealthProjection(result: HealthResult): HealthResult {
       .map((check) => ({
         name: check.name,
         status: check.status,
+        ok: check.ok,
         details: {},
       })),
     warning_count: warningsSummary.count,
@@ -1938,6 +1945,7 @@ async function buildTelemetryCheck(
     check: {
       name: "telemetry",
       status: warnings.length === 0 ? "ok" : "warn",
+      ok: warnings.length === 0,
       details: {
         enabled: settings.telemetry.enabled,
         capture_level: settings.telemetry.capture_level,
@@ -1985,6 +1993,7 @@ async function buildLocksCheck(
       check: {
         name: "locks",
         status: "warn",
+        ok: false,
         details: {
           active_lock_count: 0,
           stale_lock_count: 0,
@@ -2010,6 +2019,7 @@ async function buildLocksCheck(
     check: {
       name: "locks",
       status: warnings.length === 0 ? "ok" : "warn",
+      ok: warnings.length === 0,
       details: {
         active_lock_count: scan.active_lock_count,
         stale_lock_count: scan.stale_lock_count,
@@ -2043,6 +2053,7 @@ async function buildHistoryDriftCheck(
     check: {
       name: "history_drift",
       status: warnings.length === 0 ? "ok" : "warn",
+      ok: warnings.length === 0,
       details: {
         checked_items: items.length,
         cache_hit_verification: cacheHitVerification,
@@ -2306,6 +2317,7 @@ async function buildVectorizationCheck(
     check: {
       name: "vectorization",
       status: warnings.length === 0 ? "ok" : "warn",
+      ok: warnings.length === 0,
       details: {
         semantic_runtime_available: snapshot.semanticRuntimeAvailable,
         compatibility_mode_auto_defaults:
@@ -2536,7 +2548,7 @@ function buildSkippedHealthCheck(
   >,
 ): HealthCheckResult {
   return {
-    check: { name, status: "ok", details: { skipped: true } },
+    check: { name, status: "ok", ok: true, details: { skipped: true } },
     warnings: [],
   };
 }
@@ -2550,6 +2562,7 @@ function buildSettingsHealthCheck(
     name: "settings",
     /* c8 ignore next -- settings read-warning status split is covered in broader read-settings integration tests */
     status: normalizedSettingsReadWarnings.length === 0 ? "ok" : "warn",
+    ok: normalizedSettingsReadWarnings.length === 0,
     details: {
       path: settingsPath,
       version: settings.version,
@@ -2567,6 +2580,7 @@ function buildDirectoriesHealthCheck(
   return {
     name: "directories",
     status: directoryState.missingDirs.length === 0 ? "ok" : "warn",
+    ok: directoryState.missingDirs.length === 0,
     details: {
       required: directoryState.requiredDirs,
       optional: directoryState.optionalDirs,
@@ -2584,6 +2598,7 @@ function buildSettingsValuesHealthCheck(
   return {
     name: "settings_values",
     status: settingWarnings.length === 0 ? "ok" : "warn",
+    ok: settingWarnings.length === 0,
     details: { warnings: settingWarnings },
   };
 }
@@ -2636,6 +2651,11 @@ function buildStorageHealthCheck(
       !hasStaleInProgressItems
         ? "ok"
         : "warn",
+    ok:
+      historySummary.over_threshold.length === 0 &&
+      historySummary.orphaned.length === 0 &&
+      !hasActionableAuthorWarnings &&
+      !hasStaleInProgressItems,
     details: {
       items: items.length,
       history_streams: historySummary.count,

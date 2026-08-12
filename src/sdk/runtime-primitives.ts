@@ -347,6 +347,7 @@ export {
   buildItemNotFoundError,
   createMutationGuardSdk,
   deleteItem,
+  listAllItemMetadata,
   listAllItemMetadataLight,
   locateItem,
   mutateItem,
