@@ -183,6 +183,13 @@ Crash and error diagnostics are reported to Sentry only when telemetry is enable
 
 > Sentry is hard-disabled under Vitest (`VITEST` / `VITEST_WORKER_ID`), so these knobs are no-ops inside the test suite.
 
+Linked commands launched by `pm test --run` default
+`SENTRY_ENVIRONMENT=test`, even when the parent process is classified as
+production. This keeps sandbox failures out of production diagnostics. An
+explicit run-level or per-test `env_set=SENTRY_ENVIRONMENT=<name>` directive
+still overrides the default when a test intentionally targets another
+environment.
+
 ## Item Storage Format
 
 TOON is the default:

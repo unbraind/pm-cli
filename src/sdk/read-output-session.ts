@@ -61,6 +61,8 @@ export interface PmReadOutputSessionReceipt {
   seen_before_count: number;
   /** Number of newly delivered item facts retained in this envelope. */
   new_item_count: number;
+  /** Newly delivered identities omitted from next_state after its capacity filled. */
+  seen_item_overflow_count?: number;
   /** Number of repeated item rows replaced by references. */
   suppressed_repeat_count: number;
   /** Stable reference syntax used by suppressed rows. */
@@ -226,9 +228,16 @@ export function attachReadOutputSessionReceipt(
 ): Record<string, unknown> {
   const { deliveredIds, suppressedRepeatCount } =
     summarizeReadOutputSessionRows(result);
-  const nextSeen = [
-    ...new Set([...state.seen_item_ids, ...deliveredIds]),
-  ].sort();
+  const alreadySeen = new Set(state.seen_item_ids);
+  const newlySeen = [...deliveredIds]
+    .filter((id) => !alreadySeen.has(id))
+    .sort();
+  const retainedNewIds = newlySeen.slice(
+    0,
+    PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS - state.seen_item_ids.length,
+  );
+  const nextSeen = [...state.seen_item_ids, ...retainedNewIds].sort();
+  const seenItemOverflowCount = newlySeen.length - retainedNewIds.length;
   const receipt: PmReadOutputSessionReceipt = {
     contract_version: 1,
     id: state.id,
@@ -243,6 +252,9 @@ export function attachReadOutputSessionReceipt(
     exhausted: false,
     seen_before_count: state.seen_item_ids.length,
     new_item_count: deliveredIds.size,
+    ...(seenItemOverflowCount === 0
+      ? {}
+      : { seen_item_overflow_count: seenItemOverflowCount }),
     suppressed_repeat_count: suppressedRepeatCount,
     reference_format: "session:<session-id>:<item-id>",
     restore_reference_with: "pm get <item-id> --brief",

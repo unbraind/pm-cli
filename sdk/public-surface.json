@@ -379,6 +379,16 @@
       ],
       "package_version": "2026.8.11",
       "reason": "ValidateCheck now exposes the same required machine-readable ok predicate as HealthCheck, preventing consumers from re-deriving status semantics; review-hardened before release."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmReadOutputSessionReceipt",
+        "signature ./sdk/contracts:PmReadOutputSessionReceipt",
+        "signature ./sdk/core:PmReadOutputSessionReceipt",
+        "signature ./sdk/runtime:PmReadOutputSessionReceipt"
+      ],
+      "package_version": "2026.8.11",
+      "reason": "Add optional seen_item_overflow_count receipt while preserving every existing SDK input and below-capacity output"
     }
   ],
   "entrypoints": {
@@ -8969,7 +8979,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSessionReceipt",
-          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
         },
         {
           "classification": "supported",
@@ -17135,7 +17145,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputSessionReceipt",
-          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
         },
         {
           "classification": "contract_data",
@@ -18431,7 +18441,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSessionReceipt",
-          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
         },
         {
           "classification": "supported",
@@ -23813,7 +23823,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSessionReceipt",
-          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
         },
         {
           "classification": "supported",

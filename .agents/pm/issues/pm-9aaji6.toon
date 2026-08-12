@@ -1,0 +1,36 @@
+id: pm-9aaji6
+title: Linked pm test children inherit production Sentry environment and turn sandbox failures into release-blocking incidents
+description: "PM-CLI-31 is a single high unresolved event whose timestamp exactly matches the failed linked-test run test-local-mspeooe4-5ujujx on pm-cg1sjb. The linked pnpm lint child ran against a seeded tracker sandbox, raised the expected missing assurance-gate negative signal, but inherited no SENTRY_ENVIRONMENT override so the CLI defaulted to production and polluted the fail-closed release inventory. Linked-test orchestration must default child Sentry classification to test while preserving explicit test-authored overrides."
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-08-12T02:47:19.822Z"
+updated_at: "2026-08-12T03:34:23.471Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#09d99a3d99ca542892066fe0"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Every linked-test child defaults SENTRY_ENVIRONMENT to test before run-level and per-test directives; an explicit linked-test SENTRY_ENVIRONMENT override remains possible; the regression executes through the real runTest child boundary; PM-CLI-31 is documented and dispositioned without hiding genuine production faults; full strict gates remain green
+parent: pm-5oj5
+risk: medium
+confidence: high
+severity: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-23lmm5,related,"2026-08-12T02:47:19.822Z","harness:codex","cli:create:dep",detected
+  pm-cg1sjb,discovered_from,"2026-08-12T02:47:19.822Z","harness:codex","cli:create:dep",detected
+  pm-v0a0un,related,"2026-08-12T02:47:19.822Z","harness:codex","cli:create:dep",detected
+  pm-7zs0,related,"2026-08-12T03:14:15.896Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-12T02:47:19.822Z","harness:codex","Duplicate check: all-status searches for PM-CLI-31, graph-composition not found, linked-test Sentry environment, test telemetry pollution, and unclassified assurance faults found analogous closed classifiers pm-qyg51h and pm-v0a0un plus the open observability join pm-23lmm5, but no owner for linked-test child environment classification. Privacy-safe live evidence: one high handled event on release 2026.8.11 at 2026-08-12T01:23:55Z exactly matches the failed pm-cg1sjb linked-test run ending 2026-08-12T01:23:55.900Z; no raw event id, host, endpoint, or credential is stored."
+  "2026-08-12T02:52:08.259Z","harness:codex","TDD evidence: the new real-child regression first failed with inherited outputs [production, staging], proving a production parent polluted the default child while an explicit per-test override already won. After defaulting the composed linked-child environment to SENTRY_ENVIRONMENT=test before run-level/per-test directives, the same focused suite passed 59/59. Public configuration docs now state the isolation and override contract."
+  "2026-08-12T03:34:23.471Z","harness:codex","Verification evidence: focused linked-test suite passed 59/59; full coverage passed 486 files and 7,244 tests at exact 100/100/100/100; repo-wide lint, typecheck, contracts, secrets, docs links, SDK surface, artifact, packed npx smoke, and 88-command package-first dogfood passed. Manual temporary-project acceptance at /tmp/tmp.HijJL720QZ proved a production parent defaults its linked child to SENTRY_ENVIRONMENT=test while explicit overrides remain supported. Sentry PM-CLI-31 remains the release blocker until the fix is merged and the issue is dispositioned."
+files[2]{path,scope,note}:
+  src/sdk/test/execution.ts,project,Default linked child observability to test before explicit directives
+  tests/unit/commands/test-command.spec.ts,project,Execute default and explicit Sentry environment behavior through runTest
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts,project,300
+  node scripts/run-tests.mjs coverage,project,600
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,Document linked-test child Sentry environment default and explicit override
+body: ""
