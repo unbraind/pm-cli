@@ -2,27 +2,31 @@ id: pm-h9gsix
 title: "The real all-package install is budgeted in one of its two instances, so the coverage gate flakes and then reports no coverage verdict at all"
 description: "Two tests perform the same expensive real install of all fifteen bundled packages, and the budget that exists to keep that work from timing out was applied to one of them. The unit instance in the extension-command spec carries an explicit forty-five second budget, added when the flake class was closed on 2026-07-24. The integration instance that installs with a wildcard through the root command carries no budget at all and runs against the suite-wide thirty-second default. Both instances already existed when the fix landed, so this is not a regression: the repair was scoped to one test identity rather than to the property that a real all-package install must declare its own budget.\n\nReproduced 2026-08-07 on a clean tree. The fast suite passes with 6904 tests green. The coverage run of the same suite fails with exactly one failure, the unbudgeted integration instance, timing out at thirty seconds after running for 31.2 seconds, because instrumentation inflates wall time against a budget that was measured without it.\n\nThe second half of the defect is what the failure does to the verdict. The contributor entrypoint runs the coverage threshold gate only after the test process exits zero, so any test failure returns the vitest exit code and the threshold gate never executes. A timing flake therefore produces a red coverage command that carries no coverage information at all, and it is indistinguishable at the exit code from a genuine shortfall. The gate contributors are told to trust before pushing is the gate most exposed to a false red, and its failure mode is silence about the thing it exists to measure."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "area:ci","area:tests",coverage,flake
 created_at: "2026-08-07T05:37:11.230Z"
-updated_at: "2026-08-12T08:35:28.325Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#e92bb992d978060f83661c05"
+updated_at: "2026-08-12T09:06:07.472Z"
+closed_at: "2026-08-12T09:05:34.035Z"
+completed_at: "2026-08-12T09:05:34.035Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "Every test that performs a real all-package install declares an explicit budget, and a check fails when such a test relies on the suite-wide default; The coverage threshold gate reports a verdict whenever coverage data was produced, so a test failure and a coverage shortfall are distinguishable from the exit code and the output; The coverage run reproduces green on this tree after the budget is applied, proving the flake was the budget and not the assertions; A negative control proves a genuine coverage shortfall still fails, so restoring the verdict cannot mask an uncovered line; A failing coverage shard names the failing test and its assertion in its own job log, so no artifact download or blob decoding is required to learn why CI is red"
 parent: pm-u9d0
 risk: medium
 confidence: high
+resolution: "Both real wildcard-install tests have explicit 90-second budgets, coverage always runs its threshold verdict, combined failures have distinct exit codes, and shard logs retain assertion output."
+expected_result: Real all-package installs use explicit instrumentation-safe budgets and every coverage invocation reports both test and threshold outcomes.
+actual_result: "One real install inherited a 30-second suite timeout, and a Vitest failure prevented the coverage threshold verdict while blob-only shard logs hid the assertion."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-2qqcgl,discovered_from,"2026-08-07T05:37:11.230Z","harness:claude-code","cli:create:dep",detected
   pm-7x0wqg,discovered_from,"2026-08-07T05:37:11.230Z","harness:claude-code","cli:create:dep",detected
   pm-ei6x66,related,"2026-08-07T05:37:11.230Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-07T05:37:11.230Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-07T06:07:15.705Z","harness:claude-code","The same class cost a second diagnosis today, and this occurrence proves the verdict half of this item is worse than described.\n\nMain CI failed at c91991001 on Coverage shard 2 of 4. The shard job log contained exactly two useful lines: the blob report was written, and the process exited 1. No test name, no assertion, no stack. The reason is that the shards run with the blob reporter, so all failure detail is serialized into the blob artifact and nothing is printed, and the merge job that reads the blobs declares needs on the shard matrix, so it is skipped precisely when a shard fails. The only job that can explain a shard failure never runs when there is a shard failure to explain.\n\nCost of the workaround. Reproducing the shard locally without the CI threshold overrides exited 1 for an unrelated reason, coverage thresholds evaluated per shard, which reads exactly like the CI failure and is not it. Reproducing with the exact CI argument vector exited 0. The failure was only identifiable by downloading the 18.5 MB blob artifact and resolving its index-referenced encoding by hand, where values are integer offsets into the same flat array, so state and errors are indices rather than data.\n\nWhat it actually was, and it is not this item's budget. tests/unit/sdk/workspace-snapshot.spec.ts, the test that renews the writer lease beyond its TTL, asserted that a competing lock acquisition rejects, and the promise resolved instead. The test writes a thousand files, starts a restore with a thirty millisecond lease, polls for the writer lock, sleeps eighty milliseconds, and then requires the competing acquire to be refused. That requires the restore to still be in flight and still renewing at that instant, which is a wall-clock assumption about a thousand-file copy on a shared runner. A rerun of the failed job alone passed, confirming a timing flake rather than a regression. The race is filed separately.\n\nConsequence for this item. The verdict half is not only that a test failure suppresses the coverage number. It is that a sharded failure suppresses the failure itself, so the gate contributors are told to trust reports neither the coverage nor the cause.\n"
   "2026-08-12T08:32:12.839Z","harness:codex","Implementation evidence: coverage mode now always runs the exact threshold gate after Vitest and reports independent verdicts with exit codes 0=both pass, 1=test only, 2=coverage only, 3=combined. Tests cover all verdicts and termination signals. The real wildcard install budget is 90 seconds in both twins and completed in about 21 seconds during the exact full run."
+  "2026-08-12T09:05:14.793Z","harness:codex","Exact-head PR #990 evidence at bdd380af841efce5825bc27520e2d28463e2d527: all hosted executable checks passed, including Windows Node 24, four coverage shards plus aggregate coverage, static/typecheck/compat/smoke gates, Linux/macOS runtimes, CodeQL, Semgrep, Trivy, TruffleHog, Codecov patch, and 11 CodSpeed benchmarks. Fresh review inventory found zero inline threads and no actionable findings. CodeRabbit and Sourcery substantive reviews were rate-limited and Greptile produced no review surface; those are recorded limitations, not approvals. Every emitted bot comment/review was individually reacted to and answered with evidence."
 notes[1]{created_at,author,text}:
   "2026-08-12T08:32:13.416Z","harness:codex","Observability contract: the exact coverage verdict must run even when tests fail, because a failing assertion and stale/missing coverage are independent defects. The workflow also keeps default assertion output while uploading blob reports for merge."
 learnings[1]{created_at,author,text}:
@@ -36,4 +40,7 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/extensions/extension-command.spec.ts,project,300
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mspu3n3y-qp0ouh,test,passed,"2026-08-12T08:34:59.996Z","2026-08-12T08:35:28.318Z","2026-08-12T08:35:28.318Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Managed release history for this completed tranche
+close_reason: "Made all real wildcard installs explicitly budgeted, preserved human-readable shard failures, and made test and coverage verdicts independently observable with distinct combined exit codes; exact full coverage and all hosted shards passed on PR #990."
 body: ""

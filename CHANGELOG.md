@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The real all-package install is budgeted in one of its two instances, so the coverage gate flakes and then reports no coverage verdict at all ([pm-h9gsix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h9gsix.toon))
+- Absence-tolerant readers accept only ENOENT, so a tracker root that is a regular file raises an unclassified fault instead of the typed refusal the guard already owns — and that fault blocks the daily release ([pm-6xlyss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6xlyss.toon))
+- Mixed linked-resource remove and add in one command silently favors removal ([pm-c6urop](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c6urop.toon))
+- Global flags before a subcommand corrupt guided-error command examples by treating the flag value as the command ([pm-lph0y6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lph0y6.toon))
+
+### Other
+
+- The Windows nightly leg cannot separate product defects from harness noise: 744 hardcoded POSIX path literals and 203 raw errno strings in the suite fail on Windows for reasons unrelated to pm behaviour ([pm-j668gl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-j668gl.toon))
+
 ## 2026.8.12 - 2026-08-12
 
 ### Fixed
