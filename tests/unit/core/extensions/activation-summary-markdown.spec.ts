@@ -4,7 +4,9 @@ import { renderExtensionSurfaceMarkdown } from "../../../../src/core/extensions/
 import { renderExtensionSurfaceMarkdown as renderFromSdkBarrel } from "../../../../src/sdk/index.js";
 
 /** Build a fully-empty {@link ExtensionActivationSummary}, overriding fields per test. */
-function makeSummary(overrides: Partial<ExtensionActivationSummary> = {}): ExtensionActivationSummary {
+function makeSummary(
+  overrides: Partial<ExtensionActivationSummary> = {},
+): ExtensionActivationSummary {
   return {
     capabilities: [],
     commands: [],
@@ -63,23 +65,31 @@ describe("renderExtensionSurfaceMarkdown", () => {
   });
 
   it("honors a custom title and heading level, deepening section headings by one", () => {
-    const markdown = renderExtensionSurfaceMarkdown(makeSummary({ exporters: ["report"] }), {
-      title: "my-pkg",
-      headingLevel: 1,
-    });
+    const markdown = renderExtensionSurfaceMarkdown(
+      makeSummary({ exporters: ["report"] }),
+      {
+        title: "my-pkg",
+        headingLevel: 1,
+      },
+    );
     expect(markdown.startsWith("# my-pkg\n")).toBe(true);
     expect(markdown).toContain("## Exporters");
   });
 
   it("clamps section headings to level 6 when the title is already level 6", () => {
-    const markdown = renderExtensionSurfaceMarkdown(makeSummary({ importers: ["notion"] }), { headingLevel: 6 });
+    const markdown = renderExtensionSurfaceMarkdown(
+      makeSummary({ importers: ["notion"] }),
+      { headingLevel: 6 },
+    );
     expect(markdown).toContain("###### Extension surfaces");
     expect(markdown).toContain("###### Importers");
     expect(markdown).not.toContain("#######");
   });
 
   it("renders every surface and the capabilities line when includeEmpty is set", () => {
-    const markdown = renderExtensionSurfaceMarkdown(makeSummary(), { includeEmpty: true });
+    const markdown = renderExtensionSurfaceMarkdown(makeSummary(), {
+      includeEmpty: true,
+    });
     expect(markdown).toContain("Capabilities: _none registered_");
     expect(markdown).toContain("### Commands\n\n_None._");
     expect(markdown).toContain("### Renderer overrides\n\n_None._");
@@ -90,25 +100,39 @@ describe("renderExtensionSurfaceMarkdown", () => {
 
   it("renders a no-surfaces note (and omits the capabilities line) for an empty summary", () => {
     const markdown = renderExtensionSurfaceMarkdown(makeSummary());
-    expect(markdown).toBe(["## Extension surfaces", "", "_This extension registers no surfaces._", ""].join("\n"));
+    expect(markdown).toBe(
+      [
+        "## Extension surfaces",
+        "",
+        "_This extension registers no surfaces._",
+        "",
+      ].join("\n"),
+    );
     expect(markdown).not.toContain("Capabilities:");
   });
 
   it("delimits code spans with backtick fences (CommonMark) when an identifier contains backticks", () => {
     // Interior backtick, value does not border one: a longer fence, no padding.
-    expect(renderExtensionSurfaceMarkdown(makeSummary({ commands: ["weird`cmd"] }))).toContain("- ``weird`cmd``");
+    expect(
+      renderExtensionSurfaceMarkdown(makeSummary({ commands: ["weird`cmd"] })),
+    ).toContain("- ``weird`cmd``");
     // Leading backtick: padded so the opening fence stays distinct.
-    expect(renderExtensionSurfaceMarkdown(makeSummary({ commands: ["`lead"] }))).toContain("- `` `lead ``");
+    expect(
+      renderExtensionSurfaceMarkdown(makeSummary({ commands: ["`lead"] })),
+    ).toContain("- `` `lead ``");
     // Trailing backtick: padded so the closing fence stays distinct.
-    expect(renderExtensionSurfaceMarkdown(makeSummary({ commands: ["trail`"] }))).toContain("- `` trail` ``");
+    expect(
+      renderExtensionSurfaceMarkdown(makeSummary({ commands: ["trail`"] })),
+    ).toContain("- `` trail` ``");
   });
 
-  it("renders the override surfaces (service/renderer/parser) and search/vector providers", () => {
+  it("renders override surfaces and search, vector, and assurance providers", () => {
     const markdown = renderExtensionSurfaceMarkdown(
       makeSummary({
         capabilities: ["search"],
         search_providers: ["semantic"],
         vector_store_adapters: ["lancedb"],
+        assurance_providers: ["coverage"],
         parser_overrides: ["list"],
         service_overrides: ["output_format"],
         renderer_overrides: ["toon"],
@@ -117,15 +141,23 @@ describe("renderExtensionSurfaceMarkdown", () => {
     );
     expect(markdown).toContain("### Search providers\n\n- `semantic`");
     expect(markdown).toContain("### Vector store adapters\n\n- `lancedb`");
+    expect(markdown).toContain(
+      "### Assurance measurement providers\n\n- `coverage`",
+    );
     expect(markdown).toContain("### Parser overrides\n\n- `list`");
     expect(markdown).toContain("### Service overrides\n\n- `output_format`");
     expect(markdown).toContain("### Renderer overrides\n\n- `toon`");
     expect(markdown).toContain("### Lifecycle hooks\n\n- `before_command`");
   });
 
-  it.each([0, 7, 2.5, Number.NaN])("throws RangeError for out-of-range heading level %s", (level) => {
-    expect(() => renderExtensionSurfaceMarkdown(makeSummary(), { headingLevel: level })).toThrow(RangeError);
-  });
+  it.each([0, 7, 2.5, Number.NaN])(
+    "throws RangeError for out-of-range heading level %s",
+    (level) => {
+      expect(() =>
+        renderExtensionSurfaceMarkdown(makeSummary(), { headingLevel: level }),
+      ).toThrow(RangeError);
+    },
+  );
 
   it("is re-exported from the SDK barrel", () => {
     expect(renderFromSdkBarrel).toBe(renderExtensionSurfaceMarkdown);

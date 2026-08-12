@@ -17,6 +17,7 @@ describe("static extension contribution inventory", () => {
         schema_version: 1,
         commands: ["  Foo   Bar ", "foo bar"],
         hooks: ["zeta", "before_command"],
+        assurance_providers: [" zeta-quality ", "alpha-quality"],
         renderer_ownership: [
           {
             format: "json",
@@ -34,6 +35,7 @@ describe("static extension contribution inventory", () => {
       schema_version: 1,
       commands: ["foo bar"],
       hooks: ["before_command", "zeta"],
+      assurance_providers: ["alpha-quality", "zeta-quality"],
       renderer_ownership: [
         {
           format: "json",
@@ -42,10 +44,7 @@ describe("static extension contribution inventory", () => {
         },
       ],
       preflight_overrides: 1,
-      preflight_ownership: [
-        { commands: ["create", "zulu"] },
-        { commands: [] },
-      ],
+      preflight_ownership: [{ commands: ["create", "zulu"] }, { commands: [] }],
     });
     expect(
       normalizeExtensionContributionInventory({
@@ -156,6 +155,7 @@ describe("static extension contribution inventory", () => {
       exporters: [],
       search_providers: [],
       vector_store_adapters: [],
+      assurance_providers: ["quality"],
       parser_overrides: [],
       service_overrides: [],
       renderer_overrides: ["json"],
@@ -218,6 +218,7 @@ describe("static extension contribution inventory", () => {
         exporters: [],
         search_providers: [],
         vector_store_adapters: [],
+        assurance_providers: [],
         parser_overrides: [],
         service_overrides: [],
         renderer_overrides: [],

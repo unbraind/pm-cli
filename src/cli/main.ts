@@ -1325,6 +1325,7 @@ function hasGlobalExtensionContributions(
     entriesOrEmpty(contributions.item_fields).length,
     entriesOrEmpty(contributions.relationship_kinds).length,
     entriesOrEmpty(contributions.service_overrides).length,
+    entriesOrEmpty(contributions.assurance_providers).length,
     entriesOrEmpty(contributions.renderer_overrides).length -
       entriesOrEmpty(contributions.renderer_ownership).length,
   ];

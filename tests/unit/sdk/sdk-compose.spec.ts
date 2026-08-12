@@ -28,25 +28,50 @@ import {
   synthesizeExtensionManifest as synthesizeExtensionManifestFromBarrel,
   type ExtensionApi,
 } from "../../../src/sdk/index.js";
-import { activateExtensionForTest, describeExtensionActivation } from "../../../src/sdk/testing.js";
+import {
+  activateExtensionForTest,
+  describeExtensionActivation,
+} from "../../../src/sdk/testing.js";
 
 /**
  * A blueprint that exercises every registration surface exactly once, used to
  * prove composeExtension wires each `api.register*` and deriveExtensionCapabilities
  * reports the full capability union.
  */
-function buildFullBlueprint(observed: { imperative: boolean }): ExtensionBlueprint {
+function buildFullBlueprint(observed: {
+  imperative: boolean;
+}): ExtensionBlueprint {
   return {
     manifest: {
       name: "compose-full",
       version: "0.1.0",
       entry: "./index.js",
       priority: 0,
-      capabilities: ["commands", "schema", "parser", "preflight", "renderers", "services", "search", "importers", "hooks"],
+      capabilities: [
+        "commands",
+        "schema",
+        "parser",
+        "preflight",
+        "renderers",
+        "services",
+        "search",
+        "importers",
+        "hooks",
+      ],
     },
-    commands: [{ name: "compose demo", action: "compose-demo", run: () => ({ ok: true }) }],
+    commands: [
+      {
+        name: "compose demo",
+        action: "compose-demo",
+        run: () => ({ ok: true }),
+      },
+    ],
     commandOverrides: { list: () => undefined },
-    flags: { list: [{ long: "--compose-note", value_type: "string", value_name: "text" }] },
+    flags: {
+      list: [
+        { long: "--compose-note", value_type: "string", value_name: "text" },
+      ],
+    },
     parsers: { "compose demo": () => ({}) },
     renderers: {
       toon: {
@@ -58,7 +83,13 @@ function buildFullBlueprint(observed: { imperative: boolean }): ExtensionBluepri
     },
     services: { output_format: () => undefined },
     preflights: [() => ({})],
-    itemTypes: [{ name: "ComposeIncident", folder: "compose-incidents", aliases: ["compose-incident"] }],
+    itemTypes: [
+      {
+        name: "ComposeIncident",
+        folder: "compose-incidents",
+        aliases: ["compose-incident"],
+      },
+    ],
     itemFields: [{ name: "compose_severity", type: "string" }],
     migrations: [{ id: "compose-migration", description: "demo migration" }],
     profiles: [
@@ -75,10 +106,23 @@ function buildFullBlueprint(observed: { imperative: boolean }): ExtensionBluepri
         packages: [],
       },
     ],
-    searchProviders: [{ name: "compose-search", query: async () => ({ hits: [] }) }],
+    searchProviders: [
+      { name: "compose-search", query: async () => ({ hits: [] }) },
+    ],
     vectorStoreAdapters: [{ name: "compose-vector", query: async () => [] }],
+    assuranceProviders: [
+      {
+        id: "compose-quality",
+        keys: { score: { value_type: "number" } },
+        cost_class: "low",
+        network: false,
+        resolve: () => ({ value: 100, population_size: 1, cost: 1 }),
+      },
+    ],
     importers: [{ name: "compose-import", importer: () => ({ imported: 0 }) }],
-    exporters: [{ name: "compose-export", exporter: () => ({ exported: true }) }],
+    exporters: [
+      { name: "compose-export", exporter: () => ({ exported: true }) },
+    ],
     hooks: {
       beforeCommand: [() => undefined],
       beforeMutation: [() => ({ allow: true })],
@@ -94,12 +138,28 @@ function buildFullBlueprint(observed: { imperative: boolean }): ExtensionBluepri
   };
 }
 
-const ALL_CAPABILITIES = ["commands", "hooks", "importers", "parser", "preflight", "renderers", "schema", "search", "services"];
+const ALL_CAPABILITIES = [
+  "commands",
+  "hooks",
+  "importers",
+  "parser",
+  "preflight",
+  "renderers",
+  "schema",
+  "search",
+  "services",
+];
 
 describe("sdk composeExtension", () => {
   it("returns extension modules unchanged via the relocated defineExtension identity helper", () => {
     const extensionModule = {
-      manifest: { name: "ident", version: "1.0.0", entry: "./index.js", priority: 0, capabilities: ["commands"] as const },
+      manifest: {
+        name: "ident",
+        version: "1.0.0",
+        entry: "./index.js",
+        priority: 0,
+        capabilities: ["commands"] as const,
+      },
       activate: () => undefined,
     };
     // defineExtension is a zero-cost identity helper that now lives in compose.ts
@@ -107,7 +167,9 @@ describe("sdk composeExtension", () => {
     expect(defineExtension(extensionModule)).toBe(extensionModule);
     expect(defineExtensionFromBarrel).toBe(defineExtension);
     expect(composeExtensionFromBarrel).toBe(composeExtension);
-    expect(deriveExtensionCapabilitiesFromBarrel).toBe(deriveExtensionCapabilities);
+    expect(deriveExtensionCapabilitiesFromBarrel).toBe(
+      deriveExtensionCapabilities,
+    );
   });
 
   it("wires every declarative registration surface and runs the imperative activate last", async () => {
@@ -127,7 +189,10 @@ describe("sdk composeExtension", () => {
 
     // Activating with exactly the derived capabilities must not produce a single
     // capability-missing failure: derive ⟷ compose ⟷ loader agree by construction.
-    const activation = await activateExtensionForTest(composed, { name: "compose-full", capabilities: derived });
+    const activation = await activateExtensionForTest(composed, {
+      name: "compose-full",
+      capabilities: derived,
+    });
     expect(activation.failed).toEqual([]);
 
     // Every surface registered exactly once.
@@ -142,8 +207,11 @@ describe("sdk composeExtension", () => {
       exporters: 1,
       search_providers: 1,
       vector_store_adapters: 1,
+      assurance_providers: 1,
     });
-    expect(activation.registrations.profiles[0]?.profile.name).toBe("compose-archetype");
+    expect(activation.registrations.profiles[0]?.profile.name).toBe(
+      "compose-archetype",
+    );
     expect(activation.command_override_count).toBe(1);
     expect(activation.parser_override_count).toBe(1);
     expect(activation.preflight_override_count).toBe(1);
@@ -163,18 +231,25 @@ describe("sdk composeExtension", () => {
 
   it("runs declarative registrations before the imperative activate escape hatch", async () => {
     const composed = composeExtension({
-      commands: [{ name: "compose alpha", action: "compose-alpha", run: () => ({}) }],
+      commands: [
+        { name: "compose alpha", action: "compose-alpha", run: () => ({}) },
+      ],
       activate: (api: ExtensionApi) => {
-        api.registerCommand({ name: "compose beta", action: "compose-beta", run: () => ({}) });
+        api.registerCommand({
+          name: "compose beta",
+          action: "compose-beta",
+          run: () => ({}),
+        });
       },
     });
 
-    const activation = await activateExtensionForTest(composed, { capabilities: ["commands"] });
+    const activation = await activateExtensionForTest(composed, {
+      capabilities: ["commands"],
+    });
     // The declarative command is registered first, the imperative one second.
-    expect(activation.registrations.commands.map((command) => command.command)).toEqual([
-      "compose alpha",
-      "compose beta",
-    ]);
+    expect(
+      activation.registrations.commands.map((command) => command.command),
+    ).toEqual(["compose alpha", "compose beta"]);
   });
 
   it("produces a no-op module from an empty blueprint", async () => {
@@ -186,7 +261,12 @@ describe("sdk composeExtension", () => {
 
     const activation = await activateExtensionForTest(composed, {});
     expect(activation.failed).toEqual([]);
-    expect(activation.registration_counts).toMatchObject({ commands: 0, flags: 0, item_types: 0, item_fields: 0 });
+    expect(activation.registration_counts).toMatchObject({
+      commands: 0,
+      flags: 0,
+      item_types: 0,
+      item_fields: 0,
+    });
     expect(activation.hook_counts).toEqual({
       before_command: 0,
       before_mutation: 0,
@@ -229,19 +309,39 @@ describe("sdk deriveExtensionCapabilities", () => {
   it("treats empty arrays and empty records as absent surfaces", () => {
     // hasEntries distinguishes an empty collection from a populated one for both
     // array-valued and record-valued fields.
-    expect(deriveExtensionCapabilities({ commands: [], flags: {} })).toEqual([]);
+    expect(deriveExtensionCapabilities({ commands: [], flags: {} })).toEqual(
+      [],
+    );
   });
 
   it("maps each surface to its least-privilege capability", () => {
     // The non-obvious surface→capability mappings are pinned individually.
-    expect(deriveExtensionCapabilities({ commands: [{ name: "a b", action: "a-b", run: () => ({}) }] })).toEqual([
-      "commands",
-    ]);
-    expect(deriveExtensionCapabilities({ commandOverrides: { list: () => undefined } })).toEqual(["commands"]);
-    expect(deriveExtensionCapabilities({ flags: { list: [{ long: "--x" }] } })).toEqual(["schema"]);
-    expect(deriveExtensionCapabilities({ itemTypes: [{ name: "T", folder: "t" }] })).toEqual(["schema"]);
-    expect(deriveExtensionCapabilities({ itemFields: [{ name: "f", type: "string" }] })).toEqual(["schema"]);
-    expect(deriveExtensionCapabilities({ migrations: [{ id: "m", description: "d" }] })).toEqual(["schema"]);
+    expect(
+      deriveExtensionCapabilities({
+        commands: [{ name: "a b", action: "a-b", run: () => ({}) }],
+      }),
+    ).toEqual(["commands"]);
+    expect(
+      deriveExtensionCapabilities({
+        commandOverrides: { list: () => undefined },
+      }),
+    ).toEqual(["commands"]);
+    expect(
+      deriveExtensionCapabilities({ flags: { list: [{ long: "--x" }] } }),
+    ).toEqual(["schema"]);
+    expect(
+      deriveExtensionCapabilities({ itemTypes: [{ name: "T", folder: "t" }] }),
+    ).toEqual(["schema"]);
+    expect(
+      deriveExtensionCapabilities({
+        itemFields: [{ name: "f", type: "string" }],
+      }),
+    ).toEqual(["schema"]);
+    expect(
+      deriveExtensionCapabilities({
+        migrations: [{ id: "m", description: "d" }],
+      }),
+    ).toEqual(["schema"]);
     expect(
       deriveExtensionCapabilities({
         profiles: [
@@ -260,25 +360,58 @@ describe("sdk deriveExtensionCapabilities", () => {
         ],
       }),
     ).toEqual(["schema"]);
-    expect(deriveExtensionCapabilities({ parsers: { "a b": () => ({}) } })).toEqual(["parser"]);
-    expect(deriveExtensionCapabilities({ renderers: { toon: () => null } })).toEqual(["renderers"]);
-    expect(deriveExtensionCapabilities({ services: { output_format: () => undefined } })).toEqual(["services"]);
-    expect(deriveExtensionCapabilities({ preflights: [() => ({})] })).toEqual(["preflight"]);
-    expect(deriveExtensionCapabilities({ searchProviders: [{ name: "s", query: async () => ({ hits: [] }) }] })).toEqual([
-      "search",
+    expect(
+      deriveExtensionCapabilities({ parsers: { "a b": () => ({}) } }),
+    ).toEqual(["parser"]);
+    expect(
+      deriveExtensionCapabilities({ renderers: { toon: () => null } }),
+    ).toEqual(["renderers"]);
+    expect(
+      deriveExtensionCapabilities({
+        services: { output_format: () => undefined },
+      }),
+    ).toEqual(["services"]);
+    expect(deriveExtensionCapabilities({ preflights: [() => ({})] })).toEqual([
+      "preflight",
     ]);
-    expect(deriveExtensionCapabilities({ vectorStoreAdapters: [{ name: "v", query: async () => [] }] })).toEqual([
-      "search",
-    ]);
-    expect(deriveExtensionCapabilities({ importers: [{ name: "i", importer: () => ({}) }] })).toEqual([
-      "commands",
-      "importers",
-    ]);
-    expect(deriveExtensionCapabilities({ exporters: [{ name: "e", exporter: () => ({}) }] })).toEqual([
-      "commands",
-      "importers",
-    ]);
-    expect(deriveExtensionCapabilities({ hooks: { afterCommand: [() => undefined] } })).toEqual(["hooks"]);
+    expect(
+      deriveExtensionCapabilities({
+        searchProviders: [{ name: "s", query: async () => ({ hits: [] }) }],
+      }),
+    ).toEqual(["search"]);
+    expect(
+      deriveExtensionCapabilities({
+        vectorStoreAdapters: [{ name: "v", query: async () => [] }],
+      }),
+    ).toEqual(["search"]);
+    expect(
+      deriveExtensionCapabilities({
+        assuranceProviders: [
+          {
+            id: "quality",
+            keys: { score: { value_type: "number" } },
+            cost_class: "low",
+            network: false,
+            resolve: () => ({ value: 1, population_size: 1, cost: 1 }),
+          },
+        ],
+      }),
+    ).toEqual(["services"]);
+    expect(
+      deriveExtensionCapabilities({
+        importers: [{ name: "i", importer: () => ({}) }],
+      }),
+    ).toEqual(["commands", "importers"]);
+    expect(
+      deriveExtensionCapabilities({
+        exporters: [{ name: "e", exporter: () => ({}) }],
+      }),
+    ).toEqual(["commands", "importers"]);
+    expect(
+      deriveExtensionCapabilities({
+        hooks: { afterCommand: [() => undefined] },
+      }),
+    ).toEqual(["hooks"]);
   });
 
   it("adds schema for a command that declares inline flags, independent of a top-level flags record", () => {
@@ -288,7 +421,14 @@ describe("sdk deriveExtensionCapabilities", () => {
     // activate with a capability-missing failure.
     expect(
       deriveExtensionCapabilities({
-        commands: [{ name: "a b", action: "a-b", run: () => ({}), flags: [{ long: "--inline" }] }],
+        commands: [
+          {
+            name: "a b",
+            action: "a-b",
+            run: () => ({}),
+            flags: [{ long: "--inline" }],
+          },
+        ],
       }),
     ).toEqual(["commands", "schema"]);
   });
@@ -302,18 +442,36 @@ describe("sdk deriveExtensionCapabilities", () => {
     // so even flagless entries derive `commands` alongside `importers`.
     expect(
       deriveExtensionCapabilities({
-        importers: [{ name: "tickets", importer: () => ({}), options: { flags: [{ long: "--source" }] } }],
+        importers: [
+          {
+            name: "tickets",
+            importer: () => ({}),
+            options: { flags: [{ long: "--source" }] },
+          },
+        ],
       }),
     ).toEqual(["commands", "importers", "schema"]);
     expect(
       deriveExtensionCapabilities({
-        exporters: [{ name: "tickets", exporter: () => ({}), options: { flags: [{ long: "--dest" }] } }],
+        exporters: [
+          {
+            name: "tickets",
+            exporter: () => ({}),
+            options: { flags: [{ long: "--dest" }] },
+          },
+        ],
       }),
     ).toEqual(["commands", "importers", "schema"]);
     // options present but without flags does not add schema.
     expect(
       deriveExtensionCapabilities({
-        importers: [{ name: "tickets", importer: () => ({}), options: { description: "no flags" } }],
+        importers: [
+          {
+            name: "tickets",
+            importer: () => ({}),
+            options: { description: "no flags" },
+          },
+        ],
       }),
     ).toEqual(["commands", "importers"]);
     // A malformed null array entry (untyped .js/JSON boundary) does not crash
@@ -322,7 +480,10 @@ describe("sdk deriveExtensionCapabilities", () => {
     // entries carry no command handlers or flags, so no `commands` or `schema`
     // capability is added.
     expect(
-      deriveExtensionCapabilities({ importers: [null], exporters: [null] } as unknown as ExtensionBlueprint),
+      deriveExtensionCapabilities({
+        importers: [null],
+        exporters: [null],
+      } as unknown as ExtensionBlueprint),
     ).toEqual(["importers"]);
   });
 });
@@ -340,11 +501,17 @@ function buildParityBlueprint(): ExtensionBlueprint {
         name: "demo flagged",
         action: "demo-flagged",
         run: () => ({ ok: true }),
-        flags: [{ long: "--inline-note", value_type: "string", value_name: "text" }],
+        flags: [
+          { long: "--inline-note", value_type: "string", value_name: "text" },
+        ],
       },
     ],
     commandOverrides: { list: () => undefined },
-    flags: { "demo run": [{ long: "--top-note", value_type: "string", value_name: "text" }] },
+    flags: {
+      "demo run": [
+        { long: "--top-note", value_type: "string", value_name: "text" },
+      ],
+    },
     parsers: { "demo run": () => ({}) },
     renderers: {
       toon: {
@@ -357,7 +524,11 @@ function buildParityBlueprint(): ExtensionBlueprint {
     services: { output_format: () => undefined },
     preflights: [() => ({})],
     itemTypes: [
-      { name: "DemoIncident", folder: "demo-incidents", aliases: ["demo-incident"] },
+      {
+        name: "DemoIncident",
+        folder: "demo-incidents",
+        aliases: ["demo-incident"],
+      },
       { name: "DemoTask", folder: "demo-tasks" },
     ],
     itemFields: [
@@ -379,15 +550,32 @@ function buildParityBlueprint(): ExtensionBlueprint {
         packages: [],
       },
     ],
-    searchProviders: [{ name: "demo-search", query: async () => ({ hits: [] }) }],
+    searchProviders: [
+      { name: "demo-search", query: async () => ({ hits: [] }) },
+    ],
     vectorStoreAdapters: [{ name: "demo-vector", query: async () => [] }],
+    assuranceProviders: [
+      {
+        id: "demo-quality",
+        keys: { score: { value_type: "number" } },
+        cost_class: "low",
+        network: false,
+        resolve: () => ({ value: 100, population_size: 1, cost: 1 }),
+      },
+    ],
     importers: [
       {
         name: "demo-import",
         importer: () => ({ imported: 0 }),
         options: {
           description: "Import demo items",
-          flags: [{ long: "--import-source", value_type: "string", value_name: "path" }],
+          flags: [
+            {
+              long: "--import-source",
+              value_type: "string",
+              value_name: "path",
+            },
+          ],
         },
       },
     ],
@@ -397,7 +585,13 @@ function buildParityBlueprint(): ExtensionBlueprint {
         exporter: () => ({ exported: true }),
         options: {
           description: "Export demo items",
-          flags: [{ long: "--export-target", value_type: "string", value_name: "path" }],
+          flags: [
+            {
+              long: "--export-target",
+              value_type: "string",
+              value_name: "path",
+            },
+          ],
         },
       },
     ],
@@ -414,17 +608,22 @@ function buildParityBlueprint(): ExtensionBlueprint {
 
 describe("sdk describeExtensionBlueprint", () => {
   it("is re-exported by identity from the barrel and /sdk/testing", () => {
-    expect(describeExtensionBlueprintFromBarrel).toBe(describeExtensionBlueprint);
+    expect(describeExtensionBlueprintFromBarrel).toBe(
+      describeExtensionBlueprint,
+    );
   });
 
   it("matches describeExtensionActivation of the composed-and-activated blueprint, surface for surface", async () => {
     const blueprint = buildParityBlueprint();
     const derived = deriveExtensionCapabilities(blueprint);
 
-    const activation = await activateExtensionForTest(composeExtension(blueprint), {
-      name: "parity-ext",
-      capabilities: derived,
-    });
+    const activation = await activateExtensionForTest(
+      composeExtension(blueprint),
+      {
+        name: "parity-ext",
+        capabilities: derived,
+      },
+    );
     // Activation must succeed with exactly the derived capabilities, including the
     // schema grant for the inline-flags command.
     expect(activation.failed).toEqual([]);
@@ -432,18 +631,31 @@ describe("sdk describeExtensionBlueprint", () => {
     // The keystone: the static, no-activation summary equals the runtime one. This
     // pins the static reimplementation to the loader's behavior so any future drift
     // (command-path normalization, importer/exporter synthesis, hook ordering) fails CI.
-    expect(describeExtensionBlueprint(blueprint)).toEqual(describeExtensionActivation(activation));
+    expect(describeExtensionBlueprint(blueprint)).toEqual(
+      describeExtensionActivation(activation),
+    );
 
     // Spot-check a few surfaces so the test is self-documenting and a "both empty"
     // false pass is impossible.
     const summary = describeExtensionBlueprint(blueprint);
     expect(summary.capabilities).toEqual(ALL_CAPABILITIES);
-    expect(summary.commands).toEqual(["demo flagged", "demo run", "demo-export export", "demo-import import"]);
+    expect(summary.commands).toEqual([
+      "demo flagged",
+      "demo run",
+      "demo-export export",
+      "demo-import import",
+    ]);
     expect(summary.command_overrides).toEqual(["list"]);
-    expect(summary.flag_commands).toEqual(["demo flagged", "demo run", "demo-export export", "demo-import import"]);
+    expect(summary.flag_commands).toEqual([
+      "demo flagged",
+      "demo run",
+      "demo-export export",
+      "demo-import import",
+    ]);
     expect(summary.item_types).toEqual(["DemoIncident", "DemoTask"]);
     expect(summary.migrations).toEqual(["demo-migration"]);
     expect(summary.profiles).toEqual(["demo-archetype"]);
+    expect(summary.assurance_providers).toEqual(["demo-quality"]);
     expect(summary.renderer_ownership).toEqual([
       {
         format: "toon",
@@ -451,7 +663,14 @@ describe("sdk describeExtensionBlueprint", () => {
         result_discriminator: true,
       },
     ]);
-    expect(summary.hooks).toEqual(["before_command", "before_mutation", "after_command", "on_write", "on_read", "on_index"]);
+    expect(summary.hooks).toEqual([
+      "before_command",
+      "before_mutation",
+      "after_command",
+      "on_write",
+      "on_read",
+      "on_index",
+    ]);
     expect(summary.preflight_overrides).toBe(1);
     expect(summary.preflight_ownership).toEqual([{ commands: [] }]);
   });
@@ -496,7 +715,11 @@ describe("sdk describeExtensionBlueprint", () => {
         {
           name: "tickets",
           importer: () => ({ imported: 0 }),
-          options: { flags: [{ long: "--source", value_type: "string", value_name: "path" }] },
+          options: {
+            flags: [
+              { long: "--source", value_type: "string", value_name: "path" },
+            ],
+          },
         },
       ],
       exporters: [
@@ -504,31 +727,55 @@ describe("sdk describeExtensionBlueprint", () => {
         {
           name: "tickets",
           exporter: () => ({ exported: true }),
-          options: { flags: [{ long: "--target", value_type: "string", value_name: "path" }] },
+          options: {
+            flags: [
+              { long: "--target", value_type: "string", value_name: "path" },
+            ],
+          },
         },
       ],
     } as unknown as ExtensionBlueprint;
 
     const summary = describeExtensionBlueprint(blueprint);
 
-    expect(summary.commands).toEqual(["null safe run", "tickets export", "tickets import"]);
-    expect(summary.command_handlers).toEqual(["null safe run", "tickets export", "tickets import"]);
-    expect(summary.flag_commands).toEqual(["null safe run", "tickets export", "tickets import"]);
+    expect(summary.commands).toEqual([
+      "null safe run",
+      "tickets export",
+      "tickets import",
+    ]);
+    expect(summary.command_handlers).toEqual([
+      "null safe run",
+      "tickets export",
+      "tickets import",
+    ]);
+    expect(summary.flag_commands).toEqual([
+      "null safe run",
+      "tickets export",
+      "tickets import",
+    ]);
     expect(summary.importers).toEqual(["tickets"]);
     expect(summary.exporters).toEqual(["tickets"]);
-    expect(summary.capabilities).toEqual(expect.arrayContaining(["commands", "importers", "schema"]));
+    expect(summary.capabilities).toEqual(
+      expect.arrayContaining(["commands", "importers", "schema"]),
+    );
   });
 
   it("omits id-less migrations, which carry no identifier", () => {
     expect(
-      describeExtensionBlueprint({ migrations: [{ id: "m1", description: "d" }, { description: "no id" }] }).migrations,
+      describeExtensionBlueprint({
+        migrations: [{ id: "m1", description: "d" }, { description: "no id" }],
+      }).migrations,
     ).toEqual(["m1"]);
   });
 
   it("cannot see surfaces registered through the imperative activate escape hatch", async () => {
     const blueprint: ExtensionBlueprint = {
       activate: (api: ExtensionApi) => {
-        api.registerCommand({ name: "ghost cmd", action: "ghost", run: () => ({}) });
+        api.registerCommand({
+          name: "ghost cmd",
+          action: "ghost",
+          run: () => ({}),
+        });
       },
     };
     // The static describer reads only the declarative data, so the imperatively
@@ -537,8 +784,13 @@ describe("sdk describeExtensionBlueprint", () => {
     expect(describeExtensionBlueprint(blueprint).capabilities).toEqual([]);
     // But the runtime describe of the activated module does see it — the documented
     // boundary between the static and runtime verbs.
-    const activation = await activateExtensionForTest(composeExtension(blueprint), { capabilities: ["commands"] });
-    expect(describeExtensionActivation(activation).commands).toEqual(["ghost cmd"]);
+    const activation = await activateExtensionForTest(
+      composeExtension(blueprint),
+      { capabilities: ["commands"] },
+    );
+    expect(describeExtensionActivation(activation).commands).toEqual([
+      "ghost cmd",
+    ]);
   });
 });
 
@@ -550,18 +802,34 @@ describe("sdk lintExtensionBlueprint", () => {
   it("passes a blueprint whose declared capabilities exactly match the surfaces it exercises", () => {
     const result = lintExtensionBlueprint({
       commands: [{ name: "a b", action: "a-b", run: () => ({}) }],
-      manifest: { name: "x", version: "1.0.0", entry: "./index.js", priority: 0, capabilities: ["commands"] },
+      manifest: {
+        name: "x",
+        version: "1.0.0",
+        entry: "./index.js",
+        priority: 0,
+        capabilities: ["commands"],
+      },
     });
-    expect(result).toEqual({ ok: true, findings: [], used: ["commands"], declared: ["commands"] });
+    expect(result).toEqual({
+      ok: true,
+      findings: [],
+      used: ["commands"],
+      declared: ["commands"],
+    });
   });
 
   it("flags a used-but-undeclared capability as an error (the loader would throw extension_capability_missing)", () => {
     const result = lintExtensionBlueprint(
-      { commands: [{ name: "a b", action: "a-b", run: () => ({}) }], flags: { "a b": [{ long: "--x" }] } },
+      {
+        commands: [{ name: "a b", action: "a-b", run: () => ({}) }],
+        flags: { "a b": [{ long: "--x" }] },
+      },
       { declaredCapabilities: ["commands"] },
     );
     expect(result.ok).toBe(false);
-    const undeclared = result.findings.find((finding) => finding.code === "capability_undeclared");
+    const undeclared = result.findings.find(
+      (finding) => finding.code === "capability_undeclared",
+    );
     expect(undeclared?.severity).toBe("error");
     expect(undeclared?.capability).toBe("schema");
     expect(undeclared?.message).toContain("extension_capability_missing");
@@ -573,7 +841,9 @@ describe("sdk lintExtensionBlueprint", () => {
       { declaredCapabilities: ["commands", "search"] },
     );
     expect(result.ok).toBe(true);
-    const unused = result.findings.find((finding) => finding.code === "capability_unused");
+    const unused = result.findings.find(
+      (finding) => finding.code === "capability_unused",
+    );
     expect(unused?.severity).toBe("warning");
     expect(unused?.capability).toBe("search");
   });
@@ -598,15 +868,22 @@ describe("sdk lintExtensionBlueprint", () => {
   it("normalizes legacy capability aliases when reconciling", () => {
     // "migration" is a legacy alias for "schema"; declaring it satisfies the schema
     // capability the itemTypes surface exercises.
-    const result = lintExtensionBlueprint({ itemTypes: [{ name: "T", folder: "t" }] }, { declaredCapabilities: ["migration"] });
+    const result = lintExtensionBlueprint(
+      { itemTypes: [{ name: "T", folder: "t" }] },
+      { declaredCapabilities: ["migration"] },
+    );
     expect(result.declared).toEqual(["schema"]);
     expect(result.findings).toEqual([]);
   });
 
   it("warns once when a single capability is exercised but none are declared", () => {
-    const result = lintExtensionBlueprint({ commands: [{ name: "a b", action: "a-b", run: () => ({}) }] });
+    const result = lintExtensionBlueprint({
+      commands: [{ name: "a b", action: "a-b", run: () => ({}) }],
+    });
     expect(result.declared).toBeNull();
-    const finding = result.findings.find((entry) => entry.code === "manifest_capabilities_absent");
+    const finding = result.findings.find(
+      (entry) => entry.code === "manifest_capabilities_absent",
+    );
     expect(finding?.severity).toBe("warning");
     expect(finding?.message).toContain("capability [commands]");
     expect(result.ok).toBe(true);
@@ -625,22 +902,33 @@ describe("sdk lintExtensionBlueprint", () => {
       },
     });
     expect(result.declared).toBeNull();
-    const finding = result.findings.find((entry) => entry.code === "manifest_capabilities_absent");
+    const finding = result.findings.find(
+      (entry) => entry.code === "manifest_capabilities_absent",
+    );
     expect(finding?.message).toContain("capabilities [commands, schema]");
   });
 
   it("emits nothing for a fully empty blueprint", () => {
-    expect(lintExtensionBlueprint({})).toEqual({ ok: true, findings: [], used: [], declared: null });
+    expect(lintExtensionBlueprint({})).toEqual({
+      ok: true,
+      findings: [],
+      used: [],
+      declared: null,
+    });
   });
 
   it("rejects reserved item-field collisions from the shared runtime list", () => {
     expect(RESERVED_ITEM_FIELD_NAMES.has("severity")).toBe(true);
-    expect((RESERVED_ITEM_FIELD_NAMES as { add?: unknown }).add).toBeUndefined();
+    expect(
+      (RESERVED_ITEM_FIELD_NAMES as { add?: unknown }).add,
+    ).toBeUndefined();
     const reservedValues = [...RESERVED_ITEM_FIELD_NAMES];
     expect(RESERVED_ITEM_FIELD_NAMES.size).toBe(reservedValues.length);
     expect([...RESERVED_ITEM_FIELD_NAMES.keys()]).toEqual(reservedValues);
     expect([...RESERVED_ITEM_FIELD_NAMES.values()]).toEqual(reservedValues);
-    expect([...RESERVED_ITEM_FIELD_NAMES.entries()]).toEqual(reservedValues.map((value) => [value, value]));
+    expect([...RESERVED_ITEM_FIELD_NAMES.entries()]).toEqual(
+      reservedValues.map((value) => [value, value]),
+    );
     const visited: string[] = [];
     RESERVED_ITEM_FIELD_NAMES.forEach((value, duplicate, set) => {
       expect(duplicate).toBe(value);
@@ -648,14 +936,20 @@ describe("sdk lintExtensionBlueprint", () => {
       visited.push(value);
     });
     expect(visited).toEqual(reservedValues);
-    const result = lintExtensionBlueprint({ itemFields: [{ name: "severity", type: "string" }] });
+    const result = lintExtensionBlueprint({
+      itemFields: [{ name: "severity", type: "string" }],
+    });
     expect(result.ok).toBe(false);
-    expect(result.findings).toContainEqual(expect.objectContaining({
-      code: "reserved_item_field",
-      severity: "error",
-      field: "severity",
-    }));
-    expect(() => lintExtensionBlueprint({ itemFields: [{ name: null }] } as never)).not.toThrow();
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        code: "reserved_item_field",
+        severity: "error",
+        field: "severity",
+      }),
+    );
+    expect(() =>
+      lintExtensionBlueprint({ itemFields: [{ name: null }] } as never),
+    ).not.toThrow();
   });
 
   it("rejects host-owned and malformed long flags before package activation", () => {
@@ -719,7 +1013,9 @@ describe("sdk lintExtensionBlueprint", () => {
       },
       { declaredCapabilities: ["commands"] },
     );
-    const dup = result.findings.find((finding) => finding.code === "duplicate_command");
+    const dup = result.findings.find(
+      (finding) => finding.code === "duplicate_command",
+    );
     expect(dup?.severity).toBe("warning");
     expect(dup?.command).toBe("dup cmd");
     expect(dup?.message).toContain("2 times");
@@ -733,13 +1029,19 @@ describe("sdk lintExtensionBlueprint", () => {
       },
       { declaredCapabilities: ["commands"] },
     );
-    const conflict = result.findings.find((finding) => finding.code === "command_override_conflict");
+    const conflict = result.findings.find(
+      (finding) => finding.code === "command_override_conflict",
+    );
     expect(conflict?.severity).toBe("warning");
     expect(conflict?.command).toBe("both");
   });
 
   it("flags registration fields that are present but empty as dead surfaces", () => {
-    const result = lintExtensionBlueprint({ commands: [], flags: {}, hooks: {} });
+    const result = lintExtensionBlueprint({
+      commands: [],
+      flags: {},
+      hooks: {},
+    });
     const emptyFields = result.findings
       .filter((finding) => finding.code === "empty_surface")
       .map((finding) => finding.field)
@@ -749,8 +1051,12 @@ describe("sdk lintExtensionBlueprint", () => {
   });
 
   it("does not flag hooks as empty when at least one lifecycle hook is registered", () => {
-    const result = lintExtensionBlueprint({ hooks: { afterCommand: [() => undefined] } });
-    expect(result.findings.some((finding) => finding.code === "empty_surface")).toBe(false);
+    const result = lintExtensionBlueprint({
+      hooks: { afterCommand: [() => undefined] },
+    });
+    expect(
+      result.findings.some((finding) => finding.code === "empty_surface"),
+    ).toBe(false);
     expect(result.used).toEqual(["hooks"]);
   });
 
@@ -758,17 +1064,26 @@ describe("sdk lintExtensionBlueprint", () => {
     // `"hooks" in blueprint` is true but the value is nullish, exercising the
     // `?? {}` guard that keeps an explicit null/undefined from throwing.
     const result = lintExtensionBlueprint({ hooks: undefined });
-    expect(result.findings.filter((finding) => finding.code === "empty_surface").map((finding) => finding.field)).toEqual([
-      "hooks",
-    ]);
+    expect(
+      result.findings
+        .filter((finding) => finding.code === "empty_surface")
+        .map((finding) => finding.field),
+    ).toEqual(["hooks"]);
   });
 });
 
 describe("sdk synthesizeExtensionManifest", () => {
-  const identity = { name: "synth", version: "1.2.3", entry: "./index.js", priority: 0 } as const;
+  const identity = {
+    name: "synth",
+    version: "1.2.3",
+    entry: "./index.js",
+    priority: 0,
+  } as const;
 
   it("is re-exported by identity from the barrel", () => {
-    expect(synthesizeExtensionManifestFromBarrel).toBe(synthesizeExtensionManifest);
+    expect(synthesizeExtensionManifestFromBarrel).toBe(
+      synthesizeExtensionManifest,
+    );
   });
 
   it("fills capabilities from the blueprint and copies every identity field verbatim", () => {
@@ -810,7 +1125,15 @@ describe("sdk synthesizeExtensionManifest", () => {
       // `renderers` is registered only in an imperative activate (invisible to
       // derivation); `validation` is a legacy alias of `schema`; `commands` is
       // already derived; `bogus` is unknown and dropped.
-      { ...identity, additionalCapabilities: ["renderers", "validation", "commands", "bogus"] },
+      {
+        ...identity,
+        additionalCapabilities: [
+          "renderers",
+          "validation",
+          "commands",
+          "bogus",
+        ],
+      },
     );
     expect(manifest.capabilities).toEqual(["commands", "renderers", "schema"]);
   });
@@ -827,11 +1150,15 @@ describe("sdk synthesizeExtensionManifest", () => {
 
 describe("sdk checkExtensionManifestCompatibility", () => {
   it("is re-exported by identity from the barrel", () => {
-    expect(checkExtensionManifestCompatibilityFromBarrel).toBe(checkExtensionManifestCompatibility);
+    expect(checkExtensionManifestCompatibilityFromBarrel).toBe(
+      checkExtensionManifestCompatibility,
+    );
   });
 
   it("reports a manifest with no version bounds as compatible with no findings", () => {
-    expect(checkExtensionManifestCompatibility({}, { pmVersion: "2026.6.23" })).toEqual({
+    expect(
+      checkExtensionManifestCompatibility({}, { pmVersion: "2026.6.23" }),
+    ).toEqual({
       compatible: true,
       findings: [],
       pmVersion: "2026.6.23",
@@ -843,11 +1170,18 @@ describe("sdk checkExtensionManifestCompatibility", () => {
       { pm_min_version: "2026.1.0", pm_max_version: "2026.9.0" },
       { pmVersion: "2026.6.23" },
     );
-    expect(result).toEqual({ compatible: true, findings: [], pmVersion: "2026.6.23" });
+    expect(result).toEqual({
+      compatible: true,
+      findings: [],
+      pmVersion: "2026.6.23",
+    });
   });
 
   it("flags an unmet pm_min_version as a blocking error", () => {
-    const result = checkExtensionManifestCompatibility({ pm_min_version: "2026.9.0" }, { pmVersion: "2026.6.23" });
+    const result = checkExtensionManifestCompatibility(
+      { pm_min_version: "2026.9.0" },
+      { pmVersion: "2026.6.23" },
+    );
     expect(result.compatible).toBe(false);
     expect(result.findings).toEqual([
       {
@@ -856,15 +1190,22 @@ describe("sdk checkExtensionManifestCompatibility", () => {
         constraint: "pm_min_version",
         required: "2026.9.0",
         current: "2026.6.23",
-        message: "Requires pm >= 2026.9.0 but the target is pm 2026.6.23; the loader skips the extension.",
+        message:
+          "Requires pm >= 2026.9.0 but the target is pm 2026.6.23; the loader skips the extension.",
       },
     ]);
   });
 
   it("flags a malformed pm_min_version as a blocking error", () => {
-    const result = checkExtensionManifestCompatibility({ pm_min_version: "nightly" }, { pmVersion: "2026.6.23" });
+    const result = checkExtensionManifestCompatibility(
+      { pm_min_version: "nightly" },
+      { pmVersion: "2026.6.23" },
+    );
     expect(result.compatible).toBe(false);
-    expect(result.findings[0]).toMatchObject({ code: "pm_min_version_invalid", severity: "error" });
+    expect(result.findings[0]).toMatchObject({
+      code: "pm_min_version_invalid",
+      severity: "error",
+    });
   });
 
   it("flags blank or non-string manifest bounds as blocking malformed values", () => {
@@ -875,20 +1216,35 @@ describe("sdk checkExtensionManifestCompatibility", () => {
     expect(result.compatible).toBe(false);
     expect(result.findings).toEqual([
       expect.objectContaining({ code: "pm_min_version_invalid", required: "" }),
-      expect.objectContaining({ code: "pm_max_version_invalid", required: "20260623" }),
+      expect.objectContaining({
+        code: "pm_max_version_invalid",
+        required: "20260623",
+      }),
     ]);
   });
 
   it("reports an uninterpretable target as an advisory unchecked warning that still loads", () => {
-    const result = checkExtensionManifestCompatibility({ pm_min_version: "2026.1.0" }, { pmVersion: "nightly" });
+    const result = checkExtensionManifestCompatibility(
+      { pm_min_version: "2026.1.0" },
+      { pmVersion: "nightly" },
+    );
     expect(result.compatible).toBe(true);
-    expect(result.findings[0]).toMatchObject({ code: "pm_min_version_unchecked", severity: "warning" });
+    expect(result.findings[0]).toMatchObject({
+      code: "pm_min_version_unchecked",
+      severity: "warning",
+    });
   });
 
   it("blocks an exceeded pm_max_version in the default (block) mode", () => {
-    const result = checkExtensionManifestCompatibility({ pm_max_version: "2026.1.0" }, { pmVersion: "2026.6.23" });
+    const result = checkExtensionManifestCompatibility(
+      { pm_max_version: "2026.1.0" },
+      { pmVersion: "2026.6.23" },
+    );
     expect(result.compatible).toBe(false);
-    expect(result.findings[0]).toMatchObject({ code: "pm_max_version_exceeded", severity: "error" });
+    expect(result.findings[0]).toMatchObject({
+      code: "pm_max_version_exceeded",
+      severity: "error",
+    });
   });
 
   it("downgrades an exceeded pm_max_version to an advisory warning in warn mode", () => {
@@ -897,19 +1253,34 @@ describe("sdk checkExtensionManifestCompatibility", () => {
       { pmVersion: "2026.6.23", pmMaxVersionExceededMode: "warn" },
     );
     expect(result.compatible).toBe(true);
-    expect(result.findings[0]).toMatchObject({ code: "pm_max_version_exceeded_warn", severity: "warning" });
+    expect(result.findings[0]).toMatchObject({
+      code: "pm_max_version_exceeded_warn",
+      severity: "warning",
+    });
   });
 
   it("flags a range-prefixed pm_max_version as a blocking invalid bound", () => {
-    const result = checkExtensionManifestCompatibility({ pm_max_version: ">=2026.6.1" }, { pmVersion: "2026.6.23" });
+    const result = checkExtensionManifestCompatibility(
+      { pm_max_version: ">=2026.6.1" },
+      { pmVersion: "2026.6.23" },
+    );
     expect(result.compatible).toBe(false);
-    expect(result.findings[0]).toMatchObject({ code: "pm_max_version_invalid", severity: "error" });
+    expect(result.findings[0]).toMatchObject({
+      code: "pm_max_version_invalid",
+      severity: "error",
+    });
   });
 
   it("reports an uninterpretable target against a pm_max_version as an unchecked warning", () => {
-    const result = checkExtensionManifestCompatibility({ pm_max_version: "2026.9.0" }, { pmVersion: "nightly" });
+    const result = checkExtensionManifestCompatibility(
+      { pm_max_version: "2026.9.0" },
+      { pmVersion: "nightly" },
+    );
     expect(result.compatible).toBe(true);
-    expect(result.findings[0]).toMatchObject({ code: "pm_max_version_unchecked", severity: "warning" });
+    expect(result.findings[0]).toMatchObject({
+      code: "pm_max_version_unchecked",
+      severity: "warning",
+    });
   });
 
   it("orders the lower-bound finding before the upper-bound finding", () => {
@@ -917,13 +1288,21 @@ describe("sdk checkExtensionManifestCompatibility", () => {
       { pm_min_version: "2026.9.0", pm_max_version: ">=bad" },
       { pmVersion: "2026.6.23" },
     );
-    expect(result.findings.map((finding) => finding.constraint)).toEqual(["pm_min_version", "pm_max_version"]);
+    expect(result.findings.map((finding) => finding.constraint)).toEqual([
+      "pm_min_version",
+      "pm_max_version",
+    ]);
     expect(result.compatible).toBe(false);
   });
 });
 
 describe("sdk preflightExtension", () => {
-  const identity = { name: "preflight", version: "1.0.0", entry: "./index.js", priority: 0 } as const;
+  const identity = {
+    name: "preflight",
+    version: "1.0.0",
+    entry: "./index.js",
+    priority: 0,
+  } as const;
   const commandBlueprint: ExtensionBlueprint = {
     commands: [{ name: "demo", action: "demo", run: () => ({ ok: true }) }],
   };
@@ -941,14 +1320,22 @@ describe("sdk preflightExtension", () => {
     // The blueprint exercises a capability but declares none, so the lone finding
     // is the advisory manifest_capabilities_absent warning, tagged to the blueprint.
     expect(report.findings).toEqual([
-      { source: "blueprint", severity: "warning", code: "manifest_capabilities_absent", message: expect.any(String) },
+      {
+        source: "blueprint",
+        severity: "warning",
+        code: "manifest_capabilities_absent",
+        message: expect.any(String),
+      },
     ]);
     expect(report.blueprint.used).toEqual(["commands"]);
   });
 
   it("synthesizes the manifest from identity and exposes it on the report", () => {
     const report = preflightExtension(commandBlueprint, { identity });
-    expect(report.manifest).toEqual({ ...identity, capabilities: ["commands"] });
+    expect(report.manifest).toEqual({
+      ...identity,
+      capabilities: ["commands"],
+    });
     expect(report.compatibility).toBeNull();
     expect(report.ok).toBe(true);
   });
@@ -981,7 +1368,10 @@ describe("sdk preflightExtension", () => {
     expect(report.manifest?.capabilities).toEqual(["commands", "schema"]);
     // The raw lint still reports the drift against the mirror it was given.
     expect(report.blueprint.findings).toContainEqual(
-      expect.objectContaining({ code: "capability_undeclared", capability: "schema" }),
+      expect.objectContaining({
+        code: "capability_undeclared",
+        capability: "schema",
+      }),
     );
   });
 
@@ -997,7 +1387,10 @@ describe("sdk preflightExtension", () => {
     );
     expect(report.ok).toBe(false);
     expect(report.findings).toContainEqual(
-      expect.objectContaining({ source: "blueprint", code: "capability_undeclared" }),
+      expect.objectContaining({
+        source: "blueprint",
+        code: "capability_undeclared",
+      }),
     );
     // The synthesized manifest itself is still least-privilege-correct.
     expect(report.manifest?.capabilities).toEqual(["commands", "schema"]);
@@ -1023,39 +1416,63 @@ describe("sdk preflightExtension", () => {
     const report = preflightExtension(
       {
         ...commandBlueprint,
-        manifest: { ...identity, capabilities: ["commands"], pm_max_version: "2026.1.0" },
+        manifest: {
+          ...identity,
+          capabilities: ["commands"],
+          pm_max_version: "2026.1.0",
+        },
       },
       { target: { pmVersion: "2026.6.23" } },
     );
     expect(report.manifest).toBeNull();
     expect(report.compatibility?.compatible).toBe(false);
-    expect(report.findings.map((finding) => finding.code)).toContain("pm_max_version_exceeded");
+    expect(report.findings.map((finding) => finding.code)).toContain(
+      "pm_max_version_exceeded",
+    );
     expect(report.ok).toBe(false);
   });
 
   it("treats a target with no manifest bounds anywhere as compatible", () => {
-    const report = preflightExtension(commandBlueprint, { target: { pmVersion: "2026.6.23" } });
+    const report = preflightExtension(commandBlueprint, {
+      target: { pmVersion: "2026.6.23" },
+    });
     expect(report.manifest).toBeNull();
-    expect(report.compatibility).toEqual({ compatible: true, findings: [], pmVersion: "2026.6.23" });
+    expect(report.compatibility).toEqual({
+      compatible: true,
+      findings: [],
+      pmVersion: "2026.6.23",
+    });
     expect(report.ok).toBe(true);
   });
 
   it("flags a capability the blueprint exercises but the declared set omits as a blocking error", () => {
-    const report = preflightExtension(commandBlueprint, { declaredCapabilities: [] });
+    const report = preflightExtension(commandBlueprint, {
+      declaredCapabilities: [],
+    });
     expect(report.ok).toBe(false);
     expect(report.findings).toEqual([
-      { source: "blueprint", severity: "error", code: "capability_undeclared", message: expect.any(String) },
+      {
+        source: "blueprint",
+        severity: "error",
+        code: "capability_undeclared",
+        message: expect.any(String),
+      },
     ]);
   });
 
   it("tags every finding by source, ordering blueprint findings before compatibility findings", () => {
     const report = preflightExtension(
       { ...commandBlueprint, flags: {} },
-      { identity: { ...identity, pm_min_version: "2026.9.0" }, target: { pmVersion: "2026.6.23" } },
+      {
+        identity: { ...identity, pm_min_version: "2026.9.0" },
+        target: { pmVersion: "2026.6.23" },
+      },
     );
     const sources = report.findings.map((finding) => finding.source);
     expect(sources[sources.length - 1]).toBe("compatibility");
-    expect(sources.slice(0, -1).every((source) => source === "blueprint")).toBe(true);
+    expect(sources.slice(0, -1).every((source) => source === "blueprint")).toBe(
+      true,
+    );
     // The empty `flags` surface is an advisory blueprint warning; the unmet floor is
     // the blocking compatibility error — both flow through one consolidated report.
     // Unified findings carry only source/severity/code/message; per-stage detail
@@ -1066,7 +1483,9 @@ describe("sdk preflightExtension", () => {
       code: "empty_surface",
       message: expect.any(String),
     });
-    expect(report.blueprint.findings).toContainEqual(expect.objectContaining({ code: "empty_surface", field: "flags" }));
+    expect(report.blueprint.findings).toContainEqual(
+      expect.objectContaining({ code: "empty_surface", field: "flags" }),
+    );
     expect(report.ok).toBe(false);
   });
 });
@@ -1078,23 +1497,52 @@ describe("sdk defineExtensionBlueprint", () => {
 
   it("returns the blueprint fragment unchanged so it composes through the modular loop", async () => {
     const commandsModule = defineExtensionBlueprint({
-      commands: [{ name: "kit run", action: "kit-run", run: () => ({ ok: true }) }],
+      commands: [
+        { name: "kit run", action: "kit-run", run: () => ({ ok: true }) },
+      ],
     });
     const searchModule = defineExtensionBlueprint({
-      searchProviders: [{ name: "kit-search", query: async () => ({ hits: [] }) }],
+      searchProviders: [
+        { name: "kit-search", query: async () => ({ hits: [] }) },
+      ],
+    });
+    const assuranceModule = defineExtensionBlueprint({
+      assuranceProviders: [
+        {
+          id: "kit-quality",
+          keys: { score: { value_type: "number" } },
+          cost_class: "low",
+          network: false,
+          resolve: () => ({ value: 1, population_size: 1, cost: 1 }),
+        },
+      ],
     });
     // Zero-cost identity helper: the same object reference is returned untouched.
     expect(defineExtensionBlueprint(commandsModule)).toBe(commandsModule);
 
     // The typed fragments feed the modular loop with no loss of fidelity: merge,
     // compose, and activate exactly as hand-written blueprint literals would.
-    const merged = mergeExtensionBlueprints(commandsModule, searchModule);
-    expect(deriveExtensionCapabilities(merged)).toEqual(["commands", "search"]);
-    const activation = await activateExtensionForTest(composeExtension(merged), {
-      capabilities: ["commands", "search"],
-    });
+    const merged = mergeExtensionBlueprints(
+      commandsModule,
+      searchModule,
+      assuranceModule,
+    );
+    expect(deriveExtensionCapabilities(merged)).toEqual([
+      "commands",
+      "search",
+      "services",
+    ]);
+    const activation = await activateExtensionForTest(
+      composeExtension(merged),
+      {
+        capabilities: ["commands", "search", "services"],
+      },
+    );
     expect(activation.failed).toEqual([]);
-    expect(activation.registrations.commands.map((command) => command.command)).toEqual(["kit run"]);
+    expect(
+      activation.registrations.commands.map((command) => command.command),
+    ).toEqual(["kit run"]);
+    expect(activation.registrations.assurance_providers).toHaveLength(1);
   });
 });
 
@@ -1109,9 +1557,21 @@ describe("sdk mergeExtensionBlueprints", () => {
     const overrideB = (): undefined => undefined;
     const parserA = (): Record<string, never> => ({});
     const moduleA: ExtensionBlueprint = {
-      manifest: { name: "mod-a", version: "1.0.0", entry: "./a.js", priority: 0, capabilities: ["commands", "schema", "parser"] },
-      commands: [{ name: "kit alpha", action: "kit-alpha", run: () => ({ a: 1 }) }],
-      flags: { "kit alpha": [{ long: "--alpha", value_type: "string", value_name: "text" }] },
+      manifest: {
+        name: "mod-a",
+        version: "1.0.0",
+        entry: "./a.js",
+        priority: 0,
+        capabilities: ["commands", "schema", "parser"],
+      },
+      commands: [
+        { name: "kit alpha", action: "kit-alpha", run: () => ({ a: 1 }) },
+      ],
+      flags: {
+        "kit alpha": [
+          { long: "--alpha", value_type: "string", value_name: "text" },
+        ],
+      },
       commandOverrides: { list: overrideA },
       parsers: { "kit alpha": parserA },
       profiles: [
@@ -1137,11 +1597,25 @@ describe("sdk mergeExtensionBlueprints", () => {
       },
     };
     const moduleB: ExtensionBlueprint = {
-      manifest: { name: "mod-b", version: "2.0.0", entry: "./b.js", priority: 0, capabilities: ["commands", "search"] },
-      commands: [{ name: "kit beta", action: "kit-beta", run: () => ({ b: 2 }) }],
-      flags: { "kit alpha": [{ long: "--alpha-extra", value_type: "string", value_name: "text" }] },
+      manifest: {
+        name: "mod-b",
+        version: "2.0.0",
+        entry: "./b.js",
+        priority: 0,
+        capabilities: ["commands", "search"],
+      },
+      commands: [
+        { name: "kit beta", action: "kit-beta", run: () => ({ b: 2 }) },
+      ],
+      flags: {
+        "kit alpha": [
+          { long: "--alpha-extra", value_type: "string", value_name: "text" },
+        ],
+      },
       commandOverrides: { list: overrideB },
-      searchProviders: [{ name: "kit-search", query: async () => ({ hits: [] }) }],
+      searchProviders: [
+        { name: "kit-search", query: async () => ({ hits: [] }) },
+      ],
       hooks: {
         beforeCommand: [() => undefined],
         afterCommand: [() => undefined],
@@ -1160,11 +1634,21 @@ describe("sdk mergeExtensionBlueprints", () => {
     const merged = mergeExtensionBlueprints(moduleA, moduleB);
 
     // Array surfaces concatenate in argument order.
-    expect(merged.commands?.map((command) => command.name)).toEqual(["kit alpha", "kit beta"]);
-    expect(merged.searchProviders?.map((provider) => provider.name)).toEqual(["kit-search"]);
-    expect(merged.profiles?.map((profile) => profile.name)).toEqual(["kit-archetype"]);
+    expect(merged.commands?.map((command) => command.name)).toEqual([
+      "kit alpha",
+      "kit beta",
+    ]);
+    expect(merged.searchProviders?.map((provider) => provider.name)).toEqual([
+      "kit-search",
+    ]);
+    expect(merged.profiles?.map((profile) => profile.name)).toEqual([
+      "kit-archetype",
+    ]);
     // A shared flag target command concatenates both modules' flag arrays.
-    expect(merged.flags?.["kit alpha"].map((flag) => flag.long)).toEqual(["--alpha", "--alpha-extra"]);
+    expect(merged.flags?.["kit alpha"].map((flag) => flag.long)).toEqual([
+      "--alpha",
+      "--alpha-extra",
+    ]);
     // Single-handler record collision: the later module wins the key.
     expect(merged.commandOverrides?.list).toBe(overrideB);
     // A key only one module declares survives untouched.
@@ -1178,13 +1662,24 @@ describe("sdk mergeExtensionBlueprints", () => {
     // The manifest mirror is last-defined-wins.
     expect(merged.manifest?.name).toBe("mod-b");
     // The merged blueprint derives the union of both modules' capabilities.
-    expect(deriveExtensionCapabilities(merged)).toEqual(["commands", "hooks", "parser", "schema", "search"]);
+    expect(deriveExtensionCapabilities(merged)).toEqual([
+      "commands",
+      "hooks",
+      "parser",
+      "schema",
+      "search",
+    ]);
 
     // Imperative activate hatches chain forward; deactivate chains in reverse (LIFO).
     await merged.activate?.({} as ExtensionApi);
     expect(order).toEqual(["activate-a", "activate-b"]);
     await merged.deactivate?.();
-    expect(order).toEqual(["activate-a", "activate-b", "deactivate-b", "deactivate-a"]);
+    expect(order).toEqual([
+      "activate-a",
+      "activate-b",
+      "deactivate-b",
+      "deactivate-a",
+    ]);
 
     // Inputs are never mutated.
     expect(moduleA.commands).toHaveLength(1);
@@ -1193,30 +1688,53 @@ describe("sdk mergeExtensionBlueprints", () => {
 
   it("composes and activates a merged blueprint exactly like a hand-written one", async () => {
     const merged = mergeExtensionBlueprints(
-      { commands: [{ name: "kit alpha", action: "kit-alpha", run: () => ({}) }] },
-      { searchProviders: [{ name: "kit-search", query: async () => ({ hits: [] }) }] },
+      {
+        commands: [{ name: "kit alpha", action: "kit-alpha", run: () => ({}) }],
+      },
+      {
+        searchProviders: [
+          { name: "kit-search", query: async () => ({ hits: [] }) },
+        ],
+      },
     );
-    const activation = await activateExtensionForTest(composeExtension(merged), {
-      capabilities: ["commands", "search"],
-    });
+    const activation = await activateExtensionForTest(
+      composeExtension(merged),
+      {
+        capabilities: ["commands", "search"],
+      },
+    );
     expect(activation.failed).toEqual([]);
-    expect(activation.registrations.commands.map((command) => command.command)).toEqual(["kit alpha"]);
+    expect(
+      activation.registrations.commands.map((command) => command.command),
+    ).toEqual(["kit alpha"]);
     expect(activation.registration_counts.search_providers).toBe(1);
     // describeExtensionBlueprint reads the merged data as the runtime would see it.
-    expect(describeExtensionBlueprint(merged).search_providers).toEqual(["kit-search"]);
+    expect(describeExtensionBlueprint(merged).search_providers).toEqual([
+      "kit-search",
+    ]);
   });
 
   it("preserves cross-module duplicates so lintExtensionBlueprint still flags them", () => {
     const merged = mergeExtensionBlueprints(
       {
-        manifest: { name: "dup", version: "1.0.0", entry: "./index.js", priority: 0, capabilities: ["commands"] },
+        manifest: {
+          name: "dup",
+          version: "1.0.0",
+          entry: "./index.js",
+          priority: 0,
+          capabilities: ["commands"],
+        },
         commands: [{ name: "dup cmd", action: "dup-a", run: () => ({}) }],
       },
       { commands: [{ name: "dup cmd", action: "dup-b", run: () => ({}) }] },
     );
     expect(merged.commands).toHaveLength(2);
-    const report = lintExtensionBlueprint(merged, { declaredCapabilities: ["commands"] });
-    expect(report.findings.some((finding) => finding.code === "duplicate_command")).toBe(true);
+    const report = lintExtensionBlueprint(merged, {
+      declaredCapabilities: ["commands"],
+    });
+    expect(
+      report.findings.some((finding) => finding.code === "duplicate_command"),
+    ).toBe(true);
   });
 
   it("returns an empty blueprint when merging nothing", () => {
@@ -1296,7 +1814,12 @@ describe("sdk mergeExtensionBlueprints", () => {
 
     await merged.activate?.({} as ExtensionApi);
     await merged.deactivate?.();
-    expect(order).toEqual(["activate:module-a", "activate:module-b", "deactivate:module-b", "deactivate:module-a"]);
+    expect(order).toEqual([
+      "activate:module-a",
+      "activate:module-b",
+      "deactivate:module-b",
+      "deactivate:module-a",
+    ]);
   });
 
   it("returns a fresh blueprint object and array containers without mutating the input", () => {
@@ -1307,7 +1830,9 @@ describe("sdk mergeExtensionBlueprints", () => {
     const merged = mergeExtensionBlueprints(source);
     expect(merged).not.toBe(source);
     expect(merged.commands).not.toBe(source.commands);
-    expect(merged.commands?.map((command) => command.name)).toEqual(["solo cmd"]);
+    expect(merged.commands?.map((command) => command.name)).toEqual([
+      "solo cmd",
+    ]);
     expect(merged.hooks?.beforeCommand).toHaveLength(1);
     expect(source.commands).toHaveLength(1);
   });
@@ -1315,10 +1840,18 @@ describe("sdk mergeExtensionBlueprints", () => {
   it("omits empty surfaces and tolerates absent and explicit-null fields (untyped .js authors)", async () => {
     const order: string[] = [];
     const rich: ExtensionBlueprint = {
-      manifest: { name: "rich", version: "1.0.0", entry: "./r.js", priority: 0, capabilities: ["commands", "schema"] },
+      manifest: {
+        name: "rich",
+        version: "1.0.0",
+        entry: "./r.js",
+        priority: 0,
+        capabilities: ["commands", "schema"],
+      },
       commands: [{ name: "rich cmd", action: "rich", run: () => ({}) }],
       commandOverrides: { list: () => undefined },
-      flags: { "rich cmd": [{ long: "--rich", value_type: "string", value_name: "x" }] },
+      flags: {
+        "rich cmd": [{ long: "--rich", value_type: "string", value_name: "x" }],
+      },
       hooks: { beforeCommand: [() => undefined] },
       activate: () => {
         order.push("a");
@@ -1339,7 +1872,9 @@ describe("sdk mergeExtensionBlueprints", () => {
     } as unknown as ExtensionBlueprint;
     const merged = mergeExtensionBlueprints(rich, {}, nullish);
 
-    expect(merged.commands?.map((command) => command.name)).toEqual(["rich cmd"]);
+    expect(merged.commands?.map((command) => command.name)).toEqual([
+      "rich cmd",
+    ]);
     // The last-defined non-null mirror is the rich module's.
     expect(merged.manifest).toBe(rich.manifest);
     // Surfaces no module contributes are omitted, not emitted empty.
@@ -1354,7 +1889,12 @@ describe("sdk mergeExtensionBlueprints", () => {
 });
 
 describe("sdk composeExtensionPackage", () => {
-  const identity = { name: "kit", version: "3.1.0", entry: "./index.js", priority: 0 } as const;
+  const identity = {
+    name: "kit",
+    version: "3.1.0",
+    entry: "./index.js",
+    priority: 0,
+  } as const;
 
   it("re-exports the same function reference from the barrel", () => {
     expect(composeExtensionPackageFromBarrel).toBe(composeExtensionPackage);
@@ -1363,24 +1903,41 @@ describe("sdk composeExtensionPackage", () => {
   it("returns both halves with the synthesized manifest as the module's authoritative mirror", async () => {
     const blueprint: ExtensionBlueprint = {
       // A stale in-blueprint mirror that must be superseded by the synthesized one.
-      manifest: { name: "stale", version: "0.0.0", entry: "./stale.js", priority: 9, capabilities: ["renderers"] },
-      commands: [{ name: "kit run", action: "kit-run", run: () => ({ ok: true }) }],
-      searchProviders: [{ name: "kit-search", query: async () => ({ hits: [] }) }],
+      manifest: {
+        name: "stale",
+        version: "0.0.0",
+        entry: "./stale.js",
+        priority: 9,
+        capabilities: ["renderers"],
+      },
+      commands: [
+        { name: "kit run", action: "kit-run", run: () => ({ ok: true }) },
+      ],
+      searchProviders: [
+        { name: "kit-search", query: async () => ({ hits: [] }) },
+      ],
       deactivate: () => undefined,
     };
     const pkg = composeExtensionPackage(blueprint, identity);
 
     // The manifest is synthesized from identity + derived least-privilege capabilities.
-    expect(pkg.manifest).toEqual({ ...identity, capabilities: ["commands", "search"] });
+    expect(pkg.manifest).toEqual({
+      ...identity,
+      capabilities: ["commands", "search"],
+    });
     // The module's mirror IS the returned manifest object — one source, drift-proof.
     expect(pkg.module.manifest).toBe(pkg.manifest);
     // The stale in-blueprint mirror is superseded, not copied onto the module.
     expect(pkg.module.manifest?.name).toBe("kit");
     expect(pkg.module.deactivate).toBe(blueprint.deactivate);
 
-    const activation = await activateExtensionForTest(pkg.module, { capabilities: pkg.manifest.capabilities });
+    const activation = await activateExtensionForTest(pkg.module, {
+      capabilities: pkg.manifest.capabilities,
+    });
     expect(activation.failed).toEqual([]);
-    expect(activation.registrations.commands.map((command) => command.command)).toEqual(["kit run"]);
+    expect(
+      activation.registrations.commands.map((command) => command.command),
+    ).toEqual(["kit run"]);
     expect(activation.registration_counts.search_providers).toBe(1);
   });
 
@@ -1400,11 +1957,15 @@ describe("sdk composeExtensionPackage", () => {
   it("ships a blueprint assembled modularly by mergeExtensionBlueprints", async () => {
     const merged = mergeExtensionBlueprints(
       { commands: [{ name: "kit a", action: "kit-a", run: () => ({}) }] },
-      { searchProviders: [{ name: "kit-s", query: async () => ({ hits: [] }) }] },
+      {
+        searchProviders: [{ name: "kit-s", query: async () => ({ hits: [] }) }],
+      },
     );
     const pkg = composeExtensionPackage(merged, identity);
     expect(pkg.manifest.capabilities).toEqual(["commands", "search"]);
-    const activation = await activateExtensionForTest(pkg.module, { capabilities: pkg.manifest.capabilities });
+    const activation = await activateExtensionForTest(pkg.module, {
+      capabilities: pkg.manifest.capabilities,
+    });
     expect(activation.failed).toEqual([]);
   });
 });

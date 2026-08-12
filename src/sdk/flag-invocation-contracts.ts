@@ -107,6 +107,7 @@ function flagTakesValue(contract: CliFlagContract): boolean {
     contract.list === true ||
     contract.repeatable === true;
   const inferredBoolean =
+    contract.value_type === "boolean" ||
     contract.flag === "--stdin" ||
     contract.flag === "--stdin-json" ||
     BOOLEAN_FLAG_PREFIXES.some((prefix) => contract.flag.startsWith(prefix));
@@ -129,9 +130,7 @@ export function enrichCliFlagInvocationContract(
     description,
     takes_value: takesValue,
     value_required: takesValue,
-    ...(takesValue
-      ? { value_name: contract.value_name ?? "value" }
-      : {}),
+    ...(takesValue ? { value_name: contract.value_name ?? "value" } : {}),
     value_type: takesValue ? (contract.value_type ?? "string") : "boolean",
     required: contract.required === true,
     repeatable: contract.repeatable === true || contract.list === true,

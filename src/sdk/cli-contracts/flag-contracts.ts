@@ -465,7 +465,7 @@ export const SCHEMA_FLAG_CONTRACTS: CliFlagContract[] = [
   // add-type --infer flags (title-prefix type inference).
   { flag: "--infer" },
   { flag: "--min-count" },
-  { flag: "--apply" },
+  { flag: "--apply", value_type: "boolean" },
   // Lossless schema evolution flags.
   { flag: "--to" },
   { flag: "--migration-id", aliases: ["--migration_id"] },
@@ -1139,6 +1139,9 @@ export const ASSURANCE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--dry-run" },
   { flag: "--author", value_name: "value" },
   { flag: "--message", value_name: "value" },
+  { flag: "--owner", value_name: "item-id" },
+  { flag: "--apply", value_type: "boolean" },
+  { flag: "--enforcement", value_name: "level" },
 ];
 
 const ITEM_OWNERSHIP_AND_ISSUE_FLAG_CONTRACTS: CliFlagContract[] = [

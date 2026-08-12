@@ -224,6 +224,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   acceptanceCriteria: { type: "string" },
   author: { type: "string" },
   message: { type: "string" },
+  owner: { type: "string" },
+  enforcement: { type: "string" },
   assignee: { type: "string" },
   assigneeFilter: { type: "string", enum: ["assigned", "unassigned"] },
   parent: { type: "string" },
@@ -654,8 +656,24 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
     },
     subcommand: {
       type: "string",
-      enum: ["list", "show", "put", "remove", "run", "verdicts"],
+      enum: [
+        "list",
+        "show",
+        "put",
+        "remove",
+        "run",
+        "verdicts",
+        "presets",
+        "apply",
+        "derive",
+        "promote",
+      ],
     },
+    preset: {
+      type: "string",
+      enum: ["software-delivery", "research", "agent-evaluation", "operations"],
+    },
+    enforcement: { type: "string", enum: ["warn", "block"] },
     limit: { type: "integer", minimum: 1, maximum: 1000 },
   },
   activity: {
@@ -1023,6 +1041,15 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Stable assurance gate id used to filter durable verdict history.",
     examples: ["release-readiness"],
+  },
+  owner: {
+    description:
+      "pm item that owns preset or observation-derived assurance assertions.",
+    examples: ["pm-a1b2"],
+  },
+  enforcement: {
+    description: "Explicit next assurance enforcement level.",
+    examples: ["warn", "block"],
   },
   runId: {
     description: "Background test run identifier.",
@@ -2077,8 +2104,8 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
   assurance: {
     subcommand: {
       description:
-        "Assurance operation: list, show, put, remove, run, or verdicts.",
-      examples: ["list", "run", "verdicts"],
+        "Assurance operation: list, show, put, remove, run, verdicts, presets, apply, derive, or promote.",
+      examples: ["list", "run", "derive", "promote"],
     },
     kind: {
       description:
@@ -2093,6 +2120,10 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     limit: {
       description: "Maximum number of newest assurance verdicts returned.",
       examples: [10, 25],
+    },
+    preset: {
+      description: "Built-in assurance project shape to preview or apply.",
+      examples: ["software-delivery", "agent-evaluation"],
     },
   },
   update: {

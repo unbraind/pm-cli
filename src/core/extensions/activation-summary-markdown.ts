@@ -75,6 +75,7 @@ const SURFACE_SECTIONS = [
   ["exporters", "Exporters"],
   ["search_providers", "Search providers"],
   ["vector_store_adapters", "Vector store adapters"],
+  ["assurance_providers", "Assurance measurement providers"],
   ["hooks", "Lifecycle hooks"],
   ["parser_overrides", "Parser overrides"],
   ["service_overrides", "Service overrides"],
@@ -82,7 +83,9 @@ const SURFACE_SECTIONS = [
 ] as const satisfies ReadonlyArray<
   readonly [
     {
-      [K in keyof ExtensionActivationSummary]: ExtensionActivationSummary[K] extends readonly string[]
+      [K in keyof ExtensionActivationSummary]: NonNullable<
+        ExtensionActivationSummary[K]
+      > extends readonly string[]
         ? K
         : never;
     }[keyof ExtensionActivationSummary],
@@ -206,7 +209,7 @@ export function renderExtensionSurfaceMarkdown(
   }
 
   for (const [field, heading] of SURFACE_SECTIONS) {
-    const entries = summary[field];
+    const entries = summary[field] ?? [];
     if (entries.length === 0 && !includeEmpty) {
       continue;
     }
@@ -223,7 +226,7 @@ export function renderExtensionSurfaceMarkdown(
 
   const hasAnySurface =
     summary.preflight_overrides > 0 ||
-    SURFACE_SECTIONS.some(([field]) => summary[field].length > 0);
+    SURFACE_SECTIONS.some(([field]) => (summary[field]?.length ?? 0) > 0);
   if (!hasAnySurface && !includeEmpty) {
     lines.push("_This extension registers no surfaces._", "");
   }

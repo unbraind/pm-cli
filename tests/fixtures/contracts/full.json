@@ -1439,6 +1439,18 @@
         {
           "flag": "--message",
           "value_name": "value"
+        },
+        {
+          "flag": "--owner",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--apply",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--enforcement",
+          "value_name": "level"
         }
       ],
       "provider": "core"
@@ -7006,7 +7018,8 @@
           "flag": "--min-count"
         },
         {
-          "flag": "--apply"
+          "flag": "--apply",
+          "value_type": "boolean"
         },
         {
           "flag": "--to"
@@ -18415,7 +18428,8 @@
       "importers.importer",
       "importers.exporter",
       "search.provider",
-      "search.vectorstore"
+      "search.vectorstore",
+      "services.assuranceprovider"
     ],
     "sandbox_profiles": [
       "none",
@@ -49805,12 +49819,69 @@
                 "trigger"
               ]
             }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "apply"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "preset",
+                "owner"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "derive"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "owner"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "promote"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "id",
+                "enforcement"
+              ]
+            }
           }
         ],
         "properties": {
           "action": {
             "const": "assurance",
             "description": "Tool action to execute."
+          },
+          "apply": {
+            "description": "Persist changes instead of returning a dry-run preview: for files discovery, add the missing discovered file links; for schema add-type --infer, register the inferred custom item types.",
+            "type": "boolean"
           },
           "author": {
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
@@ -50340,6 +50411,46 @@
                     "minLength": 1,
                     "type": "string"
                   },
+                  "provider_policy": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "allowed_providers": {
+                        "items": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "triggers": {
+                        "additionalProperties": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "allow_network": {
+                              "type": "boolean"
+                            },
+                            "max_cost_class": {
+                              "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "max_cost_class",
+                            "allow_network"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "allowed_providers",
+                      "triggers"
+                    ],
+                    "type": "object"
+                  },
                   "triggers": {
                     "items": {
                       "enum": [
@@ -50370,6 +50481,18 @@
           "dryRun": {
             "description": "Preview command effects without mutating storage artifacts.",
             "type": "boolean"
+          },
+          "enforcement": {
+            "description": "Explicit next assurance enforcement level.",
+            "enum": [
+              "warn",
+              "block"
+            ],
+            "examples": [
+              "warn",
+              "block"
+            ],
+            "type": "string"
           },
           "fullChangedFields": {
             "description": "Full Changed Fields.",
@@ -50436,6 +50559,13 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "owner": {
+            "description": "pm item that owns preset or observation-derived assurance assertions.",
+            "examples": [
+              "pm-a1b2"
+            ],
+            "type": "string"
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -50451,6 +50581,20 @@
             ],
             "type": "string"
           },
+          "preset": {
+            "description": "Built-in assurance project shape to preview or apply.",
+            "enum": [
+              "software-delivery",
+              "research",
+              "agent-evaluation",
+              "operations"
+            ],
+            "examples": [
+              "software-delivery",
+              "agent-evaluation"
+            ],
+            "type": "string"
+          },
           "profile": {
             "description": "Emit deterministic timing diagnostics to stderr.",
             "type": "boolean"
@@ -50460,19 +50604,24 @@
             "type": "boolean"
           },
           "subcommand": {
-            "description": "Assurance operation: list, show, put, remove, run, or verdicts.",
+            "description": "Assurance operation: list, show, put, remove, run, verdicts, presets, apply, derive, or promote.",
             "enum": [
               "list",
               "show",
               "put",
               "remove",
               "run",
-              "verdicts"
+              "verdicts",
+              "presets",
+              "apply",
+              "derive",
+              "promote"
             ],
             "examples": [
               "list",
               "run",
-              "verdicts"
+              "derive",
+              "promote"
             ],
             "type": "string"
           },

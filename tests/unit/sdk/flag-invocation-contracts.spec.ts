@@ -92,6 +92,12 @@ describe("CLI flag invocation contracts", () => {
       value_type: "boolean",
     });
     expect(
+      enrichCliFlagInvocationContract("assurance", {
+        flag: "--apply",
+        value_type: "boolean",
+      }),
+    ).toMatchObject({ takes_value: false, value_required: false });
+    expect(
       enrichCliFlagInvocationContract("comments", {
         flag: "--stdin",
       }),

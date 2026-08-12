@@ -101,6 +101,8 @@ export interface ExtensionActivationSummary {
   search_providers: string[];
   /** Vector-store adapter names registered via `registerVectorStoreAdapter`. */
   vector_store_adapters: string[];
+  /** Assurance provider ids registered via `registerAssuranceMeasurementProvider`. */
+  assurance_providers?: string[];
   /** Command paths with a parser override registered via `registerParser`. */
   parser_overrides: string[];
   /** Built-in service names overridden via `registerService`. */
@@ -198,6 +200,10 @@ export function describeExtensionActivation(
       result_discriminator: entry.resultDiscriminator !== undefined,
     }))
     .sort((left, right) => left.format.localeCompare(right.format));
+  const assuranceProviders = collect(
+    registrations.assurance_providers ?? [],
+    (entry) => entry.definition.id,
+  );
   return {
     capabilities: collectUsedExtensionCapabilities(activation, options),
     commands: collect(registrations.commands, (entry) => entry.command),
@@ -233,6 +239,9 @@ export function describeExtensionActivation(
       registrations.vector_store_adapters,
       (entry) => entry.definition.name,
     ),
+    ...(assuranceProviders.length > 0
+      ? { assurance_providers: assuranceProviders }
+      : {}),
     parser_overrides: collect(parsers.overrides, (entry) => entry.command),
     service_overrides: collect(services.overrides, (entry) => entry.service),
     renderer_overrides: collect(renderers.overrides, (entry) => entry.format),

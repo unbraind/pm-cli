@@ -5,11 +5,7 @@
  */
 import type { Command } from "commander";
 
-import {
-  ASSURANCE_ACTIONS,
-  ASSURANCE_DECLARATION_KINDS,
-  runAssuranceAction,
-} from "../sdk/governance/assurance-action.js";
+import { runAssuranceAction } from "../sdk/governance/assurance-action.js";
 import { printResult } from "../sdk/runtime-primitives.js";
 import { getGlobalOptions, readOptionString } from "./registration-helpers.js";
 
@@ -23,11 +19,16 @@ async function runAssuranceCliAction(
   const global = getGlobalOptions(command);
   const isRun = action === "run";
   const isVerdicts = action === "verdicts";
+  const isPresetAction = action === "presets" || action === "apply";
+  const isPromote = action === "promote";
   const result = await runAssuranceAction(
     {
       action,
-      ...(isRun || isVerdicts ? {} : { kind: kindOrGate }),
-      id: isRun || isVerdicts ? (id ?? kindOrGate) : id,
+      ...(isRun || isVerdicts || isPresetAction || isPromote
+        ? {}
+        : { kind: kindOrGate }),
+      id: isRun || isVerdicts || isPromote ? (id ?? kindOrGate) : id,
+      preset: isPresetAction ? (id ?? kindOrGate) : undefined,
       definition: readOptionString(options, "definition"),
       trigger: readOptionString(options, "trigger"),
       tree: readOptionString(options, "tree"),
@@ -38,6 +39,9 @@ async function runAssuranceCliAction(
       idOnly: global.idOnly,
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
+      owner: readOptionString(options, "owner"),
+      apply: options.apply === true,
+      enforcement: readOptionString(options, "enforcement"),
     },
     global,
   );
@@ -56,20 +60,20 @@ async function runAssuranceCliAction(
 export function registerAssuranceCommand(program: Command): void {
   program
     .command("assurance")
-    .argument("<action>", `Action: ${ASSURANCE_ACTIONS.join(", ")}`)
-    .argument(
-      "[kind]",
-      `Declaration kind: ${ASSURANCE_DECLARATION_KINDS.join(", ")}; for run this may be the gate id`,
-    )
-    .argument("[id]", "Declaration or gate id")
-    .description("Declare and evaluate SDK-owned project assurance contracts.")
-    .option("--definition <json>", "JSON declaration for put")
-    .option("--trigger <value>", "Gate lifecycle trigger")
-    .option("--tree <value>", "Commit, tree, or snapshot identity being judged")
-    .option("--gate <id>", "Filter verdict history by gate id")
-    .option("--limit <number>", "Maximum newest verdicts returned")
-    .option("--dry-run", "Evaluate a gate without appending a verdict")
-    .option("--author <value>", "Mutation author override")
-    .option("--message <value>", "Audited mutation rationale")
+    .argument("<action>", "Action; inspect `pm contracts --command assurance`")
+    .argument("[kind]", "Declaration kind or run gate id")
+    .argument("[id]", "Declaration/gate id")
+    .description("Manage SDK-owned assurance contracts.")
+    .option("--definition <json>", "Put declaration JSON")
+    .option("--trigger <value>", "Gate trigger")
+    .option("--tree <value>", "Revision identity")
+    .option("--gate <id>", "Verdict gate filter")
+    .option("--limit <number>", "Verdict limit")
+    .option("--dry-run", "Evaluate without recording")
+    .option("--author <value>", "Mutation author")
+    .option("--message <value>", "Mutation rationale")
+    .option("--owner <item-id>", "Preset/derivation owner")
+    .option("--apply", "Persist derived proposals")
+    .option("--enforcement <level>", "Promote to warn or block")
     .action(runAssuranceCliAction);
 }

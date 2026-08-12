@@ -2,11 +2,13 @@ id: pm-m7bb7r
 title: "Assurance presets and self-derivation: a new workspace acquires a working quality contract in one command, seeded from its own record rather than from a generic template"
 description: "A primitive nobody configures is a primitive nobody uses. Two mechanisms make adoption cheap. Presets ship declaration bundles for recognisable project shapes — software delivery, research, agent-environment and evaluation, operations and incident response — each a small set of measurements and assertions that are meaningful on day one and are plain data the adopter can read, diff, and edit. Self-derivation is the stronger half: pm already holds the record, so it can propose the contract. Given a workspace it measures the populations that exist, finds the ones that are already clean or already stable, and offers those as candidate bounds at observe level with the observed value as the proposed number. That inverts the adoption cost — instead of an author inventing thresholds, the record proposes the thresholds it can already meet, and the author decides which to promote to warn and then to block. Because every proposal carries the population size and the scope it was computed over, a proposal that would only ever cover active items says so before it is accepted, which is the failure mode that made an earlier structural bound pass trivially. Presets and proposals are both ordinary declarations after acceptance, with no privileged status and no separate code path."
 type: Feature
-status: open
+status: in_progress
 priority: 2
 tags[5]: "area:sdk",assurance,configurability,onboarding,universal
 created_at: "2026-08-10T20:57:59.663Z"
-updated_at: "2026-08-10T20:57:59.663Z"
+updated_at: "2026-08-12T16:37:45.298Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#777a798cba07b812da163a2d"
 author: "harness:claude-code"
 estimated_minutes: 540
 acceptance_criteria: "A preset bundle is applied in one command, is plain readable declaration data afterwards, and carries no privileged behaviour; Presets exist for at least software delivery, research, agent-environment and evaluation, and operations shapes; Self-derivation proposes candidate bounds from the observed record at observe level, each carrying its population size and scope, and never promotes a bound without an explicit act; A proposal whose scope would cover only active items declares that fact before acceptance; Promotion from observe to warn to block is a recorded transition, so the strength of a project's contract over time is readable from the record"
@@ -19,4 +21,36 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-h6b73t,related,"2026-08-10T20:57:59.663Z","harness:claude-code","cli:create:dep",detected
   pm-lyfu7b,blocked_by,"2026-08-10T20:57:59.663Z","harness:claude-code","cli:create:dep",detected
   pm-t4d7nz,implements,"2026-08-10T20:57:59.663Z","harness:claude-code","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-12T14:33:39.397Z","harness:codex","Orientation evidence: reused the canonical remaining assurance child after all-status duplicate and full-lineage review. This tranche is coupled with pm-uhv1m5 because presets and self-derived observe proposals must use the same ordinary declaration/runtime contracts as package-provided measurements."
+  "2026-08-12T16:20:01.126Z","harness:codex","Implementation evidence: added four built-in assurance presets, atomic idempotent apply, observation-derived active-scope proposals, explicit accept/apply, and one-step observe-to-warn-to-block promotion across CLI/SDK/MCP contracts. Compact help remains beneath the token ratchet while machine contracts retain complete semantics. Manual packed acceptance returned four presets, applied a preset, derived and persisted three proposals, promoted one assertion, and proved --apply is a valueless boolean contract."
+  "2026-08-12T16:35:56.901Z","harness:codex","Verification evidence (final worktree): pnpm lint passed with ESLint zero warnings, jscpd zero clones, 100% docstring/export/member coverage, package boundary/parity, token/context, tracker measurement, graph-composition, record-integrity, SDK import-cost and CLI transport gates. pnpm contracts:check and pnpm sdk:surface:check passed; the linked sandboxed contracts test also passed. Exact coverage previously recorded remains 100/100/100/100 (52,606 statements, 38,692 branches, 10,822 functions, 50,850 lines; 7,280 tests). Packed acceptance proved four readable presets, atomic apply, three workspace-derived observe-level bounds, explicit one-step promotion, and a provider-backed CI gate in an isolated temporary project. pnpm smoke:npx and package-first dogfood proved npm/npx/bunx distribution paths. pm health --check-only passed all ten checks with zero warnings; history drift is zero; security scan found no credential-like secrets. The repository-wide resolution validator still reports 295 pre-existing closed-item metadata warnings, separate from this feature and with no history drift."
+  "2026-08-12T16:37:45.298Z","harness:codex","Pull request: https://github.com/unbraind/pm-cli/pull/991 at exact head 4ef822788; awaiting required checks and fresh bot review before merge."
+learnings[1]{created_at,author,text}:
+  "2026-08-12T16:20:02.279Z","harness:codex","Durable lesson: a flag vocabulary row with value_type=boolean must explicitly compile to takes_value=false; flag spelling heuristics alone cannot truthfully model domain verbs such as --apply."
+files[16]{path,scope,note}:
+  sdk/public-surface.json,project,Assurance preset derivation adoption promotion contract and regression evidence
+  src/cli/register-assurance.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  src/sdk/cli-contracts/completeness.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  src/sdk/cli-contracts/flag-contracts.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  src/sdk/cli-contracts/schemas/assurance-definition.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  src/sdk/cli-contracts/tool-schema.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  src/sdk/flag-invocation-contracts.ts,project,Truthful valueless boolean apply contract
+  src/sdk/governance/assurance-action.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  src/sdk/governance/assurance-presets.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  src/sdk/governance/assurance.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  src/sdk/index.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  tests/fixtures/contracts/full.json,project,Assurance preset derivation adoption promotion contract and regression evidence
+  tests/unit/cli/register-assurance.spec.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  tests/unit/sdk/assurance-presets.spec.ts,project,Assurance preset derivation adoption promotion contract and regression evidence
+  tests/unit/sdk/flag-invocation-contracts.spec.ts,project,Boolean apply arity regression coverage
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  pnpm lint,project,600
+  "pnpm contracts:check",project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msqb95nx-kq2dgo,test,passed,"2026-08-12T16:35:29.683Z","2026-08-12T16:35:39.117Z","2026-08-12T16:35:39.117Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/ASSURANCE.md,project,Preset derivation acceptance and promotion workflow
 body: ""

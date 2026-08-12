@@ -29,6 +29,7 @@ const STRING_LIST_FIELDS = [
   "exporters",
   "search_providers",
   "vector_store_adapters",
+  "assurance_providers",
   "parser_overrides",
   "service_overrides",
   "renderer_overrides",
@@ -176,6 +177,7 @@ export function createExtensionContributionInventory(summary: {
   exporters: string[];
   search_providers: string[];
   vector_store_adapters: string[];
+  assurance_providers?: string[];
   parser_overrides: string[];
   service_overrides: string[];
   renderer_overrides: string[];
@@ -201,6 +203,9 @@ export function createExtensionContributionInventory(summary: {
     exporters: summary.exporters,
     search_providers: summary.search_providers,
     vector_store_adapters: summary.vector_store_adapters,
+    ...(summary.assurance_providers
+      ? { assurance_providers: summary.assurance_providers }
+      : {}),
     parser_overrides: summary.parser_overrides,
     service_overrides: summary.service_overrides,
     renderer_overrides: summary.renderer_overrides,

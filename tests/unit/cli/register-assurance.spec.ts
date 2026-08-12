@@ -10,14 +10,24 @@ import {
 } from "../../../src/sdk/governance/assurance.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
-function runRegisteredCommand(pmPath: string, args: string[]): Promise<Command> {
+function runRegisteredCommand(
+  pmPath: string,
+  args: string[],
+): Promise<Command> {
   const program = new Command()
     .name("pm")
     .option("--path <path>")
     .option("--json")
     .exitOverride();
   registerAssuranceCommand(program);
-  return program.parseAsync(["node", "pm", "--path", pmPath, "--json", ...args]);
+  return program.parseAsync([
+    "node",
+    "pm",
+    "--path",
+    pmPath,
+    "--json",
+    ...args,
+  ]);
 }
 
 describe("assurance Commander registration", () => {
@@ -71,6 +81,21 @@ describe("assurance Commander registration", () => {
       process.exitCode = undefined;
       await runRegisteredCommand(pmPath, ["assurance", "verdicts", gate.id]);
       expect(process.exitCode).toBeUndefined();
+      await runRegisteredCommand(pmPath, [
+        "assurance",
+        "presets",
+        "operations",
+        "--owner",
+        "pm-owner",
+      ]);
+      await runRegisteredCommand(pmPath, [
+        "assurance",
+        "apply",
+        "ignored",
+        "research",
+        "--owner",
+        "pm-owner",
+      ]);
 
       const command = new Command().name("pm");
       registerAssuranceCommand(command);
