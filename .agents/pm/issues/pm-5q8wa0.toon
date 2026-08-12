@@ -2,26 +2,30 @@ id: pm-5q8wa0
 title: Legacy invalid provenance findings block health without a safe disposition path
 description: "pm health correctly surfaces privacy-safe aggregates for immutable boolean and single-digit provenance pollution, but currently treats those historical findings as project-health failures even though they cannot be corrected without rewriting truthful history. Keep the finding and storage aggregate visible, classify it as advisory like resolver-zero-success, and prove newly generated provenance is still refused at write time."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-12T00:20:30.191Z"
-updated_at: "2026-08-12T01:40:23.622Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#09d99a3d99ca542892066fe0"
+updated_at: "2026-08-12T02:34:14.317Z"
+closed_at: "2026-08-12T02:34:13.633Z"
+completed_at: "2026-08-12T02:34:13.633Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: provenance_value_domain_invalid remains present in health warnings and storage details; health ok and strict-exit remain green when this is the only finding; write-time controlled role validation remains strict; focused and full 100/100/100/100 gates pass
 parent: pm-usfg
 severity: high
+resolution: Legacy invalid provenance remains visible in warnings and storage details but no longer makes otherwise healthy immutable history fail; write-time validation remains strict.
+expected_result: Historical invalid provenance is actionable advisory evidence while new invalid controlled-role provenance remains refused.
+actual_result: "The health policy, integration coverage, and documentation merged in 17b40763f with all merged-head gates green."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-eq9dlw,discovered_from,"2026-08-12T00:20:30.191Z","harness:codex","cli:create:dep",detected
   pm-jezo,implements,"2026-08-12T00:20:30.191Z","harness:codex","cli:create:dep",detected
   pm-wqhzhg,related,"2026-08-12T00:20:30.191Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-12T00:20:30.191Z","harness:codex","Duplicate check: searched all statuses for provenance value-domain, immutable legacy, strict health, advisory policy, and single-digit role. pm-eq9dlw owns detection and the original resolver defect; this distinct downstream verdict/disposition gap was reproduced in pm-changelog PR #138 after adopting pm-cli 2026.8.11."
   "2026-08-12T01:05:40.931Z","harness:codex","Implementation: provenance_value_domain_invalid remains in warnings and storage details but joins the advisory warning policy, so immutable historical pollution does not make health or strict exit fail. The documentation explicitly preserves write-time controlled-role validation and prohibits history rewriting as remediation."
   "2026-08-12T01:40:23.622Z","harness:codex","Verification evidence: immutable legacy invalid provenance remains fully visible in health warnings/details but is advisory for the overall health boolean; new writes remain governed. Focused provenance and health suites passed 57 tests. Repository-wide coverage passed 486 files and 7,242 tests at exact 100% statements (52,343/52,343), branches (38,488/38,488), functions (10,770/10,770), and lines (50,579/50,579); lint, typecheck, contracts, security scan, and production audit passed."
+  "2026-08-12T02:34:12.857Z","harness:codex","Merged-head evidence: PR #983 merged the advisory disposition for immutable invalid provenance at 17b40763f. Main CI 31556883969 passed the integration, health, strict static, and 100 percent coverage gates; Security 31556883889 and CodeQL 31556883853 passed."
 files[3]{path,scope,note}:
   src/sdk/governance/health.ts,project,Classify immutable invalid-provenance aggregates as advisory without hiding them
   tests/integration/provenance-value-health.integration.spec.ts,project,Exercise real history storage and advisory health verdict
@@ -33,4 +37,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-mspe8aou-18oew3,test,passed,"2026-08-12T01:05:50.589Z","2026-08-12T01:11:11.646Z","2026-08-12T01:11:11.646Z",2,0,0
 docs[1]{path,scope,note}:
   docs/SDK_AGENT_SESSION_CONTEXT.md,project,Document immutable-history disposition and strict write-time boundary
+close_reason: Merged in PR #983 with exact merged-head verification
 body: ""
