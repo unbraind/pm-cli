@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Assurance presets and self-derivation: a new workspace acquires a working quality contract in one command, seeded from its own record rather than from a generic template ([pm-m7bb7r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m7bb7r.toon))
+- Measurement provider API: extensions contribute measurement sources, so a coverage percentage, a benchmark millisecond, an eval score, an RL episode reward, or a registry dist-tag is bounded on the same terms as an item count ([pm-uhv1m5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-uhv1m5.toon))
+
 ### Fixed
 
 - The real all-package install is budgeted in one of its two instances, so the coverage gate flakes and then reports no coverage verdict at all ([pm-h9gsix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h9gsix.toon))
