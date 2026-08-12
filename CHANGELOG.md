@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- SDK entrypoint import-cost gate false-fails on cold filesystem cache: single-shot fresh-process sampling exceeds the 30ms noise margin ([pm-cg1sjb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cg1sjb.toon))
+- Legacy invalid provenance findings block health without a safe disposition path ([pm-5q8wa0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5q8wa0.toon))
+- History drift scan hashes reordered linked-test projections ([pm-eax4y8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eax4y8.toon))
 - Linked-test removal must be lossless and observable for commands containing comma or equals delimiters ([pm-m0b7h8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m0b7h8.toon))
 - Annotation transposition recovery: detect pm <collection\> add <id\> before the item id is consumed as text ([pm-rncuf7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rncuf7.toon))
 - Health result contract parity: every checks\[\] row exposes a boolean ok beside its tri-state status ([pm-h97qxd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h97qxd.toon))
