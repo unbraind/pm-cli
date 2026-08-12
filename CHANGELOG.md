@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Read-output session receipts can emit an invalid next_state after the served-item set crosses its own 10,000-ID input ceiling ([pm-b0v8fs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b0v8fs.toon))
+- Linked pm test children inherit production Sentry environment and turn sandbox failures into release-blocking incidents ([pm-9aaji6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9aaji6.toon))
 - SDK entrypoint import-cost gate false-fails on cold filesystem cache: single-shot fresh-process sampling exceeds the 30ms noise margin ([pm-cg1sjb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cg1sjb.toon))
 - Legacy invalid provenance findings block health without a safe disposition path ([pm-5q8wa0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5q8wa0.toon))
 - History drift scan hashes reordered linked-test projections ([pm-eax4y8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eax4y8.toon))
