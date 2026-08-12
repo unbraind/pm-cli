@@ -2396,6 +2396,19 @@ describe("runTest", () => {
         expect(
           run.run_results.map((result) => result.stdout?.trim()),
         ).toEqual(["test", "staging"]);
+
+        const runLevelOverride = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "20",
+            envSet: ["SENTRY_ENVIRONMENT=acceptance"],
+          },
+          { path: context.pmPath },
+        );
+        expect(
+          runLevelOverride.run_results.map((result) => result.stdout?.trim()),
+        ).toEqual(["acceptance", "staging"]);
       });
     } finally {
       if (previousSentryEnvironment === undefined) {

@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-12T02:47:19.822Z"
-updated_at: "2026-08-12T03:36:06.177Z"
+updated_at: "2026-08-12T03:44:06.332Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#09d99a3d99ca542892066fe0"
 author: "harness:codex"
@@ -21,11 +21,12 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-cg1sjb,discovered_from,"2026-08-12T02:47:19.822Z","harness:codex","cli:create:dep",detected
   pm-v0a0un,related,"2026-08-12T02:47:19.822Z","harness:codex","cli:create:dep",detected
   pm-7zs0,related,"2026-08-12T03:14:15.896Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-12T02:47:19.822Z","harness:codex","Duplicate check: all-status searches for PM-CLI-31, graph-composition not found, linked-test Sentry environment, test telemetry pollution, and unclassified assurance faults found analogous closed classifiers pm-qyg51h and pm-v0a0un plus the open observability join pm-23lmm5, but no owner for linked-test child environment classification. Privacy-safe live evidence: one high handled event on release 2026.8.11 at 2026-08-12T01:23:55Z exactly matches the failed pm-cg1sjb linked-test run ending 2026-08-12T01:23:55.900Z; no raw event id, host, endpoint, or credential is stored."
   "2026-08-12T02:52:08.259Z","harness:codex","TDD evidence: the new real-child regression first failed with inherited outputs [production, staging], proving a production parent polluted the default child while an explicit per-test override already won. After defaulting the composed linked-child environment to SENTRY_ENVIRONMENT=test before run-level/per-test directives, the same focused suite passed 59/59. Public configuration docs now state the isolation and override contract."
   "2026-08-12T03:34:23.471Z","harness:codex","Verification evidence: focused linked-test suite passed 59/59; full coverage passed 486 files and 7,244 tests at exact 100/100/100/100; repo-wide lint, typecheck, contracts, secrets, docs links, SDK surface, artifact, packed npx smoke, and 88-command package-first dogfood passed. Manual temporary-project acceptance at /tmp/tmp.HijJL720QZ proved a production parent defaults its linked child to SENTRY_ENVIRONMENT=test while explicit overrides remain supported. Sentry PM-CLI-31 remains the release blocker until the fix is merged and the issue is dispositioned."
   "2026-08-12T03:36:06.177Z","harness:codex","Delivery surface: GitHub PR #986 https://github.com/unbraind/pm-cli/pull/986 carries the linked-child Sentry isolation fix. Keep this item claimed and in progress through exact-head checks, bot review, merge, Sentry disposition, and release proof."
+  "2026-08-12T03:44:06.332Z","harness:codex","Review feedback: Sourcery correctly identified that the regression proved default and per-test Sentry precedence but not the documented run-level layer. Extended the same real-child test to rerun with run-level SENTRY_ENVIRONMENT=acceptance and prove outputs [acceptance, staging], covering default < run-level < per-test precedence without a duplicate fixture."
 files[2]{path,scope,note}:
   src/sdk/test/execution.ts,project,Default linked child observability to test before explicit directives
   tests/unit/commands/test-command.spec.ts,project,Execute default and explicit Sentry environment behavior through runTest
