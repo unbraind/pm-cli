@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-12T03:06:07.142Z"
-updated_at: "2026-08-12T03:58:33.647Z"
+updated_at: "2026-08-12T04:37:03.463Z"
 closed_at: "2026-08-12T03:58:33.050Z"
 completed_at: "2026-08-12T03:58:33.050Z"
 author: "harness:codex"
@@ -22,12 +22,13 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,related,"2026-08-12T03:06:07.142Z","harness:codex","cli:create:dep",detected
   pm-hid9g1,discovered_from,"2026-08-12T03:06:07.142Z","harness:codex","cli:create:dep",detected
   pm-7zs0,related,"2026-08-12T03:14:16.491Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-12T03:06:07.142Z","harness:codex","Duplicate check: all-status searches for caller-carried next_state overflow, read-session capacity, invalid next_state, and the exact exported ceiling found the shipped parent pm-hid9g1 and adjacent per-call budget owner pm-5t33or but no defect owner. Live evidence: pnpm lint reached the real context calibration and failed because a receipt-generated next_state exceeded the producer's own 10,000-ID parser ceiling; the input bound remains valid and must not be widened."
   "2026-08-12T03:09:02.525Z","harness:codex","TDD evidence: the new producer-boundary regression first failed because a 9,999-ID input plus two newly delivered facts emitted a 10,001-ID next_state. The implementation now retains the existing set, deterministically keeps pm-new-a as the single available new identity, receipts one overflow, and emits a 10,000-ID next_state accepted unchanged by parseReadOutputSession. Below capacity, the optional overflow field is absent for byte compatibility. Focused SDK/calibration tests pass 34/34 and the real 2/2,243-item calibration gate is green."
   "2026-08-12T03:34:23.935Z","harness:codex","Verification evidence: focused SDK/calibration tests passed 34/34; real context-intent calibration passed at 2-item and 2,243-item tiers; full coverage passed 486 files and 7,244 tests at exact 100/100/100/100; repo-wide lint, typecheck, contracts, SDK surface, artifact, packed npx smoke, and 88-command package-first dogfood passed. Manual temporary-project acceptance at /tmp/tmp.HijJL720QZ proved a full 10,000-ID state emits overflow=1, remains capped at 10,000, and its next_state is accepted on the next CLI invocation. Health and history drift are clean; validate reports only the pre-existing 295-item historical resolution-backfill cohort."
   "2026-08-12T03:36:06.624Z","harness:codex","Delivery surface: GitHub PR #986 https://github.com/unbraind/pm-cli/pull/986 carries the bounded reusable read-session receipt contract across the CLI and all SDK entrypoints. Keep this item claimed and in progress through exact-head checks, bot review, merge, and release proof."
   "2026-08-12T03:58:31.656Z","harness:codex","Merged evidence: PR #986 exact reviewed head 3d94e70dc merged as a817c09ef after all hosted coverage/static/compat/smoke/typecheck/security/runtime gates passed. The 10,000-ID real CLI state remained capped, disclosed one overflow, and was accepted on the next invocation; full local coverage stayed exact 100/100/100/100."
+  "2026-08-12T04:37:03.463Z","harness:codex","Published release proof: v2026.8.12 is the sole same-day tag/GitHub release/npm latest and contains merge a817c09ef. Independent npx/bunx/MCP verification and npm/Bun cold installed-agent lifecycle acceptance passed. Auto Release 31562347323, Release 31562866075, and every release-commit CI/security/docs/CodeQL/Scorecard/CodSpeed workflow completed successfully. The later scheduled Auto Release 31563123396 passed without creating a second tag."
 files[4]{path,scope,note}:
   sdk/public-surface.json,project,Regenerate reviewed public SDK receipt signature for optional overflow disclosure
   src/sdk/read-output-session.ts,project,Keep emitted next_state within strict input capacity and receipt overflow
