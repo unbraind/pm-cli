@@ -1,6 +1,6 @@
 # Trustworthy Context and Evidence Contracts
 
-Tracker: [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-rncuf7](../.agents/pm/issues/pm-rncuf7.toon), [pm-m0b7h8](../.agents/pm/issues/pm-m0b7h8.toon)
+Tracker: [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-rncuf7](../.agents/pm/issues/pm-rncuf7.toon), [pm-m0b7h8](../.agents/pm/issues/pm-m0b7h8.toon), [pm-wqhzhg](../.agents/pm/issues/pm-wqhzhg.toon)
 
 ## Agent Quick Context
 
@@ -85,7 +85,7 @@ pm test pm-example --remove-index 2 --json
 `--remove-index` is repeatable and uses the current 1-based list order. Exact identity selectors remain available:
 
 ```bash
-pm test pm-example --remove 'command=node -e "console.log("left=right,still-command")"' --json
+pm test pm-example --remove "command=node -e 'console.log(\"left=right,still-command\")'" --json
 pm test pm-example --remove 'path=tests/example.spec.ts' --json
 ```
 

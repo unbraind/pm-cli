@@ -10,6 +10,7 @@ import {
   PmCliError,
   type GlobalOptions,
 } from "../sdk/runtime-primitives.js";
+import { renderPmCommand } from "../sdk/command-line.js";
 import { runComments } from "./commands/comments.js";
 import { runLearnings } from "./commands/learnings.js";
 import { runNotes } from "./commands/notes.js";
@@ -42,9 +43,19 @@ function assertNoTransposedAnnotationAction(
     readOptionString(options, "note") ??
     readOptionString(options, "body") ??
     readOptionString(options, "comment");
-  const textSuffix =
-    suppliedText === undefined ? "" : ` ${JSON.stringify(suppliedText)}`;
-  const suggestedRetry = `pm ${collection} ${text.trim()} --add${textSuffix}`;
+  const file = readOptionString(options, "file");
+  const retryArgs = [collection, text.trim()];
+  if (suppliedText !== undefined) retryArgs.push("--add", suppliedText);
+  else if (options.stdin === true) retryArgs.push("--stdin");
+  else if (file !== undefined) retryArgs.push("--file", file);
+  else retryArgs.push("--add", "-");
+  const suggestedRetry = renderPmCommand(retryArgs);
+  const stdinRetry = renderPmCommand([
+    collection,
+    text.trim(),
+    "--add",
+    "-",
+  ]);
   throw new PmCliError(
     `The positional token "add" was parsed as the item id, while "${text.trim()}" was parsed as annotation text. ${collection} does not use an add subcommand.`,
     EXIT_CODE.USAGE,
@@ -52,7 +63,7 @@ function assertNoTransposedAnnotationAction(
       code: "annotation_transposed_subcommand",
       reason: "noun_verb_object_transposition",
       required: `Place the item id immediately after ${collection}, then use --add for annotation text.`,
-      examples: [suggestedRetry, `pm ${collection} ${text.trim()} --add -`],
+      examples: [...new Set([suggestedRetry, stdinRetry])],
       recovery: {
         attempted_command: `pm ${collection} add ${text.trim()}`,
         normalized_args: [collection, "add", text.trim()],
@@ -130,9 +141,21 @@ function resolveSingleTextSource(
   positional: string | undefined,
   options: Record<string, unknown>,
 ): string | undefined {
-  const addFromOption =
-    readOptionString(options, "add") ??
-    (label === "note" ? readOptionString(options, "note") : undefined);
+  const canonicalAdd = readOptionString(options, "add");
+  const aliasAdd =
+    label === "note" ? readOptionString(options, "note") : undefined;
+  if (
+    canonicalAdd !== undefined &&
+    aliasAdd !== undefined &&
+    canonicalAdd !== aliasAdd
+  ) {
+    throw new PmCliError(
+      "Specify note text with either --add or --note, not conflicting values for both aliases",
+      EXIT_CODE.USAGE,
+      { code: "annotation_alias_conflict" },
+    );
+  }
+  const addFromOption = canonicalAdd ?? aliasAdd;
   const addFromPositional =
     typeof positional === "string" ? positional : undefined;
   if (addFromOption !== undefined && addFromPositional !== undefined) {

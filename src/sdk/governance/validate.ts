@@ -340,6 +340,8 @@ export interface ValidateCheck {
   name: ValidateCheckName;
   /** Lifecycle state reported for status. */
   status: ValidateStatus;
+  /** Direct machine predicate derived from whether status is ok. */
+  ok: boolean;
   /** Value that configures or reports details for this contract. */
   details: Record<string, unknown>;
 }
@@ -1512,6 +1514,7 @@ function buildMetadataCheck(
     check: {
       name: "metadata",
       status: warningTokens.length === 0 ? "ok" : "warn",
+      ok: warningTokens.length === 0,
       details,
     },
     warnings: warningTokens,
@@ -1586,6 +1589,7 @@ function buildResolutionCheck(
     check: {
       name: "resolution",
       status: warnings.length === 0 ? "ok" : "warn",
+      ok: warnings.length === 0,
       details: {
         checked_closed_items: closedItems.length,
         missing_resolution_items: missingResolutionRows.length,
@@ -1687,6 +1691,7 @@ function buildDependencyReferencesCheck(
     check: {
       name: "dependency_references",
       status: activeRows.length === 0 ? "ok" : "warn",
+      ok: activeRows.length === 0,
       details: {
         checked_items: items.length,
         dangling_reference_count: activeRows.length + legacyRows.length,
@@ -2594,6 +2599,7 @@ function buildLifecycleCheck(
         : warnings.length === 0
           ? "ok"
           : "warn",
+      ok: !hasErrorSeverityCycle && warnings.length === 0,
       details: {
         checked_active_items: rows.activeItems.length,
         active_closure_like_metadata_items: rows.closureLikeRows.length,
@@ -2792,6 +2798,7 @@ async function buildFilesCheck(
     check: {
       name: "files",
       status: warnings.length === 0 ? "ok" : "warn",
+      ok: warnings.length === 0,
       details: {
         workspace_root: workspaceRoot,
         scan_mode_requested: fileCandidates.requestedMode,
@@ -2892,6 +2899,7 @@ async function buildHistoryDriftCheck(
     check: {
       name: "history_drift",
       status: warnings.length === 0 ? "ok" : "warn",
+      ok: warnings.length === 0,
       details: {
         checked_items: items.length,
         drifted_items_count: driftedItems.length,
@@ -3001,6 +3009,7 @@ function buildCommandReferencesCheck(
     check: {
       name: "command_references",
       status: warnings.length === 0 ? "ok" : "warn",
+      ok: warnings.length === 0,
       details: {
         checked_items: items.length,
         linked_commands_scanned: linkedCommandsScanned,
@@ -3056,6 +3065,7 @@ function buildFormatVersionCheck(
     check: {
       name: "format_version",
       status,
+      ok: status === "ok",
       details: {
         checked_items: items.length,
         current_format_version: CURRENT_ITEM_FORMAT_VERSION,
@@ -3331,13 +3341,16 @@ async function buildStorageIntegrityCheck(
       `validate_merge_decisions_unreviewed:${pendingMergeDecisions.length}`,
     );
   }
+  const status =
+    errorCount > 0 ? "error" : warnings.length > 0 ? "warn" : "ok";
   return {
     check: {
       name: "storage_integrity",
       // Corruption findings fail the check; fence drift alone is a warning —
       // the workspace data is intact, but future merges of uncovered paths
       // would fall back to git's default text driver.
-      status: errorCount > 0 ? "error" : warnings.length > 0 ? "warn" : "ok",
+      status,
+      ok: status === "ok",
       details: {
         ...scan,
         merge_fence: fenceAudit,

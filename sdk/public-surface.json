@@ -371,6 +371,14 @@
       ],
       "package_version": "2026.8.11",
       "reason": "pm-m0b7h8: removed count is present only for successful linked-test removals"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ValidateCheck",
+        "signature ./sdk/governance:ValidateCheck"
+      ],
+      "package_version": "2026.8.11",
+      "reason": "ValidateCheck now exposes the same required machine-readable ok predicate as HealthCheck, preventing consumers from re-deriving status semantics; review-hardened before release."
     }
   ],
   "entrypoints": {
@@ -14055,7 +14063,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateCheck",
-          "signature": "export interface ValidateCheck { name: ValidateCheckName; status: ValidateStatus; details: Record<string, unknown>; }"
+          "signature": "export interface ValidateCheck { name: ValidateCheckName; status: ValidateStatus; ok: boolean; details: Record<string, unknown>; }"
         },
         {
           "classification": "supported",
@@ -19263,7 +19271,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateCheck",
-          "signature": "export interface ValidateCheck { name: ValidateCheckName; status: ValidateStatus; details: Record<string, unknown>; }"
+          "signature": "export interface ValidateCheck { name: ValidateCheckName; status: ValidateStatus; ok: boolean; details: Record<string, unknown>; }"
         },
         {
           "classification": "supported",
@@ -25558,6 +25566,7 @@
     "already_claimed_by",
     "ambiguous_list_all",
     "ambiguous_option_combination",
+    "annotation_alias_conflict",
     "annotation_flag_like_value",
     "annotation_message_without_text",
     "annotation_transposed_subcommand",

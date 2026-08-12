@@ -3324,6 +3324,11 @@ describe("runHealth", () => {
       );
 
       const health = await runHealth({ path: context.pmPath }, { brief: true });
+      expect(
+        health.checks.every(
+          (check) => check.ok === (check.status === "ok"),
+        ),
+      ).toBe(true);
       const locksCheck = health.checks.find((check) => check.name === "locks");
       expect(locksCheck?.status).toBe("warn");
       expect(locksCheck?.details).toEqual({

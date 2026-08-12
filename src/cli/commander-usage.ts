@@ -12,6 +12,7 @@ import {
   resolvePmRoot,
   readSettings,
   getActiveExtensionRegistrations,
+  locateItem,
   runActiveServiceOverride,
   levenshteinDistanceWithinLimit,
 } from "../sdk/runtime-primitives.js";
@@ -744,13 +745,22 @@ export function isKnownHelpCommandPath(
   return matchedAny;
 }
 
-async function resolveAllowedTypesForUsage(
+async function resolveWorkspaceUsageContext(
   bootstrapGlobal: ReturnType<typeof parseBootstrapGlobalOptions>,
-): Promise<string> {
+  message: string,
+  invocationArgv: string[],
+  commandName: string | undefined,
+): Promise<{
+  allowedTypes: string;
+  pmRoot?: string;
+  settings?: Awaited<ReturnType<typeof readSettings>>;
+  typeToFolder?: Record<string, string>;
+  verifiedCollectionItemId?: string;
+}> {
   try {
     const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
     if (!(await pathExists(getSettingsPath(pmRoot)))) {
-      return BUILTIN_TYPE_HELP_VALUES;
+      return { allowedTypes: BUILTIN_TYPE_HELP_VALUES };
     }
     const settings = await readSettings(pmRoot);
     const extensionRegistrations = bootstrapGlobal.noExtensions
@@ -760,12 +770,50 @@ async function resolveAllowedTypesForUsage(
       settings,
       extensionRegistrations,
     );
-    return typeRegistry.types.length > 0
-      ? typeRegistry.types.join("|")
-      : BUILTIN_TYPE_HELP_VALUES;
+    let verifiedCollectionItemId: string | undefined;
+    if (
+      /too many arguments/i.test(message) &&
+      ["comments", "docs", "files", "learnings", "notes", "test"].includes(
+        commandName ?? "",
+      )
+    ) {
+      const commandIndex = invocationArgv.findIndex(
+        (token) => token === commandName,
+      );
+      const candidate = invocationArgv[commandIndex + 2];
+      if (
+        invocationArgv[commandIndex + 1]?.toLowerCase() === "add" &&
+        candidate !== undefined &&
+        !candidate.startsWith("-")
+      ) {
+        try {
+          verifiedCollectionItemId = (
+            await locateItem(
+              pmRoot,
+              candidate,
+              settings.id_prefix,
+              settings.item_format,
+              typeRegistry.type_to_folder,
+            )
+          )?.id;
+        } catch {
+          // Usage rendering remains available when tracker storage is unreadable.
+        }
+      }
+    }
+    return {
+      allowedTypes:
+        typeRegistry.types.length > 0
+          ? typeRegistry.types.join("|")
+          : BUILTIN_TYPE_HELP_VALUES,
+      pmRoot,
+      settings,
+      typeToFolder: typeRegistry.type_to_folder,
+      verifiedCollectionItemId,
+    };
   } catch {
     /* v8 ignore start -- defensive fallback for corrupted settings during usage-error rendering; command behavior is covered through normal settings paths */
-    return BUILTIN_TYPE_HELP_VALUES;
+    return { allowedTypes: BUILTIN_TYPE_HELP_VALUES };
     /* v8 ignore stop */
   }
 }
@@ -896,7 +944,13 @@ export async function resolveCommanderUsageContext(
   const commandName = parseBootstrapCommandName(invocationArgv);
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedOptionFlags = extractProvidedOptionFlags(invocationArgv);
-  const allowedTypes = await resolveAllowedTypesForUsage(bootstrapGlobal);
+  const workspaceUsage = await resolveWorkspaceUsageContext(
+    bootstrapGlobal,
+    message,
+    invocationArgv,
+    commandName,
+  );
+  const allowedTypes = workspaceUsage.allowedTypes;
   const unknownCommandGuidance = buildUnknownCommandGuidanceFromRuntime(
     message,
     rootProgram,
@@ -934,6 +988,7 @@ export async function resolveCommanderUsageContext(
     unknownOptionOtherCommandsTruncated:
       unknownOption.otherCommands.length > 12 || undefined,
     suggestedRetryCommand,
+    verifiedCollectionItemId: workspaceUsage.verifiedCollectionItemId,
     ...splitSchemaSubcommand,
     ...unknownCommandGuidance,
     ...guidanceOverrides,
@@ -970,6 +1025,7 @@ export async function formatCommanderUsageMessage(
     unknownSubcommandToken,
     unknownSubcommandAllowedValues,
     suggestedRetryCommand,
+    verifiedCollectionItemId,
     failedExtensions,
   } = usageContext;
   const formatted = formatCommanderErrorForDisplay(
@@ -990,6 +1046,7 @@ export async function formatCommanderUsageMessage(
       unknownSubcommandToken,
       unknownSubcommandAllowedValues,
       suggestedRetryCommand,
+      verifiedCollectionItemId,
       failedExtensions,
     },
   );
@@ -1040,6 +1097,7 @@ export async function formatCommanderUsageJson(
       unknownSubcommandAllowedValues:
         usageContext.unknownSubcommandAllowedValues,
       suggestedRetryCommand: usageContext.suggestedRetryCommand,
+      verifiedCollectionItemId: usageContext.verifiedCollectionItemId,
       failedExtensions: usageContext.failedExtensions,
     },
   );

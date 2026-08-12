@@ -243,7 +243,7 @@ describe("SDK entrypoint import-cost calculations", () => {
     ).resolves.toMatchObject({ mode: "check", violations: [] });
   });
 
-  it("builds headroom budgets and reports latency, RSS, and missing entries", () => {
+  it("uses median admission while reporting persistent latency, RSS, and missing entries", () => {
     const baseline = report();
     const budgets = buildEntrypointBudgets(baseline, 1);
     expect(budgets.entrypoints["./sdk/query"]).toEqual({
@@ -251,20 +251,25 @@ describe("SDK entrypoint import-cost calculations", () => {
       max_peak_rss_bytes: 40,
     });
     expect(compareEntrypointBudgets(baseline, budgets)).toEqual([]);
+    const noisy = structuredClone(baseline);
+    noisy.entrypoints["./sdk/query"].p95_ms = 999;
+    expect(compareEntrypointBudgets(noisy, budgets)).toEqual([]);
     const regressed = structuredClone(baseline);
+    regressed.entrypoints["./sdk/query"].p50_ms = 200;
     regressed.entrypoints["./sdk/query"].p95_ms = 200;
     regressed.entrypoints["./sdk/query"].max_peak_rss_bytes = 80;
     delete budgets.entrypoints["./sdk"];
     expect(compareEntrypointBudgets(regressed, budgets)).toEqual(
       expect.arrayContaining([
         expect.stringContaining("./sdk: missing budget"),
-        expect.stringContaining("./sdk/query: 200ms"),
+        expect.stringContaining("./sdk/query median of 3: 200ms"),
         expect.stringContaining("peak RSS"),
       ]),
     );
+    regressed.baseline.p50_ms = 999;
     regressed.baseline.p95_ms = 999;
     expect(compareEntrypointBudgets(regressed, budgets)).toContain(
-      "bare node: 999ms > 74ms",
+      "bare node median of 3: 999ms > 74ms",
     );
     const withoutRss = structuredClone(baseline);
     withoutRss.entrypoints["./sdk/query"].max_peak_rss_bytes = null;
@@ -316,6 +321,7 @@ describe("SDK entrypoint import-cost command", () => {
       buildReport: async () => structuredClone(baseline),
     });
     const regressed = structuredClone(baseline);
+    regressed.entrypoints["./sdk/query"].p50_ms = 999;
     regressed.entrypoints["./sdk/query"].p95_ms = 999;
     await expect(
       main(["--check"], {

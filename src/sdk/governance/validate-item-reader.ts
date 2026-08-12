@@ -28,6 +28,7 @@ export async function readValidateItems(params: {
       params.typeToFolder,
       params.warnings,
       params.settings.schema,
+      { forceSourceScan: true },
     );
   }
   return listAllItemMetadata(

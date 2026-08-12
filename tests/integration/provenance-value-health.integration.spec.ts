@@ -10,7 +10,7 @@ describe("provenance value health projection", () => {
       const history = path.join(pmPath, "history");
       await mkdir(history, { recursive: true });
       await writeFile(
-        path.join(history, "legacy-provenance.jsonl"),
+        path.join(history, "_workspace.jsonl"),
         `${JSON.stringify({
           agent_harness: "legacy-host",
           agent_provenance: {
@@ -20,11 +20,12 @@ describe("provenance value health projection", () => {
       );
       const result = await runHealth(
         { path: pmPath },
-        { checkOnly: true, full: true },
+        { skipDrift: true, skipVectors: true },
       );
       expect(result.warnings).toContain(
         "provenance_value_domain_invalid:legacy-host:role:boolean:1",
       );
+      expect(result.ok, result.warnings.join("\n")).toBe(true);
       expect(
         result.checks.find((check) => check.name === "storage")?.details,
       ).toMatchObject({

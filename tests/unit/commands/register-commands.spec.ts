@@ -2803,11 +2803,81 @@ describe("mutation command actions", () => {
       lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).add,
     ).toBe("alias note");
     await expect(
+      runCli(
+        "notes",
+        "pm-1",
+        "--add",
+        "canonical",
+        "--note",
+        "conflicting alias",
+      ),
+    ).rejects.toMatchObject<Partial<PmCliError>>({
+      code: "annotation_alias_conflict",
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await runCli(
+      "notes",
+      "pm-1",
+      "--add",
+      "same value",
+      "--note",
+      "same value",
+    );
+    expect(
+      lastCallArg<Record<string, unknown>>(vi.mocked(runNotes) as never, 1).add,
+    ).toBe("same value");
+    await expect(
       runCli("notes", "add", "pm-1", "--note", "transposed"),
     ).rejects.toThrow("does not use an add subcommand");
-    await expect(runCli("notes", "add", "pm-1")).rejects.toThrow(
-      "does not use an add subcommand",
-    );
+    const transposedWithoutText = await runCli(
+      "notes",
+      "add",
+      "pm-1",
+    ).catch((error: unknown) => error);
+    expect(transposedWithoutText).toMatchObject<Partial<PmCliError>>({
+      code: "annotation_transposed_subcommand",
+      context: {
+        recovery: { suggested_retry: "pm notes pm-1 --add -" },
+      },
+    });
+    const transposedStdin = await runCli(
+      "notes",
+      "add",
+      "pm-1",
+      "--stdin",
+    ).catch((error: unknown) => error);
+    expect(transposedStdin).toMatchObject<Partial<PmCliError>>({
+      context: { recovery: { suggested_retry: "pm notes pm-1 --stdin" } },
+    });
+    const transposedFile = await runCli(
+      "notes",
+      "add",
+      "pm-1",
+      "--file",
+      "notes file.md",
+    ).catch((error: unknown) => error);
+    expect(transposedFile).toMatchObject<Partial<PmCliError>>({
+      context: {
+        recovery: {
+          suggested_retry: 'pm notes pm-1 --file "notes file.md"',
+        },
+      },
+    });
+    const transposedShellText = await runCli(
+      "notes",
+      "add",
+      "pm-1",
+      "--note",
+      '$(touch /tmp/should-not-run) `echo unsafe` "$TOKEN"',
+    ).catch((error: unknown) => error);
+    expect(transposedShellText).toMatchObject<Partial<PmCliError>>({
+      context: {
+        recovery: {
+          suggested_retry:
+            'pm notes pm-1 --add "\\$(touch /tmp/should-not-run) \\`echo unsafe\\` \\"\\$TOKEN\\""',
+        },
+      },
+    });
     await expect(
       runCli("comments", "add", "pm-1", "--body", "transposed body"),
     ).rejects.toThrow("does not use an add subcommand");
@@ -2845,7 +2915,7 @@ describe("mutation command actions", () => {
     await expect(
       runCli("learnings", "pm-1", "a", "--add", "b"),
     ).rejects.toThrow("not both");
-    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(9);
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(10);
   });
 
   it("maps files/docs link management and discover routing", async () => {

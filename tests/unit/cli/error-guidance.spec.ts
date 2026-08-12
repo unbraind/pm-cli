@@ -686,7 +686,10 @@ describe("collection mutation transposition guidance", () => {
       "files",
       "Task|Issue",
       2,
-      { normalizedInvocationArgs: ["files", "add", "pm-a1b2"] },
+      {
+        normalizedInvocationArgs: ["files", "add", "pm-a1b2"],
+        verifiedCollectionItemId: "pm-a1b2",
+      },
     );
 
     expect(envelope.code).toBe("collection_transposed_subcommand");
@@ -697,6 +700,19 @@ describe("collection mutation transposition guidance", () => {
     expect(envelope.recovery?.suggested_retry).toBe(
       "pm files pm-a1b2 --add <value>",
     );
+  });
+
+  it("does not invent recovery for an unverified item token", () => {
+    const envelope = formatCommanderErrorForJson(
+      "error: too many arguments for 'notes'. Expected 1 argument but got 2.",
+      "notes",
+      "Task|Issue",
+      2,
+      { normalizedInvocationArgs: ["notes", "add", "draft"] },
+    );
+
+    expect(envelope.code).toBe("invalid_command_usage");
+    expect(envelope.recovery?.suggested_retry).toBeUndefined();
   });
 
   it("renders typed positional roles and defensively normalizes malformed roles", () => {
@@ -712,7 +728,15 @@ describe("collection mutation transposition guidance", () => {
 
     expect(text).toContain("parsed_positionals:");
     expect(text).toContain("- transposed_subcommand: add");
-    expect(text).not.toContain("- : ");
+    const lines = text.split("\n");
+    const positionalStart = lines.findIndex(
+      (line) => line.trim() === "parsed_positionals:",
+    );
+    const positionalLines = lines
+      .slice(positionalStart + 1)
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("- "));
+    expect(positionalLines).toEqual(["- transposed_subcommand: add"]);
     expect(
       _testOnly.normalizeRecoveryPayload({
         parsed_positionals: [{ role: 7, value: null }] as never,

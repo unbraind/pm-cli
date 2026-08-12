@@ -131,6 +131,11 @@ const SEMANTIC_CONTEXT_KINDS = new Set([
   "verifies",
 ]);
 
+/** Return whether a relationship kind carries provenance or verification context. */
+export function isSemanticContextKind(kind: string): boolean {
+  return SEMANTIC_CONTEXT_KINDS.has(kind);
+}
+
 /** Rank used to order findings by decreasing severity. */
 const SEVERITY_RANK: Record<RelationshipAuditSeverity, number> = {
   error: 0,
@@ -760,7 +765,7 @@ function collectCoverageReport(
   );
   const semanticEdges = Object.entries(sortedEdgesByKind).reduce(
     (count, [kind, value]) =>
-      count + (SEMANTIC_CONTEXT_KINDS.has(kind) ? value : 0),
+      count + (isSemanticContextKind(kind) ? value : 0),
     0,
   );
   return {

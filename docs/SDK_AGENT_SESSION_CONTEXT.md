@@ -5,7 +5,8 @@ Tracker references: [pm-9wbiye](../.agents/pm/issues/pm-9wbiye.toon),
 [pm-oqo9l2](../.agents/pm/features/pm-oqo9l2.toon),
 [pm-3zgh2c](../.agents/pm/features/pm-3zgh2c.toon),
 [pm-eq9dlw](../.agents/pm/issues/pm-eq9dlw.toon), and
-[pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon).
+[pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), plus
+[pm-5q8wa0](../.agents/pm/issues/pm-5q8wa0.toon).
 
 Project management is context management. The public SDK therefore carries a
 session's purpose and episode boundary through the same immutable history that
@@ -136,6 +137,16 @@ host's shared `AI_AGENT` value is not Codex input. Consequently `pm health` can 
 without confusing an unavailable harness signal with a failed resolver. The
 warning is advisory and the storage check includes the bounded attempt and
 success counters for diagnosis.
+
+Older immutable history can also contain roles outside the controlled domain,
+including values recorded from presence-only harness flags before semantic role
+validation existed. `pm health` retains the privacy-safe
+`provenance_value_domain_invalid:<harness>:<dimension>:<value-shape>:<count>`
+warning and its bounded storage aggregate, but treats the finding as advisory:
+truthful append-only history is not rewritten merely to make health green. New
+session, environment, MCP, and inferred provenance still pass through the
+controlled write-time validator, so this disposition does not permit new
+invalid values.
 
 ## Cross an MCP boundary
 

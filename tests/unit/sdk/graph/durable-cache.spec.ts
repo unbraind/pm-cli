@@ -261,6 +261,55 @@ describe("durable graph cache primitives", () => {
         }),
         JSON.stringify({
           ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            edges: 1,
+            edges_by_kind: { verifies: 1 },
+            edge_share_by_kind: { verifies: 0 },
+            semantic_edges: 1,
+            semantic_edge_share: 1,
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            edges: 1,
+            edges_by_kind: { verifies: 1 },
+            edge_share_by_kind: { verifies: 1 },
+            semantic_edges: 1,
+            semantic_edge_share: 0,
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            edges: 2,
+            edges_by_kind: { related: 1 },
+            edge_share_by_kind: { related: 0.5 },
+            semantic_edges: 0,
+            semantic_edge_share: 0,
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            edge_share_by_kind: { unexpected: 0 },
+            semantic_edges: 0,
+            semantic_edge_share: 0,
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            semantic_edges: undefined,
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
           profile: { ...snapshot.profile, coverage_by_type: null },
         }),
         JSON.stringify({
@@ -323,6 +372,21 @@ describe("durable graph cache primitives", () => {
           semantic_edge_share: 0,
           coverage_by_type: {},
         },
+      });
+
+      const zeroCountProfile = {
+        ...snapshot.profile,
+        edges_by_kind: { related: 0 },
+        edge_share_by_kind: { related: 0 },
+      };
+      await writeFile(
+        graphAuditBaselinePath(context.pmPath),
+        JSON.stringify({ ...snapshot, profile: zeroCountProfile }),
+        "utf8",
+      );
+      expect(await loadGraphAuditBaseline(context.pmPath)).toEqual({
+        ...snapshot,
+        profile: zeroCountProfile,
       });
     });
   });

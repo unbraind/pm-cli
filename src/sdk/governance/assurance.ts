@@ -660,18 +660,15 @@ export function validateMeasurementDefinition(
     const hasEquals = Object.hasOwn(source, "equals");
     const hasState = source.state !== undefined;
     const predicateCount = Number(hasEquals) + Number(hasState);
-    const predicateContractErrors: Record<string, string> = {
-      "1:0": "items source with field requires exactly one of equals or state",
-      "1:2": "items source with field requires exactly one of equals or state",
-      "0:1": "items source equals/state requires field",
-      "0:2": "items source equals/state requires field",
-    };
-    const predicateContractError =
-      predicateContractErrors[
-        `${Number(source.field !== undefined)}:${predicateCount}`
-      ];
-    if (predicateContractError !== undefined) {
-      throw new AssuranceMutationRefusalError(predicateContractError);
+    if (source.field !== undefined && predicateCount !== 1) {
+      throw new AssuranceMutationRefusalError(
+        "items source with field requires exactly one of equals or state",
+      );
+    }
+    if (source.field === undefined && predicateCount !== 0) {
+      throw new AssuranceMutationRefusalError(
+        "items source equals/state requires field",
+      );
     }
   }
   if (

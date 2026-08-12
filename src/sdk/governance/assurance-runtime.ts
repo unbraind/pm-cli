@@ -79,7 +79,7 @@ function checkValue(
     checks: Array<{
       name: string;
       status: string;
-      ok?: boolean;
+      ok: boolean;
       details?: Record<string, unknown>;
     }>;
   },
@@ -91,7 +91,7 @@ function checkValue(
     throw new TypeError(`assurance check ${checkName} is not present`);
   const value =
     field === "status" || field === "ok"
-      ? (check.ok ?? check.status === "ok")
+      ? check.ok
         ? 0
         : 1
       : valueAtPath(check.details, field);

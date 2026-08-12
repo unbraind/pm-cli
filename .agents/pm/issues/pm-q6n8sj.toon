@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: assurance,governance,graph,ratchet
 created_at: "2026-08-11T13:51:17.661Z"
-updated_at: "2026-08-11T22:24:00.411Z"
+updated_at: "2026-08-11T22:48:25.627Z"
 closed_at: "2026-08-11T22:23:59.607Z"
 completed_at: "2026-08-11T22:23:59.607Z"
 author: "harness:claude-code"
@@ -28,8 +28,9 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-g4k74y,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
   pm-wmf72c,related,"2026-08-11T13:51:17.661Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-11T22:18:15.322Z","harness:codex","Evidence 2026-08-12: graph audit now publishes canonical edges_by_kind, edge_share_by_kind, semantic_edges, and semantic_edge_share; alias spellings are counted once and durable legacy cache snapshots are normalized. The live graph-composition assurance now enforces semantic share rather than rewarding inert related edges. Exact 100/100/100/100 coverage, graph gates, contracts, packed dogfood, npx, and external-package smoke passed; empty-workspace acceptance returned explicit zero composition without NaN or omission."
+  "2026-08-11T22:48:25.627Z","harness:codex","Evidence chronology: the evidence execution date is recorded in Europe/Vienna local time, while PM history event timestamp fields remain UTC. The apparent August 12 versus August 11 difference is therefore timezone presentation, not contradictory execution evidence."
 learnings[1]{created_at,author,text}:
   "2026-08-11T22:18:15.799Z","harness:codex","Graph quality needs a denominator and a semantic numerator: canonical aliasing prevents double counting, while semantic share prevents a dense but algorithmically meaningless related-edge graph from satisfying context guarantees."
 files[5]{path,scope,note}:

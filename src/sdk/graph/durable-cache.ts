@@ -21,7 +21,10 @@ import {
   writeFileAtomic,
 } from "../../core/fs/fs-utils.js";
 import { acquireLock } from "../../core/lock/lock.js";
-import type { RelationshipAuditSnapshot } from "./governance.js";
+import {
+  isSemanticContextKind,
+  type RelationshipAuditSnapshot,
+} from "./governance.js";
 
 /** Envelope format version; any change invalidates persisted entries. */
 export const GRAPH_DURABLE_CACHE_VERSION = 1;
@@ -278,6 +281,70 @@ function isNonnegativeCoverageByTypeRecord(value: unknown): boolean {
   );
 }
 
+interface DecodedGraphComposition {
+  edge_share_by_kind: Record<string, number>;
+  semantic_edges: number;
+  semantic_edge_share: number;
+}
+
+/** Decode and cross-check optional graph-composition fields as one coherent unit. */
+function decodeGraphComposition(
+  edges: number,
+  edgesByKind: Record<string, number>,
+  edgeShareByKind: unknown,
+  semanticEdgesValue: unknown,
+  semanticEdgeShareValue: unknown,
+): DecodedGraphComposition | undefined {
+  const values = [
+    edgeShareByKind,
+    semanticEdgesValue,
+    semanticEdgeShareValue,
+  ];
+  const presentCount = values.filter((value) => value !== undefined).length;
+  if (presentCount === 0) {
+    return {
+      edge_share_by_kind: {},
+      semantic_edges: 0,
+      semantic_edge_share: 0,
+    };
+  }
+  if (
+    presentCount !== values.length ||
+    !isUnitShareRecord(edgeShareByKind) ||
+    !isNonnegativeInteger(semanticEdgesValue) ||
+    !isUnitShare(semanticEdgeShareValue)
+  ) {
+    return undefined;
+  }
+  const edgeEntries = Object.entries(edgesByKind);
+  if (
+    edgeEntries.reduce((sum, [, count]) => sum + count, 0) !== edges ||
+    Object.keys(edgeShareByKind).length !== edgeEntries.length ||
+    edgeEntries.some(
+      ([kind, count]) =>
+        edgeShareByKind[kind] !== (edges === 0 ? 0 : count / edges),
+    )
+  ) {
+    return undefined;
+  }
+  const semanticEdges = edgeEntries.reduce(
+    (sum, [kind, count]) =>
+      sum + (isSemanticContextKind(kind) ? count : 0),
+    0,
+  );
+  if (
+    semanticEdgesValue !== semanticEdges ||
+    semanticEdgeShareValue !== (edges === 0 ? 0 : semanticEdges / edges)
+  ) {
+    return undefined;
+  }
+  return {
+    edge_share_by_kind: edgeShareByKind,
+    semantic_edges: semanticEdgesValue,
+    semantic_edge_share: semanticEdgeShareValue,
+  };
+}
+
 /** Decode one persisted audit census baseline, undefined on any defect. */
 function decodeBaseline(
   raw: string | null,
@@ -307,33 +374,28 @@ function decodeBaseline(
       return undefined;
     }
     if (!isNonnegativeCountRecord(profile.edges_by_kind)) return undefined;
-    const optionalProfileFields: Array<
-      readonly [unknown, (candidate: unknown) => boolean]
-    > = [
-      [profile.edge_share_by_kind, isUnitShareRecord],
-      [profile.semantic_edges, isNonnegativeInteger],
-      [profile.semantic_edge_share, isUnitShare],
-      [profile.coverage_by_type, isNonnegativeCoverageByTypeRecord],
-    ];
     if (
-      !optionalProfileFields.every(([value, validate]) =>
-        isOptionalValid(value, validate),
+      !isOptionalValid(
+        profile.coverage_by_type,
+        isNonnegativeCoverageByTypeRecord,
       )
-    )
+    ) {
       return undefined;
-    const {
-      edge_share_by_kind = {},
-      semantic_edges = 0,
-      semantic_edge_share = 0,
-      coverage_by_type = {},
-    } = profile;
+    }
+    const composition = decodeGraphComposition(
+      profile.edges,
+      profile.edges_by_kind,
+      profile.edge_share_by_kind,
+      profile.semantic_edges,
+      profile.semantic_edge_share,
+    );
+    if (composition === undefined) return undefined;
+    const { coverage_by_type = {} } = profile;
     return {
       ...snapshot,
       profile: {
         ...profile,
-        edge_share_by_kind,
-        semantic_edges,
-        semantic_edge_share,
+        ...composition,
         coverage_by_type,
       },
     } as RelationshipAuditSnapshot;

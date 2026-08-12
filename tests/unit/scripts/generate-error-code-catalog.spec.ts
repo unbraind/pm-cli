@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "../../../scripts/generate-error-code-catalog.mjs";
@@ -8,13 +8,16 @@ const harness = createScriptHarness();
 
 async function readGeneratedCatalog(root: string): Promise<string> {
   const sdkRoot = path.join(root, "src", "sdk");
+  const generatedRoot = path.join(sdkRoot, "generated");
+  const generatedParts = (await readdir(generatedRoot))
+    .filter((name) => /^generated-error-code-catalog-part-\d+\.ts$/u.test(name))
+    .sort((left, right) => left.localeCompare(right))
+    .map((name) => path.join("generated", name));
   return (
     await Promise.all(
-      [
-        "generated-error-code-catalog.ts",
-        path.join("generated", "generated-error-code-catalog-part-1.ts"),
-        path.join("generated", "generated-error-code-catalog-part-2.ts"),
-      ].map((name) => readFile(path.join(sdkRoot, name), "utf8")),
+      ["generated-error-code-catalog.ts", ...generatedParts].map((name) =>
+        readFile(path.join(sdkRoot, name), "utf8"),
+      ),
     )
   ).join("\n");
 }

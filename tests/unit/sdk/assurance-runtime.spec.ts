@@ -160,6 +160,13 @@ describe("assurance workspace runtime", () => {
       ).resolves.toMatchObject({ value: 0 });
       await expect(
         context.external({
+          kind: "validate",
+          check: "lifecycle",
+          field: "ok",
+        }),
+      ).resolves.toMatchObject({ value: 0 });
+      await expect(
+        context.external({
           kind: "health",
           check: "settings",
           field: "warnings",

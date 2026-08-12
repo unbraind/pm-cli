@@ -109,6 +109,8 @@ export interface CommanderGuidanceContext {
   unknownSubcommandAllowedValues?: string[];
   /** Value that configures or reports suggested retry command for this contract. */
   suggestedRetryCommand?: string;
+  /** Existing item id verified against the selected tracker for collection recovery. */
+  verifiedCollectionItemId?: string;
   /** Installed extensions whose activation failed for this invocation. */
   failedExtensions?: Array<{ name: string }>;
 }
@@ -1512,8 +1514,15 @@ function buildTransposedCollectionActionGuidance(
   const argv = context?.normalizedInvocationArgs ?? [];
   const commandIndex = argv.findIndex((token) => token === commandName);
   const action = argv[commandIndex + 1];
-  const itemId = argv[commandIndex + 2];
-  if (action?.toLowerCase() !== "add" || !itemId || itemId.startsWith("-")) {
+  const parsedItemId = argv[commandIndex + 2];
+  const itemId = context?.verifiedCollectionItemId?.trim();
+  if (
+    action?.toLowerCase() !== "add" ||
+    !parsedItemId ||
+    parsedItemId.startsWith("-") ||
+    !itemId ||
+    itemId.toLowerCase() !== parsedItemId.toLowerCase()
+  ) {
     return null;
   }
   const suggestedRetry = `pm ${commandName} ${itemId} --add <value>`;

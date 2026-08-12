@@ -265,6 +265,12 @@ describe("assurance SDK", () => {
       }),
     ).toThrow("exactly one of equals or state");
     expect(() =>
+      validateMeasurementDefinition({
+        id: "predicate-without-field",
+        source: { kind: "items", equals: "high" },
+      }),
+    ).toThrow("equals/state requires field");
+    expect(() =>
       validateAssertionDefinition({
         ...assertion,
         scope: { kind: "filter", measurement_id: "Bad Id" },
@@ -674,6 +680,24 @@ describe("assurance SDK", () => {
         context,
       ),
     ).resolves.toMatchObject({ value: 2, population_size: 2 });
+    await expect(
+      evaluateMeasurement(
+        {
+          id: "null-priority",
+          source: { kind: "items", field: "priority", equals: null },
+        },
+        {
+          ...context,
+          items: context.items.map((item, index) =>
+            index === 0 ? { ...item, priority: null } : item,
+          ),
+        },
+      ),
+    ).resolves.toMatchObject({
+      value: 1,
+      population_size: 2,
+      contributors: ["pm-a"],
+    });
     await expect(
       evaluateMeasurement(
         { id: "updates", source: { kind: "history", op: "update" } },

@@ -256,7 +256,7 @@ const TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS = [
   "x-pm-telemetry-max-version",
 ] as const;
 
-/** Advisory warnings are surfaced for visibility but never flip overall health to not-ok. Telemetry is opt-out, non-critical observability: a queued/unreachable telemetry endpoint or corrupt local telemetry state is not a project-health failure and must not block agents that gate on `pm health` `ok`. History over-compaction-threshold warnings are likewise advisory maintenance hints — a deep stream is healthy, just a candidate for `pm history-compact`. */
+/** Advisory warnings are surfaced for visibility but never flip overall health to not-ok. Telemetry is opt-out, non-critical observability: a queued/unreachable telemetry endpoint or corrupt local telemetry state is not a project-health failure and must not block agents that gate on `pm health` `ok`. History over-compaction-threshold warnings are likewise advisory maintenance hints — a deep stream is healthy, just a candidate for `pm history-compact`. Invalid legacy provenance values remain immutable diagnostic evidence: write-time resolvers reject new invalid values, while health reports the bounded aggregate without requiring truthful history to be rewritten. */
 function isAdvisoryHealthWarning(
   warning: string,
   requireMergeDrivers = false,
@@ -266,6 +266,7 @@ function isAdvisoryHealthWarning(
     warning.startsWith("history_stream_over_compact_threshold:") ||
     warning.startsWith("stale_in_progress_items:") ||
     warning.startsWith("provenance_resolver_zero_success:") ||
+    warning.startsWith("provenance_value_domain_invalid:") ||
     (!requireMergeDrivers &&
       warning.startsWith("merge_driver_configuration_missing:"))
   );

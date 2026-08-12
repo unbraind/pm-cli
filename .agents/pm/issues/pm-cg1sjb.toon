@@ -2,11 +2,13 @@ id: pm-cg1sjb
 title: "SDK entrypoint import-cost gate false-fails on cold filesystem cache: single-shot fresh-process sampling exceeds the 30ms noise margin"
 description: "Live reproduction 2026-07-26 on clean main (2026.7.26): the first pnpm lint invocation of the day failed the SDK entrypoint import-cost gate with './sdk/runtime: 545ms > 510ms' (budget 480ms + LATENCY_NOISE_MARGIN_MS 30). An immediate re-run with zero code or environment changes passed all 10 entrypoints, and every subsequent run stayed green. The gate spawns fresh Node processes per entrypoint but takes a single timing sample per check run, so a cold filesystem/module cache on the first run of a session (or a loaded CI runner) converts pure measurement noise into a hard gate failure. False failures train agents to re-run gates until green and erode trust in the pipeline — the symmetric hazard to the false-pass erosion pm-k6t4yb registers. Duplicate check: searched import-cost/noise/cold/flake all-status; pm-38bskj (closed) shaped the entrypoints, pm-ag9nka owns --profile truthfulness, pm-k6t4yb owns the gate registry and negative controls — none own per-run sampling noise of this gate. Fix directions (implementation out of scope for the filing pass): warm-up sample discarded before measurement, min-of-N sampling per entrypoint instead of single-shot, or cache-aware margin; whichever lands must register in the pm-k6t4yb gate registry with a negative-control fixture."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[4]: "area:ci",flake,gate-reliability,performance
 created_at: "2026-07-26T10:28:46.495Z"
-updated_at: "2026-08-11T14:34:48.199Z"
+updated_at: "2026-08-12T01:40:23.138Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#09d99a3d99ca542892066fe0"
 author: "harness:opencode"
 estimated_minutes: 120
 acceptance_criteria: "The import-cost gate cannot fail solely because the first sampled process hit a cold cache: measurement uses either a discarded warm-up sample or min-of-N per entrypoint; a simulated cold-cache run is green when costs are within budget; the gate still fails on a genuinely over-budget entrypoint (negative control per pm-k6t4yb); budgets in scripts/bench/sdk-entrypoint-budgets.json are not raised to absorb noise"
@@ -56,11 +58,35 @@ dependencies[9]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-04T09:18:04.437Z","harness:codex","Fresh audit evidence 2026-08-04: pnpm lint reached the SDK import-cost gate after ESLint, jscpd, static quality, package boundary, package-SDK parity, token budgets, context calibration, gate registry, and SDK surface checks passed. The first fresh-process sample failed governance 536ms>248ms, merge 258ms>195ms, and query 214ms>172ms. An immediate isolated rerun failed on bare node 117ms>95ms instead, demonstrating sample-to-sample and target-to-target instability rather than a stable entrypoint regression. The gate remains a real quality failure until its measurement contract is made robust."
   "2026-08-05T18:27:07.798Z","harness:claude-code","Fresh non-determinism sample, 2026-08-05, on an unchanged src tree (this session's diff touches only scripts/, tests/ and tracker data — zero files under src/). Three consecutive --check runs, back to back, warm cache:\n\n  run 1: Verified SDK entrypoint import costs (10 entrypoints)\n  run 2: FAILED — ./sdk/authoring 140ms > 133ms, ./sdk/query 203ms > 172ms\n  run 3: Verified SDK entrypoint import costs (10 entrypoints)\n\nA prior run in the same session had failed on a different entrypoint again (./sdk 375ms > 367ms). So the gate does not merely false-fail on a cold filesystem cache as the title states — it false-fails on a warm one too, and the entrypoint that trips is not stable between runs. Two of five failures observed today were within 6 percent of the budget.\n\nThat widens the fix: a single-shot fresh-process sample cannot separate an 8ms regression from 8ms of scheduler noise at any cache temperature, so the remedy has to be a sampling and admission policy (best-of-N, or a distribution with a declared confidence), not a warm-up."
   "2026-08-11T14:34:47.393Z","harness:claude-code","Sibling instance observed 2026-08-11, cause not determined. token-budget-gate fails locally on health-default (167 estimated tokens against a 137 budget, baseline 496 bytes / 124 tokens) while the hosted Gates (static) job reports 'Token budget gate passed (29 surfaces checked)' on the identical commit 61d68bd7e. The gate measures an isolated PM_PATH fixture, not the real tracker, so no tracker state can explain it: pm health --check-only emits exactly 496 bytes here through both the global binary and node dist/cli.js, and is byte-identical against a copy of the pre-commit tracker. So the divergence is environmental and reproducible locally, not a flake, and it is not the cold-cache timing shape this item owns - nothing here is timed. Recorded as an adjacent instance rather than filed, because the cause was not isolated. Same class as the closed pm-fr4dg8, where a ratchet verdict turned out to be a property of the working copy rather than of the commit, extended to a gate that reads a synthetic fixture. Anyone re-running this locally should trust the hosted verdict and not update the baseline."
-files[2]{path,scope,note}:
+  "2026-08-12T01:18:18.018Z","harness:codex","Fresh reproduction 2026-08-12: two unchanged aggregate pnpm lint runs failed different single samples (./sdk/authoring 147ms > 133ms, then ./sdk/merge 204ms > 195ms); an isolated check immediately passed all ten entrypoints after each failure. This matches the canonical warm-cache nondeterminism and activates the existing sampling fix, without raising budgets."
+  "2026-08-12T01:20:05.383Z","harness:codex",Implementation uses the existing five fresh measured processes after one discarded warm-up but admits the median rather than p95/max-of-five. One cold or descheduled outlier no longer false-fails; a majority persistent slowdown still exceeds the unchanged ratchet plus 30ms margin. p95 remains reported as diagnostic evidence and RSS remains max-observed/fail-closed. Focused regression and live ten-entrypoint check pass; budget JSON is unchanged.
+  "2026-08-12T01:40:23.138Z","harness:codex","Implementation and verification evidence: SDK entrypoint admission now evaluates the median of five measured cold imports against the unchanged budget plus 30 ms tolerance, while retaining p95 as a diagnostic and maximum RSS as a strict limit. The focused benchmark contract passed 11 tests; repeated isolated gates passed; the aggregate tracker-context pnpm lint passed every static, graph, assurance, token, package, and performance gate; full coverage passed 486 files and 7,242 tests at exact 100/100/100/100."
+files[3]{path,scope,note}:
   scripts/bench/sdk-entrypoint-budgets.json,project,budget table measured against
-  scripts/bench/sdk-entrypoint-costs.mjs,project,"gate implementation: single-shot fresh-process sampling,30ms noise margin"
+  scripts/bench/sdk-entrypoint-costs.mjs,project,Five-sample median admission with discarded warm-up and unchanged budgets
+  tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project,Median-admission and persistent-regression negative controls
+tests[4]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-entrypoint-costs.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/bench/sdk-entrypoint-costs.mjs --check
+    scope: project
+    timeout_seconds: 120
+  - command: pnpm lint
+    scope: project
+    timeout_seconds: 600
+    pm_context_mode: tracker
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mspeooe4-5ujujx,test,failed,"2026-08-12T01:20:29.103Z","2026-08-12T01:23:55.900Z","2026-08-12T01:23:55.900Z",2,1,0
+  test-local-mspet53n-8jaknk,test,passed,"2026-08-12T01:24:14.073Z","2026-08-12T01:27:24.179Z","2026-08-12T01:27:24.179Z",1,0,0
+  test-local-mspf145i-k8qohc,test,passed,"2026-08-12T01:28:40.280Z","2026-08-12T01:33:36.198Z","2026-08-12T01:33:36.198Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/performance/sdk-entrypoint-import-costs.md,project,Declare the five-sample median admission policy
 body: ""

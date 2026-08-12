@@ -13890,6 +13890,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "annotation_alias_conflict",
+      "class": "usage",
+      "code": "annotation_alias_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Annotation alias conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-annotations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "annotation_flag_like_value",
       "class": "usage",
       "code": "annotation_flag_like_value",
@@ -14165,12 +14182,12 @@
     {
       "aliases": [],
       "canonical_code": "collection_transposed_subcommand",
-      "class": "generic_failure",
+      "class": "usage",
       "code": "collection_transposed_subcommand",
       "emitting_commands": [
         "*"
       ],
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Collection transposed subcommand condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
