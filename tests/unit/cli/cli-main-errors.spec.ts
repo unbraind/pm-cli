@@ -1529,6 +1529,12 @@ describe("CLI main bootstrap helper coverage", () => {
       }),
     ).toBe(true);
     expect(
+      _testOnly.hasGlobalExtensionContributions({
+        schema_version: 1,
+        assurance_providers: ["quality"],
+      }),
+    ).toBe(true);
+    expect(
       _testOnly.extensionNeedsActivationForProbe(
         extension({
           capabilities: ["hooks"],

@@ -16,6 +16,7 @@ import {
   recordAssuranceVerdict,
   removeAssuranceDeclaration,
   type AssuranceAssertionDefinition,
+  type AssuranceBundleMutationReceipt,
   type AssuranceDeclaration,
   type AssuranceDeclarationKind,
   type AssuranceDocument,
@@ -25,6 +26,17 @@ import {
   type AssuranceMeasurementDefinition,
   type AssuranceMutationReceipt,
 } from "./assurance.js";
+import {
+  ASSURANCE_PRESET_IDS,
+  acceptAssuranceProposals,
+  applyAssurancePreset,
+  createAssurancePreset,
+  deriveAssuranceProposals,
+  promoteAssuranceAssertion,
+  type AssuranceDerivedProposal,
+  type AssurancePreset,
+  type AssurancePresetId,
+} from "./assurance-presets.js";
 import { MAX_ASSURANCE_VERDICT_LIMIT } from "./assurance-limits.js";
 import { normalizeAssuranceMutation } from "./assurance-mutation-error.js";
 import { createAssuranceWorkspaceContext } from "./assurance-runtime.js";
@@ -39,6 +51,10 @@ export const ASSURANCE_ACTIONS = [
   "remove",
   "run",
   "verdicts",
+  "presets",
+  "apply",
+  "derive",
+  "promote",
 ] as const;
 
 /** Assurance declaration kinds shared by every transport. */
@@ -79,6 +95,14 @@ export interface AssuranceActionInput {
   author?: string;
   /** Audited mutation rationale. */
   message?: string;
+  /** Built-in preset selected for preview or application. */
+  preset?: string;
+  /** pm item that owns preset or derived assertions. */
+  owner?: string;
+  /** Explicitly accept derived proposals. */
+  apply?: boolean;
+  /** Explicit next assertion enforcement level. */
+  enforcement?: string;
 }
 
 /** Result union returned by transport-neutral assurance execution. */
@@ -86,6 +110,22 @@ export type AssuranceActionResult =
   | AssuranceDeclaration
   | AssuranceMutationReceipt
   | AssuranceGateVerdict
+  | AssuranceBundleMutationReceipt
+  | AssurancePreset
+  | {
+      items: AssuranceDerivedProposal[];
+      count: number;
+      applied?: AssuranceBundleMutationReceipt;
+    }
+  | {
+      items: Array<{
+        id: AssurancePresetId;
+        title: string;
+        description: string;
+      }>;
+      count: number;
+      row_contract: { row_keys: ["items"]; jq_selector: ".items[]" };
+    }
   | { /** Mutated declaration id. */ id: string }
   | {
       /** Registry declarations. */
@@ -123,6 +163,24 @@ function parseKind(value: string | undefined): AssuranceDeclarationKind {
   }
   throw new PmCliError(
     `Assurance declaration kind is required. Expected: ${ASSURANCE_DECLARATION_KINDS.join(", ")}`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function parsePreset(value: string | undefined): AssurancePresetId {
+  if (value && ASSURANCE_PRESET_IDS.includes(value as AssurancePresetId)) {
+    return value as AssurancePresetId;
+  }
+  throw new PmCliError(
+    `Assurance preset is required. Expected: ${ASSURANCE_PRESET_IDS.join(", ")}`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function requireOwner(input: AssuranceActionInput): string {
+  if (input.owner?.trim()) return input.owner.trim();
+  throw new PmCliError(
+    "assurance preset and derivation actions require --owner <pm-item-id>",
     EXIT_CODE.USAGE,
   );
 }
@@ -230,6 +288,132 @@ async function runVerdictsAction(
   };
 }
 
+async function runAdoptionAction(
+  action: Extract<AssuranceAction, "presets" | "apply" | "derive" | "promote">,
+  input: AssuranceActionInput,
+  pmRoot: string,
+): Promise<AssuranceActionResult> {
+  if (action === "presets") {
+    if (input.preset ?? input.id) {
+      return createAssurancePreset(
+        parsePreset(input.preset ?? input.id),
+        requireOwner(input),
+      );
+    }
+    const items = ASSURANCE_PRESET_IDS.map((id) => {
+      const preset = createAssurancePreset(id, "pm-owner");
+      return { id, title: preset.title, description: preset.description };
+    });
+    return {
+      items,
+      count: items.length,
+      row_contract: { row_keys: ["items"], jq_selector: ".items[]" },
+    };
+  }
+  if (action === "apply") {
+    return normalizeAssuranceMutation(() =>
+      applyAssurancePreset(
+        pmRoot,
+        parsePreset(input.preset ?? input.id),
+        requireOwner(input),
+        { author: input.author, message: input.message },
+      ),
+    );
+  }
+  if (action === "derive") {
+    const proposals = await deriveAssuranceProposals(
+      await createAssuranceWorkspaceContext(pmRoot, {
+        resolve_tree: false,
+        trigger: "derive",
+      }),
+      requireOwner(input),
+    );
+    const applied = input.apply
+      ? await normalizeAssuranceMutation(() =>
+          acceptAssuranceProposals(pmRoot, proposals, {
+            author: input.author,
+            message:
+              input.message ?? "Accept observation-derived assurance proposals",
+          }),
+        )
+      : undefined;
+    return {
+      items: proposals,
+      count: proposals.length,
+      ...(applied ? { applied } : {}),
+    };
+  }
+  if (!input.id) {
+    throw new PmCliError(
+      "assurance promote requires an assertion id",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (input.enforcement !== "warn" && input.enforcement !== "block") {
+    throw new PmCliError(
+      "assurance promote requires --enforcement warn|block",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const definition = (await getAssuranceDeclaration(
+    pmRoot,
+    "assertion",
+    input.id,
+  )) as AssuranceAssertionDefinition;
+  return normalizeAssuranceMutation(() =>
+    promoteAssuranceAssertion(
+      pmRoot,
+      definition,
+      input.enforcement as "warn" | "block",
+      {
+        author: input.author,
+        message: input.message,
+      },
+    ),
+  );
+}
+
+async function runGateAction(
+  input: AssuranceActionInput,
+  pmRoot: string,
+): Promise<AssuranceGateVerdict> {
+  if (!input.id) {
+    throw new PmCliError("assurance run requires a gate id", EXIT_CODE.USAGE);
+  }
+  if (!input.trigger) {
+    throw new PmCliError("assurance run requires a trigger", EXIT_CODE.USAGE);
+  }
+  if (
+    !ASSURANCE_GATE_TRIGGERS.includes(input.trigger as AssuranceGateTrigger)
+  ) {
+    throw new PmCliError(
+      `Unknown assurance trigger ${input.trigger}. Expected: ${ASSURANCE_GATE_TRIGGERS.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const trigger = input.trigger as AssuranceGateTrigger;
+  const [document, workspaceContext] = await Promise.all([
+    readDocument(pmRoot),
+    createAssuranceWorkspaceContext(pmRoot, {
+      tree_id: input.tree,
+      trigger,
+    }),
+  ]);
+  const verdict = await evaluateAssuranceGate(
+    input.id,
+    document,
+    workspaceContext,
+    { trigger, dry_run: input.dry_run === true },
+  );
+  if (!verdict.dry_run) {
+    await recordAssuranceVerdict(pmRoot, verdict, {
+      author: input.author,
+      message: input.message,
+    });
+  }
+  return verdict;
+}
+
 /** Execute one assurance request through the public assurance SDK primitives. */
 export async function runAssuranceAction(
   input: AssuranceActionInput,
@@ -237,42 +421,19 @@ export async function runAssuranceAction(
 ): Promise<AssuranceActionResult> {
   const action = parseAction(input.action);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  if (
+    action === "presets" ||
+    action === "apply" ||
+    action === "derive" ||
+    action === "promote"
+  ) {
+    return runAdoptionAction(action, input, pmRoot);
+  }
   if (action === "verdicts") {
     return runVerdictsAction(input, pmRoot);
   }
   if (action === "run") {
-    if (!input.id) {
-      throw new PmCliError("assurance run requires a gate id", EXIT_CODE.USAGE);
-    }
-    if (!input.trigger) {
-      throw new PmCliError("assurance run requires a trigger", EXIT_CODE.USAGE);
-    }
-    if (!ASSURANCE_GATE_TRIGGERS.includes(input.trigger as AssuranceGateTrigger)) {
-      throw new PmCliError(
-        `Unknown assurance trigger ${input.trigger}. Expected: ${ASSURANCE_GATE_TRIGGERS.join(", ")}`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    const [document, workspaceContext] = await Promise.all([
-      readDocument(pmRoot),
-      createAssuranceWorkspaceContext(pmRoot, { tree_id: input.tree }),
-    ]);
-    const verdict = await evaluateAssuranceGate(
-      input.id,
-      document,
-      workspaceContext,
-      {
-        trigger: input.trigger as AssuranceGateTrigger,
-        dry_run: input.dry_run === true,
-      },
-    );
-    if (!verdict.dry_run) {
-      await recordAssuranceVerdict(pmRoot, verdict, {
-        author: input.author,
-        message: input.message,
-      });
-    }
-    return verdict;
+    return runGateAction(input, pmRoot);
   }
   const kind = parseKind(input.kind);
   if (action === "list") return listAssuranceDeclarations(pmRoot, kind);
@@ -285,12 +446,10 @@ export async function runAssuranceAction(
   }
   if (action === "remove") {
     const receipt = await normalizeAssuranceMutation(() =>
-      removeAssuranceDeclaration(
-        pmRoot,
-        kind,
-        id,
-        { author: input.author, message: input.message },
-      ),
+      removeAssuranceDeclaration(pmRoot, kind, id, {
+        author: input.author,
+        message: input.message,
+      }),
     );
     return projectMutationReceipt(receipt, input.idOnly);
   }
@@ -314,12 +473,7 @@ export async function runAssuranceAction(
       : {}),
   };
   const receipt = await normalizeAssuranceMutation(() =>
-    putAssuranceDeclaration(
-      pmRoot,
-      kind,
-      definition,
-      mutationOptions,
-    ),
+    putAssuranceDeclaration(pmRoot, kind, definition, mutationOptions),
   );
   return projectMutationReceipt(receipt, input.idOnly);
 }
@@ -352,6 +506,10 @@ export function runAssuranceDispatch(
       idOnly: merged.idOnly === true,
       author: readRuntimeString(merged, "author"),
       message: readRuntimeString(merged, "message"),
+      preset: readRuntimeString(merged, "preset"),
+      owner: readRuntimeString(merged, "owner"),
+      apply: merged.apply === true,
+      enforcement: readRuntimeString(merged, "enforcement"),
     },
     global,
   );

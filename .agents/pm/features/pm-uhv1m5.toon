@@ -2,11 +2,13 @@ id: pm-uhv1m5
 title: "Measurement provider API: extensions contribute measurement sources, so a coverage percentage, a benchmark millisecond, an eval score, an RL episode reward, or a registry dist-tag is bounded on the same terms as an item count"
 description: "The assurance model is only universal if the set of measurable things is open. A provider is an extension-contributed measurement source registered through the existing activate(api) surface: it declares an id, a key schema, a cost class, and a resolver that returns numbers. Nothing about the bound, the gate, the verdict, or the history changes when a provider is added, which is what makes one mechanism serve unrelated project shapes. A software project registers coverage, lint findings, bundle bytes, and a published dist-tag. A research project registers experiment counts and reproduction success. An agent-environment registers episode reward, success rate, steps to completion, and regression against a frozen baseline, which is what turns pm into a substrate where a training or evaluation run's quality bar is declared next to the tasks it scores. An operations project registers incident recurrence and repair latency. Providers must be sandbox-safe, must declare whether they reach the network, and must be refusable, so a workspace can pin which providers a gate is allowed to read and a hosted run cannot silently gain a new dependency. Cost classes let a gate refuse an expensive provider on a pre-commit trigger while allowing it in a scheduled one."
 type: Feature
-status: open
+status: in_progress
 priority: 1
 tags[6]: "area:extensions","area:sdk",assurance,configurability,rl,universal
 created_at: "2026-08-10T20:57:22.397Z"
-updated_at: "2026-08-10T20:57:22.397Z"
+updated_at: "2026-08-12T16:35:56.411Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#777a798cba07b812da163a2d"
 author: "harness:claude-code"
 estimated_minutes: 660
 acceptance_criteria: "A provider registers through the documented extension activation surface and needs no change to bound, gate, verdict, or history semantics to become enforceable; Each provider declares its key schema, cost class, and whether it reaches the network, and a gate can refuse providers by cost class or capability per trigger; Provider resolution is sandbox-safe and never reads or writes the real workspace during tests; Worked provider examples ship for at least a code-quality metric, an evaluation or reward metric, and an external registry or service metric; A workspace can pin the allowed provider set so a hosted run cannot silently acquire a new external dependency"
@@ -20,4 +22,51 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-klxax7,implements,"2026-08-10T20:57:22.397Z","harness:claude-code","cli:create:dep",detected
   pm-nfrhf0,related,"2026-08-10T20:57:22.397Z","harness:claude-code","cli:create:dep",detected
   pm-ugqx,related,"2026-08-10T20:57:22.397Z","harness:claude-code","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-12T14:33:38.991Z","harness:codex","Orientation evidence: all-status assurance lineage and full item metadata/comments/notes/learnings were read before claim. GitHub has zero open PRs and zero open Dependabot, CodeQL, or secret-scanning alerts; all 16 open GitHub issues contain canonical .toon links. The 2026-08-12 Nightly failure issue #989 is closed and linked to completed pm-j668gl, so it is not duplicated here. npm registry freshness probing timed out and remains a verification limitation to retry."
+  "2026-08-12T16:20:00.655Z","harness:codex","Implementation evidence: added extension-owned assurance measurement providers with typed keys/parameters, stable cost and network capability declarations, host timeouts, policy-gated triggers, activation inventory and summaries, composeExtension support, provider result validation, and cross-process activation from persisted contribution inventory. Manual packed acceptance found and fixed the persisted-inventory activation gap; a local quality provider now activates on a fresh CLI process and a provider-backed CI gate passes with exactly one provider call."
+  "2026-08-12T16:35:56.411Z","harness:codex","Verification evidence (final worktree): pnpm lint passed with ESLint zero warnings, jscpd zero clones, 100% docstring/export/member coverage, package boundary/parity, token/context, tracker measurement, graph-composition, record-integrity, SDK import-cost and CLI transport gates. pnpm contracts:check and pnpm sdk:surface:check passed; the linked sandboxed contracts test also passed. Exact coverage previously recorded remains 100/100/100/100 (52,606 statements, 38,692 branches, 10,822 functions, 50,850 lines; 7,280 tests). Packed acceptance installed a standalone assurance provider in an isolated temporary project and proved provider-backed CI evaluation, provider_calls=1, all four presets, explicit derive/apply/promote transitions, and boolean machine flag contracts. pnpm smoke:npx and package-first dogfood proved npm/npx/bunx distribution paths. pm health --check-only passed all ten checks with zero warnings; history drift is zero; security scan found no credential-like secrets. The repository-wide resolution validator still reports 295 pre-existing closed-item metadata warnings, separate from this feature and with no history drift."
+learnings[1]{created_at,author,text}:
+  "2026-08-12T16:20:01.672Z","harness:codex","Durable lesson: a persisted contribution inventory becomes the next process activation index. Every globally consumed extension surface, including assurance providers, must participate in global activation selection or install-time success will diverge from later CLI execution."
+files[31]{path,scope,note}:
+  sdk/public-surface.json,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/cli/main.ts,project,Persisted provider contribution activation across CLI processes
+  src/cli/register-assurance.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/core/extensions/activation-summary-markdown.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/core/extensions/activation-summary.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/core/extensions/capability-usage.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/core/extensions/contribution-inventory.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/core/extensions/extension-registries.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/core/extensions/extension-types.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/core/extensions/loader.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/core/extensions/registration-values.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/core/extensions/runtime-registrations.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/sdk/cli-contracts/completeness.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/sdk/cli-contracts/flag-contracts.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/sdk/cli-contracts/schemas/assurance-definition.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/sdk/cli-contracts/tool-schema.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/sdk/compose.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/sdk/governance/assurance-action.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/sdk/governance/assurance-runtime.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/sdk/governance/assurance.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  src/sdk/index.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  tests/fixtures/contracts/full.json,project,Assurance provider SDK CLI runtime contract and regression evidence
+  tests/unit/cli/cli-main-errors.spec.ts,project,Provider contribution activation regression coverage
+  tests/unit/cli/register-assurance.spec.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  tests/unit/core/extensions/activation-summary-markdown.spec.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  tests/unit/extensions/assurance-provider.spec.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  tests/unit/extensions/contribution-inventory.spec.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  tests/unit/extensions/runtime-registrations.spec.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  tests/unit/sdk/assurance-presets.spec.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+  tests/unit/sdk/sdk-compose.spec.ts,project,Assurance provider SDK CLI runtime contract and regression evidence
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  pnpm lint,project,600
+  "pnpm contracts:check",project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msqb8rww-ddh8lg,test,passed,"2026-08-12T16:35:12.069Z","2026-08-12T16:35:21.296Z","2026-08-12T16:35:21.296Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/ASSURANCE.md,project,Provider authoring policy and worked examples
+  docs/EXTENSIONS.md,project,Extension provider runtime API index
 body: ""

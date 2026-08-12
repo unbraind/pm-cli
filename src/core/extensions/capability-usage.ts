@@ -51,7 +51,7 @@ export const EXTENSION_CAPABILITY_REGISTRATION_SURFACES = {
   search: ["registerSearchProvider", "registerVectorStoreAdapter"],
   parser: ["registerParser"],
   preflight: ["registerPreflight"],
-  services: ["registerService"],
+  services: ["registerService", "registerAssuranceMeasurementProvider"],
 } as const satisfies Record<ExtensionCapability, readonly string[]>;
 
 /** Per-extension reconciliation of declared versus exercised capabilities. */
@@ -164,6 +164,7 @@ function attributeCapabilityUsage(
   record(parsers.overrides, "parser");
   record(preflight.overrides, "preflight");
   record(services.overrides, "services");
+  record(registrations.assurance_providers ?? [], "services");
   record(renderers.overrides, "renderers");
   record(hooks.beforeCommand, "hooks");
   record(hooks.beforeMutation, "hooks");

@@ -29,6 +29,7 @@ pm install npm:package@1.2.3 --project
 pm install https://github.com/org/repo --project
 pm install --github org/repo/path --ref main --project
 ```
+
 Bundled first-party packages live under `packages/pm-*`:
 
 ```bash
@@ -38,6 +39,7 @@ pm install calendar --project
 pm install search-advanced --project
 pm install kanban --project
 ```
+
 `pm install '*'`, `pm install all`, and shell-expanded `pm install *` are normalized to the same bundled install-all request. First-party package aliases come from each package manifest, with a fallback derived from the `packages/pm-*` directory name. A bare bundled alias that also names an installed npm package reports both explicit choices in `source_resolution`; see [Extension Lifecycle Contracts](EXTENSION_LIFECYCLE.md).
 
 External registry packages are installed by exact package name. If `npm:<name>` returns a registry 404, JSON error output includes `fallback_candidates` and `next_best_command`; unpublished first-party packages fall back to `pm install --project github.com/unbraind/<name>`. Install results include package-owned `command_paths`, `action_paths`, `contributions`, `command_discovery`, and a light `verification` block covering the target tracker, activation status, registered commands/actions/item types, and health verdict. Agents should consume those fields instead of guessing from the package name or immediately spending another invocation on doctor. A successful activation persists the versioned contribution inventory in `.managed-extensions.json`; subsequent discovery can enumerate command handlers, hooks, parser/renderer targets, schema names, and the other registered surfaces without importing the package module. A failed runtime activation returns `ok: false`, `activated: false`, a non-zero CLI exit, and actionable diagnostics; missing SDK resolution adds an explicit dependency recovery step. Local installs are containment-safe when the extension destination is nested inside the source checkout: pm stages the package outside the source and prunes the destination, `.agents`, `node_modules`, and install-backup directories before copying, so reinstalling cannot recursively copy tracker history, host dependencies, or prior backups.
@@ -52,6 +54,7 @@ pm install npm:pm-github --project
 pm package doctor --project --detail deep --trace
 pm github validate --repo owner/repo
 ```
+
 For `pm-github`, run `pm github validate --repo owner/repo` before mutating commands; write paths require `GITHUB_TOKEN`/`GH_TOKEN` or `gh auth login`.
 
 For ecosystem maintenance, use the reusable external package smoke harness after building `dist/`:
@@ -132,7 +135,11 @@ Extensions are authored **and loaded** as TypeScript (ADR [pm-2c28](../.agents/p
     "process_spawn": false
   },
   "capabilities": ["commands"],
-  "contributions": { "schema_version": 1, "commands": ["hello"], "command_handlers": ["hello"] },
+  "contributions": {
+    "schema_version": 1,
+    "commands": ["hello"],
+    "command_handlers": ["hello"]
+  },
   "activation": { "commands": ["hello"] }
 }
 ```
@@ -286,11 +293,9 @@ Doctor JSON also includes `triage.collision_plan` with grouped surfaces, ranked 
 ## Runtime APIs
 
 Use the public SDK barrel. Do not deep-import from `src/core` or `dist/core`.
-
 ```ts
 import { defineExtension } from "@unbrained/pm-cli/sdk";
 ```
-
 Common APIs:
 
 - `api.extension` is a read-only identity (`name`, `layer`, `version`, `capabilities`, `pm_min_version?`, `pm_max_version?`, `source_package?`) for self-identifying logs and version gating without re-reading the manifest.
@@ -302,6 +307,7 @@ Common APIs:
 - `api.registerRelationshipKinds(definitions)` adds validated graph semantics. Definitions declare direction, inverse spelling, ordering/precedence, hierarchy, cardinality, lifecycle, aliases, payload schema, compatibility version, and self-edge policy. Active definitions are merged into native CLI, MCP, and SDK workspace graph assembly. Requires the `schema` capability and is governed by the `schema.relationshipkinds` policy surface.
 - `api.registerMigration(definition)` adds schema migrations.
 - `api.registerProfile(profile)` contributes a project profile — a declarative archetype bundling item types, statuses, fields, per-type workflows, config, templates, and package recommendations. Once active it resolves by name through `pm profile list/show/apply` alongside the core `agile`/`ops`/`research` archetypes (built-in names are reserved; a colliding registration is ignored with a warning). Requires the `schema` capability.
+- `api.registerAssuranceMeasurementProvider(provider)` contributes typed measurements to assurance. It requires `services`; network providers also require manifest `permissions.network: true`. Gates allow providers and cost/network limits per trigger. See [Project Assurance Primitives](ASSURANCE.md#extension-measurement-providers) for examples.
 - `api.registerService("output_format", handler)` customizes output formatting through the service override API. Use `handleServiceOverride(result)` to claim a payload and return the scaffold-compatible literal `{ handled: false }` (or `declineServiceOverride()`) for commands the extension does not own. Legacy `null`/`undefined` declines remain supported; returning the original payload is now an unambiguous handled result.
 - `api.registerRenderer("toon" | "json", renderer, ownership?)` adds format-specific renderers. Scope ownership with `commands` and/or a `resultDiscriminator`; the host checks both before invoking the renderer and falls back to native rendering for unrelated output. The legacy unscoped callback remains supported, but doctor warns because package ownership cannot be proven statically.
 - `suppressHostOutput(result?)` from `@unbrained/pm-cli/sdk` marks commands that already wrote output, preventing a second CLI payload while retaining the optional result for hooks, telemetry, and embedded hosts.
@@ -312,15 +318,8 @@ Common APIs:
 - Registered command, importer, and exporter handlers receive `context.sdk`, a host-bound service bundle containing a native-action `PmClient`, `getItemAt`, and `openRelationshipEventStore`, alongside portable workspace coordinates. The client reuses the already-active extension schema context without recursively loading extensions, so package commands and data adapters can compose core lifecycle operations safely in CLI and SDK hosts.
 - An optional module-level `deactivate()` export (VS Code-style) is invoked by the host on shutdown/reload — including by the long-running MCP server between native-action requests — to close connections, clear timers, and release resources opened during `activate`. Teardown is best-effort and timeout-bounded by default so it does not block other extensions, except when a host explicitly disables waiting limits with `deactivate_timeout_ms: 0` or `Infinity`, which can wait indefinitely for a hanging `deactivate()` hook.
 
-The bundled `pm-lifecycle-hooks` package is the hook exemplar: it declares only
-`hooks` and registers a default-inert `afterCommand` hook so authors can copy a
-safe lifecycle pattern without changing command output.
-
-If a package calls a `register*` API without declaring the required manifest
-capability, `pm package doctor --project --detail deep --trace` reports
-`extension_capability_missing:<name>:<capability>` and shows the exact capability
-to add before publishing.
-
+The bundled `pm-lifecycle-hooks` package is the hook exemplar: it declares only `hooks` and registers a default-inert `afterCommand` hook so authors can copy a safe lifecycle pattern without changing command output.
+If a package calls a `register*` API without declaring the required manifest capability, `pm package doctor --project --detail deep --trace` reports `extension_capability_missing:<name>:<capability>` and shows the exact capability to add before publishing.
 Inline command flags require both `commands` and `schema` capabilities. Runtime schema changes should be verified with:
 
 ```bash

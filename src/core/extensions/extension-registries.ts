@@ -75,5 +75,6 @@ export function createEmptyExtensionRegistrationRegistry(): ExtensionRegistratio
     exporters: [],
     search_providers: [],
     vector_store_adapters: [],
+    assurance_providers: [],
   };
 }

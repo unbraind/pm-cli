@@ -125,6 +125,7 @@ export const KNOWN_EXTENSION_POLICY_SURFACES = [
   "importers.exporter",
   "search.provider",
   "search.vectorstore",
+  "services.assuranceprovider",
 ] as const;
 /** Restricts extension policy surface values accepted by command, SDK, and storage contracts. */
 export type ExtensionPolicySurface =
@@ -258,6 +259,8 @@ export interface ExtensionContributionInventory {
   search_providers?: string[];
   /** Declared vector-store adapter names. */
   vector_store_adapters?: string[];
+  /** Declared assurance measurement-provider ids. */
+  assurance_providers?: string[];
   /** Parser override command targets. */
   parser_overrides?: string[];
   /** Service override targets. */
@@ -540,7 +543,10 @@ export type BeforeMutationHookDecision =
 /** A fail-closed hook evaluated inside the item lock before persistence. */
 export type BeforeMutationHook = (
   context: BeforeMutationHookContext,
-) => Promise<BeforeMutationHookDecision | void> | BeforeMutationHookDecision | void;
+) =>
+  | Promise<BeforeMutationHookDecision | void>
+  | BeforeMutationHookDecision
+  | void;
 
 /** Documents the on read hook context payload exchanged by command, SDK, and package integrations. */
 export interface OnReadHookContext {
@@ -610,8 +616,7 @@ export interface PreflightOverrideOwnership {
 }
 
 /** Declarative preflight override paired with statically inspectable ownership. */
-export interface ScopedPreflightOverrideDefinition
-  extends PreflightOverrideOwnership {
+export interface ScopedPreflightOverrideDefinition extends PreflightOverrideOwnership {
   /** Preflight handler invoked only for a declared command, or globally when unscoped. */
   run: PreflightOverride;
 }
@@ -1259,6 +1264,75 @@ export interface VectorStoreAdapterDefinition {
   [key: string]: unknown;
 }
 
+/** Cost classes let lifecycle gates reject expensive provider work before invoking it. */
+export type AssuranceMeasurementProviderCostClass = "low" | "medium" | "high";
+
+/** JSON-compatible parameter contract for one provider measurement key. */
+export interface AssuranceMeasurementProviderParameterDefinition {
+  /** Parameter value kind. */
+  type: "string" | "number" | "boolean";
+  /** Whether callers must supply the parameter. */
+  required?: boolean;
+  /** Human-readable parameter intent. */
+  description?: string;
+}
+
+/** Serializable schema for one measurement key owned by a provider. */
+export interface AssuranceMeasurementProviderKeyDefinition {
+  /** Value kind returned by the resolver. */
+  value_type: "number" | "string_set";
+  /** Human-readable metric intent. */
+  description?: string;
+  /** Accepted provider parameters. Unknown parameters are rejected. */
+  parameters?: Record<string, AssuranceMeasurementProviderParameterDefinition>;
+}
+
+/** Runtime request supplied to an extension-owned assurance provider. */
+export interface AssuranceMeasurementProviderContext extends PortableWorkspaceContext {
+  /** Provider id selected by the measurement declaration. */
+  provider: string;
+  /** Provider-owned metric key. */
+  key: string;
+  /** Validated provider parameters. */
+  parameters: Record<string, string | number | boolean | null>;
+  /** Gate trigger that authorized this invocation. */
+  trigger: string;
+  /** Tracker root bound to the active command or SDK request. */
+  pm_root: string;
+}
+
+/** Result returned by an extension-owned assurance provider. */
+export interface AssuranceMeasurementProviderResult {
+  /** Finite numeric value or deterministic labelled set. */
+  value: number | string[];
+  /** Population denominator represented by the metric. */
+  population_size: number;
+  /** Abstract compute units charged by the provider. */
+  cost: number;
+  /** Optional stable contributor ids or labels. */
+  contributors?: string[];
+}
+
+/** Extension registration for an open assurance measurement vocabulary. */
+export interface AssuranceMeasurementProviderDefinition {
+  /** Stable provider id used by measurement declarations and gate allow-lists. */
+  id: string;
+  /** Serializable metric-key schema. */
+  keys: Record<string, AssuranceMeasurementProviderKeyDefinition>;
+  /** Coarse execution cost used by trigger policy before invocation. */
+  cost_class: AssuranceMeasurementProviderCostClass;
+  /** Whether the resolver can access the network. */
+  network: boolean;
+  /** Maximum host wait for one resolver call. */
+  timeout_ms?: number;
+  /** Resolve one declared key. */
+  resolve(
+    context: AssuranceMeasurementProviderContext,
+  ):
+    | AssuranceMeasurementProviderResult
+    | Promise<AssuranceMeasurementProviderResult>;
+}
+
 /** Documents the registered extension command override payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredExtensionCommandOverride {
   /** Value that configures or reports layer for this contract. */
@@ -1491,6 +1565,22 @@ export interface RegisteredExtensionVectorStoreAdapter {
   runtime_definition: VectorStoreAdapterDefinition;
 }
 
+/** One validated assurance measurement provider registered by an active extension. */
+export interface RegisteredExtensionAssuranceMeasurementProvider {
+  /** Extension layer owning the provider. */
+  layer: ExtensionLayer;
+  /** Extension name owning the provider. */
+  name: string;
+  /** Whether the owning manifest grants network access. */
+  network_permission: boolean;
+  /** Serializable definition used by doctor, inventory, and policy surfaces. */
+  definition: Omit<AssuranceMeasurementProviderDefinition, "resolve"> & {
+    resolve: "[Function]";
+  };
+  /** Runtime definition containing the executable resolver. */
+  runtime_definition: AssuranceMeasurementProviderDefinition;
+}
+
 /**
  * Documents a project profile contributed by an extension via
  * `api.registerProfile(profile)`.
@@ -1535,6 +1625,8 @@ export interface ExtensionRegistrationRegistry {
   search_providers: RegisteredExtensionSearchProvider[];
   /** Value that configures or reports vector store adapters for this contract. */
   vector_store_adapters: RegisteredExtensionVectorStoreAdapter[];
+  /** Extension-owned assurance measurement providers. */
+  assurance_providers: RegisteredExtensionAssuranceMeasurementProvider[];
 }
 
 /** Documents the extension registration counts payload exchanged by command, SDK, and package integrations. */
@@ -1561,6 +1653,8 @@ export interface ExtensionRegistrationCounts {
   search_providers: number;
   /** Value that configures or reports vector store adapters for this contract. */
   vector_store_adapters: number;
+  /** Number of registered assurance measurement providers. */
+  assurance_providers?: number;
 }
 
 /** Read-only identity an extension's `activate(api)` receives about itself, so authors can emit self-identifying logs, gate on their own version, and build better error messages without re-reading the on-disk manifest or duplicating metadata in-module. Exposed as `api.extension`. */
@@ -1634,6 +1728,10 @@ export interface ExtensionApi {
   registerSearchProvider(provider: SearchProviderDefinition): void;
   /** Value that configures or reports register vector store adapter for this contract. */
   registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void;
+  /** Register an assurance measurement provider through the services capability. */
+  registerAssuranceMeasurementProvider(
+    provider: AssuranceMeasurementProviderDefinition,
+  ): void;
   /** Value that configures or reports hooks for this contract. */
   hooks: {
     beforeCommand(hook: BeforeCommandHook): void;

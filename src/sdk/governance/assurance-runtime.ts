@@ -22,6 +22,15 @@ import { runGraph, type GraphCommandOptions } from "../graph/run.js";
 import { runHealth } from "./health.js";
 import { runValidate } from "./validate.js";
 import {
+  getActiveExtensionRegistrations,
+  resolvePortableWorkspaceContext,
+} from "../../core/extensions/index.js";
+import { resolveRegisteredAssuranceMeasurementProvider } from "../../core/extensions/runtime-registrations.js";
+import type {
+  AssuranceMeasurementProviderDefinition,
+  AssuranceMeasurementProviderResult,
+} from "../../core/extensions/extension-types.js";
+import {
   getHistoryPath,
   listAllItemMetadata,
   readHistoryEntries,
@@ -45,10 +54,120 @@ export interface CreateAssuranceWorkspaceContextOptions {
   resolve_tree?: boolean;
   /** Provider resolvers keyed by stable provider id. */
   providers?: Readonly<Record<string, AssuranceProviderResolver>>;
+  /** Capabilities for host-provided resolvers that are not extension registrations. */
+  provider_capabilities?: AssuranceEvaluationContext["provider_capabilities"];
+  /** Gate trigger supplied to extension provider resolvers. */
+  trigger?: string;
 }
 
 const execFileAsync = promisify(execFile);
 const HISTORY_READ_CONCURRENCY = 16;
+const DEFAULT_PROVIDER_TIMEOUT_MS = 30_000;
+
+function assertProviderResult(
+  provider: AssuranceMeasurementProviderDefinition,
+  key: string,
+  result: AssuranceMeasurementProviderResult,
+): AssuranceExternalMeasurementResult {
+  const keyDefinition = provider.keys[key];
+  const valueMatches =
+    keyDefinition.value_type === "number"
+      ? typeof result.value === "number" && Number.isFinite(result.value)
+      : Array.isArray(result.value) &&
+        result.value.every((entry) => typeof entry === "string");
+  if (!valueMatches) {
+    throw new TypeError(
+      `assurance provider ${provider.id} key ${key} returned the wrong value type`,
+    );
+  }
+  if (
+    !Number.isInteger(result.population_size) ||
+    result.population_size < 0 ||
+    !Number.isFinite(result.cost) ||
+    result.cost < 0
+  ) {
+    throw new TypeError(
+      `assurance provider ${provider.id} returned an invalid population or cost`,
+    );
+  }
+  return result;
+}
+
+function validateProviderParameters(
+  provider: AssuranceMeasurementProviderDefinition,
+  source: AssuranceProviderSource,
+): Record<string, string | number | boolean | null> {
+  const keyDefinition = provider.keys[source.key];
+  if (!keyDefinition) {
+    throw new TypeError(
+      `assurance provider ${provider.id} does not declare key ${source.key}`,
+    );
+  }
+  const parameters = source.parameters ?? {};
+  const schema = keyDefinition.parameters ?? {};
+  for (const required of Object.entries(schema)
+    .filter(([, definition]) => definition.required === true)
+    .map(([name]) => name)) {
+    if (!Object.hasOwn(parameters, required)) {
+      throw new TypeError(
+        `assurance provider ${provider.id} key ${source.key} requires parameter ${required}`,
+      );
+    }
+  }
+  for (const [name, value] of Object.entries(parameters)) {
+    const definition = schema[name];
+    if (!definition) {
+      throw new TypeError(
+        `assurance provider ${provider.id} key ${source.key} does not declare parameter ${name}`,
+      );
+    }
+    if (value === null || typeof value !== definition.type) {
+      throw new TypeError(
+        `assurance provider ${provider.id} parameter ${name} must be ${definition.type}`,
+      );
+    }
+  }
+  return { ...parameters };
+}
+
+async function runRegisteredProvider(
+  provider: AssuranceMeasurementProviderDefinition,
+  source: AssuranceProviderSource,
+  pmRoot: string,
+  trigger: string,
+): Promise<AssuranceExternalMeasurementResult> {
+  const parameters = validateProviderParameters(provider, source);
+  const providerPromise = Promise.resolve().then(() =>
+    provider.resolve({
+      provider: provider.id,
+      key: source.key,
+      parameters,
+      trigger,
+      pm_root: pmRoot,
+      ...resolvePortableWorkspaceContext(pmRoot),
+    }),
+  );
+  providerPromise.catch(() => {});
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const result = await Promise.race([
+      providerPromise,
+      new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(
+          () =>
+            reject(
+              new TypeError(`assurance provider ${provider.id} timed out`),
+            ),
+          provider.timeout_ms ?? DEFAULT_PROVIDER_TIMEOUT_MS,
+        );
+        timeoutHandle.unref?.();
+      }),
+    ]);
+    return assertProviderResult(provider, source.key, result);
+  } finally {
+    clearTimeout(timeoutHandle as ReturnType<typeof setTimeout>);
+  }
+}
 
 function valueAtPath(input: unknown, field: string): AssuranceValue {
   let current: unknown = input;
@@ -176,6 +295,16 @@ export async function createAssuranceWorkspaceContext(
     type: item.type,
   }));
   const global = { path: pmRoot };
+  const activeRegistrations = getActiveExtensionRegistrations();
+  const registeredProviderCapabilities = Object.fromEntries(
+    (activeRegistrations?.assurance_providers ?? []).map((registration) => [
+      registration.definition.id,
+      {
+        cost_class: registration.runtime_definition.cost_class,
+        network: registration.runtime_definition.network,
+      },
+    ]),
+  );
   return {
     tree_id:
       options.resolve_tree === false
@@ -187,6 +316,10 @@ export async function createAssuranceWorkspaceContext(
         ? []
         : await readWorkspaceHistory(pmRoot, items),
     terminal_statuses: [...statusRegistry.terminal_statuses],
+    provider_capabilities: {
+      ...registeredProviderCapabilities,
+      ...options.provider_capabilities,
+    },
     external: async (
       source:
         | AssuranceGraphSource
@@ -216,13 +349,23 @@ export async function createAssuranceWorkspaceContext(
         const result = await runHealth(global, { checkOnly: true, full: true });
         return checkValue(result, source.check, source.field);
       }
-      const provider = options.providers?.[source.provider];
-      if (!provider) {
+      const hostProvider = options.providers?.[source.provider];
+      if (hostProvider) return hostProvider(source);
+      const registeredProvider = resolveRegisteredAssuranceMeasurementProvider(
+        activeRegistrations,
+        source.provider,
+      );
+      if (!registeredProvider) {
         throw new TypeError(
           `assurance provider ${source.provider} is not registered`,
         );
       }
-      return provider(source);
+      return runRegisteredProvider(
+        registeredProvider.runtime_definition,
+        source,
+        pmRoot,
+        options.trigger ?? "sdk",
+      );
     },
   };
 }

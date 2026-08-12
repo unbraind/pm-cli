@@ -48,6 +48,9 @@ export type AssuranceGateTrigger = (typeof ASSURANCE_GATE_TRIGGERS)[number];
 /** Assertion enforcement strength. */
 export type AssuranceEnforcement = "block" | "warn" | "observe";
 
+/** Provider execution classes ordered from cheapest to most expensive. */
+export type AssuranceProviderCostClass = "low" | "medium" | "high";
+
 /** Assertion lifetime after its owning work item becomes terminal. */
 export type AssuranceLifetime = "hold" | "retire";
 
@@ -323,6 +326,23 @@ export interface AssuranceGateDefinition {
   triggers: AssuranceGateTrigger[];
   /** Optional description. */
   description?: string;
+  /** Explicit provider allow-list and trigger-specific execution policy. */
+  provider_policy?: {
+    /** Provider ids this gate may invoke. An empty set refuses every provider. */
+    allowed_providers: string[];
+    /** Trigger rules; an omitted rule refuses provider execution for that trigger. */
+    triggers: Partial<
+      Record<
+        AssuranceGateTrigger,
+        {
+          /** Highest provider cost class allowed at this trigger. */
+          max_cost_class: AssuranceProviderCostClass;
+          /** Whether network-declaring providers may run. */
+          allow_network: boolean;
+        }
+      >
+    >;
+  };
 }
 
 /** Complete persisted assurance registry. */
@@ -335,6 +355,26 @@ export interface AssuranceDocument {
   assertions: AssuranceAssertionDefinition[];
   /** Gate declarations. */
   gates: AssuranceGateDefinition[];
+}
+
+/** Atomic set of ordinary declarations used by presets and accepted proposals. */
+export interface AssuranceDeclarationBundle {
+  /** Measurement declarations to create without overwriting divergent ids. */
+  measurements: AssuranceMeasurementDefinition[];
+  /** Assertion declarations to create without overwriting divergent ids. */
+  assertions: AssuranceAssertionDefinition[];
+  /** Gate declarations to create without overwriting divergent ids. */
+  gates: AssuranceGateDefinition[];
+}
+
+/** Audited receipt for one atomic assurance bundle application. */
+export interface AssuranceBundleMutationReceipt {
+  /** Whether persistence changed. */
+  changed: boolean;
+  /** Stable ids created by the bundle. */
+  created_ids: string[];
+  /** Stable ids already present with byte-equivalent declarations. */
+  unchanged_ids: string[];
 }
 
 /** Host adapter result for graph, validate, health, or provider sources. */
@@ -359,6 +399,10 @@ export interface AssuranceEvaluationContext {
   history: AssuranceHistoryRecord[];
   /** Status ids that make an assertion owner terminal. */
   terminal_statuses?: string[];
+  /** Host-declared capabilities for provider-policy enforcement. */
+  provider_capabilities?: Readonly<
+    Record<string, { cost_class: AssuranceProviderCostClass; network: boolean }>
+  >;
   /** External source adapter. Implementations must enforce an appropriate timeout. */
   external: (
     source:
@@ -763,6 +807,45 @@ export function validateAssertionDefinition(
   return definition;
 }
 
+function validateGateProviderPolicy(
+  policy: NonNullable<AssuranceGateDefinition["provider_policy"]>,
+): void {
+  if (!Array.isArray(policy.allowed_providers)) {
+    throw new AssuranceMutationRefusalError(
+      "gate provider_policy.allowed_providers must be an array",
+    );
+  }
+  for (const provider of policy.allowed_providers) {
+    requireStableId(provider, "gate.provider_policy.allowed_provider");
+  }
+  if (
+    typeof policy.triggers !== "object" ||
+    policy.triggers === null ||
+    Array.isArray(policy.triggers)
+  ) {
+    throw new AssuranceMutationRefusalError(
+      "gate provider_policy.triggers must be an object",
+    );
+  }
+  for (const [trigger, rule] of Object.entries(policy.triggers)) {
+    if (!ASSURANCE_GATE_TRIGGERS.includes(trigger as AssuranceGateTrigger)) {
+      throw new AssuranceMutationRefusalError(
+        `gate provider policy has unknown trigger ${trigger}`,
+      );
+    }
+    if (
+      typeof rule !== "object" ||
+      rule === null ||
+      !["low", "medium", "high"].includes(rule.max_cost_class) ||
+      typeof rule.allow_network !== "boolean"
+    ) {
+      throw new AssuranceMutationRefusalError(
+        `gate provider policy trigger ${trigger} is invalid`,
+      );
+    }
+  }
+}
+
 /** Validate and return one gate declaration. */
 export function validateGateDefinition(
   definition: AssuranceGateDefinition,
@@ -779,6 +862,9 @@ export function validateGateDefinition(
     throw new AssuranceMutationRefusalError(
       "gate requires at least one trigger",
     );
+  }
+  if (definition.provider_policy) {
+    validateGateProviderPolicy(definition.provider_policy);
   }
   return definition;
 }
@@ -894,6 +980,42 @@ function collectMeasurementReferences(
     }
   }
   return references;
+}
+
+function collectGateProviderIds(
+  gate: AssuranceGateDefinition,
+  document: AssuranceDocument,
+): Set<string> {
+  const pending = gate.assertion_ids.flatMap((assertionId) => {
+    const assertion = document.assertions.find(
+      (entry) => entry.id === assertionId,
+    ) as AssuranceAssertionDefinition;
+    return [
+      assertion.measurement_id,
+      ...(assertion.scope.kind === "filter"
+        ? [assertion.scope.measurement_id]
+        : []),
+    ];
+  });
+  const visited = new Set<string>();
+  const providers = new Set<string>();
+  while (pending.length > 0) {
+    const measurementId = pending.pop()!;
+    if (visited.has(measurementId)) continue;
+    visited.add(measurementId);
+    const measurement = document.measurements.find(
+      (entry) => entry.id === measurementId,
+    ) as AssuranceMeasurementDefinition;
+    if (measurement.source.kind === "provider") {
+      providers.add(measurement.source.provider);
+    } else if (measurement.source.kind === "derived") {
+      collectExpressionMeasurementReferences(
+        measurement.source.expression,
+        pending,
+      );
+    }
+  }
+  return providers;
 }
 
 /** Create an empty, valid assurance registry. */
@@ -1314,6 +1436,54 @@ export function evaluateAssuranceAssertion(
   };
 }
 
+function enforceGateProviderPolicy(
+  gate: AssuranceGateDefinition,
+  document: AssuranceDocument,
+  context: AssuranceEvaluationContext,
+  trigger: AssuranceGateTrigger,
+): void {
+  const providerIds = collectGateProviderIds(gate, document);
+  if (providerIds.size === 0) return;
+  const policy = gate.provider_policy;
+  const triggerPolicy = policy?.triggers[trigger];
+  if (!policy || !triggerPolicy) {
+    throw new TypeError(
+      `assurance gate ${gate.id} refuses provider execution at trigger ${trigger} without an explicit provider policy`,
+    );
+  }
+  const allowedProviders = new Set(policy.allowed_providers);
+  const costRank: Record<AssuranceProviderCostClass, number> = {
+    low: 0,
+    medium: 1,
+    high: 2,
+  };
+  for (const providerId of providerIds) {
+    if (!allowedProviders.has(providerId)) {
+      throw new TypeError(
+        `assurance gate ${gate.id} refuses provider ${providerId}`,
+      );
+    }
+    const capability = context.provider_capabilities?.[providerId];
+    if (!capability) {
+      throw new TypeError(
+        `assurance provider ${providerId} has no declared capabilities`,
+      );
+    }
+    if (
+      costRank[capability.cost_class] > costRank[triggerPolicy.max_cost_class]
+    ) {
+      throw new TypeError(
+        `assurance gate ${gate.id} refuses ${capability.cost_class}-cost provider ${providerId} at trigger ${trigger}`,
+      );
+    }
+    if (capability.network && !triggerPolicy.allow_network) {
+      throw new TypeError(
+        `assurance gate ${gate.id} refuses network provider ${providerId} at trigger ${trigger}`,
+      );
+    }
+  }
+}
+
 /** Evaluate a named gate into one presentation-independent verdict document. */
 export async function evaluateAssuranceGate(
   gateId: string,
@@ -1333,6 +1503,7 @@ export async function evaluateAssuranceGate(
       `assurance gate ${gateId} does not declare trigger ${options.trigger}`,
     );
   }
+  enforceGateProviderPolicy(gateDefinition, document, context, options.trigger);
   const assertions = await mapWithConcurrency(
     gateDefinition.assertion_ids,
     EVALUATION_CONCURRENCY,
@@ -1546,6 +1717,72 @@ export async function putAssuranceDeclaration(
         return {
           raw: `${JSON.stringify(document, null, 2)}\n`,
           result: { changed: true, action, kind, id: definition.id },
+        };
+      },
+    });
+  return { ...mutation.result, changed: mutation.changed };
+}
+
+/** Apply a declaration bundle atomically, idempotently, and without replacing divergent ids. */
+export async function putAssuranceDeclarationBundle(
+  pmRoot: string,
+  bundle: AssuranceDeclarationBundle,
+  options: AssuranceMutationOptions = {},
+): Promise<AssuranceBundleMutationReceipt> {
+  const candidate = createEmptyAssuranceDocument();
+  candidate.measurements = structuredClone(bundle.measurements);
+  candidate.assertions = structuredClone(bundle.assertions);
+  candidate.gates = structuredClone(bundle.gates);
+  validateAssuranceDocument(candidate);
+  const settings = await readSettings(pmRoot);
+  const author = resolveAuthor(options.author, settings.author_default);
+  const mutation =
+    await mutateWorkspaceJsonWithHistory<AssuranceBundleMutationReceipt>({
+      pmRoot,
+      filePath: assurancePath(pmRoot),
+      op: "assurance:bundle:apply",
+      author,
+      message: options.message,
+      lockTtlSeconds: LOCK_TTL_SECONDS,
+      lockWaitMs: LOCK_WAIT_MS,
+      mutate: (beforeRaw) => {
+        const document =
+          beforeRaw === null
+            ? createEmptyAssuranceDocument()
+            : parseAssuranceDocument(beforeRaw);
+        const createdIds: string[] = [];
+        const unchangedIds: string[] = [];
+        const apply = <TDefinition extends AssuranceDeclaration>(
+          target: TDefinition[],
+          additions: readonly TDefinition[],
+          kind: AssuranceDeclarationKind,
+        ): void => {
+          for (const definition of additions) {
+            const existing = target.find((entry) => entry.id === definition.id);
+            if (!existing) {
+              target.push(structuredClone(definition));
+              createdIds.push(`${kind}:${definition.id}`);
+              continue;
+            }
+            if (stableStringify(existing) !== stableStringify(definition)) {
+              throw new AssuranceMutationRefusalError(
+                `assurance bundle refuses to replace divergent ${kind} ${definition.id}`,
+              );
+            }
+            unchangedIds.push(`${kind}:${definition.id}`);
+          }
+        };
+        apply(document.measurements, candidate.measurements, "measurement");
+        apply(document.assertions, candidate.assertions, "assertion");
+        apply(document.gates, candidate.gates, "gate");
+        validateAssuranceDocument(document);
+        return {
+          raw: `${JSON.stringify(document, null, 2)}\n`,
+          result: {
+            changed: createdIds.length > 0,
+            created_ids: createdIds,
+            unchanged_ids: unchangedIds,
+          },
         };
       },
     });

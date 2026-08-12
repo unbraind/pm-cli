@@ -389,6 +389,41 @@
       ],
       "package_version": "2026.8.11",
       "reason": "Add optional seen_item_overflow_count receipt while preserving every existing SDK input and below-capacity output"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ASSURANCE_ACTIONS",
+        "signature ./sdk:AssuranceActionInput",
+        "signature ./sdk:AssuranceActionResult",
+        "signature ./sdk:AssuranceEvaluationContext",
+        "signature ./sdk:AssuranceGateDefinition",
+        "signature ./sdk:CreateAssuranceWorkspaceContextOptions",
+        "signature ./sdk:createExtensionContributionInventory",
+        "signature ./sdk:EXTENSION_CAPABILITY_REGISTRATION_SURFACES",
+        "signature ./sdk:EXTENSION_POLICY_SURFACES",
+        "signature ./sdk:ExtensionActivationSummary",
+        "signature ./sdk:ExtensionApi",
+        "signature ./sdk:ExtensionBlueprint",
+        "signature ./sdk:ExtensionContributionInventory",
+        "signature ./sdk:ExtensionRegistrationRegistry",
+        "signature ./sdk:PM_EXTENSION_POLICY_SURFACE_CONTRACTS",
+        "signature ./sdk/authoring:createExtensionContributionInventory",
+        "signature ./sdk/authoring:EXTENSION_CAPABILITY_REGISTRATION_SURFACES",
+        "signature ./sdk/authoring:EXTENSION_POLICY_SURFACES",
+        "signature ./sdk/authoring:ExtensionApi",
+        "signature ./sdk/authoring:ExtensionBlueprint",
+        "signature ./sdk/authoring:ExtensionContributionInventory",
+        "signature ./sdk/authoring:ExtensionRegistrationRegistry",
+        "signature ./sdk/contracts:PM_EXTENSION_POLICY_SURFACE_CONTRACTS",
+        "signature ./sdk/core:AssuranceActionInput",
+        "signature ./sdk/core:AssuranceActionResult",
+        "signature ./sdk/runtime:AssuranceActionInput",
+        "signature ./sdk/runtime:AssuranceActionResult",
+        "signature ./sdk/testing:ExtensionActivationSummary",
+        "signature ./sdk/testing:ExtensionBlueprint"
+      ],
+      "package_version": "2026.8.12",
+      "reason": "Additive assurance provider, preset, trigger-policy, and inventory fields change structural signatures while preserving existing actions and registrations"
     }
   ],
   "entrypoints": {
@@ -478,6 +513,12 @@
           "kind": "value",
           "name": "_testOnlyValidateCommand",
           "signature": "{ applyValidateFix: typeof applyValidateFix; applyValidateFixes: typeof applyValidateFixes; attachValidateFixHints: typeof attachValidateFixHints; buildCommandReferencesCheck: typeof buildCommandReferencesCheck; buildDependencyReferencesCheck: typeof buildDependencyReferencesCheck; buildCloseReasonBackfillRows: typeof buildCloseReasonBackfillRows; buildFilesCheck: typeof buildFilesCheck; buildLifecycleCheck: typeof buildLifecycleCheck; buildLifecycleDependencyGraph: typeof buildLifecycleDependencyGraph; buildLifecycleParentGraph: typeof buildLifecycleParentGraph; buildEstimateBackfillRows: typeof buildEstimateBackfillRows; buildMetadataCounts: typeof buildMetadataCounts; buildMissingFieldOccurrences: typeof buildMissingFieldOccurrences; buildOrphanedPathRows: typeof buildOrphanedPathRows; classifyOrphanedPath: typeof classifyOrphanedPath; collectDefaultProjectFileCandidates: typeof collectDefaultProjectFileCandidates; collectTrackedGitFileCandidates: typeof collectTrackedGitFileCandidates; detectLifecycleDependencyCycles: typeof detectLifecycleDependencyCycles; detectLifecycleParentCycles: typeof detectLifecycleParentCycles; escapeRegExp: typeof escapeRegExp; extractItemIds: typeof extractItemIds; findLifecycleDependencyCycleComponents: typeof findLifecycleDependencyCycleComponents; isMetadataFieldMissing: typeof isMetadataFieldMissing; linkedArtifactPathExceedsFilesystemLimits: typeof linkedArtifactPathExceedsFilesystemLimits; listFilesRecursive: typeof listFilesRecursive; resolveDependencyCycleSeverity: typeof resolveDependencyCycleSeverity; resolveParentCycleSeverity: typeof resolveParentCycleSeverity; resolveFileScanMode: typeof resolveFileScanMode; resolveLifecycleDependencyCycleSamplePath: typeof resolveLifecycleDependencyCycleSamplePath; resolveRequestedChecks: typeof resolveRequestedChecks; resolveValidateMetadataProfile: typeof resolveValidateMetadataProfile; resolveWorkspaceRoot: typeof resolveWorkspaceRoot; sharedDirectoryPrefixLength: typeof sharedDirectoryPrefixLength; summarizeOrphanedPathRows: typeof summarizeOrphanedPathRows; summarizeDuplicateIssueCodes: typeof summarizeDuplicateIssueCodes; toMeaningfulString: typeof toMeaningfulString; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "acceptAssuranceProposals",
+          "signature": "(pmRoot: string, proposals: readonly AssuranceDerivedProposal[], options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, proposals: readonly AssuranceDerivedProposal[], options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt>"
         },
         {
           "classification": "supported",
@@ -920,6 +961,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "applyAssurancePreset",
+          "signature": "(pmRoot: string, id: AssurancePresetId, ownerItemId: string, options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, id: AssurancePresetId, ownerItemId: string, options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "applyBootstrapPagerPolicy",
           "signature": "(argv: string[]) => () => void | calls: (argv: string[]) => () => void"
         },
@@ -1239,7 +1286,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "ASSURANCE_ACTIONS",
-          "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\"]"
+          "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\"]"
         },
         {
           "classification": "advanced_export",
@@ -1267,6 +1314,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "value",
+          "name": "ASSURANCE_PRESET_IDS",
+          "signature": "readonly [\"software-delivery\", \"research\", \"agent-evaluation\", \"operations\"]"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "type",
           "name": "AssuranceAction",
           "signature": "export type AssuranceAction = (typeof ASSURANCE_ACTIONS)[number];"
@@ -1275,13 +1328,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceActionInput",
-          "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; limit?: number | string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; }"
+          "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; limit?: number | string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; preset?: string; owner?: string; apply?: boolean; enforcement?: string; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
-          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
           "classification": "advanced_export",
@@ -1315,9 +1368,21 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "AssuranceBundleMutationReceipt",
+          "signature": "export interface AssuranceBundleMutationReceipt { changed: boolean; created_ids: string[]; unchanged_ids: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "type",
           "name": "AssuranceDeclaration",
           "signature": "export type AssuranceDeclaration = AssuranceMeasurementDefinition | AssuranceAssertionDefinition | AssuranceGateDefinition;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "AssuranceDeclarationBundle",
+          "signature": "export interface AssuranceDeclarationBundle { measurements: AssuranceMeasurementDefinition[]; assertions: AssuranceAssertionDefinition[]; gates: AssuranceGateDefinition[]; }"
         },
         {
           "classification": "advanced_export",
@@ -1346,6 +1411,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "AssuranceDerivedProposal",
+          "signature": "export interface AssuranceDerivedProposal { id: string; population_size: number; scope: AssuranceScope; observed: number; declarations: AssuranceDeclarationBundle; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "AssuranceDerivedSource",
           "signature": "export interface AssuranceDerivedSource { kind: \"derived\"; expression: AssuranceDerivedExpression; }"
         },
@@ -1365,7 +1436,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "AssuranceEvaluationContext",
-          "signature": "export interface AssuranceEvaluationContext { tree_id: string; items: AssuranceItemRecord[]; history: AssuranceHistoryRecord[]; terminal_statuses?: string[]; external: (source: AssuranceGraphSource | AssuranceValidateSource | AssuranceHealthSource | AssuranceProviderSource) => Promise<AssuranceExternalMeasurementResult>; }"
+          "signature": "export interface AssuranceEvaluationContext { tree_id: string; items: AssuranceItemRecord[]; history: AssuranceHistoryRecord[]; terminal_statuses?: string[]; provider_capabilities?: Readonly<Record<string, { cost_class: AssuranceProviderCostClass; network: boolean; }>>; external: (source: AssuranceGraphSource | AssuranceValidateSource | AssuranceHealthSource | AssuranceProviderSource) => Promise<AssuranceExternalMeasurementResult>; }"
         },
         {
           "classification": "advanced_export",
@@ -1377,7 +1448,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "AssuranceGateDefinition",
-          "signature": "export interface AssuranceGateDefinition { id: string; assertion_ids: string[]; triggers: AssuranceGateTrigger[]; description?: string; }"
+          "signature": "export interface AssuranceGateDefinition { id: string; assertion_ids: string[]; triggers: AssuranceGateTrigger[]; description?: string; provider_policy?: { allowed_providers: string[]; triggers: Partial<Record<AssuranceGateTrigger, { max_cost_class: AssuranceProviderCostClass; allow_network: boolean; }>>; }; }"
         },
         {
           "classification": "advanced_export",
@@ -1498,6 +1569,24 @@
           "kind": "interface",
           "name": "AssuranceNegativeControlCase",
           "signature": "export interface AssuranceNegativeControlCase { observed: AssuranceValue; expected: \"pass\" | \"fail\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "AssurancePreset",
+          "signature": "export interface AssurancePreset { id: AssurancePresetId; title: string; description: string; declarations: AssuranceDeclarationBundle; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "AssurancePresetId",
+          "signature": "export type AssurancePresetId = (typeof ASSURANCE_PRESET_IDS)[number];"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "AssuranceProviderCostClass",
+          "signature": "export type AssuranceProviderCostClass = \"low\" | \"medium\" | \"high\";"
         },
         {
           "classification": "advanced_export",
@@ -3068,6 +3157,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "createAssurancePreset",
+          "signature": "(id: AssurancePresetId, ownerItemId: string) => AssurancePreset | calls: (id: AssurancePresetId, ownerItemId: string) => AssurancePreset"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "createAssuranceWorkspaceContext",
           "signature": "(pmRoot: string, options?: CreateAssuranceWorkspaceContextOptions) => Promise<AssuranceEvaluationContext> | calls: (pmRoot: string, options?: CreateAssuranceWorkspaceContextOptions) => Promise<AssuranceEvaluationContext>"
         },
@@ -3075,7 +3170,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "CreateAssuranceWorkspaceContextOptions",
-          "signature": "export interface CreateAssuranceWorkspaceContextOptions { tree_id?: string; include_history?: boolean; resolve_tree?: boolean; providers?: Readonly<Record<string, AssuranceProviderResolver>>; }"
+          "signature": "export interface CreateAssuranceWorkspaceContextOptions { tree_id?: string; include_history?: boolean; resolve_tree?: boolean; providers?: Readonly<Record<string, AssuranceProviderResolver>>; provider_capabilities?: AssuranceEvaluationContext[\"provider_capabilities\"]; trigger?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -3117,7 +3212,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "createExtensionContributionInventory",
-          "signature": "(summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; preflight_ownership?: ExtensionContributionInventory[\"preflight_ownership\"]; }) => ExtensionContributionInventory | calls: (summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; preflight_ownership?: ExtensionContributionInventory[\"preflight_ownership\"]; }) => ExtensionContributionInventory"
+          "signature": "(summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; assurance_providers?: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; preflight_ownership?: ExtensionContributionInventory[\"preflight_ownership\"]; }) => ExtensionContributionInventory | calls: (summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; assurance_providers?: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; preflight_ownership?: ExtensionContributionInventory[\"preflight_ownership\"]; }) => ExtensionContributionInventory"
         },
         {
           "classification": "supported",
@@ -3664,6 +3759,12 @@
           "kind": "interface",
           "name": "DepsTreeNode",
           "signature": "export interface DepsTreeNode { id: string; title?: string; type?: ItemType; status?: ItemStatus; via?: string; missing: boolean; cycle: boolean; truncated?: boolean; collapsed?: boolean; dependencies: DepsTreeNode[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "deriveAssuranceProposals",
+          "signature": "(context: AssuranceEvaluationContext, ownerItemId: string) => Promise<AssuranceDerivedProposal[]> | calls: (context: AssuranceEvaluationContext, ownerItemId: string) => Promise<AssuranceDerivedProposal[]>"
         },
         {
           "classification": "supported",
@@ -4239,7 +4340,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "EXTENSION_CAPABILITY_REGISTRATION_SURFACES",
-          "signature": "{ readonly commands: readonly [\"registerCommand\", \"command override\", \"command handler\"]; readonly renderers: readonly [\"registerRenderer\"]; readonly hooks: readonly [\"hooks.beforeCommand\", \"hooks.beforeMutation\", \"hooks.afterCommand\", \"hooks.onWrite\", \"hooks.onRead\", \"hooks.onIndex\"]; readonly schema: readonly [\"registerFlags\", \"registerItemFields\", \"registerItemTypes\", \"registerRelationshipKinds\", \"registerMigration\", \"registerProfile\"]; readonly importers: readonly [\"registerImporter\", \"registerExporter\"]; readonly search: readonly [\"registerSearchProvider\", \"registerVectorStoreAdapter\"]; readonly parser: readonly [\"registerParser\"]; readonly preflight: readonly [\"registerPreflight\"]; readonly services: readonly [\"registerService\"]; }"
+          "signature": "{ readonly commands: readonly [\"registerCommand\", \"command override\", \"command handler\"]; readonly renderers: readonly [\"registerRenderer\"]; readonly hooks: readonly [\"hooks.beforeCommand\", \"hooks.beforeMutation\", \"hooks.afterCommand\", \"hooks.onWrite\", \"hooks.onRead\", \"hooks.onIndex\"]; readonly schema: readonly [\"registerFlags\", \"registerItemFields\", \"registerItemTypes\", \"registerRelationshipKinds\", \"registerMigration\", \"registerProfile\"]; readonly importers: readonly [\"registerImporter\", \"registerExporter\"]; readonly search: readonly [\"registerSearchProvider\", \"registerVectorStoreAdapter\"]; readonly parser: readonly [\"registerParser\"]; readonly preflight: readonly [\"registerPreflight\"]; readonly services: readonly [\"registerService\", \"registerAssuranceMeasurementProvider\"]; }"
         },
         {
           "classification": "contract_data",
@@ -4311,7 +4412,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "EXTENSION_POLICY_SURFACES",
-          "signature": "readonly [\"commands.override\", \"commands.handler\", \"hooks.beforecommand\", \"hooks.beforemutation\", \"hooks.aftercommand\", \"hooks.onwrite\", \"hooks.onread\", \"hooks.onindex\", \"schema.flags\", \"schema.itemfields\", \"schema.itemtypes\", \"schema.relationshipkinds\", \"schema.migrations\", \"schema.profiles\", \"parser.override\", \"preflight.override\", \"services.override\", \"renderers.override\", \"importers.importer\", \"importers.exporter\", \"search.provider\", \"search.vectorstore\"]"
+          "signature": "readonly [\"commands.override\", \"commands.handler\", \"hooks.beforecommand\", \"hooks.beforemutation\", \"hooks.aftercommand\", \"hooks.onwrite\", \"hooks.onread\", \"hooks.onindex\", \"schema.flags\", \"schema.itemfields\", \"schema.itemtypes\", \"schema.relationshipkinds\", \"schema.migrations\", \"schema.profiles\", \"parser.override\", \"preflight.override\", \"services.override\", \"renderers.override\", \"importers.importer\", \"importers.exporter\", \"search.provider\", \"search.vectorstore\", \"services.assuranceprovider\"]"
         },
         {
           "classification": "contract_data",
@@ -4359,19 +4460,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionActivationSummary",
-          "signature": "export interface ExtensionActivationSummary { capabilities: ExtensionCapability[]; commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; parser_overrides: string[]; service_overrides: ExtensionServiceName[]; renderer_overrides: OutputRendererFormat[]; renderer_ownership?: Array<{ format: OutputRendererFormat; commands: string[]; result_discriminator: boolean; }>; preflight_overrides: number; preflight_ownership: Array<{ commands: string[]; }>; }"
+          "signature": "export interface ExtensionActivationSummary { capabilities: ExtensionCapability[]; commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; assurance_providers?: string[]; parser_overrides: string[]; service_overrides: ExtensionServiceName[]; renderer_overrides: OutputRendererFormat[]; renderer_ownership?: Array<{ format: OutputRendererFormat; commands: string[]; result_discriminator: boolean; }>; preflight_overrides: number; preflight_ownership: Array<{ commands: string[]; }>; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionApi",
-          "signature": "export interface ExtensionApi { readonly extension: ExtensionSelfIdentity; registerCommand(command: string, override: CommandOverride): void; registerCommand(definition: CommandDefinition): void; registerParser(command: string, override: ParserOverride): void; registerPreflight(override: PreflightOverride | ScopedPreflightOverrideDefinition): void; registerService(service: ExtensionServiceName, override: ServiceOverride): void; registerFlags(targetCommand: string, flags: FlagDefinition[]): void; registerItemFields(fields: SchemaFieldDefinition[]): void; registerItemTypes(types: SchemaItemTypeDefinition[]): void; registerRelationshipKinds(definitions: RelationshipKindDefinition[]): void; registerMigration(definition: SchemaMigrationDefinition): void; registerProfile(profile: ProjectProfileRegistrationInput): void; registerRenderer(format: OutputRendererFormat, renderer: RendererOverride, ownership?: RendererOverrideOwnership): void; registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void; registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void; registerSearchProvider(provider: SearchProviderDefinition): void; registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void; hooks: { beforeCommand(hook: BeforeCommandHook): void; beforeMutation(hook: BeforeMutationHook): void; afterCommand(hook: AfterCommandHook): void; onWrite(hook: OnWriteHook): void; onRead(hook: OnReadHook): void; onIndex(hook: OnIndexHook): void; }; }"
+          "signature": "export interface ExtensionApi { readonly extension: ExtensionSelfIdentity; registerCommand(command: string, override: CommandOverride): void; registerCommand(definition: CommandDefinition): void; registerParser(command: string, override: ParserOverride): void; registerPreflight(override: PreflightOverride | ScopedPreflightOverrideDefinition): void; registerService(service: ExtensionServiceName, override: ServiceOverride): void; registerFlags(targetCommand: string, flags: FlagDefinition[]): void; registerItemFields(fields: SchemaFieldDefinition[]): void; registerItemTypes(types: SchemaItemTypeDefinition[]): void; registerRelationshipKinds(definitions: RelationshipKindDefinition[]): void; registerMigration(definition: SchemaMigrationDefinition): void; registerProfile(profile: ProjectProfileRegistrationInput): void; registerRenderer(format: OutputRendererFormat, renderer: RendererOverride, ownership?: RendererOverrideOwnership): void; registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void; registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void; registerSearchProvider(provider: SearchProviderDefinition): void; registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void; registerAssuranceMeasurementProvider(provider: AssuranceMeasurementProviderDefinition): void; hooks: { beforeCommand(hook: BeforeCommandHook): void; beforeMutation(hook: BeforeMutationHook): void; afterCommand(hook: AfterCommandHook): void; onWrite(hook: OnWriteHook): void; onRead(hook: OnReadHook): void; onIndex(hook: OnIndexHook): void; }; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionBlueprint",
-          "signature": "export interface ExtensionBlueprint { manifest?: ExtensionManifest; commands?: CommandDefinition[]; commandOverrides?: Record<string, CommandOverride>; flags?: Record<string, FlagDefinition[]>; parsers?: Record<string, ParserOverride>; renderers?: Partial<Record<OutputRendererFormat, RendererOverride | ScopedRendererOverrideDefinition>>; services?: Partial<Record<ExtensionServiceName, ServiceOverride>>; preflights?: Array<PreflightOverride | ScopedPreflightOverrideDefinition>; itemTypes?: SchemaItemTypeDefinition[]; itemFields?: SchemaFieldDefinition[]; relationshipKinds?: RelationshipKindDefinition[]; migrations?: SchemaMigrationDefinition[]; profiles?: ProjectProfileRegistrationInput[]; searchProviders?: SearchProviderDefinition[]; vectorStoreAdapters?: VectorStoreAdapterDefinition[]; importers?: ExtensionBlueprintImporter[]; exporters?: ExtensionBlueprintExporter[]; hooks?: ExtensionBlueprintHooks; activate?: (api: ExtensionApi) => void | Promise<void>; deactivate?: () => void | Promise<void>; }"
+          "signature": "export interface ExtensionBlueprint { manifest?: ExtensionManifest; commands?: CommandDefinition[]; commandOverrides?: Record<string, CommandOverride>; flags?: Record<string, FlagDefinition[]>; parsers?: Record<string, ParserOverride>; renderers?: Partial<Record<OutputRendererFormat, RendererOverride | ScopedRendererOverrideDefinition>>; services?: Partial<Record<ExtensionServiceName, ServiceOverride>>; preflights?: Array<PreflightOverride | ScopedPreflightOverrideDefinition>; itemTypes?: SchemaItemTypeDefinition[]; itemFields?: SchemaFieldDefinition[]; relationshipKinds?: RelationshipKindDefinition[]; migrations?: SchemaMigrationDefinition[]; profiles?: ProjectProfileRegistrationInput[]; searchProviders?: SearchProviderDefinition[]; vectorStoreAdapters?: VectorStoreAdapterDefinition[]; assuranceProviders?: AssuranceMeasurementProviderDefinition[]; importers?: ExtensionBlueprintImporter[]; exporters?: ExtensionBlueprintExporter[]; hooks?: ExtensionBlueprintHooks; activate?: (api: ExtensionApi) => void | Promise<void>; deactivate?: () => void | Promise<void>; }"
         },
         {
           "classification": "supported",
@@ -4491,7 +4592,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionContributionInventory",
-          "signature": "export interface ExtensionContributionInventory { schema_version: 1; commands?: string[]; command_overrides?: string[]; command_handlers?: string[]; hooks?: string[]; flag_commands?: string[]; item_types?: string[]; item_fields?: string[]; relationship_kinds?: string[]; migrations?: string[]; profiles?: string[]; importers?: string[]; exporters?: string[]; search_providers?: string[]; vector_store_adapters?: string[]; parser_overrides?: string[]; service_overrides?: string[]; renderer_overrides?: string[]; renderer_ownership?: Array<{ format: OutputRendererFormat; commands: string[]; result_discriminator: boolean; }>; preflight_overrides?: number; preflight_ownership?: Array<{ commands: string[]; }>; }"
+          "signature": "export interface ExtensionContributionInventory { schema_version: 1; commands?: string[]; command_overrides?: string[]; command_handlers?: string[]; hooks?: string[]; flag_commands?: string[]; item_types?: string[]; item_fields?: string[]; relationship_kinds?: string[]; migrations?: string[]; profiles?: string[]; importers?: string[]; exporters?: string[]; search_providers?: string[]; vector_store_adapters?: string[]; assurance_providers?: string[]; parser_overrides?: string[]; service_overrides?: string[]; renderer_overrides?: string[]; renderer_ownership?: Array<{ format: OutputRendererFormat; commands: string[]; result_discriminator: boolean; }>; preflight_overrides?: number; preflight_ownership?: Array<{ commands: string[]; }>; }"
         },
         {
           "classification": "advanced_export",
@@ -4755,7 +4856,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionRegistrationRegistry",
-          "signature": "export interface ExtensionRegistrationRegistry { commands: RegisteredExtensionCommandDefinition[]; flags: RegisteredExtensionFlagDefinitions[]; item_fields: RegisteredExtensionSchemaFieldDefinitions[]; item_types: RegisteredExtensionSchemaItemTypeDefinitions[]; relationship_kinds: RegisteredExtensionRelationshipKindDefinitions[]; migrations: RegisteredExtensionSchemaMigrationDefinition[]; profiles: RegisteredExtensionProjectProfile[]; importers: RegisteredExtensionImporter[]; exporters: RegisteredExtensionExporter[]; search_providers: RegisteredExtensionSearchProvider[]; vector_store_adapters: RegisteredExtensionVectorStoreAdapter[]; }"
+          "signature": "export interface ExtensionRegistrationRegistry { commands: RegisteredExtensionCommandDefinition[]; flags: RegisteredExtensionFlagDefinitions[]; item_fields: RegisteredExtensionSchemaFieldDefinitions[]; item_types: RegisteredExtensionSchemaItemTypeDefinitions[]; relationship_kinds: RegisteredExtensionRelationshipKindDefinitions[]; migrations: RegisteredExtensionSchemaMigrationDefinition[]; profiles: RegisteredExtensionProjectProfile[]; importers: RegisteredExtensionImporter[]; exporters: RegisteredExtensionExporter[]; search_providers: RegisteredExtensionSearchProvider[]; vector_store_adapters: RegisteredExtensionVectorStoreAdapter[]; assurance_providers: RegisteredExtensionAssuranceMeasurementProvider[]; }"
         },
         {
           "classification": "supported",
@@ -8277,7 +8378,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_EXTENSION_POLICY_SURFACE_CONTRACTS",
-          "signature": "readonly [\"commands.override\", \"commands.handler\", \"hooks.beforecommand\", \"hooks.beforemutation\", \"hooks.aftercommand\", \"hooks.onwrite\", \"hooks.onread\", \"hooks.onindex\", \"schema.flags\", \"schema.itemfields\", \"schema.itemtypes\", \"schema.relationshipkinds\", \"schema.migrations\", \"schema.profiles\", \"parser.override\", \"preflight.override\", \"services.override\", \"renderers.override\", \"importers.importer\", \"importers.exporter\", \"search.provider\", \"search.vectorstore\"]"
+          "signature": "readonly [\"commands.override\", \"commands.handler\", \"hooks.beforecommand\", \"hooks.beforemutation\", \"hooks.aftercommand\", \"hooks.onwrite\", \"hooks.onread\", \"hooks.onindex\", \"schema.flags\", \"schema.itemfields\", \"schema.itemtypes\", \"schema.relationshipkinds\", \"schema.migrations\", \"schema.profiles\", \"parser.override\", \"preflight.override\", \"services.override\", \"renderers.override\", \"importers.importer\", \"importers.exporter\", \"search.provider\", \"search.vectorstore\", \"services.assuranceprovider\"]"
         },
         {
           "classification": "contract_data",
@@ -9487,6 +9588,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "function",
+          "name": "promoteAssuranceAssertion",
+          "signature": "(pmRoot: string, definition: AssuranceAssertionDefinition, enforcement: Exclude<AssuranceEnforcement, \"observe\">, options?: { author?: string; message?: string; }) => Promise<Awaited<ReturnType<typeof putAssuranceDeclaration>>> | calls: (pmRoot: string, definition: AssuranceAssertionDefinition, enforcement: Exclude<AssuranceEnforcement, \"observe\">, options?: { author?: string; message?: string; }) => Promise<Awaited<ReturnType<typeof putAssuranceDeclaration>>>"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "ProvenanceCoverageAnalytics",
           "signature": "export interface ProvenanceCoverageAnalytics { descriptors: AgentProvenanceDescriptorCoverage[]; observations: AgentProvenanceDimensionCoverage[]; inert: Array<{ harness: string; dimension: string; explicit_samples: number; }>; undeclared: string[]; warnings: string[]; window: HistoryAnalyticsWindowReceipt; }"
@@ -9520,6 +9627,12 @@
           "kind": "function",
           "name": "putAssuranceDeclaration",
           "signature": "(pmRoot: string, kind: AssuranceDeclarationKind, definition: AssuranceDeclaration, options?: AssuranceMutationOptions) => Promise<AssuranceMutationReceipt> | calls: (pmRoot: string, kind: AssuranceDeclarationKind, definition: AssuranceDeclaration, options?: AssuranceMutationOptions) => Promise<AssuranceMutationReceipt>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "putAssuranceDeclarationBundle",
+          "signature": "(pmRoot: string, bundle: AssuranceDeclarationBundle, options?: AssuranceMutationOptions) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, bundle: AssuranceDeclarationBundle, options?: AssuranceMutationOptions) => Promise<AssuranceBundleMutationReceipt>"
         },
         {
           "classification": "supported",
@@ -14715,7 +14828,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "createExtensionContributionInventory",
-          "signature": "(summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; preflight_ownership?: ExtensionContributionInventory[\"preflight_ownership\"]; }) => ExtensionContributionInventory | calls: (summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; preflight_ownership?: ExtensionContributionInventory[\"preflight_ownership\"]; }) => ExtensionContributionInventory"
+          "signature": "(summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; assurance_providers?: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; preflight_ownership?: ExtensionContributionInventory[\"preflight_ownership\"]; }) => ExtensionContributionInventory | calls: (summary: { commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; assurance_providers?: string[]; parser_overrides: string[]; service_overrides: string[]; renderer_overrides: string[]; renderer_ownership?: ExtensionContributionInventory[\"renderer_ownership\"]; preflight_overrides: number; preflight_ownership?: ExtensionContributionInventory[\"preflight_ownership\"]; }) => ExtensionContributionInventory"
         },
         {
           "classification": "supported",
@@ -14925,7 +15038,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "EXTENSION_CAPABILITY_REGISTRATION_SURFACES",
-          "signature": "{ readonly commands: readonly [\"registerCommand\", \"command override\", \"command handler\"]; readonly renderers: readonly [\"registerRenderer\"]; readonly hooks: readonly [\"hooks.beforeCommand\", \"hooks.beforeMutation\", \"hooks.afterCommand\", \"hooks.onWrite\", \"hooks.onRead\", \"hooks.onIndex\"]; readonly schema: readonly [\"registerFlags\", \"registerItemFields\", \"registerItemTypes\", \"registerRelationshipKinds\", \"registerMigration\", \"registerProfile\"]; readonly importers: readonly [\"registerImporter\", \"registerExporter\"]; readonly search: readonly [\"registerSearchProvider\", \"registerVectorStoreAdapter\"]; readonly parser: readonly [\"registerParser\"]; readonly preflight: readonly [\"registerPreflight\"]; readonly services: readonly [\"registerService\"]; }"
+          "signature": "{ readonly commands: readonly [\"registerCommand\", \"command override\", \"command handler\"]; readonly renderers: readonly [\"registerRenderer\"]; readonly hooks: readonly [\"hooks.beforeCommand\", \"hooks.beforeMutation\", \"hooks.afterCommand\", \"hooks.onWrite\", \"hooks.onRead\", \"hooks.onIndex\"]; readonly schema: readonly [\"registerFlags\", \"registerItemFields\", \"registerItemTypes\", \"registerRelationshipKinds\", \"registerMigration\", \"registerProfile\"]; readonly importers: readonly [\"registerImporter\", \"registerExporter\"]; readonly search: readonly [\"registerSearchProvider\", \"registerVectorStoreAdapter\"]; readonly parser: readonly [\"registerParser\"]; readonly preflight: readonly [\"registerPreflight\"]; readonly services: readonly [\"registerService\", \"registerAssuranceMeasurementProvider\"]; }"
         },
         {
           "classification": "supported",
@@ -14937,7 +15050,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "EXTENSION_POLICY_SURFACES",
-          "signature": "readonly [\"commands.override\", \"commands.handler\", \"hooks.beforecommand\", \"hooks.beforemutation\", \"hooks.aftercommand\", \"hooks.onwrite\", \"hooks.onread\", \"hooks.onindex\", \"schema.flags\", \"schema.itemfields\", \"schema.itemtypes\", \"schema.relationshipkinds\", \"schema.migrations\", \"schema.profiles\", \"parser.override\", \"preflight.override\", \"services.override\", \"renderers.override\", \"importers.importer\", \"importers.exporter\", \"search.provider\", \"search.vectorstore\"]"
+          "signature": "readonly [\"commands.override\", \"commands.handler\", \"hooks.beforecommand\", \"hooks.beforemutation\", \"hooks.aftercommand\", \"hooks.onwrite\", \"hooks.onread\", \"hooks.onindex\", \"schema.flags\", \"schema.itemfields\", \"schema.itemtypes\", \"schema.relationshipkinds\", \"schema.migrations\", \"schema.profiles\", \"parser.override\", \"preflight.override\", \"services.override\", \"renderers.override\", \"importers.importer\", \"importers.exporter\", \"search.provider\", \"search.vectorstore\", \"services.assuranceprovider\"]"
         },
         {
           "classification": "supported",
@@ -14961,13 +15074,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionApi",
-          "signature": "export interface ExtensionApi { readonly extension: ExtensionSelfIdentity; registerCommand(command: string, override: CommandOverride): void; registerCommand(definition: CommandDefinition): void; registerParser(command: string, override: ParserOverride): void; registerPreflight(override: PreflightOverride | ScopedPreflightOverrideDefinition): void; registerService(service: ExtensionServiceName, override: ServiceOverride): void; registerFlags(targetCommand: string, flags: FlagDefinition[]): void; registerItemFields(fields: SchemaFieldDefinition[]): void; registerItemTypes(types: SchemaItemTypeDefinition[]): void; registerRelationshipKinds(definitions: RelationshipKindDefinition[]): void; registerMigration(definition: SchemaMigrationDefinition): void; registerProfile(profile: ProjectProfileRegistrationInput): void; registerRenderer(format: OutputRendererFormat, renderer: RendererOverride, ownership?: RendererOverrideOwnership): void; registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void; registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void; registerSearchProvider(provider: SearchProviderDefinition): void; registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void; hooks: { beforeCommand(hook: BeforeCommandHook): void; beforeMutation(hook: BeforeMutationHook): void; afterCommand(hook: AfterCommandHook): void; onWrite(hook: OnWriteHook): void; onRead(hook: OnReadHook): void; onIndex(hook: OnIndexHook): void; }; }"
+          "signature": "export interface ExtensionApi { readonly extension: ExtensionSelfIdentity; registerCommand(command: string, override: CommandOverride): void; registerCommand(definition: CommandDefinition): void; registerParser(command: string, override: ParserOverride): void; registerPreflight(override: PreflightOverride | ScopedPreflightOverrideDefinition): void; registerService(service: ExtensionServiceName, override: ServiceOverride): void; registerFlags(targetCommand: string, flags: FlagDefinition[]): void; registerItemFields(fields: SchemaFieldDefinition[]): void; registerItemTypes(types: SchemaItemTypeDefinition[]): void; registerRelationshipKinds(definitions: RelationshipKindDefinition[]): void; registerMigration(definition: SchemaMigrationDefinition): void; registerProfile(profile: ProjectProfileRegistrationInput): void; registerRenderer(format: OutputRendererFormat, renderer: RendererOverride, ownership?: RendererOverrideOwnership): void; registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void; registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void; registerSearchProvider(provider: SearchProviderDefinition): void; registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void; registerAssuranceMeasurementProvider(provider: AssuranceMeasurementProviderDefinition): void; hooks: { beforeCommand(hook: BeforeCommandHook): void; beforeMutation(hook: BeforeMutationHook): void; afterCommand(hook: AfterCommandHook): void; onWrite(hook: OnWriteHook): void; onRead(hook: OnReadHook): void; onIndex(hook: OnIndexHook): void; }; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionBlueprint",
-          "signature": "export interface ExtensionBlueprint { manifest?: ExtensionManifest; commands?: CommandDefinition[]; commandOverrides?: Record<string, CommandOverride>; flags?: Record<string, FlagDefinition[]>; parsers?: Record<string, ParserOverride>; renderers?: Partial<Record<OutputRendererFormat, RendererOverride | ScopedRendererOverrideDefinition>>; services?: Partial<Record<ExtensionServiceName, ServiceOverride>>; preflights?: Array<PreflightOverride | ScopedPreflightOverrideDefinition>; itemTypes?: SchemaItemTypeDefinition[]; itemFields?: SchemaFieldDefinition[]; relationshipKinds?: RelationshipKindDefinition[]; migrations?: SchemaMigrationDefinition[]; profiles?: ProjectProfileRegistrationInput[]; searchProviders?: SearchProviderDefinition[]; vectorStoreAdapters?: VectorStoreAdapterDefinition[]; importers?: ExtensionBlueprintImporter[]; exporters?: ExtensionBlueprintExporter[]; hooks?: ExtensionBlueprintHooks; activate?: (api: ExtensionApi) => void | Promise<void>; deactivate?: () => void | Promise<void>; }"
+          "signature": "export interface ExtensionBlueprint { manifest?: ExtensionManifest; commands?: CommandDefinition[]; commandOverrides?: Record<string, CommandOverride>; flags?: Record<string, FlagDefinition[]>; parsers?: Record<string, ParserOverride>; renderers?: Partial<Record<OutputRendererFormat, RendererOverride | ScopedRendererOverrideDefinition>>; services?: Partial<Record<ExtensionServiceName, ServiceOverride>>; preflights?: Array<PreflightOverride | ScopedPreflightOverrideDefinition>; itemTypes?: SchemaItemTypeDefinition[]; itemFields?: SchemaFieldDefinition[]; relationshipKinds?: RelationshipKindDefinition[]; migrations?: SchemaMigrationDefinition[]; profiles?: ProjectProfileRegistrationInput[]; searchProviders?: SearchProviderDefinition[]; vectorStoreAdapters?: VectorStoreAdapterDefinition[]; assuranceProviders?: AssuranceMeasurementProviderDefinition[]; importers?: ExtensionBlueprintImporter[]; exporters?: ExtensionBlueprintExporter[]; hooks?: ExtensionBlueprintHooks; activate?: (api: ExtensionApi) => void | Promise<void>; deactivate?: () => void | Promise<void>; }"
         },
         {
           "classification": "supported",
@@ -15045,7 +15158,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionContributionInventory",
-          "signature": "export interface ExtensionContributionInventory { schema_version: 1; commands?: string[]; command_overrides?: string[]; command_handlers?: string[]; hooks?: string[]; flag_commands?: string[]; item_types?: string[]; item_fields?: string[]; relationship_kinds?: string[]; migrations?: string[]; profiles?: string[]; importers?: string[]; exporters?: string[]; search_providers?: string[]; vector_store_adapters?: string[]; parser_overrides?: string[]; service_overrides?: string[]; renderer_overrides?: string[]; renderer_ownership?: Array<{ format: OutputRendererFormat; commands: string[]; result_discriminator: boolean; }>; preflight_overrides?: number; preflight_ownership?: Array<{ commands: string[]; }>; }"
+          "signature": "export interface ExtensionContributionInventory { schema_version: 1; commands?: string[]; command_overrides?: string[]; command_handlers?: string[]; hooks?: string[]; flag_commands?: string[]; item_types?: string[]; item_fields?: string[]; relationship_kinds?: string[]; migrations?: string[]; profiles?: string[]; importers?: string[]; exporters?: string[]; search_providers?: string[]; vector_store_adapters?: string[]; assurance_providers?: string[]; parser_overrides?: string[]; service_overrides?: string[]; renderer_overrides?: string[]; renderer_ownership?: Array<{ format: OutputRendererFormat; commands: string[]; result_discriminator: boolean; }>; preflight_overrides?: number; preflight_ownership?: Array<{ commands: string[]; }>; }"
         },
         {
           "classification": "supported",
@@ -15213,7 +15326,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionRegistrationRegistry",
-          "signature": "export interface ExtensionRegistrationRegistry { commands: RegisteredExtensionCommandDefinition[]; flags: RegisteredExtensionFlagDefinitions[]; item_fields: RegisteredExtensionSchemaFieldDefinitions[]; item_types: RegisteredExtensionSchemaItemTypeDefinitions[]; relationship_kinds: RegisteredExtensionRelationshipKindDefinitions[]; migrations: RegisteredExtensionSchemaMigrationDefinition[]; profiles: RegisteredExtensionProjectProfile[]; importers: RegisteredExtensionImporter[]; exporters: RegisteredExtensionExporter[]; search_providers: RegisteredExtensionSearchProvider[]; vector_store_adapters: RegisteredExtensionVectorStoreAdapter[]; }"
+          "signature": "export interface ExtensionRegistrationRegistry { commands: RegisteredExtensionCommandDefinition[]; flags: RegisteredExtensionFlagDefinitions[]; item_fields: RegisteredExtensionSchemaFieldDefinitions[]; item_types: RegisteredExtensionSchemaItemTypeDefinitions[]; relationship_kinds: RegisteredExtensionRelationshipKindDefinitions[]; migrations: RegisteredExtensionSchemaMigrationDefinition[]; profiles: RegisteredExtensionProjectProfile[]; importers: RegisteredExtensionImporter[]; exporters: RegisteredExtensionExporter[]; search_providers: RegisteredExtensionSearchProvider[]; vector_store_adapters: RegisteredExtensionVectorStoreAdapter[]; assurance_providers: RegisteredExtensionAssuranceMeasurementProvider[]; }"
         },
         {
           "classification": "supported",
@@ -16725,7 +16838,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_EXTENSION_POLICY_SURFACE_CONTRACTS",
-          "signature": "readonly [\"commands.override\", \"commands.handler\", \"hooks.beforecommand\", \"hooks.beforemutation\", \"hooks.aftercommand\", \"hooks.onwrite\", \"hooks.onread\", \"hooks.onindex\", \"schema.flags\", \"schema.itemfields\", \"schema.itemtypes\", \"schema.relationshipkinds\", \"schema.migrations\", \"schema.profiles\", \"parser.override\", \"preflight.override\", \"services.override\", \"renderers.override\", \"importers.importer\", \"importers.exporter\", \"search.provider\", \"search.vectorstore\"]"
+          "signature": "readonly [\"commands.override\", \"commands.handler\", \"hooks.beforecommand\", \"hooks.beforemutation\", \"hooks.aftercommand\", \"hooks.onwrite\", \"hooks.onread\", \"hooks.onindex\", \"schema.flags\", \"schema.itemfields\", \"schema.itemtypes\", \"schema.relationshipkinds\", \"schema.migrations\", \"schema.profiles\", \"parser.override\", \"preflight.override\", \"services.override\", \"renderers.override\", \"importers.importer\", \"importers.exporter\", \"search.provider\", \"search.vectorstore\", \"services.assuranceprovider\"]"
         },
         {
           "classification": "contract_data",
@@ -17781,13 +17894,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceActionInput",
-          "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; limit?: number | string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; }"
+          "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; limit?: number | string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; preset?: string; owner?: string; apply?: boolean; enforcement?: string; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
-          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
           "classification": "supported",
@@ -22503,13 +22616,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceActionInput",
-          "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; limit?: number | string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; }"
+          "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; limit?: number | string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; preset?: string; owner?: string; apply?: boolean; enforcement?: string; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
-          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
           "classification": "supported",
@@ -25197,13 +25310,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionActivationSummary",
-          "signature": "export interface ExtensionActivationSummary { capabilities: ExtensionCapability[]; commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; parser_overrides: string[]; service_overrides: ExtensionServiceName[]; renderer_overrides: OutputRendererFormat[]; renderer_ownership?: Array<{ format: OutputRendererFormat; commands: string[]; result_discriminator: boolean; }>; preflight_overrides: number; preflight_ownership: Array<{ commands: string[]; }>; }"
+          "signature": "export interface ExtensionActivationSummary { capabilities: ExtensionCapability[]; commands: string[]; command_overrides: string[]; command_handlers: string[]; hooks: string[]; flag_commands: string[]; item_types: string[]; item_fields: string[]; relationship_kinds?: string[]; migrations: string[]; profiles: string[]; importers: string[]; exporters: string[]; search_providers: string[]; vector_store_adapters: string[]; assurance_providers?: string[]; parser_overrides: string[]; service_overrides: ExtensionServiceName[]; renderer_overrides: OutputRendererFormat[]; renderer_ownership?: Array<{ format: OutputRendererFormat; commands: string[]; result_discriminator: boolean; }>; preflight_overrides: number; preflight_ownership: Array<{ commands: string[]; }>; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionBlueprint",
-          "signature": "export interface ExtensionBlueprint { manifest?: ExtensionManifest; commands?: CommandDefinition[]; commandOverrides?: Record<string, CommandOverride>; flags?: Record<string, FlagDefinition[]>; parsers?: Record<string, ParserOverride>; renderers?: Partial<Record<OutputRendererFormat, RendererOverride | ScopedRendererOverrideDefinition>>; services?: Partial<Record<ExtensionServiceName, ServiceOverride>>; preflights?: Array<PreflightOverride | ScopedPreflightOverrideDefinition>; itemTypes?: SchemaItemTypeDefinition[]; itemFields?: SchemaFieldDefinition[]; relationshipKinds?: RelationshipKindDefinition[]; migrations?: SchemaMigrationDefinition[]; profiles?: ProjectProfileRegistrationInput[]; searchProviders?: SearchProviderDefinition[]; vectorStoreAdapters?: VectorStoreAdapterDefinition[]; importers?: ExtensionBlueprintImporter[]; exporters?: ExtensionBlueprintExporter[]; hooks?: ExtensionBlueprintHooks; activate?: (api: ExtensionApi) => void | Promise<void>; deactivate?: () => void | Promise<void>; }"
+          "signature": "export interface ExtensionBlueprint { manifest?: ExtensionManifest; commands?: CommandDefinition[]; commandOverrides?: Record<string, CommandOverride>; flags?: Record<string, FlagDefinition[]>; parsers?: Record<string, ParserOverride>; renderers?: Partial<Record<OutputRendererFormat, RendererOverride | ScopedRendererOverrideDefinition>>; services?: Partial<Record<ExtensionServiceName, ServiceOverride>>; preflights?: Array<PreflightOverride | ScopedPreflightOverrideDefinition>; itemTypes?: SchemaItemTypeDefinition[]; itemFields?: SchemaFieldDefinition[]; relationshipKinds?: RelationshipKindDefinition[]; migrations?: SchemaMigrationDefinition[]; profiles?: ProjectProfileRegistrationInput[]; searchProviders?: SearchProviderDefinition[]; vectorStoreAdapters?: VectorStoreAdapterDefinition[]; assuranceProviders?: AssuranceMeasurementProviderDefinition[]; importers?: ExtensionBlueprintImporter[]; exporters?: ExtensionBlueprintExporter[]; hooks?: ExtensionBlueprintHooks; activate?: (api: ExtensionApi) => void | Promise<void>; deactivate?: () => void | Promise<void>; }"
         },
         {
           "classification": "supported",

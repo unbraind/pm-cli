@@ -58,10 +58,6 @@ import {
   createRelationshipKindRegistry,
   type RelationshipKindDefinition,
 } from "../../sdk/relationships.js";
-// Cohesive helper groups now live in sibling modules. They are imported for the
-// discovery/activation code that stays here and re-exported below so existing
-// import sites (sdk/index.ts, commands/extension.ts, health.ts, tests, …) keep
-// importing everything from "./loader.js" unchanged.
 import {
   normalizeNames,
   isKnownExtensionCapability,
@@ -95,6 +91,24 @@ import {
   cloneContextSnapshot,
 } from "./extension-runtime-helpers.js";
 import { normalizeExtensionContributionInventory } from "./contribution-inventory.js";
+import {
+  attachRuntimeDefinition,
+  assertHookHandler,
+  assertNonEmptyRegistrationString,
+  assertRegistrationFunction,
+  cloneRuntimeRegistrationValue,
+  createRegistrationValidationError,
+  extractRegistrationValidationTrace,
+  isExtensionServiceName,
+  isOutputRendererFormat,
+  normalizeRegistrationRecord,
+  normalizeRegistrationRecordList,
+  normalizeRuntimeRegistrationRecord,
+  normalizeRegistrationName,
+  sanitizeRegistrationValue,
+  toRegistrationCommandPath,
+  validateAssuranceMeasurementProviderDefinition,
+} from "./registration-values.js";
 import {
   buildReadyExtensionCandidate,
   type ExtensionCandidateSourceIdentity,
@@ -177,6 +191,7 @@ import {
   type Exporter,
   type SearchProviderDefinition,
   type VectorStoreAdapterDefinition,
+  type AssuranceMeasurementProviderDefinition,
   type RegisteredExtensionParserOverride,
   type RegisteredExtensionServiceOverride,
   type RegisteredExtensionRendererOverride,
@@ -189,6 +204,7 @@ import {
   type RegisteredExtensionSchemaMigrationDefinition,
   type RegisteredExtensionSearchProvider,
   type RegisteredExtensionVectorStoreAdapter,
+  type RegisteredExtensionAssuranceMeasurementProvider,
   type ExtensionRegistrationRegistry,
   type ExtensionRegistrationCounts,
   type ExtensionApi,
@@ -207,8 +223,6 @@ export * from "./extension-types.js";
 /** Fallback extension priority used when callers do not provide an override. */
 export const DEFAULT_EXTENSION_PRIORITY = 100;
 let currentPmCliVersionPromise: Promise<string | null> | null = null;
-
-/* Types now in extension-types.ts - re-exported via `export * from "./extension-types.js"` above */
 
 const DEFAULT_EXTENSION_POLICY: ExtensionGovernancePolicy = Object.freeze(
   createDefaultExtensionGovernancePolicy(),
@@ -659,8 +673,7 @@ function summarizeCandidate(candidate: ExtensionCandidate): EffectiveExtension {
           commands: [...(candidate.manifest.activation.commands as string[])],
         }
       : undefined,
-    contributions:
-      candidate.manifest.contributions ?? candidate.contributions,
+    contributions: candidate.manifest.contributions ?? candidate.contributions,
   };
   if (candidate.source_package) {
     summary.source_package = candidate.source_package;
@@ -1450,167 +1463,6 @@ async function runExtensionDeactivateWithTimeout(
   }
 }
 
-function isOutputRendererFormat(value: string): value is OutputRendererFormat {
-  return value === "toon" || value === "json";
-}
-
-function isExtensionServiceName(value: string): value is ExtensionServiceName {
-  return KNOWN_EXTENSION_SERVICE_NAMES.includes(value as ExtensionServiceName);
-}
-
-function assertHookHandler(hookName: string, hook: unknown): void {
-  if (typeof hook !== "function") {
-    throw new TypeError(`api.hooks.${hookName} requires a function handler`);
-  }
-}
-
-function assertNonEmptyString(name: string, value: unknown): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new TypeError(`${name} requires a non-empty string`);
-  }
-  return value.trim();
-}
-
-function assertFunctionHandler(name: string, value: unknown): void {
-  if (typeof value !== "function") {
-    throw new TypeError(`${name} requires a function handler`);
-  }
-}
-
-function normalizeRegistrationName(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((part) => part.length > 0)
-    .join(" ");
-}
-
-function toRegistrationCommandPath(
-  name: string,
-  action: "import" | "export",
-): string {
-  return normalizeCommandName(`${name} ${action}`);
-}
-
-function sanitizeRegistrationValue(value: unknown): unknown {
-  if (value === null) {
-    return null;
-  }
-  if (Array.isArray(value)) {
-    return value.map((entry) => sanitizeRegistrationValue(entry));
-  }
-  if (typeof value === "function") {
-    return "[Function]";
-  }
-  if (typeof value === "bigint") {
-    return value.toString();
-  }
-  if (typeof value === "symbol") {
-    return value.toString();
-  }
-  if (typeof value === "object") {
-    const record = value as Record<string, unknown>;
-    const normalized: Record<string, unknown> = {};
-    const keys = Object.keys(record).sort((left, right) =>
-      left.localeCompare(right),
-    );
-    for (const key of keys) {
-      normalized[key] = sanitizeRegistrationValue(record[key]);
-    }
-    return normalized;
-  }
-  return value;
-}
-
-function cloneRuntimeRegistrationValue(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map((entry) => cloneRuntimeRegistrationValue(entry));
-  }
-  if (typeof value === "object" && value !== null) {
-    const record = value as Record<string, unknown>;
-    const cloned: Record<string, unknown> = {};
-    for (const key of Object.keys(record).sort((left, right) =>
-      left.localeCompare(right),
-    )) {
-      cloned[key] = cloneRuntimeRegistrationValue(record[key]);
-    }
-    return cloned;
-  }
-  return value;
-}
-
-const EXTENSION_REGISTRATION_TRACE_SYMBOL = Symbol(
-  "extension_registration_trace",
-);
-
-type RegistrationTraceCarrier = Error & {
-  [EXTENSION_REGISTRATION_TRACE_SYMBOL]?: ExtensionActivationFailureTrace;
-};
-
-function createRegistrationValidationError(
-  message: string,
-  trace: ExtensionActivationFailureTrace,
-): TypeError {
-  const error = new TypeError(message) as RegistrationTraceCarrier;
-  Object.defineProperty(error, EXTENSION_REGISTRATION_TRACE_SYMBOL, {
-    value: trace,
-    enumerable: false,
-    configurable: false,
-    writable: false,
-  });
-  return error;
-}
-
-function extractRegistrationValidationTrace(
-  error: unknown,
-): ExtensionActivationFailureTrace | undefined {
-  if (!(error instanceof Error)) {
-    return undefined;
-  }
-  return (error as RegistrationTraceCarrier)[
-    EXTENSION_REGISTRATION_TRACE_SYMBOL
-  ];
-}
-
-function normalizeRegistrationRecord(
-  name: string,
-  value: unknown,
-): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new TypeError(`${name} requires an object definition`);
-  }
-  return sanitizeRegistrationValue(value) as Record<string, unknown>;
-}
-
-function normalizeRuntimeRegistrationRecord(
-  name: string,
-  value: unknown,
-): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new TypeError(`${name} requires an object definition`);
-  }
-  return cloneRuntimeRegistrationValue(value) as Record<string, unknown>;
-}
-
-function normalizeRegistrationRecordList<T extends object>(
-  name: string,
-  value: readonly T[],
-): T[];
-function normalizeRegistrationRecordList(
-  name: string,
-  value: unknown,
-): Array<Record<string, unknown>>;
-function normalizeRegistrationRecordList(
-  name: string,
-  value: unknown,
-): Array<Record<string, unknown>> {
-  if (!Array.isArray(value)) {
-    throw new TypeError(`${name} requires an array of object definitions`);
-  }
-  return value.map((entry) => normalizeRegistrationRecord(name, entry));
-}
-
 const FLAG_DEFINITION_KEYS = new Set([
   "default",
   "description",
@@ -1686,7 +1538,7 @@ function normalizeCommandDefinitionArguments(
       `registerCommand definition.arguments[${index}]`,
       entry,
     );
-    const name = assertNonEmptyString(
+    const name = assertNonEmptyRegistrationString(
       `registerCommand definition.arguments[${index}].name`,
       record.name,
     );
@@ -1881,11 +1733,11 @@ function validateItemFieldDefinitions(fields: unknown): void {
       `registerItemFields fields[${index}]`,
       raw,
     );
-    assertNonEmptyString(
+    assertNonEmptyRegistrationString(
       `registerItemFields fields[${index}].name`,
       record.name,
     );
-    const fieldType = assertNonEmptyString(
+    const fieldType = assertNonEmptyRegistrationString(
       `registerItemFields fields[${index}].type`,
       record.type,
     );
@@ -1919,8 +1771,8 @@ function validateItemTypeCommandOptionPolicies(
   for (const [policyIndex, rawPolicy] of value.entries()) {
     const at = `${label}[${policyIndex}]`;
     const policy = asRegistrationRecord(at, rawPolicy);
-    assertNonEmptyString(`${at}.command`, policy.command);
-    assertNonEmptyString(`${at}.option`, policy.option);
+    assertNonEmptyRegistrationString(`${at}.command`, policy.command);
+    assertNonEmptyRegistrationString(`${at}.option`, policy.option);
     assertOptionalBooleanField(`${at}.enabled`, policy.enabled);
     assertOptionalBooleanField(`${at}.required`, policy.required);
     assertOptionalBooleanField(`${at}.visible`, policy.visible);
@@ -1939,7 +1791,7 @@ function validateItemTypeOptions(typeIndex: number, value: unknown): void {
   for (const [optionIndex, rawOption] of value.entries()) {
     const at = `${label}[${optionIndex}]`;
     const option = asRegistrationRecord(at, rawOption);
-    assertNonEmptyString(`${at}.key`, option.key);
+    assertNonEmptyRegistrationString(`${at}.key`, option.key);
     assertOptionalStringArrayField(`${at}.values`, option.values);
     assertOptionalBooleanField(`${at}.required`, option.required);
     assertOptionalStringArrayField(`${at}.aliases`, option.aliases);
@@ -1955,7 +1807,7 @@ function validateItemTypeDefinitions(types: unknown): void {
   for (const [typeIndex, raw] of types.entries()) {
     const at = `registerItemTypes types[${typeIndex}]`;
     const record = asRegistrationRecord(at, raw);
-    assertNonEmptyString(`${at}.name`, record.name);
+    assertNonEmptyRegistrationString(`${at}.name`, record.name);
     assertOptionalStringField(`${at}.folder`, record.folder);
     assertOptionalStringArrayField(`${at}.aliases`, record.aliases);
     assertOptionalStringArrayField(
@@ -2073,8 +1925,11 @@ const PROJECT_PROFILE_ENTRY_VALIDATORS: Partial<
 
 function validateProjectProfileDefinition(profile: unknown): void {
   const record = asRegistrationRecord("registerProfile profile", profile);
-  assertNonEmptyString("registerProfile profile.name", record.name);
-  assertNonEmptyString("registerProfile profile.title", record.title);
+  assertNonEmptyRegistrationString("registerProfile profile.name", record.name);
+  assertNonEmptyRegistrationString(
+    "registerProfile profile.title",
+    record.title,
+  );
   if (record.summary !== undefined && typeof record.summary !== "string") {
     throw new TypeError(
       "registerProfile profile.summary must be a string when provided",
@@ -2131,18 +1986,6 @@ function applyProjectProfileDefaults(
     }
   }
   return profile as unknown as ProjectProfileDefinition;
-}
-
-function attachRuntimeDefinition<
-  TEntry extends { definition: Record<string, unknown> },
->(entry: TEntry, runtimeDefinition: Record<string, unknown>): TEntry {
-  Object.defineProperty(entry, "runtime_definition", {
-    value: runtimeDefinition,
-    enumerable: false,
-    writable: false,
-    configurable: false,
-  });
-  return entry;
 }
 
 function getDeclaredExtensionCapabilities(
@@ -2297,6 +2140,8 @@ class ExtensionApiRegistrar implements ExtensionApi {
     this.registerSearchProvider = this.registerSearchProvider.bind(this);
     this.registerVectorStoreAdapter =
       this.registerVectorStoreAdapter.bind(this);
+    this.registerAssuranceMeasurementProvider =
+      this.registerAssuranceMeasurementProvider.bind(this);
     this.hooks = {
       beforeCommand: (hook) => this.registerBeforeCommand(hook),
       beforeMutation: (hook) => this.registerBeforeMutation(hook),
@@ -2602,9 +2447,9 @@ class ExtensionApiRegistrar implements ExtensionApi {
       return;
     }
     const normalizedCommand = normalizeCommandName(
-      assertNonEmptyString("registerParser command", command),
+      assertNonEmptyRegistrationString("registerParser command", command),
     );
-    assertFunctionHandler("registerParser override", override);
+    assertRegistrationFunction("registerParser override", override);
     this.#parserRegistry.overrides.push({
       layer: this.#loadedExtension.layer,
       name: this.#loadedExtension.name,
@@ -2663,7 +2508,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
     ) {
       return;
     }
-    assertFunctionHandler("registerService override", override);
+    assertRegistrationFunction("registerService override", override);
     this.#serviceRegistry.overrides.push({
       layer: this.#loadedExtension.layer,
       name: this.#loadedExtension.name,
@@ -2738,7 +2583,10 @@ class ExtensionApiRegistrar implements ExtensionApi {
       return;
     }
     const normalizedTargetCommand = normalizeCommandName(
-      assertNonEmptyString("registerFlags targetCommand", targetCommand),
+      assertNonEmptyRegistrationString(
+        "registerFlags targetCommand",
+        targetCommand,
+      ),
     );
     validateFlagDefinitions(flags);
     const normalizedFlags = normalizeFlagDefinitions(
@@ -3045,9 +2893,9 @@ class ExtensionApiRegistrar implements ExtensionApi {
       return;
     }
     const normalizedName = normalizeRegistrationName(
-      assertNonEmptyString("registerImporter name", name),
+      assertNonEmptyRegistrationString("registerImporter name", name),
     );
-    assertFunctionHandler("registerImporter importer", importer);
+    assertRegistrationFunction("registerImporter importer", importer);
     const commandPath = toRegistrationCommandPath(normalizedName, "import");
     // Validate and register optional command metadata before mutating the registry
     // so an invalid options object leaves no partial importer registration.
@@ -3102,9 +2950,9 @@ class ExtensionApiRegistrar implements ExtensionApi {
       return;
     }
     const normalizedName = normalizeRegistrationName(
-      assertNonEmptyString("registerExporter name", name),
+      assertNonEmptyRegistrationString("registerExporter name", name),
     );
-    assertFunctionHandler("registerExporter exporter", exporter);
+    assertRegistrationFunction("registerExporter exporter", exporter);
     const commandPath = toRegistrationCommandPath(normalizedName, "export");
     // Validate and register optional command metadata before mutating the registry
     // so an invalid options object leaves no partial exporter registration.
@@ -3209,9 +3057,67 @@ class ExtensionApiRegistrar implements ExtensionApi {
     );
   }
 
+  public registerAssuranceMeasurementProvider(
+    provider: AssuranceMeasurementProviderDefinition,
+  ): void {
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "services",
+      "registerAssuranceMeasurementProvider",
+    );
+    if (
+      !this.allowRegistration(
+        "services.assuranceprovider",
+        "registerAssuranceMeasurementProvider",
+        "services",
+      )
+    ) {
+      return;
+    }
+    validateAssuranceMeasurementProviderDefinition(provider);
+    if (
+      provider.network &&
+      this.#loadedExtension.permissions?.network !== true
+    ) {
+      throw new TypeError(
+        "registerAssuranceMeasurementProvider network provider requires permissions.network=true",
+      );
+    }
+    const runtimeDefinition = normalizeRuntimeRegistrationRecord(
+      "registerAssuranceMeasurementProvider provider",
+      provider,
+    ) as unknown as AssuranceMeasurementProviderDefinition;
+    this.#registrationRegistry.assurance_providers.push(
+      attachRuntimeDefinition(
+        {
+          layer: this.#loadedExtension.layer,
+          name: this.#loadedExtension.name,
+          network_permission:
+            this.#loadedExtension.permissions?.network === true,
+          definition: normalizeRegistrationRecord(
+            "registerAssuranceMeasurementProvider provider",
+            provider,
+          ),
+        },
+        runtimeDefinition as unknown as Record<string, unknown>,
+      ) as unknown as RegisteredExtensionAssuranceMeasurementProvider,
+    );
+  }
+
   private registerBeforeCommand(hook: BeforeCommandHook): void {
-    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.beforeCommand");
-    if (!this.allowRegistration("hooks.beforecommand", "api.hooks.beforeCommand", "hooks")) return;
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "hooks",
+      "api.hooks.beforeCommand",
+    );
+    if (
+      !this.allowRegistration(
+        "hooks.beforecommand",
+        "api.hooks.beforeCommand",
+        "hooks",
+      )
+    )
+      return;
     assertHookHandler("beforeCommand", hook);
     this.#hookRegistry.beforeCommand.push({
       layer: this.#loadedExtension.layer,
@@ -3221,8 +3127,19 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerBeforeMutation(hook: BeforeMutationHook): void {
-    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.beforeMutation");
-    if (!this.allowRegistration("hooks.beforemutation", "api.hooks.beforeMutation", "hooks")) return;
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "hooks",
+      "api.hooks.beforeMutation",
+    );
+    if (
+      !this.allowRegistration(
+        "hooks.beforemutation",
+        "api.hooks.beforeMutation",
+        "hooks",
+      )
+    )
+      return;
     assertHookHandler("beforeMutation", hook);
     this.#hookRegistry.beforeMutation.push({
       layer: this.#loadedExtension.layer,
@@ -3232,8 +3149,19 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerAfterCommand(hook: AfterCommandHook): void {
-    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.afterCommand");
-    if (!this.allowRegistration("hooks.aftercommand", "api.hooks.afterCommand", "hooks")) return;
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "hooks",
+      "api.hooks.afterCommand",
+    );
+    if (
+      !this.allowRegistration(
+        "hooks.aftercommand",
+        "api.hooks.afterCommand",
+        "hooks",
+      )
+    )
+      return;
     assertHookHandler("afterCommand", hook);
     this.#hookRegistry.afterCommand.push({
       layer: this.#loadedExtension.layer,
@@ -3243,8 +3171,13 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerOnWrite(hook: OnWriteHook): void {
-    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onWrite");
-    if (!this.allowRegistration("hooks.onwrite", "api.hooks.onWrite", "hooks")) return;
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "hooks",
+      "api.hooks.onWrite",
+    );
+    if (!this.allowRegistration("hooks.onwrite", "api.hooks.onWrite", "hooks"))
+      return;
     assertHookHandler("onWrite", hook);
     this.#hookRegistry.onWrite.push({
       layer: this.#loadedExtension.layer,
@@ -3254,8 +3187,13 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerOnRead(hook: OnReadHook): void {
-    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onRead");
-    if (!this.allowRegistration("hooks.onread", "api.hooks.onRead", "hooks")) return;
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "hooks",
+      "api.hooks.onRead",
+    );
+    if (!this.allowRegistration("hooks.onread", "api.hooks.onRead", "hooks"))
+      return;
     assertHookHandler("onRead", hook);
     this.#hookRegistry.onRead.push({
       layer: this.#loadedExtension.layer,
@@ -3265,8 +3203,13 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerOnIndex(hook: OnIndexHook): void {
-    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onIndex");
-    if (!this.allowRegistration("hooks.onindex", "api.hooks.onIndex", "hooks")) return;
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "hooks",
+      "api.hooks.onIndex",
+    );
+    if (!this.allowRegistration("hooks.onindex", "api.hooks.onIndex", "hooks"))
+      return;
     assertHookHandler("onIndex", hook);
     this.#hookRegistry.onIndex.push({
       layer: this.#loadedExtension.layer,
@@ -3339,6 +3282,9 @@ function getRegistrationCounts(
     exporters: registrations.exporters.length,
     search_providers: registrations.search_providers.length,
     vector_store_adapters: registrations.vector_store_adapters.length,
+    ...((registrations.assurance_providers?.length ?? 0) > 0
+      ? { assurance_providers: registrations.assurance_providers.length }
+      : {}),
   };
 }
 
@@ -3425,7 +3371,13 @@ function collectRendererCollisionWarnings(
     }
     const winner = bucket[bucket.length - 1];
     for (const displaced of bucket.slice(0, -1)) {
-      if (winner.commands?.length && displaced.commands?.length && !displaced.commands.some((command) => winner.commands?.includes(command))) {
+      if (
+        winner.commands?.length &&
+        displaced.commands?.length &&
+        !displaced.commands.some((command) =>
+          winner.commands?.includes(command),
+        )
+      ) {
         continue;
       }
       warnings.push(
@@ -3526,7 +3478,13 @@ export async function activateExtensions(
 
     const failedBeforeActivation = failed.length;
     const rollbackPartialActivation = captureExtensionActivationRollback({
-      hooks, commands, parsers, preflight, services, renderers, registrations,
+      hooks,
+      commands,
+      parsers,
+      preflight,
+      services,
+      renderers,
+      registrations,
     });
 
     try {
@@ -3632,8 +3590,13 @@ export const _testOnlyLoader = {
   readManagedExtensionSourcePackages: async (extensionsRoot: string) =>
     new Map(
       [...(await readManagedExtensionSourcePackages(extensionsRoot))]
-        .filter((entry): entry is [string, ManagedExtensionSourceIdentity & { package_name: string }] =>
-          typeof entry[1].package_name === "string",
+        .filter(
+          (
+            entry,
+          ): entry is [
+            string,
+            ManagedExtensionSourceIdentity & { package_name: string },
+          ] => typeof entry[1].package_name === "string",
         )
         .map(([key, identity]) => [key, identity.package_name]),
     ),

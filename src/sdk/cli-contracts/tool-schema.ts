@@ -1223,6 +1223,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "dryRun",
         "author",
         "message",
+        "preset",
+        "owner",
+        "apply",
+        "enforcement",
       ],
       conditionalRequired: [
         { property: "subcommand", value: "list", required: ["kind"] },
@@ -1234,6 +1238,17 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         },
         { property: "subcommand", value: "remove", required: ["kind", "id"] },
         { property: "subcommand", value: "run", required: ["id", "trigger"] },
+        {
+          property: "subcommand",
+          value: "apply",
+          required: ["preset", "owner"],
+        },
+        { property: "subcommand", value: "derive", required: ["owner"] },
+        {
+          property: "subcommand",
+          value: "promote",
+          required: ["id", "enforcement"],
+        },
       ],
     },
     gc: { optional: ["dryRun", "gcScope"] },

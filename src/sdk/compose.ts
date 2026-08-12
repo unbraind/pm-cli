@@ -54,6 +54,7 @@ import type {
   SearchProviderDefinition,
   ServiceOverride,
   VectorStoreAdapterDefinition,
+  AssuranceMeasurementProviderDefinition,
 } from "../core/extensions/loader.js";
 import type { ExtensionActivationSummary } from "../core/extensions/activation-summary.js";
 import type { ProjectProfileRegistrationInput } from "../core/profile/profile-presets.js";
@@ -211,6 +212,8 @@ export interface ExtensionBlueprint {
   searchProviders?: SearchProviderDefinition[];
   /** Vector store adapters registered via `api.registerVectorStoreAdapter(adapter)`. */
   vectorStoreAdapters?: VectorStoreAdapterDefinition[];
+  /** Assurance measurement providers registered via `api.registerAssuranceMeasurementProvider(provider)`. */
+  assuranceProviders?: AssuranceMeasurementProviderDefinition[];
   /** Importers registered via `api.registerImporter(name, importer, options?)`. */
   importers?: ExtensionBlueprintImporter[];
   /** Exporters registered via `api.registerExporter(name, exporter, options?)`. */
@@ -272,10 +275,7 @@ function registerBlueprintCommandSurfaces(
   for (const [format, renderer] of Object.entries(
     blueprint.renderers ?? {},
   ) as Array<
-    [
-      OutputRendererFormat,
-      RendererOverride | ScopedRendererOverrideDefinition,
-    ]
+    [OutputRendererFormat, RendererOverride | ScopedRendererOverrideDefinition]
   >) {
     if (typeof renderer === "function") {
       api.registerRenderer(format, renderer);
@@ -329,6 +329,9 @@ function registerBlueprintRetrievalSurfaces(
   }
   for (const adapter of blueprint.vectorStoreAdapters ?? []) {
     api.registerVectorStoreAdapter(adapter);
+  }
+  for (const provider of blueprint.assuranceProviders ?? []) {
+    api.registerAssuranceMeasurementProvider(provider);
   }
   for (const entry of blueprint.importers ?? []) {
     api.registerImporter(entry.name, entry.importer, entry.options);
@@ -619,6 +622,12 @@ export function mergeExtensionBlueprints(
     ),
   );
   assign(
+    "assuranceProviders",
+    mergeArraySurface(
+      blueprints.map((blueprint) => blueprint.assuranceProviders),
+    ),
+  );
+  assign(
     "importers",
     mergeArraySurface(blueprints.map((blueprint) => blueprint.importers)),
   );
@@ -714,6 +723,7 @@ const BLUEPRINT_FIELD_CAPABILITIES: ReadonlyArray<
   ["preflights", "preflight"],
   ["searchProviders", "search"],
   ["vectorStoreAdapters", "search"],
+  ["assuranceProviders", "services"],
   ["importers", "importers"],
   ["exporters", "importers"],
 ];
@@ -733,6 +743,7 @@ type BlueprintRegistrationField =
   | "profiles"
   | "searchProviders"
   | "vectorStoreAdapters"
+  | "assuranceProviders"
   | "importers"
   | "exporters";
 
@@ -939,6 +950,15 @@ function collectBlueprintRendererOwnership(
   return ownership.length > 0 ? { renderer_ownership: ownership } : {};
 }
 
+function collectBlueprintAssuranceProviders(
+  providers: ExtensionBlueprint["assuranceProviders"],
+): Pick<ExtensionActivationSummary, "assurance_providers"> {
+  if (!providers || providers.length === 0) return {};
+  return {
+    assurance_providers: sortUnique(providers.map((provider) => provider.id)),
+  };
+}
+
 function collectBlueprintSurfaceSummary(
   blueprint: ExtensionBlueprint,
   importers: ExtensionBlueprintImporter[],
@@ -954,6 +974,7 @@ function collectBlueprintSurfaceSummary(
   | "exporters"
   | "search_providers"
   | "vector_store_adapters"
+  | "assurance_providers"
   | "parser_overrides"
   | "service_overrides"
   | "renderer_overrides"
@@ -997,6 +1018,7 @@ function collectBlueprintSurfaceSummary(
     vector_store_adapters: sortUnique(
       (blueprint.vectorStoreAdapters ?? []).map((adapter) => adapter.name),
     ),
+    ...collectBlueprintAssuranceProviders(blueprint.assuranceProviders),
     parser_overrides: sortUnique(
       Object.keys(blueprint.parsers ?? {}).map((command) =>
         normalizeCommandName(command),
@@ -1118,6 +1140,7 @@ const BLUEPRINT_LINTABLE_SURFACE_FIELDS = [
   "profiles",
   "searchProviders",
   "vectorStoreAdapters",
+  "assuranceProviders",
   "importers",
   "exporters",
 ] as const satisfies ReadonlyArray<BlueprintRegistrationField>;

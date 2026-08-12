@@ -1,6 +1,6 @@
 # Project Assurance Primitives
 
-Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon)
+Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-uhv1m5](../.agents/pm/features/pm-uhv1m5.toon), [pm-m7bb7r](../.agents/pm/features/pm-m7bb7r.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon)
 
 ## Agent Quick Context
 
@@ -86,6 +86,152 @@ pm assurance remove gate release-readiness
 
 Referenced measurements and assertions cannot be removed. Remove the consuming gate or assertion first.
 
+### Presets, derivation, and promotion
+
+List the four built-in project shapes, preview one as ordinary declarations, or apply it atomically:
+
+```bash
+pm assurance presets
+pm assurance presets software-delivery --owner pm-example
+pm assurance apply software-delivery --owner pm-example \
+  --message "Adopt the initial delivery evidence contract"
+```
+
+The preset creates measurements, assertions, and a gate in one audited transaction. Reapplying the same bundle is idempotent; an existing divergent id is refused rather than overwritten. The available shapes are `software-delivery`, `research`, `agent-evaluation`, and `operations`.
+
+Self-derivation observes active items without writing anything. Each proposal reports its active scope, population size, and observed missing-evidence ceiling. Persistence requires the explicit `--apply` flag:
+
+```bash
+pm assurance derive --owner pm-example
+pm assurance derive --owner pm-example --apply \
+  --message "Accept the observed evidence baseline"
+pm assurance promote derived-active-missing-tests-ceiling --enforcement warn
+pm assurance promote derived-active-missing-tests-ceiling --enforcement block
+```
+
+Derived assertions start at `observe`. Promotion is exactly one step (`observe` to `warn`, then `warn` to `block`) and each transition is an ordinary audited declaration mutation. There is no automatic promotion and no privileged preset execution path.
+
+## Extension Measurement Providers
+
+An extension opens the measurement vocabulary through `api.registerAssuranceMeasurementProvider`. The registration declares stable keys, parameter types, a coarse `low`/`medium`/`high` cost class, network use, a host timeout, and a resolver. It requires the `services` capability; a network provider must also declare `permissions.network: true` in `manifest.json`.
+
+This code-quality provider measures a local report without changing assertion or gate semantics:
+
+```ts
+import { readFile } from "node:fs/promises";
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api) {
+    api.registerAssuranceMeasurementProvider({
+      id: "coverage",
+      keys: {
+        lines: {
+          value_type: "number",
+          parameters: { report: { type: "string", required: true } },
+        },
+      },
+      cost_class: "low",
+      network: false,
+      timeout_ms: 2_000,
+      async resolve({ parameters }) {
+        const report = JSON.parse(
+          await readFile(String(parameters.report), "utf8"),
+        ) as {
+          total: { lines: { pct: number } };
+        };
+        return { value: report.total.lines.pct, population_size: 1, cost: 1 };
+      },
+    });
+  },
+});
+```
+
+An evaluation package can expose episode reward on the same surface:
+
+```ts
+api.registerAssuranceMeasurementProvider({
+  id: "agent-eval",
+  keys: {
+    "mean-reward": {
+      value_type: "number",
+      parameters: { suite: { type: "string", required: true } },
+    },
+  },
+  cost_class: "high",
+  network: false,
+  timeout_ms: 120_000,
+  async resolve({ parameters }) {
+    const result = await runFrozenEvaluation(String(parameters.suite));
+    return {
+      value: result.meanReward,
+      population_size: result.episodes,
+      cost: result.steps,
+      contributors: result.regressedScenarioIds,
+    };
+  },
+});
+```
+
+An external registry provider declares its network dependency explicitly:
+
+```ts
+api.registerAssuranceMeasurementProvider({
+  id: "npm-registry",
+  keys: {
+    "dist-tag-count": {
+      value_type: "number",
+      parameters: { package: { type: "string", required: true } },
+    },
+  },
+  cost_class: "medium",
+  network: true,
+  timeout_ms: 5_000,
+  async resolve({ parameters }) {
+    const name = encodeURIComponent(String(parameters.package));
+    const response = await fetch(
+      `https://registry.npmjs.org/-/package/${name}/dist-tags`,
+    );
+    if (!response.ok) throw new Error(`registry returned ${response.status}`);
+    const tags = (await response.json()) as Record<string, string>;
+    return { value: Object.keys(tags).length, population_size: 1, cost: 10 };
+  },
+});
+```
+
+The corresponding measurement is ordinary registry data:
+
+```json
+{
+  "id": "published-tag-count",
+  "source": {
+    "kind": "provider",
+    "provider": "npm-registry",
+    "key": "dist-tag-count",
+    "parameters": { "package": "@example/tool" }
+  }
+}
+```
+
+A provider-backed gate must opt into every provider and each trigger's execution envelope. Omission refuses provider execution:
+
+```json
+{
+  "id": "release-readiness",
+  "assertion_ids": ["published-tag-count-ceiling"],
+  "triggers": ["ci", "scheduled"],
+  "provider_policy": {
+    "allowed_providers": ["npm-registry"],
+    "triggers": {
+      "ci": { "max_cost_class": "low", "allow_network": false },
+      "scheduled": { "max_cost_class": "medium", "allow_network": true }
+    }
+  }
+}
+```
+
+Before invocation the host verifies the provider allow-list, declared cost class, and network capability for the active trigger. It then validates key parameters and result shape, enforces the registered timeout, and charges the returned cost through the existing measurement ceiling. Extension tests must bind `PM_PATH` and `PM_GLOBAL_PATH` to temporary roots; never point provider fixtures at the repository tracker or a live service.
+
 ## SDK and MCP
 
 The reusable client exposes the same action grammar:
@@ -103,9 +249,9 @@ await pm.assurance({
 });
 ```
 
-For direct host composition, use `evaluateMeasurement`, `evaluateAssuranceGate`, `createAssuranceWorkspaceContext`, and the audited declaration/verdict helpers exported from `@unbrained/pm-cli/sdk`. A host contributes provider measurements by passing stable resolver ids to `createAssuranceWorkspaceContext`; an absent resolver fails loudly. External adapters must enforce an appropriate timeout. The core evaluator bounds concurrent assertions and expression operands, and workspace history loading uses bounded concurrency; item-only callers can explicitly skip history and Git identity resolution.
+For direct host composition, use `evaluateMeasurement`, `evaluateAssuranceGate`, `createAssuranceWorkspaceContext`, the preset/derivation helpers, and the audited declaration/verdict helpers exported from `@unbrained/pm-cli/sdk`. Active extension registrations are discovered automatically. Embedding hosts may additionally pass stable resolver ids and matching `provider_capabilities` to `createAssuranceWorkspaceContext`; an absent resolver or capability fails loudly. The core evaluator bounds concurrent assertions and expression operands, and workspace history loading uses bounded concurrency; item-only callers can explicitly skip history and Git identity resolution.
 
-Generic SDK and MCP dispatch use `action: "assurance"` with `subcommand` set to `list`, `show`, `put`, `remove`, `run`, or `verdicts`. Discover the current machine contract instead of copying parameter lists:
+Generic SDK and MCP dispatch use `action: "assurance"` with `subcommand` set to `list`, `show`, `put`, `remove`, `run`, `verdicts`, `presets`, `apply`, `derive`, or `promote`. Discover the current machine contract instead of copying parameter lists:
 
 ```bash
 pm contracts --action assurance --schema-only --json

@@ -147,6 +147,7 @@ const ACTION_POSITIONAL_PARAMETERS: Readonly<
   assurance: {
     id: "<id>",
     kind: "<kind>",
+    preset: "[kind]|[id]",
     subcommand: "<action>",
   },
   event: { title: "<title>" },
@@ -165,7 +166,12 @@ const ACTION_POSITIONAL_PARAMETERS: Readonly<
 const ACTION_FLAG_PARAMETER_OVERRIDES: Readonly<
   Partial<Record<PmToolAction, Readonly<Record<string, string>>>>
 > = {
-  assurance: { "--tree": "treeId" },
+  assurance: {
+    "--tree": "treeId",
+    "--owner": "owner",
+    "--apply": "apply",
+    "--enforcement": "enforcement",
+  },
   init: {
     "--id-prefix": "idPrefix",
     "--no-merge-fence": "mergeFence",

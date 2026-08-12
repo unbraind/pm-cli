@@ -8,6 +8,7 @@ import type {
   RegisteredExtensionSchemaMigrationDefinition,
   RegisteredExtensionSearchProvider,
   RegisteredExtensionVectorStoreAdapter,
+  RegisteredExtensionAssuranceMeasurementProvider,
   SchemaFieldDefinition,
 } from "./loader.js";
 
@@ -17,6 +18,24 @@ function normalizeRegistrationName(value: unknown): string | null {
   }
   const normalized = value.trim().toLowerCase();
   return normalized.length > 0 ? normalized : null;
+}
+
+/** Resolve the last-activated assurance provider with the requested stable id. */
+export function resolveRegisteredAssuranceMeasurementProvider(
+  registrations: ExtensionRegistrationRegistry | null,
+  providerId: string | undefined,
+): RegisteredExtensionAssuranceMeasurementProvider | null {
+  const normalizedId = normalizeRegistrationName(providerId);
+  if (!registrations || !normalizedId) return null;
+  return (
+    [...(registrations.assurance_providers ?? [])]
+      .reverse()
+      .find(
+        (registration) =>
+          normalizeRegistrationName(registration.definition.id) ===
+          normalizedId,
+      ) ?? null
+  );
 }
 
 /** Implements collect registered item fields for the public runtime surface of this module. */

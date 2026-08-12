@@ -245,6 +245,29 @@ export const ASSURANCE_DEFINITION_SCHEMA = {
             ],
           },
         },
+        provider_policy: {
+          type: "object",
+          additionalProperties: false,
+          required: ["allowed_providers", "triggers"],
+          properties: {
+            allowed_providers: {
+              type: "array",
+              items: { type: "string", minLength: 1 },
+            },
+            triggers: {
+              type: "object",
+              additionalProperties: {
+                type: "object",
+                additionalProperties: false,
+                required: ["max_cost_class", "allow_network"],
+                properties: {
+                  max_cost_class: { enum: ["low", "medium", "high"] },
+                  allow_network: { type: "boolean" },
+                },
+              },
+            },
+          },
+        },
       },
     },
   ],
