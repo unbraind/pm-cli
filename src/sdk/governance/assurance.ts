@@ -647,6 +647,31 @@ export function assuranceAssertionUpdateIsLoosening(
   );
 }
 
+/** Validate the field predicate contract of an item-backed measurement source. */
+function validateItemsMeasurementSource(source: AssuranceItemsSource): void {
+  if (
+    source.state !== undefined &&
+    !(source.state === "present" || source.state === "missing")
+  ) {
+    throw new AssuranceMutationRefusalError(
+      "items source state must be present or missing",
+    );
+  }
+  const hasEquals = Object.hasOwn(source, "equals");
+  const hasState = source.state !== undefined;
+  const predicateCount = Number(hasEquals) + Number(hasState);
+  if (source.field !== undefined && predicateCount !== 1) {
+    throw new AssuranceMutationRefusalError(
+      "items source with field requires exactly one of equals or state",
+    );
+  }
+  if (source.field === undefined && predicateCount !== 0) {
+    throw new AssuranceMutationRefusalError(
+      "items source equals/state requires field",
+    );
+  }
+}
+
 /** Validate and return one measurement declaration. */
 export function validateMeasurementDefinition(
   definition: AssuranceMeasurementDefinition,
@@ -657,19 +682,7 @@ export function validateMeasurementDefinition(
   }
   const source = definition.source;
   if (source.kind === "items") {
-    const hasEquals = Object.hasOwn(source, "equals");
-    const hasState = source.state !== undefined;
-    const predicateCount = Number(hasEquals) + Number(hasState);
-    if (source.field !== undefined && predicateCount !== 1) {
-      throw new AssuranceMutationRefusalError(
-        "items source with field requires exactly one of equals or state",
-      );
-    }
-    if (source.field === undefined && predicateCount !== 0) {
-      throw new AssuranceMutationRefusalError(
-        "items source equals/state requires field",
-      );
-    }
+    validateItemsMeasurementSource(source);
   }
   if (
     source.kind === "dependency_kind" &&

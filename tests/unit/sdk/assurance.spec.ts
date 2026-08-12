@@ -255,6 +255,12 @@ describe("assurance SDK", () => {
     ).not.toThrow();
     expect(() =>
       validateMeasurementDefinition({
+        id: "invalid-state",
+        source: { kind: "items", field: "priority", state: "invalid" },
+      } as unknown as AssuranceMeasurementDefinition),
+    ).toThrow("state must be present or missing");
+    expect(() =>
+      validateMeasurementDefinition({
         id: "ambiguous-priority",
         source: {
           kind: "items",
