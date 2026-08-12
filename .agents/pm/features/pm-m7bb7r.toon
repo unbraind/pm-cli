@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[5]: "area:sdk",assurance,configurability,onboarding,universal
 created_at: "2026-08-10T20:57:59.663Z"
-updated_at: "2026-08-12T16:35:56.901Z"
+updated_at: "2026-08-12T16:37:45.298Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#777a798cba07b812da163a2d"
 author: "harness:claude-code"
@@ -21,10 +21,11 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-h6b73t,related,"2026-08-10T20:57:59.663Z","harness:claude-code","cli:create:dep",detected
   pm-lyfu7b,blocked_by,"2026-08-10T20:57:59.663Z","harness:claude-code","cli:create:dep",detected
   pm-t4d7nz,implements,"2026-08-10T20:57:59.663Z","harness:claude-code","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-12T14:33:39.397Z","harness:codex","Orientation evidence: reused the canonical remaining assurance child after all-status duplicate and full-lineage review. This tranche is coupled with pm-uhv1m5 because presets and self-derived observe proposals must use the same ordinary declaration/runtime contracts as package-provided measurements."
   "2026-08-12T16:20:01.126Z","harness:codex","Implementation evidence: added four built-in assurance presets, atomic idempotent apply, observation-derived active-scope proposals, explicit accept/apply, and one-step observe-to-warn-to-block promotion across CLI/SDK/MCP contracts. Compact help remains beneath the token ratchet while machine contracts retain complete semantics. Manual packed acceptance returned four presets, applied a preset, derived and persisted three proposals, promoted one assertion, and proved --apply is a valueless boolean contract."
   "2026-08-12T16:35:56.901Z","harness:codex","Verification evidence (final worktree): pnpm lint passed with ESLint zero warnings, jscpd zero clones, 100% docstring/export/member coverage, package boundary/parity, token/context, tracker measurement, graph-composition, record-integrity, SDK import-cost and CLI transport gates. pnpm contracts:check and pnpm sdk:surface:check passed; the linked sandboxed contracts test also passed. Exact coverage previously recorded remains 100/100/100/100 (52,606 statements, 38,692 branches, 10,822 functions, 50,850 lines; 7,280 tests). Packed acceptance proved four readable presets, atomic apply, three workspace-derived observe-level bounds, explicit one-step promotion, and a provider-backed CI gate in an isolated temporary project. pnpm smoke:npx and package-first dogfood proved npm/npx/bunx distribution paths. pm health --check-only passed all ten checks with zero warnings; history drift is zero; security scan found no credential-like secrets. The repository-wide resolution validator still reports 295 pre-existing closed-item metadata warnings, separate from this feature and with no history drift."
+  "2026-08-12T16:37:45.298Z","harness:codex","Pull request: https://github.com/unbraind/pm-cli/pull/991 at exact head 4ef822788; awaiting required checks and fresh bot review before merge."
 learnings[1]{created_at,author,text}:
   "2026-08-12T16:20:02.279Z","harness:codex","Durable lesson: a flag vocabulary row with value_type=boolean must explicitly compile to takes_value=false; flag spelling heuristics alone cannot truthfully model domain verbs such as --apply."
 files[16]{path,scope,note}:
