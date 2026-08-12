@@ -3,6 +3,7 @@
  *
  * Maintains repository-scaffold contracts shared by the public SDK and CLI.
  */
+import { isFileMissingError } from "../core/fs/fs-utils.js";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { EXIT_CODE } from "../core/shared/constants.js";
@@ -144,7 +145,7 @@ export async function ensurePmGitignore(
     );
   } catch (error: unknown) {
     if (
-      !(error instanceof Error && "code" in error && error.code === "ENOENT")
+      !(error instanceof Error && "code" in error && isFileMissingError(error))
     ) {
       throw error;
     }

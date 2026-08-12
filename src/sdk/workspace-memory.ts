@@ -5,7 +5,7 @@
  */
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { writeFileAtomic } from "../core/fs/fs-utils.js";
+import { isFileAbsentError, writeFileAtomic } from "../core/fs/fs-utils.js";
 import { normalizeStatusForRegistry } from "../core/item/status.js";
 import { stableStringify } from "../core/shared/serialization.js";
 import { readItemMetadataDerivedIndexState } from "../core/store/item-metadata-cache.js";
@@ -347,7 +347,7 @@ async function readPersistedWorkspaceMemory(filePath: string): Promise<{
       typeof error === "object" &&
       error !== null &&
       "code" in error &&
-      (error as { code?: string }).code === "ENOENT";
+      isFileAbsentError(error);
     return { snapshot: null, invalid: !missing };
   }
 }

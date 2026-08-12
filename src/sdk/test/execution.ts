@@ -8,7 +8,7 @@ import { cp, mkdir, mkdtemp, open, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { pathExists } from "../../core/fs/fs-utils.js";
+import { isFileMissingError, pathExists } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   createStdinTokenResolver,
@@ -1601,7 +1601,7 @@ async function copyIntoSandboxIfPresent(
       typeof error === "object" &&
       error !== null &&
       "code" in error &&
-      (error as { code?: string }).code === "ENOENT"
+      isFileMissingError(error)
     ) {
       return;
     }

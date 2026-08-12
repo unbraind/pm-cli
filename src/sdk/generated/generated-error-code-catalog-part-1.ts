@@ -1587,6 +1587,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "linked_artifact_mutation_conflict",
+    meaning: "Linked artifact mutation conflict condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/linked-artifacts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "linked_artifact_mutation_conflict",
+    aliases: [],
+  },
+  {
     code: "linked_test_remove_no_match",
     meaning: "Linked test remove no match condition.",
     stability: "provisional",

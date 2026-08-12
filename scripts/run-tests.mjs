@@ -20,6 +20,20 @@ function resolveMode(argv) {
   return { ok: true, mode };
 }
 
+function runChild(command, args, env) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: process.cwd(),
+      env,
+      stdio: "inherit",
+    });
+    child.on("error", reject);
+    child.on("close", (code, signal) => {
+      resolve(signal ? 1 : (code ?? 1));
+    });
+  });
+}
+
 async function run() {
   const resolved = resolveMode(process.argv);
   if (!resolved.ok) {
@@ -56,22 +70,7 @@ async function run() {
     delete baseEnv.PM_SOURCE_WORKSPACE_ROOT;
 
     if (!skipBuild) {
-      const buildExitCode = await new Promise((resolve, reject) => {
-        const child = spawn(pnpmCommand, ["build"], {
-          cwd: process.cwd(),
-          env: baseEnv,
-          stdio: "inherit",
-        });
-
-        child.on("error", reject);
-        child.on("close", (code, signal) => {
-          if (signal) {
-            resolve(1);
-            return;
-          }
-          resolve(code ?? 1);
-        });
-      });
+      const buildExitCode = await runChild(pnpmCommand, ["build"], baseEnv);
 
       if (buildExitCode !== 0) {
         process.exitCode = buildExitCode;
@@ -79,60 +78,48 @@ async function run() {
       }
     }
 
-    const vitestExitCode = await new Promise((resolve, reject) => {
-      const child = spawn(
-        process.execPath,
-        [
-          vitestEntry,
-          "run",
-          ...MODE_TO_VITEST_ARGS[resolved.mode],
-          ...normalizedVitestArgs,
-        ],
-        {
-          cwd: process.cwd(),
-          env: baseEnv,
-          stdio: "inherit",
-        },
-      );
+    const vitestExitCode = await runChild(
+      process.execPath,
+      [
+        vitestEntry,
+        "run",
+        ...MODE_TO_VITEST_ARGS[resolved.mode],
+        ...normalizedVitestArgs,
+      ],
+      baseEnv,
+    );
 
-      child.on("error", reject);
-      child.on("close", (code, signal) => {
-        if (signal) {
-          resolve(1);
-          return;
-        }
-        resolve(code ?? 1);
-      });
-    });
-
-    if (vitestExitCode !== 0 || resolved.mode !== "coverage") {
+    if (resolved.mode !== "coverage") {
       process.exitCode = vitestExitCode;
       return;
     }
 
-    const coverageGateExitCode = await new Promise((resolve, reject) => {
-      const child = spawn(
-        process.execPath,
-        [
-          path.join(
-            process.cwd(),
-            "scripts",
-            "release",
-            "coverage-threshold-gate.mjs",
-          ),
-        ],
-        {
-          cwd: process.cwd(),
-          env: baseEnv,
-          stdio: "inherit",
-        },
+    const coverageGateExitCode = await runChild(
+      process.execPath,
+      [
+        path.join(
+          process.cwd(),
+          "scripts",
+          "release",
+          "coverage-threshold-gate.mjs",
+        ),
+      ],
+      baseEnv,
+    );
+    if (vitestExitCode !== 0 && coverageGateExitCode !== 0) {
+      console.error(
+        "Test execution and exact coverage both failed (combined verdict).",
       );
-      child.on("error", reject);
-      child.on("close", (code) => {
-        resolve(code ?? 1);
-      });
-    });
-    process.exitCode = coverageGateExitCode;
+      process.exitCode = 3;
+    } else if (vitestExitCode !== 0) {
+      console.error("Test execution failed; exact coverage still passed.");
+      process.exitCode = 1;
+    } else if (coverageGateExitCode !== 0) {
+      console.error("Tests passed; exact coverage failed.");
+      process.exitCode = 2;
+    } else {
+      process.exitCode = 0;
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`Failed to run sandboxed tests: ${message}`);

@@ -10,6 +10,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
+  isFileMissingError,
   pathExists,
   readFileIfExists,
   writeFileAtomic,
@@ -1110,7 +1111,7 @@ async function collectSchemaReferenceState(params: {
       typeof error !== "object" ||
       error === null ||
       !("code" in error) ||
-      error.code !== "ENOENT"
+      !isFileMissingError(error)
     ) {
       throw error;
     }

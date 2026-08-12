@@ -9,6 +9,7 @@
  * Zero ttl means any lock older than 0 ms is stale. Negative ttl means always stale.
  */
 
+import { isFileMissingError } from "../fs/fs-utils.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -93,15 +94,6 @@ function parseLock(raw: string): ParsedLock | null {
     return null;
   }
   return { id, owner, created_at, ttl_seconds };
-}
-
-function isErrno(error: unknown, code: string): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: string }).code === code
-  );
 }
 
 /** Fine-grained classification outcome for one readable lock file's content. `unparseable_json` and `invalid_timestamp` both surface as the coarse `reason: "unparseable"` on the scan entry (gc retains both), but stay distinct here so callers can emit precise warnings. */
@@ -209,7 +201,7 @@ export async function scanLockHealth(
     const rawDir = await fs.readdir(locksDir);
     dirEntries = rawDir.filter((f) => f.endsWith(".lock")).sort();
   } catch (error: unknown) {
-    if (isErrno(error, "ENOENT")) {
+    if (isFileMissingError(error)) {
       return scan;
     }
     throw error;
@@ -220,7 +212,7 @@ export async function scanLockHealth(
     try {
       raw = await fs.readFile(path.join(locksDir, file), "utf8");
     } catch (readError: unknown) {
-      if (isErrno(readError, "ENOENT")) {
+      if (isFileMissingError(readError)) {
         // Disappeared between readdir and readFile — treat as a ghost; skip quietly.
         continue;
       }
@@ -264,7 +256,7 @@ export async function runLockGc(
     const raw = await fs.readdir(locksDir);
     dirEntries = raw.filter((f) => f.endsWith(".lock")).sort();
   } catch (error: unknown) {
-    if (isErrno(error, "ENOENT")) {
+    if (isFileMissingError(error)) {
       return result;
     }
     throw error;
@@ -286,7 +278,7 @@ export async function runLockGc(
     try {
       raw = await fs.readFile(absPath, "utf8");
     } catch (readError: unknown) {
-      if (isErrno(readError, "ENOENT")) {
+      if (isFileMissingError(readError)) {
         // Disappeared between readdir and readFile — treat as a ghost; skip quietly.
         result.scanned -= 1;
         continue;
@@ -331,7 +323,7 @@ export async function runLockGc(
       try {
         await fs.unlink(absPath);
       } catch (unlinkError: unknown) {
-        if (!isErrno(unlinkError, "ENOENT")) {
+        if (!isFileMissingError(unlinkError)) {
           result.warnings.push(`lock_remove_failed:${file}`);
           result.retained.push(relPath);
           result.entries.push(classified.entry);

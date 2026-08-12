@@ -7,6 +7,7 @@ import {
   type PmCliErrorContext,
   type PmCliErrorRecoveryPayload,
 } from "../sdk/runtime-primitives.js";
+import { resolveRecoveryCommandName } from "../sdk/agent/command-recovery.js";
 import { renderPmCommand } from "./argv-utils.js";
 import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
 
@@ -617,14 +618,7 @@ function dedupeStrings(values: string[]): string[] {
 function inferCommandNameFromRecovery(
   recovery: PmCliErrorRecoveryPayload | undefined,
 ): string | undefined {
-  const args = recovery?.normalized_args;
-  if (!Array.isArray(args) || args.length === 0) {
-    return undefined;
-  }
-  const firstCommandArg = args.find(
-    (arg) => arg.trim().length > 0 && !arg.startsWith("-"),
-  );
-  return firstCommandArg?.trim();
+  return resolveRecoveryCommandName(recovery?.normalized_args);
 }
 
 function inferAllowedValuesFromMessage(message: string): string[] {

@@ -7,6 +7,7 @@
  * those attributes effective. Idempotent and re-runnable; schema type
  * mutations refresh the fenced block automatically once it is installed.
  */
+import { isFileMissingError } from "../../core/fs/fs-utils.js";
 import { readFile, realpath, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import path from "node:path";
@@ -387,7 +388,7 @@ async function reconcileGitattributesBlock(
     current = await readFile(gitattributesPath, "utf8");
   } catch (error: unknown) {
     if (
-      !(error instanceof Error && "code" in error && error.code === "ENOENT")
+      !(error instanceof Error && "code" in error && isFileMissingError(error))
     ) {
       throw error;
     }
@@ -615,7 +616,7 @@ export async function refreshMergeAttributeFenceIfInstalled(
       if (
         error instanceof Error &&
         "code" in error &&
-        error.code === "ENOENT"
+        isFileMissingError(error)
       ) {
         return { status: "not_installed", path: gitattributesPath };
       }

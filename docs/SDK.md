@@ -297,7 +297,7 @@ Command/action contract exports:
 - Remediation planning: `planRelationshipRemediation` (with `RelationshipRemediationPlan`, `RelationshipRemediationStep`, and operation/confidence/code contracts) derives exact dry-run `remove`/`retype`/`supersede`/`waive`/`investigate` proposals from governance-audit findings and witnessed redundancy rows — evidence-backed, confidence-rated, and never auto-applied.
 - Annotation and relationship option/result contracts: `CommentsCommandOptions` / `CommentsResult`, `NotesCommandOptions` / `NotesResult`, `LearningsCommandOptions` / `LearningsResult`, `FilesCommandOptions` / `FilesResult`, `FilesDiscoverOptions` / `FilesDiscoverResult`, `DocsCommandOptions` / `DocsResult`, `DepsCommandOptions` / `DepsResult`, `AppendCommandOptions` / `AppendResult`
 - Annotation kernel primitives: `resolveAnnotationInput`, `runAnnotationCommand`, `resolveAnnotationIndex`, `parseAnnotationTextInput`, `limitAnnotationEntries`, `readAnnotationEntries`, `wrapOwnershipConflict`, `isErrnoError`, and their typed input/config/result contracts
-- Linked-resource kernel primitives: `runFiles`, `runFilesDiscover`, `runDocs`, `runDeps`, `runLinkedArtifacts`, parsing/normalization/path-validation helpers, and their typed contracts. The CLI files/docs/deps modules are presentation-only re-exports of these SDK implementations.
+- Linked-resource kernel primitives: `runFiles`, `runFilesDiscover`, `runDocs`, `runDeps`, `runLinkedArtifacts`, `assertLinkedArtifactMutationIsUnambiguous`, parsing/normalization/path-validation helpers, and their typed contracts. The CLI files/docs/deps modules are presentation-only re-exports of these SDK implementations. A transaction that resolves one path into both its add and remove sets fails before item or history mutation; split an intentional replacement into two commands so its context remains explicit.
 - Actionability primitives: `collectBlockedByIds`, `resolveItemBlockers`, `collectDependencyBlockedIds`, and `computeActionabilityReport` expose the same edge-aware blocked/ready definition used by `pm next`, `pm context`, and `pm list-blocked`. Embedded schedulers can therefore classify custom lifecycle schemas without importing CLI or core modules.
 - Dependency-governance primitives: `collectDanglingDependencyReferences`, `collectMissingDependencyTargetIds`, and `assembleWorkspaceRelationshipGraph` normalize hierarchy, scalar blockers, and structured dependencies into one graph while partitioning missing targets into actionable active holders, informational terminal-history holders, and the legacy `no-active-blocker` sentinel without mutating stored history.
 - Relationship graph primitives: `RelationshipKindRegistry`, `createRelationshipKindRegistry`, `assertRelationshipEdgeAllowed`, `RelationshipGraph`, `RelationshipEventLog`, `RelationshipEventStore`, `planRelationshipEventBackfill`, `buildRelationshipContext`, `buildDepsRelationshipContext`, `hierarchyAncestors`, `hierarchyDescendants`, `orderingPredecessors`, `orderingSuccessors`, `enumerateRelationshipPaths`, `auditWorkspaceRelationshipGraph`, `isOrderingRelationshipKind`, and `dependencyToRelationship` provide application-defined edge semantics, durable replay, deterministic legacy migration, bounded semantic traversal, policy-aware governance, and explainable context queries. Mutation adapters should call `assertRelationshipEdgeAllowed` with the active registry before persistence; it resolves aliases and honors custom `allowSelf` definitions while built-in self edges fail before item or history writes. `RelationshipEventLog.stream/project` and their durable-store equivalents page immutable prefixes and fold them into deterministic application state with exact version, processed-count, and as-of metadata. `RelationshipEventStore.appendBatch` validates a complete import under one cross-process lock and atomically publishes it; `skip_identical` resume mode rejects same-id semantic collisions. `RelationshipGraphAdapter`, `createRelationshipGraphSnapshot`, `syncRelationshipGraphAdapter`, `loadRelationshipGraphAdapter`, and `federateRelationshipGraphSnapshots` form the backend-neutral content-addressed projection boundary for database or remote graph packages. `MemoryRelationshipGraphAdapter`, `assertRelationshipGraphAdapterConformance`, and `createRelationshipGraphScaleFixture` give package authors a reference implementation, reusable compatibility contract, and lazy deterministic fixtures through one million nodes. See [Relationship graph semantics](RELATIONSHIP_GRAPH.md).
@@ -317,7 +317,7 @@ Command/action contract exports:
 - Execution and diagnostics engines: `runTest`, `runLinkedTests`, `runTestAll`, `runStartBackgroundRun`, `runTestRunsList`, `runTestRunsStatus`, `runTestRunsLogs`, `runTestRunsStop`, `runTestRunsResume`, `runTestRunsWorker`, `runEval`, `runTelemetry`, and `runStats`. Their CLI modules are compatibility re-exports of SDK-owned implementations.
 - Execution and diagnostics contracts: `TestCommandOptions` / `TestResult` / `TestRunResult`, `TestAllCommandOptions` / `TestAllResult`, `StartBackgroundRunCommandOptions` / `StartBackgroundRunResult`, `TestRuns*CommandOptions`, `EvalOptions` / `EvalResult`, `TelemetryCommandOptions` / `TelemetrySubcommand`, and `StatsCommandOptions` / `StatsResult`.
 - Linked-test authoring primitives: `parseLinkedTestJsonEntries`, the `parseLinkedTest*` field parsers, `LINKED_TEST_PM_CONTEXT_MODE_VALUES`, `LINKED_TEST_PROTECTED_ENV_KEYS`, `classifyLinkedTestFailure`, `countFailureCategories`, and `summarizeContextPreflight` let custom hosts validate, execute, classify, and report linked tests without duplicating CLI policy.
-- Agent command primitives: `normalizeItemAddressInvocation` and `supportsItemIdAlias` project one item-id grammar across CLI adapters; `renderMissingOptionRetry` and `resolveMissingOptionPlaceholder` preserve attempted argv while deriving enum, boolean, and scalar recovery arity from flag contracts; `createUnknownSubcommandError` provides one typed positional refusal with complete allowed values and deterministic nearest retry; `rankCommandPaths` and `scoreCommandPathMatch` provide deterministic synonym/edit-distance/substring ranking; `resolveCreateExplicitEmptyFlag` and `supportsCreateExplicitEmpty` model a considered-but-empty strict repeatable input without inventing metadata or graph edges.
+- Agent command primitives: `normalizeItemAddressInvocation` and `supportsItemIdAlias` project one item-id grammar across CLI adapters; `renderMissingOptionRetry`, `resolveMissingOptionPlaceholder`, and `resolveRecoveryCommandName` preserve attempted argv, derive enum/boolean/scalar recovery arity from flag contracts, and identify the actual command without mistaking a global option value for one; `createUnknownSubcommandError` provides one typed positional refusal with complete allowed values and deterministic nearest retry; `rankCommandPaths` and `scoreCommandPathMatch` provide deterministic synonym/edit-distance/substring ranking; `resolveCreateExplicitEmptyFlag` and `supportsCreateExplicitEmpty` model a considered-but-empty strict repeatable input without inventing metadata or graph edges.
 - Refusal reachability primitives: generated `PmErrorCodeContract.owned_states` declarations bind stable codes to concrete states, probe ids, entrypoints, and exit classes; `verifyPmRefusalReachability` compares those declarations with real CLI, SDK, MCP, or package observations and fails closed for missing, duplicate, wrong-entrypoint, mismatched, or undeclared probes.
 - Typed plan workflow primitives on `PmClient`: `plan`, `planCreate`, `planShow`, `planAddStep`, `planUpdateStep`, `planCompleteStep`, `planBlockStep`, `planReorderStep`, `planRemoveStep`, `planLink`, `planUnlink`, `planDecision`, `planDiscovery`, `planValidation`, `planResume`, `planApprove`, and `planMaterialize`
 - Plan contracts: `PlanSubcommand`, `PlanCommandOptions`, `PlanCommandResult`, `PlanResultPlan`, `PlanStepSummary`, `PlanShowDepth`, and `PlanTemplateName`
@@ -512,7 +512,8 @@ loud with attributed events and authors.
 Tracked: [pm-jcvg](../.agents/pm/tasks/pm-jcvg.toon),
 [pm-2ler](../.agents/pm/issues/pm-2ler.toon),
 [pm-chyh](../.agents/pm/issues/pm-chyh.toon), and
-[pm-p9sc](../.agents/pm/issues/pm-p9sc.toon).
+[pm-p9sc](../.agents/pm/issues/pm-p9sc.toon). Conflicting batch refusal is
+tracked by [pm-c6urop](../.agents/pm/issues/pm-c6urop.toon).
 
 Custom tools can use the same domain primitives as the CLI without dispatching a
 command action. The direct functions accept the typed command options plus a
@@ -555,6 +556,13 @@ Globs, discovery, removal, and `validatePaths` use the same anchoring rule, so a
 tool invoked from a nested package never records a path that changes meaning
 when another agent runs from the repository root. Root-layout trackers use the
 tracker directory itself as their workspace.
+
+Add and remove sets are compared after invocation-root anchoring, slash
+normalization, glob expansion, and requested migrations. If the same path is in
+both sets, `runFiles`, `runDocs`, and `runLinkedArtifacts` throw
+`PmCliError` code `linked_artifact_mutation_conflict` before calling the item
+store. This contract deliberately refuses to guess whether replacement or
+removal should win and guarantees that no item or history write is published.
 
 `runDeps` also projects missing `parent` and legacy `blocked_by` references as
 typed missing edges, alongside structured dependencies. Tree and graph payloads
@@ -3291,6 +3299,12 @@ declared on the invoked command; prose that merely mentions another flag is not
 interpreted as a missing input. Strict close validation reports missing
 resolution fields first and suggests a targeted `pm update` before retrying the
 original close invocation.
+
+Recovery help examples resolve their command through
+`resolveRecoveryCommandName`, which uses the same bootstrap grammar as the CLI.
+Global value flags such as `--pm-path <path>` may appear before or after the
+subcommand; their values are never exposed as inferred command names or help
+targets.
 
 Unknown-option envelopes rank command paths that accept the rejected flag by
 shared vocabulary and include explicit total/truncation metadata. They are

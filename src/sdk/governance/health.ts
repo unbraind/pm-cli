@@ -6,7 +6,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
+import { isFileMissingError, pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
 import {
   activateExtensions,
   getActiveExtensionRegistrations,
@@ -475,7 +475,7 @@ async function listItemDocumentPaths(
         typeof error === "object" &&
         error !== null &&
         "code" in error &&
-        (error as { code?: string }).code === "ENOENT"
+        isFileMissingError(error)
       ) {
         continue;
       }
@@ -505,7 +505,7 @@ function shouldReportHistoryDirectoryUnreadable(error: unknown): boolean {
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
-    (error as { code?: string }).code === "ENOENT"
+    isFileMissingError(error)
   );
 }
 

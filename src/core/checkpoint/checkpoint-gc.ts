@@ -14,6 +14,7 @@
  * A zero/negative age (a future `created_at`) is always treated as active.
  */
 
+import { isFileMissingError } from "../fs/fs-utils.js";
 import type { Dirent } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -68,15 +69,6 @@ export interface CheckpointGcResult {
   entries: CheckpointGcEntry[];
 }
 
-function isErrno(error: unknown, code: string): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: string }).code === code
-  );
-}
-
 /** Extract a parseable `created_at` from a checkpoint's raw JSON, or null. */
 function readCheckpointCreatedAt(raw: string): string | null {
   let parsed: unknown;
@@ -101,7 +93,7 @@ async function collectCheckpointFiles(
   try {
     dirEntries = await fs.readdir(checkpointsDir, { withFileTypes: true });
   } catch (error: unknown) {
-    if (isErrno(error, "ENOENT")) {
+    if (isFileMissingError(error)) {
       return [];
     }
     throw error;
@@ -114,7 +106,7 @@ async function collectCheckpointFiles(
       try {
         nested = await fs.readdir(subdir);
       } catch (error: unknown) {
-        if (!isErrno(error, "ENOENT")) {
+        if (!isFileMissingError(error)) {
           warnings.push(`checkpoint_subdir_unreadable:${entry.name}`);
         }
         continue;
@@ -166,7 +158,7 @@ export async function runCheckpointGc(
     try {
       raw = await fs.readFile(absPath, "utf8");
     } catch (readError: unknown) {
-      if (isErrno(readError, "ENOENT")) {
+      if (isFileMissingError(readError)) {
         // Disappeared between readdir and readFile — treat as a ghost; skip quietly.
         result.scanned -= 1;
         continue;
@@ -216,7 +208,7 @@ export async function runCheckpointGc(
       try {
         await fs.unlink(absPath);
       } catch (unlinkError: unknown) {
-        if (!isErrno(unlinkError, "ENOENT")) {
+        if (!isFileMissingError(unlinkError)) {
           result.warnings.push(`checkpoint_remove_failed:${relName}`);
           result.retained.push(relPath);
           result.entries.push(entry);

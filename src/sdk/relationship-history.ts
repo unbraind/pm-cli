@@ -13,7 +13,7 @@ import { constants } from "node:fs";
 import { lstat, mkdir, open, type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import { acquireLock } from "../core/lock/lock.js";
-import { writeFileAtomic } from "../core/fs/fs-utils.js";
+import { isFileMissingError, writeFileAtomic } from "../core/fs/fs-utils.js";
 import { stableStringify } from "../core/shared/serialization.js";
 import {
   RelationshipGraph,
@@ -593,7 +593,7 @@ async function resolveRelationshipEventStorePath(
           "Relationship event path must not contain symbolic links",
         );
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") break;
+      if (isFileMissingError(error)) break;
       throw error;
     }
   }
@@ -615,7 +615,7 @@ async function loadRelationshipEventLog(
     );
     raw = await handle.readFile("utf8");
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT")
+    if (isFileMissingError(error))
       return { log, raw: "" };
     throw error;
   } finally {

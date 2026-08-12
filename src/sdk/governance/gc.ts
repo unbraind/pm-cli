@@ -12,7 +12,7 @@ import {
   runActiveOnReadHooks,
   runActiveOnWriteHooks,
 } from "../../core/extensions/index.js";
-import { pathExists } from "../../core/fs/fs-utils.js";
+import { isFileMissingError, pathExists } from "../../core/fs/fs-utils.js";
 import { runLockGc } from "../../core/lock/lock-gc.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -154,15 +154,6 @@ export interface GcResult {
   generated_at: string;
 }
 
-function isErrno(error: unknown, code: string): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: string }).code === code
-  );
-}
-
 async function removeCacheFile(
   pmRoot: string,
   target: GcTarget,
@@ -209,7 +200,7 @@ async function removeCacheFile(
       warnings: [...warnings, ...writeWarnings],
     };
   } catch (error: unknown) {
-    if (isErrno(error, "ENOENT")) {
+    if (isFileMissingError(error)) {
       return {
         removed: false,
         warnings,
@@ -255,7 +246,7 @@ async function sweepWorkspaceSnapshotTemps(
         })),
       );
       const stats = await fs.stat(absolutePath).catch((error: unknown) => {
-        if (isErrno(error, "ENOENT")) {
+        if (isFileMissingError(error)) {
           return undefined;
         }
         throw error;

@@ -6,6 +6,7 @@ import {
   appendLineAtomic,
   ensureDir,
   isFileAbsentError,
+  isFileMissingError,
   pathExists,
   readFileIfExists,
   removeFileIfExists,
@@ -53,6 +54,8 @@ describe("core/fs/fs-utils", () => {
     expect(isFileAbsentError({ code: "EACCES" })).toBe(false);
     expect(isFileAbsentError(new Error("no code"))).toBe(false);
     expect(isFileAbsentError(null)).toBe(false);
+    expect(isFileMissingError({ code: "ENOENT" })).toBe(true);
+    expect(isFileMissingError({ code: "ENOTDIR" })).toBe(false);
   });
 
   it("reads an optional file under a non-directory ancestor as absent", async () => {

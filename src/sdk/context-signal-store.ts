@@ -5,6 +5,7 @@
  * Snapshots are derived read artifacts: callers retain authoritative items and
  * history, while stale, absent, or corrupt snapshots rebuild transparently.
  */
+import { isFileAbsentError } from "../core/fs/fs-utils.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
@@ -321,7 +322,7 @@ export class JsonFileContextSignalStoreAdapter implements ContextSignalStoreAdap
     try {
       return JSON.parse(await fs.readFile(this.filePath, "utf8")) as unknown;
     } catch (error: unknown) {
-      if (isRecord(error) && error.code === "ENOENT") {
+      if (isRecord(error) && isFileAbsentError(error)) {
         return null;
       }
       throw error;

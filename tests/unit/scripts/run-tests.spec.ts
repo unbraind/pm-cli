@@ -199,11 +199,13 @@ describe("run-tests", () => {
     process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
     const spawn = vi
       .fn()
-      .mockImplementationOnce(() => closeChild(null, "SIGINT"));
+      .mockImplementationOnce(() => closeChild(null, "SIGINT"))
+      .mockImplementationOnce(() => closeChild(0));
     vi.doMock("node:child_process", () => ({ spawn }));
     mockFsPromises();
     process.argv = ["node", "scripts/run-tests.mjs", "coverage"];
     await harness.importModule("scripts/run-tests.mjs");
+    expect(spawn).toHaveBeenCalledTimes(2);
     expect(process.exitCode).toBe(1);
   });
 
@@ -217,7 +219,42 @@ describe("run-tests", () => {
     mockFsPromises();
     process.argv = ["node", "scripts/run-tests.mjs", "coverage"];
     await harness.importModule("scripts/run-tests.mjs");
+    expect(process.exitCode).toBe(2);
+  });
+
+  it("reports exact coverage even when tests fail and distinguishes both verdicts", async () => {
+    process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const spawn = vi
+      .fn()
+      .mockImplementationOnce(() => closeChild(1))
+      .mockImplementationOnce(() => closeChild(0));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    mockFsPromises();
+    process.argv = ["node", "scripts/run-tests.mjs", "coverage"];
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(spawn).toHaveBeenCalledTimes(2);
     expect(process.exitCode).toBe(1);
+    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain(
+      "coverage still passed",
+    );
+  });
+
+  it("uses a combined exit code when tests and exact coverage both fail", async () => {
+    process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const spawn = vi
+      .fn()
+      .mockImplementationOnce(() => closeChild(1))
+      .mockImplementationOnce(() => closeChild(1));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    mockFsPromises();
+    process.argv = ["node", "scripts/run-tests.mjs", "coverage"];
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(process.exitCode).toBe(3);
+    expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain(
+      "combined verdict",
+    );
   });
 
   it("defaults to test mode when no mode argument is provided", async () => {

@@ -291,6 +291,7 @@ jobs:
         run: >-
           node scripts/run-tests.mjs coverage-shard --
           --shard=${{ matrix.shard }}/4
+          --reporter=default
           --reporter=blob
           --outputFile.blob=.vitest-reports/blob-${{ matrix.shard }}.json
           --coverage.thresholds.lines=0

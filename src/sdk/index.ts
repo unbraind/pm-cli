@@ -598,6 +598,7 @@ export {
   applyPathMigrations,
   applyStandaloneNote,
   artifactKey,
+  assertLinkedArtifactMutationIsUnambiguous,
   dedupeLinkedArtifacts,
   ensureScope,
   expandAddGlobEntries,

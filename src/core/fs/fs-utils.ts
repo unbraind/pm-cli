@@ -34,7 +34,12 @@ export async function pathExists(targetPath: string): Promise<boolean> {
  * runtime fault instead of reaching the caller's own root validation.
  */
 export function isFileAbsentError(error: unknown): boolean {
-  return isErrno(error, "ENOENT") || isErrno(error, "ENOTDIR");
+  return isFileMissingError(error) || isErrno(error, "ENOTDIR");
+}
+
+/** Report an exact missing-entry race while preserving ENOTDIR as structural corruption. */
+export function isFileMissingError(error: unknown): boolean {
+  return isErrno(error, "ENOENT");
 }
 
 /** Implements read file if exists for the public runtime surface of this module. */

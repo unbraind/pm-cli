@@ -6,10 +6,13 @@
  * Tracker: pm-7rrqsk (partial application of a replication set). A reader that
  * treats a missing optional file as a default must accept `ENOTDIR` alongside
  * `ENOENT`: when an ancestor path component is a regular file the target cannot
- * exist either, so the two errno values answer the same question. Handling only
- * `ENOENT` converts a graceful default into an unclassified runtime fault that
- * escapes the caller's own root validation, reaches Sentry as an
- * `unexpected_fault`, and blocks the release gate.
+ * exist either, so the two errno values answer the same question. A
+ * corruption-sensitive race may deliberately use `isFileMissingError` instead;
+ * both choices centralize the reviewed semantic decision rather than repeating
+ * an incomplete inline errno check. Handling only `ENOENT` inline converts a
+ * graceful default into an unclassified runtime fault that escapes the caller's
+ * own root validation, reaches Sentry as an `unexpected_fault`, and blocks the
+ * release gate.
  *
  * The bound is a ceiling that may only fall. Both directions fail: a higher
  * observed count is a regression, and a lower one is an undeclared improvement
@@ -121,7 +124,7 @@ export function evaluateAbsenceTolerance(findings, ceiling) {
       direction: "regression",
       message:
         `${observed} catch clauses tolerate ${ABSENT_ERRNO} without ${DIRECTORY_ERRNO}, above the declared ceiling of ${ceiling}. ` +
-        `An optional-file reader must treat ${DIRECTORY_ERRNO} as absence too; use isFileAbsentError from src/core/fs/fs-utils.ts.`,
+        `Use isFileAbsentError for optional targets, or isFileMissingError only when ${DIRECTORY_ERRNO} must remain structural corruption; both live in src/core/fs/fs-utils.ts.`,
       findings,
     };
   }
@@ -157,7 +160,8 @@ export async function runAbsenceToleranceGate(options = {}) {
 export async function main(argv = process.argv.slice(2)) {
   const { flags } = parseFlags(argv);
   const baselinePath = flagString(flags, "baseline", DEFAULT_BASELINE_PATH);
-  const report = await runAbsenceToleranceGate({ baselinePath });
+  const root = flagString(flags, "root", repoRoot);
+  const report = await runAbsenceToleranceGate({ baselinePath, root });
   if (!report.ok) {
     for (const finding of report.findings.slice(0, 20)) {
       process.stdout.write(`${finding.file}:${finding.line}\n`);

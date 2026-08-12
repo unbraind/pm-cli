@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { pathExists } from "../../core/fs/fs-utils.js";
+import { isFileAbsentError, pathExists } from "../../core/fs/fs-utils.js";
 import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -279,7 +279,7 @@ const readExtensionInstallLockOwnerToken = async (
       "utf8",
     );
   } catch (error: unknown) {
-    if (!isErrnoCode(error, "ENOENT")) throw error;
+    if (!isFileAbsentError(error)) throw error;
     return null;
   }
   let parsed: unknown;

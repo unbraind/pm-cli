@@ -3,6 +3,7 @@
  *
  * Coordinates tracker lock ownership and cleanup for Lock.
  */
+import { isFileMissingError } from "../fs/fs-utils.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -100,7 +101,7 @@ async function readLockInfo(lockPath: string): Promise<LockReadResult> {
     });
     return parseLockInfo(raw);
   } catch (error: unknown) {
-    if (isErrno(error, "ENOENT")) {
+    if (isFileMissingError(error)) {
       return {
         info: null,
         warnings: [],
@@ -404,7 +405,7 @@ async function removeExpiredStaleCleanupGate(
       return false;
     }
   } catch (error: unknown) {
-    return isErrno(error, "ENOENT");
+    return isFileMissingError(error);
   }
   const owner = await readStaleCleanupGateOwner(gatePath);
   if (

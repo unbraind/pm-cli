@@ -2,11 +2,13 @@ id: pm-c6urop
 title: Mixed linked-resource remove and add in one command silently favors removal
 description: "The linked files/docs command accepts --remove and --add for the same path in one invocation, reports success, and leaves the path removed. Define and enforce an explicit conflict or atomic replace contract so evidence-maintenance intent cannot be silently lost."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: "area:cli","area:sdk",context-integrity,linked-resources,mutation-contract,ux
 created_at: "2026-08-12T01:40:00.500Z"
-updated_at: "2026-08-12T01:48:39.622Z"
+updated_at: "2026-08-12T09:06:05.704Z"
+closed_at: "2026-08-12T09:05:30.052Z"
+completed_at: "2026-08-12T09:05:30.052Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Same-path remove-plus-add has an explicit public contract; CLI and SDK apply the same contract to files and docs; zero partial history transitions are written; focused and manual regressions cover conflicting and non-conflicting compound mutations
@@ -23,6 +25,7 @@ reporter: "harness:codex"
 severity: medium
 environment: pm-cli 2026.8.11 built from PR #983 checkout
 repro_steps: "Run pm files <id> --remove <path> --add path=<path>,scope=project,note=<new>; inspect pm get <id> and observe that the path is absent"
+resolution: Files and docs reject normalized post-migration add/remove intersections with a typed public SDK error before item or history mutation.
 expected_result: The command preserves the added replacement or rejects the contradictory mutation before writing history
 actual_result: The command succeeds but removal wins and the requested replacement is absent
 affected_version: 2026.8.11
@@ -31,6 +34,27 @@ regression: false
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-cg1sjb,discovered_from,"2026-08-12T01:40:00.500Z","harness:codex","cli:create:dep",detected
   pm-f86lth,related,"2026-08-12T01:40:00.500Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-12T01:40:00.500Z","harness:codex","Duplicate-check evidence: searched all statuses for mixed remove/add, same-path linked-resource precedence, atomic replacement, and linked evidence repair. Closed pm-cstuys owns explicit replace-files/replace-docs but not the simultaneously accepted --remove plus --add ambiguity; related pm-cg1sjb is where the behavior was reproduced. This is new follow-up work and remains open/unclaimed."
+  "2026-08-12T08:32:08.040Z","harness:codex","Implementation evidence: files/docs now normalize and anchor additions/removals, apply declared migrations, and reject every intersecting path before mutateItem or history append. The typed usage refusal is linked_artifact_mutation_conflict with same_path_added_and_removed context and deterministically sorted conflicts. The primitive is exported from @unbrained/pm-cli/sdk and recorded in generated error/runtime/public-surface contracts."
+  "2026-08-12T09:05:11.130Z","harness:codex","Exact-head PR #990 evidence at bdd380af841efce5825bc27520e2d28463e2d527: all hosted executable checks passed, including Windows Node 24, four coverage shards plus aggregate coverage, static/typecheck/compat/smoke gates, Linux/macOS runtimes, CodeQL, Semgrep, Trivy, TruffleHog, Codecov patch, and 11 CodSpeed benchmarks. Fresh review inventory found zero inline threads and no actionable findings. CodeRabbit and Sourcery substantive reviews were rate-limited and Greptile produced no review surface; those are recorded limitations, not approvals. Every emitted bot comment/review was individually reacted to and answered with evidence."
+notes[1]{created_at,author,text}:
+  "2026-08-12T08:32:08.487Z","harness:codex","Atomicity decision: a mixed add/remove batch is accepted only when the normalized post-migration sets are disjoint. Replacement remains possible as two separately messaged commands, making each immutable history event unambiguous."
+learnings[1]{created_at,author,text}:
+  "2026-08-12T08:32:09.021Z","harness:codex","Package-boundary acceptance is essential for SDK work: source tests initially proved the primitive but the packed consumer exposed a missing top-level export. Repacking and importing @unbrained/pm-cli/sdk caught and closed that gap before PR creation."
+files[6]{path,scope,note}:
+  sdk/public-surface.json,project,Additive SDK function and error-code surface
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated structured error catalog
+  src/sdk/index.ts,project,Public SDK export for conflict primitive
+  src/sdk/linked-artifacts.ts,project,Atomic normalized add/remove conflict guard
+  tests/fixtures/contracts/full.json,project,Generated runtime error contract
+  tests/unit/commands/files-docs-command.spec.ts,project,Files docs migration no-write and packed export coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/files-docs-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mspu0spf-bexnyc,test,passed,"2026-08-12T08:32:52.719Z","2026-08-12T08:33:15.603Z","2026-08-12T08:33:15.603Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Managed release history for this completed tranche
+  docs/SDK.md,project,Atomic linked-artifact transaction contract
+close_reason: "Implemented and exported deterministic normalized linked-artifact conflict refusal before item/history mutation for files and docs, with migration, no-write, packed SDK, focused, and manual acceptance evidence on exact-head PR #990."
 body: ""

@@ -16,7 +16,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
-import { writeFileAtomic } from "../core/fs/fs-utils.js";
+import { isFileMissingError, writeFileAtomic } from "../core/fs/fs-utils.js";
 import { appendWorkspaceAuditEvent } from "../core/history/workspace-history.js";
 import { acquireLock } from "../core/lock/lock.js";
 import { getLockPath } from "../core/store/paths.js";
@@ -364,15 +364,6 @@ function validateSnapshotTarget(target: string): void {
   }
 }
 
-function isErrno(error: unknown, code: string): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: string }).code === code
-  );
-}
-
 /**
  * Runs a bounded snapshot filesystem stage, converting host environment faults
  * into declared refusals.
@@ -421,7 +412,7 @@ async function readSnapshotJson<T>(file: string, target: string): Promise<T> {
   try {
     return JSON.parse(await readFile(file, "utf8")) as T;
   } catch (error: unknown) {
-    if (isErrno(error, "ENOENT")) {
+    if (isFileMissingError(error)) {
       throw workspaceSnapshotNotFound(target);
     }
     throw error;
@@ -436,7 +427,7 @@ async function removeSnapshotEntry(
   try {
     await rm(entry, { recursive });
   } catch (error: unknown) {
-    if (isErrno(error, "ENOENT")) {
+    if (isFileMissingError(error)) {
       throw workspaceSnapshotNotFound(target);
     }
     throw error;
@@ -551,7 +542,7 @@ export async function createWorkspaceSnapshot(
     deduplicated = objectStat.isDirectory();
   } catch (error: unknown) {
     if (
-      !(error instanceof Error && "code" in error && error.code === "ENOENT")
+      !(error instanceof Error && "code" in error && isFileMissingError(error))
     ) {
       throw error;
     }
@@ -647,7 +638,7 @@ export async function listWorkspaceSnapshots(pmRoot: string): Promise<{
       if (
         error instanceof Error &&
         "code" in error &&
-        error.code === "ENOENT"
+        isFileMissingError(error)
       ) {
         return [];
       }
@@ -659,7 +650,7 @@ export async function listWorkspaceSnapshots(pmRoot: string): Promise<{
       if (
         error instanceof Error &&
         "code" in error &&
-        error.code === "ENOENT"
+        isFileMissingError(error)
       ) {
         return [];
       }
