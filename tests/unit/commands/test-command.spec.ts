@@ -2365,6 +2365,60 @@ describe("runTest", () => {
     });
   });
 
+  it("defaults linked-test Sentry classification to test while preserving explicit overrides", async () => {
+    const previousSentryEnvironment = process.env.SENTRY_ENVIRONMENT;
+    process.env.SENTRY_ENVIRONMENT = "production";
+    try {
+      await withTempPmPath(async (context) => {
+        const id = createTask(context, "linked-test-sentry-environment");
+        const printSentryEnvironment =
+          'node -e "process.stdout.write(process.env.SENTRY_ENVIRONMENT||\'\')"';
+        const printExplicitSentryEnvironment =
+          'node -e "process.stdout.write(String(process.env.SENTRY_ENVIRONMENT||\'\'))"';
+        await runTest(
+          id,
+          {
+            add: [
+              `command=${printSentryEnvironment},scope=project`,
+              `command=${printExplicitSentryEnvironment},scope=project,env_set=SENTRY_ENVIRONMENT=staging`,
+            ],
+            message: "seed linked-test Sentry environment probes",
+          },
+          { path: context.pmPath },
+        );
+
+        const run = await runTest(
+          id,
+          { run: true, timeout: "20" },
+          { path: context.pmPath },
+        );
+        expect(run.run_results).toHaveLength(2);
+        expect(
+          run.run_results.map((result) => result.stdout?.trim()),
+        ).toEqual(["test", "staging"]);
+
+        const runLevelOverride = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "20",
+            envSet: ["SENTRY_ENVIRONMENT=acceptance"],
+          },
+          { path: context.pmPath },
+        );
+        expect(
+          runLevelOverride.run_results.map((result) => result.stdout?.trim()),
+        ).toEqual(["acceptance", "staging"]);
+      });
+    } finally {
+      if (previousSentryEnvironment === undefined) {
+        delete process.env.SENTRY_ENVIRONMENT;
+      } else {
+        process.env.SENTRY_ENVIRONMENT = previousSentryEnvironment;
+      }
+    }
+  });
+
   it("ignores protected env directive keys from linked metadata while preserving sandbox safety", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "linked-test-protected-env-keys");

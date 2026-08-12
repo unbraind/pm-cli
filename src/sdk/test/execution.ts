@@ -2325,7 +2325,10 @@ function buildLinkedTestExecutionEnv(params: {
     params.runtimeDirectives,
     params.linkedTest,
   );
-  const executionEnv: NodeJS.ProcessEnv = { ...process.env };
+  const executionEnv: NodeJS.ProcessEnv = {
+    ...process.env,
+    SENTRY_ENVIRONMENT: "test",
+  };
   applyEnvDirectiveStage(executionEnv, params.runtimeDirectives);
   applyEnvDirectiveStage(executionEnv, {
     env_set: params.linkedTest.env_set ?? {},

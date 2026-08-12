@@ -519,6 +519,7 @@ describe("read output contracts", () => {
       suppressed_repeat_count: 0,
       next_state: { seen_item_ids: ["pm-1", "pm-2"] },
     });
+    expect(firstSession).not.toHaveProperty("seen_item_overflow_count");
 
     const second = applyReadOutputDimensions(
       "search",
@@ -727,6 +728,39 @@ describe("read output contracts", () => {
         seen_item_ids: ["pm-z", "pm-a", "pm-z"],
       }),
     ).toMatchObject({ seen_item_ids: ["pm-a", "pm-z"] });
+  });
+
+  it("keeps producer next states valid when newly served identities exceed capacity", () => {
+    const seenItemIds = Array.from(
+      { length: PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS - 1 },
+      (_, index) => `pm-seen-${String(index).padStart(5, "0")}`,
+    );
+    const result = attachReadOutputSessionReceipt(
+      {
+        items: [{ id: "pm-new-z" }, { id: "pm-new-a" }],
+        row_contract: { command: "list", row_keys: ["items"] },
+      },
+      {
+        version: 1,
+        id: "capacity",
+        token_budget: 1_000_000,
+        spent_tokens: 0,
+        seen_item_ids: seenItemIds,
+      },
+    );
+    const receipt = result.read_session;
+    expect(receipt.next_state.seen_item_ids).toHaveLength(
+      PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS,
+    );
+    expect(receipt.next_state.seen_item_ids).toContain("pm-new-a");
+    expect(receipt.next_state.seen_item_ids).not.toContain("pm-new-z");
+    expect(receipt.next_state.seen_item_ids).toEqual(
+      [...receipt.next_state.seen_item_ids].sort(),
+    );
+    expect(receipt).toMatchObject({ seen_item_overflow_count: 1 });
+    expect(parseReadOutputSession(receipt.next_state)).toEqual(
+      receipt.next_state,
+    );
   });
 
   it("maps, counts, and bounds nested object rows and ignores invalid paths", () => {

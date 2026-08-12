@@ -50,6 +50,15 @@ tokens separately when the remaining group allowance is smaller than the
 minimum control envelope, plus the accumulated spend, remaining capacity,
 newly served items, and suppressed repeats.
 
+The carried served-item set accepts at most 10,000 identities. A receipt always
+preserves identities already present in the supplied state and retains newly
+served identities in deterministic order until that capacity is full. When a
+single read crosses the boundary, `seen_item_overflow_count` reports how many
+new identities were not carried forward; those facts remain in the current
+envelope and may be served in full again on a later read. The emitted
+`next_state` therefore always remains valid input to the next call without
+silently widening the safety bound.
+
 Session state is deliberately caller-carried: CLI processes, SDK clients, MCP
 hosts, and packages share the same deterministic primitive without a hidden
 daemon or mutable cache. Validation rejects unknown fields, invalid identifiers,
