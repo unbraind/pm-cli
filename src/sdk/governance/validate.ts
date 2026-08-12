@@ -12,7 +12,7 @@ import { promisify } from "node:util";
 import { buildRemediationCommands } from "../../core/diagnostics/remediation.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
-import { pathExists } from "../../core/fs/fs-utils.js";
+import { isFileMissingError, pathExists } from "../../core/fs/fs-utils.js";
 import { scanHistoryDrift } from "../../core/history/drift-scan.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -895,7 +895,7 @@ async function listFilesRecursive(
   try {
     entries = await fs.readdir(targetDirectory, { withFileTypes: true });
   } catch (error: unknown) {
-    if (hasFilesystemErrorCode(error, ["ENOENT"])) {
+    if (isFileMissingError(error)) {
       return;
     }
     throw error;

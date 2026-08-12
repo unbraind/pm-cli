@@ -217,17 +217,22 @@ describe("main", () => {
   it("reports the held ceiling on stdout", async () => {
     const root = await fixtureRoot();
     await writeFile(path.join(root, "src", "clean.ts"), "export {};", "utf8");
-    const baseline = await baselineFile(root, 45);
+    const baseline = await baselineFile(root, 0);
     const write = vi
       .spyOn(process.stdout, "write")
       .mockImplementation(() => true);
-    const report = await main(["--baseline", baseline]);
+    const report = await main(["--baseline", baseline, "--root", root]);
     expect(report.ok).toBe(true);
     expect(write.mock.calls.at(-1)?.[0]).toContain("absence-tolerance-gate ok");
   });
 
   it("prints offending sites and fails when the ceiling is breached", async () => {
     const root = await fixtureRoot();
+    await writeFile(
+      path.join(root, "src", "core", "reader.ts"),
+      `try { a(); } catch (e) { if (isErrno(e, "ENOENT")) return null; throw e; }`,
+      "utf8",
+    );
     const baseline = await baselineFile(root, 0);
     const write = vi
       .spyOn(process.stdout, "write")
@@ -236,7 +241,7 @@ describe("main", () => {
     const exit = vi
       .spyOn(process, "exit")
       .mockImplementation((() => undefined) as never);
-    const report = await main(["--baseline", baseline]);
+    const report = await main(["--baseline", baseline, "--root", root]);
     expect(report.ok).toBe(false);
     expect(exit).toHaveBeenCalledWith(1);
     expect(error.mock.calls[0]?.[0]).toContain("absence-tolerance-gate:");

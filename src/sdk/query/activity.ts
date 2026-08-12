@@ -3,6 +3,7 @@
  *
  * Implements the pm activity command surface and its agent-facing runtime behavior.
  */
+import { isFileMissingError } from "../../core/fs/fs-utils.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -327,7 +328,7 @@ async function listHistoryFiles(historyDir: string): Promise<string[]> {
       .sort((a, b) => a.localeCompare(b));
   } catch (error: unknown) {
     // Activity should degrade gracefully when optional history storage is absent.
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+    if (isFileMissingError(error)) {
       return [];
     }
     throw error;

@@ -3,6 +3,7 @@
  *
  * Implements extension package-management support for Managed State.
  */
+import { isFileMissingError } from "../../core/fs/fs-utils.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -341,7 +342,7 @@ export async function readManagedExtensionState(
       typeof error === "object" &&
       error !== null &&
       "code" in error &&
-      (error as { code?: string }).code === "ENOENT"
+      isFileMissingError(error)
     ) {
       return {
         path: statePath,

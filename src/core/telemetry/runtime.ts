@@ -12,6 +12,7 @@ import path from "node:path";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import {
+  isFileMissingError,
   appendLineAtomic,
   readFileIfExists,
   writeFileAtomic,
@@ -2216,7 +2217,7 @@ function createDirectoryLock(lockPath: string): boolean {
     if (code === "EEXIST") {
       return false;
     }
-    if (code !== "ENOENT") {
+    if (!isFileMissingError(error)) {
       return false;
     }
   }
@@ -2252,7 +2253,7 @@ function acquireTelemetryFlushSpawnGate(globalPmRoot: string): boolean {
     }
     removeDirectoryLockBestEffort(lockPath);
   } catch (error: unknown) {
-    if (errorCode(error) !== "ENOENT") {
+    if (!isFileMissingError(error)) {
       return false;
     }
   }

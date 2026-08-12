@@ -4,6 +4,7 @@
  * Provides a bounded, host-reusable lifecycle primitive for pm-owned Node
  * compile-cache generations.
  */
+import { isFileMissingError } from "../core/fs/fs-utils.js";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -60,7 +61,7 @@ export function pruneCompileCacheGenerations(
         if (
           error instanceof Error &&
           "code" in error &&
-          error.code === "ENOENT"
+          isFileMissingError(error)
         ) {
           return [];
         }

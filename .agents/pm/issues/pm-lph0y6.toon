@@ -2,11 +2,13 @@ id: pm-lph0y6
 title: Global flags before a subcommand corrupt guided-error command examples by treating the flag value as the command
 description: "GitHub issue #984 reproduces on 2026.8.7 and 2026.8.11: pm --pm-path <tracker> plan show --json correctly identifies the missing plan id but renders the global flag value as the command in examples. Guided-error command-path recovery must use parsed command structure, never raw first-non-flag heuristics, for every host-owned global option ordering."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags: []
 created_at: "2026-08-12T02:57:25.496Z"
-updated_at: "2026-08-12T02:57:42.017Z"
+updated_at: "2026-08-12T08:32:52.267Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#e92bb992d978060f83661c05"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Global options before or after the subcommand produce identical valid help examples; option values and private filesystem paths can never be rendered as command names; focused unit and extension-forwarding regressions cover value-taking and boolean global flags; issue #984 is closed with merged evidence
@@ -16,7 +18,24 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-185870,related,"2026-08-12T02:57:25.496Z","harness:codex","cli:create:dep",detected
   pm-fs8q9x,related,"2026-08-12T02:57:25.496Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-12T02:57:25.496Z","harness:codex","Duplicate check: all-status searches for GH-984, global --pm-path placement, plan show missing-id examples, and option-value-as-command found adjacent closed recovery item pm-185870 and open grammar conformance pm-fs8q9x, but no exact owner. Source: https://github.com/unbraind/pm-cli/issues/984"
   "2026-08-12T02:57:42.017Z","harness:codex","Live reproduction during duplicate search: quoting the query '--pm-path before subcommand example path value' still caused the host-owned global option to be parsed out of the search argument and produced an Unknown option refusal for the search path. This confirms the same raw-argv/global-option ambiguity reaches ordinary agent recovery workflows; no item was claimed because this session is only documenting the newly reported owner."
+  "2026-08-12T08:32:06.520Z","harness:codex","Implementation evidence: resolveRecoveryCommandName now delegates command discovery to the bootstrap parser, so global options before or after the subcommand cannot turn tracker paths into help examples. The CLI recovery layer consumes the same public SDK primitive. Focused tests cover value and boolean globals, empty argv, and private-path exclusion."
+notes[1]{created_at,author,text}:
+  "2026-08-12T08:32:06.998Z","harness:codex","Design decision: recovery guidance derives the semantic command from normalized invocation argv instead of indexing raw tokens. This keeps CLI and SDK recovery behavior identical and preserves the full attempted command only in the structured recovery receipt."
+learnings[1]{created_at,author,text}:
+  "2026-08-12T08:32:07.526Z","harness:codex","Agent-facing help examples are a context boundary: derive them from grammar-aware command parsing, never from positional assumptions about argv, because global flag values may be private paths or unrelated identifiers."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,Additive SDK surface snapshot
+  src/cli/error-guidance.ts,project,CLI consumes shared recovery primitive
+  src/sdk/agent/command-recovery.ts,project,Public argv-aware recovery command primitive
+  tests/unit/cli/error-guidance.spec.ts,project,Private tracker path exclusion from help examples
+  tests/unit/sdk/agent-command-primitives.spec.ts,project,Global flag placement and empty argv coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/sdk/agent-command-primitives.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mspu0aoz-opq581,test,passed,"2026-08-12T08:32:43.166Z","2026-08-12T08:32:52.259Z","2026-08-12T08:32:52.259Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Recovery primitive contract and usage
 body: ""

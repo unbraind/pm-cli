@@ -7,7 +7,7 @@
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { acquireLock } from "../core/lock/lock.js";
-import { writeFileAtomic } from "../core/fs/fs-utils.js";
+import { isFileMissingError, writeFileAtomic } from "../core/fs/fs-utils.js";
 import { nowIso } from "../core/shared/time.js";
 
 /** Durable state reported by a transaction step inspection. */
@@ -473,7 +473,7 @@ async function loadJournal(
       error !== null &&
       typeof error === "object" &&
       "code" in error &&
-      error.code === "ENOENT"
+      isFileMissingError(error)
     )
       return undefined;
     throw error;

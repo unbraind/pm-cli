@@ -8,7 +8,7 @@ import fs from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { getHistoryPath } from "../store/paths.js";
-import { writeFileAtomic } from "../fs/fs-utils.js";
+import { isFileMissingError, writeFileAtomic } from "../fs/fs-utils.js";
 import {
   CURRENT_HISTORY_ITEM_HASH_VERSION,
   hashDocumentForVersion,
@@ -85,15 +85,6 @@ async function loadDriftCache(
   }
 }
 
-function isErrno(error: unknown, code: string): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: string }).code === code
-  );
-}
-
 interface StreamVerification {
   latestAfterHash: string;
   chainOk: boolean;
@@ -120,7 +111,7 @@ async function scanWorkspaceHistory(
   try {
     stat = await fs.stat(historyPath);
   } catch (error: unknown) {
-    if (isErrno(error, "ENOENT")) return false;
+    if (isFileMissingError(error)) return false;
     accumulator.unreadableStreams.push(WORKSPACE_HISTORY_ID);
     return false;
   }
@@ -332,7 +323,7 @@ export async function scanHistoryDrift(
     try {
       stat = await fs.stat(historyPath);
     } catch (error: unknown) {
-      if (isErrno(error, "ENOENT")) {
+      if (isFileMissingError(error)) {
         accumulator.missingStreams.push(item.id);
       } else {
         accumulator.unreadableStreams.push(item.id);

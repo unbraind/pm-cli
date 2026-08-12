@@ -2874,7 +2874,9 @@ describe("mutation command actions", () => {
       context: {
         recovery: {
           suggested_retry:
-            'pm notes pm-1 --add "\\$(touch /tmp/should-not-run) \\`echo unsafe\\` \\"\\$TOKEN\\""',
+            process.platform === "win32"
+              ? 'pm notes pm-1 --add "$(touch /tmp/should-not-run) `echo unsafe` \\"$TOKEN\\""'
+              : 'pm notes pm-1 --add "\\$(touch /tmp/should-not-run) \\`echo unsafe\\` \\"\\$TOKEN\\""',
         },
       },
     });

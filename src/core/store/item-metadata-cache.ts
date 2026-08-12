@@ -14,7 +14,7 @@ import {
 import { collectRegisteredItemFieldNames } from "../extensions/item-fields.js";
 import { parseItemDocument } from "../item/item-format.js";
 import { evictOldestMemoEntries } from "../shared/memo.js";
-import { writeFileAtomic } from "../fs/fs-utils.js";
+import { isFileMissingError, writeFileAtomic } from "../fs/fs-utils.js";
 import { acquireLock } from "../lock/lock.js";
 import { ITEM_FILE_EXTENSIONS, getItemFormatFromPath } from "./paths.js";
 import {
@@ -748,7 +748,7 @@ async function readItemDirectoryFiles(
       typeof error === "object" &&
       error !== null &&
       "code" in error &&
-      (error as { code?: string }).code !== "ENOENT"
+      !isFileMissingError(error)
     ) {
       appendWarning(warnings, `item_list_directory_read_failed:${folder}`);
     }

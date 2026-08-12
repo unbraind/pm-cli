@@ -3,6 +3,7 @@
  *
  * Invalidates derived history-chain verification state after committed writes.
  */
+import { isFileMissingError } from "../fs/fs-utils.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { writeStderr } from "../output/output.js";
@@ -57,7 +58,7 @@ export async function invalidateHistoryDriftCache(
     await fs.rm(cachePath, { force: true });
   } catch (error) {
     const errorCode = getFilesystemErrorCode(error);
-    if (errorCode === "ENOENT") {
+    if (isFileMissingError(error)) {
       return;
     }
     const code =

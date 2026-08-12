@@ -173,6 +173,48 @@ describe("pm cli error guidance context plumbing", () => {
     ]);
   });
 
+  it("never exposes a global option value as the recovery command", () => {
+    const beforeCommand = formatPmCliErrorForJson(
+      "Plan --depth must be one of brief|standard|deep|full",
+      2,
+      {
+        recovery: {
+          normalized_args: [
+            "--pm-path",
+            "/private/project/.agents/pm",
+            "plan",
+            "show",
+            "--depth",
+            "verbose",
+          ],
+          provided_fields: ["--pm-path", "--depth"],
+        },
+      },
+    );
+    const afterCommand = formatPmCliErrorForJson(
+      "Plan --depth must be one of brief|standard|deep|full",
+      2,
+      {
+        recovery: {
+          normalized_args: [
+            "plan",
+            "show",
+            "--pm-path",
+            "/private/project/.agents/pm",
+            "--depth",
+            "verbose",
+          ],
+          provided_fields: ["--pm-path", "--depth"],
+        },
+      },
+    );
+
+    expect(beforeCommand.examples).toContain("pm plan --help");
+    expect(afterCommand.examples).toContain("pm plan --help");
+    expect(beforeCommand.examples?.join(" ")).not.toContain("/private/");
+    expect(afterCommand.examples?.join(" ")).not.toContain("/private/");
+  });
+
   it("preserves structured fallback recovery candidates in JSON and text output", () => {
     const recovery = {
       attempted_command: "pm install --project npm:pm-brief",

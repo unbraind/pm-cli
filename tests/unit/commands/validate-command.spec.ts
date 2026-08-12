@@ -3307,7 +3307,8 @@ describe("runValidate", () => {
         >;
       };
       const cachedTests =
-        collectionsCache.collections[`tasks/${id}.toon`]?.collections.tests;
+        collectionsCache.collections[path.join("tasks", `${id}.toon`)]
+          ?.collections.tests;
       expect(cachedTests).toHaveLength(2);
       cachedTests?.reverse();
       await writeFile(

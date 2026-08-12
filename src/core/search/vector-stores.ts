@@ -18,7 +18,7 @@ import {
   toNonEmptyString,
   trimTrailingSlashes,
 } from "../shared/primitives.js";
-import { writeFileAtomic } from "../fs/fs-utils.js";
+import { isFileMissingError, writeFileAtomic } from "../fs/fs-utils.js";
 
 /** Restricts vector store name values accepted by command, SDK, and storage contracts. */
 export type VectorStoreName = "qdrant" | "lancedb";
@@ -431,14 +431,6 @@ function getLanceDbSnapshotPath(storePath: string, table: string): string {
   return join(resolve(storePath), LANCE_DB_LOCAL_SNAPSHOT_DIR, `${table}.json`);
 }
 
-function isNodeErrorWithCode(error: unknown, code: string): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    (error as { code?: unknown }).code === code
-  );
-}
-
 function normalizeSnapshotRecord(
   entry: unknown,
   index: number,
@@ -531,7 +523,7 @@ async function readLanceDbSnapshotStats(
     const stats = await stat(snapshotPath);
     return { mtimeMs: stats.mtimeMs, size: stats.size };
   } catch (error) {
-    if (!isNodeErrorWithCode(error, "ENOENT")) {
+    if (!isFileMissingError(error)) {
       throw error;
     }
     return null;
@@ -593,7 +585,7 @@ async function loadLanceDbLocalTable(
     const raw = await readFile(snapshotPath, "utf8");
     loaded = parseLanceDbSnapshot(snapshotPath, table, raw);
   } catch (error) {
-    if (!isNodeErrorWithCode(error, "ENOENT")) {
+    if (!isFileMissingError(error)) {
       throw error;
     }
   }
@@ -621,7 +613,7 @@ async function removeSnapshotFile(snapshotPath: string): Promise<void> {
   try {
     await unlink(snapshotPath);
   } catch (error) {
-    if (!isNodeErrorWithCode(error, "ENOENT")) {
+    if (!isFileMissingError(error)) {
       throw new Error(
         `LanceDB local snapshot delete failed at '${snapshotPath}': ${toErrorMessage(error)}`,
       );

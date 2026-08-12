@@ -9,6 +9,7 @@ import {
 } from "../../../src/sdk/agent/command-suggestions.js";
 import {
   renderMissingOptionRetry,
+  resolveRecoveryCommandName,
   resolveMissingOptionPlaceholder,
 } from "../../../src/sdk/agent/command-recovery.js";
 import { normalizeBootstrapInvocation } from "../../../src/sdk/cli-bootstrap.js";
@@ -299,6 +300,28 @@ describe("agent command SDK primitives", () => {
     ).toBe(
       'pm close pm-a1 --force --validate-close "<off|warn|strict>" -- --force operand',
     );
+  });
+
+  it("resolves recovery commands across global value and boolean flags", () => {
+    expect(
+      resolveRecoveryCommandName([
+        "--pm-path",
+        "/private/project/.agents/pm",
+        "--json",
+        "get",
+        "pm-a1",
+      ]),
+    ).toBe("get");
+    expect(
+      resolveRecoveryCommandName([
+        "get",
+        "pm-a1",
+        "--pm-path=/private/project/.agents/pm",
+      ]),
+    ).toBe("get");
+    expect(resolveRecoveryCommandName(["--json"])).toBeUndefined();
+    expect(resolveRecoveryCommandName([])).toBeUndefined();
+    expect(resolveRecoveryCommandName(undefined)).toBeUndefined();
   });
 
   it("ranks synonyms, then edit distance, then substring matches", () => {

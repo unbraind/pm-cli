@@ -5,11 +5,15 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runDocs } from "../../../src/cli/commands/docs.js";
 import { _testOnly as filesInternals, runFiles, runFilesDiscover } from "../../../src/cli/commands/files.js";
-import { parseAddGlobEntries, validateLinkedPaths } from "../../../src/sdk/linked-artifacts.js";
+import {
+  parseAddGlobEntries,
+  validateLinkedPaths,
+} from "../../../src/sdk/linked-artifacts.js";
 import * as linkedArtifactsModule from "../../../src/sdk/linked-artifacts.js";
 import * as itemStoreModule from "../../../src/core/store/item-store.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { assertLinkedArtifactMutationIsUnambiguous } from "../../../src/sdk/index.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 afterEach(() => {
   vi.restoreAllMocks();
@@ -91,6 +95,11 @@ async function latestHistoryAuthor(pmPath: string, id: string): Promise<string> 
     .filter((line) => line.length > 0);
   const last = JSON.parse(lines.at(-1) ?? "{}") as { author?: string };
   return last.author ?? "";
+}
+
+async function historyEventCount(pmPath: string, id: string): Promise<number> {
+  const raw = await readFile(path.join(pmPath, "history", `${id}.jsonl`), "utf8");
+  return raw.split("\n").filter((line) => line.trim().length > 0).length;
 }
 
 async function setSettingsAuthorDefault(pmPath: string, authorDefault: string): Promise<void> {
@@ -447,6 +456,51 @@ describe("runFiles", () => {
       expect(removed.count).toBe(0);
       expect(removed.changed).toBe(true);
     });
+  });
+
+  it("rejects conflicting normalized add/remove transactions without history", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "files-conflicting-batch");
+      const before = await historyEventCount(context.pmPath, id);
+
+      await expect(
+        runFiles(
+          id,
+          {
+            add: ["path=src/../README.md,scope=project,note=replacement"],
+            remove: ["README.md"],
+            message: "ambiguous replacement",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        code: "linked_artifact_mutation_conflict",
+        exitCode: EXIT_CODE.USAGE,
+        context: { reason: "same_path_added_and_removed" },
+      });
+      expect(await historyEventCount(context.pmPath, id)).toBe(before);
+      expect((await runFiles(id, {}, { path: context.pmPath })).files).toEqual([]);
+    });
+  });
+
+  it("accepts unambiguous linked-artifact batches and reports every sorted conflict", () => {
+    const additions = [
+      { path: "docs/z.md", scope: "project" as const },
+      { path: "docs/a.md", scope: "project" as const },
+    ];
+
+    expect(() =>
+      assertLinkedArtifactMutationIsUnambiguous([], ["docs/a.md"]),
+    ).not.toThrow();
+    expect(() =>
+      assertLinkedArtifactMutationIsUnambiguous(additions, ["docs/other.md"]),
+    ).not.toThrow();
+    expect(() =>
+      assertLinkedArtifactMutationIsUnambiguous(additions, [
+        "docs/z.md",
+        "docs/a.md",
+      ]),
+    ).toThrow("docs/a.md, docs/z.md");
   });
 
   it("accepts bare file paths for agent-friendly add entries", async () => {
@@ -1163,6 +1217,31 @@ describe("runDocs", () => {
       );
       expect(removed.count).toBe(0);
       expect(removed.changed).toBe(true);
+    });
+  });
+
+  it("rejects conflicts created by path migration for the shared docs contract", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "docs-conflicting-migrated-batch");
+      const before = await historyEventCount(context.pmPath, id);
+
+      await expect(
+        runDocs(
+          id,
+          {
+            add: ["path=docs/old/guide.md,scope=project"],
+            remove: ["docs/new/guide.md"],
+            migrate: ["from=docs/old/,to=docs/new/"],
+            message: "ambiguous migrated replacement",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        code: "linked_artifact_mutation_conflict",
+        exitCode: EXIT_CODE.USAGE,
+      });
+      expect(await historyEventCount(context.pmPath, id)).toBe(before);
+      expect((await runDocs(id, {}, { path: context.pmPath })).docs).toEqual([]);
     });
   });
 

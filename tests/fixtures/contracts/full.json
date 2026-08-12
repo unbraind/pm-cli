@@ -15870,6 +15870,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "linked_artifact_mutation_conflict",
+      "class": "usage",
+      "code": "linked_artifact_mutation_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Linked artifact mutation conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/linked-artifacts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "linked_test_remove_no_match",
       "class": "not_found",
       "code": "linked_test_remove_no_match",

@@ -241,6 +241,27 @@
   "waivers": [
     {
       "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/cli-contracts/flag-contracts.ts",
+      "pm_item": "pm-6xlyss",
+      "reason": "Centralizing exact ENOENT classification changes only optional metadata read error handling; annotation receipt flags and transport semantics are unchanged.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "health-vector-refresh-boundary",
+      "member_path": "tests/unit/sdk/health-vector-boundary.spec.ts",
+      "pm_item": "pm-6xlyss",
+      "reason": "Centralizing exact ENOENT classification does not change the existing explicit vector refresh boundary covered by this test.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "health-vector-refresh-boundary",
+      "member_path": "docs/SDK_CONTEXT_INTEGRITY.md",
+      "pm_item": "pm-6xlyss",
+      "reason": "Centralizing exact ENOENT classification does not change the documented opt-in vector provider contract.",
+      "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
       "member_path": "src/sdk/annotations.ts",
       "pm_item": "pm-mkinft",
       "reason": "Item-address aliasing changes CLI argv grammar, not annotation mutation receipt semantics.",

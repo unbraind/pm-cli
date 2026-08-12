@@ -3,6 +3,7 @@
  *
  * Implements the pm comments command surface and its agent-facing runtime behavior.
  */
+import { isFileAbsentError } from "../core/fs/fs-utils.js";
 import { readFile } from "node:fs/promises";
 import {
   EXIT_CODE,
@@ -107,7 +108,7 @@ async function resolveCommentTextSource(
     const fileInput = await readFile(filePath, "utf8");
     return { value: fileInput, emptyFlag: "--file" };
   } catch (error: unknown) {
-    if (isErrnoError(error) && error.code === "ENOENT") {
+    if (isErrnoError(error) && isFileAbsentError(error)) {
       throw new PmCliError(
         `--file path not found: ${filePath}`,
         EXIT_CODE.USAGE,

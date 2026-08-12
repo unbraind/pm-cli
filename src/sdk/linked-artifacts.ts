@@ -6,7 +6,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import fg from "fast-glob";
-import { pathExists } from "../core/fs/fs-utils.js";
+import { isFileAbsentError, pathExists } from "../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import {
   assertNoUnknownCsvKeys,
@@ -339,6 +339,44 @@ export function applyPathMigrations(
   return next;
 }
 
+/** Reject a transaction that resolves the same linked path into both add and remove sets. */
+export function assertLinkedArtifactMutationIsUnambiguous(
+  adds: LinkedArtifact[],
+  removes: string[],
+  migrations: PathMigration[] = [],
+): void {
+  if (adds.length === 0 || removes.length === 0) {
+    return;
+  }
+  const addedPaths = new Set(
+    adds.map((entry) => applyPathMigrations(entry.path, migrations)),
+  );
+  const conflicts = [
+    ...new Set(
+      removes
+        .map((entry) => applyPathMigrations(entry, migrations))
+        .filter((entry) => addedPaths.has(entry)),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
+  if (conflicts.length === 0) {
+    return;
+  }
+  throw new PmCliError(
+    `Linked artifact mutation cannot add and remove the same normalized path in one transaction: ${conflicts.join(", ")}. Split the replacement into separate commands so each history event has one unambiguous intent.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "linked_artifact_mutation_conflict",
+      reason: "same_path_added_and_removed",
+      required:
+        "Use distinct normalized paths for --add and --remove in one invocation.",
+      why: "Conflicting batch intent cannot be applied deterministically without silently discarding metadata or a removal.",
+      nextSteps: [
+        "Run the removal and addition as separate commands with a --message describing each intent.",
+      ],
+    },
+  );
+}
+
 /** Implements normalize linked path for the public runtime surface of this module. */
 export function normalizeLinkedPath(value: string): string {
   return value.split(path.sep).join("/");
@@ -497,7 +535,7 @@ export async function validateLinkedPaths(
         typeof error === "object" &&
         error !== null &&
         "code" in error &&
-        (error as { code?: string }).code === "ENOENT"
+        isFileAbsentError(error)
       ) {
         missingPaths.push(relativePath);
         continue;
@@ -645,6 +683,7 @@ export async function runLinkedArtifacts(
     anchorLinkedPath(entry, workspaceRoot, invocationRoot),
   );
   const migrations = parseMigrateEntries(resolvedMigrations);
+  assertLinkedArtifactMutationIsUnambiguous(adds, removes, migrations);
   const shouldMutate =
     adds.length > 0 || removes.length > 0 || migrations.length > 0;
 

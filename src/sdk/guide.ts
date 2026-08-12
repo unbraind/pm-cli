@@ -3,6 +3,7 @@
  *
  * Implements the pm guide command surface and its agent-facing runtime behavior.
  */
+import { isFileAbsentError } from "../core/fs/fs-utils.js";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -243,8 +244,7 @@ async function renderGuideDocs(
         });
       }
     } catch (error) {
-      const code = (error as { code?: string } | null)?.code;
-      const missing = code === "ENOENT";
+      const missing = isFileAbsentError(error);
       docs.push({
         path: doc.path,
         purpose: doc.purpose,

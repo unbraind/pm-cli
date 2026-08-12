@@ -12,6 +12,7 @@
  * receipt only costs the ability to short-circuit an identical replay — it
  * never breaks correctness.
  */
+import { isFileMissingError } from "../core/fs/fs-utils.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -64,15 +65,6 @@ export interface WorkspaceTransactionGcResult {
   warnings: string[];
   /** One decision row per scanned journal. */
   entries: WorkspaceTransactionGcEntry[];
-}
-
-function isErrno(error: unknown, code: string): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: string }).code === code
-  );
 }
 
 function readJournalStatusAndTimestamp(raw: string): {
@@ -226,7 +218,7 @@ export async function runWorkspaceTransactionGc(
       .filter((file) => file.endsWith(".json"))
       .sort((left, right) => left.localeCompare(right));
   } catch (error: unknown) {
-    if (isErrno(error, "ENOENT")) {
+    if (isFileMissingError(error)) {
       return result;
     }
     throw error;

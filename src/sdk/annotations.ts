@@ -4,7 +4,7 @@
  * Implements the pm annotation command command surface and its agent-facing runtime behavior.
  */
 import { readFile } from "node:fs/promises";
-import { pathExists } from "../core/fs/fs-utils.js";
+import { isFileAbsentError, pathExists } from "../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { createStdinTokenResolver, parseCsvKv } from "../core/item/parse.js";
@@ -299,7 +299,7 @@ async function resolveAnnotationTextSource(
   try {
     return { value: await readFile(filePath, "utf8"), emptyFlag: "--file" };
   } catch (error: unknown) {
-    if (isErrnoError(error) && error.code === "ENOENT") {
+    if (isErrnoError(error) && isFileAbsentError(error)) {
       throw new PmCliError(
         `--file path not found: ${filePath}`,
         EXIT_CODE.USAGE,

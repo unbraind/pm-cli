@@ -1074,6 +1074,12 @@
           "signature": "(id: string | undefined, all: boolean) => void | calls: (id: string | undefined, all: boolean) => void"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertLinkedArtifactMutationIsUnambiguous",
+          "signature": "(adds: LinkedArtifact[], removes: string[], migrations?: PathMigration[]) => void | calls: (adds: LinkedArtifact[], removes: string[], migrations?: PathMigration[]) => void"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "assertMemoryRelationshipGraphAdapterConformance",
@@ -11194,6 +11200,12 @@
           "kind": "function",
           "name": "resolveReadRowContract",
           "signature": "(command: string, result: Record<string, unknown>) => ReadRowContract | undefined | calls: (command: string, result: Record<string, unknown>) => ReadRowContract | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveRecoveryCommandName",
+          "signature": "(invocationArgv: string[] | undefined) => string | undefined | calls: (invocationArgv: string[] | undefined) => string | undefined"
         },
         {
           "classification": "advanced_export",
@@ -25691,6 +25703,7 @@
     "item_id_collision",
     "item_not_found",
     "likely_duplicate",
+    "linked_artifact_mutation_conflict",
     "linked_test_remove_no_match",
     "linked_test_value_not_quoted",
     "list_source_incomplete",

@@ -7,10 +7,21 @@
  */
 import { renderPmCommand } from "../command-line.js";
 import { resolveSubcommandFlagContractsForCommand } from "../cli-contracts.js";
+import { parseBootstrapCommandName } from "../cli-bootstrap.js";
 
 function normalizeMissingFlag(label: string): string | undefined {
   const match = label.trim().match(/--[a-z0-9][a-z0-9_-]*/i);
   return match?.[0]?.replaceAll("_", "-").toLowerCase();
+}
+
+/** Resolve a recovery command without interpreting global option values as command tokens. */
+export function resolveRecoveryCommandName(
+  invocationArgv: string[] | undefined,
+): string | undefined {
+  if (!Array.isArray(invocationArgv) || invocationArgv.length === 0) {
+    return undefined;
+  }
+  return parseBootstrapCommandName(invocationArgv);
 }
 
 /** Resolve the truthful placeholder for a missing flag from its contract. */
