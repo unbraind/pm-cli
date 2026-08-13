@@ -23,6 +23,7 @@
 
 ### Other
 
+- Quota-aware branch protection: external AI review limits must never block merges ([pm-e02lgu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-e02lgu.toon))
 - Refresh compatible Greptile 3.4, TypeScript-ESLint 8.67, and jscpd 5.0.15 tooling ([pm-87hmdw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-87hmdw.toon))
 - Isolate the merge SDK bundle from focused-entrypoint chunk fanout ([pm-m9gu9r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-m9gu9r.toon))
 - The Windows nightly leg cannot separate product defects from harness noise: 744 hardcoded POSIX path literals and 203 raw errno strings in the suite fail on Windows for reasons unrelated to pm behaviour ([pm-j668gl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-j668gl.toon))
