@@ -239,7 +239,7 @@ describe("GitHub workflow contract", () => {
     expect(
       gatesJob.indexOf("node dist/cli.js merge install --no-extensions"),
     ).toBeLessThan(
-      gatesJob.indexOf("node scripts/release/tracker-measurement-gate.mjs"),
+      gatesJob.indexOf("node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json"),
     );
     expect(
       gatesJob.match(/node dist\/cli\.js merge install --no-extensions/g),

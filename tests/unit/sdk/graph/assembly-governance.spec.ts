@@ -286,6 +286,15 @@ describe("relationship graph governance", () => {
         blocked_by: 3,
         related: 2,
       },
+      finding_subjects_by_code: {
+        missing_reference_active: 1,
+        missing_reference_terminal: 1,
+        legacy_no_blocker_sentinel: 1,
+        ordering_cycle: 2,
+        stale_lifecycle_block: 1,
+        isolated_active_node: 1,
+        sparse_active_node: 2,
+      },
     });
   });
 
@@ -329,6 +338,18 @@ describe("relationship graph governance", () => {
     expect(() =>
       auditWorkspaceRelationshipGraph(assembly, { signal: controller.signal }),
     ).toThrow();
+    let cancellationChecks = 0;
+    expect(() =>
+      auditWorkspaceRelationshipGraph(assembly, {
+        signal: {
+          throwIfAborted: () => {
+            cancellationChecks += 1;
+            if (cancellationChecks === 8) throw new Error("cancelled in scan");
+          },
+        } as AbortSignal,
+      }),
+    ).toThrow("cancelled in scan");
+    expect(cancellationChecks).toBe(8);
   });
 
   it("orders multiple cycles and distinguishes missing, terminal, and open predecessors", () => {
@@ -448,6 +469,33 @@ describe("relationship graph governance", () => {
         isolated_active_nodes: 0,
         degree_leq_one_active_nodes: 0,
         coverage_by_type: {},
+        articulation_points: 0,
+        bridge_edges: 0,
+        outcome_nodes: 0,
+        active_outcome_reachable_nodes: 0,
+        active_outcome_unreachable_nodes: 0,
+        active_outcome_reachability_basis_points: 0,
+        terminal_nodes: 0,
+        terminal_outcome_reachable_nodes: 0,
+        terminal_outcome_unreachable_nodes: 0,
+        terminal_outcome_reachability_basis_points: 0,
+        outcome_reachable_nodes: 0,
+        outcome_unreachable_nodes: 0,
+        outcome_reachability_basis_points: 0,
+        finding_subjects_by_code: {
+          missing_reference_active: 0,
+          missing_reference_terminal: 0,
+          legacy_no_blocker_sentinel: 0,
+          ordering_cycle: 0,
+          legacy_ordering_cycle: 0,
+          duplicate_edge: 0,
+          legacy_duplicate_edge: 0,
+          duplicate_dependency_row: 0,
+          legacy_duplicate_dependency_row: 0,
+          stale_lifecycle_block: 0,
+          isolated_active_node: 0,
+          sparse_active_node: 0,
+        },
       },
     });
   });

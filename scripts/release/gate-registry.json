@@ -1,5 +1,107 @@
 {
   "version": 2,
+  "automation_inventory": {
+    "gate_scripts": [
+      {
+        "path": "scripts/release/tracker-measurement-gate.mjs",
+        "disposition": "migrated",
+        "replacement": "pm assurance run tracker-context-quality"
+      },
+      {
+        "path": "scripts/release/absence-tolerance-gate.mjs",
+        "disposition": "retained",
+        "reason": "Exercises package absence and degraded-tool behavior across process boundaries."
+      },
+      {
+        "path": "scripts/release/agent-task-token-gate.mjs",
+        "disposition": "retained",
+        "reason": "Computes source-corpus token budgets that are not tracker-native measurements."
+      },
+      {
+        "path": "scripts/release/context-eval-gate.mjs",
+        "disposition": "retained",
+        "reason": "Runs the external golden-query retrieval corpus and fail-under evaluation."
+      },
+      {
+        "path": "scripts/release/context-intent-calibration-gate.mjs",
+        "disposition": "retained",
+        "reason": "Calibrates intent contracts over checked-in fixtures outside tracker state."
+      },
+      {
+        "path": "scripts/release/coverage-threshold-gate.mjs",
+        "disposition": "retained",
+        "reason": "Validates coverage artifacts with integer uncovered-count negative controls."
+      },
+      {
+        "path": "scripts/release/docs-skills-gate.mjs",
+        "disposition": "retained",
+        "reason": "Checks documentation links and skill contracts across repository files."
+      },
+      {
+        "path": "scripts/release/gate-registry.mjs",
+        "disposition": "retained",
+        "reason": "Fail-closes the hosted, local, migration, and graph-consumer inventories."
+      },
+      {
+        "path": "scripts/release/greptile-review-gate.mjs",
+        "disposition": "retained",
+        "reason": "Reads hosted review state and cannot be evaluated from local tracker data."
+      },
+      {
+        "path": "scripts/release/hosted-analysis-gate.mjs",
+        "disposition": "retained",
+        "reason": "Aggregates hosted analysis services using authenticated GitHub state."
+      },
+      {
+        "path": "scripts/release/package-artifact-gate.mjs",
+        "disposition": "retained",
+        "reason": "Inspects packed package contents and installed consumer behavior."
+      },
+      {
+        "path": "scripts/release/retrieval-eval-gate.mjs",
+        "disposition": "retained",
+        "reason": "Executes end-to-end retrieval quality against isolated CLI workspaces."
+      },
+      {
+        "path": "scripts/release/sentry-telemetry-gate.mjs",
+        "disposition": "retained",
+        "reason": "Queries privacy-safe live observability services under release policy."
+      },
+      {
+        "path": "scripts/release/surface-replication-gate.mjs",
+        "disposition": "retained",
+        "reason": "Builds changed SDK surfaces and verifies package replication contracts."
+      },
+      {
+        "path": "scripts/release/static-quality-gate.mts",
+        "disposition": "retained",
+        "reason": "Enforces repository-wide lint suppression, coverage pragma, complexity, and docstring budgets from TypeScript source."
+      },
+      {
+        "path": "scripts/release/token-budget-gate.mjs",
+        "disposition": "retained",
+        "reason": "Measures serialized command fixtures and continuation token envelopes."
+      }
+    ],
+    "graph_operations": [
+      { "operation": "ancestors", "interactive_only_reason": "Bounded hierarchy lookup selected by an operator or agent root." },
+      { "operation": "descendants", "interactive_only_reason": "Bounded hierarchy expansion selected by an operator or agent root." },
+      { "operation": "predecessors", "interactive_only_reason": "Ordering lookup requires a caller-selected root and traversal bound." },
+      { "operation": "successors", "interactive_only_reason": "Ordering lookup requires a caller-selected root and traversal bound." },
+      { "operation": "paths", "interactive_only_reason": "Path enumeration requires caller-selected endpoints and cost bounds." },
+      { "operation": "impact", "interactive_only_reason": "Impact analysis is an exploratory projection over a selected root." },
+      { "operation": "analyze", "interactive_only_reason": "Broad graph analysis is an on-demand planning and diagnosis surface." },
+      { "operation": "audit", "automated_consumer": "assurance gate tracker-context-quality" },
+      { "operation": "communities", "interactive_only_reason": "Community detection is exploratory and has caller-selected parameters." },
+      { "operation": "redundancy", "interactive_only_reason": "Redundancy candidates require human or agent remediation judgment." },
+      { "operation": "dominators", "interactive_only_reason": "Dominator analysis requires a caller-selected execution root." },
+      { "operation": "slack", "interactive_only_reason": "Schedule slack depends on a caller-selected planning projection." },
+      { "operation": "centrality", "interactive_only_reason": "Centrality ranking is an on-demand prioritization projection." },
+      { "operation": "articulation", "automated_consumer": "graph audit profile articulation_points and bridge_edges" },
+      { "operation": "plan", "interactive_only_reason": "Remediation plans require explicit review before tracker mutation." },
+      { "operation": "index", "interactive_only_reason": "Durable index lifecycle is explicitly controlled by the workspace operator." }
+    ]
+  },
   "local_preflight": {
     "command": "pnpm verify:preflight",
     "steps": [
@@ -310,18 +412,18 @@
       "owner": "pm-kpftft",
       "pipelines": ["ci.yml#gates"],
       "failure_taxonomy": [
-        "tracker_population_regressed",
-        "tracker_population_undeclared",
-        "tracker_health_regressed",
-        "tracker_measurement_control_failed"
+        "assurance_floor_undercut",
+        "assurance_ceiling_exceeded",
+        "graph_structure_regressed",
+        "outcome_reachability_regressed"
       ],
       "bypass": {
         "allowed": false,
-        "audit": "Filed tracker measurements are shrinking-only context-quality ceilings, not advisory prose."
+        "audit": "Filed tracker measurements enforce stable context-quality floors and ceilings; lifecycle-sensitive partitions remain explicit advisory diagnostics."
       },
       "negative_control": {
-        "test": "tests/unit/scripts/release/tracker-measurement-gate.spec.ts",
-        "assertion": "proves the gate can fail by seeding a row beyond a declared ceiling of zero"
+        "test": "tests/unit/sdk/graph/structural-governance.spec.ts",
+        "assertion": "requires typed hierarchy or implements paths instead of arbitrary related edges"
       }
     },
     {

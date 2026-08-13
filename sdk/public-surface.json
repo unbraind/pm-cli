@@ -424,6 +424,30 @@
       ],
       "package_version": "2026.8.12",
       "reason": "Additive assurance provider, preset, trigger-policy, and inventory fields change structural signatures while preserving existing actions and registrations"
+    },
+    {
+      "changes": [
+        "signature ./sdk:RelationshipCoverageProfile",
+        "signature ./sdk/graph:RelationshipCoverageProfile"
+      ],
+      "package_version": "2026.8.12",
+      "reason": "RelationshipCoverageProfile intentionally adds always-present structural and typed outcome governance fields under pm-4vz6mz; existing fields and semantics remain unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:RelationshipCoverageProfile",
+        "signature ./sdk/graph:RelationshipCoverageProfile"
+      ],
+      "package_version": "2026.8.12",
+      "reason": "RelationshipCoverageProfile intentionally adds always-present structural and lifecycle-stable typed outcome governance fields under pm-4vz6mz, pm-g4k74y, and pm-bzmeaa; existing fields and semantics remain unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:RelationshipAuditFindingCode",
+        "signature ./sdk/graph:RelationshipAuditFindingCode"
+      ],
+      "package_version": "2026.8.12",
+      "reason": "Source-derived finding-code type replaces an identical handwritten union; the accepted values and runtime behavior are unchanged."
     }
   ],
   "entrypoints": {
@@ -10238,7 +10262,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "RelationshipAuditFindingCode",
-          "signature": "export type RelationshipAuditFindingCode = \"missing_reference_active\" | \"missing_reference_terminal\" | \"legacy_no_blocker_sentinel\" | \"ordering_cycle\" | \"legacy_ordering_cycle\" | \"duplicate_edge\" | \"legacy_duplicate_edge\" | \"duplicate_dependency_row\" | \"legacy_duplicate_dependency_row\" | \"stale_lifecycle_block\" | \"isolated_active_node\" | \"sparse_active_node\";"
+          "signature": "export type RelationshipAuditFindingCode = (typeof RELATIONSHIP_AUDIT_FINDING_CODES)[number];"
         },
         {
           "classification": "supported",
@@ -10346,7 +10370,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }"
+          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
         },
         {
           "classification": "supported",
@@ -20144,7 +20168,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "RelationshipAuditFindingCode",
-          "signature": "export type RelationshipAuditFindingCode = \"missing_reference_active\" | \"missing_reference_terminal\" | \"legacy_no_blocker_sentinel\" | \"ordering_cycle\" | \"legacy_ordering_cycle\" | \"duplicate_edge\" | \"legacy_duplicate_edge\" | \"duplicate_dependency_row\" | \"legacy_duplicate_dependency_row\" | \"stale_lifecycle_block\" | \"isolated_active_node\" | \"sparse_active_node\";"
+          "signature": "export type RelationshipAuditFindingCode = (typeof RELATIONSHIP_AUDIT_FINDING_CODES)[number];"
         },
         {
           "classification": "supported",
@@ -20252,7 +20276,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }"
+          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
         },
         {
           "classification": "supported",

@@ -257,6 +257,21 @@ bounded deterministic samples, truncation, policy text, and safe remediation;
 the audit never invents an edge. Explicit isolate exemptions suppress policy
 findings without changing structural coverage metrics.
 
+The audit profile also exposes graph-wide resilience and delivery-lineage
+metrics. `articulation_points` and `bridge_edges` reuse the exact cut-structure
+algorithm; outcome metrics count explicit `Milestone` titles beginning with
+`Outcome milestone:` and follow only hierarchy or `implements` edges toward
+them. Active and terminal populations are reported separately, with integer
+basis-point rates and all-status reachable/unreachable totals; the explicit
+outcome milestones are roots, not work subjects, and are excluded from those
+populations. Rate or
+all-status floors are lifecycle-stable; an absolute active-population floor is
+invalid because completing reachable work legitimately moves it into the
+terminal population. `finding_subjects_by_code` includes every known finding
+code even when its population is zero, so assurance selectors never confuse a
+clean class with a missing contract field. Generic `related` edges cannot
+satisfy outcome reachability.
+
 ```ts
 import {
   assembleWorkspaceRelationshipGraph,

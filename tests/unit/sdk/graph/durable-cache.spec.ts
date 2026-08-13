@@ -181,6 +181,36 @@ describe("durable graph cache primitives", () => {
   it("round-trips the audit baseline and ignores defective baselines", async () => {
     await withTempPmPath(async (context) => {
       expect(await loadGraphAuditBaseline(context.pmPath)).toBeUndefined();
+      const structuralProfile = {
+        edge_basis: "deduplicated_directed" as const,
+        articulation_points: 0,
+        bridge_edges: 0,
+        outcome_nodes: 0,
+        active_outcome_reachable_nodes: 0,
+        active_outcome_unreachable_nodes: 0,
+        active_outcome_reachability_basis_points: 0,
+        terminal_nodes: 0,
+        terminal_outcome_reachable_nodes: 0,
+        terminal_outcome_unreachable_nodes: 0,
+        terminal_outcome_reachability_basis_points: 0,
+        outcome_reachable_nodes: 0,
+        outcome_unreachable_nodes: 0,
+        outcome_reachability_basis_points: 0,
+        finding_subjects_by_code: {
+          missing_reference_active: 0,
+          missing_reference_terminal: 0,
+          legacy_no_blocker_sentinel: 0,
+          ordering_cycle: 1,
+          legacy_ordering_cycle: 0,
+          duplicate_edge: 0,
+          legacy_duplicate_edge: 0,
+          duplicate_dependency_row: 0,
+          legacy_duplicate_dependency_row: 0,
+          stale_lifecycle_block: 0,
+          isolated_active_node: 0,
+          sparse_active_node: 0,
+        },
+      };
       const snapshot = {
         saved_at: "2026-07-20T00:00:00.000Z",
         fingerprint: "fp",
@@ -197,6 +227,7 @@ describe("durable graph cache primitives", () => {
           isolated_active_nodes: 1,
           degree_leq_one_active_nodes: 1,
           coverage_by_type: {},
+          ...structuralProfile,
         },
       };
       await saveGraphAuditBaseline(context.pmPath, snapshot);
@@ -341,6 +372,35 @@ describe("durable graph cache primitives", () => {
             },
           },
         }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, edge_basis: "undirected" },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, articulation_points: -1 },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            outcome_reachability_basis_points: 10_001,
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            finding_subjects_by_code: { ordering_cycle: -1 },
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            finding_subjects_by_code: undefined,
+          },
+        }),
         JSON.stringify(null),
       ]) {
         await writeFile(
@@ -356,6 +416,21 @@ describe("durable graph cache primitives", () => {
         edge_share_by_kind: _legacyShares,
         semantic_edges: _legacySemanticEdges,
         semantic_edge_share: _legacySemanticShare,
+        edge_basis: _legacyEdgeBasis,
+        articulation_points: _legacyArticulationPoints,
+        bridge_edges: _legacyBridgeEdges,
+        outcome_nodes: _legacyOutcomeNodes,
+        active_outcome_reachable_nodes: _legacyActiveOutcomeReachable,
+        active_outcome_unreachable_nodes: _legacyActiveOutcomeUnreachable,
+        active_outcome_reachability_basis_points: _legacyActiveOutcomeRate,
+        terminal_nodes: _legacyTerminalNodes,
+        terminal_outcome_reachable_nodes: _legacyTerminalOutcomeReachable,
+        terminal_outcome_unreachable_nodes: _legacyTerminalOutcomeUnreachable,
+        terminal_outcome_reachability_basis_points: _legacyTerminalOutcomeRate,
+        outcome_reachable_nodes: _legacyOutcomeReachable,
+        outcome_unreachable_nodes: _legacyOutcomeUnreachable,
+        outcome_reachability_basis_points: _legacyOutcomeRate,
+        finding_subjects_by_code: _legacyFindingSubjects,
         ...legacyProfile
       } = snapshot.profile;
       await writeFile(
@@ -371,6 +446,7 @@ describe("durable graph cache primitives", () => {
           semantic_edges: 0,
           semantic_edge_share: 0,
           coverage_by_type: {},
+          ...structuralProfile,
         },
       });
 

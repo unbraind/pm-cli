@@ -13,6 +13,7 @@ import {
   runGateRegistryEntrypoint,
   validateGateRegistry,
 } from "../../../../scripts/release/gate-registry.mjs";
+import { GRAPH_SUBCOMMAND_VALUES } from "../../../../src/sdk/cli-contracts/enum-contracts.js";
 
 const roots: string[] = [];
 
@@ -114,6 +115,128 @@ describe("gate registry", () => {
     await expect(
       validateGateRegistry(registry(), { repoRoot: root }),
     ).resolves.toEqual([]);
+  });
+
+  it("enforces gate-script disposition and graph-operation consumer inventories", async () => {
+    const root = await fixtureRoot();
+    await mkdir(path.join(root, "scripts", "release"), { recursive: true });
+    await writeFile(path.join(root, "scripts", "release", "quality-gate.mjs"), "quality");
+    await writeFile(path.join(root, "scripts", "release", "typed-gate.mts"), "typed");
+    const declared = {
+      ...registry(),
+      automation_inventory: {
+      gate_scripts: [
+        {
+          path: "scripts/release/quality-gate.mjs",
+          disposition: "retained",
+          reason: "This fixture remains the executable quality boundary.",
+        },
+        {
+          path: "scripts/release/retired-gate.mjs",
+          disposition: "migrated",
+          replacement: "pm assurance run fixture-quality",
+        },
+        {
+          path: "scripts/release/typed-gate.mts",
+          disposition: "retained",
+          reason: "This fixture remains a typed executable quality boundary.",
+        },
+      ],
+        graph_operations: GRAPH_SUBCOMMAND_VALUES.map((operation) => ({
+          operation,
+          interactive_only_reason: "This fixture operation is intentionally user-invoked only.",
+        })),
+      },
+    };
+    await expect(validateGateRegistry(declared, { repoRoot: root })).resolves.toEqual([]);
+
+    declared.automation_inventory.gate_scripts[0].reason = "short";
+    declared.automation_inventory.graph_operations[0] = {
+      operation: GRAPH_SUBCOMMAND_VALUES[0],
+    } as never;
+    await expect(validateGateRegistry(declared, { repoRoot: root })).resolves.toEqual(
+      expect.arrayContaining([
+        "automation_inventory:gate_script:invalid",
+        "automation_inventory:graph_operation:invalid",
+      ]),
+    );
+  });
+
+  it("fails closed across incomplete automation-inventory dispositions", async () => {
+    const root = await fixtureRoot();
+    await mkdir(path.join(root, "scripts", "release"), { recursive: true });
+    await Promise.all(
+      [
+        "quality-gate.mjs",
+        "provider-gate.mjs",
+        "undeclared-gate.mjs",
+        "undeclared-gate.ts",
+      ].map(
+        (file) => writeFile(path.join(root, "scripts", "release", file), file),
+      ),
+    );
+    const graphOperations = GRAPH_SUBCOMMAND_VALUES.slice(1).map(
+      (operation) => ({
+        operation,
+        automated_consumer: "pm assurance run fixture-quality",
+      }),
+    );
+    graphOperations.push({
+      operation: GRAPH_SUBCOMMAND_VALUES[1],
+      automated_consumer: "pm assurance run fixture-quality",
+    });
+    graphOperations.push({
+      operation: "unknown",
+      automated_consumer: "pm assurance run fixture-quality",
+    } as never);
+    graphOperations.push({
+      automated_consumer: "pm assurance run fixture-quality",
+    } as never);
+    const invalid = {
+      ...registry(),
+      automation_inventory: {
+        gate_scripts: [
+          {
+            path: "scripts/release/quality-gate.mjs",
+            disposition: "retained",
+            reason: "This retained fixture gate has a complete rationale.",
+          },
+          {
+            path: "scripts/release/provider-gate.mjs",
+            disposition: "reduced_to_provider",
+            provider: "fixture-provider",
+          },
+          {
+            path: "scripts/release/missing-gate.mjs",
+            disposition: "reduced_to_provider",
+            provider: "x",
+          },
+          {
+            path: "scripts/release/quality-gate.mjs",
+            disposition: "migrated",
+            replacement: "short",
+          },
+          { disposition: "retained" },
+        ],
+        graph_operations: graphOperations,
+      },
+    };
+    await expect(validateGateRegistry(invalid, { repoRoot: root })).resolves.toEqual(
+      expect.arrayContaining([
+        "automation_inventory:gate_script:invalid",
+        "automation_inventory:gate_script:scripts/release/undeclared-gate.mjs:undeclared",
+        "automation_inventory:gate_script:scripts/release/undeclared-gate.ts:undeclared",
+        "automation_inventory:graph_operation:invalid",
+        `automation_inventory:graph_operation:${GRAPH_SUBCOMMAND_VALUES[0]}:undeclared`,
+      ]),
+    );
+
+    await expect(
+      validateGateRegistry(
+        { ...registry(), automation_inventory: null },
+        { repoRoot: root },
+      ),
+    ).resolves.toContain("automation_inventory:invalid");
   });
 
   it("fails closed for malformed, duplicate, stale, and missing policy", async () => {
@@ -303,13 +426,21 @@ describe("gate registry", () => {
       ).size,
     );
     expect(committed.version).toBe(2);
+    expect(
+      committed.automation_inventory.graph_operations.map(
+        (entry: { operation: string }) => entry.operation,
+      ),
+    ).toEqual(GRAPH_SUBCOMMAND_VALUES);
     const root = await fixtureRoot();
     const claimsFreePath = path.join(root, "claims-free.json");
     delete committed.claims;
+    delete committed.automation_inventory;
     await writeFile(claimsFreePath, JSON.stringify(committed));
     await expect(main(["--registry", claimsFreePath])).resolves.toMatchObject({
       ok: true,
       claim_count: 0,
+      migrated_gate_script_count: 0,
+      declared_graph_operation_count: 0,
     });
   });
 

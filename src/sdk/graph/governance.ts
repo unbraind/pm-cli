@@ -18,25 +18,17 @@ import {
   orientTransitiveEdge,
   transitiveFamilyKey,
 } from "./analytics.js";
+import { findRelationshipCutStructure } from "./centrality.js";
 import type { WorkspaceRelationshipAssembly } from "./assembly.js";
+import {
+  RELATIONSHIP_AUDIT_FINDING_CODES,
+  type RelationshipAuditFindingCode,
+} from "./governance-contracts.js";
+
+export type { RelationshipAuditFindingCode } from "./governance-contracts.js";
 
 /** Severity ladder shared by every relationship audit finding. */
 export type RelationshipAuditSeverity = "error" | "warning" | "info";
-
-/** Machine-readable identifier for one relationship audit finding family. */
-export type RelationshipAuditFindingCode =
-  | "missing_reference_active"
-  | "missing_reference_terminal"
-  | "legacy_no_blocker_sentinel"
-  | "ordering_cycle"
-  | "legacy_ordering_cycle"
-  | "duplicate_edge"
-  | "legacy_duplicate_edge"
-  | "duplicate_dependency_row"
-  | "legacy_duplicate_dependency_row"
-  | "stale_lifecycle_block"
-  | "isolated_active_node"
-  | "sparse_active_node";
 
 /** One policy-aware relationship audit finding with bounded evidence. */
 export interface RelationshipAuditFinding {
@@ -94,6 +86,34 @@ export interface RelationshipCoverageProfile {
   degree_leq_one_active_nodes: number;
   /** Deterministic per-type connectivity coverage; untyped nodes bucket under `(untyped)`. */
   coverage_by_type: Record<string, RelationshipCoverageTypeProfile>;
+  /** Undirected cut vertices whose removal increases the component count. */
+  articulation_points: number;
+  /** Undirected cut edges whose removal disconnects their endpoints. */
+  bridge_edges: number;
+  /** Milestone nodes whose title explicitly declares an outcome. */
+  outcome_nodes: number;
+  /** Active non-outcome nodes with a typed hierarchy or implements path to an outcome. */
+  active_outcome_reachable_nodes: number;
+  /** Active non-outcome nodes without a typed hierarchy or implements path to an outcome. */
+  active_outcome_unreachable_nodes: number;
+  /** Active typed-outcome reachability expressed as integer basis points. */
+  active_outcome_reachability_basis_points: number;
+  /** Terminal non-placeholder, non-outcome nodes included in the all-status census. */
+  terminal_nodes: number;
+  /** Terminal non-outcome nodes with a typed hierarchy or implements path to an outcome. */
+  terminal_outcome_reachable_nodes: number;
+  /** Terminal non-outcome nodes without a typed hierarchy or implements path to an outcome. */
+  terminal_outcome_unreachable_nodes: number;
+  /** Terminal typed-outcome reachability expressed as integer basis points. */
+  terminal_outcome_reachability_basis_points: number;
+  /** All active and terminal non-outcome nodes with a typed path to an outcome. */
+  outcome_reachable_nodes: number;
+  /** All active and terminal non-outcome nodes without a typed path to an outcome. */
+  outcome_unreachable_nodes: number;
+  /** All-status typed-outcome reachability expressed as integer basis points. */
+  outcome_reachability_basis_points: number;
+  /** Affected-subject census containing every known finding code, including zero populations. */
+  finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>;
 }
 
 /** Tuning and policy inputs accepted by the relationship audit. */
@@ -122,6 +142,10 @@ export interface RelationshipAuditReport {
 
 /** Default bounded sample size applied to every finding family. */
 const DEFAULT_MAX_SAMPLE_SIZE = 25;
+
+/** Canonical item type and title marker that identify explicit outcomes. */
+const OUTCOME_MILESTONE_TYPE = "milestone";
+const OUTCOME_MILESTONE_TITLE_PREFIX = "outcome milestone:";
 
 /** Relationship kinds that preserve why work exists or how evidence supports it. */
 const SEMANTIC_CONTEXT_KINDS = new Set([
@@ -669,6 +693,154 @@ interface CoverageTallies {
   byType: Map<string, RelationshipCoverageTypeProfile>;
 }
 
+/** Outcome-reachability census over typed hierarchy and implementation edges. */
+interface OutcomeReachabilityProfile {
+  /** Explicit outcome milestone count. */
+  outcome_nodes: number;
+  /** Active non-outcome nodes that reach an outcome. */
+  active_outcome_reachable_nodes: number;
+  /** Active non-outcome nodes that do not reach an outcome. */
+  active_outcome_unreachable_nodes: number;
+  /** Active typed-outcome reachability expressed as integer basis points. */
+  active_outcome_reachability_basis_points: number;
+  /** Terminal non-outcome nodes included in the census. */
+  terminal_nodes: number;
+  /** Terminal non-outcome nodes that reach an outcome. */
+  terminal_outcome_reachable_nodes: number;
+  /** Terminal non-outcome nodes that do not reach an outcome. */
+  terminal_outcome_unreachable_nodes: number;
+  /** Terminal typed-outcome reachability expressed as integer basis points. */
+  terminal_outcome_reachability_basis_points: number;
+  /** All active and terminal non-outcome nodes that reach an outcome. */
+  outcome_reachable_nodes: number;
+  /** All active and terminal non-outcome nodes that do not reach an outcome. */
+  outcome_unreachable_nodes: number;
+  /** All-status typed-outcome reachability expressed as integer basis points. */
+  outcome_reachability_basis_points: number;
+}
+
+/** Build the reverse typed paths that can carry context toward an outcome. */
+function buildOutcomeReverseIndex(
+  assembly: WorkspaceRelationshipAssembly,
+  signal: AbortSignal | undefined,
+): Map<string, Set<string>> {
+  const reverse = new Map<string, Set<string>>();
+  for (const edge of assembly.graph.edges()) {
+    signal?.throwIfAborted();
+    const definition = assembly.graph.registry().require(edge.kind);
+    let oriented: { from: string; to: string } | undefined;
+    if (definition.hierarchy) {
+      oriented = orientTransitiveEdge(edge, definition);
+    } else if (definition.kind === "implements") {
+      oriented = { from: edge.source, to: edge.target };
+    }
+    if (oriented === undefined) continue;
+    const sources = reverse.get(oriented.to) ?? new Set<string>();
+    sources.add(oriented.from);
+    reverse.set(oriented.to, sources);
+  }
+  return reverse;
+}
+
+/** Expand outcome nodes through every deterministic reverse typed path. */
+function expandOutcomeReachability(
+  outcomes: ReadonlySet<string>,
+  reverse: ReadonlyMap<string, ReadonlySet<string>>,
+  signal: AbortSignal | undefined,
+): Set<string> {
+  const reachable = new Set(outcomes);
+  const queue = [...outcomes].sort();
+  for (let index = 0; index < queue.length; index += 1) {
+    signal?.throwIfAborted();
+    for (const source of [...(reverse.get(queue[index]!) ?? [])].sort()) {
+      if (reachable.has(source)) continue;
+      reachable.add(source);
+      queue.push(source);
+    }
+  }
+  return reachable;
+}
+
+/** Count active and terminal nodes against the resolved outcome-reachable set. */
+function tallyOutcomeReachability(
+  nodeStates: ReadonlyMap<string, AuditNodeState>,
+  outcomes: ReadonlySet<string>,
+  reachable: ReadonlySet<string>,
+  signal: AbortSignal | undefined,
+): Omit<OutcomeReachabilityProfile, "outcome_nodes"> {
+  let activeReachable = 0;
+  let activeUnreachable = 0;
+  let terminal = 0;
+  let terminalReachable = 0;
+  for (const state of nodeStates.values()) {
+    signal?.throwIfAborted();
+    if (outcomes.has(state.id)) continue;
+    if (state.missing || state.status === "external") continue;
+    if (state.terminal) {
+      terminal += 1;
+      if (reachable.has(state.id)) terminalReachable += 1;
+      continue;
+    }
+    if (reachable.has(state.id)) activeReachable += 1;
+    else activeUnreachable += 1;
+  }
+  const active = activeReachable + activeUnreachable;
+  const terminalUnreachable = terminal - terminalReachable;
+  const outcomeReachable = activeReachable + terminalReachable;
+  const outcomeUnreachable = activeUnreachable + terminalUnreachable;
+  const outcomePopulation = outcomeReachable + outcomeUnreachable;
+  return {
+    active_outcome_reachable_nodes: activeReachable,
+    active_outcome_unreachable_nodes: activeUnreachable,
+    active_outcome_reachability_basis_points:
+      active === 0 ? 0 : Math.floor((activeReachable * 10_000) / active),
+    terminal_nodes: terminal,
+    terminal_outcome_reachable_nodes: terminalReachable,
+    terminal_outcome_unreachable_nodes: terminalUnreachable,
+    terminal_outcome_reachability_basis_points:
+      terminal === 0 ? 0 : Math.floor((terminalReachable * 10_000) / terminal),
+    outcome_reachable_nodes: outcomeReachable,
+    outcome_unreachable_nodes: outcomeUnreachable,
+    outcome_reachability_basis_points:
+      outcomePopulation === 0
+        ? 0
+        : Math.floor((outcomeReachable * 10_000) / outcomePopulation),
+  };
+}
+
+/**
+ * Count nodes with an explicit typed path to an outcome milestone. Hierarchy
+ * edges flow child to parent and `implements` flows implementation to outcome;
+ * unrelated association edges deliberately contribute no reachability.
+ */
+function profileOutcomeReachability(
+  assembly: WorkspaceRelationshipAssembly,
+  nodeStates: ReadonlyMap<string, AuditNodeState>,
+  signal: AbortSignal | undefined,
+): OutcomeReachabilityProfile {
+  const outcomes = new Set(
+    assembly.details
+      .filter(
+        (detail) =>
+          detail.type?.toLowerCase() === OUTCOME_MILESTONE_TYPE &&
+          detail.title
+            .trim()
+            .toLowerCase()
+            .startsWith(OUTCOME_MILESTONE_TITLE_PREFIX),
+      )
+      .map((detail) => detail.id),
+  );
+  const reachable = expandOutcomeReachability(
+    outcomes,
+    buildOutcomeReverseIndex(assembly, signal),
+    signal,
+  );
+  return {
+    outcome_nodes: outcomes.size,
+    ...tallyOutcomeReachability(nodeStates, outcomes, reachable, signal),
+  };
+}
+
 /** Fold one active node's degree into the aggregate and per-type coverage tallies. */
 function tallyActiveCoverageNode(
   tallies: CoverageTallies,
@@ -708,6 +880,7 @@ function collectCoverageReport(
   isolateExemptTypes: Set<string>,
   maxSampleSize: number,
   edgesByKind: Record<string, number>,
+  signal: AbortSignal | undefined,
 ): RelationshipAuditReport {
   const tallies: CoverageTallies = {
     active: 0,
@@ -719,6 +892,7 @@ function collectCoverageReport(
     byType: new Map(),
   };
   for (const id of assembly.graph.nodes()) {
+    signal?.throwIfAborted();
     const state = nodeStates.get(id);
     /* c8 ignore next -- every graph node originates from assembly details by construction */
     if (!state) continue;
@@ -768,6 +942,14 @@ function collectCoverageReport(
       count + (isSemanticContextKind(kind) ? value : 0),
     0,
   );
+  const cutStructure = findRelationshipCutStructure(assembly.graph, {
+    signal,
+  }).value;
+  const outcomeReachability = profileOutcomeReachability(
+    assembly,
+    nodeStates,
+    signal,
+  );
   return {
     findings,
     profile: {
@@ -792,6 +974,12 @@ function collectCoverageReport(
           left < right ? -1 : 1,
         ),
       ),
+      articulation_points: cutStructure.articulationPoints.length,
+      bridge_edges: cutStructure.bridges.length,
+      ...outcomeReachability,
+      finding_subjects_by_code: Object.fromEntries(
+        RELATIONSHIP_AUDIT_FINDING_CODES.map((code) => [code, 0]),
+      ) as Record<RelationshipAuditFindingCode, number>,
     },
   };
 }
@@ -869,6 +1057,7 @@ export function auditWorkspaceRelationshipGraph(
     isolateExemptTypes,
     maxSampleSize,
     edgesByKind,
+    options.signal,
   );
   findings.push(...coverage.findings);
 
@@ -878,9 +1067,16 @@ export function auditWorkspaceRelationshipGraph(
       left.code.localeCompare(right.code) ||
       left.sample[0]!.localeCompare(right.sample[0]!),
   );
+  const findingSubjectsByCode = coverage.profile.finding_subjects_by_code;
+  for (const finding of findings) {
+    findingSubjectsByCode[finding.code] += finding.count;
+  }
   return {
     findings,
-    profile: coverage.profile,
+    profile: {
+      ...coverage.profile,
+      finding_subjects_by_code: findingSubjectsByCode,
+    },
   };
 }
 

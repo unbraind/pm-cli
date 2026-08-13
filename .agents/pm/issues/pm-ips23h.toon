@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:ci","area:governance",graph,quality-gate,recurrence
 created_at: "2026-08-04T05:48:43.072Z"
-updated_at: "2026-08-04T16:43:05.509Z"
+updated_at: "2026-08-12T22:36:34.846Z"
 closed_at: "2026-08-04T16:43:04.970Z"
 completed_at: "2026-08-04T16:43:04.970Z"
 author: "harness:claude-code"
@@ -44,17 +44,17 @@ comments[5]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-08-04T14:53:37.047Z","harness:codex","A tracker measurement becomes durable project context only when selector, ceiling, owner, provenance, and retirement semantics are executable. Exhaustive sources must fail on undeclared keys, while bounded mutation receipts keep regression output actionable and token-efficient."
 files[9]{path,scope,note}:
+  .agents/pm/assurance.json,project,owner-linked shrinking-only population declarations
   .agents/pm/extensions/.managed-extensions.json,project,Pins the latest installed pm-changelog package used to generate and verify CHANGELOG.md.
   .github/workflows/ci.yml,project,hosted negative-control and real-tracker enforcement
   package.json,project,Composes the tracker ratchet into the repository-wide static quality command.
   scripts/release/gate-registry.json,project,hosted gate ownership and failure taxonomy
-  scripts/release/tracker-measurement-gate.mjs,project,generic measured-population evaluator and negative control
-  scripts/release/tracker-measurements.json,project,owner-linked shrinking-only population declarations
+  src/sdk/governance/assurance-runtime.ts,project,generic measured-population evaluator and negative control
   tests/integration/release-automation-contract.spec.ts,project,Keeps release automation contract aligned with the expanded static quality command.
   tests/integration/release-readiness-runtime.spec.ts,project,Keeps runtime release-readiness assertions aligned with the expanded static quality command.
-  tests/unit/scripts/release/tracker-measurement-gate.spec.ts,project,fail-closed evaluator and CLI coverage
+  tests/unit/sdk/assurance-runtime.spec.ts,project,fail-closed evaluator and CLI coverage
 tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/scripts/release/tracker-measurement-gate.spec.ts tests/unit/scripts/release/gate-registry.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance-runtime.spec.ts tests/unit/sdk/graph/structural-governance.spec.ts tests/unit/scripts/release/gate-registry.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mses1w9p-puydnz,test,passed,"2026-08-04T14:52:28.476Z","2026-08-04T14:52:39.709Z","2026-08-04T14:52:39.709Z",1,0,0
   test-local-mseuu1c1-5i0f71,test,passed,"2026-08-04T16:10:21.904Z","2026-08-04T16:10:31.873Z","2026-08-04T16:10:31.873Z",1,0,0

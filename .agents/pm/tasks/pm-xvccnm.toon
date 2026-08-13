@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:release",auto-release,ci-parity,merge-safety,tracker-measurement
 created_at: "2026-08-05T08:57:55.010Z"
-updated_at: "2026-08-05T09:19:25.871Z"
+updated_at: "2026-08-12T22:35:07.550Z"
 closed_at: "2026-08-05T09:19:25.163Z"
 completed_at: "2026-08-05T09:19:25.163Z"
 author: "harness:codex"
@@ -34,13 +34,13 @@ comments[3]{created_at,author,text}:
 files[1]{path,scope,note}:
   scripts/release/run-release-pipeline.mjs,project,build-and-merge-bootstrap
 tests[2]:
-  - command: node dist/cli.js merge install --no-extensions && node scripts/release/tracker-measurement-gate.mjs --json
-    scope: project
-    timeout_seconds: 240
-    pm_context_mode: tracker
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts
     scope: project
     timeout_seconds: 240
+  - command: node dist/cli.js merge install --no-extensions && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json
+    scope: project
+    timeout_seconds: 240
+    pm_context_mode: tracker
 test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msfuucl5-ubulfq,test,passed,"2026-08-05T08:58:13.266Z","2026-08-05T08:58:32.633Z","2026-08-05T08:58:32.633Z",1,0,0
   test-local-msfvclvg-sv017l,test,failed,"2026-08-05T09:11:44.497Z","2026-08-05T09:12:44.476Z","2026-08-05T09:12:44.476Z",1,1,0

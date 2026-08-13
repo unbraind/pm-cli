@@ -23,8 +23,11 @@ import {
 import { acquireLock } from "../../core/lock/lock.js";
 import {
   isSemanticContextKind,
+  type RelationshipAuditFindingCode,
   type RelationshipAuditSnapshot,
+  type RelationshipCoverageProfile,
 } from "./governance.js";
+import { RELATIONSHIP_AUDIT_FINDING_CODES } from "./governance-contracts.js";
 
 /** Envelope format version; any change invalidates persisted entries. */
 export const GRAPH_DURABLE_CACHE_VERSION = 1;
@@ -287,6 +290,105 @@ interface DecodedGraphComposition {
   semantic_edge_share: number;
 }
 
+type DecodedStructuralProfile = Pick<
+  RelationshipCoverageProfile,
+  | "edge_basis"
+  | "articulation_points"
+  | "bridge_edges"
+  | "outcome_nodes"
+  | "active_outcome_reachable_nodes"
+  | "active_outcome_unreachable_nodes"
+  | "active_outcome_reachability_basis_points"
+  | "terminal_nodes"
+  | "terminal_outcome_reachable_nodes"
+  | "terminal_outcome_unreachable_nodes"
+  | "terminal_outcome_reachability_basis_points"
+  | "outcome_reachable_nodes"
+  | "outcome_unreachable_nodes"
+  | "outcome_reachability_basis_points"
+  | "finding_subjects_by_code"
+>;
+
+/** Decode optional structural fields while normalizing pre-structure baselines. */
+function decodeStructuralProfile(
+  profile: Record<string, unknown>,
+  affectedSubjectsByCode: Record<string, number>,
+): DecodedStructuralProfile | undefined {
+  const countFields = [
+    "articulation_points",
+    "bridge_edges",
+    "outcome_nodes",
+    "active_outcome_reachable_nodes",
+    "active_outcome_unreachable_nodes",
+    "terminal_nodes",
+    "terminal_outcome_reachable_nodes",
+    "terminal_outcome_unreachable_nodes",
+    "outcome_reachable_nodes",
+    "outcome_unreachable_nodes",
+  ] as const;
+  const rateFields = [
+    "active_outcome_reachability_basis_points",
+    "terminal_outcome_reachability_basis_points",
+    "outcome_reachability_basis_points",
+  ] as const;
+  const introducedStructuralFields = [
+    ...countFields,
+    ...rateFields,
+    "finding_subjects_by_code",
+  ] as const;
+  const introducedStructuralFieldCount = introducedStructuralFields.filter(
+    (field) => profile[field] !== undefined,
+  ).length;
+  if (
+    introducedStructuralFieldCount !== 0 &&
+    introducedStructuralFieldCount !== introducedStructuralFields.length
+  ) {
+    return undefined;
+  }
+  const validCounts = countFields.every(
+    (field) =>
+      profile[field] === undefined || isNonnegativeInteger(profile[field]),
+  );
+  const validRates = rateFields.every(
+    (field) =>
+      profile[field] === undefined ||
+      (isNonnegativeInteger(profile[field]) && Number(profile[field]) <= 10_000),
+  );
+  if (!validCounts || !validRates) return undefined;
+  if (
+    profile.edge_basis !== undefined &&
+    profile.edge_basis !== "deduplicated_directed"
+  )
+    return undefined;
+  if (
+    !isOptionalValid(
+      profile.finding_subjects_by_code,
+      isNonnegativeCountRecord,
+    )
+  )
+    return undefined;
+  const findingSubjects = isNonnegativeCountRecord(
+    profile.finding_subjects_by_code,
+  )
+    ? profile.finding_subjects_by_code
+    : {};
+  return {
+    edge_basis: "deduplicated_directed",
+    ...Object.fromEntries(
+      countFields.map((field) => [field, profile[field] ?? 0]),
+    ),
+    ...Object.fromEntries(
+      rateFields.map((field) => [field, profile[field] ?? 0]),
+    ),
+    finding_subjects_by_code: Object.fromEntries(
+      RELATIONSHIP_AUDIT_FINDING_CODES.map((code) => [
+        code,
+        findingSubjects[code] ?? affectedSubjectsByCode[code] ?? 0,
+      ]),
+    ) as Record<RelationshipAuditFindingCode, number>,
+  } as DecodedStructuralProfile;
+}
+
 /** Decode and cross-check optional graph-composition fields as one coherent unit. */
 function decodeGraphComposition(
   edges: number,
@@ -357,7 +459,8 @@ function decodeBaseline(
     const profile = snapshot.profile;
     if (typeof snapshot.saved_at !== "string") return undefined;
     if (typeof snapshot.fingerprint !== "string") return undefined;
-    if (!isNonnegativeCountRecord(snapshot.affected_subjects_by_code)) {
+    const affectedSubjectsByCode = snapshot.affected_subjects_by_code;
+    if (!isNonnegativeCountRecord(affectedSubjectsByCode)) {
       return undefined;
     }
     if (!isRecord(profile)) return undefined;
@@ -390,12 +493,18 @@ function decodeBaseline(
       profile.semantic_edge_share,
     );
     if (composition === undefined) return undefined;
+    const structural = decodeStructuralProfile(
+      profile,
+      affectedSubjectsByCode,
+    );
+    if (structural === undefined) return undefined;
     const { coverage_by_type = {} } = profile;
     return {
       ...snapshot,
       profile: {
         ...profile,
         ...composition,
+        ...structural,
         coverage_by_type,
       },
     } as RelationshipAuditSnapshot;
