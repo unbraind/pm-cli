@@ -217,6 +217,7 @@ function calendarCommand(name: "calendar" | "cal"): CommandDefinition {
     name,
     action: "calendar",
     description: "Show deadline, reminder, and scheduled event calendar views.",
+    intent: "Inspect time-bounded project context across schedules and work.",
     arguments: [
       {
         name: "view",

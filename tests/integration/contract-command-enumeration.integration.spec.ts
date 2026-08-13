@@ -39,7 +39,14 @@ describe("contract command enumeration", () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["--no-extensions", "--help"]).stdout;
       const contracts = context.runCli(
-        ["--no-extensions", "contracts", "--flags-only", "--json"],
+        [
+          "--no-extensions",
+          "contracts",
+          "--flags-only",
+          "--json",
+          "--output-budget",
+          "unbounded",
+        ],
         { expectJson: true },
       ).json as FlagsOnlyContracts;
       const helpCommands = rootHelpCommandSpellings(help);
@@ -68,7 +75,14 @@ describe("contract command enumeration", () => {
   it("resolves structured help for every contract-enumerated command path", async () => {
     await withTempPmPath(async (context) => {
       const contracts = context.runCli(
-        ["--no-extensions", "contracts", "--flags-only", "--json"],
+        [
+          "--no-extensions",
+          "contracts",
+          "--flags-only",
+          "--json",
+          "--output-budget",
+          "unbounded",
+        ],
         { expectJson: true },
       ).json as FlagsOnlyContracts;
 

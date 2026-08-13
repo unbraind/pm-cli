@@ -2,7 +2,7 @@
   "version": 3,
   "metric": "utf8_bytes",
   "token_estimate": "ceil(bytes / 4)",
-  "fixture": "isolated PM_PATH and PM_GLOBAL_PATH with 27 deterministic linked items",
+  "fixture": "isolated PM_PATH and PM_GLOBAL_PATH with 27 deterministic linked items, 32 comments, 16 notes, governance audit, and an assurance gate",
   "policy": "all surfaces use ratcheted byte ceilings; answer surfaces also use live command contracts",
   "budgets": [
     {
@@ -12,11 +12,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 12290,
-      "baseline_estimated_tokens": 3073,
-      "baseline_lines": 108,
-      "max_bytes": 13520,
-      "max_estimated_tokens": 3381
+      "baseline_bytes": 12888,
+      "baseline_estimated_tokens": 3222,
+      "baseline_lines": 112,
+      "max_bytes": 14177,
+      "max_estimated_tokens": 3545
     },
     {
       "id": "search-help",
@@ -54,11 +54,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 8651,
-      "baseline_estimated_tokens": 2163,
-      "baseline_lines": 106,
-      "max_bytes": 9517,
-      "max_estimated_tokens": 2380
+      "baseline_bytes": 8890,
+      "baseline_estimated_tokens": 2223,
+      "baseline_lines": 111,
+      "max_bytes": 9779,
+      "max_estimated_tokens": 2446
     },
     {
       "id": "contracts-summary-json",
@@ -69,11 +69,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 10860,
-      "baseline_estimated_tokens": 2715,
-      "baseline_lines": 505,
-      "max_bytes": 11947,
-      "max_estimated_tokens": 2987
+      "baseline_bytes": 20304,
+      "baseline_estimated_tokens": 5076,
+      "baseline_lines": 835,
+      "max_bytes": 22335,
+      "max_estimated_tokens": 5584
     },
     {
       "id": "contracts-flags-json",
@@ -84,11 +84,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 141244,
-      "baseline_estimated_tokens": 35311,
-      "baseline_lines": 7534,
-      "max_bytes": 155369,
-      "max_estimated_tokens": 38843
+      "baseline_bytes": 645,
+      "baseline_estimated_tokens": 162,
+      "baseline_lines": 27,
+      "max_bytes": 710,
+      "max_estimated_tokens": 179
     },
     {
       "id": "list-default",
@@ -134,7 +134,62 @@
       "max_bytes": 4927,
       "max_estimated_tokens": 1232,
       "command": "list",
-      "contract_max_estimated_tokens": 4000
+      "contract_max_estimated_tokens": 6000
+    },
+    {
+      "id": "comments-audit-full-history",
+      "args": [
+        "comments-audit",
+        "--full-history",
+        "--json"
+      ],
+      "kind": "answer",
+      "scale_tier": "depth-heavy",
+      "baseline_bytes": 15714,
+      "baseline_estimated_tokens": 3929,
+      "baseline_lines": 434,
+      "max_bytes": 17286,
+      "max_estimated_tokens": 4322,
+      "command": "comments-audit",
+      "contract_max_estimated_tokens": 6000
+    },
+    {
+      "id": "notes-depth-heavy",
+      "args": [
+        "notes",
+        "<fixture-item>",
+        "--json"
+      ],
+      "kind": "answer",
+      "scale_tier": "depth-heavy",
+      "baseline_bytes": 5773,
+      "baseline_estimated_tokens": 1444,
+      "baseline_lines": 86,
+      "max_bytes": 6351,
+      "max_estimated_tokens": 1589,
+      "command": "notes",
+      "contract_max_estimated_tokens": 3000
+    },
+    {
+      "id": "assurance-run-depth-heavy",
+      "args": [
+        "assurance",
+        "run",
+        "preset-operations-readiness",
+        "--trigger",
+        "ci",
+        "--dry-run",
+        "--json"
+      ],
+      "kind": "answer",
+      "scale_tier": "depth-heavy",
+      "baseline_bytes": 2850,
+      "baseline_estimated_tokens": 713,
+      "baseline_lines": 126,
+      "max_bytes": 3136,
+      "max_estimated_tokens": 785,
+      "command": "assurance",
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "get-default",
@@ -144,11 +199,11 @@
       ],
       "kind": "answer",
       "scale_tier": "linked",
-      "baseline_bytes": 923,
-      "baseline_estimated_tokens": 231,
-      "baseline_lines": 36,
-      "max_bytes": 1016,
-      "max_estimated_tokens": 255,
+      "baseline_bytes": 953,
+      "baseline_estimated_tokens": 239,
+      "baseline_lines": 37,
+      "max_bytes": 1049,
+      "max_estimated_tokens": 263,
       "command": "get",
       "contract_max_estimated_tokens": 4000
     },
@@ -163,13 +218,13 @@
       ],
       "kind": "answer",
       "scale_tier": "linked",
-      "baseline_bytes": 763,
-      "baseline_estimated_tokens": 191,
-      "baseline_lines": 36,
-      "max_bytes": 840,
-      "max_estimated_tokens": 211,
+      "baseline_bytes": 846,
+      "baseline_estimated_tokens": 212,
+      "baseline_lines": 40,
+      "max_bytes": 931,
+      "max_estimated_tokens": 234,
       "command": "get",
-      "contract_max_estimated_tokens": 4000
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "context-default",
@@ -178,11 +233,11 @@
       ],
       "kind": "answer",
       "scale_tier": "medium",
-      "baseline_bytes": 4133,
-      "baseline_estimated_tokens": 1034,
-      "baseline_lines": 179,
-      "max_bytes": 4547,
-      "max_estimated_tokens": 1138,
+      "baseline_bytes": 4244,
+      "baseline_estimated_tokens": 1061,
+      "baseline_lines": 185,
+      "max_bytes": 4669,
+      "max_estimated_tokens": 1168,
       "command": "context",
       "contract_max_estimated_tokens": 4000
     },
@@ -208,11 +263,11 @@
       ],
       "kind": "answer",
       "scale_tier": "medium",
-      "baseline_bytes": 2563,
-      "baseline_estimated_tokens": 641,
-      "baseline_lines": 44,
-      "max_bytes": 2820,
-      "max_estimated_tokens": 706,
+      "baseline_bytes": 2622,
+      "baseline_estimated_tokens": 656,
+      "baseline_lines": 46,
+      "max_bytes": 2885,
+      "max_estimated_tokens": 722,
       "command": "activity",
       "contract_max_estimated_tokens": 4000
     },
@@ -263,7 +318,7 @@
       "max_bytes": 780,
       "max_estimated_tokens": 196,
       "command": "deps",
-      "contract_max_estimated_tokens": 4000
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "graph-audit-summary",
@@ -275,13 +330,13 @@
       ],
       "kind": "answer",
       "scale_tier": "medium",
-      "baseline_bytes": 2433,
-      "baseline_estimated_tokens": 609,
-      "baseline_lines": 98,
-      "max_bytes": 2677,
-      "max_estimated_tokens": 670,
+      "baseline_bytes": 2646,
+      "baseline_estimated_tokens": 662,
+      "baseline_lines": 104,
+      "max_bytes": 2911,
+      "max_estimated_tokens": 729,
       "command": "graph",
-      "contract_max_estimated_tokens": 4000
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "duplicates-default",
@@ -299,7 +354,7 @@
       "max_bytes": 412,
       "max_estimated_tokens": 104,
       "command": "duplicates",
-      "contract_max_estimated_tokens": 4000
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "events-default",
@@ -310,11 +365,11 @@
       ],
       "kind": "answer",
       "scale_tier": "medium",
-      "baseline_bytes": 6411,
-      "baseline_estimated_tokens": 1603,
+      "baseline_bytes": 6292,
+      "baseline_estimated_tokens": 1573,
       "baseline_lines": 20,
-      "max_bytes": 7053,
-      "max_estimated_tokens": 1764,
+      "max_bytes": 6922,
+      "max_estimated_tokens": 1731,
       "command": "events",
       "contract_max_estimated_tokens": 4000
     },
@@ -342,11 +397,11 @@
       ],
       "kind": "answer",
       "scale_tier": "medium",
-      "baseline_bytes": 5648,
-      "baseline_estimated_tokens": 1412,
-      "baseline_lines": 177,
-      "max_bytes": 6213,
-      "max_estimated_tokens": 1554,
+      "baseline_bytes": 5759,
+      "baseline_estimated_tokens": 1440,
+      "baseline_lines": 180,
+      "max_bytes": 6335,
+      "max_estimated_tokens": 1585,
       "command": "validate",
       "contract_max_estimated_tokens": 6000
     },
@@ -381,7 +436,7 @@
       "max_bytes": 978,
       "max_estimated_tokens": 246,
       "command": "search",
-      "contract_max_estimated_tokens": 4000
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "context-intent-orient",
@@ -393,13 +448,13 @@
       ],
       "kind": "answer",
       "scale_tier": "medium",
-      "baseline_bytes": 5475,
-      "baseline_estimated_tokens": 1369,
-      "baseline_lines": 238,
-      "max_bytes": 6023,
-      "max_estimated_tokens": 1506,
+      "baseline_bytes": 5679,
+      "baseline_estimated_tokens": 1420,
+      "baseline_lines": 249,
+      "max_bytes": 6247,
+      "max_estimated_tokens": 1563,
       "command": "context",
-      "contract_max_estimated_tokens": 4000
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "get-intent-inspect",
@@ -412,13 +467,13 @@
       ],
       "kind": "answer",
       "scale_tier": "linked",
-      "baseline_bytes": 1830,
-      "baseline_estimated_tokens": 458,
-      "baseline_lines": 83,
-      "max_bytes": 2014,
-      "max_estimated_tokens": 504,
+      "baseline_bytes": 1916,
+      "baseline_estimated_tokens": 479,
+      "baseline_lines": 87,
+      "max_bytes": 2108,
+      "max_estimated_tokens": 527,
       "command": "get",
-      "contract_max_estimated_tokens": 4000
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "list-intent-triage",
@@ -436,7 +491,7 @@
       "max_bytes": 9442,
       "max_estimated_tokens": 2361,
       "command": "list",
-      "contract_max_estimated_tokens": 4000
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "next-intent-execute",
@@ -454,7 +509,7 @@
       "max_bytes": 2413,
       "max_estimated_tokens": 604,
       "command": "next",
-      "contract_max_estimated_tokens": 4000
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "search-intent-discover",
@@ -473,7 +528,7 @@
       "max_bytes": 1611,
       "max_estimated_tokens": 403,
       "command": "search",
-      "contract_max_estimated_tokens": 4000
+      "contract_max_estimated_tokens": 6000
     }
   ]
 }

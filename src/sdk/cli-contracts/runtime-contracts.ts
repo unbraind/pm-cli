@@ -407,8 +407,13 @@ interface CommandSummarySurface {
   command: string;
   aliases?: string[];
   intent: string;
+  intent_source: "command" | "description" | "generated";
   flags?: string[];
   default_max_estimated_tokens: number;
+  default_max_estimated_tokens_by_format: {
+    toon: number;
+    json: number;
+  };
 }
 
 const AGENT_BOOTSTRAP_FLAGS = new Map<string, readonly string[]>([
@@ -639,19 +644,33 @@ const COMMAND_INTENTS = new Map<string, string>([
   ["activity", "Read activity."],
   ["aggregate", "Group counts."],
   ["append", "Append body."],
+  ["assurance", "Evaluate assurance."],
+  ["beads", "Manage Beads interoperability."],
+  ["cal", "Manage calendar integration."],
+  ["calendar", "Manage calendar integration."],
+  ["changelog", "Generate changelog output."],
   ["claim", "Claim work."],
   ["close", "Close work."],
+  ["close-many", "Close matching work."],
+  ["close-task", "Close task work."],
+  ["command-kit", "Inspect command authoring primitives."],
   ["comments", "Manage comments."],
+  ["comments-audit", "Audit comment governance."],
   ["completion", "Generate shell completions."],
   ["config", "Manage settings."],
   ["context", "Build context."],
   ["contracts", "Inspect contracts."],
   ["copy", "Copy work."],
   ["create", "Create work."],
+  ["dedupe-audit", "Audit duplicate work."],
+  ["dedupe-merge", "Merge duplicate work."],
   ["delete", "Delete work."],
   ["deps", "Manage deps."],
   ["duplicates", "Find duplicate clusters."],
   ["docs", "Link docs."],
+  ["eval", "Run evaluations."],
+  ["event", "Manage events."],
+  ["events", "Read events."],
   ["files", "Link files."],
   ["focus", "Manage focus."],
   ["gc", "Clean caches."],
@@ -663,26 +682,53 @@ const COMMAND_INTENTS = new Map<string, string>([
   ["history", "Inspect history."],
   ["init", "Initialize workspace."],
   ["install", "Install packages."],
+  ["item", "Mutate work through typed operations."],
   ["learnings", "Manage learnings."],
   ["list", "List work."],
+  ["list-all", "List work across every status."],
+  ["list-blocked", "List blocked work."],
+  ["list-canceled", "List canceled work."],
+  ["list-closed", "List closed work."],
+  ["list-draft", "List draft work."],
+  ["list-in-progress", "List in-progress work."],
+  ["list-open", "List open work."],
+  ["meet", "Record meeting context."],
+  ["merge", "Manage tracker merges."],
   ["next", "Pick next work."],
   ["notes", "Manage notes."],
+  ["normalize", "Normalize tracker data."],
   ["ops", "Run operations."],
   ["package", "Manage packages."],
+  ["packages", "Manage packages."],
+  ["pause-task", "Pause task work."],
   ["plan", "Manage plans."],
   ["profile", "Manage profiles."],
   ["reindex", "Refresh search index."],
   ["release", "Release claim."],
+  ["remind", "Manage reminders."],
   ["restore", "Restore history."],
   ["schema", "Customize schema."],
   ["search", "Search work."],
+  ["search-advanced", "Run advanced search."],
+  ["start-task", "Start task work."],
   ["stats", "Show stats."],
   ["telemetry", "Manage telemetry."],
+  ["templates", "Manage work templates."],
   ["test", "Run linked tests."],
+  ["test-all", "Run all linked tests."],
+  ["test-runs", "Inspect background test runs."],
+  ["todos", "Manage source-code todos."],
+  ["twin", "Manage repository twins."],
   ["update", "Update work."],
+  ["update-many", "Update matching work."],
   ["upgrade", "Upgrade packages."],
   ["validate", "Validate data."],
+  ["vcs", "Inspect version-control context."],
   ["workspace", "Manage portable workspace primitives."],
+  ["history-author-acknowledge", "Acknowledge reviewed history authors."],
+  ["history-compact", "Compact history."],
+  ["history-redact", "Redact sensitive history values."],
+  ["history-repair", "Repair history integrity."],
 ]);
 
 // Lifecycle subcommand flag contracts for `pm extension`. Only `init` differs
@@ -2475,67 +2521,117 @@ function resolveOutputCommands(
   return commands;
 }
 
-function summarizeCommandIntent(command: string): string {
-  const rootCommand = command.split(" ")[0];
-  return (
-    COMMAND_INTENTS.get(command) ??
-    COMMAND_INTENTS.get(rootCommand) ??
-    "Inspect flags."
-  );
+function canonicalSummaryCommand(command: string): string {
+  const rootCommand = command.split(" ")[0]!;
+  if (rootCommand.startsWith("list-")) return "list";
+  if (rootCommand.startsWith("history-")) return "history";
+  return COMMAND_ALIAS_TO_CANONICAL.get(rootCommand) ?? rootCommand;
 }
 
-function canonicalSummaryCommand(command: string): string {
-  const rootCommand = command.split(" ")[0];
-  if (rootCommand.startsWith("list-")) {
-    return "list";
+const COMMAND_OPERATION_INTENTS = new Map<string, string>([
+  ["activate", "Activate"],
+  ["adopt", "Adopt"],
+  ["adopt-all", "Adopt all"],
+  ["catalog", "Catalog"],
+  ["complete", "Complete"],
+  ["create", "Create"],
+  ["deactivate", "Deactivate"],
+  ["delete", "Delete"],
+  ["describe", "Describe"],
+  ["doctor", "Diagnose"],
+  ["explore", "Explore"],
+  ["init", "Initialize"],
+  ["inspect", "Inspect"],
+  ["install", "Install"],
+  ["list", "List"],
+  ["manage", "Manage"],
+  ["migrate", "Migrate"],
+  ["mutate", "Mutate"],
+  ["reload", "Reload"],
+  ["restore", "Restore"],
+  ["run", "Run"],
+  ["snapshot", "Manage snapshots for"],
+  ["uninstall", "Uninstall"],
+]);
+
+function summarizeCommandIntent(
+  command: string,
+  extensionContracts: readonly ExtensionCommandContract[],
+): Pick<CommandSummarySurface, "intent" | "intent_source"> {
+  const declared =
+    COMMAND_INTENTS.get(command) ??
+    (command.includes(" ")
+      ? undefined
+      : COMMAND_INTENTS.get(canonicalSummaryCommand(command)));
+  if (declared !== undefined) {
+    return { intent: declared, intent_source: "command" };
   }
-  if (rootCommand.startsWith("history-")) {
-    return "history";
+  const extensionContract = extensionContracts.find((contract) =>
+    splitCommandPathAliases(contract.command).includes(command),
+  );
+  if (extensionContract?.intent !== null && extensionContract?.intent !== undefined) {
+    return { intent: extensionContract.intent, intent_source: "command" };
   }
-  if (rootCommand === "ctx") {
-    return "context";
+  if (
+    extensionContract?.description !== null &&
+    extensionContract?.description !== undefined
+  ) {
+    return {
+      intent: extensionContract.description,
+      intent_source: "description",
+    };
   }
-  if (rootCommand === "packages") {
-    return "package";
-  }
-  return COMMAND_ALIAS_TO_CANONICAL.get(rootCommand) ?? rootCommand;
+  const tokens = command.split(" ");
+  const operation = tokens.at(-1)!;
+  const subject = tokens.slice(0, -1).join(" ");
+  const verb = COMMAND_OPERATION_INTENTS.get(operation);
+  return {
+    intent:
+      verb === undefined || subject.length === 0
+        ? `Run ${command}.`
+        : `${verb} ${subject}.`,
+    intent_source: "generated",
+  };
 }
 
 function buildCommandSummarySurface(
   commands: readonly string[],
+  extensionContracts: readonly ExtensionCommandContract[] = [],
 ): CommandSummarySurface[] {
-  const rootsByCanonical = new Map<string, Set<string>>();
-  for (const command of commands) {
-    const root = command.split(" ")[0]!;
-    const canonical = canonicalSummaryCommand(root);
-    const roots = rootsByCanonical.get(canonical) ?? new Set<string>();
-    roots.add(root);
-    rootsByCanonical.set(canonical, roots);
-  }
-  const rootCommands = [...rootsByCanonical.keys()]
+  return [...new Set(commands.map(normalizeCommandPath))]
     .filter((command) => command.length > 0)
-    .sort((left, right) => left.localeCompare(right));
-  return rootCommands.map((command) => {
-    const budget = resolvePmCommandOutputBudget(command, {
-      generateFallback: true,
+    .sort((left, right) => left.localeCompare(right))
+    .map((command) => {
+      const budget = resolvePmCommandOutputBudget(command, {
+        generateFallback: true,
+      });
+      const rootCommand = command.split(" ")[0]!;
+      const canonicalRoot =
+        COMMAND_ALIAS_TO_CANONICAL.get(rootCommand) ??
+        (rootCommand.startsWith("list-")
+          ? "list"
+          : rootCommand.startsWith("history-")
+            ? "history"
+            : rootCommand);
+      const availableFlags = new Set(
+        resolveCoreCommandFlags(command).map((contract) => contract.flag),
+      );
+      const flags = (
+        AGENT_BOOTSTRAP_FLAGS.get(command) ??
+        AGENT_BOOTSTRAP_FLAGS.get(canonicalRoot) ??
+        AGENT_BOUNDED_FLAG_PRIORITY
+      ).filter((flag) => availableFlags.has(flag));
+      const intent = summarizeCommandIntent(command, extensionContracts);
+      return {
+        command,
+        ...intent,
+        ...(flags.length > 0 ? { flags } : {}),
+        default_max_estimated_tokens: budget.default_max_estimated_tokens,
+        default_max_estimated_tokens_by_format: {
+          ...budget.default_max_estimated_tokens_by_format,
+        },
+      };
     });
-    const availableFlags = new Set(
-      resolveCoreCommandFlags(command).map((contract) => contract.flag),
-    );
-    const flags = (
-      AGENT_BOOTSTRAP_FLAGS.get(command) ?? AGENT_BOUNDED_FLAG_PRIORITY
-    ).filter((flag) => availableFlags.has(flag));
-    const aliases = [...rootsByCanonical.get(command)!]
-      .filter((root) => root !== command)
-      .sort((left, right) => left.localeCompare(right));
-    return {
-      command,
-      ...(aliases.length > 0 ? { aliases } : {}),
-      intent: summarizeCommandIntent(command),
-      ...(flags.length > 0 ? { flags } : {}),
-      default_max_estimated_tokens: budget.default_max_estimated_tokens,
-    };
-  });
 }
 
 function buildCommandOutputContracts(
@@ -2785,8 +2881,12 @@ function attachCommanderAliasContractsResult(
 function attachAgentCommandContractsResult(
   result: ContractsResult,
   outputCommands: string[],
+  extensionCommandContracts: ExtensionCommandContract[],
 ): void {
-  result.command_summaries = buildCommandSummarySurface(outputCommands);
+  result.command_summaries = buildCommandSummarySurface(
+    outputCommands,
+    extensionCommandContracts,
+  );
   result.output_policy = {
     token_estimate: "ceil(utf8_bytes / 4)",
     degradation_ladder: [...PM_OUTPUT_DEGRADATION_STEPS],
@@ -2817,19 +2917,23 @@ export async function runContracts(
     actionContext,
     outputCommands,
   );
-
-  if (selection.summary || selection.fullOutput) {
-    attachAgentCommandContractsResult(result, outputCommands);
-  }
-  if (selection.summary) {
-    return result;
-  }
-  const commandAliases = buildCommandAliasSurface(commands);
   const extensionCommandContracts = resolveExtensionCommandContracts(
     selection,
     runtime,
     outputCommands,
   );
+
+  if (selection.summary || selection.fullOutput) {
+    attachAgentCommandContractsResult(
+      result,
+      outputCommands,
+      extensionCommandContracts,
+    );
+  }
+  if (selection.summary) {
+    return result;
+  }
+  const commandAliases = buildCommandAliasSurface(commands);
   if (!(selection.flagsOnly && !selection.fullOutput)) {
     attachRuntimeContractsResult(result, runtime);
   }

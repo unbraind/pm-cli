@@ -697,6 +697,7 @@ export function buildTwinCommands(): CommandDefinition[] {
       action: "twin-entity-create",
       description:
         "Create a stable facility or asset identity and its first immutable state event.",
+      intent: "Create one digital-twin entity with an attributable initial state.",
       arguments: ENTITY_ARGUMENT,
       flags: [
         { long: "--title", value_name: "text", value_type: "string" },
@@ -728,6 +729,7 @@ export function buildTwinCommands(): CommandDefinition[] {
       action: "twin-observe",
       description:
         "Append an attributable observation or correction with optimistic concurrency.",
+      intent: "Append a versioned observation to one digital-twin entity.",
       arguments: ENTITY_ARGUMENT,
       flags: [
         {
@@ -756,6 +758,7 @@ export function buildTwinCommands(): CommandDefinition[] {
       action: "twin-relate",
       description:
         "Append or supersede one typed containment, flow, or utility relationship.",
+      intent: "Record one typed relationship in the digital-twin topology.",
       arguments: ENTITY_ARGUMENT,
       flags: [
         {
@@ -789,6 +792,7 @@ export function buildTwinCommands(): CommandDefinition[] {
       action: "twin-query",
       description:
         "Query point-in-time state, topology, provenance, conflicts, invariants, and impact.",
+      intent: "Inspect one entity's point-in-time state and topology impact.",
       arguments: ENTITY_ARGUMENT,
       flags: [
         { long: "--at", value_name: "iso", value_type: "string" },
@@ -802,6 +806,7 @@ export function buildTwinCommands(): CommandDefinition[] {
       action: "twin-export",
       description:
         "Export a bounded shell-friendly event bundle with a tamper-evident checkpoint.",
+      intent: "Export a bounded portable digital-twin event bundle.",
       flags: [
         { long: "--at", value_name: "iso", value_type: "string" },
         { long: "--limit", value_name: "n", value_type: "number" },
@@ -813,6 +818,7 @@ export function buildTwinCommands(): CommandDefinition[] {
       action: "twin-import",
       description:
         "Validate and idempotently merge a portable offline replica bundle.",
+      intent: "Validate and merge an offline digital-twin replica bundle.",
       flags: [
         {
           long: "--payload",
@@ -828,6 +834,7 @@ export function buildTwinCommands(): CommandDefinition[] {
       action: "twin-verify",
       description:
         "Verify checkpoint integrity, deterministic replay, topology, and invariants.",
+      intent: "Verify digital-twin replay, checkpoint, topology, and invariants.",
       flags: [{ long: "--at", value_name: "iso", value_type: "string" }],
       run: runVerify,
     },

@@ -58,6 +58,7 @@ export function activate(api: ExtensionApi): void {
     {
       action: "beads-import",
       description: "Import Beads JSONL records into pm items.",
+      intent: "Import Beads records through audited pm item mutations.",
       failure_hints: [
         "Use the host-global --author <id> flag when an explicit mutation identity override is required.",
       ],

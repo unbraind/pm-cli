@@ -1123,6 +1123,10 @@ describe("contracts command runtime", () => {
             "--full",
           ],
           default_max_estimated_tokens: 3000,
+          default_max_estimated_tokens_by_format: {
+            toon: 3000,
+            json: 4500,
+          },
         }),
         expect.objectContaining({
           command: "list",
@@ -1168,7 +1172,33 @@ describe("contracts command runtime", () => {
       allows_unbounded_opt_out: true,
     });
     expect(result.commands).toEqual([]);
-    expect(JSON.stringify(result).length).toBeLessThan(12_000);
+    expect(JSON.stringify(result).length).toBeLessThan(40_000);
+  });
+
+  it("publishes one meaningful intent and budget for every exact command path", async () => {
+    const result = await runContracts({ full: true }, GLOBAL_OPTIONS);
+    const summaries = result.command_summaries ?? [];
+    expect(summaries.map((entry) => entry.command)).toEqual(
+      [...result.commands].sort((left, right) => left.localeCompare(right)),
+    );
+    expect(new Set(summaries.map((entry) => entry.command)).size).toBe(
+      result.commands.length,
+    );
+    for (const summary of summaries) {
+      expect(summary.intent.trim().length).toBeGreaterThan(0);
+      expect(summary.intent).not.toBe("Inspect flags.");
+      expect(summary.default_max_estimated_tokens).toBeGreaterThan(0);
+    }
+    expect(
+      summaries.find(
+        (entry) => entry.command === "workspace snapshot create",
+      )?.intent,
+    ).toBe("Create workspace snapshot.");
+    expect(
+      summaries.find((entry) => entry.command === "package install")?.intent,
+    ).not.toBe(
+      summaries.find((entry) => entry.command === "package")?.intent,
+    );
   });
 
   it("contracts every workspace snapshot command path", async () => {
@@ -1217,13 +1247,13 @@ describe("contracts command runtime", () => {
     ).toEqual(
       [
         ["completion", "Generate shell completions."],
-        ["context", "Build context."],
+        ["ctx", "Build context."],
         ["guide", "Show user guides."],
-        ["history", "Inspect history."],
-        ["list", "List work."],
-        ["mystery", "Inspect flags."],
+        ["history-compact", "Compact history."],
+        ["list-open", "List open work."],
+        ["mystery command", "Run mystery command."],
         ["ops", "Run operations."],
-        ["package", "Manage packages."],
+        ["packages", "Manage packages."],
         ["reindex", "Refresh search index."],
       ].map(([command, intent]) =>
         expect.objectContaining({ command, intent }),
@@ -2362,6 +2392,7 @@ describe("contracts command runtime", () => {
         {
           action: "migrate-asset",
           command: "migrate-asset",
+          full: true,
         },
         {
           ...GLOBAL_OPTIONS,
@@ -2451,6 +2482,14 @@ describe("contracts command runtime", () => {
           ],
         }),
       ]);
+      expect(result.command_summaries).toEqual([
+        expect.objectContaining({
+          command: "migrate-asset",
+          intent:
+            "Validate and migrate asset payloads before writing output.",
+          intent_source: "command",
+        }),
+      ]);
 
       const oneOf = (result.schema?.oneOf ?? []) as Array<{
         properties?: {
@@ -2493,6 +2532,50 @@ describe("contracts command runtime", () => {
       expect(migrateBranch?.["x-extension-commands"]).toEqual([
         "migrate-asset",
       ]);
+    });
+  });
+
+  it("discloses extension-description fallback intent provenance", async () => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "description-intent-contract",
+        manifest: {
+          name: "description-intent-contract",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'describe-only',",
+          "      description: 'Describe package-owned context without an explicit intent.',",
+          "      run: () => ({ ok: true }),",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      });
+
+      const result = await runContracts(
+        { summary: true },
+        { ...GLOBAL_OPTIONS, path: context.pmPath },
+      );
+      expect(result.command_summaries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            command: "describe-only",
+            intent:
+              "Describe package-owned context without an explicit intent.",
+            intent_source: "description",
+          }),
+        ]),
+      );
     });
   });
 

@@ -327,6 +327,7 @@ function dedupeAuditCommand(): CommandDefinition {
     action: "dedupe-audit",
     description:
       "Audit likely duplicate items by title and parent scope heuristics.",
+    intent: "Find likely duplicate work without mutating the tracker.",
     flags: [...dedupeAuditFlags],
     run: async (context) =>
       runDedupeAuditPackage(context.options, context.global),
@@ -339,6 +340,7 @@ function dedupeMergeCommand(): CommandDefinition {
     action: "dedupe-merge",
     description:
       "Consolidate duplicates into a canonical item: re-parent active children and close duplicates with duplicate_of.",
+    intent: "Preview or apply an evidence-preserving duplicate consolidation.",
     flags: [...dedupeMergeFlags],
     run: async (context) =>
       runDedupeMergePackage(context.options, context.global),
@@ -350,6 +352,7 @@ function commentsAuditCommand(): CommandDefinition {
     name: "comments-audit",
     action: "comments-audit",
     description: "Audit item comment coverage and export comment history rows.",
+    intent: "Audit comment coverage and read bounded comment-history evidence.",
     flags: [...commentsAuditFlags],
     run: async (context) =>
       runCommentsAuditPackage(context.options, context.global),
@@ -361,6 +364,7 @@ function normalizeCommand(): CommandDefinition {
     name: "normalize",
     action: "normalize",
     description: "Plan/apply lifecycle metadata normalization sweeps.",
+    intent: "Preview or apply deterministic lifecycle metadata normalization.",
     flags: [...normalizeFlags],
     run: async (context) =>
       runNormalizePackage(context.options, context.global),

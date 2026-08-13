@@ -53,6 +53,17 @@ describe("agent output contracts", () => {
     expect(estimatePmOutputTokens(-4)).toBe(0);
   });
 
+  it("selects encoding-specific ceilings for exact command paths", () => {
+    const budget = resolvePmCommandOutputBudget("comments-audit scan", {
+      generateFallback: true,
+    });
+    expect(budget.command).toBe("comments-audit scan");
+    expect(budget.default_max_estimated_tokens_by_format).toEqual({
+      toon: 4_000,
+      json: 6_000,
+    });
+  });
+
   it("preserves package-authored literal budget definitions", () => {
     const contract = definePmCommandOutputBudget({
       command: "get",

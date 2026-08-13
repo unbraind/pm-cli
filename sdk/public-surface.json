@@ -463,6 +463,23 @@
       ],
       "package_version": "2026.8.13",
       "reason": "pm-dwj33e and pm-h06944: additive optional history-agreement and graph-governance fields; existing inputs and legacy snapshots remain accepted"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_READ_OUTPUT_SURFACES",
+        "signature ./sdk:PmReadOutputOptions",
+        "signature ./sdk:PmReadOutputReceipt",
+        "signature ./sdk:PmResolvedReadOutputDimensions",
+        "signature ./sdk/contracts:PM_READ_OUTPUT_SURFACES",
+        "signature ./sdk/contracts:PmReadOutputOptions",
+        "signature ./sdk/contracts:PmReadOutputReceipt",
+        "signature ./sdk/contracts:PmResolvedReadOutputDimensions",
+        "signature ./sdk/core:PmReadOutputOptions",
+        "signature ./sdk/core:PmReadOutputReceipt",
+        "signature ./sdk/runtime:PmReadOutputOptions"
+      ],
+      "package_version": "2026.8.13",
+      "reason": "Intentional SDK contract widening: default output budgets, explicit unbounded opt-out, and assurance/comments-audit read surfaces"
     }
   ],
   "entrypoints": {
@@ -8609,7 +8626,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_READ_OUTPUT_SURFACES",
-          "signature": "readonly [\"list\", \"context\", \"search\", \"get\", \"next\", \"health\", \"deps\", \"graph\", \"history\", \"activity\", \"validate\", \"events\", \"contracts\", \"comments\", \"notes\", \"files\", \"docs\", \"stats\", \"aggregate\", \"package-manage\"]"
+          "signature": "readonly [\"list\", \"context\", \"search\", \"get\", \"next\", \"health\", \"deps\", \"graph\", \"history\", \"activity\", \"validate\", \"events\", \"contracts\", \"comments\", \"notes\", \"files\", \"docs\", \"stats\", \"aggregate\", \"package-manage\", \"comments-audit\", \"assurance\"]"
         },
         {
           "classification": "advanced_export",
@@ -9119,13 +9136,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
         },
         {
           "classification": "supported",
@@ -9209,7 +9226,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmResolvedReadOutputDimensions",
-          "signature": "export interface PmResolvedReadOutputDimensions { command: PmReadOutputSurface; include?: PmResolvedReadOutputDimension<string[]>; amount?: PmResolvedReadOutputDimension<number | \"unbounded\">; cost?: PmResolvedReadOutputDimension<number>; encoding?: PmResolvedReadOutputDimension<\"json\" | \"toon\" | \"stream\">; legacy_aliases_used: string[]; migration_hints: string[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+          "signature": "export interface PmResolvedReadOutputDimensions { command: PmReadOutputSurface; include?: PmResolvedReadOutputDimension<string[]>; amount?: PmResolvedReadOutputDimension<number | \"unbounded\">; cost?: PmResolvedReadOutputDimension<number | \"unbounded\">; encoding?: PmResolvedReadOutputDimension<\"json\" | \"toon\" | \"stream\">; legacy_aliases_used: string[]; migration_hints: string[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
         },
         {
           "classification": "supported",
@@ -17015,7 +17032,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_READ_OUTPUT_SURFACES",
-          "signature": "readonly [\"list\", \"context\", \"search\", \"get\", \"next\", \"health\", \"deps\", \"graph\", \"history\", \"activity\", \"validate\", \"events\", \"contracts\", \"comments\", \"notes\", \"files\", \"docs\", \"stats\", \"aggregate\", \"package-manage\"]"
+          "signature": "readonly [\"list\", \"context\", \"search\", \"get\", \"next\", \"health\", \"deps\", \"graph\", \"history\", \"activity\", \"validate\", \"events\", \"contracts\", \"comments\", \"notes\", \"files\", \"docs\", \"stats\", \"aggregate\", \"package-manage\", \"comments-audit\", \"assurance\"]"
         },
         {
           "classification": "contract_data",
@@ -17345,13 +17362,13 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -17405,7 +17422,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmResolvedReadOutputDimensions",
-          "signature": "export interface PmResolvedReadOutputDimensions { command: PmReadOutputSurface; include?: PmResolvedReadOutputDimension<string[]>; amount?: PmResolvedReadOutputDimension<number | \"unbounded\">; cost?: PmResolvedReadOutputDimension<number>; encoding?: PmResolvedReadOutputDimension<\"json\" | \"toon\" | \"stream\">; legacy_aliases_used: string[]; migration_hints: string[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+          "signature": "export interface PmResolvedReadOutputDimensions { command: PmReadOutputSurface; include?: PmResolvedReadOutputDimension<string[]>; amount?: PmResolvedReadOutputDimension<number | \"unbounded\">; cost?: PmResolvedReadOutputDimension<number | \"unbounded\">; encoding?: PmResolvedReadOutputDimension<\"json\" | \"toon\" | \"stream\">; legacy_aliases_used: string[]; migration_hints: string[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
         },
         {
           "classification": "contract_data",
@@ -18641,13 +18658,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
         },
         {
           "classification": "supported",
@@ -24047,7 +24064,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
         },
         {
           "classification": "supported",

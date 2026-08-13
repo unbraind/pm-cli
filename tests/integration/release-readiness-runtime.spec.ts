@@ -2012,6 +2012,8 @@ describe("release readiness runtime coverage", () => {
           "--runtime-only",
           "--flags-only",
           "--json",
+          "--output-budget",
+          "unbounded",
         ],
         { expectJson: true },
       );
@@ -2041,6 +2043,8 @@ describe("release readiness runtime coverage", () => {
           "--runtime-only",
           "--flags-only",
           "--json",
+          "--output-budget",
+          "unbounded",
         ],
         {
           expectJson: true,
@@ -2658,7 +2662,7 @@ describe("release readiness runtime coverage", () => {
       "node scripts/release-version.mjs next",
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
-      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 114 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/surface-replication-gate.mjs && node scripts/release/absence-tolerance-gate.mjs && node scripts/release/token-budget-gate.mjs && node scripts/release/context-intent-calibration-gate.mjs && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json",
+      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 114 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/surface-replication-gate.mjs && node scripts/release/absence-tolerance-gate.mjs && node scripts/release/token-budget-gate.mjs && node scripts/release/context-intent-calibration-gate.mjs && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded",
     );
     expect(packageJson.scripts?.["quality:token-budget"]).toBe(
       "node scripts/release/token-budget-gate.mjs",

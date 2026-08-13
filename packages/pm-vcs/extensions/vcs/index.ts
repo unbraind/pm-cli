@@ -647,6 +647,7 @@ export function buildVcsCommands(): CommandDefinition[] {
       name: `${VCS_COMMAND_NAMESPACE} ref-create`,
       action: "vcs-ref-create",
       description: "Create a VCS ref through the public pm lifecycle SDK.",
+      intent: "Create a version-control ref through SDK lifecycle primitives.",
       arguments: [{ name: "name", required: true, description: "Ref name." }],
       run: runRefCreate,
     },
@@ -654,6 +655,7 @@ export function buildVcsCommands(): CommandDefinition[] {
       name: `${VCS_COMMAND_NAMESPACE} create`,
       action: "vcs-create",
       description: "Create a draft changeset.",
+      intent: "Create a draft changeset against a version-control ref.",
       arguments: [
         { name: "title", required: true, description: "Changeset title." },
       ],
@@ -678,6 +680,7 @@ export function buildVcsCommands(): CommandDefinition[] {
       name: `${VCS_COMMAND_NAMESPACE} propose`,
       action: "vcs-propose",
       description: "Move a draft changeset into review.",
+      intent: "Move a draft changeset into the review lifecycle.",
       arguments: ID_ARGUMENT,
       run: (context) => transitionChangeset(context, "proposed"),
     },
@@ -685,6 +688,7 @@ export function buildVcsCommands(): CommandDefinition[] {
       name: `${VCS_COMMAND_NAMESPACE} merge`,
       action: "vcs-merge",
       description: "Merge a reviewed changeset into a ref.",
+      intent: "Merge one reviewed changeset into its target ref.",
       arguments: ID_ARGUMENT,
       flags: [
         {
@@ -706,6 +710,7 @@ export function buildVcsCommands(): CommandDefinition[] {
       name: `${VCS_COMMAND_NAMESPACE} abandon`,
       action: "vcs-abandon",
       description: "Retire a draft or proposed changeset.",
+      intent: "Retire one unmerged changeset with an audited transition.",
       arguments: ID_ARGUMENT,
       run: (context) => transitionChangeset(context, "abandoned"),
     },
@@ -713,6 +718,7 @@ export function buildVcsCommands(): CommandDefinition[] {
       name: `${VCS_COMMAND_NAMESPACE} show`,
       action: "vcs-show",
       description: "Read current or point-in-time changeset state.",
+      intent: "Inspect current or historical state for one changeset.",
       arguments: ID_ARGUMENT,
       flags: [
         { long: "--at", value_name: "version-or-time", value_type: "string" },
@@ -723,6 +729,7 @@ export function buildVcsCommands(): CommandDefinition[] {
       name: `${VCS_COMMAND_NAMESPACE} log`,
       action: "vcs-log",
       description: "Project the immutable merge relationship stream.",
+      intent: "Read the immutable changeset-to-ref merge projection.",
       run: runVcsLog,
     },
   ];

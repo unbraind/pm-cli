@@ -1,6 +1,6 @@
 # SDK Context Integrity
 
-Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), and [pm-h06944](../.agents/pm/issues/pm-h06944.toon).
+Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), and [pm-5t33or](../.agents/pm/features/pm-5t33or.toon).
 
 ## Agent Quick Context
 
@@ -30,6 +30,16 @@ an array. `--output-include item.collection_counts` therefore uses the same
 selector grammar and omission receipts as any other SDK-owned item field.
 
 The same SDK-owned read-output registry now declares `package manage` as a first-class read surface. Package authors can resolve either `package manage` or `package-manage` to its canonical contract and discover the universal include, amount, cost, and encoding dimensions without copying CLI knowledge.
+
+Every registered read surface also resolves a format-aware default token ceiling
+from the public command-output contract. Results already inside that ceiling are
+returned byte-for-byte unchanged, so the safety default adds no receipt overhead
+to ordinary reads. Oversized results follow the shared compaction ladder and
+identify `budget_source: default` plus the applied `budget_tokens` in their
+`read_output` receipt. Complete internal artifacts and callers that intentionally
+accept unbounded output must say so explicitly with `--output-budget unbounded`
+or `outputBudget: "unbounded"`; that opt-out is distinct from row-count
+`--unbounded` compatibility behavior.
 
 ## Row discovery and exact output receipts
 

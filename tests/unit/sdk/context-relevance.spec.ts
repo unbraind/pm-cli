@@ -389,9 +389,16 @@ describe("context relevance SDK primitives", () => {
       ],
     };
     const focus = (id: string) => ({ id }) as never;
+    const observedReadOptions: Array<Record<string, unknown>> = [];
     const reader = {
-      context: async () => ({ high_level: [], low_level: [focus("pm-a"), focus("pm-b")], blocked_fallback: [], ranking }) as never,
-      next: async () => ({ recommended: focus("pm-b"), ready: [focus("pm-a")], ranking }) as never,
+      context: async (options?: Record<string, unknown>) => {
+        observedReadOptions.push(options ?? {});
+        return { high_level: [], low_level: [focus("pm-a"), focus("pm-b")], blocked_fallback: [], ranking } as never;
+      },
+      next: async (options?: Record<string, unknown>) => {
+        observedReadOptions.push(options ?? {});
+        return { recommended: focus("pm-b"), ready: [focus("pm-a")], ranking } as never;
+      },
     };
     const scenarios = [
       {
@@ -422,6 +429,10 @@ describe("context relevance SDK primitives", () => {
 
     expect(report.passed).toBe(true);
     expect(report.scenario_count).toBe(2);
+    expect(observedReadOptions).toEqual([
+      { explainRanking: true, outputBudget: "unbounded" },
+      { explainRanking: true, outputBudget: "unbounded" },
+    ]);
     expect(report.scenarios[0]?.attribution[0]).toEqual({ id: "pm-a", contributions: { structural: 1 } });
     expect(report.scenarios[1]?.ranked_ids).toEqual(["pm-b", "pm-a"]);
 

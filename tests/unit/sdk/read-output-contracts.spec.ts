@@ -33,7 +33,7 @@ describe("read output contracts", () => {
       "cost",
       "encoding",
     ]);
-    expect(PM_READ_OUTPUT_SURFACE_CONTRACTS).toHaveLength(20);
+    expect(PM_READ_OUTPUT_SURFACE_CONTRACTS).toHaveLength(22);
     expect(PM_READ_OUTPUT_OPTION_FLAGS).toEqual([
       "--output-include",
       "--output-limit",
@@ -82,6 +82,28 @@ describe("read output contracts", () => {
       cost: { source: "canonical", value: 1200 },
       encoding: { source: "canonical", value: "json" },
       precedence: ["canonical", "legacy", "intent", "default"],
+    });
+  });
+
+  it("resolves format-aware default ceilings and an explicit unbounded escape hatch", () => {
+    expect(resolveReadOutputDimensions("list", {})).toMatchObject({
+      cost: { source: "default", value: 4_000 },
+    });
+    expect(
+      resolveReadOutputDimensions("comments-audit", {
+        resolvedOutputFormat: "json",
+      }),
+    ).toMatchObject({
+      command: "comments-audit",
+      cost: { source: "default", value: 6_000 },
+    });
+    expect(
+      resolveReadOutputDimensions("assurance run", {
+        outputBudget: "unbounded",
+      }),
+    ).toMatchObject({
+      command: "assurance",
+      cost: { source: "canonical", value: "unbounded" },
     });
   });
 
@@ -160,6 +182,18 @@ describe("read output contracts", () => {
     expect(applyReadOutputDimensions("health", { summary: true }, result)).toBe(
       result,
     );
+    const contextResult = {
+      filters: { token_budget: 64 },
+      packing: { token_budget: 64 },
+      detail: "x".repeat(2_000),
+    };
+    expect(
+      applyReadOutputDimensions(
+        "context",
+        { tokenBudget: "64" },
+        contextResult,
+      ),
+    ).toBe(contextResult);
   });
 
   it("fails closed to a bounded receipt when the requested budget is infeasible", () => {
@@ -277,6 +311,69 @@ describe("read output contracts", () => {
     const result = { id: "pm-1", status: "open" };
     expect(applyReadOutputDimensions("create", {}, result)).toBe(result);
     expect(applyReadOutputDimensions("list", {}, result)).toBe(result);
+    expect(
+      applyReadOutputDimensions(
+        "list",
+        { outputBudget: "unbounded" },
+        result,
+      ),
+    ).toBe(result);
+    expect(
+      applyReadOutputDimensions(
+        "list",
+        { outputBudget: "unbounded", outputInclude: "id" },
+        { items: [{ id: "pm-1", title: "drop" }] },
+      ),
+    ).toMatchObject({
+      items: [{ id: "pm-1" }],
+      read_output: {
+        requested_dimensions: ["include", "cost"],
+        within_budget: true,
+      },
+    });
+  });
+
+  it("enforces a declared default only when an otherwise-unbounded result exceeds it", () => {
+    const result = {
+      items: Array.from({ length: 200 }, (_, index) => ({
+        id: `pm-${index}`,
+        detail: "x".repeat(600),
+      })),
+      row_contract: { command: "list", row_keys: ["items"] },
+    };
+    const projected = applyReadOutputDimensions("list", {}, result);
+    expect(projected).not.toBe(result);
+    expect(projected).toMatchObject({
+      read_output: {
+        budget_source: "default",
+        budget_tokens: 4_000,
+        requested_dimensions: [],
+        within_budget: true,
+      },
+    });
+    if (isReadOutputBudgetExceeded(projected)) {
+      throw new Error("The representative default-bound list should compact.");
+    }
+    expect(projected.read_output?.estimated_tokens).toBeLessThanOrEqual(4_000);
+
+    const omitted = applyReadOutputDimensions(
+      "stats",
+      {},
+      Object.fromEntries(
+        Array.from({ length: 1_000 }, (_, index) => [
+          `field_${index}`,
+          "x".repeat(100),
+        ]),
+      ),
+    );
+    expect(omitted).toMatchObject({
+      output_budget_exceeded: { omitted_result: true },
+      read_output: {
+        budget_source: "default",
+        budget_tokens: 6_000,
+        result_omitted: true,
+      },
+    });
   });
 
   it("rejects malformed controls and mutation-scoped output projection", () => {
@@ -300,7 +397,7 @@ describe("read output contracts", () => {
       validateReadOutputOptions("list", {
         output_include: ["id", "title"],
         output_limit: "unbounded",
-        output_budget: 256,
+        output_budget: "unbounded",
         output_format: "toon",
       }),
     ).not.toThrow();
@@ -345,7 +442,7 @@ describe("read output contracts", () => {
     ).toBeUndefined();
     expect(
       resolveReadOutputDimensions("list", { for: "triage" })?.cost,
-    ).toBeUndefined();
+    ).toEqual({ source: "default", value: 4_000 });
     expect(
       resolveReadOutputDimensions("list", {
         for: "triage",
@@ -360,7 +457,7 @@ describe("read output contracts", () => {
     ).toMatchObject({ amount: { source: "legacy", value: 10 } });
     expect(
       resolveReadOutputDimensions("list", { token_budget: "invalid" })?.cost,
-    ).toBeUndefined();
+    ).toEqual({ source: "default", value: 4_000 });
     expect(
       resolveReadOutputDimensions("events", { follow: true })?.encoding,
     ).toEqual({ source: "legacy", value: "stream" });

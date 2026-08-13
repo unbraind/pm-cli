@@ -11749,34 +11749,58 @@
     {
       "command": "activity",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--limit",
         "--compact",
         "--full"
       ],
-      "intent": "Read activity."
+      "intent": "Read activity.",
+      "intent_source": "command"
     },
     {
       "command": "aggregate",
       "default_max_estimated_tokens": 4000,
-      "intent": "Group counts."
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Group counts.",
+      "intent_source": "command"
     },
     {
       "command": "append",
       "default_max_estimated_tokens": 2000,
-      "intent": "Append body."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Append body.",
+      "intent_source": "command"
     },
     {
       "command": "assurance",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--limit"
       ],
-      "intent": "Inspect flags."
+      "intent": "Evaluate assurance.",
+      "intent_source": "command"
     },
     {
       "command": "claim",
       "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
       "flags": [
         "--if-available",
         "--next",
@@ -11785,11 +11809,16 @@
         "--token-budget",
         "--explain-ranking"
       ],
-      "intent": "Claim work."
+      "intent": "Claim work.",
+      "intent_source": "command"
     },
     {
       "command": "close",
       "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
       "flags": [
         "--reason",
         "--validate-close",
@@ -11798,44 +11827,66 @@
         "--actual-result",
         "--message"
       ],
-      "intent": "Close work."
+      "intent": "Close work.",
+      "intent_source": "command"
     },
     {
       "command": "close-many",
       "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
       "flags": [
         "--limit",
         "--offset"
       ],
-      "intent": "Inspect flags."
+      "intent": "Close matching work.",
+      "intent_source": "command"
     },
     {
       "command": "close-task",
       "default_max_estimated_tokens": 2000,
-      "intent": "Inspect flags."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Close task work.",
+      "intent_source": "command"
     },
     {
       "command": "comments",
       "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
       "flags": [
         "--limit"
       ],
-      "intent": "Manage comments."
+      "intent": "Manage comments.",
+      "intent_source": "command"
     },
     {
       "command": "config",
       "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
       "flags": [
         "--format"
       ],
-      "intent": "Manage settings."
+      "intent": "Manage settings.",
+      "intent_source": "command"
     },
     {
-      "aliases": [
-        "ctx"
-      ],
       "command": "context",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--limit",
         "--after",
@@ -11844,11 +11895,16 @@
         "--token-budget",
         "--explain-ranking"
       ],
-      "intent": "Build context."
+      "intent": "Build context.",
+      "intent_source": "command"
     },
     {
       "command": "contracts",
       "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
       "flags": [
         "--command",
         "--flags-only",
@@ -11857,16 +11913,26 @@
         "--availability-only",
         "--full"
       ],
-      "intent": "Inspect contracts."
+      "intent": "Inspect contracts.",
+      "intent_source": "command"
     },
     {
       "command": "copy",
       "default_max_estimated_tokens": 2000,
-      "intent": "Copy work."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Copy work.",
+      "intent_source": "command"
     },
     {
       "command": "create",
       "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
       "flags": [
         "--title",
         "--type",
@@ -11875,78 +11941,304 @@
         "--dep",
         "--comment"
       ],
-      "intent": "Create work."
+      "intent": "Create work.",
+      "intent_source": "command"
+    },
+    {
+      "command": "ctx",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--limit",
+        "--after",
+        "--depth",
+        "--section",
+        "--token-budget",
+        "--explain-ranking"
+      ],
+      "intent": "Build context.",
+      "intent_source": "command"
     },
     {
       "command": "delete",
       "default_max_estimated_tokens": 2000,
-      "intent": "Delete work."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Delete work.",
+      "intent_source": "command"
     },
     {
       "command": "deps",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--token-budget",
         "--summary",
         "--full",
         "--format"
       ],
-      "intent": "Manage deps."
+      "intent": "Manage deps.",
+      "intent_source": "command"
     },
     {
       "command": "docs",
       "default_max_estimated_tokens": 2000,
-      "intent": "Link docs."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Link docs.",
+      "intent_source": "command"
     },
     {
       "command": "duplicates",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--limit",
         "--since"
       ],
-      "intent": "Find duplicate clusters."
+      "intent": "Find duplicate clusters.",
+      "intent_source": "command"
     },
     {
       "command": "eval",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--format"
       ],
-      "intent": "Inspect flags."
+      "intent": "Run evaluations.",
+      "intent_source": "command"
     },
     {
       "command": "event",
       "default_max_estimated_tokens": 2000,
-      "intent": "Inspect flags."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Manage events.",
+      "intent_source": "command"
     },
     {
       "command": "events",
       "default_max_estimated_tokens": 4000,
-      "intent": "Inspect flags."
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Read events.",
+      "intent_source": "command"
+    },
+    {
+      "command": "extension",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Manage packages.",
+      "intent_source": "command"
+    },
+    {
+      "command": "extension activate",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Activate extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension adopt",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Adopt extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension adopt-all",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Adopt all extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension catalog",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "Catalog extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension deactivate",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Deactivate extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension describe",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Describe extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension doctor",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Diagnose extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension explore",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Explore extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension init",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Initialize extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension install",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Install extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension manage",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Manage extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension migrate",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Migrate extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension reload",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Reload extension.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "extension uninstall",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Uninstall extension.",
+      "intent_source": "generated"
     },
     {
       "command": "files",
       "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
       "flags": [
         "--limit",
         "--offset"
       ],
-      "intent": "Link files."
+      "intent": "Link files.",
+      "intent_source": "command"
     },
     {
       "command": "focus",
       "default_max_estimated_tokens": 2000,
-      "intent": "Manage focus."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Manage focus.",
+      "intent_source": "command"
     },
     {
       "command": "gc",
       "default_max_estimated_tokens": 6000,
-      "intent": "Clean caches."
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "intent": "Clean caches.",
+      "intent_source": "command"
     },
     {
       "command": "get",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--full",
         "--depth",
@@ -11955,22 +12247,32 @@
         "--tree-depth",
         "--format"
       ],
-      "intent": "Read item."
+      "intent": "Read item.",
+      "intent_source": "command"
     },
     {
       "command": "graph",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--limit",
         "--after",
         "--summary",
         "--full"
       ],
-      "intent": "Query graph."
+      "intent": "Query graph.",
+      "intent_source": "command"
     },
     {
       "command": "health",
       "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
       "flags": [
         "--check-only",
         "--summary",
@@ -11979,60 +12281,145 @@
         "--strict-exit",
         "--full"
       ],
-      "intent": "Check health."
+      "intent": "Check health.",
+      "intent_source": "command"
     },
     {
       "command": "help",
       "default_max_estimated_tokens": 3000,
-      "intent": "Show help."
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Show help.",
+      "intent_source": "command"
     },
     {
-      "aliases": [
-        "history-author-acknowledge",
-        "history-compact",
-        "history-redact",
-        "history-repair"
-      ],
       "command": "history",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--limit",
         "--compact",
         "--full",
         "--format"
       ],
-      "intent": "Inspect history."
+      "intent": "Inspect history.",
+      "intent_source": "command"
+    },
+    {
+      "command": "history-author-acknowledge",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Acknowledge reviewed history authors.",
+      "intent_source": "command"
+    },
+    {
+      "command": "history-compact",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Compact history.",
+      "intent_source": "command"
+    },
+    {
+      "command": "history-redact",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Redact sensitive history values.",
+      "intent_source": "command"
+    },
+    {
+      "command": "history-repair",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Repair history integrity.",
+      "intent_source": "command"
     },
     {
       "command": "init",
       "default_max_estimated_tokens": 2000,
-      "intent": "Initialize workspace."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Initialize workspace.",
+      "intent_source": "command"
+    },
+    {
+      "command": "install",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Install packages.",
+      "intent_source": "command"
     },
     {
       "command": "item",
       "default_max_estimated_tokens": 2000,
-      "intent": "Inspect flags."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Mutate work through typed operations.",
+      "intent_source": "command"
+    },
+    {
+      "command": "item complete",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Complete item.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "item mutate",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Mutate item.",
+      "intent_source": "generated"
     },
     {
       "command": "learnings",
       "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
       "flags": [
         "--limit"
       ],
-      "intent": "Manage learnings."
+      "intent": "Manage learnings.",
+      "intent_source": "command"
     },
     {
-      "aliases": [
-        "list-all",
-        "list-blocked",
-        "list-canceled",
-        "list-closed",
-        "list-draft",
-        "list-in-progress",
-        "list-open"
-      ],
       "command": "list",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--status",
         "--type",
@@ -12041,21 +12428,162 @@
         "--brief",
         "--fields"
       ],
-      "intent": "List work."
+      "intent": "List work.",
+      "intent_source": "command"
+    },
+    {
+      "command": "list-all",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--status",
+        "--type",
+        "--limit",
+        "--after",
+        "--brief",
+        "--fields"
+      ],
+      "intent": "List work across every status.",
+      "intent_source": "command"
+    },
+    {
+      "command": "list-blocked",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--status",
+        "--type",
+        "--limit",
+        "--after",
+        "--brief",
+        "--fields"
+      ],
+      "intent": "List blocked work.",
+      "intent_source": "command"
+    },
+    {
+      "command": "list-canceled",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--status",
+        "--type",
+        "--limit",
+        "--after",
+        "--brief",
+        "--fields"
+      ],
+      "intent": "List canceled work.",
+      "intent_source": "command"
+    },
+    {
+      "command": "list-closed",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--status",
+        "--type",
+        "--limit",
+        "--after",
+        "--brief",
+        "--fields"
+      ],
+      "intent": "List closed work.",
+      "intent_source": "command"
+    },
+    {
+      "command": "list-draft",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--status",
+        "--type",
+        "--limit",
+        "--after",
+        "--brief",
+        "--fields"
+      ],
+      "intent": "List draft work.",
+      "intent_source": "command"
+    },
+    {
+      "command": "list-in-progress",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--status",
+        "--type",
+        "--limit",
+        "--after",
+        "--brief",
+        "--fields"
+      ],
+      "intent": "List in-progress work.",
+      "intent_source": "command"
+    },
+    {
+      "command": "list-open",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--status",
+        "--type",
+        "--limit",
+        "--after",
+        "--brief",
+        "--fields"
+      ],
+      "intent": "List open work.",
+      "intent_source": "command"
     },
     {
       "command": "meet",
       "default_max_estimated_tokens": 2000,
-      "intent": "Inspect flags."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Record meeting context.",
+      "intent_source": "command"
     },
     {
       "command": "merge",
       "default_max_estimated_tokens": 6000,
-      "intent": "Inspect flags."
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "intent": "Manage tracker merges.",
+      "intent_source": "command"
     },
     {
       "command": "next",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--limit",
         "--blocked-limit",
@@ -12064,68 +12592,409 @@
         "--explain-ranking",
         "--format"
       ],
-      "intent": "Pick next work."
+      "intent": "Pick next work.",
+      "intent_source": "command"
     },
     {
       "command": "notes",
       "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
       "flags": [
         "--limit",
         "--since"
       ],
-      "intent": "Manage notes."
+      "intent": "Manage notes.",
+      "intent_source": "command"
     },
     {
-      "aliases": [
-        "extension",
-        "install",
-        "packages"
-      ],
       "command": "package",
       "default_max_estimated_tokens": 3000,
-      "intent": "Manage packages."
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Manage packages.",
+      "intent_source": "command"
+    },
+    {
+      "command": "package activate",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Activate package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package adopt",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Adopt package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package adopt-all",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Adopt all package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package catalog",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "Catalog package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package deactivate",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Deactivate package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package describe",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Describe package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package doctor",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Diagnose package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package explore",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Explore package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package init",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Initialize package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package install",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Install package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package manage",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Manage package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package migrate",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Migrate package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package reload",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Reload package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "package uninstall",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Uninstall package.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Manage packages.",
+      "intent_source": "command"
+    },
+    {
+      "command": "packages activate",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Activate packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages adopt",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Adopt packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages adopt-all",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Adopt all packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages catalog",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "flags": [
+        "--fields"
+      ],
+      "intent": "Catalog packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages deactivate",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Deactivate packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages describe",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Describe packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages doctor",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Diagnose packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages explore",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Explore packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages init",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Initialize packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages install",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Install packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages manage",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Manage packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages migrate",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Migrate packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages reload",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Reload packages.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "packages uninstall",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Uninstall packages.",
+      "intent_source": "generated"
     },
     {
       "command": "pause-task",
       "default_max_estimated_tokens": 2000,
-      "intent": "Inspect flags."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Pause task work.",
+      "intent_source": "command"
     },
     {
       "command": "plan",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--fields"
       ],
-      "intent": "Manage plans."
+      "intent": "Manage plans.",
+      "intent_source": "command"
     },
     {
       "command": "profile",
       "default_max_estimated_tokens": 3000,
-      "intent": "Manage profiles."
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Manage profiles.",
+      "intent_source": "command"
     },
     {
       "command": "release",
       "default_max_estimated_tokens": 2000,
-      "intent": "Release claim."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Release claim.",
+      "intent_source": "command"
     },
     {
       "command": "remind",
       "default_max_estimated_tokens": 2000,
-      "intent": "Inspect flags."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Manage reminders.",
+      "intent_source": "command"
     },
     {
       "command": "restore",
       "default_max_estimated_tokens": 2000,
-      "intent": "Restore history."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Restore history.",
+      "intent_source": "command"
     },
     {
       "command": "schema",
       "default_max_estimated_tokens": 2000,
-      "intent": "Customize schema."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Customize schema.",
+      "intent_source": "command"
     },
     {
       "command": "search",
       "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
       "flags": [
         "--mode",
         "--status",
@@ -12134,43 +13003,73 @@
         "--after",
         "--fields"
       ],
-      "intent": "Search work."
+      "intent": "Search work.",
+      "intent_source": "command"
     },
     {
       "command": "start-task",
       "default_max_estimated_tokens": 2000,
-      "intent": "Inspect flags."
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Start task work.",
+      "intent_source": "command"
     },
     {
       "command": "stats",
       "default_max_estimated_tokens": 6000,
-      "intent": "Show stats."
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "intent": "Show stats.",
+      "intent_source": "command"
     },
     {
       "command": "telemetry",
       "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
       "flags": [
         "--limit"
       ],
-      "intent": "Manage telemetry."
+      "intent": "Manage telemetry.",
+      "intent_source": "command"
     },
     {
       "command": "test",
       "default_max_estimated_tokens": 6000,
-      "intent": "Run linked tests."
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "intent": "Run linked tests.",
+      "intent_source": "command"
     },
     {
       "command": "test-all",
       "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
       "flags": [
         "--limit",
         "--offset"
       ],
-      "intent": "Inspect flags."
+      "intent": "Run all linked tests.",
+      "intent_source": "command"
     },
     {
       "command": "update",
       "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
       "flags": [
         "--status",
         "--message",
@@ -12179,25 +13078,40 @@
         "--file",
         "--test"
       ],
-      "intent": "Update work."
+      "intent": "Update work.",
+      "intent_source": "command"
     },
     {
       "command": "update-many",
       "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
       "flags": [
         "--limit",
         "--offset"
       ],
-      "intent": "Inspect flags."
+      "intent": "Update matching work.",
+      "intent_source": "command"
     },
     {
       "command": "upgrade",
       "default_max_estimated_tokens": 3000,
-      "intent": "Upgrade packages."
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Upgrade packages.",
+      "intent_source": "command"
     },
     {
       "command": "validate",
       "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
       "flags": [
         "--check-resolution",
         "--check-history-drift",
@@ -12206,12 +13120,78 @@
         "--strict-exit",
         "--fix-hints"
       ],
-      "intent": "Validate data."
+      "intent": "Validate data.",
+      "intent_source": "command"
     },
     {
       "command": "workspace",
       "default_max_estimated_tokens": 4000,
-      "intent": "Manage portable workspace primitives."
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Manage portable workspace primitives.",
+      "intent_source": "command"
+    },
+    {
+      "command": "workspace snapshot",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Manage snapshots for workspace.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "workspace snapshot create",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Create workspace snapshot.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "workspace snapshot delete",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Delete workspace snapshot.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "workspace snapshot inspect",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Inspect workspace snapshot.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "workspace snapshot list",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "List workspace snapshot.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "workspace snapshot restore",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Restore workspace snapshot.",
+      "intent_source": "generated"
     }
   ],
   "commander_aliases": {
@@ -29026,6 +30006,84 @@
     },
     {
       "command": "package-manage",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "comments-audit",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ]
+    },
+    {
+      "command": "assurance",
       "dimensions": {
         "amount": {
           "applicable": true,
@@ -50558,6 +51616,110 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "description": "Universal estimated-token ceiling for a read result.",
+            "examples": [
+              600,
+              1200
+            ],
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "maxItems": 10000,
+                    "type": "array"
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
           },
           "owner": {
             "description": "pm item that owns preset or observation-derived assurance assertions.",

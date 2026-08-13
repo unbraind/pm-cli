@@ -8,8 +8,10 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import {
   compactReadOutputToBudget,
+  estimateReadOutputTokens,
   updateReadOutputReceiptEstimate,
 } from "./read-output-budget.js";
+import { resolvePmCommandOutputBudget } from "./cli-contracts/agent-output-contracts.js";
 import {
   boundReadOutputRows,
   countReadOutputRows,
@@ -58,6 +60,8 @@ export const PM_READ_OUTPUT_SURFACES = [
   "stats",
   "aggregate",
   "package-manage",
+  "comments-audit",
+  "assurance",
 ] as const;
 
 /** Built-in read command supported by the universal output contract. */
@@ -69,8 +73,8 @@ export interface PmReadOutputOptions {
   outputInclude?: string | string[];
   /** Maximum rows retained, or `unbounded` to disable the shared row ceiling. */
   outputLimit?: string | number | "unbounded";
-  /** Maximum estimated result tokens. */
-  outputBudget?: string | number;
+  /** Maximum estimated result tokens, or `unbounded` to disable the default ceiling. */
+  outputBudget?: string | number | "unbounded";
   /** Requested static renderer encoding; streaming remains a command behavior. */
   outputFormat?: "json" | "toon";
   /** Caller-carried cross-call budget and served-fact state. */
@@ -136,8 +140,8 @@ export interface PmResolvedReadOutputDimensions {
   include?: PmResolvedReadOutputDimension<string[]>;
   /** Requested row ceiling. */
   amount?: PmResolvedReadOutputDimension<number | "unbounded">;
-  /** Requested estimated-token ceiling. */
-  cost?: PmResolvedReadOutputDimension<number>;
+  /** Requested estimated-token ceiling or explicit opt-out. */
+  cost?: PmResolvedReadOutputDimension<number | "unbounded">;
   /** Requested static encoding or a retained legacy streaming behavior. */
   encoding?: PmResolvedReadOutputDimension<"json" | "toon" | "stream">;
   /** Compatibility flags observed on the invocation. */
@@ -156,6 +160,10 @@ export interface PmReadOutputReceipt {
   command: PmReadOutputSurface;
   /** Dimensions explicitly or compatibly requested by the invocation. */
   requested_dimensions: PmReadOutputDimension[];
+  /** Layer that supplied an automatically applied token ceiling. */
+  budget_source?: "default";
+  /** Automatically applied token ceiling; explicit/session budgets already disclose their value. */
+  budget_tokens?: number;
   /** Deterministic precedence used during resolution. */
   precedence: readonly ["canonical", "legacy", "intent", "default"];
   /** Compatibility options observed on the invocation. */
@@ -303,6 +311,8 @@ const LEGACY_FLAGS_BY_COMMAND: Readonly<
   stats: {},
   aggregate: {},
   "package-manage": {},
+  "comments-audit": {},
+  assurance: {},
 };
 
 const VALUE_BEARING_INCLUDE_ALIASES = new Set(["--fields", "--section"]);
@@ -459,8 +469,9 @@ const READ_OUTPUT_VALUE_VALIDATORS = [
   },
   {
     keys: ["outputBudget", "output_budget"],
-    valid: (value: unknown): boolean => positiveInteger(value) !== undefined,
-    message: "--output-budget must be a positive integer.",
+    valid: (value: unknown): boolean =>
+      value === "unbounded" || positiveInteger(value) !== undefined,
+    message: "--output-budget must be a positive integer or unbounded.",
   },
   {
     keys: ["outputFormat", "output_format"],
@@ -598,7 +609,10 @@ function resolveAmountValue(
 function resolveCostValue(
   canonical: unknown,
   legacy: { value: unknown; flag: string } | undefined,
-): PmResolvedReadOutputDimension<number> | undefined {
+): PmResolvedReadOutputDimension<number | "unbounded"> | undefined {
+  if (canonical === "unbounded") {
+    return { source: "canonical", value: "unbounded" };
+  }
   const canonicalBudget = positiveInteger(canonical);
   if (canonicalBudget !== undefined) {
     return { source: "canonical", value: canonicalBudget };
@@ -672,6 +686,21 @@ export function resolveReadOutputDimensions(
     )!;
     return [alias.migration_hint];
   });
+  const encoding = resolveEncodingValue(
+    options.outputFormat ?? options.output_format,
+    legacyByDimension.encoding,
+  );
+  const explicitCost = resolveCostValue(
+    options.outputBudget ?? options.output_budget,
+    legacyByDimension.cost,
+  );
+  const budget = resolvePmCommandOutputBudget(command, {
+    generateFallback: true,
+  });
+  const resolvedOutputFormat =
+    encoding?.value === "json" || options.resolvedOutputFormat === "json"
+      ? "json"
+      : "toon";
   return {
     command: normalizedCommand,
     include: resolveIncludeValue(
@@ -682,14 +711,14 @@ export function resolveReadOutputDimensions(
       options.outputLimit ?? options.output_limit,
       legacyByDimension.amount,
     ),
-    cost: resolveCostValue(
-      options.outputBudget ?? options.output_budget,
-      legacyByDimension.cost,
-    ),
-    encoding: resolveEncodingValue(
-      options.outputFormat ?? options.output_format,
-      legacyByDimension.encoding,
-    ),
+    cost:
+      explicitCost ??
+      {
+        source: "default",
+        value:
+          budget.default_max_estimated_tokens_by_format[resolvedOutputFormat],
+      },
+    encoding,
     legacy_aliases_used: legacyAliasesUsed,
     migration_hints: migrationHints,
     precedence: READ_OUTPUT_PRECEDENCE,
@@ -913,7 +942,9 @@ function requestedDimensions(
   resolved: PmResolvedReadOutputDimensions,
 ): PmReadOutputDimension[] {
   return PM_READ_OUTPUT_DIMENSIONS.filter(
-    (dimension) => resolved[dimension] !== undefined,
+    (dimension) =>
+      resolved[dimension] !== undefined &&
+      resolved[dimension]?.source !== "default",
   );
 }
 
@@ -987,14 +1018,29 @@ function projectReadOutputRows(
 function resolveBindingReadOutputBudget(
   resolved: PmResolvedReadOutputDimensions,
   session: PmReadOutputSessionState | undefined,
-): number | undefined {
-  const budgets = [
-    ...(resolved.cost?.source === "canonical" ? [resolved.cost.value] : []),
+): {
+  source: PmReadOutputDimensionSource | "session";
+  tokens: number;
+} | undefined {
+  const budgets: Array<{
+    source: PmReadOutputDimensionSource | "session";
+    tokens: number;
+  }> = [
+    ...(resolved.cost !== undefined &&
+    resolved.cost.value !== "unbounded" &&
+    (resolved.cost.source === "canonical" || resolved.cost.source === "default")
+      ? [{ source: resolved.cost.source, tokens: resolved.cost.value }]
+      : []),
     ...(session === undefined
       ? []
-      : [readOutputSessionRemainingTokens(session)]),
+      : [
+          {
+            source: "session" as const,
+            tokens: readOutputSessionRemainingTokens(session),
+          },
+        ]),
   ];
-  return budgets.length === 0 ? undefined : Math.min(...budgets);
+  return budgets.sort((left, right) => left.tokens - right.tokens)[0];
 }
 
 /** Build the smallest truthful omission envelope or reject an exhausted session. */
@@ -1002,12 +1048,21 @@ function omitReadOutputForBudget(
   resolved: PmResolvedReadOutputDimensions,
   requested: PmReadOutputDimension[],
   session: PmReadOutputSessionState | undefined,
-  budget: number,
+  bindingBudget: {
+    source: PmReadOutputDimensionSource | "session";
+    tokens: number;
+  },
 ): Record<string, unknown> {
   const minimalReceipt: PmReadOutputReceipt = {
     contract_version: 1,
     command: resolved.command,
     requested_dimensions: requested,
+    ...(bindingBudget.source === "default"
+      ? {
+          budget_source: bindingBudget.source,
+          budget_tokens: bindingBudget.tokens,
+        }
+      : {}),
     precedence: resolved.precedence,
     legacy_aliases_used: [],
     migration_hints: [],
@@ -1036,13 +1091,40 @@ function omitReadOutputForBudget(
   if (session === undefined) {
     updateReadOutputReceiptEstimate(boundedOmission, minimalReceipt);
   }
-  if (session !== undefined && minimalReceipt.estimated_tokens > budget) {
+  if (
+    session !== undefined &&
+    minimalReceipt.estimated_tokens > bindingBudget.tokens
+  ) {
     throw new PmCliError(
       "The remaining output-session budget cannot fit its mandatory receipts; start a new session with a larger token_budget.",
       EXIT_CODE.USAGE,
     );
   }
   return boundedOmission;
+}
+
+/** Decide whether shaping would add no value to an already-bounded result. */
+function canReturnReadOutputUnchanged(
+  resolved: PmResolvedReadOutputDimensions,
+  requested: readonly PmReadOutputDimension[],
+  session: PmReadOutputSessionState | undefined,
+  result: Record<string, unknown>,
+): boolean {
+  if (session !== undefined) return false;
+  const canonicalRequestedCount = requested.filter(
+    (dimension) => resolved[dimension]?.source === "canonical",
+  ).length;
+  if (resolved.cost?.value === "unbounded") {
+    return canonicalRequestedCount === 1;
+  }
+  if (resolved.cost?.source === "legacy" && canonicalRequestedCount === 0) {
+    return true;
+  }
+  return (
+    canonicalRequestedCount === 0 &&
+    (resolved.cost === undefined ||
+      estimateReadOutputTokens(result) <= resolved.cost.value)
+  );
 }
 
 /** Apply universal field, row, and token bounds and attach an exact receipt. */
@@ -1059,17 +1141,21 @@ export function applyReadOutputDimensions<
     options.outputSession ?? options.output_session,
   );
   const requested = requestedDimensions(resolved);
-  const canonicalRequested = requested.filter(
-    (dimension) => resolved[dimension]?.source === "canonical",
-  );
-  if (canonicalRequested.length === 0 && session === undefined) {
+  if (canReturnReadOutputUnchanged(resolved, requested, session, result)) {
     return result;
   }
+  const bindingBudget = resolveBindingReadOutputBudget(resolved, session);
   let projected = projectReadOutputRows(result, resolved, session);
   const receipt: PmReadOutputReceipt = {
     contract_version: 1,
     command: resolved.command,
     requested_dimensions: requested,
+    ...(bindingBudget?.source === "default"
+      ? {
+          budget_source: bindingBudget.source,
+          budget_tokens: bindingBudget.tokens,
+        }
+      : {}),
     precedence: resolved.precedence,
     legacy_aliases_used: resolved.legacy_aliases_used,
     migration_hints: resolved.migration_hints,
@@ -1085,19 +1171,28 @@ export function applyReadOutputDimensions<
       ? projected
       : attachReadOutputSessionContracts(projected, session, receipt);
   updateReadOutputReceiptEstimate(projected, receipt);
-  const budget = resolveBindingReadOutputBudget(resolved, session);
-  if (budget !== undefined && receipt.estimated_tokens > budget) {
-    projected = compactReadOutputToBudget(projected, receipt, budget);
+  if (
+    bindingBudget !== undefined &&
+    receipt.estimated_tokens > bindingBudget.tokens
+  ) {
+    projected = compactReadOutputToBudget(
+      projected,
+      receipt,
+      bindingBudget.tokens,
+    );
     if (session !== undefined) {
       projected = attachReadOutputSessionContracts(projected, session, receipt);
     }
   }
-  if (budget !== undefined && receipt.estimated_tokens > budget) {
+  if (
+    bindingBudget !== undefined &&
+    receipt.estimated_tokens > bindingBudget.tokens
+  ) {
     return omitReadOutputForBudget(
       resolved,
       requested,
       session,
-      budget,
+      bindingBudget,
     ) as PmReadOutputResult<Result>;
   }
   return projected as Result & {

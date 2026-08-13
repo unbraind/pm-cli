@@ -2,16 +2,21 @@ id: pm-pmrae8
 title: "Contract coverage stops at the top level: 93 of 159 declared command paths carry neither an intent nor a token ceiling, so every consolidation the grammar programme plans moves a command out of the contract"
 description: "The contracts table is the surface an agent is routed to for the exact shape of a command, and it describes a minority of the command paths that exist. Measured 2026-08-13 from contracts --json --full on the shipped build.\n\nThe census. 159 command paths are declared: 81 top-level and 78 subcommand paths. 72 command summaries are emitted, and six of them name extension command groups that appear nowhere in the path list, so 66 declared paths carry a summary and 93 do not. Every one of the 78 subcommand paths is in the uncovered set, together with 15 top-level paths including all eight list-* status aliases, all four history-* maintenance commands, ctx, install, extension and packages. Of the 72 summaries that do exist, 29 carry the placeholder intent 'Inspect flags.', so a command path that states what it is for exists for 43 of 159 paths, or 27 percent of the declared surface.\n\nA summary carries exactly two fields an agent cannot obtain anywhere else: intent, and default_max_estimated_tokens. Both are therefore absent for 93 paths. The consequence is measurable and large. list-closed emits 12,628,728 bytes on this workspace, roughly 3,157,182 estimated tokens, which is the single largest default output in the product, and it declares no ceiling at all because status aliases are outside the summary set. There is no number for a gate to compare it against and no number for an agent to plan against.\n\nWhy this is upstream of the consolidation programme rather than beside it. Every open consolidation task under pm-n7rr has the same shape: a command that is top-level today becomes a verb under a noun tomorrow. list-* under list, history-* under history, next and focus under context, dedupe-audit and duplicates under one noun, meet and event and remind into a package. In the contract as it is emitted today, top-level paths carry intents and ceilings and subcommand paths carry neither. So each consolidation, executed exactly as specified and with zero feature loss, moves a command from the half of the surface that declares its intent and its cost into the half that declares neither. The grammar gets simpler and the contract gets thinner, and the freeze pm-xp1xsw contemplates would lock in that trade.\n\nThis is the same defect pm-7i97c3 measured as a placeholder-intent count of 32 of 76, but the denominator there was top-level commands. Taking the denominator to be declared paths shows the placeholder is the smaller half of the problem: 78 paths have no row to place a placeholder in."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",grammar,output-contract,token-efficiency
 created_at: "2026-08-13T14:26:27.903Z"
-updated_at: "2026-08-13T14:26:27.903Z"
+updated_at: "2026-08-13T17:13:35.516Z"
+closed_at: "2026-08-13T17:13:06.777Z"
+completed_at: "2026-08-13T17:13:06.777Z"
 author: "harness:claude-code"
 acceptance_criteria: "Every declared command path, top-level and subcommand alike, carries an intent and a default_max_estimated_tokens, or is explicitly declared as not agent-facing with a recorded reason; The placeholder intent is not a permitted value: a path either states its intent or fails the contract gate; The eight list-* status aliases and the four history-* maintenance commands carry declared ceilings; A consolidation that moves a command under a noun carries its intent and its ceiling with it, and the grammar conformance gate proves the transfer; The contract coverage ratio is a measured assertion with a floor so the surface cannot be frozen while coverage is a minority"
 parent: pm-mpbb
 risk: high
 confidence: 94
+resolution: Generated an exact one-row-per-advertised-path contract summary.
+expected_result: Every advertised command path exposes intent and positive format-aware budget metadata.
+actual_result: "Core, aliases, maintenance, and package paths are enumerated with intent provenance and budgets."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-7i97c3,discovered_from,"2026-08-13T14:26:27.903Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-08-13T14:26:27.903Z","harness:claude-code","cli:create:dep",detected
@@ -19,4 +24,19 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-08-13T14:26:27.903Z","harness:claude-code","cli:create:dep",detected
   pm-wt43zj,verifies,"2026-08-13T14:26:27.903Z","harness:claude-code","cli:create:dep",detected
   pm-yy8rmx,discovered_from,"2026-08-13T14:26:27.903Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-13T15:27:26.226Z","harness:codex","TDD red evidence: full runtime contracts currently collapse command_summaries and fail exact set parity against commands; missing aliases, lifecycle subcommands, history maintenance, item/workspace children. The new test requires one non-placeholder intent and positive budget per exact command path."
+  "2026-08-13T17:12:50.187Z","harness:codex","Completion evidence: command summaries now emit exactly one row per advertised top-level/subcommand path, with positive default_max_estimated_tokens, format budgets, exact operation-derived meaning, and intent_source. Exhaustive enumeration and SDK agent-contract integration cover aliases and maintenance commands. Linked contracts test passed 48/48; exact full suite passed 7,262 tests at 100/100/100/100. Package-first dogfood passed 88 commands."
+files[4]{path,scope,note}:
+  src/sdk/cli-contracts/runtime-contracts.ts,project,exact-path command summary contracts
+  tests/integration/contract-command-enumeration.integration.spec.ts,project,exact advertised path enumeration and structured-help parity
+  tests/integration/sdk-agent-command-contracts.integration.spec.ts,project,exhaustive command-scoped flags use explicit unbounded discovery
+  tests/unit/commands/contracts-command.spec.ts,project,catalog completeness ratchet
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msrs049h-zmlsgi,test,passed,"2026-08-13T17:12:03.211Z","2026-08-13T17:12:17.045Z","2026-08-13T17:12:17.045Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,exact command summary discovery contract
+close_reason: "Completed exact advertised command-path summaries with generated intents, format budgets, exhaustive alias coverage, and passing contract/coverage/package acceptance."
 body: ""

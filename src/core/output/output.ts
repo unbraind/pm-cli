@@ -511,7 +511,15 @@ function formatEffectiveOutput(
   const format =
     resolveReadOutputEncoding(command ?? "", commandOptions) ??
     resolveOutputFormat(options);
-  const effectiveOptions = { ...options, command, commandOptions };
+  const resolvedCommandOptions = {
+    ...commandOptions,
+    resolvedOutputFormat: format,
+  };
+  const effectiveOptions = {
+    ...options,
+    command,
+    commandOptions: resolvedCommandOptions,
+  };
   const service = resolveOutputService(
     effectiveResult,
     nativeOutput,
@@ -526,7 +534,7 @@ function formatEffectiveOutput(
       : outputResult;
   const intentOutputResult = attachReadOutputContracts(
     command,
-    commandOptions,
+    resolvedCommandOptions,
     projectedOutputResult,
   );
   const renderResolvedOutput = (value: unknown): string => {

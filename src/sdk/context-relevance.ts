@@ -741,8 +741,16 @@ export async function runContextEvaluationScenario(
   }
   const result =
     scenario.surface === "context"
-      ? await reader.context({ ...scenario.options, explainRanking: true })
-      : await reader.next({ ...scenario.options, explainRanking: true });
+      ? await reader.context({
+          ...scenario.options,
+          explainRanking: true,
+          outputBudget: "unbounded",
+        })
+      : await reader.next({
+          ...scenario.options,
+          explainRanking: true,
+          outputBudget: "unbounded",
+        });
   const { rankedIds, attribution } = rankingPayloadForScenario(
     result,
     scenario.surface,
