@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[6]: agent-ux,"area:ci","area:sdk",assurance,contracts,recovery
 created_at: "2026-08-13T21:18:07.562Z"
-updated_at: "2026-08-13T23:17:37.958Z"
+updated_at: "2026-08-13T23:21:03.759Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#880713bb55cef4270b5f889d"
 author: "harness:claude-code"
@@ -22,10 +22,11 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-j82fd3,implements,"2026-08-13T21:18:19.039Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,implements,"2026-08-13T21:18:19.039Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-13T21:18:19.039Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-13T22:07:15.361Z","harness:codex","Progress evidence: the contract now declares replacement versus behavior_preserving semantics instead of inferring strength from prose. An executable temporary-tracker corpus derives and runs all 22 exact projection-mode replacements, comparing both spellings after only receipt/volatile metadata removal. The corpus caught --collapse <value> and health --check-only as independent execution semantics; both are excluded from false replacement mapping and --collapse now emits truthful weaker guidance. Remaining scope before this general feature can close: derive and execute the other forward-reference kinds, declare the full obligation set as assurance data, and add the cross-kind negative-control gate."
   "2026-08-13T22:27:26.637Z","harness:codex","Assurance evidence: tracker-context-quality initially blocked because the new executable migration spec was test-command linked but not file-owned. Added explicit project file ownership; preserved the pre-existing one-path orphan ceiling rather than weakening the ratchet."
   "2026-08-13T23:17:37.958Z","harness:codex","Verification evidence for this PR tranche: derived and executed all 22 replacement promises across list/search/get/health/deps/graph/history/activity/validate/events/contracts in a real temporary tracker; exact legacy-versus-canonical projections match after removing only invocation receipts and volatile run metadata. Linked PM tests passed 20/20. Full repository coverage passed 7,280 tests at exact 100/100/100/100. Packed npm acceptance exercised canonical CLI normalization and the public SDK, with independent npx and bunx dispatch succeeding. The broader feature remains open for the other forward-reference kinds and its cross-kind assurance negative control."
+  "2026-08-13T23:21:03.759Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1005 at implementation commit a4b33ccb3. The PR combines executable migration contracts, nested budget receipts, token-gate correction, generated SDK/contracts/changelog artifacts, and all-status GitHub/PM lineage."
 learnings[1]{created_at,author,text}:
   "2026-08-13T22:07:15.884Z","harness:codex","A migration flag can belong to a universal output dimension without being replaceable by the universal option. Promise strength must be explicit contract data: parsing a well-formed hint or checking that its target flag exists cannot distinguish projection equivalence from preserved traversal, grouping, side-effect, cursor, or streaming semantics."
 files[5]{path,scope,note}:
