@@ -1,0 +1,38 @@
+id: pm-dwj33e
+title: "ADR: Graph structural ratchets measure recorded nodes and informative edges"
+description: Authorize the graph assurance node and edge floors to move from diagnostic totals to invariant-bearing recorded-node and informative-edge populations.
+type: Decision
+status: closed
+priority: 1
+tags[6]: adr,assurance,governance,graph,ratchet,sdk
+created_at: "2026-08-13T09:51:55.349Z"
+updated_at: "2026-08-13T10:09:35.258Z"
+closed_at: "2026-08-13T09:52:12.680Z"
+completed_at: "2026-08-13T09:52:12.680Z"
+author: "harness:codex"
+acceptance_criteria: The node floor reads profile.recorded_nodes and excludes missing or external placeholders.; The edge floor reads profile.informative_edges after a union deduction for redundant and contradictory rows.; Redundancy and ordering contradictions have independent ceilings so cleanup tightens rather than weakens governance.
+goal: truthful-graph-assurance
+objective: Prevent placeholder and repairable-edge debt from being required by structural floors.
+value: Graph cleanup can reduce defects without requiring a privileged floor relaxation.
+impact: CI separately preserves real item and informative relationship populations while allowing redundancy and contradictions to shrink.
+outcome: "Recorded-node and informative-edge floors ratchet independently from missing placeholders, redundant shortcuts, and contradictory storage rows."
+why_now: The final legacy cleanup is mechanically correct but the old total-edge floor treats the repair as structural loss.
+parent: pm-m2u1
+resolution: "Accepted ADR: graph assurance now separates diagnostic totals from recorded-node and informative-edge invariant populations."
+expected_result: "Graph cleanup can remove missing placeholders and non-informative edges without weakening the structural floors, while independent ceilings prevent debt growth."
+actual_result: "SDK audit fields, durable-baseline compatibility, exact contradiction evidence, and blocking assurance declarations were implemented and verified on the live corpus."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-z0cfor,supersedes,"2026-08-13T09:51:55.349Z","harness:codex","cli:create:dep",detected
+  pm-9gzr4r,discovered_from,"2026-08-13T10:06:13.143Z","harness:codex","cli:update:dep",detected
+  pm-hnc9w7,discovered_from,"2026-08-13T10:06:13.143Z","harness:codex","cli:update:dep",detected
+  pm-mfvsng,discovered_from,"2026-08-13T10:06:13.143Z","harness:codex","cli:update:dep",detected
+  pm-xvt7ps,discovered_from,"2026-08-13T10:06:13.143Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-08-13T09:51:55.349Z","harness:codex","Duplicate-check evidence: all-status searches for informative edge floor redundancy assurance denominator decision; recorded node floor placeholder assurance decision; and graph floor re-denomination found the canonical defect items pm-9gzr4r and pm-mfvsng but no Decision authorizing this denominator change."
+  "2026-08-13T09:52:11.134Z","harness:codex","Evidence before acceptance: live graph audit after the changelog-safe cleanup reports nodes=2463 and recorded_nodes=2463; edges=12117, redundant_edges=67, ordering_contradiction_edges=0, and informative_edges=12050. All graph finding families are zero. The new fields are SDK-owned, deterministic, persisted in durable baselines with legacy defaults, and covered by focused tests."
+  "2026-08-13T09:55:25.007Z","harness:codex","Acceptance follow-up: the first full tracker-context-quality dry-run blocked exactly because this newly closed Decision lacked resolution fields (296 vs ceiling 295). The item now carries resolution, expected_result, and actual_result; this demonstrates the existing validation ratchet caught a real closeout omission."
+  "2026-08-13T10:05:57.136Z","harness:codex","Assurance evidence: tracker-context-quality correctly blocked the four newly added generic related edges at 6057 against ceiling 6053. They are now directional discovered_from provenance edges to the four source items, preserving graph context without weakening the related-edge ratchet."
+  "2026-08-13T10:06:13.935Z","harness:codex","Correction and completion: the first dependency mutation was rejected because the supported add flag is --dep, so the immediately preceding comment described intended state before it existed. The corrected atomic update has now replaced all four related rows with discovered_from rows; live metadata is authoritative."
+  "2026-08-13T10:09:35.258Z","harness:codex","SDK compatibility evidence: the surface gate classified the expanded existing interfaces conservatively. New graph fields were made optional for consumer-authored fixtures and legacy snapshots, runtime producers always populate them, durable decoding supplies legacy defaults, and the public snapshot was updated with this Decision plus pm-h06944 as the explicit rationale. Build, package/example typechecks, and surface re-check pass."
+close_reason: "Accepted: graph structural floors use recorded nodes and informative edges; diagnostic totals remain visible and redundancy/contradictions receive independent ceilings."
+body: "## Context\nThe existing graph node and edge floors consume diagnostic totals. Missing placeholders inflate nodes; witnessed redundancy and contradictory ordering rows inflate edges. A repair therefore lowers a floor even when the information-bearing graph is unchanged.\n\n## Decision\nStructural assurance floors are denominated over `profile.recorded_nodes` and `profile.informative_edges`. Diagnostic `nodes` and `edges` remain public. Informative edges equal deduplicated directed edges minus the union of witnessed redundant edge identities and structured ordering rows proven to contradict scalar blockers. Independent ceilings govern redundancy and contradiction populations.\n\n## Consequences\nRemoving a placeholder cannot fail the recorded-node floor. Removing a redundant or contradictory edge cannot fail the informative-edge floor. Deleting real work or an information-bearing relationship still lowers a blocking floor and requires an explicit Decision. The bounded redundancy algorithm and its counting basis remain visible in the audit profile and documentation."

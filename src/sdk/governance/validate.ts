@@ -13,7 +13,6 @@ import { buildRemediationCommands } from "../../core/diagnostics/remediation.js"
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import { isFileMissingError, pathExists } from "../../core/fs/fs-utils.js";
-import { scanHistoryDrift } from "../../core/history/drift-scan.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
@@ -105,6 +104,7 @@ import {
   readValidateItems,
   type ValidateItem,
 } from "./validate-item-reader.js";
+import { buildValidateHistoryDriftCheck } from "./validate-history-drift.js";
 
 type ValidateCheckName =
   | "metadata"
@@ -2857,67 +2857,6 @@ async function buildFilesCheck(
 }
 /* c8 ignore stop */
 
-/* c8 ignore start -- history-drift warning/count projection permutations are covered by drift integration tests */
-async function buildHistoryDriftCheck(
-  pmRoot: string,
-  items: ItemWithBody[],
-  verboseDiagnostics: boolean,
-): Promise<{ check: ValidateCheck; warnings: string[] }> {
-  const {
-    missingStreams,
-    unreadableStreams,
-    hashMismatches,
-    chainMismatches,
-    driftedItems,
-  } = await scanHistoryDrift(pmRoot, items);
-  const warnings: string[] = [];
-  if (missingStreams.length > 0) {
-    warnings.push(
-      `validate_history_drift_missing_streams:${missingStreams.length}`,
-    );
-  }
-  if (unreadableStreams.length > 0) {
-    warnings.push(
-      `validate_history_drift_unreadable_streams:${unreadableStreams.length}`,
-    );
-  }
-  if (hashMismatches.length > 0) {
-    warnings.push(
-      `validate_history_drift_hash_mismatches:${hashMismatches.length}`,
-    );
-  }
-  if (chainMismatches.length > 0) {
-    warnings.push(
-      `validate_history_drift_chain_mismatches:${chainMismatches.length}`,
-    );
-  }
-  const diagnosticLimit = verboseDiagnostics
-    ? Number.POSITIVE_INFINITY
-    : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
-  const summarizedDrifted = summarizeList(driftedItems, diagnosticLimit);
-  return {
-    check: {
-      name: "history_drift",
-      status: warnings.length === 0 ? "ok" : "warn",
-      ok: warnings.length === 0,
-      details: {
-        checked_items: items.length,
-        drifted_items_count: driftedItems.length,
-        drifted_items: summarizedDrifted.values,
-        drifted_items_truncated: summarizedDrifted.truncated,
-        counts: {
-          missing_streams: missingStreams.length,
-          unreadable_streams: unreadableStreams.length,
-          hash_mismatches: hashMismatches.length,
-          chain_mismatches: chainMismatches.length,
-        },
-      },
-    },
-    warnings,
-  };
-}
-/* c8 ignore stop */
-
 /* c8 ignore start -- command preview truncation formatting is covered by command-reference integration fixtures */
 function summarizeCommandReferenceRow(
   ownerId: string,
@@ -3496,7 +3435,7 @@ async function executeRequestedValidateChecks(params: {
   if (params.requestedChecks.has("history_drift")) {
     recordValidateCheck(
       state,
-      await buildHistoryDriftCheck(
+      await buildValidateHistoryDriftCheck(
         params.pmRoot,
         params.items,
         fullDiagnostics,

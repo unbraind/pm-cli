@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:operations",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.876Z"
-updated_at: "2026-07-26T17:30:54.852Z"
+updated_at: "2026-08-13T09:50:46.344Z"
 deadline: "2026-03-03T23:02:09.876Z"
 assignee: steve
 author: steve
@@ -41,10 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/stats-health-and-gc-commands
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for stats health and gc commands.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-54d,parent,"2026-02-17T23:02:09.876Z",steve,null
-  pm-c0r,blocks,"2026-02-17T23:02:09.876Z",steve,null
-  pm-54d,implements,"2026-07-26T17:30:54.664Z",null,null
+dependencies[2]:
+  - id: pm-54d
+    kind: parent
+    created_at: "2026-02-17T23:02:09.876Z"
+    author: steve
+  - id: pm-54d
+    kind: implements
+    created_at: "2026-07-26T17:30:54.664Z"
 comments[10]{created_at,author,text}:
   "2026-02-18T03:53:00.847Z",maintainer-agent,"author=maintainer-agent,created_at=now,text=Planned changeset: update PRD/README command matrix first, then add deterministic pm stats command with unit/integration coverage and preserve 100% thresholds."
   "2026-02-18T03:58:25.902Z",maintainer-agent,"Implemented pm stats command with deterministic totals/by_type/by_status output; updated README/PRD command matrix first per contract, then wired CLI + tests. Evidence: pm test pm-zau --run --timeout 600 passed (linked commands node scripts/run-tests.mjs coverage/test + pnpm build), pm test-all --status in_progress --timeout 600 passed (11/11 linked tests), coverage remains 100% lines/branches/functions/statements including src/commands/stats.ts."

@@ -39,9 +39,7 @@ interface MainMocks {
   stat?: (target: string) => Promise<{ mtimeMs: number }>;
   rename?: (source: string, destination: string) => Promise<void>;
   rm?: (target: string) => Promise<void>;
-  readdir?: (
-    target: string,
-  ) => Promise<
+  readdir?: (target: string) => Promise<
     Array<{
       name: string;
       isDirectory(): boolean;
@@ -177,12 +175,21 @@ describe("bundle-cli main()", () => {
     });
 
     expect(scenario.failure).toBeNull();
-    expect(scenario.build).toHaveBeenCalledTimes(2);
+    expect(scenario.build).toHaveBeenCalledTimes(3);
     expect(scenario.build.mock.calls[0]?.[0]).toMatchObject({
       chunkNames: "chunks/[name]-[hash]",
     });
     expect(scenario.build.mock.calls[1]?.[0]).toMatchObject({
       chunkNames: "focused-chunks/[name]-[hash]",
+    });
+    expect(scenario.build.mock.calls[2]?.[0]).toMatchObject({
+      chunkNames: "isolated-chunks/[name]-[hash]",
+      entryPoints: {
+        "sdk-merge": expect.stringContaining(
+          path.join("dist", "sdk", "merge.js"),
+        ),
+      },
+      splitting: false,
     });
     expect(scenario.rename).toHaveBeenCalled();
     expect(scenario.unlink).toHaveBeenCalledWith(

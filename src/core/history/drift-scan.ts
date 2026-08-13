@@ -17,6 +17,7 @@ import {
 import { verifyHistoryChainWithVersion } from "./replay.js";
 import {
   getWorkspaceHistoryPath,
+  inspectWorkspaceHistoryState,
   WORKSPACE_HISTORY_ID,
 } from "./workspace-history.js";
 import type { HistoryEntry, ItemMetadata } from "../../types/index.js";
@@ -33,6 +34,12 @@ export interface DriftScanResult {
   chainMismatches: string[];
   /** Value that configures or reports drifted items for this contract. */
   driftedItems: string[];
+  /** Governed singleton files whose JSON differs from workspace-history replay. */
+  workspaceStateMismatches: string[];
+  /** Governed singleton files absent from disk. */
+  workspaceStateMissing: string[];
+  /** Governed singleton files unreadable as safe workspace-local JSON. */
+  workspaceStateUnreadable: string[];
 }
 
 const DRIFT_CACHE_VERSION = 4;
@@ -97,6 +104,15 @@ interface DriftScanAccumulator {
   unreadableStreams: string[];
   hashMismatches: string[];
   chainMismatches: string[];
+  workspaceStateMismatches: string[];
+  workspaceStateMissing: string[];
+  workspaceStateUnreadable: string[];
+}
+
+interface DriftScanCacheState {
+  previousEntries: Record<string, DriftCacheEntry>;
+  nextEntries: Record<string, DriftCacheEntry>;
+  verifyCacheHitByContent: boolean;
 }
 
 async function scanWorkspaceHistory(
@@ -286,6 +302,78 @@ async function resolveStreamVerification(params: {
   };
 }
 
+/** Scan one item stream and return whether its cache entry needs persistence. */
+async function scanItemHistory(
+  pmRoot: string,
+  item: ItemMetadata & { body: string },
+  cache: DriftScanCacheState,
+  accumulator: DriftScanAccumulator,
+): Promise<boolean> {
+  const historyPath = getHistoryPath(pmRoot, item.id);
+  let stat: Stats;
+  try {
+    stat = await fs.stat(historyPath);
+  } catch (error: unknown) {
+    (isFileMissingError(error)
+      ? accumulator.missingStreams
+      : accumulator.unreadableStreams
+    ).push(item.id);
+    return false;
+  }
+  const resolved = await resolveStreamVerification({
+    itemId: item.id,
+    historyPath,
+    stat,
+    cached: cache.previousEntries[item.id],
+    verifyCacheHitByContent: cache.verifyCacheHitByContent,
+    accumulator,
+  });
+  if (!resolved.verification) return resolved.cacheDirty;
+  if (!resolved.verification.chainOk)
+    accumulator.chainMismatches.push(item.id);
+  cache.nextEntries[item.id] = {
+    mtime_ms: stat.mtimeMs,
+    ctime_ms: stat.ctimeMs,
+    size: stat.size,
+    content_hash: resolved.verification.contentHash,
+    latest_after_hash: resolved.verification.latestAfterHash,
+    chain_ok: resolved.verification.chainOk,
+    item_hash_version: resolved.verification.itemHashVersion,
+  };
+  const { body, ...itemMetadata } = item;
+  const currentHash = hashDocumentForVersion(
+    { metadata: itemMetadata as ItemMetadata, body },
+    resolved.verification.itemHashVersion,
+  );
+  if (currentHash !== resolved.verification.latestAfterHash)
+    accumulator.hashMismatches.push(item.id);
+  return resolved.cacheDirty;
+}
+
+/** Compare the verified workspace stream with every governed singleton file. */
+async function scanWorkspaceStateAgreement(
+  pmRoot: string,
+  accumulator: DriftScanAccumulator,
+): Promise<void> {
+  if (
+    accumulator.unreadableStreams.includes(WORKSPACE_HISTORY_ID) ||
+    accumulator.chainMismatches.includes(WORKSPACE_HISTORY_ID)
+  )
+    return;
+  try {
+    const agreement = await inspectWorkspaceHistoryState(pmRoot);
+    accumulator.workspaceStateMismatches.push(
+      ...agreement.mismatched_documents,
+    );
+    accumulator.workspaceStateMissing.push(...agreement.missing_documents);
+    accumulator.workspaceStateUnreadable.push(
+      ...agreement.unreadable_documents,
+    );
+  } catch {
+    accumulator.unreadableStreams.push(WORKSPACE_HISTORY_ID);
+  }
+}
+
 /**
  * Scan every item's history stream for drift (missing/unreadable streams, broken
  * hash chains, and item/history hash mismatches).
@@ -306,6 +394,9 @@ export async function scanHistoryDrift(
     unreadableStreams: [],
     hashMismatches: [],
     chainMismatches: [],
+    workspaceStateMismatches: [],
+    workspaceStateMissing: [],
+    workspaceStateUnreadable: [],
   };
 
   const cache = await loadDriftCache(pmRoot);
@@ -316,59 +407,14 @@ export async function scanHistoryDrift(
   // failures are intentionally deferred to strict validate/history-repair scans.
   const verifyCacheHitByContent = options.cacheHitVerification !== "metadata";
 
+  const cacheState: DriftScanCacheState = {
+    previousEntries,
+    nextEntries,
+    verifyCacheHitByContent,
+  };
   for (const item of items) {
-    const historyPath = getHistoryPath(pmRoot, item.id);
-
-    let stat: Stats;
-    try {
-      stat = await fs.stat(historyPath);
-    } catch (error: unknown) {
-      if (isFileMissingError(error)) {
-        accumulator.missingStreams.push(item.id);
-      } else {
-        accumulator.unreadableStreams.push(item.id);
-      }
-      continue;
-    }
-
-    const cached = previousEntries[item.id];
-    const resolved = await resolveStreamVerification({
-      itemId: item.id,
-      historyPath,
-      stat,
-      cached,
-      verifyCacheHitByContent,
-      accumulator,
-    });
-    cacheDirty ||= resolved.cacheDirty;
-    if (!resolved.verification) {
-      continue;
-    }
-
-    if (!resolved.verification.chainOk) {
-      accumulator.chainMismatches.push(item.id);
-    }
-    nextEntries[item.id] = {
-      mtime_ms: stat.mtimeMs,
-      ctime_ms: stat.ctimeMs,
-      size: stat.size,
-      content_hash: resolved.verification.contentHash,
-      latest_after_hash: resolved.verification.latestAfterHash,
-      chain_ok: resolved.verification.chainOk,
-      item_hash_version: resolved.verification.itemHashVersion,
-    };
-
-    const { body, ...itemMetadata } = item;
-    const currentHash = hashDocumentForVersion(
-      {
-        metadata: itemMetadata as ItemMetadata,
-        body,
-      },
-      resolved.verification.itemHashVersion,
-    );
-    if (currentHash !== resolved.verification.latestAfterHash) {
-      accumulator.hashMismatches.push(item.id);
-    }
+    if (await scanItemHistory(pmRoot, item, cacheState, accumulator))
+      cacheDirty = true;
   }
   const workspaceCacheDirty = await scanWorkspaceHistory(
     pmRoot,
@@ -378,6 +424,7 @@ export async function scanHistoryDrift(
     accumulator,
   );
   cacheDirty ||= workspaceCacheDirty;
+  await scanWorkspaceStateAgreement(pmRoot, accumulator);
 
   if (
     cacheDirty ||
@@ -401,6 +448,11 @@ export async function scanHistoryDrift(
       ...accumulator.unreadableStreams,
       ...accumulator.hashMismatches,
       ...accumulator.chainMismatches,
+      ...(accumulator.workspaceStateMismatches.length > 0 ||
+      accumulator.workspaceStateMissing.length > 0 ||
+      accumulator.workspaceStateUnreadable.length > 0
+        ? [WORKSPACE_HISTORY_ID]
+        : []),
     ]),
   ].sort((a, b) => a.localeCompare(b));
   return { ...accumulator, driftedItems };

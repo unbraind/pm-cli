@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:list",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.324Z"
-updated_at: "2026-07-26T17:24:32.939Z"
+updated_at: "2026-08-13T09:50:45.162Z"
 deadline: "2026-03-03T23:02:09.324Z"
 assignee: steve
 author: steve
@@ -41,10 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/list-and-list-filters-with-deterministic-sort
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for list and list-* filters with deterministic sort.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-54d,parent,"2026-02-17T23:02:09.324Z",steve,null
-  pm-c0r,blocks,"2026-02-17T23:02:09.324Z",steve,null
-  pm-54d,implements,"2026-07-26T17:24:32.674Z",null,null
+dependencies[2]:
+  - id: pm-54d
+    kind: parent
+    created_at: "2026-02-17T23:02:09.324Z"
+    author: steve
+  - id: pm-54d
+    kind: implements
+    created_at: "2026-07-26T17:24:32.674Z"
 comments[3]{created_at,author,text}:
   "2026-02-18T18:36:52.182Z",cursor-maintainer,"Planned change-set: verify PRD deterministic list ordering (open before terminal, priority asc, updated_at desc, id asc), tighten any implementation gaps, and add/adjust tests for uncovered branches before running pm test and pm test-all."
   "2026-02-18T18:38:07.235Z",cursor-maintainer,"Implemented list filter validation hardening: --priority and --limit now require integers, and --type now validates/canonicalizes to Epic|Feature|Task|Chore|Issue (case-insensitive). Added unit coverage for invalid decimal filters, invalid type, and normalized lowercase type filter."

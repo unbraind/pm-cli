@@ -1,6 +1,8 @@
-import { appendFile, readFile, writeFile } from "node:fs/promises";
+import { appendFile, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import * as historyModule from "../../../../src/core/history/history.js";
+import * as workspaceHistoryModule from "../../../../src/core/history/workspace-history.js";
 import { readHistoryEntries } from "../../../../src/core/history/read.js";
 import {
   cloneEmptyReplayDocument,
@@ -11,6 +13,9 @@ import {
   appendWorkspaceHistoryChange,
   appendWorkspaceAuditEvent,
   getWorkspaceHistoryPath,
+  inspectWorkspaceHistoryState,
+  reconcileWorkspaceJsonHistory,
+  restoreWorkspaceJsonFromHistory,
   writeWorkspaceJsonWithHistory,
   WORKSPACE_HISTORY_ID,
 } from "../../../../src/core/history/workspace-history.js";
@@ -60,14 +65,14 @@ describe("workspace history", () => {
       };
       await appendWorkspaceHistoryChange({
         ...common,
-        documentPath: "settings.json",
+        documentPath: "custom-settings.json",
         before: { enabled: false },
         after: { enabled: true },
         op: "config_set",
       });
       const schema = {
         ...common,
-        documentPath: "schema/types.json",
+        documentPath: "custom-schema.json",
         before: { definitions: [] },
         after: { definitions: [{ name: "Spike" }] },
         op: "schema_add_type",
@@ -75,6 +80,14 @@ describe("workspace history", () => {
       };
       await appendWorkspaceHistoryChange(schema);
       await appendWorkspaceHistoryChange(schema);
+      await writeFile(
+        path.join(context.pmPath, "custom-settings.json"),
+        '{"enabled":true}\n',
+      );
+      await writeFile(
+        path.join(context.pmPath, "custom-schema.json"),
+        '{"definitions":[{"name":"Spike"}]}\n',
+      );
 
       const entries = await readHistoryEntries(
         getWorkspaceHistoryPath(context.pmPath),
@@ -147,6 +160,321 @@ describe("workspace history", () => {
           after: { enabled: false },
         }),
       ).rejects.toThrow("Workspace history verification failed");
+    });
+  });
+
+  it("detects, reconciles, and restores singleton state through append-only history", async () => {
+    await withTempPmPath(async (context) => {
+      const filePath = path.join(context.pmPath, "governance.json");
+      const common = {
+        pmRoot: context.pmPath,
+        filePath,
+        op: "governance_put",
+        author: "workspace-history-test",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+      };
+      await writeWorkspaceJsonWithHistory({
+        ...common,
+        raw: '{"floor":10}\n',
+      });
+      await writeWorkspaceJsonWithHistory({
+        ...common,
+        raw: '{"floor":12}\n',
+      });
+      await writeFile(filePath, '{"floor":8}\n');
+
+      await expect(inspectWorkspaceHistoryState(context.pmPath)).resolves.toMatchObject({
+        ok: false,
+        document_count: 1,
+        matching_documents: [],
+        mismatched_documents: ["governance.json"],
+        missing_documents: [],
+        unreadable_documents: [],
+      });
+      const drift = await scanHistoryDrift(context.pmPath, []);
+      expect(drift.workspaceStateMismatches).toEqual(["governance.json"]);
+      expect(drift.driftedItems).toContain(WORKSPACE_HISTORY_ID);
+      const history = await runHistory(
+        WORKSPACE_HISTORY_ID,
+        { verify: true },
+        { path: context.pmPath },
+      );
+      expect(history.verification).toMatchObject({
+        ok: false,
+        workspace_state_matches_latest: false,
+        workspace_state_mismatches: ["governance.json"],
+      });
+
+      await reconcileWorkspaceJsonHistory({
+        ...common,
+        op: "workspace_state_reconcile",
+        message: "Accept the intended governance bound after review.",
+        authorizationDecision: "pm-decision",
+      });
+      await expect(inspectWorkspaceHistoryState(context.pmPath)).resolves.toMatchObject({
+        ok: true,
+        matching_documents: ["governance.json"],
+      });
+
+      const restored = await restoreWorkspaceJsonFromHistory({
+        ...common,
+        targetVersion: 1,
+        message: "Restore the first recorded governance bound.",
+      });
+      expect(restored).toMatchObject({
+        document_path: "governance.json",
+        restored_from_version: 1,
+        changed: true,
+      });
+      expect(JSON.parse(await readFile(filePath, "utf8"))).toEqual({
+        floor: 10,
+      });
+      await expect(
+        restoreWorkspaceJsonFromHistory({
+          ...common,
+          targetVersion: 1,
+          message: "Confirm the restored document is already current.",
+        }),
+      ).resolves.toMatchObject({
+        changed: false,
+        restored_from_version: 1,
+      });
+      expect(verifyHistoryChain(await readHistoryEntries(
+        getWorkspaceHistoryPath(context.pmPath),
+        WORKSPACE_HISTORY_ID,
+      ))).toEqual({ ok: true, errors: [] });
+      await expect(inspectWorkspaceHistoryState(context.pmPath)).resolves.toMatchObject({
+        ok: true,
+        matching_documents: ["governance.json"],
+      });
+    });
+  });
+
+  it("compensates both existing and absent documents when restore history append fails", async () => {
+    await withTempPmPath(async (context) => {
+      const filePath = path.join(context.pmPath, "governance.json");
+      const common = {
+        pmRoot: context.pmPath,
+        filePath,
+        op: "workspace_state_restore",
+        author: "workspace-history-test",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+        targetVersion: 1,
+        message: "Exercise restore compensation.",
+      };
+      await writeWorkspaceJsonWithHistory({
+        ...common,
+        op: "governance_put",
+        raw: '{"floor":10}\n',
+      });
+
+      const appendSpy = vi.spyOn(historyModule, "appendHistoryEntry");
+      try {
+        const outOfBandRaw = '{"floor":8}\n';
+        await writeFile(filePath, outOfBandRaw);
+        appendSpy.mockRejectedValueOnce(new Error("restore-append-failed"));
+        await expect(
+          restoreWorkspaceJsonFromHistory(common),
+        ).rejects.toThrow("restore-append-failed");
+        expect(await readFile(filePath, "utf8")).toBe(outOfBandRaw);
+
+        await rm(filePath);
+        appendSpy.mockRejectedValueOnce(new Error("restore-append-failed"));
+        await expect(
+          restoreWorkspaceJsonFromHistory(common),
+        ).rejects.toThrow("restore-append-failed");
+        await expect(readFile(filePath, "utf8")).rejects.toMatchObject({
+          code: "ENOENT",
+        });
+      } finally {
+        appendSpy.mockRestore();
+      }
+    });
+  });
+
+  it("classifies a workspace-state inspection failure as an unreadable stream", async () => {
+    await withTempPmPath(async (context) => {
+      await appendWorkspaceHistoryChange({
+        pmRoot: context.pmPath,
+        documentPath: "governance.json",
+        before: { enabled: false },
+        after: { enabled: true },
+        op: "inspection_failure_fixture",
+        author: "workspace-history-test",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+      });
+      await writeFile(
+        path.join(context.pmPath, "governance.json"),
+        '{"enabled":true}\n',
+      );
+
+      const inspectSpy = vi
+        .spyOn(workspaceHistoryModule, "inspectWorkspaceHistoryState")
+        .mockRejectedValueOnce(new Error("singleton-read-failed"));
+      try {
+        const drift = await scanHistoryDrift(context.pmPath, []);
+        expect(drift.unreadableStreams).toContain(WORKSPACE_HISTORY_ID);
+        expect(drift.driftedItems).toContain(WORKSPACE_HISTORY_ID);
+      } finally {
+        inspectSpy.mockRestore();
+      }
+    });
+  });
+
+  it("refuses unauthorized reconciliation and invalid restore targets", async () => {
+    await withTempPmPath(async (context) => {
+      const filePath = path.join(context.pmPath, "governance.json");
+      const common = {
+        pmRoot: context.pmPath,
+        filePath,
+        op: "governance_put",
+        author: "workspace-history-test",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+      };
+      await writeWorkspaceJsonWithHistory({
+        ...common,
+        raw: '{"floor":10}\n',
+      });
+      await writeFile(filePath, '{"floor":8}\n');
+      await expect(
+        reconcileWorkspaceJsonHistory({
+          ...common,
+          op: "workspace_state_reconcile",
+          message: "Missing an authorization decision.",
+          authorizationDecision: " ",
+        }),
+      ).rejects.toThrow("authorization decision");
+      await expect(
+        restoreWorkspaceJsonFromHistory({
+          ...common,
+          targetVersion: 2,
+          message: "Invalid future restore.",
+        }),
+      ).rejects.toThrow("target version");
+      await expect(
+        restoreWorkspaceJsonFromHistory({
+          ...common,
+          targetVersion: 1,
+          message: "Reject the out-of-band value and restore verified state.",
+        }),
+      ).resolves.toMatchObject({ changed: true, restored_from_version: 1 });
+      expect(JSON.parse(await readFile(filePath, "utf8"))).toEqual({
+        floor: 10,
+      });
+      await expect(inspectWorkspaceHistoryState(context.pmPath)).resolves.toMatchObject({
+        ok: true,
+        matching_documents: ["governance.json"],
+      });
+      await writeFile(filePath, "not-json");
+      await expect(inspectWorkspaceHistoryState(context.pmPath)).resolves.toMatchObject({
+        ok: false,
+        unreadable_documents: ["governance.json"],
+      });
+    });
+  });
+
+  it("fails closed for missing, ungoverned, and unverifiable reconciliation or restore state", async () => {
+    await withTempPmPath(async (context) => {
+      const filePath = path.join(context.pmPath, "governance.json");
+      const common = {
+        pmRoot: context.pmPath,
+        filePath,
+        op: "workspace_state_reconcile",
+        author: "workspace-history-test",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+      };
+      await writeWorkspaceJsonWithHistory({
+        ...common,
+        op: "governance_put",
+        raw: '{"floor":10}\n',
+      });
+      await expect(
+        reconcileWorkspaceJsonHistory({
+          ...common,
+          authorizationDecision: "pm-decision",
+        }),
+      ).resolves.toMatchObject({ changed: false });
+
+      await rm(filePath);
+      await expect(
+        reconcileWorkspaceJsonHistory({
+          ...common,
+          authorizationDecision: "pm-decision",
+        }),
+      ).rejects.toThrow("document is missing");
+
+      const ungovernedPath = path.join(context.pmPath, "ungoverned.json");
+      await writeFile(ungovernedPath, '{}\n');
+      await expect(
+        reconcileWorkspaceJsonHistory({
+          ...common,
+          filePath: ungovernedPath,
+          authorizationDecision: "pm-decision",
+        }),
+      ).rejects.toThrow("does not govern document");
+      const outsidePath = path.join(path.dirname(context.pmPath), "outside.json");
+      await writeFile(outsidePath, '{}\n');
+      await expect(
+        reconcileWorkspaceJsonHistory({
+          ...common,
+          filePath: outsidePath,
+          authorizationDecision: "pm-decision",
+        }),
+      ).rejects.toThrow("must stay inside the tracker root");
+
+      await appendFile(
+        getWorkspaceHistoryPath(context.pmPath),
+        '{"ts":"broken"}\n',
+      );
+      await expect(
+        inspectWorkspaceHistoryState(context.pmPath),
+      ).rejects.toThrow("Workspace history verification failed");
+      await expect(
+        reconcileWorkspaceJsonHistory({
+          ...common,
+          authorizationDecision: "pm-decision",
+        }),
+      ).rejects.toThrow("Workspace history verification failed");
+      await expect(
+        restoreWorkspaceJsonFromHistory({
+          ...common,
+          targetVersion: 1,
+        }),
+      ).rejects.toThrow("Workspace history verification failed");
+    });
+
+    await withTempPmPath(async (context) => {
+      await appendWorkspaceAuditEvent({
+        pmRoot: context.pmPath,
+        op: "review",
+        author: "workspace-history-test",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+      });
+      const filePath = path.join(context.pmPath, "governance.json");
+      const common = {
+        pmRoot: context.pmPath,
+        filePath,
+        op: "governance_put",
+        author: "workspace-history-test",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+      };
+      await writeWorkspaceJsonWithHistory({
+        ...common,
+        raw: '{"floor":10}\n',
+      });
+      await expect(
+        restoreWorkspaceJsonFromHistory({
+          ...common,
+          targetVersion: 1,
+        }),
+      ).rejects.toThrow("does not contain governance.json");
     });
   });
 
@@ -286,7 +614,7 @@ describe("workspace history", () => {
     await withTempPmPath(async (context) => {
       await appendWorkspaceHistoryChange({
         pmRoot: context.pmPath,
-        documentPath: "settings.json",
+        documentPath: "custom-state.json",
         before: { enabled: false },
         after: { enabled: true },
         op: "config_set",
@@ -294,6 +622,10 @@ describe("workspace history", () => {
         lockTtlSeconds: 30,
         lockWaitMs: 1000,
       });
+      await writeFile(
+        path.join(context.pmPath, "custom-state.json"),
+        '{"enabled":true}\n',
+      );
       expect(
         await scanHistoryDrift(context.pmPath, [], {
           cacheHitVerification: "metadata",

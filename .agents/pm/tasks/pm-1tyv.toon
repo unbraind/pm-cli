@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:commands","area:history",pm-cli
 created_at: "2026-04-01T15:27:15.596Z"
-updated_at: "2026-07-26T17:01:25.205Z"
+updated_at: "2026-08-13T09:47:59.076Z"
 deadline: "2026-04-06T15:27:15.596Z"
 author: cursor-agent
 estimated_minutes: 180
@@ -40,10 +40,14 @@ fixed_version: target-vnext
 component: history-runtime
 regression: true
 customer_impact: Consistent behavior across history diagnostics and mutations
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-8wnm,blocks,"2026-04-01T15:27:15.596Z",cursor-agent,null
-  pm-kb21,parent,"2026-04-01T15:27:15.596Z",cursor-agent,null
-  pm-kb21,implements,"2026-07-26T17:01:24.977Z",null,null
+dependencies[2]:
+  - id: pm-kb21
+    kind: parent
+    created_at: "2026-04-01T15:27:15.596Z"
+    author: cursor-agent
+  - id: pm-kb21
+    kind: implements
+    created_at: "2026-07-26T17:01:24.977Z"
 comments[3]{created_at,author,text}:
   "2026-04-01T15:27:15.596Z",cursor-agent,Task focuses on reusable helper plus read/diagnostic/mutation enforcement wiring.
   "2026-04-01T15:39:32.464Z",cursor-agent,"Implemented shared history-stream policy helper and command enforcement. Added src/core/history/history-stream-policy.ts and wired policy checks into history/activity/stats/health plus item-store mutate/delete flows. Added strict-mode regressions in unit suites. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/stats-command.spec.ts tests/unit/health-command.spec.ts tests/unit/item-store.spec.ts passed."

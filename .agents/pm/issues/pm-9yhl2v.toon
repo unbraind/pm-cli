@@ -1,0 +1,40 @@
+id: pm-9yhl2v
+title: Unsupported assurance triggers bypass the typed evaluation-refusal boundary and surface as high-severity Sentry faults
+description: "evaluateAssuranceGate throws a raw TypeError when a named gate does not declare the requested lifecycle trigger. The CLI action already normalizes AssuranceEvaluationRefusalError into a stable usage refusal, so this single raw branch becomes unclassified_runtime_error telemetry and a high-severity handled Sentry fault instead of actionable user guidance."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-08-13T11:58:14.430Z"
+updated_at: "2026-08-13T12:19:50.365Z"
+closed_at: "2026-08-13T12:19:49.522Z"
+completed_at: "2026-08-13T12:19:49.522Z"
+author: "harness:codex"
+acceptance_criteria: The SDK preserves TypeError compatibility through AssuranceEvaluationRefusalError while CLI and MCP transports receive a PmCliError usage refusal.; Focused SDK and CLI regression tests prove the exact undeclared-trigger path is typed and normalized.; The fresh Sentry release gate finding is documented and publication remains fail-closed until the immutable next release contains the correction.
+parent: pm-1jzupz
+severity: high
+resolution: "Missing gates and undeclared lifecycle triggers now throw AssuranceEvaluationRefusalError, preserving TypeError compatibility for SDK callers while normalizing CLI and MCP transports to stable invalid_argument_value guidance."
+expected_result: Unsupported gate triggers return a structured invalid_argument_value assurance_evaluation_refused usage response and are excluded from unexpected-fault Sentry reporting.
+actual_result: PM-CLI-33 recorded a handled high-priority TypeError for tracker-context-quality with trigger pre-commit on pm-cli@2026.8.13.
+fixed_version: next
+component: SDK assurance evaluation
+regression: true
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-h06944,discovered_from,"2026-08-13T11:58:14.430Z","harness:codex","cli:create:dep",detected
+  pm-wn6wot,implements,"2026-08-13T11:58:14.430Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-13T11:58:14.430Z","harness:codex","Duplicate check: searched all statuses for PM-CLI-33 and the exact assurance gate/trigger refusal. Only the closed historical umbrella pm-rnpb and general assurance lineage matched; no dedicated issue represented this fresh 2026-08-13 fault. Live Sentry evidence is intentionally contract-level and redacted: one handled production event, priority high, unclassified_runtime_error, release pm-cli@2026.8.13."
+  "2026-08-13T12:00:40.215Z","harness:codex","TDD evidence: the focused test first failed on both the direct SDK type and action normalization, reproducing PM-CLI-33 exactly. Replacing the two gate-selection TypeError branches with AssuranceEvaluationRefusalError made all 17 focused tests pass. Exact manual CLI probe now exits 2 with invalid_argument_value and the undeclared-trigger detail instead of unclassified_runtime_error. Local telemetry flush via NODE_USE_ENV_PROXY=1 drained 1/1 queued entries and reported queue_progressed=true, queue_empty=true; server telemetry remains independently healthy at 1.78% finish error rate and zero failures without error codes. Publication remains fail-closed because the existing immutable 2026.8.13 artifact still owns the unresolved one-event Sentry group until a future release contains this fix."
+  "2026-08-13T12:18:53.342Z","harness:codex","Final local verification: the linked PM test passed 17/17 in a schema-sandboxed tracker; repository-wide coverage passed all 7,256 tests at exact 52,698/52,698 statements, 38,711/38,711 branches, 10,832/10,832 functions, and 50,910/50,910 lines. Full lint, architecture, token-budget, context-calibration, assurance, and append-only history gates passed. PR #996: https://github.com/unbraind/pm-cli/pull/996. The existing immutable 2026.8.13 Sentry group remains unresolved and publication remains fail-closed until a future artifact contains this fix."
+files[3]{path,scope,note}:
+  src/sdk/governance/assurance.ts,project,Typed undeclared and missing gate evaluation refusals
+  tests/unit/sdk/assurance-action.spec.ts,project,CLI and MCP normalization regression
+  tests/unit/sdk/assurance.spec.ts,project,Direct SDK typed-refusal regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-action.spec.ts --reporter=dot,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msrhhkth-uokt1m,test,passed,"2026-08-13T12:17:44.372Z","2026-08-13T12:17:55.877Z","2026-08-13T12:17:55.877Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Canonical assurance SDK transport-refusal contract
+close_reason: "Normalized missing-gate and undeclared-trigger assurance failures through the typed evaluation-refusal boundary; focused TDD, manual CLI, exact coverage, telemetry separation, and fail-closed publication evidence are recorded."
+body: ""

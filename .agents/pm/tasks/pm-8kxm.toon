@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:calendar","area:cli","area:recurrence",code,pm-cli
 created_at: "2026-03-31T22:30:11.348Z"
-updated_at: "2026-07-26T17:07:35.349Z"
+updated_at: "2026-08-13T09:48:02.598Z"
 deadline: "2026-04-07T22:30:11.348Z"
 assignee: codex-agent
 author: codex-agent
@@ -41,9 +41,8 @@ fixed_version: archive-2026q2
 component: project-management/add-advanced-event-filters-and-bounded-recurrenc
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add advanced event filters and bounded recurrence controls.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-0c0g,blocks,"2026-03-31T22:30:11.348Z",codex-agent,null
-  pm-8m6s,implements,"2026-07-26T17:07:35.137Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-8m6s,implements,"2026-07-26T17:07:35.137Z"
 comments[2]{created_at,author,text}:
   "2026-03-31T22:30:11.348Z",codex-agent,Task created for recurrence safety and advanced filtering controls.
   "2026-03-31T22:46:54.536Z",codex-agent,Added calendar include-source filtering and bounded recurrence controls (lookahead/lookback/occurrence-limit) with deterministic validation and runtime metadata output.

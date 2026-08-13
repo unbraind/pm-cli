@@ -5,6 +5,7 @@ import {
   collectDanglingDependencyReferences,
   collectDuplicateDependencyRows,
   collectMissingDependencyTargetIds,
+  collectOrderingStorageContradictions,
 } from "../../../../src/sdk/graph/assembly.js";
 import {
   auditWorkspaceRelationshipGraph,
@@ -209,6 +210,119 @@ describe("workspace relationship graph assembly", () => {
         .map(({ kind }) => kind)
         .sort(),
     ).toEqual(["blocked_by", "related"]);
+  });
+
+  it("distinguishes recorded nodes and informative edges from placeholders and contradictory rows", () => {
+    const items = [
+      {
+        id: "pm-holder",
+        title: "Holder",
+        status: "closed",
+        blocked_by: "pm-target",
+        dependencies: [
+          { id: "pm-target", kind: "blocks" },
+          { id: "pm-missing", kind: "related" },
+        ],
+      },
+      { id: "pm-target", title: "Target", status: "closed" },
+    ] as never;
+    expect(collectOrderingStorageContradictions(items)).toEqual([
+      {
+        holder_id: "pm-holder",
+        target_id: "pm-target",
+        dependency_kind: "blocks",
+        holder_status: "closed",
+        legacy_terminal: true,
+      },
+    ]);
+
+    const report = auditWorkspaceRelationshipGraph(
+      assembleWorkspaceRelationshipGraph(items),
+    );
+    expect(report.profile).toMatchObject({
+      nodes: 3,
+      recorded_nodes: 2,
+      missing_nodes: 1,
+      edges: 3,
+      ordering_contradiction_edges: 1,
+      informative_edges: 2,
+    });
+    expect(
+      report.findings.find(
+        (finding) => finding.code === "legacy_ordering_storage_contradiction",
+      ),
+    ).toMatchObject({
+      count: 1,
+      sample: [
+        "pm-holder -> pm-target (blocked_by scalar + blocks dependency)",
+      ],
+      remediation: expect.stringContaining("blocks dependency row"),
+    });
+    expect(
+      report.findings.find(
+        (finding) => finding.code === "legacy_ordering_cycle",
+      )?.evidence,
+    ).toEqual([
+      "pm-holder -> pm-target (blocked_by scalar + blocks dependency)",
+    ]);
+  });
+
+  it("orders exact contradictions by holder, target, and ordering kind", () => {
+    const registry = new RelationshipKindRegistry();
+    registry.register({
+      kind: "precedes",
+      direction: "directed",
+      ordering: true,
+      hierarchy: false,
+      outgoing: "many",
+      incoming: "many",
+      lifecycle: "persistent",
+      compatibilityVersion: 1,
+      allowSelf: false,
+    });
+    expect(
+      collectOrderingStorageContradictions(
+        [
+          undefined,
+          { id: " ", title: "Blank", status: "open" },
+          {
+            id: "pm-z",
+            title: "Z",
+            status: "open",
+            blocked_by: "pm-b",
+            dependencies: [{ id: "pm-b", kind: "blocks" }],
+          },
+          {
+            id: "pm-a",
+            title: "A first",
+            status: "open",
+            blocked_by: "pm-z",
+            dependencies: [
+              { id: "pm-z" },
+              { id: "pm-z", kind: "precedes" },
+              { id: "pm-z", kind: "blocks" },
+            ],
+          },
+          {
+            id: "pm-a",
+            title: "A second",
+            status: "open",
+            blocked_by: "pm-y",
+            dependencies: [{ id: "pm-y", kind: "blocks" }],
+          },
+        ] as never,
+        undefined,
+        registry,
+      ).map(
+        ({ holder_id, target_id, dependency_kind }) =>
+          `${holder_id}:${target_id}:${dependency_kind}`,
+      ),
+    ).toEqual([
+      "pm-a:pm-y:blocks",
+      "pm-a:pm-z:blocks",
+      "pm-a:pm-z:precedes",
+      "pm-z:pm-b:blocks",
+    ]);
   });
 });
 describe("relationship graph governance", () => {
@@ -458,7 +572,11 @@ describe("relationship graph governance", () => {
       findings: [],
       profile: {
         nodes: 0,
+        recorded_nodes: 0,
         edges: 0,
+        informative_edges: 0,
+        redundant_edges: 0,
+        ordering_contradiction_edges: 0,
         edge_basis: "deduplicated_directed",
         edges_by_kind: {},
         edge_share_by_kind: {},
@@ -488,6 +606,8 @@ describe("relationship graph governance", () => {
           legacy_no_blocker_sentinel: 0,
           ordering_cycle: 0,
           legacy_ordering_cycle: 0,
+          ordering_storage_contradiction: 0,
+          legacy_ordering_storage_contradiction: 0,
           duplicate_edge: 0,
           legacy_duplicate_edge: 0,
           duplicate_dependency_row: 0,
@@ -612,6 +732,74 @@ describe("relationship graph governance", () => {
       count: 2,
       sample: ["pm-old-a", "pm-old-b"],
     });
+  });
+
+  it("reports active exact contradictions with sorted cycle evidence", () => {
+    const report = auditWorkspaceRelationshipGraph(
+      assembleWorkspaceRelationshipGraph([
+        {
+          id: "pm-a",
+          title: "A",
+          status: "open",
+          blocked_by: "pm-b",
+          dependencies: [{ id: "pm-b", kind: "blocks" }],
+        },
+        {
+          id: "pm-b",
+          title: "B",
+          status: "open",
+          blocked_by: "pm-a",
+          dependencies: [{ id: "pm-a", kind: "blocks" }],
+        },
+      ] as never),
+    );
+    expect(
+      report.findings.find(
+        (finding) => finding.code === "ordering_storage_contradiction",
+      ),
+    ).toMatchObject({
+      severity: "error",
+      count: 2,
+      sample: [
+        "pm-a -> pm-b (blocked_by scalar + blocks dependency)",
+        "pm-b -> pm-a (blocked_by scalar + blocks dependency)",
+      ],
+    });
+    expect(
+      report.findings.find((finding) => finding.code === "ordering_cycle")
+        ?.evidence,
+    ).toEqual([
+      "pm-a -> pm-b (blocked_by scalar + blocks dependency)",
+      "pm-b -> pm-a (blocked_by scalar + blocks dependency)",
+    ]);
+  });
+
+  it("accepts legacy assemblies without exact contradiction evidence", () => {
+    const base = assembleWorkspaceRelationshipGraph([
+      {
+        id: "pm-a",
+        title: "A",
+        status: "open",
+        dependencies: [{ id: "pm-b", kind: "blocked_by" }],
+      },
+      {
+        id: "pm-b",
+        title: "B",
+        status: "open",
+        dependencies: [{ id: "pm-a", kind: "blocked_by" }],
+      },
+    ] as never);
+    const report = auditWorkspaceRelationshipGraph({
+      ...base,
+      orderingContradictions: undefined,
+    });
+    expect(
+      report.findings.find((finding) => finding.code === "ordering_cycle"),
+    ).toMatchObject({ severity: "error", sample: ["pm-a", "pm-b"] });
+    expect(
+      report.findings.find((finding) => finding.code === "ordering_cycle"),
+    ).not.toHaveProperty("evidence");
+    expect(report.profile.ordering_contradiction_edges).toBe(0);
   });
 
   it("reports duplicated same-family spellings split by endpoint lifecycle", () => {
@@ -1083,7 +1271,11 @@ describe("diffRelationshipAuditSnapshots", () => {
       },
       profile: {
         nodes: 2,
+        recorded_nodes: 2,
         edges: 0,
+        informative_edges: 0,
+        redundant_edges: 0,
+        ordering_contradiction_edges: 0,
         active_nodes: 1,
         missing_nodes: 0,
         isolated_active_nodes: -2,

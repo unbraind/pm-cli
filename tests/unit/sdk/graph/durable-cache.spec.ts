@@ -183,6 +183,10 @@ describe("durable graph cache primitives", () => {
       expect(await loadGraphAuditBaseline(context.pmPath)).toBeUndefined();
       const structuralProfile = {
         edge_basis: "deduplicated_directed" as const,
+        recorded_nodes: 1,
+        informative_edges: 0,
+        redundant_edges: 0,
+        ordering_contradiction_edges: 0,
         articulation_points: 0,
         bridge_edges: 0,
         outcome_nodes: 0,
@@ -202,6 +206,8 @@ describe("durable graph cache primitives", () => {
           legacy_no_blocker_sentinel: 0,
           ordering_cycle: 1,
           legacy_ordering_cycle: 0,
+          ordering_storage_contradiction: 0,
+          legacy_ordering_storage_contradiction: 0,
           duplicate_edge: 0,
           legacy_duplicate_edge: 0,
           duplicate_dependency_row: 0,
@@ -274,6 +280,36 @@ describe("durable graph cache primitives", () => {
         JSON.stringify({
           ...snapshot,
           profile: { ...snapshot.profile, nodes: -1 },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            informative_edges: undefined,
+          },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, recorded_nodes: -1 },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, recorded_nodes: 2 },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, informative_edges: 1 },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: { ...snapshot.profile, redundant_edges: 1 },
+        }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            ordering_contradiction_edges: 1,
+          },
         }),
         JSON.stringify({
           ...snapshot,
@@ -431,6 +467,10 @@ describe("durable graph cache primitives", () => {
         outcome_unreachable_nodes: _legacyOutcomeUnreachable,
         outcome_reachability_basis_points: _legacyOutcomeRate,
         finding_subjects_by_code: _legacyFindingSubjects,
+        recorded_nodes: _legacyRecordedNodes,
+        informative_edges: _legacyInformativeEdges,
+        redundant_edges: _legacyRedundantEdges,
+        ordering_contradiction_edges: _legacyOrderingContradictionEdges,
         ...legacyProfile
       } = snapshot.profile;
       await writeFile(

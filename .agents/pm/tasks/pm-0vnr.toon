@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:release","area:tests",pm-cli
 created_at: "2026-04-01T15:27:36.473Z"
-updated_at: "2026-07-26T17:00:28.438Z"
+updated_at: "2026-08-13T09:47:57.080Z"
 deadline: "2026-04-07T15:27:36.473Z"
 author: cursor-agent
 estimated_minutes: 180
@@ -40,10 +40,14 @@ fixed_version: target-vnext
 component: verification
 regression: true
 customer_impact: Users receive documented and validated resilient behavior
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-g6qd,blocks,"2026-04-01T15:27:36.473Z",cursor-agent,null
-  pm-kb21,parent,"2026-04-01T15:27:36.473Z",cursor-agent,null
-  pm-kb21,implements,"2026-07-26T17:00:28.259Z",null,null
+dependencies[2]:
+  - id: pm-kb21
+    kind: parent
+    created_at: "2026-04-01T15:27:36.473Z"
+    author: cursor-agent
+  - id: pm-kb21
+    kind: implements
+    created_at: "2026-07-26T17:00:28.259Z"
 comments[4]{created_at,author,text}:
   "2026-04-01T15:27:36.473Z",cursor-agent,Task tracks final test/doc/verification gate and closure evidence.
   "2026-04-01T15:43:03.149Z",cursor-agent,"Documentation updates completed for missing history-stream policy and history-only restore recovery in README, PRD, ARCHITECTURE, and CHANGELOG. Verification after docs/runtime updates: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts passed (40/40); node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts passed (22/22)."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:history","area:restore",pm-cli
 created_at: "2026-04-01T15:27:26.599Z"
-updated_at: "2026-07-26T17:14:18.613Z"
+updated_at: "2026-08-13T09:48:11.601Z"
 deadline: "2026-04-06T15:27:26.599Z"
 author: cursor-agent
 estimated_minutes: 150
@@ -40,11 +40,18 @@ fixed_version: target-vnext
 component: restore
 regression: true
 customer_impact: Users can recover deleted or missing item files without manual reconstruction
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-1tyv,blocks,"2026-04-01T15:27:26.599Z",cursor-agent,null
-  pm-9lc,related,"2026-04-01T15:27:26.599Z",cursor-agent,null
-  pm-kb21,parent,"2026-04-01T15:27:26.599Z",cursor-agent,null
-  pm-kb21,implements,"2026-07-26T17:14:18.386Z",null,null
+dependencies[3]:
+  - id: pm-9lc
+    kind: related
+    created_at: "2026-04-01T15:27:26.599Z"
+    author: cursor-agent
+  - id: pm-kb21
+    kind: parent
+    created_at: "2026-04-01T15:27:26.599Z"
+    author: cursor-agent
+  - id: pm-kb21
+    kind: implements
+    created_at: "2026-07-26T17:14:18.386Z"
 comments[4]{created_at,author,text}:
   "2026-04-01T15:27:26.599Z",cursor-agent,Task adds history-only restore fallback for missing/deleted item files.
   "2026-04-01T15:39:36.115Z",cursor-agent,"Implemented restore recovery for missing/deleted item files from history streams: restore now resolves history-only subjects when item file is absent, reconstructs current state from history for restore event diffs, and preserves lock + rollback behavior. Added unit coverage for missing-file and deleted-item recovery and integration coverage for strict policy failures and history-only restore. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts tests/integration/cli.integration.spec.ts passed."

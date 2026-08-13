@@ -57,10 +57,7 @@ describe("health vector provider boundary", () => {
         return new Promise(() => undefined);
       }) as typeof globalThis.fetch;
       try {
-        const result = await runHealth(
-          { path: context.pmPath },
-          { skipDrift: true },
-        );
+        const result = await runHealth({ path: context.pmPath });
         expect(requests).toBe(0);
         expect(
           result.checks.every((check) => check.ok === (check.status === "ok")),
@@ -73,6 +70,16 @@ describe("health vector provider boundary", () => {
         expect(
           result.checks.find((check) => check.name === "integrity"),
         ).toMatchObject({ name: "integrity", status: "ok", ok: true });
+        expect(
+          result.checks.find((check) => check.name === "history_drift")
+            ?.details,
+        ).toMatchObject({
+          counts: {
+            workspace_state_mismatches: 0,
+            workspace_state_missing: 0,
+            workspace_state_unreadable: 0,
+          },
+        });
         expect(
           result.checks.find((check) => check.name === "vectorization")
             ?.details,

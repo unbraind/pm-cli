@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-renderers",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.686Z"
-updated_at: "2026-07-26T17:14:28.285Z"
+updated_at: "2026-08-13T09:50:37.527Z"
 deadline: "2026-03-13T23:02:11.686Z"
 assignee: steve
 author: steve
@@ -41,10 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/renderer-and-command-extension-points
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Renderer and command extension points.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-b1w,parent,"2026-02-17T23:02:11.686Z",steve,null
-  pm-f45,blocks,"2026-02-17T23:02:11.686Z",steve,null
-  pm-b1w,implements,"2026-07-26T17:14:28.047Z",null,null
+dependencies[2]:
+  - id: pm-b1w
+    kind: parent
+    created_at: "2026-02-17T23:02:11.686Z"
+    author: steve
+  - id: pm-b1w
+    kind: implements
+    created_at: "2026-07-26T17:14:28.047Z"
 comments[13]{created_at,author,text}:
   "2026-02-19T17:58:50.080Z",maintainer-agent,"Planned change-set: docs-first update describing command/renderer extension-point baseline, then implement deterministic extension API registration + runtime dispatch with failure containment and add focused unit/integration coverage before pm test/pm test-all evidence logging."
   "2026-02-19T18:23:27.398Z",maintainer-agent,"Implemented docs-first command/renderer extension-point baseline: README.md and PRD.md now define deterministic command-result override and renderer override behavior; loader activation now exposes registerCommand/registerRenderer registries with deterministic precedence and failure containment; runtime state in core/extensions now tracks active command context + command/renderer registries; output formatting applies command-result overrides before renderer overrides with fallback to core rendering; CLI preAction wires active command context and registries from activated extensions."

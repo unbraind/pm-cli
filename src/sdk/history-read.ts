@@ -71,6 +71,14 @@ export interface HistoryVerificationResult {
   current_item_hash?: string;
   /** Whether the supplied document matches the newest history hash. */
   current_matches_latest?: boolean;
+  /** Whether every governed workspace singleton matches the latest replayed state. */
+  workspace_state_matches_latest?: boolean;
+  /** Governed singleton paths whose JSON differs from the replayed value. */
+  workspace_state_mismatches?: string[];
+  /** Governed singleton paths absent from disk. */
+  workspace_state_missing?: string[];
+  /** Governed singleton paths unreadable as safe workspace-local JSON. */
+  workspace_state_unreadable?: string[];
 }
 
 /**

@@ -293,6 +293,10 @@ interface DecodedGraphComposition {
 type DecodedStructuralProfile = Pick<
   RelationshipCoverageProfile,
   | "edge_basis"
+  | "recorded_nodes"
+  | "informative_edges"
+  | "redundant_edges"
+  | "ordering_contradiction_edges"
   | "articulation_points"
   | "bridge_edges"
   | "outcome_nodes"
@@ -309,11 +313,84 @@ type DecodedStructuralProfile = Pick<
   | "finding_subjects_by_code"
 >;
 
+type DecodedInformativeProfile = Pick<
+  RelationshipCoverageProfile,
+  | "recorded_nodes"
+  | "informative_edges"
+  | "redundant_edges"
+  | "ordering_contradiction_edges"
+>;
+
+/** Decode the additive information-bearing census as one coherent field group. */
+function decodeInformativeProfile(
+  profile: Record<string, unknown>,
+  nodes: number,
+  edges: number,
+): DecodedInformativeProfile | undefined {
+  const fields = [
+    "recorded_nodes",
+    "informative_edges",
+    "redundant_edges",
+    "ordering_contradiction_edges",
+  ] as const;
+  const presentCount = fields.filter(
+    (field) => profile[field] !== undefined,
+  ).length;
+  if (presentCount !== 0 && presentCount !== fields.length) return undefined;
+  if (!fields.every((field) => isOptionalValid(profile[field], isNonnegativeInteger)))
+    return undefined;
+  const decoded = {
+    recorded_nodes: profile.recorded_nodes ?? nodes,
+    informative_edges: profile.informative_edges ?? edges,
+    redundant_edges: profile.redundant_edges ?? 0,
+    ordering_contradiction_edges: profile.ordering_contradiction_edges ?? 0,
+  } as Required<DecodedInformativeProfile>;
+  return decoded.recorded_nodes <= nodes &&
+    decoded.informative_edges <= edges &&
+    decoded.redundant_edges <= edges &&
+    decoded.ordering_contradiction_edges <= edges
+    ? decoded
+    : undefined;
+}
+
+/** Validate the optional structural census fields as one complete version group. */
+function hasValidStructuralFields(
+  profile: Record<string, unknown>,
+  countFields: readonly string[],
+  rateFields: readonly string[],
+): boolean {
+  const introducedFields = [
+    ...countFields,
+    ...rateFields,
+    "finding_subjects_by_code",
+  ];
+  const presentCount = introducedFields.filter(
+    (field) => profile[field] !== undefined,
+  ).length;
+  if (presentCount !== 0 && presentCount !== introducedFields.length)
+    return false;
+  return (
+    countFields.every((field) =>
+      isOptionalValid(profile[field], isNonnegativeInteger),
+    ) &&
+    rateFields.every(
+      (field) =>
+        isOptionalValid(profile[field], isNonnegativeInteger) &&
+        (profile[field] === undefined || Number(profile[field]) <= 10_000),
+    ) &&
+    isOptionalValid(profile.finding_subjects_by_code, isNonnegativeCountRecord)
+  );
+}
+
 /** Decode optional structural fields while normalizing pre-structure baselines. */
 function decodeStructuralProfile(
   profile: Record<string, unknown>,
   affectedSubjectsByCode: Record<string, number>,
+  nodes: number,
+  edges: number,
 ): DecodedStructuralProfile | undefined {
+  const informative = decodeInformativeProfile(profile, nodes, edges);
+  if (informative === undefined) return undefined;
   const countFields = [
     "articulation_points",
     "bridge_edges",
@@ -331,40 +408,11 @@ function decodeStructuralProfile(
     "terminal_outcome_reachability_basis_points",
     "outcome_reachability_basis_points",
   ] as const;
-  const introducedStructuralFields = [
-    ...countFields,
-    ...rateFields,
-    "finding_subjects_by_code",
-  ] as const;
-  const introducedStructuralFieldCount = introducedStructuralFields.filter(
-    (field) => profile[field] !== undefined,
-  ).length;
-  if (
-    introducedStructuralFieldCount !== 0 &&
-    introducedStructuralFieldCount !== introducedStructuralFields.length
-  ) {
+  if (!hasValidStructuralFields(profile, countFields, rateFields))
     return undefined;
-  }
-  const validCounts = countFields.every(
-    (field) =>
-      profile[field] === undefined || isNonnegativeInteger(profile[field]),
-  );
-  const validRates = rateFields.every(
-    (field) =>
-      profile[field] === undefined ||
-      (isNonnegativeInteger(profile[field]) && Number(profile[field]) <= 10_000),
-  );
-  if (!validCounts || !validRates) return undefined;
   if (
     profile.edge_basis !== undefined &&
     profile.edge_basis !== "deduplicated_directed"
-  )
-    return undefined;
-  if (
-    !isOptionalValid(
-      profile.finding_subjects_by_code,
-      isNonnegativeCountRecord,
-    )
   )
     return undefined;
   const findingSubjects = isNonnegativeCountRecord(
@@ -374,6 +422,7 @@ function decodeStructuralProfile(
     : {};
   return {
     edge_basis: "deduplicated_directed",
+    ...informative,
     ...Object.fromEntries(
       countFields.map((field) => [field, profile[field] ?? 0]),
     ),
@@ -496,6 +545,8 @@ function decodeBaseline(
     const structural = decodeStructuralProfile(
       profile,
       affectedSubjectsByCode,
+      profile.nodes,
+      profile.edges,
     );
     if (structural === undefined) return undefined;
     const { coverage_by_type = {} } = profile;

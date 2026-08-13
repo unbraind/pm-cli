@@ -59,6 +59,58 @@ describe("ordering-cycle mutation advisories", () => {
     ).toEqual([]);
   });
 
+  it("identifies a newly stored scalar-versus-structured contradiction exactly", () => {
+    const holder = { ...item("pm-holder"), blocked_by: "pm-target" };
+    expect(
+      collectNewOrderingCycleWarnings(
+        [holder, item("pm-target")],
+        [
+          {
+            ...holder,
+            dependencies: [
+              {
+                id: "pm-target",
+                kind: "blocks",
+                author: "test",
+                created_at: "2026-01-01T00:00:00.000Z",
+              },
+            ],
+          },
+          item("pm-target"),
+        ],
+        "pm-holder",
+      ),
+    ).toEqual([
+      "ordering_storage_contradiction_created:pm-holder -> pm-target (blocked_by scalar + blocks dependency):remove_contradicting_dependency_row:run_pm_graph_audit",
+      "ordering_cycle_created:pm-holder -> pm-target -> pm-holder:items_will_not_be_ready:run_pm_graph_audit",
+    ]);
+  });
+
+  it("does not repeat a pre-existing scalar-versus-structured contradiction", () => {
+    const contradictory = [
+      {
+        ...item("pm-holder"),
+        blocked_by: "pm-target",
+        dependencies: [
+          {
+            id: "pm-target",
+            kind: "blocks",
+            author: "test",
+            created_at: "2026-01-01T00:00:00.000Z",
+          },
+        ],
+      },
+      item("pm-target"),
+    ];
+    expect(
+      collectNewOrderingCycleWarnings(
+        contradictory,
+        contradictory,
+        "pm-holder",
+      ),
+    ).toEqual([]);
+  });
+
   it("builds the ordering digraph directly from item rows with canonical ids", () => {
     const registry = createRelationshipKindRegistry();
     registry.register({

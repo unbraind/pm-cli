@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search-semantic",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.253Z"
-updated_at: "2026-07-26T17:30:36.672Z"
+updated_at: "2026-08-13T09:48:29.341Z"
 deadline: "2026-03-07T23:02:10.253Z"
 assignee: steve
 author: steve
@@ -41,10 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/embedding-provider-abstraction
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Embedding provider abstraction.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-54d,blocks,"2026-02-17T23:02:10.253Z",steve,null
-  pm-f45,parent,"2026-02-17T23:02:10.253Z",steve,null
-  pm-f45,implements,"2026-07-26T17:30:36.453Z",null,null
+dependencies[2]:
+  - id: pm-f45
+    kind: parent
+    created_at: "2026-02-17T23:02:10.253Z"
+    author: steve
+  - id: pm-f45
+    kind: implements
+    created_at: "2026-07-26T17:30:36.453Z"
 comments[31]{created_at,author,text}:
   "2026-02-20T22:40:16.459Z",maintainer-agent,"Planned changeset: docs-first milestone update plus core embedding provider abstraction (deterministic provider resolution from settings/env), then wire semantic-mode gating in search/reindex and add unit regressions while preserving keyword-mode behavior."
   "2026-02-20T22:42:48.928Z",maintainer-agent,"Docs-first update completed: PRD.md now marks embedding provider abstraction as partial ([~]) with deterministic provider-resolution baseline, and README.md reflects semantic/hybrid provider-validation baseline while semantic/vector execution remains roadmap."

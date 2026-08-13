@@ -1,0 +1,37 @@
+id: pm-87hmdw
+title: Refresh compatible Greptile 3.4 and TypeScript-ESLint 8.67 tooling
+description: "Adopt the current compatible review and TypeScript lint tooling minors inside the broad SDK/CLI graph and history contract tranche, with strict lint, type, coverage, packed-consumer, hosted-review, and security proof."
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-08-13T10:51:47.009Z"
+updated_at: "2026-08-13T12:20:05.685Z"
+closed_at: "2026-08-13T12:19:46.329Z"
+completed_at: "2026-08-13T12:19:46.329Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: "package.json and pnpm-lock.yaml resolve greptile 3.4.0 and typescript-eslint 8.67.0; npm outdated contains only the canonically deferred TypeScript 7 and npm-package-arg 14 majors; audit, lint, typecheck, exact 100% coverage, packed acceptance, and hosted review gates pass"
+parent: pm-92if
+resolution: Compatible review and lint tooling minors are current while incompatible majors remain explicitly deferred in canonical dependency items.
+expected_result: "Greptile 3.4.0 and typescript-eslint 8.67.0 pass security, lint, type, coverage, package, and hosted review gates."
+actual_result: Both versions are locked; audit is clean; all mandatory local and prior hosted exact-code-head checks passed.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7564ov,supersedes,"2026-08-13T10:51:47.009Z","harness:codex","cli:create:dep",detected
+  pm-7gxbl8,supersedes,"2026-08-13T10:51:47.009Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-13T10:51:47.009Z","harness:codex","Duplicate check 2026-08-13: all-status exact-version searches for Greptile 3.4.0 and typescript-eslint 8.67.0 found no version-specific work item; prior pm-7564ov and pm-7gxbl8 are completed historical refreshes for older minors, while the two remaining major upgrades stay canonically tracked by pm-do5b and pm-ksr40d."
+  "2026-08-13T11:42:34.444Z","harness:codex","Dependency verification: TypeScript package/example/type fixtures passed; contracts and docs gates passed; credential scan and pnpm audit report zero known vulnerabilities after Greptile 3.4.0 and typescript-eslint 8.67.0 updates."
+  "2026-08-13T11:46:43.691Z","harness:codex","Delivery: broad SDK/CLI implementation is under hosted review in PR #996 (https://github.com/unbraind/pm-cli/pull/996) at exact head c61da907be0e9903dd9de41754a4973bc693549a. Keep this item active until exact-head checks and reviewer inventory complete."
+  "2026-08-13T12:19:21.013Z","harness:codex","Closeout evidence: Greptile 3.4.0 and typescript-eslint 8.67.0 are locked; audit reports zero known vulnerabilities; typecheck, lint, exact coverage, package acceptance, and the prior hosted PR #996 check inventory passed. Canonically deferred incompatible majors remain separate PM items."
+files[2]{path,scope,note}:
+  package.json,project,current compatible review and lint tool ranges
+  pnpm-lock.yaml,project,resolved compatible tooling dependency graph
+tests[3]{command,scope,timeout_seconds}:
+  "pnpm lint:eslint",project,240
+  pnpm typecheck,project,300
+  pnpm audit --audit-level high,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msreh0at-r9wjeg,test,passed,"2026-08-13T10:52:26.576Z","2026-08-13T10:53:30.437Z","2026-08-13T10:53:30.437Z",3,0,0
+close_reason: "Updated compatible Greptile and TypeScript-ESLint minors with zero known vulnerabilities and green lint, type, coverage, package, and hosted check evidence."
+body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-pi",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:12.269Z"
-updated_at: "2026-07-26T17:16:31.206Z"
+updated_at: "2026-08-13T09:50:38.822Z"
 deadline: "2026-03-13T23:02:12.269Z"
 assignee: steve
 author: steve
@@ -41,10 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/built-in-pi-tool-wrapper-extension
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Built-in Pi tool wrapper extension.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-b1w,parent,"2026-02-17T23:02:12.269Z",steve,null
-  pm-f45,blocks,"2026-02-17T23:02:12.269Z",steve,null
-  pm-b1w,implements,"2026-07-26T17:16:31.036Z",null,null
+dependencies[2]:
+  - id: pm-b1w
+    kind: parent
+    created_at: "2026-02-17T23:02:12.269Z"
+    author: steve
+  - id: pm-b1w
+    kind: implements
+    created_at: "2026-07-26T17:16:31.036Z"
 comments[28]{created_at,author,text}:
   "2026-02-19T22:35:05.742Z",maintainer-agent,"Planned changeset: add built-in Pi wrapper extension command surface with action-dispatch mapping and deterministic tool response shape; update PRD/README before code to keep docs authoritative; add unit+integration coverage for wrapper action routing and output contract."
   "2026-02-19T22:37:43.443Z",maintainer-agent,"Doc-first alignment completed before code edits: README now lists pi wrapper in implemented command surface and planned-extensions baseline; PRD now includes pm pi pm command contract and marks Milestone 5 Pi wrapper as partial baseline; AGENTS now notes the wrapper command path."

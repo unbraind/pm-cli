@@ -12,10 +12,14 @@
 import type { ItemMetadata } from "../../types/index.js";
 import type { RelationshipKindRegistry } from "../relationships.js";
 import {
+  collectOrderingStorageContradictions,
   normalizeDependencyGraphTarget,
   resolveWorkspaceRelationshipKindRegistry,
 } from "./assembly.js";
-import { collectOrderingCycles } from "./governance.js";
+import {
+  collectOrderingCycles,
+  formatOrderingStorageContradiction,
+} from "./governance.js";
 
 /** Lightweight ordering digraph over one immutable item snapshot. */
 interface OrderingDigraph {
@@ -235,12 +239,37 @@ export function collectNewOrderingCycleWarnings(
   const before = collectScopedCycles(beforeItems, registry, changedItemId);
   const after = collectScopedCycles(afterItems, registry, changedItemId);
   const beforeCycles = new Set(before.cycles.map(cycleKey));
-  return after.cycles
+  const beforeContradictions = new Set(
+    collectOrderingStorageContradictions(beforeItems, undefined, registry).map(
+      (row) =>
+        `${row.holder_id.toLowerCase()}\u0000${row.target_id.toLowerCase()}\u0000${row.dependency_kind}`,
+    ),
+  );
+  const contradictionWarnings = collectOrderingStorageContradictions(
+    afterItems,
+    undefined,
+    registry,
+  )
+    .filter(
+      (row) =>
+        row.holder_id.toLowerCase() === changedItemId.trim().toLowerCase() &&
+        !beforeContradictions.has(
+          `${row.holder_id.toLowerCase()}\u0000${row.target_id.toLowerCase()}\u0000${row.dependency_kind}`,
+        ),
+    )
+    .map(
+      (row) =>
+        `ordering_storage_contradiction_created:${formatOrderingStorageContradiction(row)}:remove_contradicting_dependency_row:run_pm_graph_audit`,
+    );
+  return [
+    ...contradictionWarnings,
+    ...after.cycles
     .filter((component) => !beforeCycles.has(cycleKey(component)))
     .map(
       (component) =>
         `ordering_cycle_created:${findCyclePath(after.successors, component, after.canonical).join(" -> ")}:items_will_not_be_ready:run_pm_graph_audit`,
-    );
+    ),
+  ];
 }
 
 /** White-box graph-path helpers for exhaustive SDK primitive verification. */

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-todos",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:12.078Z"
-updated_at: "2026-07-26T17:03:23.143Z"
+updated_at: "2026-08-13T09:50:30.407Z"
 deadline: "2026-03-13T23:02:12.078Z"
 author: steve
 estimated_minutes: 120
@@ -40,10 +40,14 @@ fixed_version: archive-2026q2
 component: project-management/built-in-todos-import-export-extension
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Built-in todos import export extension.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-b1w,parent,"2026-02-17T23:02:12.078Z",steve,null
-  pm-f45,blocks,"2026-02-17T23:02:12.078Z",steve,null
-  pm-b1w,implements,"2026-07-26T17:03:22.942Z",null,null
+dependencies[2]:
+  - id: pm-b1w
+    kind: parent
+    created_at: "2026-02-17T23:02:12.078Z"
+    author: steve
+  - id: pm-b1w
+    kind: implements
+    created_at: "2026-07-26T17:03:22.942Z"
 comments[11]{created_at,author,text}:
   "2026-02-19T20:12:36.006Z",cursor-agent,"Planned change-set: docs-first update to mark todos import and export as built-in extension command handlers, then implement built-in todos extension modules and command-path dispatch through extension registry, keeping beads as import-only extension command without core fallback."
   "2026-02-19T20:16:43.603Z",cursor-agent,"Docs-first update completed: README now lists pm todos import/export as built-in extension commands and clarifies beads is extension import-only; PRD command contracts now include todos import/export outputs, marks todos built-in extension as implemented baseline, and tightens beads to extension-only (no core fallback)."

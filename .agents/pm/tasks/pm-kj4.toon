@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search-vector",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.455Z"
-updated_at: "2026-07-26T17:18:26.761Z"
+updated_at: "2026-08-13T09:48:14.673Z"
 deadline: "2026-03-07T23:02:10.455Z"
 assignee: steve
 author: steve
@@ -41,10 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/vector-store-adapters-for-qdrant-and-lancedb
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Vector store adapters for Qdrant and LanceDB.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-54d,blocks,"2026-02-17T23:02:10.455Z",steve,null
-  pm-f45,parent,"2026-02-17T23:02:10.455Z",steve,null
-  pm-f45,implements,"2026-07-26T17:18:26.493Z",null,null
+dependencies[2]:
+  - id: pm-f45
+    kind: parent
+    created_at: "2026-02-17T23:02:10.455Z"
+    author: steve
+  - id: pm-f45
+    kind: implements
+    created_at: "2026-07-26T17:18:26.493Z"
 comments[21]{created_at,author,text}:
   "2026-02-21T01:51:29.039Z",cursor-maintainer-agent,"Planned docs-first change-set: update PRD.md and README.md to mark vector-store adapter resolution/planning baseline as partial, then implement deterministic Qdrant/LanceDB adapter helpers and wire semantic/hybrid search/reindex validation to require both embedding provider and vector store before returning roadmap-not-implemented diagnostics."
   "2026-02-21T02:07:06.006Z",cursor-maintainer-agent,"Implemented docs-first vector-store adapter baseline increment. Docs: updated PRD.md Milestone 4 checklist + provider/vector baseline text and README.md planned-search section to mark Qdrant/LanceDB config-resolution/request-target-planning baseline as partial while semantic/vector execution remains roadmap. Code: added src/core/search/vector-stores.ts with deterministic Qdrant/LanceDB resolver + request/query/upsert plan helpers; wired src/cli/commands/search.ts and src/cli/commands/reindex.ts semantic/hybrid gating to require both embedding provider and vector store and emit explicit provider/vector diagnostics; added tests/unit/vector-store-adapter.spec.ts and updated tests/unit/search-command.spec.ts + tests/unit/reindex-command.spec.ts; added vitest coverage include for src/core/search/vector-stores.ts. Evidence: node dist/cli.js test pm-kj4 --run --timeout 3000 --json passed all linked tests (4/4). Regression: node dist/cli.js test-all --status in_progress --timeout 3000 --json => items=11 linked_tests=59 passed=35 failed=0 skipped=24; node dist/cli.js test-all --status closed --timeout 3000 --json => items=21 linked_tests=57 passed=20 failed=0 skipped=37. Coverage proof: node scripts/run-tests.mjs coverage reports 100% lines/branches/functions/statements."

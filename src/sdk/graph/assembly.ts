@@ -121,6 +121,20 @@ export interface DuplicateDependencyRow {
   legacy_terminal: boolean;
 }
 
+/** One holder whose scalar blocker and structured ordering row assert opposite precedence. */
+export interface OrderingStorageContradiction {
+  /** Item storing both contradictory representations. */
+  holder_id: string;
+  /** Target named by both the scalar blocker and structured dependency row. */
+  target_id: string;
+  /** Structured ordering kind that places the holder before the target. */
+  dependency_kind: string;
+  /** Current lifecycle status of the holder. */
+  holder_status: ItemStatus;
+  /** Whether the holder is terminal and the contradiction is historical debt. */
+  legacy_terminal: boolean;
+}
+
 /** Compare text case-insensitively with an exact-spelling deterministic tie-breaker. */
 function compareCaseFoldedText(left: string, right: string): number {
   const normalizedLeft = left.toLowerCase();
@@ -195,6 +209,86 @@ export function collectDuplicateDependencyRows(
     );
     if (targetCompare !== 0) return targetCompare;
     return compareCaseFoldedText(left.kind, right.kind);
+  });
+}
+
+/** Decode one dependency row only when it contradicts the holder's scalar blocker. */
+function decodeOrderingStorageContradiction(
+  item: DependencyReferenceHolder,
+  blocker: string,
+  dependency: Dependency,
+  isTerminal: (status: ItemStatus) => boolean,
+  registry: RelationshipKindRegistry,
+): OrderingStorageContradiction | undefined {
+  if (typeof dependency !== "object" || dependency === null) return undefined;
+  const target = normalizeDependencyReferenceTarget(dependency.id);
+  if (!target || target.toLowerCase() !== blocker.toLowerCase())
+    return undefined;
+  const definition = registry.resolve(
+    typeof dependency.kind === "string" ? dependency.kind : "related",
+  );
+  if (
+    definition?.ordering !== true ||
+    (definition.precedence ?? "source_before_target") !== "source_before_target"
+  )
+    return undefined;
+  return {
+    holder_id: item.id.trim(),
+    target_id: target,
+    dependency_kind: definition.kind,
+    holder_status: item.status,
+    legacy_terminal: isTerminal(item.status),
+  };
+}
+
+/**
+ * Collect storage rows where `blocked_by: target` places the target before the
+ * holder while a same-target structured ordering dependency places the holder
+ * before the target. The contradictory rows form an artificial two-node cycle
+ * after graph assembly, so this pre-assembly evidence identifies the exact row
+ * to remove instead of reporting only strongly connected component members.
+ */
+export function collectOrderingStorageContradictions(
+  items: readonly DependencyReferenceHolder[],
+  isTerminal: (status: ItemStatus) => boolean = (status) =>
+    status === "closed" || status === "canceled",
+  registry: RelationshipKindRegistry = resolveWorkspaceRelationshipKindRegistry(),
+): OrderingStorageContradiction[] {
+  const contradictions = new Map<string, OrderingStorageContradiction>();
+  for (const item of items) {
+    if (typeof item?.id !== "string" || item.id.trim().length === 0) continue;
+    const blocker = normalizeDependencyReferenceTarget(item.blocked_by);
+    if (!blocker) continue;
+    for (const dependency of item.dependencies ?? []) {
+      const row = decodeOrderingStorageContradiction(
+        item,
+        blocker,
+        dependency,
+        isTerminal,
+        registry,
+      );
+      if (!row) continue;
+      contradictions.set(
+        `${row.holder_id.toLowerCase()}\u0000${row.target_id.toLowerCase()}\u0000${row.dependency_kind}`,
+        row,
+      );
+    }
+  }
+  return [...contradictions.values()].sort((left, right) => {
+    const holderCompare = compareCaseFoldedText(
+      left.holder_id,
+      right.holder_id,
+    );
+    if (holderCompare !== 0) return holderCompare;
+    const targetCompare = compareCaseFoldedText(
+      left.target_id,
+      right.target_id,
+    );
+    if (targetCompare !== 0) return targetCompare;
+    return compareCaseFoldedText(
+      left.dependency_kind,
+      right.dependency_kind,
+    );
   });
 }
 
@@ -351,6 +445,8 @@ export interface WorkspaceRelationshipAssembly {
   dangling: DanglingDependencyReferenceSummary;
   /** Raw same-identity duplicated dependency rows found before graph dedup. */
   duplicateRows: DuplicateDependencyRow[];
+  /** Scalar-versus-structured ordering contradictions found before graph normalization. */
+  orderingContradictions?: OrderingStorageContradiction[];
   /** Raw legacy alias rows grouped by accepted spelling before graph canonicalization. */
   legacyAliasCounts: Record<string, number>;
 }
@@ -477,6 +573,11 @@ export function assembleWorkspaceRelationshipGraph(
     missingIdSet: new Set(missingIds.map((id) => id.toLowerCase())),
     dangling,
     duplicateRows: collectDuplicateDependencyRows(safeItems, isTerminal),
+    orderingContradictions: collectOrderingStorageContradictions(
+      safeItems,
+      isTerminal,
+      relationshipRegistry,
+    ),
     legacyAliasCounts: collectLegacyDependencyAliasCounts(
       safeItems,
       relationshipRegistry,

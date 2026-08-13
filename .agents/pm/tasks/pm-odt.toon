@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-beads",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.883Z"
-updated_at: "2026-07-26T17:21:48.101Z"
+updated_at: "2026-08-13T09:50:40.000Z"
 deadline: "2026-03-13T23:02:11.883Z"
 author: steve
 estimated_minutes: 120
@@ -40,10 +40,14 @@ fixed_version: archive-2026q2
 component: project-management/built-in-beads-import-extension
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Built-in beads import extension.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-b1w,parent,"2026-02-17T23:02:11.883Z",steve,null
-  pm-f45,blocks,"2026-02-17T23:02:11.883Z",steve,null
-  pm-b1w,implements,"2026-07-26T17:21:47.861Z",null,null
+dependencies[2]:
+  - id: pm-b1w
+    kind: parent
+    created_at: "2026-02-17T23:02:11.883Z"
+    author: steve
+  - id: pm-b1w
+    kind: implements
+    created_at: "2026-07-26T17:21:47.861Z"
 comments[19]{created_at,author,text}:
   "2026-02-19T18:37:14.624Z",cursor-agent,"Planned change-set: docs-first update for built-in beads import command status, then implement pm beads import --file parser/mapping with deterministic defaults and import history evidence; add unit/integration tests and run pm test + pm test-all regression sweeps."
   "2026-02-19T18:39:22.684Z",cursor-agent,"Docs-first update completed: README command surface now includes pm beads import baseline and extension roadmap notes; PRD command matrix now includes beads import output contract, section 15 captures default file/skip-warning behavior, and Milestone 5 checklist marks beads as partial baseline in progress."

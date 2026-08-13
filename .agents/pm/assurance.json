@@ -310,8 +310,8 @@
       "description": "Duplicate issue-code groups reported by validation",
       "source": {
         "kind": "validate",
-        "check": "metadata",
-        "field": "duplicate_issue_codes_count"
+        "field": "duplicate_issue_codes_count",
+        "check": "metadata"
       },
       "max_cost": 50000
     },
@@ -320,8 +320,8 @@
       "description": "Linked project paths missing from the commit view",
       "source": {
         "kind": "validate",
-        "check": "files",
-        "field": "missing_linked_paths_count"
+        "field": "missing_linked_paths_count",
+        "check": "files"
       },
       "max_cost": 50000
     },
@@ -460,8 +460,8 @@
       "description": "Affected subjects for graph finding duplicate_dependency_row",
       "source": {
         "kind": "graph",
-        "operation": "audit",
-        "field": "profile.finding_subjects_by_code.duplicate_dependency_row"
+        "field": "profile.finding_subjects_by_code.duplicate_dependency_row",
+        "operation": "audit"
       },
       "max_cost": 50000
     },
@@ -470,8 +470,8 @@
       "description": "Affected subjects for graph finding legacy_duplicate_edge",
       "source": {
         "kind": "graph",
-        "operation": "audit",
-        "field": "profile.finding_subjects_by_code.legacy_duplicate_edge"
+        "field": "profile.finding_subjects_by_code.legacy_duplicate_edge",
+        "operation": "audit"
       },
       "max_cost": 50000
     },
@@ -554,6 +554,56 @@
         "field": "profile.outcome_reachability_basis_points"
       },
       "max_cost": 50000
+    },
+    {
+      "id": "graph-recorded-nodes",
+      "description": "Tracker-recorded graph nodes excluding synthesized missing and external placeholders",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.recorded_nodes"
+      },
+      "max_cost": 100000
+    },
+    {
+      "id": "graph-informative-edges",
+      "description": "Deduplicated directed graph edges excluding the union of witnessed redundant and contradictory storage rows",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.informative_edges"
+      },
+      "max_cost": 100000
+    },
+    {
+      "id": "graph-redundant-edges",
+      "description": "Stored graph edges implied by a bounded longer path in the same semantic family",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.redundant_edges"
+      },
+      "max_cost": 100000
+    },
+    {
+      "id": "graph-ordering-contradiction-edges",
+      "description": "Structured ordering rows that assert opposite precedence from a same-target scalar blocker",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.ordering_contradiction_edges"
+      },
+      "max_cost": 100000
+    },
+    {
+      "id": "graph-finding-legacy-ordering-storage-contradiction",
+      "description": "Affected subjects for graph finding legacy_ordering_storage_contradiction",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.finding_subjects_by_code.legacy_ordering_storage_contradiction"
+      },
+      "max_cost": 100000
     }
   ],
   "assertions": [
@@ -587,7 +637,6 @@
       "scope": {
         "kind": "all"
       },
-      "floor": 84,
       "lifetime": "hold",
       "enforcement": "block",
       "negative_control": {
@@ -601,7 +650,8 @@
             "expected": "fail"
           }
         ]
-      }
+      },
+      "floor": 84
     },
     {
       "id": "discovered-from-floor",
@@ -656,7 +706,6 @@
       "scope": {
         "kind": "all"
       },
-      "ceiling": 243,
       "lifetime": "hold",
       "enforcement": "block",
       "negative_control": {
@@ -670,7 +719,8 @@
             "expected": "fail"
           }
         ]
-      }
+      },
+      "ceiling": 243
     },
     {
       "id": "history-append-only",
@@ -679,7 +729,6 @@
       "scope": {
         "kind": "all"
       },
-      "monotone_nondecreasing": 47588,
       "lifetime": "hold",
       "enforcement": "block",
       "negative_control": {
@@ -693,7 +742,8 @@
             "expected": "fail"
           }
         ]
-      }
+      },
+      "monotone_nondecreasing": 47588
     },
     {
       "id": "graph-semantic-edge-share-floor",
@@ -702,7 +752,6 @@
       "scope": {
         "kind": "all"
       },
-      "floor": 0.068,
       "lifetime": "hold",
       "enforcement": "block",
       "negative_control": {
@@ -716,7 +765,8 @@
             "expected": "fail"
           }
         ]
-      }
+      },
+      "floor": 0.068
     },
     {
       "id": "implements-floor",
@@ -725,6 +775,7 @@
       "scope": {
         "kind": "all"
       },
+      "floor": 2591,
       "lifetime": "hold",
       "enforcement": "block",
       "negative_control": {
@@ -738,54 +789,55 @@
             "expected": "fail"
           }
         ]
-      },
-      "floor": 2591
+      }
     },
     {
       "id": "graph-edges-floor",
-      "measurement_id": "graph-edges",
-      "owner_item_id": "pm-96h7",
+      "measurement_id": "graph-informative-edges",
+      "owner_item_id": "pm-9gzr4r",
       "scope": {
         "kind": "all"
       },
+      "floor": 12050,
       "lifetime": "hold",
       "enforcement": "block",
       "negative_control": {
         "cases": [
           {
-            "observed": 12103,
+            "observed": 12050,
             "expected": "pass"
           },
           {
-            "observed": 12102,
+            "observed": 12049,
             "expected": "fail"
           }
         ]
       },
-      "floor": 12103
+      "authorization_decision": "pm-dwj33e"
     },
     {
       "id": "graph-nodes-floor",
-      "measurement_id": "graph-nodes",
-      "owner_item_id": "pm-o2kc",
+      "measurement_id": "graph-recorded-nodes",
+      "owner_item_id": "pm-mfvsng",
       "scope": {
         "kind": "all"
       },
+      "floor": 2463,
       "lifetime": "hold",
       "enforcement": "block",
       "negative_control": {
         "cases": [
           {
-            "observed": 2456,
+            "observed": 2463,
             "expected": "pass"
           },
           {
-            "observed": 2455,
+            "observed": 2462,
             "expected": "fail"
           }
         ]
       },
-      "floor": 2456
+      "authorization_decision": "pm-dwj33e"
     },
     {
       "id": "related-to-ceiling",
@@ -1327,21 +1379,21 @@
       "scope": {
         "kind": "all"
       },
+      "ceiling": 0,
       "lifetime": "hold",
       "enforcement": "block",
       "negative_control": {
         "cases": [
           {
-            "observed": 8,
+            "observed": 0,
             "expected": "pass"
           },
           {
-            "observed": 9,
+            "observed": 1,
             "expected": "fail"
           }
         ]
-      },
-      "ceiling": 8
+      }
     },
     {
       "id": "graph-finding-legacy-no-blocker-sentinel-ceiling",
@@ -1350,44 +1402,45 @@
       "scope": {
         "kind": "all"
       },
+      "ceiling": 0,
       "lifetime": "hold",
       "enforcement": "block",
       "negative_control": {
         "cases": [
           {
-            "observed": 98,
+            "observed": 0,
             "expected": "pass"
           },
           {
-            "observed": 99,
+            "observed": 1,
             "expected": "fail"
           }
         ]
-      },
-      "ceiling": 98
+      }
     },
     {
       "id": "graph-finding-legacy-ordering-cycle-ceiling",
       "measurement_id": "graph-finding-legacy-ordering-cycle",
-      "owner_item_id": "pm-jkbqt8",
+      "owner_item_id": "pm-hnc9w7",
       "scope": {
         "kind": "all"
       },
+      "ceiling": 0,
       "lifetime": "hold",
       "enforcement": "block",
       "negative_control": {
         "cases": [
           {
-            "observed": 49,
+            "observed": 0,
             "expected": "pass"
           },
           {
-            "observed": 50,
+            "observed": 1,
             "expected": "fail"
           }
         ]
       },
-      "ceiling": 49
+      "authorization_decision": "pm-dwj33e"
     },
     {
       "id": "graph-finding-missing-reference-terminal-ceiling",
@@ -1396,21 +1449,21 @@
       "scope": {
         "kind": "all"
       },
+      "ceiling": 0,
       "lifetime": "hold",
       "enforcement": "block",
       "negative_control": {
         "cases": [
           {
-            "observed": 3,
+            "observed": 0,
             "expected": "pass"
           },
           {
-            "observed": 4,
+            "observed": 1,
             "expected": "fail"
           }
         ]
-      },
-      "ceiling": 3
+      }
     },
     {
       "id": "graph-outcome-reachable-floor",
@@ -1424,16 +1477,16 @@
       "negative_control": {
         "cases": [
           {
-            "observed": 2434,
+            "observed": 2438,
             "expected": "pass"
           },
           {
-            "observed": 2433,
+            "observed": 2437,
             "expected": "fail"
           }
         ]
       },
-      "floor": 2434
+      "floor": 2438
     },
     {
       "id": "graph-outcome-unreachable-ceiling",
@@ -1480,6 +1533,75 @@
         ]
       },
       "floor": 9938
+    },
+    {
+      "id": "graph-redundant-edges-ceiling",
+      "measurement_id": "graph-redundant-edges",
+      "owner_item_id": "pm-9gzr4r",
+      "scope": {
+        "kind": "all"
+      },
+      "ceiling": 67,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 67,
+            "expected": "pass"
+          },
+          {
+            "observed": 68,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "graph-ordering-contradiction-edges-zero",
+      "measurement_id": "graph-ordering-contradiction-edges",
+      "owner_item_id": "pm-xvt7ps",
+      "scope": {
+        "kind": "all"
+      },
+      "ceiling": 0,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "graph-finding-legacy-ordering-storage-contradiction-zero",
+      "measurement_id": "graph-finding-legacy-ordering-storage-contradiction",
+      "owner_item_id": "pm-xvt7ps",
+      "scope": {
+        "kind": "all"
+      },
+      "ceiling": 0,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      }
     }
   ],
   "gates": [
@@ -1521,6 +1643,9 @@
         "supersedes-floor",
         "graph-edges-floor",
         "graph-nodes-floor",
+        "graph-redundant-edges-ceiling",
+        "graph-ordering-contradiction-edges-zero",
+        "graph-finding-legacy-ordering-storage-contradiction-zero",
         "blocks-ceiling",
         "related-to-ceiling",
         "graph-isolated-active-zero",

@@ -36,8 +36,13 @@ const focusedEntryPoints = {
   "sdk-core": path.join(repoRoot, "dist", "sdk", "core.js"),
   "sdk-governance": path.join(repoRoot, "dist", "sdk", "governance.js"),
   "sdk-graph": path.join(repoRoot, "dist", "sdk", "graph.js"),
-  "sdk-merge": path.join(repoRoot, "dist", "sdk", "merge.js"),
   "sdk-query": path.join(repoRoot, "dist", "sdk", "query.js"),
+};
+// The merge surface is intentionally standalone. Its dependencies overlap with
+// several broader focused entrypoints, so sharing their chunk graph makes a
+// merge-only consumer traverse unrelated focused chunks during module loading.
+const isolatedEntryPoints = {
+  "sdk-merge": path.join(repoRoot, "dist", "sdk", "merge.js"),
 };
 const outputDir = path.join(repoRoot, "dist", "cli-bundle");
 const lockDir = path.join(repoRoot, "dist", ".cli-bundle-build.lock");
@@ -188,12 +193,12 @@ export async function writeBundleManifest(outputs) {
 }
 
 /** Build the shared esbuild settings for one isolated entrypoint graph. */
-function bundleOptions(selectedEntryPoints, chunkNames) {
+function bundleOptions(selectedEntryPoints, chunkNames, splitting = true) {
   return {
     entryPoints: selectedEntryPoints,
     outdir: outputDir,
     bundle: true,
-    splitting: true,
+    splitting,
     format: "esm",
     platform: "node",
     target: ["node22"],
@@ -212,7 +217,7 @@ function bundleOptions(selectedEntryPoints, chunkNames) {
 export async function main() {
   // Do not delete the live bundle before rebuilding. Agents often run docs,
   // dogfood, and build gates concurrently in one checkout; removing this folder
-  // creates a transient broken `dist/cli.js` runtime. Once both new graphs are
+  // creates a transient broken `dist/cli.js` runtime. Once all new graphs are
   // complete under the build lock, obsolete hashed chunks are safe to prune and
   // must not leak into repeated-build package artifacts.
   const releaseBundleBuildLock = await acquireBundleBuildLock();
@@ -223,9 +228,17 @@ export async function main() {
     const focusedBuildResult = await build(
       bundleOptions(focusedEntryPoints, "focused-chunks/[name]-[hash]"),
     );
+    const isolatedBuildResult = await build(
+      bundleOptions(
+        isolatedEntryPoints,
+        "isolated-chunks/[name]-[hash]",
+        false,
+      ),
+    );
     const outputs = {
       ...primaryBuildResult.metafile.outputs,
       ...focusedBuildResult.metafile.outputs,
+      ...isolatedBuildResult.metafile.outputs,
     };
     await removeStaleBundleFiles(outputs);
     await writeBundleManifest(outputs);

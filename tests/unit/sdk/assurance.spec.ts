@@ -24,6 +24,7 @@ import {
   type AssuranceGateDefinition,
   type AssuranceMeasurementDefinition,
 } from "../../../src/sdk/governance/assurance.js";
+import { AssuranceEvaluationRefusalError } from "../../../src/sdk/governance/assurance-mutation-error.js";
 import {
   getWorkspaceHistoryPath,
   WORKSPACE_HISTORY_ID,
@@ -1117,7 +1118,12 @@ describe("assurance SDK", () => {
       evaluateAssuranceGate("quality", document, evaluationContext(), {
         trigger: "scheduled",
       }),
-    ).rejects.toThrow("does not declare trigger");
+    ).rejects.toBeInstanceOf(AssuranceEvaluationRefusalError);
+    await expect(
+      evaluateAssuranceGate("missing", document, evaluationContext(), {
+        trigger: "ci",
+      }),
+    ).rejects.toBeInstanceOf(AssuranceEvaluationRefusalError);
   });
 
   it("applies scope and owner-aware lifetime without weakening held guarantees", async () => {

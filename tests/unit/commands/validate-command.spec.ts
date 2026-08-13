@@ -29,6 +29,7 @@ import {
 } from "../../../src/core/shared/constants.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { getActiveExtensionRegistrations } from "../../../src/core/extensions/index.js";
+import { writeWorkspaceJsonWithHistory } from "../../../src/core/history/workspace-history.js";
 import { resolveItemTypeRegistry } from "../../../src/core/item/type-registry.js";
 import {
   clearItemMetadataEnvelopeMemo,
@@ -3155,6 +3156,9 @@ describe("runValidate", () => {
         unreadable_streams: 1,
         hash_mismatches: 1,
         chain_mismatches: 0,
+        workspace_state_mismatches: 0,
+        workspace_state_missing: 0,
+        workspace_state_unreadable: 0,
       });
     });
   });
@@ -3180,6 +3184,42 @@ describe("runValidate", () => {
         counts: { unreadable_streams: number };
       };
       expect(details.counts.unreadable_streams).toBe(1);
+    });
+  });
+
+  it("reports workspace singleton state-agreement drift", async () => {
+    await withTempPmPath(async (context) => {
+      const singletonPath = path.join(context.pmPath, "quality-gates.json");
+      await writeWorkspaceJsonWithHistory({
+        pmRoot: context.pmPath,
+        filePath: singletonPath,
+        raw: '{"required":true}\n',
+        op: "test_quality_gate_put",
+        author: "test-author",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+      });
+      await writeFile(singletonPath, '{"required":false}\n', "utf8");
+
+      const result = await runValidate(
+        { checkHistoryDrift: true },
+        { path: context.pmPath },
+      );
+      expect(result.has_warnings).toBe(true);
+      expect(result.warnings).toContain(
+        "validate_history_drift_workspace_state_mismatches:1",
+      );
+      const historyCheck = checkByName(result, "history_drift");
+      expect(historyCheck.details).toMatchObject({
+        drifted_items_count: 1,
+        drifted_items: ["_workspace"],
+        counts: {
+          workspace_state_mismatches: 1,
+          workspace_state_missing: 0,
+          workspace_state_unreadable: 0,
+        },
+        workspace_state_mismatches: ["quality-gates.json"],
+      });
     });
   });
 
@@ -3307,8 +3347,7 @@ describe("runValidate", () => {
         >;
       };
       const cachedTests =
-        collectionsCache.collections[path.join("tasks", `${id}.toon`)]
-          ?.collections.tests;
+        collectionsCache.collections[`tasks/${id}.toon`]?.collections.tests;
       expect(cachedTests).toHaveLength(2);
       cachedTests?.reverse();
       await writeFile(

@@ -333,6 +333,25 @@ describe("assurance action transport", () => {
           {
             action: "run",
             id: "provider-quality",
+            trigger: "pre-commit",
+            dry_run: true,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          code: "invalid_argument_value",
+          reason: "assurance_evaluation_refused",
+        },
+      });
+
+      await expect(
+        runAssuranceAction(
+          {
+            action: "run",
+            id: "provider-quality",
             trigger: "ci",
             dry_run: true,
           },
