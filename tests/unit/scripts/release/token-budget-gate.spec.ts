@@ -660,6 +660,25 @@ describe("scripts/release/token-budget-gate", () => {
         },
       ],
     };
+    expect(
+      mod.compareBudgets(
+        [
+          {
+            id: "context-intent",
+            args: ["context", "--for", "orient"],
+            kind: "answer",
+            command: "context",
+            contract_max_estimated_tokens: 4_000,
+            bytes: 400,
+            estimated_tokens: 100,
+            intent: true,
+          },
+        ],
+        intentManifest,
+      ),
+    ).toEqual([
+      "context-intent: intent receipt did not prove a feasible delivered result (context --for orient)",
+    ]);
     for (const intentReceipt of [
       {
         declaration_feasible: true,
