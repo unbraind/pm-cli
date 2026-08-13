@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- Telemetry flush reliability: configurable cold-connect timeout without foreground blocking ([pm-pmwozm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmwozm.toon))
 - The measurement ratchet has a single polarity: a filed number can only be enforced as a ceiling, so no quality floor this project wants to hold is expressible ([pm-g4k74y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g4k74y.toon))
 - The relationship graph's only automated reader is a nine-field census with no structural property, so the deepest enforceable statement about an 11,291-edge record is that every active item has two edges ([pm-4vz6mz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4vz6mz.toon))
 - The real all-package install is budgeted in one of its two instances, so the coverage gate flakes and then reports no coverage verdict at all ([pm-h9gsix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h9gsix.toon))
@@ -18,6 +19,7 @@
 
 ### Other
 
+- ADR: Lifecycle-sensitive graph partitions are advisory; stable all-status outcomes carry blocking assurance ([pm-dczodv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-dczodv.toon))
 - The Windows nightly leg cannot separate product defects from harness noise: 744 hardcoded POSIX path literals and 203 raw errno strings in the suite fail on Windows for reasons unrelated to pm behaviour ([pm-j668gl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-j668gl.toon))
 
 ## 2026.8.12 - 2026-08-12

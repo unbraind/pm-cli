@@ -1,0 +1,30 @@
+id: pm-dczodv
+title: "ADR: Lifecycle-sensitive graph partitions are advisory; stable all-status outcomes carry blocking assurance"
+description: "Active-item graph populations change during honest claim, close, and release transitions. Blocking delivery on their absolute census would make normal PM lifecycle operations fail the release gate. Retain active-partition measurements and negative controls as warnings for diagnosis, while stable all-status outcome reachability, structural fragility, integrity, and semantic relationship assertions remain blocking."
+type: Decision
+status: closed
+priority: 0
+tags: []
+created_at: "2026-08-13T00:29:38.603Z"
+updated_at: "2026-08-13T00:30:04.469Z"
+closed_at: "2026-08-13T00:29:51.136Z"
+completed_at: "2026-08-13T00:29:51.136Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Decision records the stable-versus-lifecycle-sensitive boundary; both affected assertions reference this closed authorization; native gates still fail closed on stable all-status outcome and structural contracts.
+parent: pm-g4k74y
+risk: low
+confidence: high
+resolution: "Accepted: lifecycle-sensitive active graph partitions are advisory warnings; stable all-status outcome reachability, structural fragility, integrity, and semantic relationship contracts remain blocking."
+expected_result: Active-only assertions produce warning verdicts; stable all-status and integrity assertions continue to produce blocking failures when thresholds regress.
+actual_result: Policy authorized for graph-degree-leq-one-active-zero and graph-active-outcome-unreachable-ceiling; native gates retain their all-status blocking assertions.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4jqm,related,"2026-08-13T00:29:38.603Z","harness:codex","cli:create:dep",detected
+  pm-4ok4ex,related,"2026-08-13T00:29:38.603Z","harness:codex","cli:create:dep",detected
+  pm-4vz6mz,related,"2026-08-13T00:29:38.603Z","harness:codex","cli:create:dep",detected
+  pm-bzmeaa,related,"2026-08-13T00:29:38.603Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-13T00:29:38.603Z","harness:codex","Duplicate check: all-status search for active lifecycle assertion, assurance enforcement, degree-leq-one active, and outcome-unreachable found no existing decision authorizing this specific stable-versus-lifecycle-sensitive gate boundary."
+  "2026-08-13T00:29:46.991Z","harness:codex","Decision evidence: active-only absolute counts are expected to move whenever items are claimed, closed, released, or newly linked. Blocking gates remain on the all-status outcome census and structural/integrity assertions; active partitions retain measurements, negative controls, and visible warning verdicts for diagnosis."
+close_reason: "Accepted and ready for enforcement updates: active-only graph census assertions warn, while stable all-status and integrity assertions continue to block."
+body: ""

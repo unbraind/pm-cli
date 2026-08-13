@@ -121,6 +121,7 @@ describe("gate registry", () => {
     const root = await fixtureRoot();
     await mkdir(path.join(root, "scripts", "release"), { recursive: true });
     await writeFile(path.join(root, "scripts", "release", "quality-gate.mjs"), "quality");
+    await writeFile(path.join(root, "scripts", "release", "typed-gate.mts"), "typed");
     const declared = {
       ...registry(),
       automation_inventory: {
@@ -134,6 +135,11 @@ describe("gate registry", () => {
           path: "scripts/release/retired-gate.mjs",
           disposition: "migrated",
           replacement: "pm assurance run fixture-quality",
+        },
+        {
+          path: "scripts/release/typed-gate.mts",
+          disposition: "retained",
+          reason: "This fixture remains a typed executable quality boundary.",
         },
       ],
         graph_operations: GRAPH_SUBCOMMAND_VALUES.map((operation) => ({
@@ -160,7 +166,12 @@ describe("gate registry", () => {
     const root = await fixtureRoot();
     await mkdir(path.join(root, "scripts", "release"), { recursive: true });
     await Promise.all(
-      ["quality-gate.mjs", "provider-gate.mjs", "undeclared-gate.mjs"].map(
+      [
+        "quality-gate.mjs",
+        "provider-gate.mjs",
+        "undeclared-gate.mjs",
+        "undeclared-gate.ts",
+      ].map(
         (file) => writeFile(path.join(root, "scripts", "release", file), file),
       ),
     );
@@ -177,7 +188,7 @@ describe("gate registry", () => {
     graphOperations.push({
       operation: "unknown",
       automated_consumer: "pm assurance run fixture-quality",
-    });
+    } as never);
     graphOperations.push({
       automated_consumer: "pm assurance run fixture-quality",
     } as never);
@@ -214,6 +225,7 @@ describe("gate registry", () => {
       expect.arrayContaining([
         "automation_inventory:gate_script:invalid",
         "automation_inventory:gate_script:scripts/release/undeclared-gate.mjs:undeclared",
+        "automation_inventory:gate_script:scripts/release/undeclared-gate.ts:undeclared",
         "automation_inventory:graph_operation:invalid",
         `automation_inventory:graph_operation:${GRAPH_SUBCOMMAND_VALUES[0]}:undeclared`,
       ]),

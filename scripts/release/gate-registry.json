@@ -73,6 +73,11 @@
         "reason": "Builds changed SDK surfaces and verifies package replication contracts."
       },
       {
+        "path": "scripts/release/static-quality-gate.mts",
+        "disposition": "retained",
+        "reason": "Enforces repository-wide lint suppression, coverage pragma, complexity, and docstring budgets from TypeScript source."
+      },
+      {
         "path": "scripts/release/token-budget-gate.mjs",
         "disposition": "retained",
         "reason": "Measures serialized command fixtures and continuation token envelopes."
@@ -414,7 +419,7 @@
       ],
       "bypass": {
         "allowed": false,
-        "audit": "Filed tracker measurements are shrinking-only context-quality ceilings, not advisory prose."
+        "audit": "Filed tracker measurements enforce stable context-quality floors and ceilings; lifecycle-sensitive partitions remain explicit advisory diagnostics."
       },
       "negative_control": {
         "test": "tests/unit/sdk/graph/structural-governance.spec.ts",

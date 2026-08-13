@@ -20,40 +20,15 @@ import {
 } from "./analytics.js";
 import { findRelationshipCutStructure } from "./centrality.js";
 import type { WorkspaceRelationshipAssembly } from "./assembly.js";
+import {
+  RELATIONSHIP_AUDIT_FINDING_CODES,
+  type RelationshipAuditFindingCode,
+} from "./governance-contracts.js";
+
+export type { RelationshipAuditFindingCode } from "./governance-contracts.js";
 
 /** Severity ladder shared by every relationship audit finding. */
 export type RelationshipAuditSeverity = "error" | "warning" | "info";
-
-/** Stable machine-readable relationship audit finding families. */
-const RELATIONSHIP_AUDIT_FINDING_CODES = [
-  "missing_reference_active",
-  "missing_reference_terminal",
-  "legacy_no_blocker_sentinel",
-  "ordering_cycle",
-  "legacy_ordering_cycle",
-  "duplicate_edge",
-  "legacy_duplicate_edge",
-  "duplicate_dependency_row",
-  "legacy_duplicate_dependency_row",
-  "stale_lifecycle_block",
-  "isolated_active_node",
-  "sparse_active_node",
-] as const;
-
-/** Machine-readable identifier for one relationship audit finding family. */
-export type RelationshipAuditFindingCode =
-  | "missing_reference_active"
-  | "missing_reference_terminal"
-  | "legacy_no_blocker_sentinel"
-  | "ordering_cycle"
-  | "legacy_ordering_cycle"
-  | "duplicate_edge"
-  | "legacy_duplicate_edge"
-  | "duplicate_dependency_row"
-  | "legacy_duplicate_dependency_row"
-  | "stale_lifecycle_block"
-  | "isolated_active_node"
-  | "sparse_active_node";
 
 /** One policy-aware relationship audit finding with bounded evidence. */
 export interface RelationshipAuditFinding {
@@ -167,6 +142,10 @@ export interface RelationshipAuditReport {
 
 /** Default bounded sample size applied to every finding family. */
 const DEFAULT_MAX_SAMPLE_SIZE = 25;
+
+/** Canonical item type and title marker that identify explicit outcomes. */
+const OUTCOME_MILESTONE_TYPE = "milestone";
+const OUTCOME_MILESTONE_TITLE_PREFIX = "outcome milestone:";
 
 /** Relationship kinds that preserve why work exists or how evidence supports it. */
 const SEMANTIC_CONTEXT_KINDS = new Set([
@@ -743,9 +722,11 @@ interface OutcomeReachabilityProfile {
 /** Build the reverse typed paths that can carry context toward an outcome. */
 function buildOutcomeReverseIndex(
   assembly: WorkspaceRelationshipAssembly,
+  signal: AbortSignal | undefined,
 ): Map<string, Set<string>> {
   const reverse = new Map<string, Set<string>>();
   for (const edge of assembly.graph.edges()) {
+    signal?.throwIfAborted();
     const definition = assembly.graph.registry().require(edge.kind);
     let oriented: { from: string; to: string } | undefined;
     if (definition.hierarchy) {
@@ -765,10 +746,12 @@ function buildOutcomeReverseIndex(
 function expandOutcomeReachability(
   outcomes: ReadonlySet<string>,
   reverse: ReadonlyMap<string, ReadonlySet<string>>,
+  signal: AbortSignal | undefined,
 ): Set<string> {
   const reachable = new Set(outcomes);
   const queue = [...outcomes].sort();
   for (let index = 0; index < queue.length; index += 1) {
+    signal?.throwIfAborted();
     for (const source of [...(reverse.get(queue[index]!) ?? [])].sort()) {
       if (reachable.has(source)) continue;
       reachable.add(source);
@@ -782,12 +765,14 @@ function expandOutcomeReachability(
 function tallyOutcomeReachability(
   nodeStates: ReadonlyMap<string, AuditNodeState>,
   reachable: ReadonlySet<string>,
+  signal: AbortSignal | undefined,
 ): Omit<OutcomeReachabilityProfile, "outcome_nodes"> {
   let activeReachable = 0;
   let activeUnreachable = 0;
   let terminal = 0;
   let terminalReachable = 0;
   for (const state of nodeStates.values()) {
+    signal?.throwIfAborted();
     if (state.missing || state.status === "external") continue;
     if (state.terminal) {
       terminal += 1;
@@ -829,23 +814,28 @@ function tallyOutcomeReachability(
 function profileOutcomeReachability(
   assembly: WorkspaceRelationshipAssembly,
   nodeStates: ReadonlyMap<string, AuditNodeState>,
+  signal: AbortSignal | undefined,
 ): OutcomeReachabilityProfile {
   const outcomes = new Set(
     assembly.details
       .filter(
         (detail) =>
-          detail.type?.toLowerCase() === "milestone" &&
-          detail.title.trim().toLowerCase().startsWith("outcome milestone:"),
+          detail.type?.toLowerCase() === OUTCOME_MILESTONE_TYPE &&
+          detail.title
+            .trim()
+            .toLowerCase()
+            .startsWith(OUTCOME_MILESTONE_TITLE_PREFIX),
       )
       .map((detail) => detail.id),
   );
   const reachable = expandOutcomeReachability(
     outcomes,
-    buildOutcomeReverseIndex(assembly),
+    buildOutcomeReverseIndex(assembly, signal),
+    signal,
   );
   return {
     outcome_nodes: outcomes.size,
-    ...tallyOutcomeReachability(nodeStates, reachable),
+    ...tallyOutcomeReachability(nodeStates, reachable, signal),
   };
 }
 
@@ -888,6 +878,7 @@ function collectCoverageReport(
   isolateExemptTypes: Set<string>,
   maxSampleSize: number,
   edgesByKind: Record<string, number>,
+  signal: AbortSignal | undefined,
 ): RelationshipAuditReport {
   const tallies: CoverageTallies = {
     active: 0,
@@ -899,6 +890,7 @@ function collectCoverageReport(
     byType: new Map(),
   };
   for (const id of assembly.graph.nodes()) {
+    signal?.throwIfAborted();
     const state = nodeStates.get(id);
     /* c8 ignore next -- every graph node originates from assembly details by construction */
     if (!state) continue;
@@ -948,8 +940,14 @@ function collectCoverageReport(
       count + (isSemanticContextKind(kind) ? value : 0),
     0,
   );
-  const cutStructure = findRelationshipCutStructure(assembly.graph).value;
-  const outcomeReachability = profileOutcomeReachability(assembly, nodeStates);
+  const cutStructure = findRelationshipCutStructure(assembly.graph, {
+    signal,
+  }).value;
+  const outcomeReachability = profileOutcomeReachability(
+    assembly,
+    nodeStates,
+    signal,
+  );
   return {
     findings,
     profile: {
@@ -1057,6 +1055,7 @@ export function auditWorkspaceRelationshipGraph(
     isolateExemptTypes,
     maxSampleSize,
     edgesByKind,
+    options.signal,
   );
   findings.push(...coverage.findings);
 

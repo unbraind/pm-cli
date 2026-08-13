@@ -6,16 +6,16 @@ status: closed
 priority: 1
 tags[5]: "area:ci",gate,governance,graph,measurement
 created_at: "2026-08-07T17:12:24.771Z"
-updated_at: "2026-08-13T00:01:40.078Z"
-closed_at: "2026-08-12T23:28:27.442Z"
-completed_at: "2026-08-12T23:28:27.442Z"
+updated_at: "2026-08-13T01:08:51.595Z"
+closed_at: "2026-08-13T01:02:04.583Z"
+completed_at: "2026-08-13T01:02:04.583Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "At least one structural graph property beyond a degree count is computed by an automated surface and compared against a declaration, so a record whose lineage collapses to a spine fails rather than passes; The audit profile exposes the structural properties the graph analytics already compute, so a consumer does not have to re-run and re-parse a second subcommand to reach them; Every graph subcommand either has a named automated consumer or is recorded as deliberately interactive-only, and the classification is data rather than an absence of references; The typed reachability of terminal items to an outcome is measured over the whole record rather than the active scope, so a property that only holds for the current frontier cannot report as satisfied; A negative control proves the new structural check fails on a record whose typed relationships have been stripped to a spine"
 parent: pm-96h7
 risk: high
 confidence: high
-resolution: "The SDK graph audit now projects structural cut metrics, exhaustive findings, and typed all-status outcome reachability into native assurance."
+resolution: "Implemented native structural graph profiles, typed outcome reachability, exhaustive finding census, cancellation, and backward-compatible durable baseline normalization."
 expected_result: "A structural collapse or loss of typed outcome reachability fails an automated declaration, and every graph operation has an explicit consumer disposition."
 actual_result: "Articulation, bridge, active/terminal reachability, and finding census assertions pass with negative controls; all 16 operations are inventoried."
 dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
@@ -28,24 +28,31 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-mfy1ux,related,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
   pm-t4d7nz,implements,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-12T22:09:13.324Z","harness:codex","Start evidence 2026-08-13: actively implementing the full structural-automation acceptance criteria with audit-profile cut structure, all-status terminal-to-outcome reachability, native assurance declarations, a graph-operation consumer ledger, and negative controls."
   "2026-08-12T22:46:35.622Z","harness:codex","Token-efficiency evidence: graph audit --summary grows from 409 to 554 estimated tokens (+145) to carry cut structure, typed outcome reachability, terminal reachability, and exhaustive finding-code counts. The increase is intentional and bounded in scripts/release/token-budgets.json; these fields replace repeated follow-up graph commands for automated and agent consumers."
   "2026-08-12T22:52:56.636Z","harness:codex","SDK compatibility evidence: the public surface registry classifies the always-present RelationshipCoverageProfile expansion as two signature changes (aggregate and graph subpath). The acknowledgement records that existing fields and semantics remain unchanged while structural and typed-outcome fields are added intentionally; no finding-code union change or unrelated surface drift remains."
   "2026-08-12T23:27:45.948Z","harness:codex","Completion evidence: graph audit now returns articulation points (112), bridge edges (305), all-status terminal/outcome reachability (2,103 reachable and 14 unreachable terminals), and an exhaustive finding-code census. Native assurance compares each structural value against a declared bound with proven negative controls. The registry declares all 16 public graph operations: audit and articulation have named automated consumers; the remaining 14 have explicit interactive-only rationales. Linked tests pass 3/3; repo coverage passes 7,236 tests at exact 100/100/100/100."
   "2026-08-13T00:01:40.078Z","harness:codex","Implementation PR: https://github.com/unbraind/pm-cli/pull/992 — structural articulation/bridge and exhaustive finding-population SDK primitives."
+  "2026-08-13T01:01:48.674Z","harness:codex","Review-fix evidence: the audit now propagates AbortSignal through coverage, Tarjan cut-structure, reverse typed-path construction, reachability expansion, and lifecycle tally loops. Legacy durable baselines normalize every new structural/outcome/finding-census field deterministically while malformed present values still fail closed. Focused graph/cache tests pass; full suite passes 488 files / 7,236 tests with exact statements 52,474/52,474, branches 38,540/38,540, functions 10,793/10,793, lines 50,700/50,700."
+  "2026-08-13T01:08:51.595Z","harness:codex","Manual acceptance after review: in an isolated temporary tracker, created an explicit outcome milestone and child work item, saved a graph audit baseline, removed all newly introduced structural fields to simulate a pre-change persisted baseline, and reran graph audit. The CLI decoded the legacy file, preserved same_snapshot=true, and returned outcome_nodes=1 plus active_outcome_reachable_nodes=2. Temporary data was then removed. Packed artifact gate also passed for @unbrained/pm-cli 2026.8.12 (1,392 files)."
 learnings[1]{created_at,author,text}:
   "2026-08-12T23:27:46.448Z","harness:codex",Graph governance should project expensive structural properties once into a bounded audit profile and cache that shared snapshot across assertions; this makes structural enforcement both cheaper and harder for consumers to misinterpret.
-files[4]{path,scope,note}:
+files[8]{path,scope,note}:
   scripts/release/token-budgets.json,project,Intentional graph audit summary budget for structural and outcome census fields
   sdk/public-surface.json,project,Versioned SDK profile expansion with recorded compatibility acknowledgement
+  src/sdk/graph/durable-cache.ts,project,Backward-compatible structural baseline decoding added after review
+  src/sdk/graph/governance-contracts.ts,project,Single authoritative finding-code tuple shared by audit and durable decoder
   src/sdk/graph/governance.ts,project,Structural audit profile and typed outcome reachability implementation
+  tests/unit/sdk/graph/assembly-governance.spec.ts,project,Finding census and mid-scan cancellation coverage
+  tests/unit/sdk/graph/durable-cache.spec.ts,project,Legacy structural baseline normalization and invalid-field coverage
   tests/unit/sdk/graph/structural-governance.spec.ts,project,Negative-control coverage for graph structure and typed reachability
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/graph/structural-governance.spec.ts,project,240
+  node scripts/run-tests.mjs coverage,project,420
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msqpsfq1-nr2yvm,test,passed,"2026-08-12T23:22:25.774Z","2026-08-12T23:22:33.241Z","2026-08-12T23:22:33.241Z",1,0,0
 docs[1]{path,scope,note}:
   docs/RELATIONSHIP_GRAPH.md,project,Structural and outcome profile contract
-close_reason: "Delivered automated structural graph governance, all-status typed outcome reachability, exhaustive graph-operation dispositions, and failing negative controls through the SDK audit and native assurance surfaces."
+close_reason: "Completed in PR #992 with structural and outcome primitives, cancellation propagation, legacy baseline compatibility, focused tests, and exact 100% repository coverage."
 body: ""

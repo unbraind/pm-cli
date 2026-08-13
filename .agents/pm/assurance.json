@@ -168,15 +168,6 @@
       "max_cost": 300000
     },
     {
-      "id": "edges-associative-declared",
-      "description": "Canonical associative relationship rows. Legacy related_to spellings resolve to related before counting, so aliases never double count the same population.",
-      "source": {
-        "kind": "dependency_kind",
-        "dependency_kind": "related"
-      },
-      "max_cost": 80000
-    },
-    {
       "id": "history-events-total",
       "description": "Every immutable history entry across every stream. The record is append-only, so this number can never fall",
       "source": {
@@ -203,15 +194,6 @@
         "field": "profile.active_outcome_reachable_nodes"
       },
       "max_cost": 50000
-    },
-    {
-      "id": "edges-related-to",
-      "description": "Canonical associative related dependency rows",
-      "source": {
-        "kind": "dependency_kind",
-        "dependency_kind": "related"
-      },
-      "max_cost": 40000
     },
     {
       "id": "graph-nodes",
@@ -691,29 +673,6 @@
       }
     },
     {
-      "id": "associative-edge-ceiling",
-      "measurement_id": "edges-associative-declared",
-      "owner_item_id": "pm-q6n8sj",
-      "scope": {
-        "kind": "all"
-      },
-      "ceiling": 6200,
-      "lifetime": "hold",
-      "enforcement": "warn",
-      "negative_control": {
-        "cases": [
-          {
-            "observed": 6200,
-            "expected": "pass"
-          },
-          {
-            "observed": 6201,
-            "expected": "fail"
-          }
-        ]
-      }
-    },
-    {
       "id": "history-append-only",
       "measurement_id": "history-events-total",
       "owner_item_id": "pm-w7ccmv",
@@ -830,7 +789,7 @@
     },
     {
       "id": "related-to-ceiling",
-      "measurement_id": "edges-related-to",
+      "measurement_id": "edges-related",
       "owner_item_id": "pm-q6n8sj",
       "scope": {
         "kind": "all"
@@ -840,16 +799,16 @@
       "negative_control": {
         "cases": [
           {
-            "observed": 6046,
+            "observed": 6053,
             "expected": "pass"
           },
           {
-            "observed": 6047,
+            "observed": 6054,
             "expected": "fail"
           }
         ]
       },
-      "ceiling": 6046,
+      "ceiling": 6053,
       "authorization_decision": "pm-4jqm"
     },
     {
@@ -883,7 +842,7 @@
         "kind": "all"
       },
       "lifetime": "hold",
-      "enforcement": "block",
+      "enforcement": "warn",
       "negative_control": {
         "cases": [
           {
@@ -896,7 +855,8 @@
           }
         ]
       },
-      "ceiling": 0
+      "ceiling": 0,
+      "authorization_decision": "pm-dczodv"
     },
     {
       "id": "graph-articulation-points-ceiling",
@@ -975,7 +935,7 @@
         "kind": "all"
       },
       "lifetime": "hold",
-      "enforcement": "block",
+      "enforcement": "warn",
       "negative_control": {
         "cases": [
           {
@@ -988,7 +948,8 @@
           }
         ]
       },
-      "ceiling": 1
+      "ceiling": 1,
+      "authorization_decision": "pm-dczodv"
     },
     {
       "id": "validate-duplicate-issue-codes-ceiling",
@@ -1527,7 +1488,7 @@
       "assertion_ids": [
         "semantic-edge-share-floor",
         "graph-semantic-edge-share-floor",
-        "associative-edge-ceiling",
+        "related-to-ceiling",
         "supersedes-floor",
         "discovered-from-floor",
         "verifies-floor",

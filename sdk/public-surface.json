@@ -440,6 +440,14 @@
       ],
       "package_version": "2026.8.12",
       "reason": "RelationshipCoverageProfile intentionally adds always-present structural and lifecycle-stable typed outcome governance fields under pm-4vz6mz, pm-g4k74y, and pm-bzmeaa; existing fields and semantics remain unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:RelationshipAuditFindingCode",
+        "signature ./sdk/graph:RelationshipAuditFindingCode"
+      ],
+      "package_version": "2026.8.12",
+      "reason": "Source-derived finding-code type replaces an identical handwritten union; the accepted values and runtime behavior are unchanged."
     }
   ],
   "entrypoints": {
@@ -10254,7 +10262,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "RelationshipAuditFindingCode",
-          "signature": "export type RelationshipAuditFindingCode = \"missing_reference_active\" | \"missing_reference_terminal\" | \"legacy_no_blocker_sentinel\" | \"ordering_cycle\" | \"legacy_ordering_cycle\" | \"duplicate_edge\" | \"legacy_duplicate_edge\" | \"duplicate_dependency_row\" | \"legacy_duplicate_dependency_row\" | \"stale_lifecycle_block\" | \"isolated_active_node\" | \"sparse_active_node\";"
+          "signature": "export type RelationshipAuditFindingCode = (typeof RELATIONSHIP_AUDIT_FINDING_CODES)[number];"
         },
         {
           "classification": "supported",
@@ -20160,7 +20168,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "RelationshipAuditFindingCode",
-          "signature": "export type RelationshipAuditFindingCode = \"missing_reference_active\" | \"missing_reference_terminal\" | \"legacy_no_blocker_sentinel\" | \"ordering_cycle\" | \"legacy_ordering_cycle\" | \"duplicate_edge\" | \"legacy_duplicate_edge\" | \"duplicate_dependency_row\" | \"legacy_duplicate_dependency_row\" | \"stale_lifecycle_block\" | \"isolated_active_node\" | \"sparse_active_node\";"
+          "signature": "export type RelationshipAuditFindingCode = (typeof RELATIONSHIP_AUDIT_FINDING_CODES)[number];"
         },
         {
           "classification": "supported",

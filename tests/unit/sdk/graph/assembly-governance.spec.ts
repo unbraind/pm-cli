@@ -286,6 +286,15 @@ describe("relationship graph governance", () => {
         blocked_by: 3,
         related: 2,
       },
+      finding_subjects_by_code: {
+        missing_reference_active: 1,
+        missing_reference_terminal: 1,
+        legacy_no_blocker_sentinel: 1,
+        ordering_cycle: 2,
+        stale_lifecycle_block: 1,
+        isolated_active_node: 1,
+        sparse_active_node: 2,
+      },
     });
   });
 
@@ -329,6 +338,18 @@ describe("relationship graph governance", () => {
     expect(() =>
       auditWorkspaceRelationshipGraph(assembly, { signal: controller.signal }),
     ).toThrow();
+    let cancellationChecks = 0;
+    expect(() =>
+      auditWorkspaceRelationshipGraph(assembly, {
+        signal: {
+          throwIfAborted: () => {
+            cancellationChecks += 1;
+            if (cancellationChecks === 8) throw new Error("cancelled in scan");
+          },
+        } as AbortSignal,
+      }),
+    ).toThrow("cancelled in scan");
+    expect(cancellationChecks).toBe(8);
   });
 
   it("orders multiple cycles and distinguishes missing, terminal, and open predecessors", () => {

@@ -11,6 +11,7 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDocument } from "yaml";
+import { GRAPH_SUBCOMMAND_VALUES } from "../../dist/sdk/cli-contracts/enum-contracts.js";
 import { fail, parseFlags, repoRoot } from "./utils.mjs";
 
 const DEFAULT_REGISTRY_PATH = path.join(
@@ -19,24 +20,6 @@ const DEFAULT_REGISTRY_PATH = path.join(
   "release",
   "gate-registry.json",
 );
-const GRAPH_OPERATIONS = [
-  "ancestors",
-  "descendants",
-  "predecessors",
-  "successors",
-  "paths",
-  "impact",
-  "analyze",
-  "audit",
-  "communities",
-  "redundancy",
-  "dominators",
-  "slack",
-  "centrality",
-  "articulation",
-  "plan",
-  "index",
-];
 function gateIdsFromWorkflow(source, file) {
   const document = parseDocument(source);
   if (document.errors.length > 0) {
@@ -326,7 +309,7 @@ function validateGraphOperationInventory(graphOperations, violations) {
     if (
       typeof entry?.operation !== "string" ||
       declaredOperations.has(entry.operation) ||
-      !GRAPH_OPERATIONS.includes(entry.operation) ||
+      !GRAPH_SUBCOMMAND_VALUES.includes(entry.operation) ||
       consumer === interactive
     ) {
       violations.push("automation_inventory:graph_operation:invalid");
@@ -334,7 +317,7 @@ function validateGraphOperationInventory(graphOperations, violations) {
     if (typeof entry?.operation === "string")
       declaredOperations.add(entry.operation);
   }
-  for (const operation of GRAPH_OPERATIONS) {
+  for (const operation of GRAPH_SUBCOMMAND_VALUES) {
     if (!declaredOperations.has(operation))
       violations.push(`automation_inventory:graph_operation:${operation}:undeclared`);
   }
@@ -354,7 +337,9 @@ async function validateAutomationInventory(inventory, root, violations) {
   }
   const discoveredScripts = new Set(
     (await readdir(path.join(root, "scripts", "release")))
-      .filter((file) => file.endsWith("-gate.mjs") || file === "gate-registry.mjs")
+      .filter((file) =>
+        /(?:-gate|gate-registry)\.(?:[cm]?[jt]s)$/u.test(file),
+      )
       .map((file) => `scripts/release/${file}`),
   );
   validateGateScriptInventory(

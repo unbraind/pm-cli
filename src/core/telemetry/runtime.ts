@@ -7,6 +7,8 @@ import crypto from "node:crypto";
 import { spawn } from "node:child_process";
 import { mkdirSync, rmSync, statSync } from "node:fs";
 import { mkdir, readdir, rm, stat } from "node:fs/promises";
+import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 import os from "node:os";
 import path from "node:path";
 import type { GlobalOptions } from "../shared/command-types.js";
@@ -52,11 +54,10 @@ const TELEMETRY_OTEL_SPANS_RELATIVE_PATH = path.join(
   "telemetry",
   "otel-spans.jsonl",
 );
-// Kept small so a worst-case batch against a blackholed collector
-// (TELEMETRY_OTEL_SPANS_FLUSH_BATCH_SIZE * TELEMETRY_HTTP_TIMEOUT_MS plus the
-// preceding event flush) stays well under TELEMETRY_FLUSH_LOCK_STALE_MS (60s).
-// Otherwise a later command could treat the still-held flush lock as stale and
-// start a second concurrent worker.
+// OTLP requests run concurrently, while event and OTLP phases run sequentially.
+// The maximum configurable HTTP timeout therefore keeps two worst-case network
+// phases below TELEMETRY_FLUSH_LOCK_STALE_MS (60s), preventing a later command
+// from treating a live worker's lock as stale and starting a second worker.
 const TELEMETRY_OTEL_SPANS_FLUSH_BATCH_SIZE = 8;
 const TELEMETRY_OTEL_SPANS_MAX_PENDING = 500;
 /** Public contract for telemetry schema version, shared by SDK and presentation-layer consumers. */
@@ -65,7 +66,9 @@ const TELEMETRY_CLIENT_SCHEMA_VERSION = 1;
 const TELEMETRY_FLUSH_BATCH_SIZE = 100;
 const TELEMETRY_MAX_RETRY_DELAY_MS = 3_600_000;
 const TELEMETRY_RETRY_BASE_DELAY_MS = 30_000;
-const TELEMETRY_HTTP_TIMEOUT_MS = 5_000;
+const TELEMETRY_HTTP_TIMEOUT_DEFAULT_MS = 20_000;
+const TELEMETRY_HTTP_TIMEOUT_MIN_MS = 1_000;
+const TELEMETRY_HTTP_TIMEOUT_MAX_MS = 25_000;
 const MILLISECONDS_PER_DAY = 86_400_000;
 const TELEMETRY_MAX_EVENT_BYTES = 65_536;
 const TELEMETRY_SANITIZE_MAX_DEPTH = 6;
@@ -88,6 +91,8 @@ const PM_TELEMETRY_OTEL_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const PM_TELEMETRY_INLINE_FLUSH_ENV = "PM_TELEMETRY_INLINE_FLUSH";
 const PM_TELEMETRY_FLUSH_CHILD_ENV = "PM_TELEMETRY_FLUSH_CHILD";
 const PM_TELEMETRY_SOURCE_CONTEXT_ENV = "PM_TELEMETRY_SOURCE_CONTEXT";
+const PM_TELEMETRY_HTTP_TIMEOUT_MS_ENV = "PM_TELEMETRY_HTTP_TIMEOUT_MS";
+const NATIVE_FETCH = globalThis.fetch;
 /** Supported values accepted by the pm telemetry source context contract. */
 export const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = [
   "user",
@@ -672,6 +677,78 @@ function normalizeCaptureLevel(
 
 function parseBooleanTrueLike(value: string | undefined): boolean {
   return BOOLEAN_TRUE_VALUES.has((value ?? "").trim().toLowerCase());
+}
+
+/** Resolve the background event and OTLP request timeout within the flush-lock safety envelope. */
+function resolveTelemetryHttpTimeoutMs(): number {
+  const rawConfigured = process.env[PM_TELEMETRY_HTTP_TIMEOUT_MS_ENV]?.trim();
+  if (!rawConfigured) {
+    return TELEMETRY_HTTP_TIMEOUT_DEFAULT_MS;
+  }
+  const configured = Number(rawConfigured);
+  if (!Number.isFinite(configured)) {
+    return TELEMETRY_HTTP_TIMEOUT_DEFAULT_MS;
+  }
+  return Math.min(
+    TELEMETRY_HTTP_TIMEOUT_MAX_MS,
+    Math.max(TELEMETRY_HTTP_TIMEOUT_MIN_MS, Math.trunc(configured)),
+  );
+}
+
+/** POST a JSON payload with one total timeout that covers DNS, connection, TLS, and response completion. */
+async function postTelemetryJson(
+  endpoint: string,
+  headers: Record<string, string>,
+  body: string,
+): Promise<number> {
+  const url = new URL(endpoint);
+  // A replaced global fetch is an intentional runtime adapter used by the
+  // repository's deterministic tests and by embedders that instrument network
+  // traffic. Production retains the native HTTP transport below so Node's
+  // independent built-in-fetch connect timeout cannot preempt our bound.
+  if (globalThis.fetch !== NATIVE_FETCH) {
+    const response = await globalThis.fetch(endpoint, {
+      method: "POST",
+      headers,
+      body,
+      signal: AbortSignal.timeout(resolveTelemetryHttpTimeoutMs()),
+    });
+    return response.status;
+  }
+  const request =
+    url.protocol === "https:"
+      ? httpsRequest
+      : url.protocol === "http:"
+        ? httpRequest
+        : undefined;
+  if (!request) {
+    throw new Error(`telemetry_http_protocol_unsupported_${url.protocol}`);
+  }
+  return new Promise<number>((resolve, reject) => {
+    const timeoutMs = resolveTelemetryHttpTimeoutMs();
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        ...headers,
+        "content-length": Buffer.byteLength(body),
+      },
+      signal: AbortSignal.timeout(timeoutMs),
+      autoSelectFamilyAttemptTimeout: Math.min(5_000, timeoutMs),
+    };
+    const clientRequest = request(
+      url,
+      requestOptions,
+      (response) => {
+        response.once("error", reject);
+        // Client responses always carry an HTTP status code; Node's shared
+        // IncomingMessage type is also used for server requests where it is absent.
+        response.once("end", () => resolve(response.statusCode!));
+        response.resume();
+      },
+    );
+    clientRequest.once("error", reject);
+    clientRequest.end(body);
+  });
 }
 
 function normalizePmVersion(value: string | undefined): string {
@@ -1847,14 +1924,13 @@ async function flushPendingOtelSpans(
   await Promise.all(
     due.map(async (span) => {
       try {
-        const response = await fetch(span.endpoint, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(span.payload),
-          signal: AbortSignal.timeout(TELEMETRY_HTTP_TIMEOUT_MS),
-        });
-        if (!response.ok) {
-          throw new Error(`local_otel_export_http_${response.status}`);
+        const status = await postTelemetryJson(
+          span.endpoint,
+          { "content-type": "application/json" },
+          JSON.stringify(span.payload),
+        );
+        if (status < 200 || status >= 300) {
+          throw new Error(`local_otel_export_http_${status}`);
         }
         succeededIds.add(span.id);
         succeededCount += 1;
@@ -2081,17 +2157,16 @@ async function flushQueue(
   }
 
   try {
-    const response = await fetch(normalizedEndpoint, {
-      method: "POST",
-      headers: requestHeaders,
-      body: JSON.stringify({
+    const status = await postTelemetryJson(
+      normalizedEndpoint,
+      requestHeaders,
+      JSON.stringify({
         schema_version: TELEMETRY_SCHEMA_VERSION,
         events: dueEntries.map((entry) => entry.event),
       }),
-      signal: AbortSignal.timeout(TELEMETRY_HTTP_TIMEOUT_MS),
-    });
-    if (!response.ok) {
-      throw new Error(`telemetry_flush_http_${response.status}`);
+    );
+    if (status < 200 || status >= 300) {
+      throw new Error(`telemetry_flush_http_${status}`);
     }
   } catch (error: unknown) {
     const retried = await markFailedEntriesInCurrentQueue(
@@ -2295,11 +2370,13 @@ export const _testOnly = {
   looksLikeEmailToken,
   otelSpansQueuePath,
   parseBooleanTrueLike,
+  postTelemetryJson,
   parsePendingOtelSpanLines,
   prunePendingOtelSpans,
   reconcilePendingOtelSpansAfterFlush,
   retentionCutoffMs,
   resolveOtelTracesEndpoint,
+  resolveTelemetryHttpTimeoutMs,
   rewritePendingOtelSpans,
   normalizeForHash,
   normalizeCaptureLevel,
