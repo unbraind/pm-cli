@@ -115,6 +115,18 @@ const FINDING_STEP_TEMPLATES: Record<
     rationale:
       "Terminal-only ordering cycles have no scheduling effect; repairing them would mutate closed history (changelog drag).",
   },
+  ordering_storage_contradiction: {
+    op: "remove",
+    confidence: "high",
+    rationale:
+      "The structured ordering row asserts the opposite precedence from the same-target scalar blocker; remove that exact dependency row or replace both representations with one unambiguous edge.",
+  },
+  legacy_ordering_storage_contradiction: {
+    op: "remove",
+    confidence: "high",
+    rationale:
+      "The terminal holder contains a proven contradictory structured ordering row; remove it in a dedicated changelog-safe batch while preserving the scalar blocker as history.",
+  },
   // duplicate_edge findings are expanded into per-stored-edge remove steps by
   // the planner itself (see stepsFromDuplicateGroup); this template documents
   // the family for exhaustiveness and backs any future sample-only fallback.

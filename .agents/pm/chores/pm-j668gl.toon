@@ -2,13 +2,13 @@ id: pm-j668gl
 title: "The Windows nightly leg cannot separate product defects from harness noise: 744 hardcoded POSIX path literals and 203 raw errno strings in the suite fail on Windows for reasons unrelated to pm behaviour"
 description: "GH-791 (windows-latest / Node 24, commit d885d5a0) fails four tests. Exactly one of them is a product defect - the merge-safety workspace_root canonicalization tracked as pm-ihmfs6, which also fails on macOS. The other three are properties of the suite, not of pm:\n\n1. tests/unit/sdk/merge-safety.spec.ts 'installs idempotent git attributes/config and exercises the CLI adapter' - same path-spelling family as pm-ihmfs6.\n2. tests/unit/packages/guide-shell-runtime.spec.ts 'builds completion registries and list helpers across schema shapes' - asserts listAllItemMetadata was called with the literal '/tmp/pm' (lines 24, 28, 120, 136, 142). On Windows path.resolve('/tmp/pm') is C:\\tmp\\pm, so the assertion cannot hold and never could.\n3. tests/unit/sdk/context-integrity-primitives.spec.ts 'invalidates derived drift state after conventional history writes' - asserts the warning string history_drift_cache_invalidation_failed:ENOTDIR. Windows raises a different errno for the same condition. This one has a product tail worth deciding separately: the diagnostic code embeds a raw platform errno, so the warning an agent parses is platform-dependent.\n\nCensus of the class across tests/: 744 hardcoded POSIX absolute path literals matching \"/(tmp|home|var|usr)/ in 81 files (worst: extension-loader.spec.ts 159, search-command.spec.ts 137, extensions-runtime.spec.ts 48, builtin-extension-entrypoints.spec.ts 39, telemetry-runtime.spec.ts 34, settings-store.spec.ts 30), plus 203 raw errno literals.\n\nWhy this matters more than tidiness: the Windows leg has been red often enough (pm-e70zh5 records a 32/84 scheduled-run failure rate) that a red leg carries no information. Today it is red for one real cross-platform defect and three artifacts, and nothing in the failure output distinguishes them - somebody has to read four stack traces to learn that. The suite is asserting on the harness's temp-directory conventions rather than on pm, so a genuine Windows regression would arrive already camouflaged.\n\nRemedy: route path literals through the existing helpers (withTempPmPath, mockPosixPath) or path.join from os.tmpdir(), and assert on normalized error classes rather than raw errno strings. Prefer a lint rule or a gate over a one-time sweep, since the count grows with every new spec."
 type: Chore
-status: closed
+status: in_progress
 priority: 2
 tags[5]: ci,cross-platform,nightly,test-quality,windows
 created_at: "2026-07-28T10:29:33.965Z"
-updated_at: "2026-08-12T09:06:06.905Z"
-closed_at: "2026-08-12T09:05:32.762Z"
-completed_at: "2026-08-12T09:05:32.762Z"
+updated_at: "2026-08-13T11:42:35.086Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#3e72d1e1e1b98ee0c323a3b0"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: No test asserts on a hardcoded POSIX absolute path or a raw platform errno string; a red Windows nightly leg names only product defects
@@ -26,7 +26,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-6l2mza,verifies,"2026-07-29T18:27:58.839Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-08-03T20:38:19.263Z","harness:claude-code","cli:update:dep",detected
   pm-ei6x66,verifies,"2026-08-05T08:05:40.825Z","harness:codex","cli:update:dep",detected
-comments[21]{created_at,author,text}:
+comments[24]{created_at,author,text}:
   "2026-07-28T11:53:13.607Z","harness:codex","Progress tranche evidence: canonical/native path expectations were fixed in merge safety, guide-shell runtime, and context-integrity tests, and drift-cache filesystem failures now expose stable diagnostic codes instead of raw errno text. The full repo-wide removal of all hardcoded POSIX paths and raw errno assertions remains, so this broader chore returns to open after the cross-platform nightly evidence is captured on pm-ihmfs6."
   "2026-07-28T11:57:10.427Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/795 at implementation head 862e88f71. The PR description links canonical PM records and records full coverage, isolated consumer, security, compatibility, and token-gate evidence."
   "2026-07-28T12:15:00.058Z","harness:codex","Nightly run 30356894804 reduced the Windows failures to three actionable portability cases: stable diagnostic semantics for invalid tracker roots, one canonical-path assertion, and cwd-safe cleanup. Implemented deterministic root classification independent of raw errno, realpath expectations, and finally-guarded cwd restoration; focused 27 tests and strict static quality now pass."
@@ -48,12 +48,16 @@ comments[21]{created_at,author,text}:
   "2026-08-05T08:05:42.598Z","harness:codex","GH-900 evidence: scheduled Nightly Validation run 30981615129 on main b10da24 failed only tests/unit/core/workspace/gitignore.spec.ts because Windows reports EPERM for the same permission-constrained file operation that Linux reports EACCES. Replaced the raw single-errno expectation with the established cross-platform semantic set EACCES|EPERM without weakening the error code, exit code, recovery guidance, path-redaction, or unchanged-byte assertions. All four linked portability commands passed: 4, 31, 10, and 67 tests. Delivery is folded into broad SDK/CLI PR #901; hosted Windows Node 24 remains the final oracle."
   "2026-08-12T08:32:11.183Z","harness:codex","Implementation evidence: Windows-sensitive retry expectations now use the platform renderer, validation cache paths use path.join, and coverage shards emit the default assertion reporter alongside the mergeable blob. GitHub issue #989 is linked back to this item and pm-h9gsix. Local focused tests and the full 7,251-test suite pass; hosted Windows verification will run on the PR exact head."
   "2026-08-12T09:05:13.578Z","harness:codex","Exact-head PR #990 evidence at bdd380af841efce5825bc27520e2d28463e2d527: all hosted executable checks passed, including Windows Node 24, four coverage shards plus aggregate coverage, static/typecheck/compat/smoke gates, Linux/macOS runtimes, CodeQL, Semgrep, Trivy, TruffleHog, Codecov patch, and 11 CodSpeed benchmarks. Fresh review inventory found zero inline threads and no actionable findings. CodeRabbit and Sourcery substantive reviews were rate-limited and Greptile produced no review surface; those are recorded limitations, not approvals. Every emitted bot comment/review was individually reacted to and answered with evidence."
+  "2026-08-13T10:47:11.162Z","harness:codex","GH-995 evidence: scheduled run 31671198638 passed 7,237 Windows tests and failed only the authoritative linked-test-order cache fixture. The fixture indexed an on-disk JSON cache with path.join, producing a backslash key on Windows while the serialized cache contract and its later assertion use tasks/<id>.toon. This is the existing portability census lineage, not a new item."
+  "2026-08-13T10:49:32.827Z","harness:codex","Evidence: GitHub issue #995 reproduced a Windows-only validate spec regression because the test indexed the serialized collection cache with path.join(), producing backslashes although cache keys are canonical slash-delimited tracker paths. Replaced the host-dependent lookup with tasks/<id>.toon and verified the complete focused validate suite: 95/95 tests passed via node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts."
+  "2026-08-13T11:42:35.086Z","harness:codex","Exact local regression evidence after the Windows-neutral cache-key correction: full coverage passed 490 files / 7,256 tests at exact 100% statements, branches, functions, and lines. Hosted Windows proof remains the PR acceptance step before closing GH-995."
 notes[2]{created_at,author,text}:
   "2026-07-30T09:21:18.633Z","harness:claude-code","Nightly verdict recorded 2026-07-30. The 06:30Z scheduled run 30519801227 was RED on exactly one leg (windows-latest, Node 24) and exactly one spec: tests/unit/core/store/item-store-root-contract.spec.ts > item metadata tracker-root contract > rejects a regular file root with a stable typed diagnostic. Test Files 1 failed / 396 passed. That run started at 06:30Z; PR 823, which fixes precisely that contract by inspecting existing ancestors after ENOENT, merged at 08:52Z. So the red window was pre-fix, not a HEAD regression.\n\nVerified by dispatch rather than by inference: workflow_dispatch run 30529480380 on main is GREEN on all five legs (ubuntu Node 22, ubuntu Node 24, ubuntu Node 25, macos Node 24, windows Node 24). HEAD is clean on the Windows leg.\n\nResidual worth noting for this item's scope: the same nightly log shows two MCP contract-violation warnings emitted by our own integration suite and failing nothing - Unknown option \"full\" for pm_update action \"update\" and Unknown option \"dryRun\" for pm_run action \"test-all\". Neither option is declared by the CLI either (pm update has no --full, pm test-all has no --dry-run), so these are suite-side arguments that no contract knows. The warning fires on every nightly and no gate escalates it."
   "2026-08-12T08:32:11.719Z","harness:codex","Scope decision: fix the three live nightly failures and improve hosted diagnostics without mechanically rewriting hundreds of historical literals that are not executed path contracts. Existing deep Windows portability lineage remains canonical."
-learnings[2]{created_at,author,text}:
+learnings[3]{created_at,author,text}:
   "2026-07-29T18:28:09.090Z","harness:codex",Cross-platform conformance should preserve the semantic case on supporting platforms and condition only the platform-inexpressible fixture; treating an unsupported Unix socket fixture as a Windows product failure destroys nightly signal.
   "2026-08-12T08:32:12.244Z","harness:codex",A blob-only coverage shard can preserve mergeability while hiding the assertion that caused a hosted failure. Multiple Vitest reporters provide both machine merge input and human/actionable job logs without duplicating test execution.
+  "2026-08-13T10:49:33.609Z","harness:codex","Serialized tracker/cache keys are logical portable identifiers, not host filesystem paths; tests and consumers must address them with canonical slash notation even when the cache file itself is reached through node:path."
 files[9]{path,scope,note}:
   .github/workflows/ci.yml,project,Coverage shard keeps human reporter beside mergeable blob
   src/core/history/drift-cache.ts,project,Stable cross-platform diagnostics and native path expectations
@@ -64,12 +68,13 @@ files[9]{path,scope,note}:
   tests/unit/sdk/context-integrity-primitives.spec.ts,project,Stable cross-platform diagnostics and native path expectations
   tests/unit/sdk/merge-safety.spec.ts,project,Stable cross-platform diagnostics and native path expectations
   tests/unit/sdk/workspace-snapshot.spec.ts,project,Windows-safe server cleanup without masking listen failures
-tests[5]{command,scope,timeout_seconds}:
+tests[6]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts tests/unit/packages/guide-shell-runtime.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts tests/unit/commands/test-command.spec.ts,project,120
   node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/commands/validate-command.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,project,300
 test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms66harf-rn2h9v,test,passed,"2026-07-29T14:26:17.499Z","2026-07-29T14:26:37.370Z","2026-07-29T14:26:37.370Z",1,0,0
   test-local-ms6fau8t-2cu9ab,test,passed,"2026-07-29T18:32:42.126Z","2026-07-29T18:33:32.573Z","2026-07-29T18:33:32.573Z",3,0,0
@@ -77,5 +82,4 @@ test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-mspu30uv-i7am58,test,passed,"2026-08-12T08:33:33.764Z","2026-08-12T08:34:59.479Z","2026-08-12T08:34:59.479Z",5,0,0
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Managed release history for this completed tranche
-close_reason: Restored Windows nightly portability for command quoting and path cache identity; the exact-head Windows Node 24 hosted regression passed on PR #990 and GitHub issue #989 is configured to close with the accepted merge.
 body: ""

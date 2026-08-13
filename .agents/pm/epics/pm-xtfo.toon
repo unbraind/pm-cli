@@ -6,7 +6,7 @@ status: canceled
 priority: 0
 tags[7]: "area:milestone",code,docs,"milestone:4",pm-cli,"priority:0",tests
 created_at: "2026-03-06T22:55:53.977Z"
-updated_at: "2026-07-26T22:16:44.318Z"
+updated_at: "2026-08-13T09:48:26.545Z"
 deadline: "2026-03-20T22:55:53.977Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -39,9 +39,8 @@ fixed_version: archive-2026q2
 component: project-management/prd-milestone-4-search
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for PRD Milestone 4 - Search.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-met4,blocks,"2026-03-06T22:55:53.977Z",maintainer-agent,null
-  pm-doxj,blocks,"2026-07-26T22:16:44.069Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-doxj,blocks,"2026-07-26T22:16:44.069Z"
 comments[2]{created_at,author,text}:
   "2026-03-06T22:55:53.977Z",maintainer-agent,Milestone 4 seeded from PRD to establish complete dogfood planning coverage.
   "2026-03-06T23:18:36.738Z",maintainer-agent,Duplicate milestone epic identified during tracker normalization. Canonical milestone item is pm-f45 for Milestone 4; this seeded duplicate is being canceled to keep backlog deterministic and non-overlapping.

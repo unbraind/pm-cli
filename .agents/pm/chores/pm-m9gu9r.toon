@@ -1,0 +1,41 @@
+id: pm-m9gu9r
+title: Isolate the merge SDK bundle from focused-entrypoint chunk fanout
+description: Build the narrow @unbrained/pm-cli/sdk/merge entrypoint as a standalone bundle so its public import contract does not eagerly traverse unrelated focused SDK chunks or intermittently exceed the mandatory startup budget under normal host load.
+type: Chore
+status: in_progress
+priority: 1
+tags[5]: agent-efficiency,bundling,performance,quality-gate,sdk
+created_at: "2026-08-13T11:26:44.669Z"
+updated_at: "2026-08-13T11:42:33.794Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#3e72d1e1e1b98ee0c323a3b0"
+author: "harness:codex"
+acceptance_criteria: sdk/merge is emitted as a standalone no-splitting bundle without focused-chunks imports; bundle manifest and package exports remain complete; focused bundle tests and exact SDK import-cost gates pass under the existing threshold; repository coverage remains exactly 100/100/100/100
+goal: project management = context management
+objective: Keep narrow public SDK entrypoints genuinely narrow at runtime as well as at the type surface.
+value: Faster deterministic agent startup and a trustworthy non-flaky mandatory import-cost gate.
+impact: Consumers of the merge-only SDK surface load only merge dependencies; CI no longer depends on unrelated focused chunk topology.
+outcome: "The emitted sdk-merge.js has no focused-chunks imports, behavior and package exports remain compatible, and the exact import-cost gate passes without raising budgets."
+why_now: The broad exact-coverage implementation exposed repeated sdk/merge import-budget failures while an isolated proof bundle reduced median startup materially.
+parent: pm-usfg
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-38bskj,verifies,"2026-08-13T11:26:44.669Z","harness:codex","cli:create:dep",detected
+  pm-cg1sjb,discovered_from,"2026-08-13T11:26:44.669Z","harness:codex","cli:create:dep",detected
+  pm-gt82,discovered_from,"2026-08-13T11:26:44.669Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-13T11:26:44.669Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-13T11:26:54.994Z","harness:codex","Duplicate-check evidence: all-status searches for 'merge entrypoint bundle isolation', 'focused chunk fanout import cost', and 'sdk merge import performance' found no active or closed item owning standalone merge bundle topology. pm-gt82 owns the shipped general CLI bundler, while closed pm-cg1sjb owns median sampling noise; this item is the distinct runtime chunk-fanout remediation."
+  "2026-08-13T11:27:46.689Z","harness:codex","Implementation: moved sdk-merge out of the shared focused chunk graph and added a third standalone esbuild invocation with splitting disabled. This preserves the public subpath and manifest while preventing merge-only consumers from importing unrelated focused chunks; no performance budget or scheduler margin changed."
+  "2026-08-13T11:28:43.077Z","harness:codex","Focused evidence: bundle-cli unit regression passed 17/17; the unchanged-budget SDK entrypoint gate passed all 10 entrypoints. The emitted dist/cli-bundle/sdk-merge.js is standalone and contains no imports from chunks/, focused-chunks/, or isolated-chunks/."
+  "2026-08-13T11:42:33.794Z","harness:codex","Artifact acceptance evidence: package-artifact gate passed (1,390 files, forbidden source maps absent); packed npx smoke passed all 13 package aliases; package-first dogfood passed 88 workflows; a clean Bun 1.3.11 consumer installed the generated 2026.8.13 tarball, initialized strict governance, completed create/get/close lifecycle, imported @unbrained/pm-cli/sdk/merge in-process, and passed history-drift validation. The first strict close correctly refused missing resolution fields; after supplying resolution/expected/actual evidence, close passed."
+files[2]{path,scope,note}:
+  scripts/bundle-cli.mjs,project,emit merge SDK entrypoint as an isolated no-splitting bundle graph
+  tests/unit/scripts/bundle-cli.spec.ts,project,regression contract for the isolated third build invocation
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/bundle-cli.spec.ts,project,300,focused bundle orchestration regression
+  "pnpm benchmark:sdk-entrypoints:check",project,300,exact unchanged-budget fresh-process SDK import gate
+docs[1]{path,scope,note}:
+  docs/performance/sdk-entrypoint-import-costs.md,project,document why merge runtime topology is intentionally standalone
+body: ""

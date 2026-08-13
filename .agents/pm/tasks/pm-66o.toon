@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:test-orchestration",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.686Z"
-updated_at: "2026-07-26T17:05:14.962Z"
+updated_at: "2026-08-13T09:50:42.801Z"
 deadline: "2026-03-03T23:02:09.686Z"
 assignee: steve
 author: steve
@@ -41,10 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/test-all-orchestration-and-dependency-failed-exi
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for test-all orchestration and dependency-failed exit handling.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-54d,parent,"2026-02-17T23:02:09.686Z",steve,null
-  pm-c0r,blocks,"2026-02-17T23:02:09.686Z",steve,null
-  pm-54d,implements,"2026-07-26T17:05:14.753Z",null,null
+dependencies[2]:
+  - id: pm-54d
+    kind: parent
+    created_at: "2026-02-17T23:02:09.686Z"
+    author: steve
+  - id: pm-54d
+    kind: implements
+    created_at: "2026-07-26T17:05:14.753Z"
 comments[8]{created_at,author,text}:
   "2026-02-18T01:40:00.761Z",agent,"Cross-item evidence: integration test tests/integration/cli.integration.spec.ts now asserts pm test-all returns exit code 5 when a linked command fails, validating dependency-failed semantics in CLI execution path."
   "2026-02-18T03:23:31.818Z",maintainer-agent,"Plan: prevent recursive pm test-all self-invocation via linked test entries, then add unit and integration assertions for the guard."

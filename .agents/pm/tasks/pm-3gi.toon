@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:schema",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:07.402Z"
-updated_at: "2026-07-26T17:03:04.872Z"
+updated_at: "2026-08-13T09:48:00.402Z"
 deadline: "2026-04-15T11:57:43.129Z"
 author: steve
 estimated_minutes: 120
@@ -40,10 +40,14 @@ fixed_version: archive-2026q2
 component: project-management/item-schema-model-and-validation
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Item schema model and validation.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-2xl,blocks,"2026-02-17T23:02:07.402Z",steve,null
-  pm-u9r,parent,"2026-02-17T23:02:07.402Z",steve,null
-  pm-u9r,implements,"2026-07-26T17:03:04.640Z",null,null
+dependencies[2]:
+  - id: pm-u9r
+    kind: parent
+    created_at: "2026-02-17T23:02:07.402Z"
+    author: steve
+  - id: pm-u9r
+    kind: implements
+    created_at: "2026-07-26T17:03:04.640Z"
 comments[8]{created_at,author,text}:
   "2026-02-22T22:16:13.123Z",maintainer-agent,"Plan: harden runtime item front-matter validation in parser paths, add targeted unit tests for required fields/enums/priority/timestamps, then run item tests and regression test-all before closure decision."
   "2026-02-22T22:20:57.528Z",maintainer-agent,"Implemented parser-level front-matter validation for required PRD fields (id/title/description/type/status/priority/tags/timestamps), with deterministic PmCliError messages for missing/malformed JSON and invalid enum/range/timestamp values. Added unit coverage in tests/unit/item-format-validation.spec.ts."

@@ -14,12 +14,16 @@
  */
 import type { RelationshipEdge } from "../relationships.js";
 import {
+  findRedundantRelationshipEdges,
   isTransitiveKind,
   orientTransitiveEdge,
   transitiveFamilyKey,
 } from "./analytics.js";
 import { findRelationshipCutStructure } from "./centrality.js";
-import type { WorkspaceRelationshipAssembly } from "./assembly.js";
+import type {
+  OrderingStorageContradiction,
+  WorkspaceRelationshipAssembly,
+} from "./assembly.js";
 import {
   RELATIONSHIP_AUDIT_FINDING_CODES,
   type RelationshipAuditFindingCode,
@@ -44,6 +48,8 @@ export interface RelationshipAuditFinding {
   count: number;
   /** Deterministic bounded sample of affected subjects. */
   sample: string[];
+  /** Optional exact evidence that explains why the sampled subjects were selected. */
+  evidence?: string[];
   /** Whether {@link sample} was truncated by the configured sample bound. */
   sample_truncated: boolean;
   /** Safe machine-actionable next step; audits never invent or auto-apply edges. */
@@ -64,8 +70,16 @@ export interface RelationshipCoverageTypeProfile {
 export interface RelationshipCoverageProfile {
   /** Total indexed nodes including materialized missing placeholders. */
   nodes: number;
+  /** Tracker-recorded nodes, excluding synthesized missing and external placeholders. */
+  recorded_nodes?: number;
   /** Total deduplicated indexed edges. */
   edges: number;
+  /** Edges that remain after excluding redundant and contradictory storage rows. */
+  informative_edges?: number;
+  /** Stored edges implied by a bounded longer path in the same semantic family. */
+  redundant_edges?: number;
+  /** Structured ordering edges that contradict a same-target scalar blocker. */
+  ordering_contradiction_edges?: number;
   /** Counting convention used by edges and edges_by_kind. */
   edge_basis: "deduplicated_directed";
   /** Deterministic per-kind edge counts. */
@@ -167,6 +181,15 @@ const SEVERITY_RANK: Record<RelationshipAuditSeverity, number> = {
   info: 2,
 };
 
+/** Normalize optional exemption identifiers into a case-insensitive lookup set. */
+function normalizeExemptionSet(values: readonly string[] | undefined): Set<string> {
+  return new Set(
+    (values ?? [])
+      .filter((value): value is string => typeof value === "string")
+      .map((value) => value.trim().toLowerCase()),
+  );
+}
+
 /** Internal per-node lifecycle classification resolved once per audit. */
 interface AuditNodeState {
   /** Original-case node identifier. */
@@ -214,6 +237,7 @@ function buildFinding(
   subjects: readonly string[],
   maxSampleSize: number,
   remediation: string,
+  evidence?: readonly string[],
 ): RelationshipAuditFinding {
   const sorted = [...subjects].sort((left, right) => left.localeCompare(right));
   return {
@@ -225,6 +249,13 @@ function buildFinding(
     sample: sorted.slice(0, maxSampleSize),
     sample_truncated: sorted.length > maxSampleSize,
     remediation,
+    ...(evidence === undefined
+      ? {}
+      : {
+          evidence: [...evidence]
+            .sort((left, right) => left.localeCompare(right))
+            .slice(0, maxSampleSize),
+        }),
   };
 }
 /** Resolve the ordering-only successor adjacency for cycle analysis. */
@@ -452,6 +483,53 @@ function isActiveAuditMember(
   return !state.terminal;
 }
 
+/** Format the exact contradictory storage pair that manufactures an ordering cycle. */
+export function formatOrderingStorageContradiction(
+  contradiction: Pick<
+    OrderingStorageContradiction,
+    "holder_id" | "target_id" | "dependency_kind"
+  >,
+): string {
+  return `${contradiction.holder_id} -> ${contradiction.target_id} (blocked_by scalar + ${contradiction.dependency_kind} dependency)`;
+}
+
+/** Report active and historical scalar-versus-structured ordering contradictions. */
+function collectOrderingStorageContradictionFindings(
+  assembly: WorkspaceRelationshipAssembly,
+  maxSampleSize: number,
+): RelationshipAuditFinding[] {
+  const active: string[] = [];
+  const legacy: string[] = [];
+  for (const contradiction of assembly.orderingContradictions ?? [])
+    (contradiction.legacy_terminal ? legacy : active).push(
+      formatOrderingStorageContradiction(contradiction),
+    );
+  const findings: RelationshipAuditFinding[] = [];
+  appendFinding(
+    findings,
+    active,
+    maxSampleSize,
+    "ordering_storage_contradiction",
+    "error",
+    "A scalar blocker and same-target structured ordering row must not assert opposite precedence.",
+    (count) =>
+      `${count} active scalar-versus-structured ordering contradiction(s)`,
+    "Remove the structured dependency row that points the holder before its scalar blocker, or replace both representations with one unambiguous ordering edge.",
+  );
+  appendFinding(
+    findings,
+    legacy,
+    maxSampleSize,
+    "legacy_ordering_storage_contradiction",
+    "info",
+    "Terminal scalar-versus-structured ordering contradictions are exact historical storage defects with no live scheduling effect.",
+    (count) =>
+      `${count} terminal scalar-versus-structured ordering contradiction(s)`,
+    "Remove the contradictory blocks dependency row in a dedicated changelog-safe closed-item batch; preserve the scalar blocker as the historical precedence record.",
+  );
+  return findings;
+}
+
 /** Collect ordering-cycle and lifecycle-block governance findings. */
 function collectOrderingFindings(
   assembly: WorkspaceRelationshipAssembly,
@@ -468,6 +546,14 @@ function collectOrderingFindings(
     const active = cycle.some((member) =>
       isActiveAuditMember(member, nodeStates),
     );
+    const cycleMembers = new Set(cycle.map((member) => member.toLowerCase()));
+    const contradictionEvidence = (assembly.orderingContradictions ?? [])
+      .filter(
+        (row) =>
+          cycleMembers.has(row.holder_id.toLowerCase()) &&
+          cycleMembers.has(row.target_id.toLowerCase()),
+      )
+      .map(formatOrderingStorageContradiction);
     findings.push(
       active
         ? buildFinding(
@@ -478,6 +564,9 @@ function collectOrderingFindings(
             cycle,
             maxSampleSize,
             "Remove or retype one ordering edge inside the cycle, or split the work so precedence is linear.",
+            contradictionEvidence.length === 0
+              ? undefined
+              : contradictionEvidence,
           )
         : buildFinding(
             "legacy_ordering_cycle",
@@ -488,6 +577,9 @@ function collectOrderingFindings(
             cycle,
             maxSampleSize,
             "Leave as history debt, or clean up in a dedicated changelog-safe closed-item batch; never repair closed items ad hoc.",
+            contradictionEvidence.length === 0
+              ? undefined
+              : contradictionEvidence,
           ),
     );
   }
@@ -932,6 +1024,19 @@ function collectCoverageReport(
     "Investigate for an honest second edge (story->task, defect family, cross-epic complement); do not fabricate one.",
   );
   const edgeCount = assembly.graph.edges().length;
+  const redundantEdges = findRedundantRelationshipEdges(assembly.graph, {
+    signal,
+  }).value;
+  const nonInformativeEdgeKeys = new Set(
+    redundantEdges.map(
+      ({ edge }) =>
+        `${edge.source.toLowerCase()}\u0000${edge.target.toLowerCase()}\u0000${edge.kind}`,
+    ),
+  );
+  for (const contradiction of assembly.orderingContradictions ?? [])
+    nonInformativeEdgeKeys.add(
+      `${contradiction.holder_id.toLowerCase()}\u0000${contradiction.target_id.toLowerCase()}\u0000${contradiction.dependency_kind}`,
+    );
   const sortedEdgesByKind = Object.fromEntries(
     Object.entries(edgesByKind).sort(([left], [right]) =>
       left.localeCompare(right),
@@ -954,7 +1059,14 @@ function collectCoverageReport(
     findings,
     profile: {
       nodes: assembly.graph.nodes().length,
+      recorded_nodes: assembly.details.filter(
+        (detail) => detail.status !== "missing" && detail.status !== "external",
+      ).length,
       edges: edgeCount,
+      informative_edges: edgeCount - nonInformativeEdgeKeys.size,
+      redundant_edges: redundantEdges.length,
+      ordering_contradiction_edges:
+        assembly.orderingContradictions?.length ?? 0,
       edge_basis: "deduplicated_directed",
       edges_by_kind: sortedEdgesByKind,
       edge_share_by_kind: Object.fromEntries(
@@ -1008,16 +1120,8 @@ export function auditWorkspaceRelationshipGraph(
     throw new TypeError(
       `Invalid audit sample bound: ${String(options.maxSampleSize)}`,
     );
-  const exemptIsolates = new Set(
-    (options.exemptIsolates ?? [])
-      .filter((id): id is string => typeof id === "string")
-      .map((id) => id.trim().toLowerCase()),
-  );
-  const isolateExemptTypes = new Set(
-    (options.isolateExemptTypes ?? [])
-      .filter((type): type is string => typeof type === "string")
-      .map((type) => type.trim().toLowerCase()),
-  );
+  const exemptIsolates = normalizeExemptionSet(options.exemptIsolates);
+  const isolateExemptTypes = normalizeExemptionSet(options.isolateExemptTypes);
   const nodeStates = new Map<string, AuditNodeState>(
     assembly.details.map((detail) => [
       detail.id,
@@ -1039,6 +1143,10 @@ export function auditWorkspaceRelationshipGraph(
     assembly,
     isTerminal,
     maxSampleSize,
+  );
+  options.signal?.throwIfAborted();
+  findings.push(
+    ...collectOrderingStorageContradictionFindings(assembly, maxSampleSize),
   );
   options.signal?.throwIfAborted();
   findings.push(
@@ -1104,8 +1212,16 @@ export interface RelationshipAuditDelta {
   profile: {
     /** Node-count change including missing placeholders. */
     nodes: number;
+    /** Tracker-recorded node-count change excluding synthesized placeholders. */
+    recorded_nodes?: number;
     /** Deduplicated edge-count change. */
     edges: number;
+    /** Informative edge-count change after non-information deductions. */
+    informative_edges?: number;
+    /** Redundant edge-count change. */
+    redundant_edges?: number;
+    /** Ordering contradiction edge-count change. */
+    ordering_contradiction_edges?: number;
     /** Active-node-count change. */
     active_nodes: number;
     /** Missing-placeholder-count change. */
@@ -1150,6 +1266,39 @@ function readSnapshotCoverageByType(
   return snapshot.profile.coverage_by_type ?? {};
 }
 
+/** Diff per-type coverage while omitting unchanged type rows. */
+function diffCoverageByType(
+  baseline: RelationshipAuditSnapshot,
+  current: RelationshipAuditSnapshot,
+): Record<string, RelationshipCoverageTypeProfile> {
+  const deltas: Record<string, RelationshipCoverageTypeProfile> = {};
+  const baselineCoverage = readSnapshotCoverageByType(baseline);
+  const currentCoverage = readSnapshotCoverageByType(current);
+  const types = [
+    ...new Set([
+      ...Object.keys(baselineCoverage),
+      ...Object.keys(currentCoverage),
+    ]),
+  ].sort();
+  for (const type of types) {
+    const before = Object.assign(
+      { active: 0, isolated: 0, degree_leq_one: 0 },
+      baselineCoverage[type],
+    );
+    const after = Object.assign(
+      { active: 0, isolated: 0, degree_leq_one: 0 },
+      currentCoverage[type],
+    );
+    const delta = {
+      active: after.active - before.active,
+      isolated: after.isolated - before.isolated,
+      degree_leq_one: after.degree_leq_one - before.degree_leq_one,
+    };
+    if (Object.values(delta).some((value) => value !== 0)) deltas[type] = delta;
+  }
+  return deltas;
+}
+
 /**
  * Compare two point-in-time audit snapshots and return the signed change in
  * findings and structural coverage. This is the temporal primitive behind
@@ -1160,35 +1309,10 @@ export function diffRelationshipAuditSnapshots(
   baseline: RelationshipAuditSnapshot,
   current: RelationshipAuditSnapshot,
 ): RelationshipAuditDelta {
-  const coverageByType: Record<string, RelationshipCoverageTypeProfile> = {};
   // Public SDK callers may compare legacy or JSON-decoded snapshots created
   // before per-type coverage was added, even though current typed snapshots
   // always carry this field.
-  const baselineCoverageByType = readSnapshotCoverageByType(baseline);
-  const currentCoverageByType = readSnapshotCoverageByType(current);
-  const typeKeys = [
-    ...new Set([
-      ...Object.keys(baselineCoverageByType),
-      ...Object.keys(currentCoverageByType),
-    ]),
-  ].sort();
-  for (const type of typeKeys) {
-    const before = Object.assign(
-      { active: 0, isolated: 0, degree_leq_one: 0 },
-      baselineCoverageByType[type],
-    );
-    const after = Object.assign(
-      { active: 0, isolated: 0, degree_leq_one: 0 },
-      currentCoverageByType[type],
-    );
-    const delta = {
-      active: after.active - before.active,
-      isolated: after.isolated - before.isolated,
-      degree_leq_one: after.degree_leq_one - before.degree_leq_one,
-    };
-    if (Object.values(delta).some((value) => value !== 0))
-      coverageByType[type] = delta;
-  }
+  const coverageByType = diffCoverageByType(baseline, current);
   const {
     edge_share_by_kind: baselineEdgeShareByKind = {},
     semantic_edges: baselineSemanticEdges = 0,
@@ -1199,6 +1323,20 @@ export function diffRelationshipAuditSnapshots(
     semantic_edges: currentSemanticEdges = 0,
     semantic_edge_share: currentSemanticEdgeShare = 0,
   } = current.profile;
+  const baselineRecordedNodes =
+    baseline.profile.recorded_nodes ?? baseline.profile.nodes;
+  const currentRecordedNodes =
+    current.profile.recorded_nodes ?? current.profile.nodes;
+  const baselineInformativeEdges =
+    baseline.profile.informative_edges ?? baseline.profile.edges;
+  const currentInformativeEdges =
+    current.profile.informative_edges ?? current.profile.edges;
+  const baselineRedundantEdges = baseline.profile.redundant_edges ?? 0;
+  const currentRedundantEdges = current.profile.redundant_edges ?? 0;
+  const baselineOrderingContradictionEdges =
+    baseline.profile.ordering_contradiction_edges ?? 0;
+  const currentOrderingContradictionEdges =
+    current.profile.ordering_contradiction_edges ?? 0;
   return {
     baseline_saved_at: baseline.saved_at,
     same_snapshot: baseline.fingerprint === current.fingerprint,
@@ -1208,7 +1346,12 @@ export function diffRelationshipAuditSnapshots(
     ),
     profile: {
       nodes: current.profile.nodes - baseline.profile.nodes,
+      recorded_nodes: currentRecordedNodes - baselineRecordedNodes,
       edges: current.profile.edges - baseline.profile.edges,
+      informative_edges: currentInformativeEdges - baselineInformativeEdges,
+      redundant_edges: currentRedundantEdges - baselineRedundantEdges,
+      ordering_contradiction_edges:
+        currentOrderingContradictionEdges - baselineOrderingContradictionEdges,
       active_nodes:
         current.profile.active_nodes - baseline.profile.active_nodes,
       missing_nodes:

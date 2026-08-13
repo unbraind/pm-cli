@@ -14,6 +14,8 @@ export const RELATIONSHIP_AUDIT_FINDING_CODES = [
   "legacy_no_blocker_sentinel",
   "ordering_cycle",
   "legacy_ordering_cycle",
+  "ordering_storage_contradiction",
+  "legacy_ordering_storage_contradiction",
   "duplicate_edge",
   "legacy_duplicate_edge",
   "duplicate_dependency_row",

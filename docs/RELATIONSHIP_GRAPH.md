@@ -1,6 +1,6 @@
 # Relationship graph semantics
 
-Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), [pm-8xr8](../.agents/pm/stories/pm-8xr8.toon), [pm-m2il](../.agents/pm/chores/pm-m2il.toon), and [pm-jiusod](../.agents/pm/issues/pm-jiusod.toon).
+Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), [pm-8xr8](../.agents/pm/stories/pm-8xr8.toon), [pm-m2il](../.agents/pm/chores/pm-m2il.toon), [pm-jiusod](../.agents/pm/issues/pm-jiusod.toon), [pm-mfvsng](../.agents/pm/issues/pm-mfvsng.toon), [pm-9gzr4r](../.agents/pm/issues/pm-9gzr4r.toon), and [pm-xvt7ps](../.agents/pm/issues/pm-xvt7ps.toon).
 
 ## Decision
 
@@ -251,14 +251,21 @@ terminal dangling-reference partitions. Domain adapters pass their
 company, or package-defined edges survive assembly with their registered
 semantics. `auditWorkspaceRelationshipGraph`
 consumes that assembly and emits counts-first findings for active/terminal
-missing references, retired sentinels, ordering cycles, stale lifecycle blocks,
-and sparse or isolated active nodes. Findings include stable codes, severity,
+missing references, retired sentinels, ordering cycles, exact
+scalar-versus-structured ordering contradictions, stale lifecycle blocks, and
+sparse or isolated active nodes. Findings include stable codes, severity,
 bounded deterministic samples, truncation, policy text, and safe remediation;
 the audit never invents an edge. Explicit isolate exemptions suppress policy
 findings without changing structural coverage metrics.
 
 The audit profile also exposes graph-wide resilience and delivery-lineage
-metrics. `articulation_points` and `bridge_edges` reuse the exact cut-structure
+metrics. `nodes` and `edges` remain diagnostic totals. Structural ratchets use
+`recorded_nodes`, which excludes synthesized missing/external placeholders,
+and `informative_edges`, which subtracts the union of witnessed redundant edge
+identities and structured rows proven to contradict scalar blocker precedence.
+`redundant_edges` and `ordering_contradiction_edges` remain separate debt
+censuses so repair can tighten their ceilings without weakening the
+information-bearing floor. `articulation_points` and `bridge_edges` reuse the exact cut-structure
 algorithm; outcome metrics count explicit `Milestone` titles beginning with
 `Outcome milestone:` and follow only hierarchy or `implements` edges toward
 them. Active and terminal populations are reported separately, with integer
@@ -340,7 +347,15 @@ on terminal ones) reports raw dependency rows whose exact identity is stored
 more than once on one holder — invisible to every assembled-graph projection
 because graph construction deduplicates edges by identity, so
 `collectDuplicateDependencyRows` scans the pre-assembly item rows carried on
-the assembly. Coverage policy is type-aware: the audit profile's
+the assembly. `collectOrderingStorageContradictions` similarly scans raw rows
+before normalization: `blocked_by: target` plus a same-target source-first
+ordering dependency asserts both directions and manufactures a two-node cycle.
+The audit reports the exact holder, target, and removable dependency kind under
+`ordering_storage_contradiction` or
+`legacy_ordering_storage_contradiction`; cycle findings attach that evidence
+instead of leaving agents to re-derive the storage cause. Mutation advisories
+also identify a newly introduced contradiction before reporting its derived
+cycle. Coverage policy is type-aware: the audit profile's
 `coverage_by_type` breaks active/isolated/degree≤1 counts down per item type
 (untyped items under `(untyped)`), and `isolateExemptTypes`
 (`--exempt-isolate-type`) suppresses isolate/sparse findings for types whose

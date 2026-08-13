@@ -1431,6 +1431,18 @@ const HEALTH_DETAIL_SUMMARIZERS = {
     unreadable_streams: summarizeStringList(details.unreadable_streams, limit),
     hash_mismatches: summarizeStringList(details.hash_mismatches, limit),
     chain_mismatches: summarizeStringList(details.chain_mismatches, limit),
+    workspace_state_mismatches: summarizeStringList(
+      details.workspace_state_mismatches,
+      limit,
+    ),
+    workspace_state_missing: summarizeStringList(
+      details.workspace_state_missing,
+      limit,
+    ),
+    workspace_state_unreadable: summarizeStringList(
+      details.workspace_state_unreadable,
+      limit,
+    ),
     skipped: details.skipped,
   }),
   vectorization: (details, limit) => ({
@@ -2042,12 +2054,24 @@ async function buildHistoryDriftCheck(
     hashMismatches,
     chainMismatches,
     driftedItems,
+    workspaceStateMismatches,
+    workspaceStateMissing,
+    workspaceStateUnreadable,
   } = await scanHistoryDrift(pmRoot, items, { cacheHitVerification });
   const warnings = [
     ...missingStreams.map((id) => `history_drift_missing_stream:${id}`),
     ...unreadableStreams.map((id) => `history_drift_unreadable_stream:${id}`),
     ...hashMismatches.map((id) => `history_drift_hash_mismatch:${id}`),
     ...chainMismatches.map((id) => `history_drift_chain_mismatch:${id}`),
+    ...workspaceStateMismatches.map(
+      (documentPath) => `history_drift_workspace_state_mismatch:${documentPath}`,
+    ),
+    ...workspaceStateMissing.map(
+      (documentPath) => `history_drift_workspace_state_missing:${documentPath}`,
+    ),
+    ...workspaceStateUnreadable.map(
+      (documentPath) => `history_drift_workspace_state_unreadable:${documentPath}`,
+    ),
   ];
   return {
     check: {
@@ -2064,11 +2088,17 @@ async function buildHistoryDriftCheck(
           unreadable_streams: unreadableStreams.length,
           hash_mismatches: hashMismatches.length,
           chain_mismatches: chainMismatches.length,
+          workspace_state_mismatches: workspaceStateMismatches.length,
+          workspace_state_missing: workspaceStateMissing.length,
+          workspace_state_unreadable: workspaceStateUnreadable.length,
         },
         missing_streams: missingStreams,
         unreadable_streams: unreadableStreams,
         hash_mismatches: hashMismatches,
         chain_mismatches: chainMismatches,
+        workspace_state_mismatches: workspaceStateMismatches,
+        workspace_state_missing: workspaceStateMissing,
+        workspace_state_unreadable: workspaceStateUnreadable,
       },
     },
     warnings,

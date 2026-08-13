@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:item-io",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:07.611Z"
-updated_at: "2026-07-26T17:19:05.140Z"
+updated_at: "2026-08-13T09:48:15.676Z"
 deadline: "2026-02-23T23:02:07.611Z"
 assignee: steve
 author: steve
@@ -41,10 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/markdown-item-parser-and-serializer
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Markdown item parser and serializer.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-2xl,blocks,"2026-02-17T23:02:07.611Z",steve,null
-  pm-u9r,parent,"2026-02-17T23:02:07.611Z",steve,null
-  pm-u9r,implements,"2026-07-26T17:19:04.865Z",null,null
+dependencies[2]:
+  - id: pm-u9r
+    kind: parent
+    created_at: "2026-02-17T23:02:07.611Z"
+    author: steve
+  - id: pm-u9r
+    kind: implements
+    created_at: "2026-07-26T17:19:04.865Z"
 comments[2]{created_at,author,text}:
   "2026-02-22T23:45:15.158Z",cursor-maintainer,"Planned changeset: validate parser/serializer round-trip behavior against current implementation and tests, link canonical docs/files/tests, then run pm-linked verification and regression sweeps before closure decision."
   "2026-02-23T00:02:12.781Z",cursor-maintainer,"Evidence: ran pm test pm-l4o --run --timeout 3600 --json (3/3 linked tests passed), pm test-all --status in_progress --timeout 3600 --json (totals items=9 linked_tests=32 passed=13 failed=0 skipped=19), and pm test-all --status closed --timeout 3600 --json (totals items=29 linked_tests=104 passed=46 failed=0 skipped=58). Coverage statement: sandboxed coverage run in pm-linked tests remains 100% lines/branches/functions/statements. Acceptance criteria met: parser/serializer round-trip behaves without semantic drift in targeted determinism and front-matter validation tests."

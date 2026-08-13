@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:commands",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:08.240Z"
-updated_at: "2026-07-26T16:59:50.669Z"
+updated_at: "2026-08-13T09:47:56.191Z"
 deadline: "2026-02-23T23:02:08.240Z"
 assignee: steve
 author: steve
@@ -41,10 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/core-command-set-init-create-get-update-append-d
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Core command set init create get update append delete claim release close.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-2xl,blocks,"2026-02-17T23:02:08.240Z",steve,null
-  pm-u9r,parent,"2026-02-17T23:02:08.240Z",steve,null
-  pm-u9r,implements,"2026-07-26T16:59:50.365Z",null,null
+dependencies[2]:
+  - id: pm-u9r
+    kind: parent
+    created_at: "2026-02-17T23:02:08.240Z"
+    author: steve
+  - id: pm-u9r
+    kind: implements
+    created_at: "2026-07-26T16:59:50.365Z"
 comments[18]{created_at,author,text}:
   "2026-02-17T23:13:38.874Z",steve,Implemented init/create plus list/get/update/append/comments/files/test/docs/claim/release with deterministic serialization atomic writes and history patches. Verified with pnpm build and list-open/get/update flows.
   "2026-02-17T23:13:49.374Z",steve,"Verification run succeeded: linked test command list-open passed and pnpm build passed after session-id persistence fixes."

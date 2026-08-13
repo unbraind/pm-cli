@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1506,
+    "covered_symbols": 1509,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1507
+    "required_symbols": 1510
   },
   "breaking_acknowledgements": [
     {
@@ -448,6 +448,21 @@
       ],
       "package_version": "2026.8.12",
       "reason": "Source-derived finding-code type replaces an identical handwritten union; the accepted values and runtime behavior are unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryVerificationResult",
+        "signature ./sdk:RelationshipAuditDelta",
+        "signature ./sdk:RelationshipAuditFinding",
+        "signature ./sdk:RelationshipCoverageProfile",
+        "signature ./sdk:WorkspaceRelationshipAssembly",
+        "signature ./sdk/graph:RelationshipAuditDelta",
+        "signature ./sdk/graph:RelationshipAuditFinding",
+        "signature ./sdk/graph:RelationshipCoverageProfile",
+        "signature ./sdk/graph:WorkspaceRelationshipAssembly"
+      ],
+      "package_version": "2026.8.13",
+      "reason": "pm-dwj33e and pm-h06944: additive optional history-agreement and graph-governance fields; existing inputs and legacy snapshots remain accepted"
     }
   ],
   "entrypoints": {
@@ -2343,6 +2358,12 @@
           "kind": "function",
           "name": "collectOrderingCycles",
           "signature": "(successors: Map<string, string[]>) => string[][] | calls: (successors: Map<string, string[]>) => string[][]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "collectOrderingStorageContradictions",
+          "signature": "(items: readonly DependencyReferenceHolder[], isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => OrderingStorageContradiction[] | calls: (items: readonly DependencyReferenceHolder[], isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => OrderingStorageContradiction[]"
         },
         {
           "classification": "advanced_export",
@@ -5189,6 +5210,12 @@
           "signature": "(group: DuplicateRelationshipEdgeGroup) => string | calls: (group: DuplicateRelationshipEdgeGroup) => string"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "formatOrderingStorageContradiction",
+          "signature": "(contradiction: Pick<OrderingStorageContradiction, \"dependency_kind\" | \"holder_id\" | \"target_id\">) => string | calls: (contradiction: Pick<OrderingStorageContradiction, \"holder_id\" | \"target_id\" | \"dependency_kind\">) => string"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "formatProfileApplyHuman",
@@ -6062,7 +6089,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryVerificationResult",
-          "signature": "export interface HistoryVerificationResult { ok: boolean; entries: number; errors: string[]; latest_after_hash?: string; current_item_hash?: string; current_matches_latest?: boolean; }"
+          "signature": "export interface HistoryVerificationResult { ok: boolean; entries: number; errors: string[]; latest_after_hash?: string; current_item_hash?: string; current_matches_latest?: boolean; workspace_state_matches_latest?: boolean; workspace_state_mismatches?: string[]; workspace_state_missing?: string[]; workspace_state_unreadable?: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -6267,6 +6294,12 @@
           "kind": "interface",
           "name": "InspectStaleInProgressOptions",
           "signature": "export interface InspectStaleInProgressOptions { in_progress_status?: string; threshold_hours: number; now?: Date; last_history_activity?: (item: ItemMetadata) => string | undefined; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "inspectWorkspaceHistoryState",
+          "signature": "(pmRoot: string) => Promise<WorkspaceHistoryStateAgreement> | calls: (pmRoot: string) => Promise<WorkspaceHistoryStateAgreement>"
         },
         {
           "classification": "advanced_export",
@@ -7629,6 +7662,12 @@
           "kind": "function",
           "name": "orderingPredecessors",
           "signature": "(graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]> | calls: (graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "OrderingStorageContradiction",
+          "signature": "export interface OrderingStorageContradiction { holder_id: string; target_id: string; dependency_kind: string; holder_status: ItemStatus; legacy_terminal: boolean; }"
         },
         {
           "classification": "supported",
@@ -9925,6 +9964,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "reconcileWorkspaceJsonHistory",
+          "signature": "(options: WorkspaceJsonReconciliationOptions) => Promise<{ changed: boolean; entry?: HistoryEntry; historyPath: string; }> | calls: (options: WorkspaceJsonReconciliationOptions) => Promise<{ changed: boolean; entry?: HistoryEntry; historyPath: string; }>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "recordAfterCommandAffectedItem",
           "signature": "(item: AfterCommandAffectedItem) => void | calls: (item: AfterCommandAffectedItem) => void"
         },
@@ -10250,13 +10295,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipAuditDelta",
-          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { nodes: number; edges: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
+          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipAuditFinding",
-          "signature": "export interface RelationshipAuditFinding { code: RelationshipAuditFindingCode; severity: RelationshipAuditSeverity; policy: string; message: string; count: number; sample: string[]; sample_truncated: boolean; remediation: string; }"
+          "signature": "export interface RelationshipAuditFinding { code: RelationshipAuditFindingCode; severity: RelationshipAuditSeverity; policy: string; message: string; count: number; sample: string[]; evidence?: string[]; sample_truncated: boolean; remediation: string; }"
         },
         {
           "classification": "supported",
@@ -10370,7 +10415,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
+          "signature": "export interface RelationshipCoverageProfile { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
         },
         {
           "classification": "supported",
@@ -11517,6 +11562,12 @@
           "kind": "interface",
           "name": "RestoreResult",
           "signature": "export interface RestoreResult { item: ItemMetadata; restored_from: { kind: \"version\" | \"timestamp\"; target: string; history_index: number; entry_ts: string; entry_op: string; }; changed_fields: string[]; warnings: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "restoreWorkspaceJsonFromHistory",
+          "signature": "(options: WorkspaceJsonRestoreOptions) => Promise<WorkspaceJsonRestoreResult> | calls: (options: WorkspaceJsonRestoreOptions) => Promise<WorkspaceJsonRestoreResult>"
         },
         {
           "classification": "advanced_export",
@@ -14479,6 +14530,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "WorkspaceHistoryStateAgreement",
+          "signature": "export interface WorkspaceHistoryStateAgreement { ok: boolean; document_count: number; matching_documents: string[]; mismatched_documents: string[]; missing_documents: string[]; unreadable_documents: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "WorkspaceJsonMutation",
           "signature": "export interface WorkspaceJsonMutation<Result> { raw: string; result: Result; }"
         },
@@ -14487,6 +14544,24 @@
           "kind": "interface",
           "name": "WorkspaceJsonMutationOptions",
           "signature": "export interface WorkspaceJsonMutationOptions<Result> extends Omit<WorkspaceJsonWriteOptions, \"raw\"> { mutate: (beforeRaw: string | null) => WorkspaceJsonMutation<Result> | Promise<WorkspaceJsonMutation<Result>>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceJsonReconciliationOptions",
+          "signature": "export interface WorkspaceJsonReconciliationOptions extends Omit<WorkspaceJsonWriteOptions, \"raw\" | \"recordCreation\"> { authorizationDecision: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceJsonRestoreOptions",
+          "signature": "export interface WorkspaceJsonRestoreOptions extends Omit<WorkspaceJsonWriteOptions, \"raw\" | \"recordCreation\"> { targetVersion: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceJsonRestoreResult",
+          "signature": "export interface WorkspaceJsonRestoreResult { document_path: string; restored_from_version: number; changed: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -14552,7 +14627,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceRelationshipAssembly",
-          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; legacyAliasCounts: Record<string, number>; }"
+          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; orderingContradictions?: OrderingStorageContradiction[]; legacyAliasCounts: Record<string, number>; }"
         },
         {
           "classification": "supported",
@@ -19627,6 +19702,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "collectOrderingStorageContradictions",
+          "signature": "(items: readonly DependencyReferenceHolder[], isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => OrderingStorageContradiction[] | calls: (items: readonly DependencyReferenceHolder[], isTerminal?: (status: ItemStatus) => boolean, registry?: RelationshipKindRegistry) => OrderingStorageContradiction[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "compareRelationshipSnapshots",
           "signature": "(before: RelationshipSnapshot, after: RelationshipSnapshot) => RelationshipSnapshotComparison | calls: (before: RelationshipSnapshot, after: RelationshipSnapshot) => RelationshipSnapshotComparison"
         },
@@ -19791,6 +19872,12 @@
           "kind": "function",
           "name": "formatDuplicateEdgeGroup",
           "signature": "(group: DuplicateRelationshipEdgeGroup) => string | calls: (group: DuplicateRelationshipEdgeGroup) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "formatOrderingStorageContradiction",
+          "signature": "(contradiction: Pick<OrderingStorageContradiction, \"dependency_kind\" | \"holder_id\" | \"target_id\">) => string | calls: (contradiction: Pick<OrderingStorageContradiction, \"holder_id\" | \"target_id\" | \"dependency_kind\">) => string"
         },
         {
           "classification": "supported",
@@ -20100,6 +20187,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "OrderingStorageContradiction",
+          "signature": "export interface OrderingStorageContradiction { holder_id: string; target_id: string; dependency_kind: string; holder_status: ItemStatus; legacy_terminal: boolean; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "orderingSuccessors",
           "signature": "(graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]> | calls: (graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]>"
@@ -20156,13 +20249,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipAuditDelta",
-          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { nodes: number; edges: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
+          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipAuditFinding",
-          "signature": "export interface RelationshipAuditFinding { code: RelationshipAuditFindingCode; severity: RelationshipAuditSeverity; policy: string; message: string; count: number; sample: string[]; sample_truncated: boolean; remediation: string; }"
+          "signature": "export interface RelationshipAuditFinding { code: RelationshipAuditFindingCode; severity: RelationshipAuditSeverity; policy: string; message: string; count: number; sample: string[]; evidence?: string[]; sample_truncated: boolean; remediation: string; }"
         },
         {
           "classification": "supported",
@@ -20276,7 +20369,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
+          "signature": "export interface RelationshipCoverageProfile { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
         },
         {
           "classification": "supported",
@@ -20714,7 +20807,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceRelationshipAssembly",
-          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; legacyAliasCounts: Record<string, number>; }"
+          "signature": "export interface WorkspaceRelationshipAssembly { graph: RelationshipGraph; details: WorkspaceRelationshipNodeDetails[]; missingIdSet: Set<string>; dangling: DanglingDependencyReferenceSummary; duplicateRows: DuplicateDependencyRow[]; orderingContradictions?: OrderingStorageContradiction[]; legacyAliasCounts: Record<string, number>; }"
         },
         {
           "classification": "supported",

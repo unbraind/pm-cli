@@ -1,6 +1,6 @@
 # SDK Context Integrity
 
-Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), and [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon).
+Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), and [pm-h06944](../.agents/pm/issues/pm-h06944.toon).
 
 ## Agent Quick Context
 
@@ -84,6 +84,12 @@ The SDK exposes `resolveUnknownAuthorAcknowledgmentSelector` and `parseUnknownAu
 `pm health` is read-only by default and never refreshes embeddings merely because a semantic provider is configured. Provider I/O requires `--refresh-vectors`; `--skip-vectors` or `--no-refresh` records the explicit non-provider path. Provider requests remain bounded by the configured embedding timeout, and a failed refresh reports the responsible vector diagnostic plus the skip remediation.
 
 Storage integrity is evaluated independently of that provider boundary. Lossless merge receipts remain visible as provenance, while only receipts containing discarded scalar values produce `merge_decisions_unreviewed` guidance; neither classification enables vector refresh or remote provider I/O.
+
+Default history-drift verification also replays the append-only `_workspace`
+stream and compares every governed singleton with its latest recorded state.
+That agreement check reads only local history and JSON files: mismatched,
+missing, or unreadable singleton paths become bounded `history_drift` evidence
+without enabling embeddings, vector-store access, or any other provider I/O.
 
 Brief and summary check-only health projections use the scalar-only metadata
 reader. Validation uses collection-bearing metadata for evidence and

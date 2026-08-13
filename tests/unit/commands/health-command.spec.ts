@@ -21,6 +21,7 @@ import {
   clearActiveExtensionHooks,
   setActiveExtensionHooks,
 } from "../../../src/core/extensions/index.js";
+import { writeWorkspaceJsonWithHistory } from "../../../src/core/history/workspace-history.js";
 import { writeVectorizationStatusLedger } from "../../../src/core/search/cache.js";
 import {
   EXIT_CODE,
@@ -1198,6 +1199,58 @@ describe("runHealth", () => {
         unreadable_streams: [unreadableId],
         hash_mismatches: [mismatchId],
         chain_mismatches: [mismatchId],
+      });
+    });
+  });
+
+  it("reports every workspace singleton state-agreement failure", async () => {
+    await withTempPmPath(async (context) => {
+      const documents = ["mismatched.json", "missing.json", "unreadable.json"];
+      for (const document of documents) {
+        await writeWorkspaceJsonWithHistory({
+          pmRoot: context.pmPath,
+          filePath: path.join(context.pmPath, document),
+          raw: '{"floor":10}\n',
+          op: "test_singleton_put",
+          author: "test-author",
+          lockTtlSeconds: 30,
+          lockWaitMs: 1000,
+        });
+      }
+      await writeFile(
+        path.join(context.pmPath, "mismatched.json"),
+        '{"floor":8}\n',
+        "utf8",
+      );
+      await rm(path.join(context.pmPath, "missing.json"), { force: true });
+      await writeFile(
+        path.join(context.pmPath, "unreadable.json"),
+        "{not-json}\n",
+        "utf8",
+      );
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(false);
+      expect(health.warnings).toEqual(
+        expect.arrayContaining([
+          "history_drift_workspace_state_mismatch:mismatched.json",
+          "history_drift_workspace_state_missing:missing.json",
+          "history_drift_workspace_state_unreadable:unreadable.json",
+        ]),
+      );
+      const historyDriftCheck = health.checks.find(
+        (check) => check.name === "history_drift",
+      );
+      expect(historyDriftCheck?.details).toMatchObject({
+        drifted_items: ["_workspace"],
+        counts: {
+          workspace_state_mismatches: 1,
+          workspace_state_missing: 1,
+          workspace_state_unreadable: 1,
+        },
+        workspace_state_mismatches: ["mismatched.json"],
+        workspace_state_missing: ["missing.json"],
+        workspace_state_unreadable: ["unreadable.json"],
       });
     });
   });

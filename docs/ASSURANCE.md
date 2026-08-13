@@ -1,6 +1,6 @@
 # Project Assurance Primitives
 
-Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-uhv1m5](../.agents/pm/features/pm-uhv1m5.toon), [pm-m7bb7r](../.agents/pm/features/pm-m7bb7r.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon)
+Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-uhv1m5](../.agents/pm/features/pm-uhv1m5.toon), [pm-m7bb7r](../.agents/pm/features/pm-m7bb7r.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon)
 
 ## Agent Quick Context
 
@@ -11,6 +11,15 @@ Assurance turns project policy into three reusable SDK-owned declarations:
 3. A **gate** evaluates named assertions at declared lifecycle triggers and returns one structured verdict shared by CLI, SDK, MCP, and CI callers.
 
 Declarations live in `.agents/pm/assurance.json`. Every registry mutation and non-dry gate verdict is appended through the verified workspace history stream; never edit either file directly.
+
+`pm history _workspace --verify`, `pm validate`, and `pm health` verify both
+the hash chain and replay-to-disk agreement for every governed singleton. A
+valid chain paired with a different, missing, or unreadable singleton is still
+drift. SDK hosts can inspect that state with `inspectWorkspaceHistoryState`,
+adopt a reviewed out-of-band value only through
+`reconcileWorkspaceJsonHistory` with a terminal authorizing Decision, or
+replace it from a verified version with `restoreWorkspaceJsonFromHistory`.
+Both recovery paths append forward; neither rewrites the existing stream.
 
 ## Why Assurance Exists
 

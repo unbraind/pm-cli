@@ -21,6 +21,7 @@ import {
   readLocatedItem,
   getHistoryPath,
   getWorkspaceHistoryPath,
+  inspectWorkspaceHistoryState,
   getSettingsPath,
   resolvePmRoot,
   readSettings,
@@ -298,6 +299,25 @@ export async function runHistory(
         ).document
       : undefined;
     result.verification = verifyHistoryEntries(fullHistory, currentDocument);
+    if (resolvedId === WORKSPACE_HISTORY_ID && result.verification.ok) {
+      const agreement = await inspectWorkspaceHistoryState(
+        resolvePmRoot(process.cwd(), global.path),
+      );
+      result.verification = {
+        ...result.verification,
+        ok: agreement.ok,
+        errors: agreement.ok
+          ? result.verification.errors
+          : [
+              ...result.verification.errors,
+              "verify_failed:workspace_state_mismatch",
+            ],
+        workspace_state_matches_latest: agreement.ok,
+        workspace_state_mismatches: agreement.mismatched_documents,
+        workspace_state_missing: agreement.missing_documents,
+        workspace_state_unreadable: agreement.unreadable_documents,
+      };
+    }
   }
 
   return result;

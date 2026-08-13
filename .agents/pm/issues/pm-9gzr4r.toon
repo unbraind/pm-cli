@@ -2,11 +2,13 @@ id: pm-9gzr4r
 title: "The edge-count floor is denominated over a population that includes the edges the graph itself calls redundant, so repairing 73 witnessed implied ordering rows and silently relaxing the guard are the same privileged act"
 description: "pm graph redundancy computes 73 transitively implied ordering edges (35 blocks + 38 blocked_by), each carrying a witness path, so the product already names them as adding no ordering information. graph-profile-edges-floor is denominated in TOTAL deduplicated directed edges and stands at 11871 against 11875 observed, so the gate-admissible repair is at most 4 of 73 (5.5%). Beyond that the run reports floor_undercut, and --update resolves floors with Math.max, so the gate cannot absorb the reduction either. The declaration's own note anticipates this and prescribes a hand edit of the number. That is the defect: in the resulting diff, repairing a witnessed defect population and silently relaxing a quality floor are byte-indistinguishable acts, both requiring the same privileged edit, so the guard cannot tell a cleanup from an erosion. Denominating the floor over informative edges (total minus redundant) makes the two motions distinguishable without any privileged act: removing an implied edge drops both terms and is neutral, while removing a load-bearing edge still breaches. Dual of pm-c90tfh, which owns the ADDITION direction (the blocks ceiling sits at 243 with zero headroom, so ordering edges cannot be added either); together the two mean the ordering relation is frozen in both directions while three open items require changing it."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[5]: enforcement,graph,measurement-ratchet,redundancy,tracker-governance
 created_at: "2026-08-10T20:46:45.822Z"
-updated_at: "2026-08-10T20:58:25.675Z"
+updated_at: "2026-08-13T10:42:28.844Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#3e72d1e1e1b98ee0c323a3b0"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "The floor is re-denominated over a derived measurement (total deduplicated directed edges minus the redundancy analytic's implied ordering rows) declared as pm data, not as a patch to a gate script; redundant_count carries a declared ceiling so the witnessed implied-ordering population can only shrink; Removing a witnessed implied edge is bound-neutral and removing a load-bearing edge still breaches, proven by a negative control in both directions; Lowering any floor requires a linked Decision item, so a repair and an erosion are no longer the same hand edit of a number"
@@ -23,4 +25,20 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,implements,"2026-08-10T20:46:45.822Z","harness:claude-code","cli:create:dep",detected
   pm-1jzupz,related,"2026-08-10T20:58:25.528Z","harness:claude-code","cli:update:dep",detected
   pm-2lex4r,blocked_by,"2026-08-10T20:58:25.528Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-13T09:28:44.923Z","harness:codex","Start evidence 2026-08-13: implementing the SDK-native informative-edge denominator together with node semantics, native assurance declarations, diagnostics, docs, and negative controls; the fix is a derived measurement rather than a hand-edited floor."
+  "2026-08-13T10:42:28.201Z","harness:codex","Verification evidence: informative edge floors now exclude independently measured redundancy and exact contradiction debt, while both debts have separate ceilings. The live cleaned corpus remains above the informative floor, and removing meaningful structure still fails the negative control. Full coverage, lint, contracts, package, npx, dogfood, and Bun acceptance passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-13T10:42:28.844Z","harness:codex",A cleanup-safe graph ratchet uses an informative-edge denominator plus explicit debt ceilings; total edge count conflates useful context with removable implied or contradictory rows.
+files[4]{path,scope,note}:
+  sdk/public-surface.json,project,Versioned optional informative-edge and redundancy contract
+  src/sdk/graph/durable-cache.ts,project,Persists informative and redundant edge baselines
+  src/sdk/graph/governance.ts,project,Separates informative edges from bounded redundancy debt
+  tests/unit/sdk/graph/durable-cache.spec.ts,project,Informative-edge and debt baseline compatibility coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/graph/assembly-governance.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/unit/sdk/graph/durable-cache.spec.ts,project,180
+docs[2]{path,scope,note}:
+  docs/RELATIONSHIP_GRAPH.md,project,Defines informative edge ratchet and redundancy debt
+  docs/SDK.md,project,Documents graph profile semantics
 body: ""

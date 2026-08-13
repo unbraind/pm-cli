@@ -113,6 +113,50 @@ export interface WorkspaceAuditEventOptions {
   lockWaitMs: number;
 }
 
+/** Agreement between the replayed workspace stream and governed singleton files. */
+export interface WorkspaceHistoryStateAgreement {
+  /** Whether every governed singleton is readable and equals its replayed value. */
+  ok: boolean;
+  /** Number of singleton documents represented by the latest replayed state. */
+  document_count: number;
+  /** Governed documents whose on-disk JSON equals the replayed value. */
+  matching_documents: string[];
+  /** Governed documents whose on-disk JSON differs from the replayed value. */
+  mismatched_documents: string[];
+  /** Governed documents absent from disk. */
+  missing_documents: string[];
+  /** Governed documents that cannot be read as safe workspace-local JSON. */
+  unreadable_documents: string[];
+}
+
+/** Authorized append-only reconciliation of one out-of-band singleton state. */
+export interface WorkspaceJsonReconciliationOptions extends Omit<
+  WorkspaceJsonWriteOptions,
+  "raw" | "recordCreation"
+> {
+  /** Closed Decision item authorizing acceptance of the on-disk state. */
+  authorizationDecision: string;
+}
+
+/** Restore one governed singleton from a recorded workspace history version. */
+export interface WorkspaceJsonRestoreOptions extends Omit<
+  WorkspaceJsonWriteOptions,
+  "raw" | "recordCreation"
+> {
+  /** One-based workspace history version whose document value is restored. */
+  targetVersion: number;
+}
+
+/** Receipt returned after a singleton is restored from workspace history. */
+export interface WorkspaceJsonRestoreResult {
+  /** Tracker-relative singleton identity. */
+  document_path: string;
+  /** One-based workspace history version used as the restore source. */
+  restored_from_version: number;
+  /** Whether the on-disk singleton and latest history state changed. */
+  changed: boolean;
+}
+
 interface WorkspaceAuditMetadata extends ItemMetadata {
   documents: Record<string, unknown>;
 }
@@ -138,9 +182,10 @@ function workspaceDocument(
 
 function replayWorkspaceEntries(
   entries: readonly HistoryEntry[],
+  count = entries.length,
 ): ItemDocument {
   let replay = cloneEmptyReplayDocument();
-  for (const entry of entries) {
+  for (const entry of entries.slice(0, count)) {
     const applied = tryApplyReplayPatch(replay, entry.patch) as {
       ok: true;
       document: ReplayDocument;
@@ -148,6 +193,96 @@ function replayWorkspaceEntries(
     replay = applied.document;
   }
   return replayToItemDocument(replay);
+}
+
+/** Read the governed document map from one replayed workspace document. */
+function workspaceDocuments(document: ItemDocument): Record<string, unknown> {
+  return "documents" in document.metadata &&
+    typeof document.metadata.documents === "object" &&
+    document.metadata.documents !== null &&
+    !Array.isArray(document.metadata.documents)
+    ? (document.metadata.documents as Record<string, unknown>)
+    : {};
+}
+
+/** Resolve a governed singleton path and reject paths outside the tracker root. */
+function resolveGovernedDocumentPath(
+  pmRoot: string,
+  filePath: string,
+): { documentPath: string; absolutePath: string } {
+  const absolutePath = path.resolve(filePath);
+  const documentPath = path.relative(pmRoot, absolutePath).replaceAll("\\", "/");
+  if (
+    documentPath.length === 0 ||
+    documentPath === ".." ||
+    documentPath.startsWith("../") ||
+    path.isAbsolute(documentPath)
+  ) {
+    throw new TypeError("Workspace history document path must stay inside the tracker root");
+  }
+  return { documentPath, absolutePath };
+}
+
+/**
+ * Compare every singleton represented by the verified workspace stream with
+ * its current on-disk JSON. Hash-chain verification proves recorded ordering;
+ * this state-agreement check separately proves that every current singleton
+ * mutation is represented by that chain.
+ */
+export async function inspectWorkspaceHistoryState(
+  pmRoot: string,
+): Promise<WorkspaceHistoryStateAgreement> {
+  const entries = await readHistoryEntries(
+    getWorkspaceHistoryPath(pmRoot),
+    WORKSPACE_HISTORY_ID,
+  );
+  const verification = verifyHistoryChain(entries);
+  if (!verification.ok) {
+    throw new TypeError(
+      `Workspace history verification failed: ${verification.errors.join(", ")}`,
+    );
+  }
+  const documents = workspaceDocuments(
+    entries.length === 0
+      ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
+      : replayWorkspaceEntries(entries),
+  );
+  const matching: string[] = [];
+  const mismatched: string[] = [];
+  const missing: string[] = [];
+  const unreadable: string[] = [];
+  for (const documentPath of Object.keys(documents).sort()) {
+    let raw: string | null;
+    try {
+      const resolved = resolveGovernedDocumentPath(
+        pmRoot,
+        path.resolve(pmRoot, documentPath),
+      );
+      raw = await readFileIfExists(resolved.absolutePath);
+      if (raw === null) {
+        missing.push(documentPath);
+        continue;
+      }
+      const current = JSON.parse(raw) as unknown;
+      (stableStringify(current) === stableStringify(documents[documentPath])
+        ? matching
+        : mismatched
+      ).push(documentPath);
+    } catch {
+      unreadable.push(documentPath);
+    }
+  }
+  return {
+    ok:
+      mismatched.length === 0 &&
+      missing.length === 0 &&
+      unreadable.length === 0,
+    document_count: Object.keys(documents).length,
+    matching_documents: matching,
+    mismatched_documents: mismatched,
+    missing_documents: missing,
+    unreadable_documents: unreadable,
+  };
 }
 
 /**
@@ -179,13 +314,7 @@ async function appendWorkspaceHistoryChangeLocked(
     entries.length === 0
       ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
       : replayWorkspaceEntries(entries);
-  const priorDocuments =
-    "documents" in beforeDocument.metadata &&
-    typeof beforeDocument.metadata.documents === "object" &&
-    beforeDocument.metadata.documents !== null &&
-    !Array.isArray(beforeDocument.metadata.documents)
-      ? (beforeDocument.metadata.documents as Record<string, unknown>)
-      : {};
+  const priorDocuments = workspaceDocuments(beforeDocument);
   const recordedBefore = priorDocuments[change.documentPath];
   if (
     recordedBefore !== undefined &&
@@ -391,6 +520,178 @@ export async function writeWorkspaceJsonWithHistory(
       params,
       await readFileIfExists(params.filePath),
     );
+  } finally {
+    await release();
+  }
+}
+
+/**
+ * Append an authorized reconciliation event that adopts a reviewed on-disk
+ * singleton after an out-of-band change. The existing stream is never edited:
+ * its latest replayed state becomes the event before-state and the reviewed
+ * singleton becomes the after-state, with the authorizing Decision recorded in
+ * structured context.
+ */
+export async function reconcileWorkspaceJsonHistory(
+  options: WorkspaceJsonReconciliationOptions,
+): Promise<{ changed: boolean; entry?: HistoryEntry; historyPath: string }> {
+  const authorizationDecision = options.authorizationDecision.trim();
+  if (!authorizationDecision) {
+    throw new TypeError("Workspace history reconciliation requires an authorization decision");
+  }
+  const release = await acquireLock(
+    options.pmRoot,
+    "workspace-history",
+    options.lockTtlSeconds,
+    options.author,
+    false,
+    false,
+    options.lockWaitMs,
+  );
+  try {
+    const { documentPath, absolutePath } = resolveGovernedDocumentPath(
+      options.pmRoot,
+      options.filePath,
+    );
+    const historyPath = getWorkspaceHistoryPath(options.pmRoot);
+    const entries = await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID);
+    const verification = verifyHistoryChain(entries);
+    if (!verification.ok) {
+      throw new TypeError(
+        `Workspace history verification failed: ${verification.errors.join(", ")}`,
+      );
+    }
+    const beforeDocument = replayWorkspaceEntries(entries);
+    const priorDocuments = workspaceDocuments(beforeDocument);
+    if (!Object.hasOwn(priorDocuments, documentPath)) {
+      throw new TypeError(
+        `Workspace history does not govern document ${documentPath}`,
+      );
+    }
+    const raw = await readFileIfExists(absolutePath);
+    if (raw === null) {
+      throw new TypeError(`Workspace history document is missing: ${documentPath}`);
+    }
+    const current = JSON.parse(raw) as unknown;
+    if (stableStringify(priorDocuments[documentPath]) === stableStringify(current)) {
+      return { changed: false, historyPath };
+    }
+    const timestamp = new Date().toISOString();
+    const entry = createHistoryEntry({
+      nowIso: timestamp,
+      author: options.author,
+      op: options.op,
+      before: beforeDocument,
+      after: workspaceDocument(
+        { ...priorDocuments, [documentPath]: current },
+        beforeDocument.metadata.created_at!,
+      ),
+      message: options.message,
+      context: {
+        reason: "out_of_band_workspace_state_reconciliation",
+        document_path: documentPath,
+        authorization_decision: authorizationDecision,
+      },
+    });
+    await appendHistoryEntry(historyPath, entry);
+    return { changed: true, entry, historyPath };
+  } finally {
+    await release();
+  }
+}
+
+/**
+ * Restore one governed JSON singleton to the value recorded at a one-based
+ * workspace history version, then append the restore as a new history state so
+ * replay remains forward-only and independently verifiable.
+ */
+export async function restoreWorkspaceJsonFromHistory(
+  options: WorkspaceJsonRestoreOptions,
+): Promise<WorkspaceJsonRestoreResult> {
+  const release = await acquireLock(
+    options.pmRoot,
+    "workspace-history",
+    options.lockTtlSeconds,
+    options.author,
+    false,
+    false,
+    options.lockWaitMs,
+  );
+  try {
+    const { documentPath, absolutePath } = resolveGovernedDocumentPath(
+      options.pmRoot,
+      options.filePath,
+    );
+    const entries = await readHistoryEntries(
+      getWorkspaceHistoryPath(options.pmRoot),
+      WORKSPACE_HISTORY_ID,
+    );
+    if (
+      !Number.isInteger(options.targetVersion) ||
+      options.targetVersion < 1 ||
+      options.targetVersion > entries.length
+    ) {
+      throw new TypeError(
+        `Invalid workspace history target version: ${String(options.targetVersion)}`,
+      );
+    }
+    const verification = verifyHistoryChain(entries);
+    if (!verification.ok) {
+      throw new TypeError(
+        `Workspace history verification failed: ${verification.errors.join(", ")}`,
+      );
+    }
+    const target = workspaceDocuments(
+      replayWorkspaceEntries(entries, options.targetVersion),
+    )[documentPath];
+    if (target === undefined) {
+      throw new TypeError(
+        `Workspace history version ${options.targetVersion} does not contain ${documentPath}`,
+      );
+    }
+    const beforeRaw = await readFileIfExists(absolutePath);
+    const targetRaw = `${JSON.stringify(target, null, 2)}\n`;
+    if (beforeRaw === targetRaw)
+      return {
+        document_path: documentPath,
+        restored_from_version: options.targetVersion,
+        changed: false,
+      };
+    const beforeDocument = replayWorkspaceEntries(entries);
+    const timestamp = new Date().toISOString();
+    const entry = createHistoryEntry({
+      nowIso: timestamp,
+      author: options.author,
+      op: options.op,
+      before: beforeDocument,
+      after: workspaceDocument(
+        { ...workspaceDocuments(beforeDocument), [documentPath]: target },
+        beforeDocument.metadata.created_at!,
+      ),
+      message: options.message,
+      context: {
+        reason: "workspace_state_restore",
+        document_path: documentPath,
+        restored_from_version: options.targetVersion,
+        replaced_out_of_band_state: true,
+      },
+    });
+    await writeFileAtomic(absolutePath, targetRaw);
+    try {
+      await appendHistoryEntry(
+        getWorkspaceHistoryPath(options.pmRoot),
+        entry,
+      );
+    } catch (error: unknown) {
+      if (beforeRaw === null) await fs.rm(absolutePath, { force: true });
+      else await writeFileAtomic(absolutePath, beforeRaw);
+      throw error;
+    }
+    return {
+      document_path: documentPath,
+      restored_from_version: options.targetVersion,
+      changed: true,
+    };
   } finally {
     await release();
   }
