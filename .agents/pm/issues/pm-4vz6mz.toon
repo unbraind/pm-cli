@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:ci",gate,governance,graph,measurement
 created_at: "2026-08-07T17:12:24.771Z"
-updated_at: "2026-08-12T23:28:28.013Z"
+updated_at: "2026-08-13T00:01:40.078Z"
 closed_at: "2026-08-12T23:28:27.442Z"
 completed_at: "2026-08-12T23:28:27.442Z"
 author: "harness:claude-code"
@@ -28,11 +28,12 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-mfy1ux,related,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
   pm-t4d7nz,implements,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-12T22:09:13.324Z","harness:codex","Start evidence 2026-08-13: actively implementing the full structural-automation acceptance criteria with audit-profile cut structure, all-status terminal-to-outcome reachability, native assurance declarations, a graph-operation consumer ledger, and negative controls."
   "2026-08-12T22:46:35.622Z","harness:codex","Token-efficiency evidence: graph audit --summary grows from 409 to 554 estimated tokens (+145) to carry cut structure, typed outcome reachability, terminal reachability, and exhaustive finding-code counts. The increase is intentional and bounded in scripts/release/token-budgets.json; these fields replace repeated follow-up graph commands for automated and agent consumers."
   "2026-08-12T22:52:56.636Z","harness:codex","SDK compatibility evidence: the public surface registry classifies the always-present RelationshipCoverageProfile expansion as two signature changes (aggregate and graph subpath). The acknowledgement records that existing fields and semantics remain unchanged while structural and typed-outcome fields are added intentionally; no finding-code union change or unrelated surface drift remains."
   "2026-08-12T23:27:45.948Z","harness:codex","Completion evidence: graph audit now returns articulation points (112), bridge edges (305), all-status terminal/outcome reachability (2,103 reachable and 14 unreachable terminals), and an exhaustive finding-code census. Native assurance compares each structural value against a declared bound with proven negative controls. The registry declares all 16 public graph operations: audit and articulation have named automated consumers; the remaining 14 have explicit interactive-only rationales. Linked tests pass 3/3; repo coverage passes 7,236 tests at exact 100/100/100/100."
+  "2026-08-13T00:01:40.078Z","harness:codex","Implementation PR: https://github.com/unbraind/pm-cli/pull/992 — structural articulation/bridge and exhaustive finding-population SDK primitives."
 learnings[1]{created_at,author,text}:
   "2026-08-12T23:27:46.448Z","harness:codex",Graph governance should project expensive structural properties once into a bounded audit profile and cache that shared snapshot across assertions; this makes structural enforcement both cheaper and harder for consumers to misinterpret.
 files[4]{path,scope,note}:
