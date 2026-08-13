@@ -12,8 +12,8 @@
 
 ### Other
 
+- Refresh compatible Greptile 3.4, TypeScript-ESLint 8.67, and jscpd 5.0.15 tooling ([pm-87hmdw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-87hmdw.toon))
 - Isolate the merge SDK bundle from focused-entrypoint chunk fanout ([pm-m9gu9r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-m9gu9r.toon))
-- Refresh compatible Greptile 3.4 and TypeScript-ESLint 8.67 tooling ([pm-87hmdw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-87hmdw.toon))
 - The Windows nightly leg cannot separate product defects from harness noise: 744 hardcoded POSIX path literals and 203 raw errno strings in the suite fail on Windows for reasons unrelated to pm behaviour ([pm-j668gl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-j668gl.toon))
 - Graph wave: changelog-safe legacy edge hygiene batch — retire the no-active-blocker sentinel, duplicate spellings, terminal ordering cycles, and dangling terminal references ([pm-hnc9w7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hnc9w7.toon))
 - ADR: Graph structural ratchets measure recorded nodes and informative edges ([pm-dwj33e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-dwj33e.toon))
