@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: ci,governance,quality-gate,validation
 created_at: "2026-07-25T18:01:02.045Z"
-updated_at: "2026-08-04T16:43:07.251Z"
+updated_at: "2026-08-12T22:36:33.183Z"
 closed_at: "2026-08-04T16:43:06.773Z"
 completed_at: "2026-08-04T16:43:06.773Z"
 author: "harness:claude-code"
@@ -64,19 +64,19 @@ comments[8]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-08-04T14:53:37.607Z","harness:codex","Shrinking-only baselines must separate stable check identities from display text, map health severities monotonically, refuse update while any regression exists, and carry a sandbox negative control in the same mandatory pipeline."
 files[11]{path,scope,note}:
+  .agents/pm/assurance.json,project,complete current warning and health baselines
   .agents/pm/extensions/.managed-extensions.json,project,Pins the latest installed pm-changelog package used to generate and verify CHANGELOG.md.
   .github/workflows/ci.yml,project,mandatory pull-request tracker context-quality gate
   .gitignore,project,Keeps this repository aligned with the SDK-managed runtime-cache ignore fence.
   package.json,project,local quality entrypoint and static gate integration
   scripts/release/gate-registry.json,project,"Registers the tracker context-quality gate,fail-closed claims,and negative control."
-  scripts/release/tracker-measurement-gate.mjs,project,validator and health measurement execution
-  scripts/release/tracker-measurements.json,project,complete current warning and health baselines
+  src/sdk/governance/assurance-runtime.ts,project,validator and health measurement execution
   tests/integration/ci-workflow-contract.spec.ts,project,Verifies CI workflow contracts including the mandatory tracker ratchet step.
   tests/integration/release-automation-contract.spec.ts,project,release automation contract parity
   tests/integration/release-readiness-runtime.spec.ts,project,runtime release gate contract parity
-  tests/unit/scripts/release/tracker-measurement-gate.spec.ts,project,"shrinking-only,exhaustive and health regression coverage"
+  tests/unit/sdk/assurance-runtime.spec.ts,project,"shrinking-only,exhaustive and health regression coverage"
 tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/scripts/release/tracker-measurement-gate.spec.ts tests/unit/scripts/release/gate-registry.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance-runtime.spec.ts tests/unit/sdk/graph/structural-governance.spec.ts tests/unit/scripts/release/gate-registry.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mses22i6-df0xrq,test,passed,"2026-08-04T14:52:28.477Z","2026-08-04T14:52:47.790Z","2026-08-04T14:52:47.790Z",1,0,0
   test-local-mseuuey1-f9lvaf,test,passed,"2026-08-04T16:10:32.244Z","2026-08-04T16:10:49.513Z","2026-08-04T16:10:49.513Z",1,0,0

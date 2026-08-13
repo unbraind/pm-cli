@@ -36,6 +36,11 @@ Measurements support these built-in sources:
 
 Each measurement may declare `max_cost`. Evaluation fails closed when the total abstract compute units exceed that ceiling. Every result reports units, scanned items, scanned history rows, provider calls, duration, population size, and contributors.
 
+One workspace context memoizes identical graph operations and the shared
+validate and health reports for its lifetime. A gate may therefore project many
+fields from one authoritative audit snapshot without multiplying full-workspace
+I/O or allowing concurrent assertions to observe different tracker states.
+
 An `items` source with `field` must declare exactly one predicate: `equals` (including an explicit `null`) or `state`. `state: missing` treats an absent property, `null`, an empty string, or an empty array as missing; `state: present` selects the complement. Workspace evaluation loads full item metadata, so `files`, `tests`, and `docs` selectors measure stored evidence rather than a light projection that omitted those collections.
 
 Assertions require exactly one polarity:

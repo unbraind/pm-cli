@@ -209,9 +209,7 @@ jobs:
 
       - name: Run tracker context-quality ratchets
         if: matrix.gate == 'static'
-        run: |
-          node scripts/release/tracker-measurement-gate.mjs --negative-control
-          node scripts/release/tracker-measurement-gate.mjs
+        run: node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json
 
       - name: Run compatibility migration gate
         if: matrix.gate == 'compat'

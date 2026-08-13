@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: code-quality,codefactor,tech-debt
 created_at: "2026-06-26T13:29:14.359Z"
-updated_at: "2026-08-11T14:18:51.706Z"
+updated_at: "2026-08-12T23:57:58.564Z"
 author: claude-code-agent
 estimated_minutes: 600
 acceptance_criteria: "CodeFactor overall repository grade reaches A+ (or the highest attainable) on branch main; CodeFactor reports 0 outstanding issues across Complexity, Maintainability, and Duplication; local lint/quality parity tooling exists so findings can be reproduced and kept at zero (no regressions on new PRs)."
@@ -18,7 +18,7 @@ dependencies[4]{id,kind,created_at}:
   pm-rtn5h6,related,"2026-07-24T23:54:53.339Z"
   pm-zclzll,related,"2026-07-24T23:54:53.339Z"
   pm-xp1xsw,implements,"2026-07-26T05:49:02.336Z"
-comments[177]{created_at,author,text}:
+comments[181]{created_at,author,text}:
   "2026-06-26T15:46:30.976Z",codex-gpt5,"Progress update: live CodeFactor for main still reports 255 issues until this branch lands (83 maintainability, 152 complexity, 20 duplication). This branch completes the maintainability groups tracked by pm-xsth, pm-m8yl, and pm-x878/Codecov; complexity pm-arzz and duplication pm-fmjy remain open for dedicated refactor follow-up."
   "2026-06-26T18:50:54.481Z",codex-codefactor-sdk-cli-20260626,"Investigation note: live 2026-06-26 CodeFactor public issues page reports A rating, 601 analyzed files, 172 issues after the merged maintainability branch; PM snapshot still tracks remaining complexity and duplication children. GitHub state: no open PRs, no open Dependabot or code-scanning alerts; issue #374 remains open and externally blocked on missing RELEASE_PAT in release environment; pnpm audit --audit-level moderate reports no known vulnerabilities. Dependency drift from pnpm outdated: @sentry/cli 3.5.1 -> 3.6.0, @sentry/node 10.61.0 -> 10.62.0, @types/node held at Node 22 types despite latest 26.x."
   "2026-06-26T19:05:47.605Z",codex-codefactor-sdk-cli-20260626,"Evidence update: CodeFactor remediation bundle now covers the remaining duplication primitives and generated/test analysis scope. Verification passed: pnpm build; targeted 254-test suite; pnpm contracts:check; pnpm quality:static; pnpm typecheck; pnpm security:scan; full coverage 100/100/100/100 across 5133 tests; manual isolated temp-project smoke with PM_PATH/PM_GLOBAL_PATH passed package install/doctor and shared unset behavior. Remaining release issue #374 is external to code changes: GitHub scheduled Auto Release requires RELEASE_PAT in the release environment."
@@ -196,6 +196,10 @@ comments[177]{created_at,author,text}:
   "2026-07-24T12:05:49.996Z",claude-code-agent,"Current core-repository quality evidence is strong: 354 test files / 6,214 tests at literal 100% statements, branches, functions, and lines; typecheck, ESLint, static quality, package boundary, docs/skills, contracts, security scan, production audit, and token-budget gates pass; jscpd reports zero code clones across 733 files / 412,613 lines. Markdown duplication is low at 49 lines across 109 files and is concentrated in merge-contract examples. Residual quality work remains correctly separated: pm-f4yn dead exports/knip, pm-j8vq suppression burn-down, pm-yh8r large files, pm-kb5h fan-out, and the three open high Semgrep shell-spawn items under pm-oz8u."
   "2026-08-04T09:19:19.372Z","harness:codex","Fresh whole-tree quality evidence 2026-08-04: ESLint passes; jscpd reports zero clones across 884 files and 474,912 lines; static quality, package boundary, package-SDK parity, token-budget, context-calibration, gate-registry, contracts, typecheck, docs/skills, package-artifact, and secret-scan gates pass. Residual measured debt is explicitly owned: 51 source files over 1,000 raw lines, 114 ESLint suppressions, 383 c8-ignore pragmas, 18 TypeScript suppression directives, dead-export gating still open, and a noisy SDK import-cost gate. The quality run is not fully green because that final import-cost check failed."
   "2026-08-11T14:18:51.706Z","harness:claude-code","Ownership recorded 2026-08-11: open CodeFactor issue GH-628 (src/sdk/graph/run.ts:1040, unnecessary spread) is tracked under this programme's per-category children rather than as an individual item, and the GitHub issue now carries the canonical pm-link comment. With this, all 21 open GitHub issues have pm traceability."
+  "2026-08-12T23:00:04.963Z","harness:codex","Implementation start 2026-08-13: all-status duplicate detection rejected a date-specific refresh as likely duplicate of closed pm-8l1m5t, so this active quality epic is reused instead. Live outdated shows Greptile 3.3.1 -> 3.4.0 and typescript-eslint 8.66.0 -> 8.67.0 as compatible patches. npm-package-arg 14 and TypeScript 7 remain separately owned by canonical open pm-ksr40d and pm-do5b."
+  "2026-08-12T23:02:40.127Z","harness:codex","Supply-chain disposition: typescript-eslint 8.67.0 was published 2026-08-10T17:22:44Z and has cleared the 72-hour policy window, so it is updated without exclusions. Greptile 3.4.0 was published 2026-08-11T02:54:54Z and remains inside that mandatory window at this run; no minimumReleaseAgeExclude or bypass is added. Registry timeouts retried internally and installation completed."
+  "2026-08-12T23:27:48.066Z","harness:codex","Dependency/security evidence: typescript-eslint is refreshed from 8.66.0 to 8.67.0 after clearing the 72-hour minimum-release-age policy; typecheck, lint/static quality, 7,236-test exact coverage, package artifact, npx smoke, package-first dogfood, npm and Bun isolated SDK/CLI acceptance, pnpm audit, and tracked-secret scan all pass. GitHub reports zero open Dependabot, code-scanning, secret-scanning, or repository-security advisories. Greptile 3.4.0 remains policy-deferred because it was published 2026-08-11T02:54:54Z and is only about 44 hours old at verification; no age exclusion or bypass was added. npm-package-arg 14 and TypeScript 7 remain owned by canonical open pm-ksr40d and pm-do5b."
+  "2026-08-12T23:57:37.224Z","harness:codex","Final dependency/quality evidence for this active tranche: typescript-eslint 8.67.0 is installed after satisfying the 72-hour minimum-release-age policy. Greptile 3.4.0 remains correctly deferred without bypass while inside that policy window. Corrected-head lint/static quality, zero clones, exact 100/100/100/100 coverage over 7,236 tests, package artifact, npx smoke, and package-first dogfood all pass. The CodeFactor programme remains open for its broader living backlog."
 notes[2]{created_at,author,text}:
   "2026-07-02T08:14:23.356Z",claude-code-agent,"2026-07-02 pm-chxp/PR#415 merged (17798d15): duplication leg complete — pnpm lint:duplicates now 0 clones repo-wide (was 24). Complexity suppressions already 0 (PR#413/#414). Remaining for A+: await CodeFactor re-analysis of main; verify grade at https://www.codefactor.io/repository/github/unbraind/pm-cli — if findings persist they are in generated runtime-loaders (excluded-by-design candidates via .codefactor.yml)."
   "2026-07-12T07:36:46.400Z",maintainer-agent,"Gate-calibration discovery (2026-07-12, GH-518/pm-2gvp): CodeFactor's \"Complex Method\" detector is NESTING-WEIGHTED, not plain cyclomatic. Evidence: it flagged renderNextMarkdown (cyclomatic 14, cognitive 22) while never flagging runNext in the same file (cyclomatic 16, cognitive 5 — flat early-return style). The old `complexity max 17` gate was calibrated to a \"CC>=18\" assumption and was structurally blind to this class. Fix: twin ceilings — complexity max 16 + sonarjs/cognitive-complexity max 16 (user policy: nothing over 16 on either metric); 76 pre-existing violations grandfathered (suppressions 104->180, budget re-pinned, burn-down = pm-j8vq). Any future CodeFactor Complex Method finding on code that passes both ceilings means the calibration needs ANOTHER metric — re-derive from the flagged function's scores, do not bump thresholds blindly."
@@ -360,7 +364,7 @@ files[160]{path,scope,note}:
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,complexity sweep zero ESLint complexity findings
   tests/unit/sdk/tool-option-contracts.spec.ts,project,regression coverage for exported SDK option contract object isolation
   vitest.config.ts,project,Literal all-source coverage and Windows shebang transform include .mts scripts
-tests[89]:
+tests[90]:
   - command: checksum-verified actionlint v1.7.12 install and lint over .github/workflows/*.yml
     scope: project
     timeout_seconds: 120
@@ -649,6 +653,9 @@ tests[89]:
   - command: "strict CodeFactor file-set jscpd with empty ignore config: scripts/gen-plugin-mcp-wrappers.mjs plus generated plugin MCP wrappers"
     scope: project
     timeout_seconds: 120
+  - command: pnpm audit --json
+    scope: project
+    timeout_seconds: 240
 test_runs[20]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqw0kk1b-ny2017,test,failed,"2026-06-27T07:02:42.078Z","2026-06-27T07:03:47.567Z","2026-06-27T07:03:47.567Z",4,1,0
   test-local-mqw0mxnv-pjj9c9,test,failed,"2026-06-27T07:04:30.903Z","2026-06-27T07:05:38.540Z","2026-06-27T07:05:38.540Z",4,1,0

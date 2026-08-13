@@ -193,6 +193,385 @@
         "field": "profile.semantic_edge_share"
       },
       "max_cost": 80000
+    },
+    {
+      "id": "graph-active-outcome-reachable",
+      "description": "Active work items connected to an explicit outcome milestone through typed hierarchy or implements paths",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.active_outcome_reachable_nodes"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "edges-related-to",
+      "description": "Canonical associative related dependency rows",
+      "source": {
+        "kind": "dependency_kind",
+        "dependency_kind": "related"
+      },
+      "max_cost": 40000
+    },
+    {
+      "id": "graph-nodes",
+      "description": "All indexed graph nodes including missing placeholders",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.nodes"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-edges",
+      "description": "All deduplicated directed graph edges",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.edges"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-isolated-active",
+      "description": "Active graph nodes with no incident edge",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.isolated_active_nodes"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-degree-leq-one-active",
+      "description": "Active graph nodes with at most one incident edge",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.degree_leq_one_active_nodes"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-articulation-points",
+      "description": "Undirected graph cut vertices",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.articulation_points"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-bridge-edges",
+      "description": "Undirected graph cut edges",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.bridge_edges"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-outcome-nodes",
+      "description": "Explicit outcome milestone nodes",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.outcome_nodes"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-active-outcome-unreachable",
+      "description": "Active nodes without a typed path to an outcome",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.active_outcome_unreachable_nodes"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-terminal-nodes",
+      "description": "Terminal non-placeholder nodes in the all-status graph",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.terminal_nodes"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-terminal-outcome-reachable",
+      "description": "Terminal nodes with a typed path to an outcome",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.terminal_outcome_reachable_nodes"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-terminal-outcome-unreachable",
+      "description": "Terminal nodes without a typed path to an outcome",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.terminal_outcome_unreachable_nodes"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "validate-duplicate-issue-codes",
+      "description": "Duplicate issue-code groups reported by validation",
+      "source": {
+        "kind": "validate",
+        "check": "metadata",
+        "field": "duplicate_issue_codes_count"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "validate-missing-linked-paths",
+      "description": "Linked project paths missing from the commit view",
+      "source": {
+        "kind": "validate",
+        "check": "files",
+        "field": "missing_linked_paths_count"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "validate-orphaned-paths",
+      "description": "Unowned project paths reported by validation",
+      "source": {
+        "kind": "validate",
+        "check": "files",
+        "field": "orphaned_paths_count"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "validate-missing-close-reason",
+      "description": "Closed items missing a close reason",
+      "source": {
+        "kind": "validate",
+        "check": "metadata",
+        "field": "counts.closed_missing_close_reason"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "validate-missing-resolution-fields",
+      "description": "Closed items missing required resolution fields",
+      "source": {
+        "kind": "validate",
+        "check": "resolution",
+        "field": "missing_resolution_items"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "health-settings",
+      "description": "Health severity for settings",
+      "source": {
+        "kind": "health",
+        "check": "settings",
+        "field": "status"
+      },
+      "max_cost": 100
+    },
+    {
+      "id": "health-directories",
+      "description": "Health severity for directories",
+      "source": {
+        "kind": "health",
+        "check": "directories",
+        "field": "status"
+      },
+      "max_cost": 100
+    },
+    {
+      "id": "health-settings-values",
+      "description": "Health severity for settings_values",
+      "source": {
+        "kind": "health",
+        "check": "settings_values",
+        "field": "status"
+      },
+      "max_cost": 100
+    },
+    {
+      "id": "health-telemetry",
+      "description": "Health severity for telemetry",
+      "source": {
+        "kind": "health",
+        "check": "telemetry",
+        "field": "status"
+      },
+      "max_cost": 100
+    },
+    {
+      "id": "health-extensions",
+      "description": "Health severity for extensions",
+      "source": {
+        "kind": "health",
+        "check": "extensions",
+        "field": "status"
+      },
+      "max_cost": 100
+    },
+    {
+      "id": "health-storage",
+      "description": "Health severity for storage",
+      "source": {
+        "kind": "health",
+        "check": "storage",
+        "field": "status"
+      },
+      "max_cost": 100
+    },
+    {
+      "id": "health-locks",
+      "description": "Health severity for locks",
+      "source": {
+        "kind": "health",
+        "check": "locks",
+        "field": "status"
+      },
+      "max_cost": 100
+    },
+    {
+      "id": "health-integrity",
+      "description": "Health severity for integrity",
+      "source": {
+        "kind": "health",
+        "check": "integrity",
+        "field": "status"
+      },
+      "max_cost": 100
+    },
+    {
+      "id": "health-history-drift",
+      "description": "Health severity for history_drift",
+      "source": {
+        "kind": "health",
+        "check": "history_drift",
+        "field": "status"
+      },
+      "max_cost": 100
+    },
+    {
+      "id": "health-vectorization",
+      "description": "Health severity for vectorization",
+      "source": {
+        "kind": "health",
+        "check": "vectorization",
+        "field": "status"
+      },
+      "max_cost": 100
+    },
+    {
+      "id": "graph-finding-duplicate-dependency-row",
+      "description": "Affected subjects for graph finding duplicate_dependency_row",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.finding_subjects_by_code.duplicate_dependency_row"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-finding-legacy-duplicate-edge",
+      "description": "Affected subjects for graph finding legacy_duplicate_edge",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.finding_subjects_by_code.legacy_duplicate_edge"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-finding-legacy-no-blocker-sentinel",
+      "description": "Affected subjects for graph finding legacy_no_blocker_sentinel",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.finding_subjects_by_code.legacy_no_blocker_sentinel"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-finding-legacy-ordering-cycle",
+      "description": "Affected subjects for graph finding legacy_ordering_cycle",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.finding_subjects_by_code.legacy_ordering_cycle"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-finding-missing-reference-terminal",
+      "description": "Affected subjects for graph finding missing_reference_terminal",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.finding_subjects_by_code.missing_reference_terminal"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-active-outcome-reachability-basis-points",
+      "description": "Active typed outcome reachability in integer basis points; diagnostic only because lifecycle transitions change the population",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.active_outcome_reachability_basis_points"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-terminal-outcome-reachability-basis-points",
+      "description": "Terminal typed outcome reachability in integer basis points; diagnostic only because reopen and close transitions change the population",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.terminal_outcome_reachability_basis_points"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-outcome-reachable",
+      "description": "All active and terminal items connected to an explicit outcome milestone through typed hierarchy or implements paths",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.outcome_reachable_nodes"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-outcome-unreachable",
+      "description": "All active and terminal items without a typed hierarchy or implements path to an explicit outcome milestone",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.outcome_unreachable_nodes"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "graph-outcome-reachability-basis-points",
+      "description": "All-status typed outcome reachability in integer basis points",
+      "source": {
+        "kind": "graph",
+        "operation": "audit",
+        "field": "profile.outcome_reachability_basis_points"
+      },
+      "max_cost": 50000
     }
   ],
   "assertions": [
@@ -379,6 +758,766 @@
           }
         ]
       }
+    },
+    {
+      "id": "implements-floor",
+      "measurement_id": "edges-implements",
+      "owner_item_id": "pm-bzmeaa",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 2591,
+            "expected": "pass"
+          },
+          {
+            "observed": 2590,
+            "expected": "fail"
+          }
+        ]
+      },
+      "floor": 2591
+    },
+    {
+      "id": "graph-edges-floor",
+      "measurement_id": "graph-edges",
+      "owner_item_id": "pm-96h7",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 12103,
+            "expected": "pass"
+          },
+          {
+            "observed": 12102,
+            "expected": "fail"
+          }
+        ]
+      },
+      "floor": 12103
+    },
+    {
+      "id": "graph-nodes-floor",
+      "measurement_id": "graph-nodes",
+      "owner_item_id": "pm-o2kc",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 2456,
+            "expected": "pass"
+          },
+          {
+            "observed": 2455,
+            "expected": "fail"
+          }
+        ]
+      },
+      "floor": 2456
+    },
+    {
+      "id": "related-to-ceiling",
+      "measurement_id": "edges-related-to",
+      "owner_item_id": "pm-q6n8sj",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 6046,
+            "expected": "pass"
+          },
+          {
+            "observed": 6047,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 6046,
+      "authorization_decision": "pm-4jqm"
+    },
+    {
+      "id": "graph-isolated-active-zero",
+      "measurement_id": "graph-isolated-active",
+      "owner_item_id": "pm-bzmeaa",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "graph-degree-leq-one-active-zero",
+      "measurement_id": "graph-degree-leq-one-active",
+      "owner_item_id": "pm-bzmeaa",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "graph-articulation-points-ceiling",
+      "measurement_id": "graph-articulation-points",
+      "owner_item_id": "pm-4vz6mz",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 112,
+            "expected": "pass"
+          },
+          {
+            "observed": 113,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 112
+    },
+    {
+      "id": "graph-bridge-edges-ceiling",
+      "measurement_id": "graph-bridge-edges",
+      "owner_item_id": "pm-4vz6mz",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 305,
+            "expected": "pass"
+          },
+          {
+            "observed": 306,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 305
+    },
+    {
+      "id": "graph-outcome-nodes-floor",
+      "measurement_id": "graph-outcome-nodes",
+      "owner_item_id": "pm-g4k74y",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 6,
+            "expected": "pass"
+          },
+          {
+            "observed": 5,
+            "expected": "fail"
+          }
+        ]
+      },
+      "floor": 6
+    },
+    {
+      "id": "graph-active-outcome-unreachable-ceiling",
+      "measurement_id": "graph-active-outcome-unreachable",
+      "owner_item_id": "pm-g4k74y",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 2,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 1
+    },
+    {
+      "id": "validate-duplicate-issue-codes-ceiling",
+      "measurement_id": "validate-duplicate-issue-codes",
+      "owner_item_id": "pm-pivf",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 2,
+            "expected": "pass"
+          },
+          {
+            "observed": 3,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 2
+    },
+    {
+      "id": "validate-missing-linked-paths-ceiling",
+      "measurement_id": "validate-missing-linked-paths",
+      "owner_item_id": "pm-j8z6",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 195,
+            "expected": "pass"
+          },
+          {
+            "observed": 196,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 195
+    },
+    {
+      "id": "validate-orphaned-paths-ceiling",
+      "measurement_id": "validate-orphaned-paths",
+      "owner_item_id": "pm-j8z6",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 2,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 1
+    },
+    {
+      "id": "validate-missing-close-reason-ceiling",
+      "measurement_id": "validate-missing-close-reason",
+      "owner_item_id": "pm-e9zh",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 16,
+            "expected": "pass"
+          },
+          {
+            "observed": 17,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 16
+    },
+    {
+      "id": "validate-missing-resolution-fields-ceiling",
+      "measurement_id": "validate-missing-resolution-fields",
+      "owner_item_id": "pm-wenq",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 295,
+            "expected": "pass"
+          },
+          {
+            "observed": 296,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 295
+    },
+    {
+      "id": "health-settings-zero",
+      "measurement_id": "health-settings",
+      "owner_item_id": "pm-33cw",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "health-directories-zero",
+      "measurement_id": "health-directories",
+      "owner_item_id": "pm-33cw",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "health-settings-values-zero",
+      "measurement_id": "health-settings-values",
+      "owner_item_id": "pm-33cw",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "health-telemetry-zero",
+      "measurement_id": "health-telemetry",
+      "owner_item_id": "pm-7zs0",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "health-extensions-zero",
+      "measurement_id": "health-extensions",
+      "owner_item_id": "pm-33cw",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "health-storage-zero",
+      "measurement_id": "health-storage",
+      "owner_item_id": "pm-33cw",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "health-locks-zero",
+      "measurement_id": "health-locks",
+      "owner_item_id": "pm-33cw",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "health-integrity-zero",
+      "measurement_id": "health-integrity",
+      "owner_item_id": "pm-33cw",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "health-history-drift-zero",
+      "measurement_id": "health-history-drift",
+      "owner_item_id": "pm-33cw",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "health-vectorization-zero",
+      "measurement_id": "health-vectorization",
+      "owner_item_id": "pm-33cw",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "graph-finding-duplicate-dependency-row-zero",
+      "measurement_id": "graph-finding-duplicate-dependency-row",
+      "owner_item_id": "pm-flnefm",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 0
+    },
+    {
+      "id": "graph-finding-legacy-duplicate-edge-ceiling",
+      "measurement_id": "graph-finding-legacy-duplicate-edge",
+      "owner_item_id": "pm-96h7",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 8,
+            "expected": "pass"
+          },
+          {
+            "observed": 9,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 8
+    },
+    {
+      "id": "graph-finding-legacy-no-blocker-sentinel-ceiling",
+      "measurement_id": "graph-finding-legacy-no-blocker-sentinel",
+      "owner_item_id": "pm-96h7",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 98,
+            "expected": "pass"
+          },
+          {
+            "observed": 99,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 98
+    },
+    {
+      "id": "graph-finding-legacy-ordering-cycle-ceiling",
+      "measurement_id": "graph-finding-legacy-ordering-cycle",
+      "owner_item_id": "pm-jkbqt8",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 49,
+            "expected": "pass"
+          },
+          {
+            "observed": 50,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 49
+    },
+    {
+      "id": "graph-finding-missing-reference-terminal-ceiling",
+      "measurement_id": "graph-finding-missing-reference-terminal",
+      "owner_item_id": "pm-96h7",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 3,
+            "expected": "pass"
+          },
+          {
+            "observed": 4,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 3
+    },
+    {
+      "id": "graph-outcome-reachable-floor",
+      "measurement_id": "graph-outcome-reachable",
+      "owner_item_id": "pm-g4k74y",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 2438,
+            "expected": "pass"
+          },
+          {
+            "observed": 2437,
+            "expected": "fail"
+          }
+        ]
+      },
+      "floor": 2438
+    },
+    {
+      "id": "graph-outcome-unreachable-ceiling",
+      "measurement_id": "graph-outcome-unreachable",
+      "owner_item_id": "pm-bzmeaa",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 15,
+            "expected": "pass"
+          },
+          {
+            "observed": 16,
+            "expected": "fail"
+          }
+        ]
+      },
+      "ceiling": 15
+    },
+    {
+      "id": "graph-outcome-reachability-basis-points-floor",
+      "measurement_id": "graph-outcome-reachability-basis-points",
+      "owner_item_id": "pm-bzmeaa",
+      "scope": {
+        "kind": "all"
+      },
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 9938,
+            "expected": "pass"
+          },
+          {
+            "observed": 9937,
+            "expected": "fail"
+          }
+        ]
+      },
+      "floor": 9938
     }
   ],
   "gates": [
@@ -404,6 +1543,53 @@
       "description": "The immutable history is append-only: no maintenance operation, merge, or compaction may reduce the recorded entry count",
       "assertion_ids": [
         "history-append-only"
+      ],
+      "triggers": [
+        "ci",
+        "pre-release"
+      ]
+    },
+    {
+      "id": "tracker-context-quality",
+      "description": "Native assurance replacement for the bespoke tracker census: typed relationship preservation, structural graph resilience, outcome reachability, validation debt and workspace health.",
+      "assertion_ids": [
+        "implements-floor",
+        "discovered-from-floor",
+        "verifies-floor",
+        "supersedes-floor",
+        "graph-edges-floor",
+        "graph-nodes-floor",
+        "blocks-ceiling",
+        "related-to-ceiling",
+        "graph-isolated-active-zero",
+        "graph-degree-leq-one-active-zero",
+        "graph-articulation-points-ceiling",
+        "graph-bridge-edges-ceiling",
+        "graph-outcome-nodes-floor",
+        "graph-active-outcome-unreachable-ceiling",
+        "validate-duplicate-issue-codes-ceiling",
+        "validate-missing-linked-paths-ceiling",
+        "validate-orphaned-paths-ceiling",
+        "validate-missing-close-reason-ceiling",
+        "validate-missing-resolution-fields-ceiling",
+        "health-settings-zero",
+        "health-directories-zero",
+        "health-settings-values-zero",
+        "health-telemetry-zero",
+        "health-extensions-zero",
+        "health-storage-zero",
+        "health-locks-zero",
+        "health-integrity-zero",
+        "health-history-drift-zero",
+        "health-vectorization-zero",
+        "graph-finding-duplicate-dependency-row-zero",
+        "graph-finding-legacy-duplicate-edge-ceiling",
+        "graph-finding-legacy-no-blocker-sentinel-ceiling",
+        "graph-finding-legacy-ordering-cycle-ceiling",
+        "graph-finding-missing-reference-terminal-ceiling",
+        "graph-outcome-reachable-floor",
+        "graph-outcome-unreachable-ceiling",
+        "graph-outcome-reachability-basis-points-floor"
       ],
       "triggers": [
         "ci",

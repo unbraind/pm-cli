@@ -26,6 +26,7 @@ import {
   resolvePortableWorkspaceContext,
 } from "../../core/extensions/index.js";
 import { resolveRegisteredAssuranceMeasurementProvider } from "../../core/extensions/runtime-registrations.js";
+import { stableStringify } from "../../core/shared/serialization.js";
 import type {
   AssuranceMeasurementProviderDefinition,
   AssuranceMeasurementProviderResult,
@@ -305,6 +306,9 @@ export async function createAssuranceWorkspaceContext(
       },
     ]),
   );
+  const graphRuns = new Map<string, ReturnType<typeof runGraph>>();
+  let validateRun: ReturnType<typeof runValidate> | undefined;
+  let healthRun: ReturnType<typeof runHealth> | undefined;
   return {
     tree_id:
       options.resolve_tree === false
@@ -325,16 +329,25 @@ export async function createAssuranceWorkspaceContext(
         | AssuranceGraphSource
         | AssuranceValidateSource
         | AssuranceHealthSource
-        | AssuranceProviderSource,
+      | AssuranceProviderSource,
     ) => {
       if (source.kind === "graph") {
-        const result = await runGraph(
-          source.operation,
-          undefined,
-          undefined,
-          { ...source.parameters, full: true } as GraphCommandOptions,
-          global,
-        );
+        const key = stableStringify({
+          operation: source.operation,
+          parameters: source.parameters ?? {},
+        });
+        let pending = graphRuns.get(key);
+        if (pending === undefined) {
+          pending = runGraph(
+            source.operation,
+            undefined,
+            undefined,
+            { ...source.parameters, full: true } as GraphCommandOptions,
+            global,
+          );
+          graphRuns.set(key, pending);
+        }
+        const result = await pending;
         return {
           value: valueAtPath(result, source.field),
           population_size: items.length,
@@ -342,11 +355,13 @@ export async function createAssuranceWorkspaceContext(
         };
       }
       if (source.kind === "validate") {
-        const result = await runValidate({ counts: true }, global);
+        validateRun ??= runValidate({ counts: true }, global);
+        const result = await validateRun;
         return checkValue(result, source.check, source.field);
       }
       if (source.kind === "health") {
-        const result = await runHealth(global, { checkOnly: true, full: true });
+        healthRun ??= runHealth(global, { checkOnly: true, full: true });
+        const result = await healthRun;
         return checkValue(result, source.check, source.field);
       }
       const hostProvider = options.providers?.[source.provider];

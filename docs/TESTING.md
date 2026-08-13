@@ -270,28 +270,37 @@ parsed `workflow_jobs`; validation requires the two sets to match exactly.
 
 ## Tracker Context-Quality Ratchets
 
-Tracked by [pm-ips23h](../.agents/pm/issues/pm-ips23h.toon) and
-[pm-kpftft](../.agents/pm/tasks/pm-kpftft.toon).
+Tracked by [pm-ips23h](../.agents/pm/issues/pm-ips23h.toon),
+[pm-kpftft](../.agents/pm/tasks/pm-kpftft.toon), and
+[pm-4ok4ex](../.agents/pm/tasks/pm-4ok4ex.toon), with lifecycle-stable outcome
+reachability owned by [pm-g4k74y](../.agents/pm/issues/pm-g4k74y.toon) and
+[pm-bzmeaa](../.agents/pm/tasks/pm-bzmeaa.toon).
 
-`scripts/release/tracker-measurements.json` turns measured tracker populations
-into reviewed, shrinking-only ceilings. Each declaration names its canonical
-pm owner and a selector over stored dependency kinds, validator warnings,
-graph-profile fields, or health-check severity. Open owners enforce their
-ceiling; terminal owners retire it. Validator warnings and health checks are
-exhaustive, so a newly observed class fails until it has a canonical owner and
-reviewed declaration.
+The SDK-owned assurance registry stores tracker context-quality measurements,
+floors, ceilings, lifetimes, enforcement, and executable negative controls in
+`.agents/pm/assurance.json`. The `tracker-context-quality` gate covers stored
+relationship kinds, validator debt, health checks, graph findings, structural
+cut points, and typed reachability to outcome milestones. One workspace
+assurance context reuses identical graph, validate, and health evaluations, so
+a broad gate has one authoritative snapshot without repeatedly rescanning it.
+Outcome enforcement uses an all-status reachable population, unreachable
+ceiling, and basis-point floor. Active and terminal populations remain
+diagnostics: absolute per-lifecycle floors would mistake normal close or reopen
+transitions for relationship loss.
 
 Run the same gate used by hosted CI:
 
 ```bash
 pnpm quality:tracker-measurements
-node scripts/release/tracker-measurement-gate.mjs --negative-control
+pm assurance run tracker-context-quality --trigger ci --dry-run --json
 ```
 
-`--update` can only lower a ceiling. It refuses to write while any population
-has regressed or remains undeclared, so updating the baseline cannot absorb a
-failure. Dependency-kind regressions include the post-measurement item, target,
-author, timestamp, and mutation-source rows in the JSON receipt.
+Every native assertion contains both a passing boundary case and an impossible
+case that must fail. Changes flow through `pm assurance put`, which refuses a
+weaker bound, scope, lifetime, or enforcement unless a verified Decision item
+authorizes it. `scripts/release/gate-registry.json` separately inventories the
+retired bespoke gate and gives every graph subcommand either a named automated
+consumer or an explicit interactive-only classification.
 
 ## Agent Output Token Budgets
 

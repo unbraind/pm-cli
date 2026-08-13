@@ -19,6 +19,24 @@ const DEFAULT_REGISTRY_PATH = path.join(
   "release",
   "gate-registry.json",
 );
+const GRAPH_OPERATIONS = [
+  "ancestors",
+  "descendants",
+  "predecessors",
+  "successors",
+  "paths",
+  "impact",
+  "analyze",
+  "audit",
+  "communities",
+  "redundancy",
+  "dominators",
+  "slack",
+  "centrality",
+  "articulation",
+  "plan",
+  "index",
+];
 function gateIdsFromWorkflow(source, file) {
   const document = parseDocument(source);
   if (document.errors.length > 0) {
@@ -254,6 +272,99 @@ function validateLocalPreflight(localPreflight, gateIds, violations) {
   }
 }
 
+/** Test whether one gate-script disposition is complete and truthful. */
+function validGateScriptDisposition(entry, disposition, discoveredScripts) {
+  if (disposition === "migrated") {
+    return (
+      !discoveredScripts.has(entry.path) &&
+      typeof entry.replacement === "string" &&
+      entry.replacement.trim().length >= 10
+    );
+  }
+  if (!discoveredScripts.has(entry.path)) return false;
+  if (disposition === "reduced_to_provider") {
+    return (
+      typeof entry.provider === "string" && entry.provider.trim().length >= 3
+    );
+  }
+  return typeof entry.reason === "string" && entry.reason.trim().length >= 20;
+}
+
+/** Validate every current and retired release-gate script disposition. */
+function validateGateScriptInventory(
+  gateScripts,
+  discoveredScripts,
+  violations,
+) {
+  const declaredScripts = new Set();
+  for (const entry of gateScripts) {
+    const disposition = entry?.disposition;
+    const rowValid =
+      typeof entry?.path === "string" &&
+      !declaredScripts.has(entry.path) &&
+      ["migrated", "reduced_to_provider", "retained"].includes(disposition) &&
+      validGateScriptDisposition(entry, disposition, discoveredScripts);
+    if (!rowValid) violations.push("automation_inventory:gate_script:invalid");
+    if (typeof entry?.path === "string") declaredScripts.add(entry.path);
+  }
+  for (const script of discoveredScripts) {
+    if (!declaredScripts.has(script))
+      violations.push(`automation_inventory:gate_script:${script}:undeclared`);
+  }
+}
+
+/** Validate one disposition for every public relationship-graph operation. */
+function validateGraphOperationInventory(graphOperations, violations) {
+  const declaredOperations = new Set();
+  for (const entry of graphOperations) {
+    const consumer =
+      typeof entry?.automated_consumer === "string" &&
+      entry.automated_consumer.trim().length >= 10;
+    const interactive =
+      typeof entry?.interactive_only_reason === "string" &&
+      entry.interactive_only_reason.trim().length >= 20;
+    if (
+      typeof entry?.operation !== "string" ||
+      declaredOperations.has(entry.operation) ||
+      !GRAPH_OPERATIONS.includes(entry.operation) ||
+      consumer === interactive
+    ) {
+      violations.push("automation_inventory:graph_operation:invalid");
+    }
+    if (typeof entry?.operation === "string")
+      declaredOperations.add(entry.operation);
+  }
+  for (const operation of GRAPH_OPERATIONS) {
+    if (!declaredOperations.has(operation))
+      violations.push(`automation_inventory:graph_operation:${operation}:undeclared`);
+  }
+}
+
+/** Validate the exhaustive script-migration and graph-consumer inventory. */
+async function validateAutomationInventory(inventory, root, violations) {
+  if (
+    typeof inventory !== "object" ||
+    inventory === null ||
+    !Array.isArray(inventory.gate_scripts) ||
+    !Array.isArray(inventory.graph_operations)
+  ) {
+    if (inventory !== undefined)
+      violations.push("automation_inventory:invalid");
+    return;
+  }
+  const discoveredScripts = new Set(
+    (await readdir(path.join(root, "scripts", "release")))
+      .filter((file) => file.endsWith("-gate.mjs") || file === "gate-registry.mjs")
+      .map((file) => `scripts/release/${file}`),
+  );
+  validateGateScriptInventory(
+    inventory.gate_scripts,
+    discoveredScripts,
+    violations,
+  );
+  validateGraphOperationInventory(inventory.graph_operations, violations);
+}
+
 /** Validate registry policy and exact parity with enforced workflow steps. */
 export async function validateGateRegistry(registry, options = {}) {
   const root = options.repoRoot ?? repoRoot;
@@ -270,6 +381,11 @@ export async function validateGateRegistry(registry, options = {}) {
     await validateGatePolicy(gate, root, ids, registeredPipelines, violations);
   }
   validateLocalPreflight(registry.local_preflight, ids, violations);
+  await validateAutomationInventory(
+    registry.automation_inventory,
+    root,
+    violations,
+  );
   for (const pipeline of discovered) {
     if (!registeredPipelines.has(pipeline)) {
       violations.push(`pipeline:${pipeline}:unregistered`);
@@ -317,6 +433,12 @@ export async function main(argv = process.argv.slice(2)) {
     registered_gate_count: registry.gates.length,
     enforced_pipeline_count: discovered.length,
     claim_count: registry.claims?.length ?? 0,
+    migrated_gate_script_count:
+      registry.automation_inventory?.gate_scripts.filter(
+        (entry) => entry.disposition === "migrated",
+      ).length ?? 0,
+    declared_graph_operation_count:
+      registry.automation_inventory?.graph_operations.length ?? 0,
   };
 }
 
