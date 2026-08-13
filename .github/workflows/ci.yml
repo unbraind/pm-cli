@@ -207,9 +207,18 @@ jobs:
           representative_id="$(node dist/cli.js list --status all --limit 1 --sort created_at --order desc --json --no-extensions | jq -er '.items[0].id')"
           node dist/cli.js history "${representative_id}" --verify --strict-exit --json --no-extensions > /dev/null
 
-      - name: Run tracker context-quality ratchets
+      # Every ci-triggered assurance gate runs here (pm-fhifkc). Before this,
+      # only tracker-context-quality was wired to pull requests; graph-composition
+      # and record-integrity reached CI solely through `pnpm quality:static`,
+      # which runs in nightly.yml and release.yml, so the append-only history
+      # assertion that carries the immutability guarantee was never evaluated
+      # on a changeset before it merged.
+      - name: Run tracker assurance gates
         if: matrix.gate == 'static'
-        run: node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json
+        run: |
+          node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json
+          node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json
+          node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json
 
       - name: Run compatibility migration gate
         if: matrix.gate == 'compat'

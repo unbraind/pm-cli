@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: agent-ux,"area:cli","area:contracts",simplification
 created_at: "2026-08-01T09:46:45.146Z"
-updated_at: "2026-08-04T09:18:08.582Z"
+updated_at: "2026-08-13T14:30:33.429Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Every command in the catalog resolves to a declared intent by construction with no fallback string; package-contributed commands declare intent through the contribution manifest; intent shape is constrained (imperative, names the noun and read/write direction, within a declared character budget, unique across commands); coverage and uniqueness are machine-checked in the noun-verb conformance pass so a command without an intent cannot merge"
@@ -34,9 +34,10 @@ dependencies[15]{id,kind,created_at,author,source_kind,author_source}:
   pm-wt43zj,related,"2026-08-01T09:46:45.146Z","harness:claude-code","cli:create:dep",detected
   pm-x4nn3z,related,"2026-08-01T09:46:45.146Z","harness:claude-code","cli:create:dep",detected
   pm-wt43zj,blocked_by,"2026-08-01T09:56:21.460Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-03T11:15:43.989Z","harness:codex","Live contract delta 2026-08-03: 31 of 76 canonical summary commands still emit the placeholder intent Inspect flags. The historical title records 32 at discovery time; current evidence shows one improvement but 40.8 percent of the canonical cold-start surface remains non-explanatory. Keep the item open until the machine check reaches zero and prevents recurrence."
   "2026-08-04T09:18:08.582Z","harness:codex","Fresh contract census 2026-08-04 remains 76 canonical command summaries, 31 placeholder intents reading Inspect flags., 21 commands without a default token budget, and 111 advertised flag mentions. The placeholder count is unchanged from 2026-08-03 and still leaves 40.8 percent of the designated cold-start command surface semantically unexplained."
+  "2026-08-13T14:30:33.429Z","harness:claude-code","Re-measured 2026-08-13 with a wider denominator, which changes the size of the problem rather than confirming it.\n\nCounting top-level commands, the placeholder census is now 29 of 72 rather than 32 of 76, so the ratio is roughly unchanged while the surface shrank by four.\n\nCounting declared command paths — the unit an agent actually resolves — the picture is different. contracts --json --full declares 159 paths: 81 top-level and 78 subcommand. It emits 72 summaries, six of which name extension command groups that appear in no path list, so 66 declared paths carry a summary and 93 carry none. Every subcommand path is in the uncovered set. Combining both effects, a path that states a real intent exists for 43 of 159, or 27 percent.\n\nThe consequence for this item's scope: closing it by filling in 29 placeholder strings would leave 93 paths with no row to hold an intent at all. Filed pm-pmrae8 for the coverage half, which also carries the sequencing risk that every consolidation under pm-n7rr moves a command from the covered half into the uncovered one."
 files[1]{path,scope,note}:
   src/sdk/cli-contracts/runtime-contracts.ts,project,"COMMAND_INTENTS map at :594 and the silent summarizeCommandIntent fallback at :2429"
 tests[1]{command,scope,timeout_seconds}:

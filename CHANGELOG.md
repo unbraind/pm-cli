@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Two of the three ci-triggered assurance gates never ran on a pull request, so the append-only history assertion that carries the immutability guarantee was evaluated only after merge ([pm-fhifkc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fhifkc.toon))
 - Unsupported assurance triggers bypass the typed evaluation-refusal boundary and surface as high-severity Sentry faults ([pm-9yhl2v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9yhl2v.toon))
 - The ordering-cycle finding names the items in the cycle and not the contradiction that creates it, so its remediation hint cannot be executed without re-deriving the cause by hand ([pm-xvt7ps](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xvt7ps.toon))
 - The edge-count floor is denominated over a population that includes the edges the graph itself calls redundant, so repairing 73 witnessed implied ordering rows and silently relaxing the guard are the same privileged act ([pm-9gzr4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9gzr4r.toon))

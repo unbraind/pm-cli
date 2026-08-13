@@ -1,0 +1,21 @@
+id: pm-398z0u
+title: "Grouping by a set-valued field groups by the whole set: pm aggregate --group-by tags returns 2,022 tag-tuple rows for 2,467 items, so the governance question the command exists to answer cannot be asked"
+description: "pm aggregate is documented as aggregating grouped item counts for governance queries and accepts tags as a group-by field. It groups by the tag tuple rather than by the tag, so the answer it returns is not an aggregation in the sense the field name implies. Measured 2026-08-13.\n\npm aggregate --group-by tags returns 2,022 groups over 2,467 items. The corpus contains 1,038 distinct tags. So the command emits four fifths of a row per item, keyed by strings such as 'dependabot,github-alert,security,undici' and 'area:extensions,code,doc,milestone:5,pm-cli,priority:1,tests', and every count is dominated by ones: the largest group in the closed population is the 21 items sharing one exact four-tag tuple, and the second is 8.\n\nThe question a governance query actually asks is how many items carry a given tag. That question has 1,038 possible answers and none of them appears anywhere in the output, because an item tagged security and an item tagged security plus dependabot land in different groups and neither group is labelled security. Filtering answers it one tag at a time — --tag is a supported filter — so the information exists and the aggregation surface is the only place it is unavailable, which is the surface named after the operation.\n\nTwo second-order consequences fall out of the same measurement. The first is cost: a grouped aggregation whose row count is 82 percent of the item count is a full listing with extra steps, and it is emitted by a command whose declared ceiling is 4,000 tokens. The second is a data-quality fact the tuple grouping surfaced by accident, because null is the one tuple that does aggregate correctly: 182 closed items carry no tags at all. Those items are invisible to every tag-scoped query, tag-scoped release note bucket, and tag-scoped relevance signal in the product, and nothing measures the population.\n\nThe sequencing note matters because pm-xkgq proposes retiring the aggregate top-level and folding grouping into list --group-by. Whatever noun ends up owning it inherits this semantics, so the set-valued grouping rule should be decided before the fold rather than after."
+type: Issue
+status: open
+priority: 2
+tags[5]: aggregation,"area:cli","area:query",governance,output-contract
+created_at: "2026-08-13T14:27:59.356Z"
+updated_at: "2026-08-13T14:27:59.356Z"
+author: "harness:claude-code"
+acceptance_criteria: "Grouping by a set-valued field groups by element: --group-by tags returns one row per distinct tag with the count of items carrying it, and an item with k tags contributes to k rows; The tuple behaviour remains reachable under an explicit spelling if it has a use, and is documented as a distinct operation rather than as the default reading of the field name; The row-count expansion is bounded and the declared ceiling is honoured; The rule for every present and future set-valued field is declared once rather than per field; The 182 untagged closed items are measured as a named population with a disposition"
+parent: pm-33cw
+risk: medium
+confidence: 93
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-33cw,implements,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
+  pm-n7rr,implements,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
+  pm-pj2isb,verifies,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
+  pm-plwm,discovered_from,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
+  pm-xkgq,discovered_from,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -1,0 +1,33 @@
+id: pm-fhifkc
+title: "Two of the three ci-triggered assurance gates never ran on a pull request, so the append-only history assertion that carries the immutability guarantee was evaluated only after merge"
+description: "Three gates declare the trigger ci in the assurance registry: tracker-context-quality with 40 assertions, graph-composition with 7, and record-integrity with 1. Only the first was wired into the pull-request workflow.\n\nMeasured 2026-08-13. ci.yml ran a single assurance invocation, tracker-context-quality, under the static matrix leg. graph-composition and record-integrity reached a runner only through pnpm quality:static, which appears in nightly.yml and release.yml and in no pull-request path. So both gates declared themselves ci-triggered and neither was evaluated by CI in the sense that matters, which is before a change merges.\n\nThe one that matters most is record-integrity, whose single assertion is history-append-only at block enforcement. That assertion is the machine-checkable form of the guarantee the product is built around: every mutation permanently recorded, the record not alterable afterwards, any version restorable. A change that violated it would pass every pull-request check, merge, and be caught that night at the earliest — after it was already in the immutable record, which is the one place where after is materially different from before.\n\ngraph-composition is less severe and the same shape: seven assertions on edge composition and semantic share, evaluated nightly against a main branch that already contains whatever changed them.\n\nThis is not a gap in the declarations. The registry is correct, the triggers are correct, all three gates pass today, and the assertions are well formed with negative controls. The gap is entirely in the wiring, which is exactly the class pm-cu1i and its relatives keep producing: a capability declares where it should run and nothing checks that it runs there. The general remedy is that the gate registry should derive workflow wiring from the declared triggers rather than have a human keep two lists in agreement, which is what pm-1jzupz's premise implies and what gate-registry.mjs already half does by discovering gates through a regex over workflow step names."
+type: Issue
+status: closed
+priority: 0
+tags[6]: assurance,ci,governance,history,immutability,merge-safety
+created_at: "2026-08-13T14:37:01.915Z"
+updated_at: "2026-08-13T14:39:58.770Z"
+closed_at: "2026-08-13T14:39:50.473Z"
+completed_at: "2026-08-13T14:39:50.473Z"
+author: "harness:claude-code"
+acceptance_criteria: "Every gate declaring the ci trigger is evaluated on pull requests; A check proves the set of gates wired into the pull-request workflow equals the set declaring the ci trigger, so the two lists cannot drift apart silently; record-integrity failing blocks a merge rather than a nightly run"
+parent: pm-u9d0
+risk: high
+confidence: 97
+resolution: All three ci-triggered assurance gates now run on pull requests; the append-only history assertion is evaluated before merge instead of only nightly.
+expected_result: "A changeset that violates history-append-only, graph composition, or tracker context quality fails its own pull request."
+actual_result: "Only tracker-context-quality was wired to pull requests; graph-composition and record-integrity reached a runner only via pnpm quality:static in nightly.yml and release.yml, so both were evaluated only after the change had merged."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,implements,"2026-08-13T14:37:01.915Z","harness:claude-code","cli:create:dep",detected
+  pm-4ok4ex,verifies,"2026-08-13T14:37:01.915Z","harness:claude-code","cli:create:dep",detected
+  pm-rtn5h6,implements,"2026-08-13T14:37:01.915Z","harness:claude-code","cli:create:dep",detected
+  pm-t7wn04,discovered_from,"2026-08-13T14:37:01.915Z","harness:claude-code","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-08-13T14:37:01.915Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-13T14:39:46.138Z","harness:claude-code","Evidence: ci.yml step 'Run tracker context-quality ratchets' replaced by 'Run tracker assurance gates', which now runs all three ci-triggered gates on the static matrix leg — tracker-context-quality, graph-composition and record-integrity.\n\nVerified locally on the same tree: all three return verdict pass under --trigger ci --dry-run --json, and scripts/release/gate-registry.mjs still reports ok with registered_gate_count 12 and enforced_pipeline_count 18, so renaming the step did not break gate discovery.\n\nScope note for the residual: this change makes the wiring correct today and does not make it self-checking. The equivalence between the set of gates declaring the ci trigger and the set wired into the pull-request workflow is still maintained by hand, which is the recurrence risk the description names. That half stays open on this item's acceptance criteria and belongs with pm-1jzupz, whose premise is that enforcement is declared data rather than duplicated lists."
+files[1]{path,scope,note}:
+  .github/workflows/ci.yml,project,Wire graph-composition and record-integrity into the pull-request assurance step
+tests[1]{command,scope,timeout_seconds}:
+  node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json,project,300
+close_reason: "Wired graph-composition and record-integrity into the pull-request assurance step so every ci-triggered gate, including the append-only history assertion, is evaluated before merge; all three gates pass and the gate registry check is unaffected."
+body: ""
