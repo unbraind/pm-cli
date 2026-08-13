@@ -169,7 +169,7 @@ import { loadExtensionRecoveryFailures, loadUnknownCommandRecoveryFailures } fro
 import { maybeRenderBootstrapJsonHelp, attachCreateUpdatePolicyHelpText } from "./help-json-payload.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-runtime.js";
-import { validateReadOutputOptions } from "../sdk/read-output-contracts.js";
+import { applyReadOutputIncludeModes, validateReadOutputOptions } from "../sdk/read-output-contracts.js";
 import { loadContextIntentSnapshotForInvocation } from "./context-intent-invocation.js";
 import { isPmSuccessfulExitCode } from "../sdk/cli-contracts/command-exit-contracts.js";
 
@@ -792,6 +792,43 @@ async function handleGenericRunPmCliError(params: {
       printError(`Failed to flush error reporting: ${describeUnknownError(flushError)}`);
     }
   }
+}
+
+/**
+ * Hand canonical `--output-include` projection modes to the command that owns
+ * them, leaving only field selectors for post-execution projection.
+ *
+ * `--output-include brief` must be the exact behaviour of `--brief`, which the
+ * emitted migration hint promises; a mode can only be honoured before the
+ * command computes its rows, so it cannot be resolved by the output layer.
+ */
+function forwardReadOutputIncludeModes(
+  actionCommand: Command,
+  commandPath: string,
+  globalOptions: GlobalOptions,
+  commandOptions: Record<string, unknown>,
+): void {
+  const requested = globalOptions.outputInclude;
+  if (requested === undefined) return;
+  const modeOptions: Record<string, unknown> = {};
+  const { selectors, modes } = applyReadOutputIncludeModes(commandPath, requested, modeOptions);
+  if (modes.length === 0) return;
+  for (const [key, value] of Object.entries(modeOptions)) {
+    commandOptions[key] = value;
+    actionCommand.setOptionValueWithSource(key, value, "cli");
+  }
+  const residual = selectors.length > 0 ? selectors.join(",") : undefined;
+  if (residual === undefined) {
+    delete globalOptions.outputInclude;
+  } else {
+    globalOptions.outputInclude = residual;
+  }
+  // The resolved-global cache is cleared and re-read from Commander before the
+  // handler runs, so the consumed modes have to leave the parsed option too.
+  for (let scope: Command | null = actionCommand; scope; scope = scope.parent) {
+    scope.setOptionValueWithSource("outputInclude", residual, "cli");
+  }
+  setResolvedGlobalOptions(actionCommand, globalOptions);
 }
 
 function extractCommandScopedOptions(
@@ -2087,6 +2124,7 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
       outputFormat: rawGlobalOptions.outputFormat,
       outputSession: rawGlobalOptions.outputSession,
     });
+    forwardReadOutputIncludeModes(actionCommand, commandPath, globalOptions, commandOptions);
     await maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions);
     const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
     const runtimeExtensions = await maybeLoadRuntimeExtensions(actionCommand);
@@ -2126,6 +2164,7 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
 
     const extensionFlagDefinitions = collectExtensionFlagDefinitionsForInvocation(runtimeExtensions.registrations, commandPath, commandArgs);
     commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, extensionFlagDefinitions);
+    forwardReadOutputIncludeModes(actionCommand, commandPath, globalOptions, commandOptions);
     const parserOverride = await runActiveParserOverride({
       command: commandPath,
       args: commandArgs,

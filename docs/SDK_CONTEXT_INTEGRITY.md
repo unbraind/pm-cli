@@ -31,6 +31,14 @@ selector grammar and omission receipts as any other SDK-owned item field.
 
 The same SDK-owned read-output registry now declares `package manage` as a first-class read surface. Package authors can resolve either `package manage` or `package-manage` to its canonical contract and discover the universal include, amount, cost, and encoding dimensions without copying CLI knowledge.
 
+Compatibility aliases declare whether their migration promise is an exact
+`replacement` or only `behavior_preserving`. Exact projection modes are
+available through `readOutputIncludeModeOptions()` and are executed against
+their legacy spelling in the temporary-tracker contract suite. Execution
+controls such as `deps --collapse <value>` and `health --check-only` retain
+their independent semantics and are never exposed as false include-mode
+replacements.
+
 Every registered read surface also resolves a format-aware default token ceiling
 from the public command-output contract. Results already inside that ceiling are
 returned byte-for-byte unchanged, so the safety default adds no receipt overhead
@@ -40,6 +48,13 @@ identify `budget_source: default` plus the applied `budget_tokens` in their
 accept unbounded output must say so explicitly with `--output-budget unbounded`
 or `outputBudget: "unbounded"`; that opt-out is distinct from row-count
 `--unbounded` compatibility behavior.
+
+The budget ladder separately discovers nested arrays below declared result
+rows. This lets governance envelopes reduce diagnostic findings before
+omitting the whole verdict without redefining a nested tag or remediation list
+as a pagination row. Receipts name every `compacted_row_paths` entry; a complete
+omission also records the useful result's pre-omission estimate, while the
+universal recovery remains `--output-budget unbounded`.
 
 ## Row discovery and exact output receipts
 

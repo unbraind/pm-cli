@@ -7,7 +7,7 @@
 import type { PmReadOutputReceipt } from "./read-output-contracts.js";
 import {
   countReadOutputRows,
-  readOutputRowCollections,
+  readOutputBudgetCollections,
 } from "./read-output-rows.js";
 
 interface StringCompactionState {
@@ -75,7 +75,7 @@ function compactRowsToBudget(
   ) {
     updateReadOutputReceiptEstimate(result, receipt);
     if (receipt.estimated_tokens <= budget) return;
-    const candidate = readOutputRowCollections(result)
+    const candidate = readOutputBudgetCollections(result)
       .filter(
         (collection) =>
           (Array.isArray(collection.value)
@@ -105,6 +105,9 @@ function compactRowsToBudget(
       }
     }
     receipt.rows_compacted = true;
+    receipt.compacted_row_paths = [
+      ...new Set([...(receipt.compacted_row_paths ?? []), candidate.path]),
+    ].sort((left, right) => left.localeCompare(right));
     result.has_more = true;
     result.truncated = true;
     if (typeof result.count === "number") {

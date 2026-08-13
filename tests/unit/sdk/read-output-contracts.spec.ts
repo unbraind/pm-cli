@@ -17,6 +17,7 @@ import {
   boundReadOutputRows,
   countReadOutputRows,
   mapReadOutputRows,
+  readOutputBudgetCollections,
   readOutputRowCollections,
 } from "../../../src/sdk/read-output-rows.js";
 import {
@@ -242,6 +243,9 @@ describe("read output contracts", () => {
     });
     expect(isReadOutputBudgetExceeded(projected)).toBe(true);
     expect(projected.read_output.estimated_tokens).toBeLessThanOrEqual(256);
+    expect(
+      projected.read_output.omitted_result_estimated_tokens,
+    ).toBeGreaterThan(256);
 
     const perCallOnly = applyReadOutputDimensions(
       "stats",
@@ -604,6 +608,28 @@ describe("read output contracts", () => {
     expect(rootOnly).not.toHaveProperty("items");
   });
 
+  it("refuses selectors that empty every returned row with mode-aware guidance", () => {
+    expect(() =>
+      applyReadOutputDimensions(
+        "list",
+        { outputInclude: "nosuchfield" },
+        { items: [{ id: "pm-1", title: "One" }] },
+      ),
+    ).toThrow(
+      "No selector matched any returned row field. Declared list projection modes: brief, compact, full.",
+    );
+
+    expect(() =>
+      applyReadOutputDimensions(
+        "comments",
+        { outputInclude: "nosuchfield" },
+        { comments: [{ text: "One" }] },
+      ),
+    ).toThrow(
+      "The comments surface declares no projection modes; name row fields instead.",
+    );
+  });
+
   it("carries cross-call spend and replaces prior item facts with references", () => {
     const first = applyReadOutputDimensions(
       "list",
@@ -952,6 +978,30 @@ describe("read output contracts", () => {
     });
   });
 
+  it("discovers nested budget collections without redefining projected rows", () => {
+    const result = {
+      checks: [
+        {
+          details: {
+            missing_resolution_rows: [{ id: "pm-1" }, { id: "pm-2" }],
+            remediation_hints: ["one", "two"],
+          },
+        },
+      ],
+      read_output: { requested_dimensions: ["cost"] },
+    };
+    expect(readOutputRowCollections(result).map(({ path }) => path)).toEqual([
+      "checks",
+    ]);
+    expect(readOutputBudgetCollections(result).map(({ path }) => path)).toEqual(
+      [
+        "checks",
+        "checks.0.details.missing_resolution_rows",
+        "checks.0.details.remediation_hints",
+      ],
+    );
+  });
+
   it("bounds fixed-point receipt work for adversarial serializers", () => {
     let directSerializations = 0;
     const direct = attachReadOutputSessionReceipt(
@@ -1123,6 +1173,60 @@ describe("read output contracts", () => {
       truncated: true,
       read_output: { rows_compacted: true },
     });
+
+    const validationResult = {
+      ok: false,
+      checks: [
+        {
+          name: "resolution",
+          details: {
+            missing_resolution_rows: makeRows("missing"),
+            missing_resolution_remediation_hints: makeRows("hint"),
+          },
+        },
+        { name: "history", details: { findings: [] } },
+      ],
+    };
+    const nestedRows = applyReadOutputDimensions(
+      "validate",
+      { outputBudget: 700, outputLimit: "unbounded" },
+      structuredClone(validationResult),
+    );
+    expect(nestedRows).toMatchObject({
+      ok: false,
+      has_more: true,
+      truncated: true,
+      output_budget_truncation: {
+        restore_with:
+          "Re-run with --output-budget unbounded for the complete result.",
+        overridden_dimensions: ["amount"],
+        compacted_row_paths: expect.arrayContaining([
+          "checks.0.details.missing_resolution_rows",
+          "checks.0.details.missing_resolution_remediation_hints",
+        ]),
+      },
+      read_output: {
+        within_budget: true,
+        rows_compacted: true,
+        compacted_row_paths: expect.arrayContaining([
+          "checks.0.details.missing_resolution_rows",
+        ]),
+      },
+    });
+    expect(isReadOutputBudgetExceeded(nestedRows)).toBe(false);
+    const restoredNestedRows = applyReadOutputDimensions(
+      "validate",
+      { outputBudget: "unbounded" },
+      structuredClone(validationResult),
+    );
+    expect(restoredNestedRows).not.toHaveProperty("output_budget_truncation");
+    expect(
+      restoredNestedRows.checks[0]?.details.missing_resolution_rows,
+    ).toHaveLength(8);
+    expect(
+      restoredNestedRows.checks[0]?.details
+        .missing_resolution_remediation_hints,
+    ).toHaveLength(8);
   });
 
   it("bounds token estimation when custom JSON serialization never reaches a fixed point", () => {

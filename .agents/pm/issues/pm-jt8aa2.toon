@@ -1,0 +1,40 @@
+id: pm-jt8aa2
+title: "A budget-truncated read reports that rows are missing without a cursor, a recovery, or any sign that it overrode the caller's explicit request for all of them"
+description: "compactRowsToBudget halves the largest row collection until the estimate fits the ceiling, then sets has_more and truncated and recomputes count. It writes nothing else. The result is an envelope that states rows are missing and provides no way to obtain them.\n\nMeasured at HEAD build 2026.8.13 against this tracker of 2,473 items:\n\n  pm list --status open                 84 of 339 rows, has_more true, next_cursor null\n  pm list --status open --no-truncate   84 of 339 rows, has_more true, next_cursor null\n\nThe second line is the defect that matters. --no-truncate shipped under pm-0c0j as an explicit override of any row limit, and the receipt proves the layer saw it: legacy_aliases_used records --no-truncate and migration_hints records 'prefer --output-limit unbounded'. The request is resolved, recorded, and then discarded by a ceiling whose own source field reads 'default'. The declared precedence is canonical, legacy, intent, default, so the weakest layer silently overrides the strongest, and nothing in the envelope says so.\n\nRecovery is unreachable from the response. next_cursor is null because the row limit was never hit, so --after has nothing to continue from. The only spelling that returns the complete result, --output-budget unbounded, appears nowhere in the output. The whole-result omission path does carry restore_with; the row-compaction path, which is the common case, carries none, so the surface teaches recovery exactly when it does not need to and never when it does.\n\nThe consequence at scale is a wrong answer rather than a partial one. An agent asking for the open backlog receives 84 rows, an assertion that more exist, and no next step. It cannot tell that 255 items were withheld, and every count it derives is wrong by construction. This is the fifth consequence of the same inversion pm-5t33or names: a declared ceiling became binding without the envelope disclosure that criterion required."
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:sdk",context-management,contracts,output-contract,token-efficiency
+created_at: "2026-08-13T21:09:40.035Z"
+updated_at: "2026-08-13T21:26:22.162Z"
+closed_at: "2026-08-13T21:19:54.422Z"
+completed_at: "2026-08-13T21:19:54.422Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "A read whose rows were dropped for a token budget discloses the binding budget, its source, and a recovery instruction that works on that command; The disclosure names any explicitly requested dimension the budget overrode, so a caller can tell a downgraded request from an exhausted result set; has_more true is never emitted without either a usable continuation cursor or a named alternative recovery path; A regression test drives a real workspace read past the default ceiling and asserts the disclosure, rather than asserting only that truncation occurred; The row-compaction path and the whole-result omission path disclose recovery through the same declared shape"
+parent: pm-mpbb
+risk: high
+confidence: high
+resolution: "Attached a machine-readable truncation disclosure at the point where the binding budget and resolved dimensions are both in scope, reporting precedence inversion as data rather than prose."
+expected_result: "A read whose rows were dropped for a token budget states the budget, what it overrode, and how to obtain the complete result."
+actual_result: "output_budget_truncation reports reason, budget_source default, budget_tokens 6000, overridden_dimensions [amount], and a restore_with naming --output-budget unbounded and the paging alternative."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,discovered_from,"2026-08-13T21:10:03.401Z","harness:claude-code","cli:update:dep",detected
+  pm-eugaqy,discovered_from,"2026-08-13T21:10:03.401Z","harness:claude-code","cli:update:dep",detected
+  pm-f05lsg,implements,"2026-08-13T21:10:03.401Z","harness:claude-code","cli:update:dep",detected
+  pm-j82fd3,implements,"2026-08-13T21:10:03.401Z","harness:claude-code","cli:update:dep",detected
+  pm-o87av6,implements,"2026-08-13T21:10:03.401Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-13T21:19:00.373Z","harness:claude-code","Evidence: shipped. attachReadOutputTruncationDisclosure in src/sdk/read-output-contracts.ts attaches output_budget_truncation whenever the receipt records rows_compacted, at the point where the binding budget and the resolved dimensions are both in scope. It carries the reason, the budget source and value, the list of explicitly requested dimensions the budget overrode, and a restore_with naming both the complete-result spelling and the paging alternative.\n\nVerified live: 'pm list --status open --no-truncate' now returns count 84, total 339, truncated true, has_more true, and output_budget_truncation with budget_source default, budget_tokens 6000, overridden_dimensions [\"amount\"], restore_with naming --output-budget unbounded. Before the change the same invocation returned the same 84 rows with next_cursor null and no statement that the explicitly requested unbounded row read had been overridden by a default-sourced ceiling.\n\nThe overridden_dimensions field is the part that matters: it is computed from the resolved dimension set, so it reports precedence inversion as data rather than as prose, and it is empty when the caller made no explicit request. Full suite green, 7,272 tests."
+learnings[1]{created_at,author,text}:
+  "2026-08-13T21:19:12.108Z","harness:claude-code","A precedence table is a claim that must be enforced somewhere, and 'default' is the layer most likely to break it, because a default is applied by a different code path than the one that resolves explicit requests. Here the resolution layer recorded the caller's explicit unbounded row request, printed a migration hint about it, and then let a default-sourced token ceiling override it silently — the receipt contained every fact needed to notice, and nothing compared them. When a resolved dimension set and a binding bound are both in scope, the comparison is one filter, and its output is the disclosure."
+files[2]{path,scope,note}:
+  src/sdk/read-output-budget.ts,project,Row compaction that sets has_more without a continuation
+  src/sdk/read-output-contracts.ts,project,Budget truncation disclosure attached where the binding budget and resolved dimensions are both known
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts,project,240
+docs[2]{path,scope,note}:
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Token ceiling accounting and degradation ladder
+  docs/READ_OUTPUT_CONTRACTS.md,project,output_budget_truncation disclosure in the receipt section
+close_reason: "A budget-truncated read now attaches output_budget_truncation naming the binding budget, its source, the explicitly requested dimensions the budget overrode, and a recovery that works on that command. Verified live on pm list --status open --no-truncate, which previously reported has_more with a null cursor and no statement that the caller's explicit unbounded row request had been discarded by a default-sourced ceiling."
+body: ""

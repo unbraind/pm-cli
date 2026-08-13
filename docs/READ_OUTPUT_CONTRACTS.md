@@ -1,17 +1,17 @@
 # Universal Read Output Contracts
 
-Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), and [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon).
+Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-eugaqy](../.agents/pm/issues/pm-eugaqy.toon), [pm-jt8aa2](../.agents/pm/issues/pm-jt8aa2.toon), and [pm-kyjdne](../.agents/pm/issues/pm-kyjdne.toon).
 
 ## Agent Quick Context
 
 Every built-in read surface uses four output dimensions: what to include, how much to return, how much the result may cost, and how to encode it. The same canonical controls work through the CLI, SDK, MCP, generated schemas, runtime contracts, and shell completions.
 
-| Dimension | CLI                             | SDK and MCP     | Meaning                                                    |
-| --------- | ------------------------------- | --------------- | ---------------------------------------------------------- |
-| Include   | `--output-include <csv>`        | `outputInclude` | Retain named fields or top-level sections.                 |
-| Amount    | `--output-limit <n\|unbounded>` | `outputLimit`   | Bound shared row collections.                              |
-| Cost      | `--output-budget <tokens>`      | `outputBudget`  | Fail closed when even the compact result cannot fit.       |
-| Encoding  | `--output-format <toon\|json>`  | `outputFormat`  | Select the CLI renderer and record the requested encoding. |
+| Dimension | CLI                             | SDK and MCP     | Meaning                                                                |
+| --------- | ------------------------------- | --------------- | ---------------------------------------------------------------------- |
+| Include   | `--output-include <csv>`        | `outputInclude` | Retain named fields or sections, or select a declared projection mode. |
+| Amount    | `--output-limit <n\|unbounded>` | `outputLimit`   | Bound shared row collections.                                          |
+| Cost      | `--output-budget <tokens>`      | `outputBudget`  | Fail closed when even the compact result cannot fit.                   |
+| Encoding  | `--output-format <toon\|json>`  | `outputFormat`  | Select the CLI renderer and record the requested encoding.             |
 
 The contract covers `list`, `context`, `search`, `get`, `next`, `health`, `deps`, `graph`, `history`, `activity`, `validate`, `events`, `contracts`, `comments`, `notes`, `files`, `docs`, `stats`, and `aggregate`, including list aliases and `ctx`.
 
@@ -23,6 +23,39 @@ The runtime uses that declaration internally on every read but omits the
 repeated metadata from results by default. Request
 `--output-row-contract` / `outputRowContract: true` when a consumer needs the
 row paths, jq selector, and active TOON encoding contract.
+
+### Include Modes
+
+`--output-include` accepts two kinds of token. A **field selector** names a row
+field or section and narrows the computed result. A **projection mode** names a
+whole declared projection and is the canonical spelling of a command-local mode
+flag: `brief`, `compact`, `full`, `summary`, and `counts`, depending on the
+surface. Controls that change execution rather than projection remain separate:
+for example, `deps --collapse <none|repeated>` retains dependency-grouping
+semantics, and `health --check-only` retains refresh-suppression semantics.
+
+Mode tokens are resolved before the command computes its rows, because a mode
+selects which fields exist rather than which of the computed fields survive.
+`pm list --output-include brief` is therefore exactly `pm list --brief`, and the
+two are byte-identical apart from the `read_output` receipt that records which
+spelling was used. Modes and field selectors compose: the mode selects the
+projection, the remaining selectors narrow it.
+
+```bash
+pm list --status open --output-include brief          # same result as --brief
+pm contracts --output-include full                    # same result as --full
+pm list --status open --output-include brief,id       # brief projection, id only
+```
+
+Read `readOutputIncludeModeOptions(command)` from the SDK for the exact
+replacement modes a surface declares. Every compatibility alias also declares
+`semantics: "replacement" | "behavior_preserving"`; generators therefore do
+not have to infer obligation strength from prose. The executable migration test
+derives all 22 projection-mode replacements from this table, invokes both
+spellings in a temporary tracker, and compares their useful result after
+removing spelling receipts and volatile run metadata. A selector that matches
+neither a declared mode nor any field on any returned row is refused with the
+legal domain, rather than returning rows with every field removed.
 
 ## Cross-Call Context Sessions
 
@@ -92,7 +125,9 @@ pm stats --output-row-contract
 pm contracts --full --json
 ```
 
-Every projected result carries a `read_output` receipt with the requested dimensions, precedence, observed compatibility aliases, deterministic estimated token count, string/row compaction signals, and budget outcome. If no useful content can fit, `PmReadOutputBudgetExceeded` provides a discriminated omission result; use `isReadOutputBudgetExceeded` before accessing result-specific fields. Universal controls are rejected on mutation commands and on the mutation mode of hybrid commands such as `comments`, `notes`, `files`, and `docs`.
+Every projected result carries a `read_output` receipt with the requested dimensions, precedence, observed compatibility aliases, deterministic estimated token count, string/row compaction signals, and budget outcome. Budget degradation discovers nested arrays as well as declared result rows, so validation diagnostics and other governance payloads compact their inner findings before the useful result is omitted. `compacted_row_paths` names every reduced collection without redefining those nested arrays as ordinary pagination rows.
+
+When rows are dropped to satisfy a ceiling, the result also carries `output_budget_truncation`, naming the binding budget and its source, any explicitly requested dimension the budget overrode, every compacted collection path, and an executable recovery instruction — a default ceiling can override an explicit `--output-limit unbounded`, and that override is reported rather than silent. If no useful content can fit, `PmReadOutputBudgetExceeded` provides a discriminated omission result and reports `omitted_result_estimated_tokens`, the last useful-result estimate before omission; use `isReadOutputBudgetExceeded` before accessing result-specific fields. Universal controls are rejected on mutation commands and on the mutation mode of hybrid commands such as `comments`, `notes`, `files`, and `docs`.
 
 ## SDK and Package Usage
 
@@ -127,5 +162,6 @@ The full runtime contract reports every surface and all four dimensions. Strict 
 ```bash
 pnpm contracts:check
 node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts
+node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-migration-hints.spec.ts
 node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts
 ```

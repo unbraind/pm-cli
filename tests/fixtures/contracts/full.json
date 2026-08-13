@@ -28865,16 +28865,19 @@
             {
               "flag": "--after",
               "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--limit",
               "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--no-truncate",
               "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit unbounded.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             }
           ]
@@ -28888,6 +28891,7 @@
             {
               "flag": "--token-budget",
               "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -28901,11 +28905,13 @@
             {
               "flag": "--format",
               "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--stream",
               "migration_hint": "--stream retains command streaming semantics; --output-format selects only static result encoding.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             }
           ]
@@ -28919,21 +28925,25 @@
             {
               "flag": "--brief",
               "migration_hint": "--brief is a compatibility alias; prefer --output-include brief.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--compact",
               "migration_hint": "--compact is a compatibility alias; prefer --output-include compact.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--fields",
               "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -28958,16 +28968,19 @@
             {
               "flag": "--after",
               "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--depth",
               "migration_hint": "--depth retains traversal or detail-depth semantics; --output-limit does not replace it.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--limit",
               "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -28981,6 +28994,7 @@
             {
               "flag": "--token-budget",
               "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -28994,6 +29008,7 @@
             {
               "flag": "--format",
               "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29007,11 +29022,13 @@
             {
               "flag": "--fields",
               "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--section",
               "migration_hint": "--section is a compatibility alias; prefer --output-include <csv>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29036,11 +29053,13 @@
             {
               "flag": "--after",
               "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--limit",
               "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29054,6 +29073,7 @@
             {
               "flag": "--token-budget",
               "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29067,6 +29087,7 @@
             {
               "flag": "--format",
               "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29080,16 +29101,19 @@
             {
               "flag": "--compact",
               "migration_hint": "--compact is a compatibility alias; prefer --output-include compact.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--fields",
               "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29114,6 +29138,7 @@
             {
               "flag": "--depth",
               "migration_hint": "--depth retains traversal or detail-depth semantics; --output-limit does not replace it.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             }
           ]
@@ -29127,6 +29152,7 @@
             {
               "flag": "--token-budget",
               "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29140,6 +29166,7 @@
             {
               "flag": "--format",
               "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29153,11 +29180,13 @@
             {
               "flag": "--fields",
               "migration_hint": "--fields is a compatibility alias; prefer --output-include <csv>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29182,11 +29211,13 @@
             {
               "flag": "--blocked-limit",
               "migration_hint": "--blocked-limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--limit",
               "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29200,6 +29231,7 @@
             {
               "flag": "--token-budget",
               "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29213,6 +29245,7 @@
             {
               "flag": "--format",
               "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29265,21 +29298,25 @@
             {
               "flag": "--brief",
               "migration_hint": "--brief is a compatibility alias; prefer --output-include brief.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--check-only",
               "migration_hint": "--check-only retains health side-effect semantics; --output-include does not suppress vector refresh.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--summary",
               "migration_hint": "--summary is a compatibility alias; prefer --output-include summary.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29304,16 +29341,19 @@
             {
               "flag": "--edge-limit",
               "migration_hint": "--edge-limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--max-depth",
               "migration_hint": "--max-depth retains graph traversal-depth semantics; --output-limit does not replace it.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--node-limit",
               "migration_hint": "--node-limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29327,6 +29367,7 @@
             {
               "flag": "--token-budget",
               "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29340,6 +29381,7 @@
             {
               "flag": "--format",
               "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29352,17 +29394,20 @@
           "legacy_aliases": [
             {
               "flag": "--collapse",
-              "migration_hint": "--collapse is a compatibility alias; prefer --output-include collapse.",
+              "migration_hint": "--collapse retains dependency grouping semantics; --output-include does not replace it.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--summary",
               "migration_hint": "--summary is a compatibility alias; prefer --output-include summary.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29387,21 +29432,25 @@
             {
               "flag": "--after",
               "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--limit",
               "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--max-depth",
               "migration_hint": "--max-depth retains graph traversal-depth semantics; --output-limit does not replace it.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--max-paths",
               "migration_hint": "--max-paths retains graph path-search semantics; use --output-limit separately to bound returned rows.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             }
           ]
@@ -29429,11 +29478,13 @@
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--summary",
               "migration_hint": "--summary is a compatibility alias; prefer --output-include summary.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29458,6 +29509,7 @@
             {
               "flag": "--limit",
               "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29478,6 +29530,7 @@
             {
               "flag": "--format",
               "migration_hint": "--format is a compatibility alias; prefer --output-format <toon|json>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29491,11 +29544,13 @@
             {
               "flag": "--compact",
               "migration_hint": "--compact is a compatibility alias; prefer --output-include compact.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29520,11 +29575,13 @@
             {
               "flag": "--limit",
               "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--unbounded",
               "migration_hint": "--unbounded is a compatibility alias; prefer --output-limit unbounded.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             }
           ]
@@ -29545,6 +29602,7 @@
             {
               "flag": "--stream",
               "migration_hint": "--stream retains command streaming semantics; --output-format selects only static result encoding.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             }
           ]
@@ -29558,11 +29616,13 @@
             {
               "flag": "--compact",
               "migration_hint": "--compact is a compatibility alias; prefer --output-include compact.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29608,11 +29668,13 @@
             {
               "flag": "--counts",
               "migration_hint": "--counts is a compatibility alias; prefer --output-include counts.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29637,6 +29699,7 @@
             {
               "flag": "--limit",
               "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29657,6 +29720,7 @@
             {
               "flag": "--follow",
               "migration_hint": "--follow retains event-tail semantics; --output-format does not enable following.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             }
           ]
@@ -29670,6 +29734,7 @@
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29715,11 +29780,13 @@
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--summary",
               "migration_hint": "--summary is a compatibility alias; prefer --output-include summary.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29744,6 +29811,7 @@
             {
               "flag": "--limit",
               "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29789,6 +29857,7 @@
             {
               "flag": "--limit",
               "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             }
           ]
@@ -29834,16 +29903,19 @@
             {
               "flag": "--limit",
               "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--no-truncate",
               "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit unbounded.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             },
             {
               "flag": "--offset",
               "migration_hint": "--offset retains positional pagination semantics; use --output-limit separately to bound returned rows.",
+              "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             }
           ]

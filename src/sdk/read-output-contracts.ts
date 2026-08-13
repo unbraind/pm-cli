@@ -87,6 +87,8 @@ export interface PmReadOutputOptions {
 export interface PmReadOutputLegacyAlias {
   /** Historical CLI spelling. */
   flag: string;
+  /** Strength of the migration promise carried by this alias. */
+  semantics?: "replacement" | "behavior_preserving";
   /** One-line migration instruction for agents and help generators. */
   migration_hint: string;
   /** Compatibility aliases are accepted but omitted from the canonical vocabulary. */
@@ -178,8 +180,28 @@ export interface PmReadOutputReceipt {
   strings_compacted: boolean;
   /** Whether row collections were reduced while satisfying the cost ceiling. */
   rows_compacted: boolean;
+  /** Declared or nested collection paths reduced by budget degradation. */
+  compacted_row_paths?: string[];
   /** Whether the requested cost ceiling forced the useful result to be omitted. */
   result_omitted: boolean;
+  /** Estimated tokens in the useful result immediately before whole-result omission. */
+  omitted_result_estimated_tokens?: number;
+}
+
+/** Machine-readable explanation of budget-driven row degradation. */
+export interface PmReadOutputTruncationDisclosure {
+  /** Stable reason for dropping rows. */
+  reason: "output_budget_reached";
+  /** Layer that supplied the binding ceiling. */
+  budget_source: PmReadOutputDimensionSource | "session";
+  /** Binding estimated-token ceiling. */
+  budget_tokens: number;
+  /** Explicit dimensions whose unbounded request was overridden by the ceiling. */
+  overridden_dimensions: PmReadOutputDimension[];
+  /** Declared or nested collection paths reduced by budget degradation. */
+  compacted_row_paths: string[];
+  /** Executable recovery instruction for retrieving the complete result. */
+  restore_with: string;
 }
 
 /** Result returned when the requested cost ceiling cannot fit useful content. */
@@ -202,6 +224,7 @@ export type PmReadOutputResult<Result> =
   | (Result & {
       read_output?: PmReadOutputReceipt;
       read_session?: PmReadOutputSessionReceipt;
+      output_budget_truncation?: PmReadOutputTruncationDisclosure;
     })
   | (PmReadOutputBudgetExceeded & {
       read_session?: PmReadOutputSessionReceipt;
@@ -315,7 +338,11 @@ const LEGACY_FLAGS_BY_COMMAND: Readonly<
   assurance: {},
 };
 
-const VALUE_BEARING_INCLUDE_ALIASES = new Set(["--fields", "--section"]);
+const VALUE_BEARING_INCLUDE_ALIASES = new Set([
+  "--collapse",
+  "--fields",
+  "--section",
+]);
 
 const BEHAVIOR_PRESERVING_MIGRATION_HINTS: Readonly<Record<string, string>> =
   Object.freeze({
@@ -323,6 +350,8 @@ const BEHAVIOR_PRESERVING_MIGRATION_HINTS: Readonly<Record<string, string>> =
       "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
     "--check-only":
       "--check-only retains health side-effect semantics; --output-include does not suppress vector refresh.",
+    "--collapse":
+      "--collapse retains dependency grouping semantics; --output-include does not replace it.",
     "--depth":
       "--depth retains traversal or detail-depth semantics; --output-limit does not replace it.",
     "--follow":
@@ -378,6 +407,10 @@ function buildSurfaceContract(
             (legacy[dimension] ?? []).map((flag) =>
               Object.freeze({
                 flag,
+                semantics:
+                  BEHAVIOR_PRESERVING_MIGRATION_HINTS[flag] === undefined
+                    ? ("replacement" as const)
+                    : ("behavior_preserving" as const),
                 migration_hint: migrationHint(flag, dimension),
                 visibility: "hidden_alias" as const,
               }),
@@ -522,6 +555,86 @@ export function validateReadOutputOptions(
     if (value !== undefined && !validator.valid(value)) {
       throw new PmCliError(validator.message, EXIT_CODE.USAGE);
     }
+  }
+}
+
+/**
+ * Map every canonical `--output-include` token that names a projection mode
+ * rather than a row field onto the command-local option that mode already owns.
+ *
+ * The include dimension folds two kinds of legacy alias into one canonical
+ * spelling: value-bearing selectors (`--fields`, `--section`) that name row
+ * fields, and mode flags (`--brief`, `--full`, `--summary`, ...) that select a
+ * whole declared projection. Only the first kind can be honoured by projecting
+ * an already-computed result, so mode tokens have to reach the command itself.
+ */
+export function readOutputIncludeModeOptions(
+  command: string,
+): ReadonlyMap<string, string> {
+  const surface = resolveReadOutputSurface(command);
+  if (!surface) return new Map();
+  return new Map(
+    (LEGACY_FLAGS_BY_COMMAND[surface].include ?? [])
+      .filter(
+        (flag) =>
+          !VALUE_BEARING_INCLUDE_ALIASES.has(flag) &&
+          BEHAVIOR_PRESERVING_MIGRATION_HINTS[flag] === undefined,
+      )
+      .map((flag) => [flagSelector(flag), optionKey(flag)] as const),
+  );
+}
+
+/**
+ * Translate canonical projection-mode tokens into the command-local options
+ * they alias, so the spelling the migration hints recommend is behaviour
+ * identical to the legacy flag it replaces, and return the field selectors that
+ * remain for post-execution projection.
+ */
+export function applyReadOutputIncludeModes(
+  command: string,
+  includeValue: unknown,
+  commandOptions: Record<string, unknown>,
+): { selectors: string[]; modes: string[] } {
+  const requested = stringList(includeValue) ?? [];
+  const modeOptions = readOutputIncludeModeOptions(command);
+  const selectors: string[] = [];
+  const modes: string[] = [];
+  for (const token of requested) {
+    const option = modeOptions.get(token);
+    if (option === undefined) {
+      selectors.push(token);
+      continue;
+    }
+    commandOptions[option] = true;
+    modes.push(token);
+  }
+  return { selectors, modes };
+}
+
+/**
+ * Resolve canonical include modes against one combined options bag, rewriting
+ * the include value in place to the selectors that remain.
+ *
+ * Used by dispatch paths that carry command options and universal output
+ * controls in a single record, so an action honours a mode token exactly as the
+ * CLI does.
+ */
+export function normalizeReadOutputIncludeModeOptions(
+  command: string,
+  options: Record<string, unknown>,
+): void {
+  const include = options.outputInclude ?? options.output_include;
+  if (include === undefined) return;
+  const { selectors, modes } = applyReadOutputIncludeModes(
+    command,
+    include,
+    options,
+  );
+  if (modes.length === 0) return;
+  const residual = selectors.length > 0 ? selectors.join(",") : undefined;
+  options.outputInclude = residual;
+  if (Object.hasOwn(options, "output_include")) {
+    options.output_include = residual;
   }
 }
 
@@ -877,6 +990,44 @@ function applyGetIncludeProjection(
   return projected;
 }
 
+/** Count row objects that still carry at least one field. */
+function countPopulatedRows(result: Record<string, unknown>): number {
+  let populated = 0;
+  mapReadOutputRows({ ...result }, (entry) => {
+    if (isRecord(entry) && Object.keys(entry).length > 0) populated += 1;
+    return entry;
+  });
+  return populated;
+}
+
+/**
+ * Refuse an include projection that strips every field from every row.
+ *
+ * Selectors that match no field are not a narrower answer, they are no answer:
+ * without this the surface returns the requested row count as empty objects and
+ * exits 0, so a mistyped or mode-shaped selector is indistinguishable from a
+ * workspace that genuinely holds nothing.
+ */
+function rejectEmptyIncludeProjection(
+  command: PmReadOutputSurface,
+  original: Record<string, unknown>,
+  shaped: Record<string, unknown>,
+  selectors: readonly string[],
+): void {
+  if (countPopulatedRows(original) === 0 || countPopulatedRows(shaped) > 0) {
+    return;
+  }
+  const modes = [...readOutputIncludeModeOptions(command).keys()];
+  const domain =
+    modes.length > 0
+      ? ` Declared ${command} projection modes: ${modes.join(", ")}.`
+      : ` The ${command} surface declares no projection modes; name row fields instead.`;
+  throw new PmCliError(
+    `Unknown --output-include selector(s) for ${command}: ${selectors.join(", ")}. No selector matched any returned row field.${domain}`,
+    EXIT_CODE.USAGE,
+  );
+}
+
 function applyIncludeProjection(
   command: PmReadOutputSurface,
   result: Record<string, unknown>,
@@ -900,16 +1051,13 @@ function applyIncludeProjection(
   );
   if (rows.length > 0 && (!selectedRoot || qualifiedRowSelectors.length > 0)) {
     const projected = { ...result };
-    return mapReadOutputRows(projected, (entry) =>
-      isRecord(entry)
-        ? projectRecordFields(
-            entry,
-            qualifiedRowSelectors.length > 0
-              ? qualifiedRowSelectors
-              : selectors,
-          )
-        : entry,
+    const rowSelectors =
+      qualifiedRowSelectors.length > 0 ? qualifiedRowSelectors : selectors;
+    const shaped = mapReadOutputRows(projected, (entry) =>
+      isRecord(entry) ? projectRecordFields(entry, rowSelectors) : entry,
     );
+    rejectEmptyIncludeProjection(command, result, shaped, rowSelectors);
+    return shaped;
   }
   return Object.fromEntries(
     Object.entries(result).filter(
@@ -1056,6 +1204,7 @@ function omitReadOutputForBudget(
     source: PmReadOutputDimensionSource | "session";
     tokens: number;
   },
+  omittedResultEstimatedTokens: number,
 ): Record<string, unknown> {
   const minimalReceipt: PmReadOutputReceipt = {
     contract_version: 1,
@@ -1075,6 +1224,9 @@ function omitReadOutputForBudget(
     strings_compacted: false,
     rows_compacted: false,
     result_omitted: true,
+    ...(session === undefined
+      ? { omitted_result_estimated_tokens: omittedResultEstimatedTokens }
+      : {}),
   };
   const omitted: PmReadOutputBudgetExceeded = {
     output_budget_exceeded: {
@@ -1131,6 +1283,37 @@ function canReturnReadOutputUnchanged(
   );
 }
 
+/**
+ * Disclose a budget-driven row drop in the envelope that carries it.
+ *
+ * `has_more` and `truncated` say that rows were withheld but not why, by what,
+ * or how to get them: the row-compaction path emits no continuation cursor, so
+ * without this an explicitly requested unbounded read is silently downgraded and
+ * the only working recovery is never named.
+ */
+function attachReadOutputTruncationDisclosure(
+  projected: Record<string, unknown>,
+  resolved: PmResolvedReadOutputDimensions,
+  receipt: PmReadOutputReceipt,
+  bindingBudget: {
+    source: PmReadOutputDimensionSource | "session";
+    tokens: number;
+  },
+): void {
+  if (!receipt.rows_compacted) return;
+  const overridden =
+    resolved.amount?.value === "unbounded" ? (["amount"] as const) : [];
+  projected.output_budget_truncation = {
+    reason: "output_budget_reached",
+    budget_source: bindingBudget.source,
+    budget_tokens: bindingBudget.tokens,
+    overridden_dimensions: overridden,
+    compacted_row_paths: receipt.compacted_row_paths!,
+    restore_with:
+      "Re-run with --output-budget unbounded for the complete result.",
+  };
+}
+
 /** Apply universal field, row, and token bounds and attach an exact receipt. */
 export function applyReadOutputDimensions<
   Result extends Record<string, unknown>,
@@ -1184,6 +1367,12 @@ export function applyReadOutputDimensions<
       receipt,
       bindingBudget.tokens,
     );
+    attachReadOutputTruncationDisclosure(
+      projected,
+      resolved,
+      receipt,
+      bindingBudget,
+    );
     if (session !== undefined) {
       projected = attachReadOutputSessionContracts(projected, session, receipt);
     }
@@ -1197,6 +1386,7 @@ export function applyReadOutputDimensions<
       requested,
       session,
       bindingBudget,
+      receipt.estimated_tokens,
     ) as PmReadOutputResult<Result>;
   }
   return projected as Result & {

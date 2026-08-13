@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- The degradation ladder only sees top-level arrays, so the governance reads whose bulk is nested skip every intermediate rung and return nothing at all ([pm-kyjdne](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kyjdne.toon))
+- A budget-truncated read reports that rows are missing without a cursor, a recovery, or any sign that it overrode the caller's explicit request for all of them ([pm-jt8aa2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jt8aa2.toon))
+- The canonical spelling the output contract tells agents to adopt returns every row with every field stripped, and only the one surface that validates its selectors refuses it ([pm-eugaqy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eugaqy.toon))
 - Every core and first-party package command declares an attributable agent intent ([pm-7i97c3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7i97c3.toon))
 - Exact command-path summaries expose intent, flags, and format-aware output ceilings ([pm-pmrae8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmrae8.toon))
 - Default output ceilings bind representative read surfaces with depth-heavy negative controls ([pm-s2h0mq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s2h0mq.toon))

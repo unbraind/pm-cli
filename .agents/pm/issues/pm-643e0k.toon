@@ -1,0 +1,21 @@
+id: pm-643e0k
+title: Detect extension-host pm-cli version skew before a workspace reports healthy
+description: "GH-1003 proves a project can contain a pinned host @unbrained/pm-cli plus a newer nested extension copy while pm health reports ok. Add an SDK-owned dependency-resolution census and health finding that names privacy-safe package paths and versions whenever an active extension resolves a different host copy, with npm and pnpm layouts covered."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:sdk",dependency-integrity,extensions,health
+created_at: "2026-08-13T22:03:33.719Z"
+updated_at: "2026-08-13T22:03:33.719Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: pm health reports every distinct resolvable @unbrained/pm-cli copy relevant to an installed extension; a host/extension version mismatch cannot return a clean extensions check; clean deduplicated and workspace-linked installs stay green; npm and pnpm nested layouts have temporary-project acceptance coverage; GH-1003 is linked in evidence
+parent: pm-usfg
+risk: high
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-iqq0,discovered_from,"2026-08-13T22:03:33.719Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-13T22:03:33.719Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-13T22:03:33.719Z","harness:codex","Duplicate check: exhaustive all-status search found extension authoring and health ancestors but no item owning host-copy version skew; GH-1003 is the canonical external report."
+body: ""
