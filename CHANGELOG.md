@@ -2,8 +2,20 @@
 
 ## Unreleased
 
+### Fixed
+
+- Unsupported assurance triggers bypass the typed evaluation-refusal boundary and surface as high-severity Sentry faults ([pm-9yhl2v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9yhl2v.toon))
+- The ordering-cycle finding names the items in the cycle and not the contradiction that creates it, so its remediation hint cannot be executed without re-deriving the cause by hand ([pm-xvt7ps](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xvt7ps.toon))
+- The edge-count floor is denominated over a population that includes the edges the graph itself calls redundant, so repairing 73 witnessed implied ordering rows and silently relaxing the guard are the same privileged act ([pm-9gzr4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9gzr4r.toon))
+- The graph node floor counts materialized placeholders, so its negative control declares the fully repaired corpus a failure and the gate passes only while a dangling reference exists ([pm-mfvsng](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mfvsng.toon))
+- Two governance loosenings sit in the committed assurance registry with no entry in the append-only workspace audit stream, which freezes every future audited write and is invisible to both validate and health ([pm-h06944](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h06944.toon))
+
 ### Other
 
+- Isolate the merge SDK bundle from focused-entrypoint chunk fanout ([pm-m9gu9r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-m9gu9r.toon))
+- Refresh compatible Greptile 3.4 and TypeScript-ESLint 8.67 tooling ([pm-87hmdw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-87hmdw.toon))
+- The Windows nightly leg cannot separate product defects from harness noise: 744 hardcoded POSIX path literals and 203 raw errno strings in the suite fail on Windows for reasons unrelated to pm behaviour ([pm-j668gl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-j668gl.toon))
+- Graph wave: changelog-safe legacy edge hygiene batch — retire the no-active-blocker sentinel, duplicate spellings, terminal ordering cycles, and dangling terminal references ([pm-hnc9w7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hnc9w7.toon))
 - ADR: Graph structural ratchets measure recorded nodes and informative edges ([pm-dwj33e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-dwj33e.toon))
 
 ## 2026.8.13 - 2026-08-13

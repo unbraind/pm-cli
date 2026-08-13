@@ -1500,9 +1500,11 @@ export async function evaluateAssuranceGate(
   validateAssuranceDocument(document);
   const gateDefinition = document.gates.find((entry) => entry.id === gateId);
   if (!gateDefinition)
-    throw new TypeError(`assurance gate ${gateId} not found`);
+    throw new AssuranceEvaluationRefusalError(
+      `assurance gate ${gateId} not found`,
+    );
   if (!gateDefinition.triggers.includes(options.trigger)) {
-    throw new TypeError(
+    throw new AssuranceEvaluationRefusalError(
       `assurance gate ${gateId} does not declare trigger ${options.trigger}`,
     );
   }
