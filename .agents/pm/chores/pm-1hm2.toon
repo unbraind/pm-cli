@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: ci,pm-cli,release-readiness,security
 created_at: "2026-03-09T12:42:13.949Z"
-updated_at: "2026-07-26T17:01:09.662Z"
+updated_at: "2026-08-13T08:04:26.402Z"
 deadline: "2026-03-10T12:42:13.949Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: high
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: "Release hardening: scoped npm + version policy + CI has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Release hardening: scoped npm + version policy + CI is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/release-hardening-scoped-npm-version-policy-ci
 regression: false
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for Release hardening: scoped npm + version policy + CI."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-i7w2,implements,"2026-07-26T17:01:09.461Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-i7w2,implements,"2026-07-26T17:01:09.461Z"
 comments[2]{created_at,author,text}:
   "2026-03-09T12:42:13.949Z",maintainer-agent,Initiate final release hardening sweep before public launch.
   "2026-03-09T12:56:28.657Z",maintainer-agent,"Evidence: release hardening validations passed. Commands: pnpm version:next => 2026.3.9; pnpm version:check => passed; pnpm security:scan => no credential-like secrets in tracked files (including .agents/pm tracked data); pnpm smoke:npx => passed (2026.3.9); node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/release-readiness-contract.spec.ts => 48/48 passing; pnpm test => 54 files, 541 tests passing; node scripts/run-tests.mjs coverage => 54 files, 541 tests passing at 100% lines/branches/functions/statements."

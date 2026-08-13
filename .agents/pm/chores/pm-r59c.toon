@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: maintenance,pm-cli,release-readiness
 created_at: "2026-03-06T15:28:01.811Z"
-updated_at: "2026-07-26T17:24:41.390Z"
+updated_at: "2026-08-13T08:05:15.117Z"
 deadline: "2026-03-07T15:28:01.811Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: medium
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Release readiness maintenance sweep has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Release readiness maintenance sweep is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-maintenance-sweep
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release readiness maintenance sweep.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-2c8,implements,"2026-07-26T17:24:41.138Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-2c8,implements,"2026-07-26T17:24:41.138Z"
 comments[6]{created_at,author,text}:
   "2026-03-06T15:28:01.811Z",maintainer-agent,Starting maintainer run with bootstrap baseline and contract drift detection.
   "2026-03-06T15:28:12.912Z",maintainer-agent,"Bootstrap complete: selected PM_CMD=node dist/cli.js; PM_AUTHOR=maintainer-agent; baseline build and version checks passed."

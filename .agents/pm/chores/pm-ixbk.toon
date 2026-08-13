@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:ci","area:release",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness
 created_at: "2026-03-08T21:16:00.083Z"
-updated_at: "2026-07-26T17:16:51.784Z"
+updated_at: "2026-08-13T08:04:56.151Z"
 deadline: "2026-03-09T21:16:00.083Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: low
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Add package.json npm metadata and GitHub community files has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add package.json npm metadata and GitHub community files is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: v0.1
 component: project-management/add-package-json-npm-metadata-and-github-communi
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add package.json npm metadata and GitHub community files.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-8a2s,implements,"2026-07-26T17:16:51.530Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-8a2s,implements,"2026-07-26T17:16:51.530Z"
 comments[2]{created_at,author,text}:
   "2026-03-08T21:16:00.083Z",maintainer-agent,Missing npm metadata fields (repository/bugs/homepage/author) affect how npm displays the package. Dependabot and GitHub templates are standard for production open-source.
   "2026-03-08T21:18:21.635Z",maintainer-agent,"Implementation complete. Changes: (1) package.json - added repository/bugs/homepage/author fields and expanded keywords with ai/git-native/task-tracker/coding-agents. (2) .github/ISSUE_TEMPLATE/bug-report.yml - structured bug report template with version/OS/repro fields. (3) .github/ISSUE_TEMPLATE/feature-request.yml - feature request template with problem/solution/area fields. (4) .github/PULL_REQUEST_TEMPLATE.md - PR checklist including pm item links and test evidence. (5) .github/dependabot.yml - weekly npm+GitHub Actions updates. (6) CHANGELOG.md updated. Tests: 535 passing, 100% coverage maintained."

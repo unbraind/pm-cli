@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:testing",code,"milestone:6",pm-cli,"priority:1",tests
 created_at: "2026-03-06T21:31:15.657Z"
-updated_at: "2026-07-26T17:11:19.121Z"
+updated_at: "2026-08-13T08:04:44.940Z"
 deadline: "2026-03-08T18:00:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: medium
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Optimize test-all dedupe across timeout variants has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Optimize test-all dedupe across timeout variants is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/optimize-test-all-dedupe-across-timeout-variants
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Optimize test-all dedupe across timeout variants.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-2p6q,implements,"2026-07-26T17:11:14.709Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-2p6q,implements,"2026-07-26T17:11:14.709Z"
 comments[6]{created_at,author,text}:
   "2026-03-06T21:31:15.657Z",maintainer-agent,"Why this exists: release sweeps run too long due to timeout-variant duplicate linked tests."
   "2026-03-06T21:31:23.205Z",maintainer-agent,"Planned change-set: align docs and implementation so test-all dedupe key ignores timeout metadata and uses deterministic effective timeout when running the retained command."

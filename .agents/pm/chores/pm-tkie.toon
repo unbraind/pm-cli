@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:maintenance","milestone:6",pm-cli,release-readiness
 created_at: "2026-03-06T15:56:24.745Z"
-updated_at: "2026-07-26T17:26:24.864Z"
+updated_at: "2026-08-13T08:05:18.219Z"
 deadline: "2026-03-07T15:56:24.745Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: medium
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Release-readiness maintenance loop 2026-03-06 has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Release-readiness maintenance loop 2026-03-06 is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-maintenance-loop-2026-03-06
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-06.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-8a2s,implements,"2026-07-26T17:26:24.558Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-8a2s,implements,"2026-07-26T17:26:24.558Z"
 comments[4]{created_at,author,text}:
   "2026-03-06T15:56:24.745Z",maintainer-agent,Queue is empty and this item captures the current maintenance iteration.
   "2026-03-06T15:58:11.782Z",maintainer-agent,"Planned changeset: add release-readiness contract coverage that enforces update --status closed rejection and close-command guidance per PRD workflow."

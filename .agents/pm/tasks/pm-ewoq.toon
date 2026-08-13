@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:pi",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-09T11:39:51.674Z"
-updated_at: "2026-07-26T17:13:16.837Z"
+updated_at: "2026-08-13T08:04:48.802Z"
 deadline: "2026-03-10T11:39:51.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: medium
 confidence: high
 sprint: maintainer-loop
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: "Pi wrapper workflow preset: close-task has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Pi wrapper workflow preset: close-task is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: v0.1
 component: project-management/pi-wrapper-workflow-preset-close-task
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for Pi wrapper workflow preset: close-task."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-2p6q,implements,"2026-07-26T17:13:16.547Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-2p6q,implements,"2026-07-26T17:13:16.547Z"
 comments[5]{created_at,author,text}:
   "2026-03-09T11:39:51.674Z",maintainer-agent,Why this exists current workflow presets cover start and pause while close and release remains manual.
   "2026-03-09T11:40:08.178Z",maintainer-agent,Planned changeset before edits docs first update PRD and README for close-task preset then implement Pi wrapper close-task sequence and add unit tests.

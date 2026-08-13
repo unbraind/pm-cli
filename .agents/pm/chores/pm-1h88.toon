@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: pm-cli,publishing,release,security
 created_at: "2026-03-09T13:02:02.787Z"
-updated_at: "2026-07-26T17:01:06.525Z"
+updated_at: "2026-08-13T08:04:25.798Z"
 deadline: "2026-03-10T13:02:02.787Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: high
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.12
-blocked_by: no-active-blocker
 blocked_reason: Cut public release 2026.3.9 has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Cut public release 2026.3.9 is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/cut-public-release-2026-3-9
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Cut public release 2026.3.9.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-i7w2,implements,"2026-07-26T17:01:06.221Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-i7w2,implements,"2026-07-26T17:01:06.221Z"
 comments[2]{created_at,author,text}:
   "2026-03-09T13:02:02.787Z",maintainer-agent,Execute final launch operations with explicit leak checks and release guardrails.
   "2026-03-09T13:16:11.859Z",maintainer-agent,"Execution evidence: PR https://github.com/unbraind/pm-cli/pull/1 created and merged (merge commit e1c959de4788f707cca0e3c3a16e8cc5ec43d076). Repository visibility switched to PUBLIC via gh repo edit. Safe pre-release checklist passed for tag v2026.3.9: version/tag policy check, security scan, build, typecheck, full tests, sandboxed coverage, npx smoke. Release workflow succeeded: https://github.com/unbraind/pm-cli/actions/runs/22854914140 (publish + GitHub release). npm availability verified: npm view @unbrained/pm-cli@2026.3.9 version => 2026.3.9 and npx --yes @unbrained/pm-cli@2026.3.9 --version => 2026.3.9."

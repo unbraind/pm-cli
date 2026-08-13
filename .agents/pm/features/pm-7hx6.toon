@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:cli",code,docs,"milestone:6",pm-cli,tests
 created_at: "2026-03-08T18:01:45.100Z"
-updated_at: "2026-07-26T17:06:32.924Z"
+updated_at: "2026-08-13T08:04:36.519Z"
 deadline: "2026-03-09T18:01:45.100Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: low
 confidence: high
 sprint: release-hardening
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Add pm completion command for bash/zsh/fish shell completion has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add pm completion command for bash/zsh/fish shell completion is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: v0.1.1
 component: project-management/add-pm-completion-command-for-bash-zsh-fish-shel
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add pm completion command for bash/zsh/fish shell completion.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-v3g3,implements,"2026-07-26T17:06:28.469Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-v3g3,implements,"2026-07-26T17:06:28.469Z"
 comments[2]{created_at,author,text}:
   "2026-03-08T18:01:45.100Z",maintainer-agent,Starting implementation of shell completion command
   "2026-03-08T18:11:41.930Z",maintainer-agent,"Implementation complete. Files changed: src/cli/commands/completion.ts (new, 260 lines), src/cli/commands/index.ts (export added), src/cli/main.ts (command registered), tests/unit/completion-command.spec.ts (new, 47 tests), vitest.config.ts (include added), CHANGELOG.md/README.md/PRD.md (docs updated). Evidence: 522 tests pass at 100% lines/branches/functions/statements coverage. pm completion bash/zsh/fish all output valid scripts. --json mode returns {shell, script, setup_hint}. Unknown shell returns exit code 2."

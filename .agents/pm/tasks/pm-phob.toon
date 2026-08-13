@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:cli","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:0",tests
 created_at: "2026-03-08T00:44:03.331Z"
-updated_at: "2026-07-26T17:23:00.732Z"
+updated_at: "2026-08-13T08:05:10.527Z"
 deadline: "2026-03-10T00:44:03.331Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: medium
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Promote strategic metadata flags into canonical create/update contract has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Promote strategic metadata flags into canonical create/update contract is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/promote-strategic-metadata-flags-into-canonical-
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Promote strategic metadata flags into canonical create/update contract.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-2p6q,implements,"2026-07-26T17:23:00.447Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-2p6q,implements,"2026-07-26T17:23:00.447Z"
 comments[5]{created_at,author,text}:
   "2026-03-08T00:44:03.331Z",maintainer-agent,Needed to support richer all-fields maintainer workflows and business-context planning metadata.
   "2026-03-08T00:44:19.299Z",maintainer-agent,"Planned change-set: docs-first promotion of selected planned flags (order/rank, definition-of-ready, goal/objective, value/impact/outcome/why-now), then schema+CLI create/update wiring with none-unset semantics and updated release-contract/unit/integration tests."

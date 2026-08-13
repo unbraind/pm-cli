@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:search",code,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-07T10:27:27.606Z"
-updated_at: "2026-07-26T17:16:14.887Z"
+updated_at: "2026-08-13T08:04:53.716Z"
 deadline: "2026-03-08T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: medium
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: "M4: Honor embedding batch + retry settings in semantic indexing has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M4: Honor embedding batch + retry settings in semantic indexing is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/honor-embedding-batch-retry-settings-in-semantic
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Honor embedding batch + retry settings in semantic indexing.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-2p6q,implements,"2026-07-26T17:16:14.714Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-2p6q,implements,"2026-07-26T17:16:14.714Z"
 comments[4]{created_at,author,text}:
   "2026-03-07T10:27:27.606Z",maintainer-agent,Roadmap gap settings expose embedding_batch_size and scanner_max_batch_retries but command-path semantic indexing does not consume them yet.
   "2026-03-07T10:27:34.029Z",maintainer-agent,"Planned change-set: docs-first clarify that semantic reindex and mutation refresh honor embedding_batch_size and scanner_max_batch_retries, then implement shared batched embedding retry helper and add deterministic unit coverage for retry exhaustion behavior."

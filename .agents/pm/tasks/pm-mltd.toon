@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs",pm-cli,quickstart,readme
 created_at: "2026-03-12T23:22:33.164Z"
-updated_at: "2026-07-26T17:20:25.070Z"
+updated_at: "2026-08-13T08:05:02.512Z"
 deadline: "2026-03-13T23:22:33.164Z"
 assignee: codex-maintainer
 author: codex-maintainer
@@ -26,7 +26,6 @@ risk: low
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.12
-blocked_by: no-active-blocker
 blocked_reason: Expand README quick start create example to full field surface has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Expand README quick start create example to full field surface is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-maintainer
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: documentation
 regression: true
 customer_impact: Users should understand the full pm create capability without reading source code.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-nhgt,implements,"2026-07-26T17:20:24.781Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-nhgt,implements,"2026-07-26T17:20:24.781Z"
 comments[4]{created_at,author,text}:
   "2026-03-12T23:22:33.164Z",codex-maintainer,Track public README quick start expansion and pre-push leak review.
   "2026-03-12T23:25:16.747Z",codex-maintainer,"Constraint update from user: markdown files are documentation only and must not be treated as contract sources; verification for this work will rely on pm runtime behavior and source/tests instead."

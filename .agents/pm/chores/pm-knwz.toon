@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:docs","area:tests","milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T23:07:13.604Z"
-updated_at: "2026-07-26T17:18:39.103Z"
+updated_at: "2026-08-13T08:04:58.584Z"
 deadline: "2026-03-08T23:07:13.604Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: high
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Release-readiness maintenance loop 2026-03-08 run 1 (chore archival variant) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Release-readiness maintenance loop 2026-03-08 run 1 (chore archival variant) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,9 +40,9 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-maintenance-loop-2026-03-08-ru
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-08 run 1 (chore archival variant).
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-8a2s,implements,"2026-07-26T17:18:38.862Z",null,null
-  pm-vz16,related,"2026-07-26T17:18:38.862Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-8a2s,implements,"2026-07-26T17:18:38.862Z"
+  pm-vz16,related,"2026-07-26T17:18:38.862Z"
 comments[4]{created_at,author,text}:
   "2026-03-07T23:07:13.604Z",maintainer-agent,This run is to ensure project remains at 100% and release-ready.
   "2026-03-07T23:58:55.355Z",maintainer-agent,"Sweep complete: 51 test files, 443 tests passed, 100% coverage (lines/branches/functions/statements). Build succeeded. CLI help and PRD commands fully aligned."

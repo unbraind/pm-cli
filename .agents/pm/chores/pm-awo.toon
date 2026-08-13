@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:verification",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:14:58.875Z"
-updated_at: "2026-07-26T17:09:38.511Z"
+updated_at: "2026-08-13T08:04:40.392Z"
 deadline: "2026-03-05T11:19:39.284Z"
 assignee: steve
 author: steve
@@ -26,7 +26,6 @@ risk: medium
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Create contract verification sample has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Create contract verification sample is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: steve
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/create-contract-verification-sample
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Create contract verification sample.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-2xl,implements,"2026-07-26T17:09:38.269Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-2xl,implements,"2026-07-26T17:09:38.269Z"
 comments[3]{created_at,author,text}:
   "2026-03-04T11:19:44.696Z",cursor-maintainer,"Plan: validate release-readiness create-contract behavior against current docs and CLI help, verify sandbox-safe test execution, then close with fresh evidence."
   "2026-03-04T11:21:30.722Z",cursor-maintainer,"Verified latest local package is globally available: ran npm i -g . and confirmed pm --version=0.1.0."

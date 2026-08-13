@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: docs,readme,release
 created_at: "2026-03-12T22:16:28.392Z"
-updated_at: "2026-07-26T17:27:02.096Z"
+updated_at: "2026-08-13T08:05:20.134Z"
 deadline: "2026-03-26T22:16:28.392Z"
 assignee: codex-agent
 author: codex-agent
@@ -26,7 +26,6 @@ risk: low
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.12
-blocked_by: no-active-blocker
 blocked_reason: Rewrite README for public users has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Rewrite README for public users is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: documentation
 regression: true
 customer_impact: Lower onboarding friction for public users
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-8a2s,implements,"2026-07-26T17:27:01.830Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-8a2s,implements,"2026-07-26T17:27:01.830Z"
 comments[3]{created_at,author,text}:
   "2026-03-12T22:16:28.392Z",codex-agent,Start README rewrite focused on public-facing docs and removal of maintainer-only detail.
   "2026-03-12T22:18:01.333Z",codex-agent,"Rewrote README into a concise public-facing document. Removed maintainer bootstrap, internal operational detail, and person-specific examples; retained install, valid quick start, and doc links."

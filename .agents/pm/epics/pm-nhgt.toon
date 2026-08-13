@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:cli","area:docs","area:input","area:ux",pm-cli
 created_at: "2026-04-01T10:11:50.649Z"
-updated_at: "2026-08-10T11:53:01.536Z"
+updated_at: "2026-08-13T08:05:06.348Z"
 deadline: "2026-04-11T10:11:50.649Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,6 @@ risk: medium
 confidence: high
 sprint: archive-2026w14
 release: v2026.5.1
-blocked_by: no-active-blocker
 blocked_reason: Harden entry and add input resilience has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Harden entry and add input resilience is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent

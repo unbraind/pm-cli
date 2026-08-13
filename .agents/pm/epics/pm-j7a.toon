@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:program",core,"milestone:root",pm-cli
 created_at: "2026-02-17T22:59:06.628Z"
-updated_at: "2026-08-10T11:52:33.780Z"
+updated_at: "2026-08-13T08:04:57.418Z"
 deadline: "2026-03-19T22:59:06.628Z"
 assignee: steve
 author: steve
@@ -25,7 +25,6 @@ risk: high
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Build pm-cli v1 has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Build pm-cli v1 is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: steve

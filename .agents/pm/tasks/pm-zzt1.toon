@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: "area:cli","area:ux",code,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-08T22:07:09.126Z"
-updated_at: "2026-07-26T17:31:27.450Z"
+updated_at: "2026-08-13T08:05:26.860Z"
 deadline: "2026-04-10T11:57:41.055Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -25,7 +25,6 @@ risk: low
 confidence: high
 sprint: release-polish
 release: v2026.5.1
-blocked_by: no-active-blocker
 blocked_reason: Differentiate pm list (active-only) from pm list-all (all items) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Differentiate pm list (active-only) from pm list-all (all items) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -40,8 +39,8 @@ fixed_version: v0.1
 component: project-management/differentiate-pm-list-active-only-from-pm-list-a
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Differentiate pm list (active-only) from pm list-all (all items).
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-8a2s,implements,"2026-07-26T17:31:27.222Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-8a2s,implements,"2026-07-26T17:31:27.222Z"
 comments[6]{created_at,author,text}:
   "2026-03-08T22:07:09.126Z",maintainer-agent,"pm list and pm list-all are currently identical. Fix: pm list should exclude terminal statuses by default."
   "2026-03-08T22:12:48.671Z",maintainer-agent,"Implementation complete. Changed: list.ts (excludeTerminal option in ListOptions + applyFilters), main.ts (normalizeListOptions returns ListOptions, registerListCommand adds excludeTerminal param, pm list wired with excludeTerminal=true). Updated: PRD.md, README.md (new pm list vs pm list-all section), CHANGELOG.md. Tests: added excludes-terminal-statuses test case in list-command.spec.ts. Result: 536/536 tests pass, 100% coverage maintained."

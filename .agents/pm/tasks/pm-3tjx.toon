@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:ci","area:docs",maintenance,"milestone:6",pm-cli,release-readiness
 created_at: "2026-03-08T16:53:26.858Z"
-updated_at: "2026-07-26T17:03:25.221Z"
+updated_at: "2026-08-13T08:04:32.384Z"
 deadline: "2026-03-09T16:53:26.858Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: low
 confidence: high
 sprint: maintenance-loop
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Release-readiness maintenance loop 2026-03-08 run 2 has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Release-readiness maintenance loop 2026-03-08 run 2 is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,9 +40,9 @@ fixed_version: v0.1
 component: project-management/release-readiness-maintenance-loop-2026-03-08-ru
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-08 run 2.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-8a2s,implements,"2026-07-26T17:03:24.941Z",null,null
-  pm-vz16,related,"2026-07-26T17:03:24.941Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-8a2s,implements,"2026-07-26T17:03:24.941Z"
+  pm-vz16,related,"2026-07-26T17:03:24.941Z"
 comments[4]{created_at,author,text}:
   "2026-03-08T16:53:26.858Z",maintainer-agent,"Starting from fully closed state with 100% coverage. Key gap: CHANGELOG.md only has 2 bullet points but dozens of features have been added. Also pm health warns about missing search directory."
   "2026-03-08T17:05:43.533Z",maintainer-agent,"Changes made: 1) Fixed missing .agents/pm/search directory via pm init (pm health now ok: true with no warnings). 2) Updated CHANGELOG.md with comprehensive feature list covering all additions since initial 0.1.0 baseline - now documents all CLI commands, schema fields, search, extensions, built-ins, Pi wrapper, safety guardrails, and CI tooling. 3) Updated PRD milestone markers from [~] to [x] for M4 Search (all 5 items) and M5 Extensions (all 4 remaining [~] items) since the baseline implementations are complete. 4) Added comprehensive Extension Development section to CONTRIBUTING.md. 5) Set project definition-of-done criteria."

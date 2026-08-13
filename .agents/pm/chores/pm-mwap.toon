@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:ci","area:security",code,"milestone:6",pm-cli,tests
 created_at: "2026-03-08T21:48:02.472Z"
-updated_at: "2026-07-26T17:20:40.193Z"
+updated_at: "2026-08-13T08:05:03.781Z"
 deadline: "2026-03-09T21:48:02.472Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: low
 confidence: high
 sprint: maintainer-loop
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Add npm provenance attestation to release workflow has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add npm provenance attestation to release workflow is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: v0.1.0
 component: project-management/add-npm-provenance-attestation-to-release-workfl
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add npm provenance attestation to release workflow.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-8a2s,implements,"2026-07-26T17:20:39.933Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-8a2s,implements,"2026-07-26T17:20:39.933Z"
 comments[2]{created_at,author,text}:
   "2026-03-08T21:48:02.472Z",maintainer-agent,"release.yml already has id-token: write permission. Adding --provenance to npm publish command is a one-line change."
   "2026-03-08T21:49:07.159Z",maintainer-agent,"Implemented: npm publish --access public --provenance in release.yml. CHANGELOG updated. 535/535 tests pass. Contract test still passes (contains check on 'run: npm publish' matches the full command)."

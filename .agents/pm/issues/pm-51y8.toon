@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: dependabot,github-alert,security,undici
 created_at: "2026-03-12T22:34:30.344Z"
-updated_at: "2026-07-26T17:04:23.511Z"
+updated_at: "2026-08-13T08:04:34.104Z"
 deadline: "2026-03-26T22:34:30.344Z"
 author: codex-agent
 estimated_minutes: 30
@@ -25,7 +25,6 @@ risk: medium
 confidence: high
 sprint: archive-2026w14
 release: v2026.5.1
-blocked_by: no-active-blocker
 blocked_reason: Track GitHub Dependabot alert #13 for undici (GHSA-g9mf-h72j-4rw9) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Track GitHub Dependabot alert #13 for undici (GHSA-g9mf-h72j-4rw9) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: github-dependabot
@@ -40,8 +39,8 @@ fixed_version: 6.23.0
 component: "dependency:undici"
 regression: true
 customer_impact: Runtime dependency vulnerabilities may affect CLI users and maintainers until remediated.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-i7w2,implements,"2026-07-26T17:04:23.289Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-i7w2,implements,"2026-07-26T17:04:23.289Z"
 comments[4]{created_at,author,text}:
   "2026-03-12T22:34:30.344Z",codex-agent,Imported GitHub Dependabot alert GHSA-g9mf-h72j-4rw9.
   "2026-03-12T23:19:23.573Z",cursor-agent,"Verification: pnpm audit --prod reports 'No known vulnerabilities found' on 2026-03-12. Current lockfile resolves undici@7.22.0, fast-json-patch@3.1.1, and zod@4.3.6, meeting or exceeding fixed versions recorded in this alert."

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
 created_at: "2026-03-07T14:01:19.143Z"
-updated_at: "2026-07-26T17:10:12.136Z"
+updated_at: "2026-08-13T08:04:43.649Z"
 deadline: "2026-03-21T14:01:19.143Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: medium
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: "M5 roadmap: Broader override surfaces has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 roadmap: Broader override surfaces is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/m5-roadmap-broader-override-surfaces
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 roadmap: Broader override surfaces."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-hbc1,implements,"2026-07-26T17:10:11.849Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-hbc1,implements,"2026-07-26T17:10:11.849Z"
 comments[3]{created_at,author,text}:
   "2026-03-07T21:02:57.694Z",maintainer-agent,"Planned changeset: docs-first update PRD/README override-surface contract to include richer command execution context for command and renderer overrides, then implement loader/runtime context plumbing with regression tests before running pm test and pm test-all sweeps."
   "2026-03-07T21:05:48.759Z",maintainer-agent,"Docs-first updates landed in PRD.md and README.md: override/renderer contract now states cloned command args/options/global snapshots plus pm_root metadata are available during override execution. Implementation in progress in loader/runtime plumbing and unit tests."

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
 created_at: "2026-03-07T14:01:18.992Z"
-updated_at: "2026-07-26T17:20:02.109Z"
+updated_at: "2026-08-13T08:05:01.351Z"
 deadline: "2026-03-10T21:36:41.713Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: medium
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: "M5 roadmap: Broader call-site expansion for hooks has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 roadmap: Broader call-site expansion for hooks is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/m5-roadmap-broader-call-site-expansion-for-hooks
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 roadmap: Broader call-site expansion for hooks."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-hbc1,implements,"2026-07-26T17:20:01.841Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-hbc1,implements,"2026-07-26T17:20:01.841Z"
 comments[4]{created_at,author,text}:
   "2026-03-07T21:36:53.800Z",maintainer-agent,"Planned change-set: docs-first update PRD and README hook lifecycle call-site contract to include init directory bootstrap writes, then implement runInit onWrite hook dispatch for directory ensure operations and add unit regression coverage for deterministic warning propagation."
   "2026-03-07T21:51:23.643Z",maintainer-agent,"Implemented docs-first and code/test updates for hook lifecycle call-site expansion: PRD/README now include init directory bootstrap ensure-write dispatch, runInit now dispatches onWrite hooks for each required directory ensure operation, and tests/unit/init-command.spec.ts adds deterministic regression coverage for trace + warning behavior."

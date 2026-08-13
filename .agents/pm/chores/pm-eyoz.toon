@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:docs","area:tests","milestone:6",pm-cli,"priority:0"
 created_at: "2026-03-09T02:09:08.466Z"
-updated_at: "2026-07-26T17:13:19.958Z"
+updated_at: "2026-08-13T08:04:49.397Z"
 deadline: "2026-03-10T02:09:08.466Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: high
 confidence: high
 sprint: maintainer-loop-2026-03-09-4
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Maintain release readiness 2026-03-09 (Run 4) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Maintain release readiness 2026-03-09 (Run 4) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,9 +40,9 @@ fixed_version: v0.1
 component: project-management/maintain-release-readiness-2026-03-09-run-4
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Maintain release readiness 2026-03-09 (Run 4).
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-7vr0,related,"2026-07-26T17:13:19.769Z",null,null
-  pm-t6f7,implements,"2026-07-26T17:13:19.769Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-7vr0,related,"2026-07-26T17:13:19.769Z"
+  pm-t6f7,implements,"2026-07-26T17:13:19.769Z"
 comments[3]{created_at,author,text}:
   "2026-03-09T02:09:08.466Z",maintainer-agent,This run is to ensure project remains at 100 percent coverage and release-ready.
   "2026-03-09T02:24:50.660Z",maintainer-agent,"Evidence: pm test pm-eyoz --run passed. pm test-all --status in_progress passed with 1 test. pm test-all --status closed passed all non-skipped tests. Coverage remains 100% lines/branches/functions/statements."

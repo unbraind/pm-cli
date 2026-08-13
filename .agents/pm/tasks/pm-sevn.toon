@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: pm-cli,pm-data,release-readiness,runtime,tests
 created_at: "2026-03-12T22:55:06.526Z"
-updated_at: "2026-07-26T17:25:29.282Z"
+updated_at: "2026-08-13T08:05:17.669Z"
 deadline: "2026-03-13T22:55:06.526Z"
 assignee: codex-maintainer
 author: codex-maintainer
@@ -26,7 +26,6 @@ risk: medium
 confidence: medium
 sprint: archive-2026w14
 release: v2026.3.12
-blocked_by: no-active-blocker
 blocked_reason: Replace docs-as-contract tests with pm-data/runtime checks has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Replace docs-as-contract tests with pm-data/runtime checks is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-maintainer
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: tests/runtime
 regression: true
 customer_impact: Documentation can evolve without breaking contract tests when behavior has not changed.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-u919,implements,"2026-07-26T17:25:29.039Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-u919,implements,"2026-07-26T17:25:29.039Z"
 comments[4]{created_at,author,text}:
   "2026-03-12T22:55:06.526Z",codex-maintainer,Track removal of prose-doc contract coupling from release-readiness and help integration coverage.
   "2026-03-12T23:03:15.471Z",codex-maintainer,Refactored release-readiness/help coverage away from README/PRD/AGENTS contract parsing and toward runtime behavior plus sandboxed pm-data flows. Updated supporting repo language to describe pm data and runtime tests as the source of truth.

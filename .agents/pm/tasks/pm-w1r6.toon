@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:cli",code,doc,pm-cli,tests
 created_at: "2026-03-07T13:10:28.926Z"
-updated_at: "2026-07-26T17:28:27.003Z"
+updated_at: "2026-08-13T08:05:23.766Z"
 deadline: "2026-03-09T13:10:28.926Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,7 +26,6 @@ risk: high
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Add --title and -t support for pm update has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add --title and -t support for pm update is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
@@ -41,8 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/add-title-and-t-support-for-pm-update
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add --title and -t support for pm update.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-2p6q,implements,"2026-07-26T17:28:26.702Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-2p6q,implements,"2026-07-26T17:28:26.702Z"
 comments[3]{created_at,author,text}:
   "2026-03-07T13:10:28.926Z",maintainer-agent,Users should be able to update item title without editing files manually
   "2026-03-07T13:15:39.434Z",unknown,"Implemented --title/-t support for pm update. Updated PRD and README command contract, added option parsing in src/cli/main.ts and src/cli/commands/update.ts, added Pi wrapper action mapping. Tests updated to assert the new flag and title modification behavior."
@@ -51,13 +50,20 @@ notes[1]{created_at,author,text}:
   "2026-03-07T13:10:28.926Z",maintainer-agent,Need to update PRD and README first then cli and tests
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:49.908Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[6]{path,scope,note}:
-  PRD.md,project,null
-  README.md,project,null
-  src/cli/commands/update.ts,project,null
-  src/cli/main.ts,project,null
-  tests/integration/release-readiness-runtime.spec.ts,project,migrated linked path
-  tests/unit/update-command.spec.ts,project,null
+files[6]:
+  - path: PRD.md
+    scope: project
+  - path: README.md
+    scope: project
+  - path: src/cli/commands/update.ts
+    scope: project
+  - path: src/cli/main.ts
+    scope: project
+  - path: tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    note: migrated linked path
+  - path: tests/unit/update-command.spec.ts
+    scope: project
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs coverage,project,3600
   node scripts/run-tests.mjs test,project,240

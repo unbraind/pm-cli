@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:meta",pm-cli,release,release-readiness
 created_at: "2026-02-17T23:36:55.193Z"
-updated_at: "2026-08-10T11:52:38.602Z"
+updated_at: "2026-08-13T08:05:08.749Z"
 deadline: "2026-03-03T23:36:55.193Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -25,7 +25,6 @@ risk: high
 confidence: high
 sprint: archive-2026w14
 release: v2026.3.9
-blocked_by: no-active-blocker
 blocked_reason: Release readiness refactor has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Release readiness refactor is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: cursor-agent

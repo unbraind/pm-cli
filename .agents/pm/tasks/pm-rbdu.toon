@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: pm-cli,pm-data,security,tracker
 created_at: "2026-03-12T23:13:24.830Z"
-updated_at: "2026-07-26T17:24:55.429Z"
+updated_at: "2026-08-13T08:05:15.736Z"
 deadline: "2026-03-13T23:13:24.830Z"
 assignee: codex-maintainer
 author: codex-maintainer
@@ -26,7 +26,6 @@ risk: medium
 confidence: medium
 sprint: archive-2026w14
 release: v2026.3.12
-blocked_by: no-active-blocker
 blocked_reason: Track and commit imported pm issue/history files has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Track and commit imported pm issue/history files is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-maintainer
@@ -41,9 +40,9 @@ fixed_version: archive-2026q2
 component: "tracker:pm-data"
 regression: true
 customer_impact: Repository users can inspect current security-tracker items directly from git history.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-4ydh,related,"2026-07-26T17:24:55.146Z",null,null
-  pm-i7w2,implements,"2026-07-26T17:24:55.146Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-4ydh,related,"2026-07-26T17:24:55.146Z"
+  pm-i7w2,implements,"2026-07-26T17:24:55.146Z"
 comments[3]{created_at,author,text}:
   "2026-03-12T23:13:24.830Z",codex-maintainer,Audit imported tracker files for private data before committing them.
   "2026-03-12T23:14:13.187Z",codex-maintainer,"Audited 13 imported issue files and 13 matching history logs. No credentials, tokens, private keys, JWT-like strings, emails, or auth-token assignments were found. Content is limited to Dependabot advisory metadata, package paths, and repository alert reference URLs."

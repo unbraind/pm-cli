@@ -6,7 +6,7 @@ status: canceled
 priority: 0
 tags[4]: "area:program",core,"milestone:root",pm-cli
 created_at: "2026-02-17T22:58:48.411Z"
-updated_at: "2026-07-26T22:17:32.023Z"
+updated_at: "2026-08-13T07:49:36.797Z"
 deadline: "2026-03-19T22:58:48.411Z"
 author: steve
 estimated_minutes: 2400
@@ -24,7 +24,6 @@ risk: medium
 confidence: medium
 sprint: legacy-archive
 release: v2026.3.9
-blocked_by: backlog-sequencing
 blocked_reason: sequencing-dependency
 unblock_note: align-with-canonical-roadmap
 reporter: steve
@@ -39,11 +38,11 @@ fixed_version: "2026.2"
 component: program-management
 regression: false
 customer_impact: prevents-duplicate-portfolio-records
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-iuzs,related,"2026-07-26T17:19:33.889Z",null,null
-  pm-r59c,related,"2026-07-26T17:19:33.889Z",null,null
-  pm-vyqe,related,"2026-07-26T17:19:33.889Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:17:31.682Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-iuzs,related,"2026-07-26T17:19:33.889Z"
+  pm-r59c,related,"2026-07-26T17:19:33.889Z"
+  pm-vyqe,related,"2026-07-26T17:19:33.889Z"
+  pm-doxj,blocks,"2026-07-26T22:17:31.682Z"
 comments[3]{created_at,author,text}:
   "2026-02-17T22:58:48.411Z",steve,Root epic exists to coordinate milestone delivery.
   "2026-02-17T23:16:56.401Z",steve,Canceled as duplicate root epic created during an earlier create command failure before history rollback logic was completed.
