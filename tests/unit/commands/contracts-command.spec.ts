@@ -1190,15 +1190,12 @@ describe("contracts command runtime", () => {
       expect(summary.default_max_estimated_tokens).toBeGreaterThan(0);
     }
     expect(
-      summaries.find(
-        (entry) => entry.command === "workspace snapshot create",
-      )?.intent,
+      summaries.find((entry) => entry.command === "workspace snapshot create")
+        ?.intent,
     ).toBe("Create workspace snapshot.");
     expect(
       summaries.find((entry) => entry.command === "package install")?.intent,
-    ).not.toBe(
-      summaries.find((entry) => entry.command === "package")?.intent,
-    );
+    ).not.toBe(summaries.find((entry) => entry.command === "package")?.intent);
   });
 
   it("contracts every workspace snapshot command path", async () => {
@@ -1242,23 +1239,55 @@ describe("contracts command runtime", () => {
         "guide",
         "ops",
         "reindex",
+        "extension adopt-all",
+        "package adopt-all",
+        "workspace snapshot list",
+        "mystery list",
         "mystery command",
       ]),
     ).toEqual(
       [
         ["completion", "Generate shell completions."],
         ["ctx", "Build context."],
+        ["extension adopt-all", "Adopt all extensions."],
         ["guide", "Show user guides."],
         ["history-compact", "Compact history."],
         ["list-open", "List open work."],
         ["mystery command", "Run mystery command."],
+        ["mystery list", "List mystery."],
         ["ops", "Run operations."],
+        ["package adopt-all", "Adopt all packages."],
         ["packages", "Manage packages."],
         ["reindex", "Refresh search index."],
+        ["workspace snapshot list", "List workspace snapshots."],
       ].map(([command, intent]) =>
         expect.objectContaining({ command, intent }),
       ),
     );
+  });
+
+  it("includes bounded extension flags in exact-path command summaries", () => {
+    const extensionContract = {
+      command: "custom list|custom ls",
+      action: "custom-list",
+      source: { layer: "project", name: "custom" },
+      description: "List custom records.",
+      intent: "List custom records.",
+      arguments: [],
+      flags: [{ flag: "--limit" }, { flag: "--custom-filter" }],
+      examples: [],
+      failure_hints: [],
+    } as const;
+
+    expect(
+      _testOnlyContractsCommand.buildCommandSummarySurface(
+        ["custom list", "custom ls"],
+        [extensionContract],
+      ),
+    ).toEqual([
+      expect.objectContaining({ command: "custom list", flags: ["--limit"] }),
+      expect.objectContaining({ command: "custom ls", flags: ["--limit"] }),
+    ]);
   });
 
   it("normalizes extension flag names defensively", () => {
@@ -2485,8 +2514,7 @@ describe("contracts command runtime", () => {
       expect(result.command_summaries).toEqual([
         expect.objectContaining({
           command: "migrate-asset",
-          intent:
-            "Validate and migrate asset payloads before writing output.",
+          intent: "Validate and migrate asset payloads before writing output.",
           intent_source: "command",
         }),
       ]);

@@ -188,9 +188,6 @@
     }
   },
   "src/sdk/cli-contracts/runtime-contracts.ts": {
-    "complexity": {
-      "count": 1
-    },
     "sonarjs/cognitive-complexity": {
       "count": 1
     }

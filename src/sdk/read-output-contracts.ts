@@ -273,7 +273,7 @@ const LEGACY_FLAGS_BY_COMMAND: Readonly<
     encoding: ["--format"],
   },
   health: {
-    include: ["--brief", "--check-only", "--full", "--summary", "--verbose"],
+    include: ["--brief", "--check-only", "--full", "--summary"],
   },
   deps: {
     include: ["--collapse", "--full", "--summary"],
@@ -295,7 +295,7 @@ const LEGACY_FLAGS_BY_COMMAND: Readonly<
     amount: ["--limit", "--unbounded"],
     encoding: ["--stream"],
   },
-  validate: { include: ["--counts", "--full", "--verbose"] },
+  validate: { include: ["--counts", "--full"] },
   events: {
     include: ["--full"],
     amount: ["--limit"],
@@ -331,10 +331,14 @@ const BEHAVIOR_PRESERVING_MIGRATION_HINTS: Readonly<Record<string, string>> =
       "--max-depth retains graph traversal-depth semantics; --output-limit does not replace it.",
     "--max-paths":
       "--max-paths retains graph path-search semantics; use --output-limit separately to bound returned rows.",
+    "--no-truncate":
+      "--no-truncate is a compatibility alias; prefer --output-limit unbounded.",
     "--offset":
       "--offset retains positional pagination semantics; use --output-limit separately to bound returned rows.",
     "--stream":
       "--stream retains command streaming semantics; --output-format selects only static result encoding.",
+    "--unbounded":
+      "--unbounded is a compatibility alias; prefer --output-limit unbounded.",
   });
 
 function flagSelector(flag: string): string {
@@ -711,13 +715,11 @@ export function resolveReadOutputDimensions(
       options.outputLimit ?? options.output_limit,
       legacyByDimension.amount,
     ),
-    cost:
-      explicitCost ??
-      {
-        source: "default",
-        value:
-          budget.default_max_estimated_tokens_by_format[resolvedOutputFormat],
-      },
+    cost: explicitCost ?? {
+      source: "default",
+      value:
+        budget.default_max_estimated_tokens_by_format[resolvedOutputFormat],
+    },
     encoding,
     legacy_aliases_used: legacyAliasesUsed,
     migration_hints: migrationHints,
@@ -1018,10 +1020,12 @@ function projectReadOutputRows(
 function resolveBindingReadOutputBudget(
   resolved: PmResolvedReadOutputDimensions,
   session: PmReadOutputSessionState | undefined,
-): {
-  source: PmReadOutputDimensionSource | "session";
-  tokens: number;
-} | undefined {
+):
+  | {
+      source: PmReadOutputDimensionSource | "session";
+      tokens: number;
+    }
+  | undefined {
   const budgets: Array<{
     source: PmReadOutputDimensionSource | "session";
     tokens: number;

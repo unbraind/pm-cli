@@ -189,6 +189,16 @@ function commandStdout(args: string[]): string {
       command_summaries: [{ default_max_estimated_tokens: 4_000 }],
     });
   }
+  if (joined.includes("assurance run preset-operations-readiness")) {
+    return JSON.stringify({
+      gate_id: "preset-operations-readiness",
+      trigger: "ci",
+      dry_run: true,
+      verdict: "warn",
+      exit_code: 0,
+      assertions: [],
+    });
+  }
   if (
     joined.includes(
       "comments-audit --full-history --json --output-budget unbounded",
@@ -226,6 +236,8 @@ function mockRuntime(
     exists?: (targetPath: string) => boolean;
     manifestText?: string;
     stdout?: (args: string[]) => string;
+    status?: (args: string[]) => number;
+    stderr?: (args: string[]) => string;
   } = {},
 ): {
   readFileSync: ReturnType<typeof vi.fn>;
@@ -250,9 +262,9 @@ function mockRuntime(
     };
   });
   const runCommand = vi.fn((_command: string, args: string[]) => ({
-    status: 0,
+    status: options.status ? options.status(args) : 0,
     stdout: options.stdout ? options.stdout(args) : commandStdout(args),
-    stderr: "",
+    stderr: options.stderr ? options.stderr(args) : "",
   }));
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
     const actual = await vi.importActual<Record<string, unknown>>(
@@ -974,5 +986,75 @@ describe("scripts/release/token-budget-gate", () => {
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
       "Token budget fixture command did not return JSON",
     );
+  });
+
+  it("rejects an allowed nonzero assurance result without its structured report", async () => {
+    mockRuntime({
+      status: (args) =>
+        args.join(" ").includes("assurance run preset-operations-readiness")
+          ? 1
+          : 0,
+      stdout: (args) =>
+        args.join(" ").includes("assurance run preset-operations-readiness")
+          ? ""
+          : commandStdout(args),
+    });
+    process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
+
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "Token budget fixture command did not return JSON",
+    );
+  });
+
+  it("rejects an undeclared assurance exit status with stderr context", async () => {
+    mockRuntime({
+      status: (args) =>
+        args.join(" ").includes("assurance run preset-operations-readiness")
+          ? 2
+          : 0,
+      stderr: (args) =>
+        args.join(" ").includes("assurance run preset-operations-readiness")
+          ? "unexpected usage failure"
+          : "",
+    });
+    process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
+
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "unexpected exit status 2; expected 0 or 1",
+    );
+  });
+
+  it("rejects malformed assurance gate report fields before measurement", async () => {
+    const validReport = {
+      gate_id: "preset-operations-readiness",
+      trigger: "ci",
+      dry_run: true,
+      verdict: "warn",
+      exit_code: 0,
+      assertions: [],
+    };
+    const malformedReports: unknown[] = [
+      "not-an-object",
+      null,
+      { ...validReport, gate_id: "wrong" },
+      { ...validReport, trigger: "manual" },
+      { ...validReport, dry_run: false },
+      { ...validReport, exit_code: 1 },
+      { ...validReport, verdict: "unknown" },
+      { ...validReport, assertions: null },
+    ];
+    process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
+
+    for (const report of malformedReports) {
+      mockRuntime({
+        stdout: (args) =>
+          args.join(" ").includes("assurance run preset-operations-readiness")
+            ? JSON.stringify(report)
+            : commandStdout(args),
+      });
+      await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+        "did not return the expected assurance gate report",
+      );
+    }
   });
 });

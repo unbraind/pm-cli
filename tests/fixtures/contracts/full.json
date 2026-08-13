@@ -12082,7 +12082,7 @@
         "json": 4500,
         "toon": 3000
       },
-      "intent": "Adopt all extension.",
+      "intent": "Adopt all extensions.",
       "intent_source": "generated"
     },
     {
@@ -12646,7 +12646,7 @@
         "json": 4500,
         "toon": 3000
       },
-      "intent": "Adopt all package.",
+      "intent": "Adopt all packages.",
       "intent_source": "generated"
     },
     {
@@ -13180,7 +13180,7 @@
         "json": 6000,
         "toon": 4000
       },
-      "intent": "List workspace snapshot.",
+      "intent": "List workspace snapshots.",
       "intent_source": "generated"
     },
     {
@@ -28874,7 +28874,7 @@
             },
             {
               "flag": "--no-truncate",
-              "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit unbounded.",
               "visibility": "hidden_alias"
             }
           ]
@@ -29281,11 +29281,6 @@
               "flag": "--summary",
               "migration_hint": "--summary is a compatibility alias; prefer --output-include summary.",
               "visibility": "hidden_alias"
-            },
-            {
-              "flag": "--verbose",
-              "migration_hint": "--verbose is a compatibility alias; prefer --output-include verbose.",
-              "visibility": "hidden_alias"
             }
           ]
         }
@@ -29529,7 +29524,7 @@
             },
             {
               "flag": "--unbounded",
-              "migration_hint": "--unbounded is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--unbounded is a compatibility alias; prefer --output-limit unbounded.",
               "visibility": "hidden_alias"
             }
           ]
@@ -29618,11 +29613,6 @@
             {
               "flag": "--full",
               "migration_hint": "--full is a compatibility alias; prefer --output-include full.",
-              "visibility": "hidden_alias"
-            },
-            {
-              "flag": "--verbose",
-              "migration_hint": "--verbose is a compatibility alias; prefer --output-include verbose.",
               "visibility": "hidden_alias"
             }
           ]
@@ -29848,7 +29838,7 @@
             },
             {
               "flag": "--no-truncate",
-              "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit <n>.",
+              "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit unbounded.",
               "visibility": "hidden_alias"
             },
             {

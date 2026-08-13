@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-13T17:55:17.348Z",
+  "updated_at": "2026-08-13T19:17:31.483Z",
   "entries": [
     {
       "name": "pm-changelog",
@@ -46,25 +46,25 @@
           "json",
           "toon"
         ],
-        "preflight_overrides": 0,
         "renderer_ownership": [
           {
             "format": "json",
             "commands": [
-              "changelog export",
-              "changelog generate"
+              "changelog generate",
+              "changelog export"
             ],
             "result_discriminator": true
           },
           {
             "format": "toon",
             "commands": [
-              "changelog export",
-              "changelog generate"
+              "changelog generate",
+              "changelog export"
             ],
             "result_discriminator": true
           }
         ],
+        "preflight_overrides": 0,
         "preflight_ownership": []
       },
       "installed_at": "2026-05-23T20:26:03.509Z",

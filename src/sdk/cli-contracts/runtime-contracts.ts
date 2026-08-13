@@ -1291,29 +1291,39 @@ function collectExtensionCommandContracts(
     left.localeCompare(right),
   )) {
     const definition = definitionsByCommand.get(command);
-    if (definition) {
-      contracts.push({
-        ...definition,
-        flags:
-          definition.flags.length > 0
-            ? definition.flags
-            : (flagsByCommand.get(command)?.flags ?? []),
-      });
-      continue;
-    }
-    contracts.push({
-      command,
-      action: normalizeActionNameFromCommand(command),
-      source: null,
-      description: null,
-      intent: null,
-      arguments: [],
-      flags: flagsByCommand.get(command)?.flags ?? [],
-      examples: [],
-      failure_hints: [],
-    });
+    contracts.push(
+      buildCollectedExtensionCommandContract(
+        command,
+        definition,
+        flagsByCommand.get(command)?.flags ?? [],
+      ),
+    );
   }
   return contracts;
+}
+
+function buildCollectedExtensionCommandContract(
+  command: string,
+  definition: ExtensionCommandContract | undefined,
+  registeredFlags: CliFlagContract[],
+): ExtensionCommandContract {
+  if (definition) {
+    return {
+      ...definition,
+      flags: definition.flags.length > 0 ? definition.flags : registeredFlags,
+    };
+  }
+  return {
+    command,
+    action: normalizeActionNameFromCommand(command),
+    source: null,
+    description: null,
+    intent: null,
+    arguments: [],
+    flags: registeredFlags,
+    examples: [],
+    failure_hints: [],
+  };
 }
 
 function extensionSchemaPropertyNameFromFlag(
@@ -2554,6 +2564,12 @@ const COMMAND_OPERATION_INTENTS = new Map<string, string>([
   ["uninstall", "Uninstall"],
 ]);
 
+const COMMAND_INTENT_SUBJECT_OVERRIDES = new Map<string, string>([
+  ["extension adopt-all", "extensions"],
+  ["package adopt-all", "packages"],
+  ["workspace snapshot list", "workspace snapshots"],
+]);
+
 function summarizeCommandIntent(
   command: string,
   extensionContracts: readonly ExtensionCommandContract[],
@@ -2569,7 +2585,10 @@ function summarizeCommandIntent(
   const extensionContract = extensionContracts.find((contract) =>
     splitCommandPathAliases(contract.command).includes(command),
   );
-  if (extensionContract?.intent !== null && extensionContract?.intent !== undefined) {
+  if (
+    extensionContract?.intent !== null &&
+    extensionContract?.intent !== undefined
+  ) {
     return { intent: extensionContract.intent, intent_source: "command" };
   }
   if (
@@ -2585,11 +2604,13 @@ function summarizeCommandIntent(
   const operation = tokens.at(-1)!;
   const subject = tokens.slice(0, -1).join(" ");
   const verb = COMMAND_OPERATION_INTENTS.get(operation);
+  const intentSubject =
+    COMMAND_INTENT_SUBJECT_OVERRIDES.get(command) ?? subject;
   return {
     intent:
       verb === undefined || subject.length === 0
         ? `Run ${command}.`
-        : `${verb} ${subject}.`,
+        : `${verb} ${intentSubject}.`,
     intent_source: "generated",
   };
 }
@@ -2613,9 +2634,14 @@ function buildCommandSummarySurface(
           : rootCommand.startsWith("history-")
             ? "history"
             : rootCommand);
-      const availableFlags = new Set(
-        resolveCoreCommandFlags(command).map((contract) => contract.flag),
-      );
+      const availableFlags = new Set([
+        ...resolveCoreCommandFlags(command).map((contract) => contract.flag),
+        ...extensionContracts
+          .filter((contract) =>
+            splitCommandPathAliases(contract.command).includes(command),
+          )
+          .flatMap((contract) => contract.flags.map((flag) => flag.flag)),
+      ]);
       const flags = (
         AGENT_BOOTSTRAP_FLAGS.get(command) ??
         AGENT_BOOTSTRAP_FLAGS.get(canonicalRoot) ??

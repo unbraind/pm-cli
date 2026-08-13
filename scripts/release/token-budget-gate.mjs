@@ -33,17 +33,15 @@ function runCli(cliPath, args, options, allowFailure = false) {
     PM_TELEMETRY_OTEL_DISABLED: "1",
     PM_TELEMETRY_PROMPT: "0",
   };
-  const result = runCommand(process.execPath, [cliPath, ...args], {
+  return runCommand(process.execPath, [cliPath, ...args], {
     cwd: options.workspaceRoot,
     env,
     capture: true,
     allowFailure,
   });
-  return result.stdout;
 }
 
-function runCliJson(cliPath, args, options) {
-  const stdout = runCli(cliPath, args, options);
+function parseCliJson(stdout, args) {
   try {
     return JSON.parse(stdout);
   } catch (error) {
@@ -53,6 +51,10 @@ function runCliJson(cliPath, args, options) {
       `Token budget fixture command did not return JSON: ${args.join(" ")}\n${message}`,
     );
   }
+}
+
+function runCliJson(cliPath, args, options) {
+  return parseCliJson(runCli(cliPath, args, options).stdout, args);
 }
 
 export function mutationId(result, label) {
@@ -182,14 +184,7 @@ function seedFixture(cliPath, options) {
   }
   runCli(
     cliPath,
-    [
-      "assurance",
-      "apply",
-      "operations",
-      "--owner",
-      parentId,
-      "--json",
-    ],
+    ["assurance", "apply", "operations", "--owner", parentId, "--json"],
     options,
   );
   return {
@@ -278,6 +273,7 @@ function commandCorpus(ids) {
       command: "assurance",
       scale_tier: "depth-heavy",
       allow_failure: true,
+      expected_exit_statuses: [0, 1],
       args: [
         "assurance",
         "run",
@@ -469,12 +465,34 @@ function resolveDeclaredBudget(cliPath, command, format, options) {
   const budget =
     result?.command_summaries?.[0]?.default_max_estimated_tokens_by_format?.[
       format
-    ] ??
-    result?.command_summaries?.[0]?.default_max_estimated_tokens;
+    ] ?? result?.command_summaries?.[0]?.default_max_estimated_tokens;
   if (!Number.isFinite(budget) || budget <= 0) {
     fail(`Token budget contract missing for answer command: ${command}`);
   }
   return budget;
+}
+
+function validateToleratedCommandResult(entry, result) {
+  if (!entry.expected_exit_statuses.includes(result.status)) {
+    fail(
+      `Token budget fixture command returned unexpected exit status ${result.status}; expected ${entry.expected_exit_statuses.join(" or ")}: ${entry.args.join(" ")}\n${result.stderr.trim()}`,
+    );
+  }
+  const report = parseCliJson(result.stdout, entry.args);
+  if (
+    typeof report !== "object" ||
+    report === null ||
+    report.gate_id !== entry.args[2] ||
+    report.trigger !== "ci" ||
+    report.dry_run !== true ||
+    report.exit_code !== result.status ||
+    !["pass", "warn", "fail"].includes(report.verdict) ||
+    !Array.isArray(report.assertions)
+  ) {
+    fail(
+      `Token budget fixture command did not return the expected assurance gate report: ${entry.args.join(" ")}`,
+    );
+  }
 }
 
 function measureCorpus(cliPath) {
@@ -488,23 +506,22 @@ function measureCorpus(cliPath) {
     const ids = seedFixture(cliPath, options);
     const contractBudgets = new Map();
     const measurements = commandCorpus(ids).map((entry) => {
-      const stdout = runCli(
+      const result = runCli(
         cliPath,
         entry.args,
         options,
         entry.allow_failure === true,
       );
+      if (entry.allow_failure === true) {
+        validateToleratedCommandResult(entry, result);
+      }
+      const stdout = result.stdout;
       const format = entry.args.includes("--json") ? "json" : "toon";
       const contractBudgetKey = `${entry.command}:${format}`;
       const contractMaxEstimatedTokens =
         entry.kind === "answer"
           ? (contractBudgets.get(contractBudgetKey) ??
-            resolveDeclaredBudget(
-              cliPath,
-              entry.command,
-              format,
-              options,
-            ))
+            resolveDeclaredBudget(cliPath, entry.command, format, options))
           : undefined;
       if (entry.kind === "answer") {
         contractBudgets.set(contractBudgetKey, contractMaxEstimatedTokens);
@@ -540,7 +557,7 @@ function measureCorpus(cliPath) {
             "unbounded",
           ],
           options,
-        ),
+        ).stdout,
       ),
       contract_max_estimated_tokens: resolveDeclaredBudget(
         cliPath,
@@ -577,9 +594,7 @@ export function budgetForMeasurement(measurement, multiplier) {
       ? { max_lines: measurement.max_lines }
       : {}),
     max_bytes: Math.ceil(measurement.bytes * multiplier),
-    max_estimated_tokens: Math.ceil(
-      measurement.estimated_tokens * multiplier,
-    ),
+    max_estimated_tokens: Math.ceil(measurement.estimated_tokens * multiplier),
     ...(measurement.kind === "answer"
       ? {
           command: measurement.command,
@@ -638,8 +653,9 @@ function isMalformedBudget(budget, requireAnswerRatchet) {
     if (!isNonNegativeFinite(budget.max_bytes)) {
       return true;
     }
-    return requireAnswerRatchet &&
-      !isNonNegativeFinite(budget.max_estimated_tokens);
+    return (
+      requireAnswerRatchet && !isNonNegativeFinite(budget.max_estimated_tokens)
+    );
   }
   if (
     typeof budget.command !== "string" ||
@@ -647,9 +663,11 @@ function isMalformedBudget(budget, requireAnswerRatchet) {
   ) {
     return true;
   }
-  return requireAnswerRatchet &&
+  return (
+    requireAnswerRatchet &&
     (!isNonNegativeFinite(budget.max_bytes) ||
-      !isNonNegativeFinite(budget.max_estimated_tokens));
+      !isNonNegativeFinite(budget.max_estimated_tokens))
+  );
 }
 
 function measurementViolation(measurement, budget) {
@@ -680,9 +698,7 @@ function measurementViolation(measurement, budget) {
   ) {
     return `${measurement.id}: ${measurement.estimated_tokens} estimated tokens exceeds ${measurement.command} contract ${measurement.contract_max_estimated_tokens} tokens (${measurement.args.join(" ")})`;
   }
-  if (
-    measurement.estimated_tokens > budget.max_estimated_tokens
-  ) {
+  if (measurement.estimated_tokens > budget.max_estimated_tokens) {
     return `${measurement.id}: ${measurement.estimated_tokens} estimated tokens exceeds budget ${budget.max_estimated_tokens} tokens (${measurement.args.join(" ")})`;
   }
   if (measurement.bytes > budget.max_bytes) {

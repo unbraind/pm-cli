@@ -4,15 +4,19 @@
 
 ### Fixed
 
-- The contracts summary answers 'what is this command for' with a silent placeholder for 32 of 76 canonical commands, so the designated agent cold start carries no intent for 42 percent of the surface ([pm-7i97c3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7i97c3.toon))
-- Contract coverage stops at the top level: 93 of 159 declared command paths carry neither an intent nor a token ceiling, so every consolidation the grammar programme plans moves a command out of the contract ([pm-pmrae8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmrae8.toon))
-- Contract-declared output ceilings are decorative on a real corpus: 10 of 30 read surfaces exceed their own declared token budget, the worst by 104x, and the gate that closed this defect measures a 27-item fixture ([pm-s2h0mq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s2h0mq.toon))
+- Every core and first-party package command declares an attributable agent intent ([pm-7i97c3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7i97c3.toon))
+- Exact command-path summaries expose intent, flags, and format-aware output ceilings ([pm-pmrae8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmrae8.toon))
+- Default output ceilings bind representative read surfaces with depth-heavy negative controls ([pm-s2h0mq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s2h0mq.toon))
 - Two of the three ci-triggered assurance gates never ran on a pull request, so the append-only history assertion that carries the immutability guarantee was evaluated only after merge ([pm-fhifkc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fhifkc.toon))
 - Unsupported assurance triggers bypass the typed evaluation-refusal boundary and surface as high-severity Sentry faults ([pm-9yhl2v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9yhl2v.toon))
 - The ordering-cycle finding names the items in the cycle and not the contradiction that creates it, so its remediation hint cannot be executed without re-deriving the cause by hand ([pm-xvt7ps](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xvt7ps.toon))
 - The edge-count floor is denominated over a population that includes the edges the graph itself calls redundant, so repairing 73 witnessed implied ordering rows and silently relaxing the guard are the same privileged act ([pm-9gzr4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9gzr4r.toon))
 - The graph node floor counts materialized placeholders, so its negative control declares the fully repaired corpus a failure and the gate passes only while a dangling reference exists ([pm-mfvsng](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mfvsng.toon))
 - Two governance loosenings sit in the committed assurance registry with no entry in the append-only workspace audit stream, which freezes every future audited write and is invisible to both validate and health ([pm-h06944](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h06944.toon))
+
+### Security
+
+- GHSA-2v37-7h3g-55p8: pin patched nanoid in the Vite/PostCSS development graph ([pm-5dwz1a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5dwz1a.toon))
 
 ### Other
 
@@ -180,7 +184,6 @@
 
 ### Security
 
-- GHSA-2v37-7h3g-55p8: pin patched nanoid in the Vite/PostCSS development graph ([pm-5dwz1a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5dwz1a.toon))
 - GH-933: nested PM writes in non-PM linked tests can mutate the source project ([pm-alhqbz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-alhqbz.toon))
 
 ### Other

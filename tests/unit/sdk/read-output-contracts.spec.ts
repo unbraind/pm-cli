@@ -182,6 +182,28 @@ describe("read output contracts", () => {
     expect(applyReadOutputDimensions("health", { summary: true }, result)).toBe(
       result,
     );
+    expect(
+      resolveReadOutputDimensions("activity", { unbounded: true }),
+    ).toMatchObject({
+      migration_hints: [
+        "--unbounded is a compatibility alias; prefer --output-limit unbounded.",
+      ],
+    });
+    expect(
+      resolveReadOutputDimensions("list", { truncate: false }),
+    ).toMatchObject({
+      migration_hints: [
+        "--no-truncate is a compatibility alias; prefer --output-limit unbounded.",
+      ],
+    });
+    for (const command of ["health", "validate"] as const) {
+      const contract = PM_READ_OUTPUT_SURFACE_CONTRACTS.find(
+        (entry) => entry.command === command,
+      );
+      expect(
+        contract?.dimensions.include.legacy_aliases.map((entry) => entry.flag),
+      ).not.toContain("--verbose");
+    }
     const contextResult = {
       filters: { token_budget: 64 },
       packing: { token_budget: 64 },
@@ -312,11 +334,7 @@ describe("read output contracts", () => {
     expect(applyReadOutputDimensions("create", {}, result)).toBe(result);
     expect(applyReadOutputDimensions("list", {}, result)).toBe(result);
     expect(
-      applyReadOutputDimensions(
-        "list",
-        { outputBudget: "unbounded" },
-        result,
-      ),
+      applyReadOutputDimensions("list", { outputBudget: "unbounded" }, result),
     ).toBe(result);
     expect(
       applyReadOutputDimensions(
