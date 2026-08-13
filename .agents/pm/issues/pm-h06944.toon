@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[6]: assurance,ci,governance,history,immutability,integrity
 created_at: "2026-08-13T08:59:21.974Z"
-updated_at: "2026-08-13T11:04:36.135Z"
+updated_at: "2026-08-13T11:46:40.789Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#3e72d1e1e1b98ee0c323a3b0"
 author: "harness:claude-code"
@@ -28,9 +28,10 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-hnc9w7,discovered_from,"2026-08-13T08:59:21.974Z","harness:claude-code","cli:create:dep",detected
   pm-mfvsng,verifies,"2026-08-13T08:59:21.974Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-13T08:59:21.974Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-13T09:28:40.440Z","harness:codex","Start evidence 2026-08-13: selected after live all-status orientation of 2,463 items, complete item/history/graph lineage review, and GitHub/security/dependency inventory. This tranche adds SDK-level singleton replay agreement, validate/health reporting, recorded reconciliation/restoration, and negative controls; no unrelated PM item is claimed."
   "2026-08-13T10:42:24.825Z","harness:codex","Verification evidence: exact workspace-state replay and append-only recovery passed 13 focused workspace tests, health and validate integration tests, repository-wide 7,249-test coverage at 100/100/100/100, strict typecheck, contracts, and packed Bun SDK acceptance. The acceptance detected an out-of-band singleton, restored version 1, then proved disk/history agreement. Restore append-failure tests prove compensation for both pre-existing and previously absent documents."
+  "2026-08-13T11:46:40.789Z","harness:codex","Delivery: broad SDK/CLI implementation is under hosted review in PR #996 (https://github.com/unbraind/pm-cli/pull/996) at exact head c61da907be0e9903dd9de41754a4973bc693549a. Keep this item active until exact-head checks and reviewer inventory complete."
 learnings[1]{created_at,author,text}:
   "2026-08-13T10:42:25.632Z","harness:codex","A valid hash chain proves recorded ordering but not that governed singleton files still equal the replayed state. State agreement must be checked separately, and recovery must compensate disk writes if the forward-only audit append fails."
 files[11]{path,scope,note}:

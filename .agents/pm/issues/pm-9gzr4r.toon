@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: enforcement,graph,measurement-ratchet,redundancy,tracker-governance
 created_at: "2026-08-10T20:46:45.822Z"
-updated_at: "2026-08-13T10:42:28.844Z"
+updated_at: "2026-08-13T11:46:39.366Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#3e72d1e1e1b98ee0c323a3b0"
 author: "harness:claude-code"
@@ -25,9 +25,10 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,implements,"2026-08-10T20:46:45.822Z","harness:claude-code","cli:create:dep",detected
   pm-1jzupz,related,"2026-08-10T20:58:25.528Z","harness:claude-code","cli:update:dep",detected
   pm-2lex4r,blocked_by,"2026-08-10T20:58:25.528Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-13T09:28:44.923Z","harness:codex","Start evidence 2026-08-13: implementing the SDK-native informative-edge denominator together with node semantics, native assurance declarations, diagnostics, docs, and negative controls; the fix is a derived measurement rather than a hand-edited floor."
   "2026-08-13T10:42:28.201Z","harness:codex","Verification evidence: informative edge floors now exclude independently measured redundancy and exact contradiction debt, while both debts have separate ceilings. The live cleaned corpus remains above the informative floor, and removing meaningful structure still fails the negative control. Full coverage, lint, contracts, package, npx, dogfood, and Bun acceptance passed."
+  "2026-08-13T11:46:39.366Z","harness:codex","Delivery: broad SDK/CLI implementation is under hosted review in PR #996 (https://github.com/unbraind/pm-cli/pull/996) at exact head c61da907be0e9903dd9de41754a4973bc693549a. Keep this item active until exact-head checks and reviewer inventory complete."
 learnings[1]{created_at,author,text}:
   "2026-08-13T10:42:28.844Z","harness:codex",A cleanup-safe graph ratchet uses an informative-edge denominator plus explicit debt ceilings; total edge count conflates useful context with removable implied or contradictory rows.
 files[4]{path,scope,note}:

@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: assurance,governance,graph,measurement,ratchet
 created_at: "2026-08-13T08:30:00.326Z"
-updated_at: "2026-08-13T10:42:27.264Z"
+updated_at: "2026-08-13T11:46:40.116Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#3e72d1e1e1b98ee0c323a3b0"
 author: "harness:claude-code"
@@ -28,9 +28,10 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jzupz,implements,"2026-08-13T08:44:16.374Z","harness:claude-code","cli:update:dep",detected
   pm-hnc9w7,verifies,"2026-08-13T08:44:16.374Z","harness:claude-code","cli:update:dep",detected
   pm-o2kc,implements,"2026-08-13T08:44:16.374Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-13T09:28:42.517Z","harness:codex","Start evidence 2026-08-13: coupled with pm-9gzr4r and pm-xvt7ps so graph node/edge floors distinguish real recorded structure from assembly placeholders, redundant edges, and contradictions. TDD will prove repair-neutral and erosion-sensitive behavior before tracker cleanup."
   "2026-08-13T10:42:26.400Z","harness:codex","Verification evidence: graph profiles now expose recorded nodes independently from synthesized placeholders and carry backward-compatible durable baselines. Exact full coverage, strict static gates, contracts, package artifact, npx SDK consumer, 88-command dogfood, and Bun packed-SDK acceptance passed."
+  "2026-08-13T11:46:40.116Z","harness:codex","Delivery: broad SDK/CLI implementation is under hosted review in PR #996 (https://github.com/unbraind/pm-cli/pull/996) at exact head c61da907be0e9903dd9de41754a4973bc693549a. Keep this item active until exact-head checks and reviewer inventory complete."
 learnings[1]{created_at,author,text}:
   "2026-08-13T10:42:27.264Z","harness:codex","Structural floors should protect accepted structure: recorded nodes exclude missing placeholders, while missing-node debt remains an independent zero-ceiling diagnostic."
 files[5]{path,scope,note}:

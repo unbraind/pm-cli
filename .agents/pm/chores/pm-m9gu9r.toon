@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: agent-efficiency,bundling,performance,quality-gate,sdk
 created_at: "2026-08-13T11:26:44.669Z"
-updated_at: "2026-08-13T11:42:33.794Z"
+updated_at: "2026-08-13T11:46:44.352Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#3e72d1e1e1b98ee0c323a3b0"
 author: "harness:codex"
@@ -25,11 +25,12 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-cg1sjb,discovered_from,"2026-08-13T11:26:44.669Z","harness:codex","cli:create:dep",detected
   pm-gt82,discovered_from,"2026-08-13T11:26:44.669Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-08-13T11:26:44.669Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-13T11:26:54.994Z","harness:codex","Duplicate-check evidence: all-status searches for 'merge entrypoint bundle isolation', 'focused chunk fanout import cost', and 'sdk merge import performance' found no active or closed item owning standalone merge bundle topology. pm-gt82 owns the shipped general CLI bundler, while closed pm-cg1sjb owns median sampling noise; this item is the distinct runtime chunk-fanout remediation."
   "2026-08-13T11:27:46.689Z","harness:codex","Implementation: moved sdk-merge out of the shared focused chunk graph and added a third standalone esbuild invocation with splitting disabled. This preserves the public subpath and manifest while preventing merge-only consumers from importing unrelated focused chunks; no performance budget or scheduler margin changed."
   "2026-08-13T11:28:43.077Z","harness:codex","Focused evidence: bundle-cli unit regression passed 17/17; the unchanged-budget SDK entrypoint gate passed all 10 entrypoints. The emitted dist/cli-bundle/sdk-merge.js is standalone and contains no imports from chunks/, focused-chunks/, or isolated-chunks/."
   "2026-08-13T11:42:33.794Z","harness:codex","Artifact acceptance evidence: package-artifact gate passed (1,390 files, forbidden source maps absent); packed npx smoke passed all 13 package aliases; package-first dogfood passed 88 workflows; a clean Bun 1.3.11 consumer installed the generated 2026.8.13 tarball, initialized strict governance, completed create/get/close lifecycle, imported @unbrained/pm-cli/sdk/merge in-process, and passed history-drift validation. The first strict close correctly refused missing resolution fields; after supplying resolution/expected/actual evidence, close passed."
+  "2026-08-13T11:46:44.352Z","harness:codex","Delivery: broad SDK/CLI implementation is under hosted review in PR #996 (https://github.com/unbraind/pm-cli/pull/996) at exact head c61da907be0e9903dd9de41754a4973bc693549a. Keep this item active until exact-head checks and reviewer inventory complete."
 files[2]{path,scope,note}:
   scripts/bundle-cli.mjs,project,emit merge SDK entrypoint as an isolated no-splitting bundle graph
   tests/unit/scripts/bundle-cli.spec.ts,project,regression contract for the isolated third build invocation
