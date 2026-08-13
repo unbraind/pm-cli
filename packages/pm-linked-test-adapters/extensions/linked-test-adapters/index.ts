@@ -43,6 +43,7 @@ function testRunsCommand(): CommandDefinition {
     name: "test-runs",
     action: "test-runs-list",
     description: "List background linked-test runs.",
+    intent: "List recent background linked-test executions.",
     flags: [
       {
         long: "--status",
@@ -69,6 +70,7 @@ function testRunsListCommand(): CommandDefinition {
     name: "test-runs list",
     action: "test-runs-list",
     description: "List background linked-test runs.",
+    intent: "List recent background linked-test executions.",
     flags: [
       {
         long: "--status",
@@ -96,6 +98,7 @@ function testRunsStatusCommand(): CommandDefinition {
     action: "test-runs-status",
     description:
       "Show status and health snapshot for a background linked-test run.",
+    intent: "Inspect one background linked-test run's status and health.",
     arguments: [
       { name: "runId", required: true, description: "Background run id." },
     ],
@@ -112,6 +115,7 @@ function testRunsLogsCommand(): CommandDefinition {
     name: "test-runs logs",
     action: "test-runs-logs",
     description: "Show tailed logs for a background linked-test run.",
+    intent: "Read bounded stdout or stderr from one background test run.",
     arguments: [
       { name: "runId", required: true, description: "Background run id." },
     ],
@@ -143,6 +147,7 @@ function testRunsStopCommand(): CommandDefinition {
     name: "test-runs stop",
     action: "test-runs-stop",
     description: "Stop a running background linked-test run.",
+    intent: "Stop one active background linked-test run.",
     arguments: [
       { name: "runId", required: true, description: "Background run id." },
     ],
@@ -168,6 +173,7 @@ function testRunsResumeCommand(): CommandDefinition {
     action: "test-runs-resume",
     description:
       "Resume a terminal background linked-test run by starting a new attempt.",
+    intent: "Start a new attempt from one terminal background test run.",
     arguments: [
       { name: "runId", required: true, description: "Background run id." },
     ],

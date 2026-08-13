@@ -959,6 +959,7 @@ describe("MCP dynamic package actions", () => {
             options: {
               runtimeOnly: true,
               availabilityOnly: true,
+              outputBudget: "unbounded",
             },
           },
         },
@@ -1001,6 +1002,7 @@ describe("MCP dynamic package actions", () => {
             path: context.pmPath,
             options: {
               command: "health",
+              outputBudget: "unbounded",
             },
           },
         },

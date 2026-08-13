@@ -319,14 +319,25 @@ function initializeGuideRuntime(runtimeEnv) {
 function loadAvailableGuideCommands(runtimeEnv) {
   const contractsResult = runCommand(
     process.execPath,
-    ["dist/cli.js", "contracts", "--runtime-only", "--availability-only", "--json"],
+    [
+      "dist/cli.js",
+      "contracts",
+      "--runtime-only",
+      "--availability-only",
+      "--json",
+      "--output-budget",
+      "unbounded",
+    ],
     {
       cwd: REPO_ROOT,
       capture: true,
       env: runtimeEnv,
     },
   );
-  const contractsPayload = parseJson(contractsResult.stdout, "pm contracts --runtime-only --availability-only --json");
+  const contractsPayload = parseJson(
+    contractsResult.stdout,
+    "pm contracts --runtime-only --availability-only --json --output-budget unbounded",
+  );
   return new Set(Array.isArray(contractsPayload.commands) ? contractsPayload.commands : []);
 }
 

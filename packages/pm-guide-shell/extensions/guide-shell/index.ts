@@ -94,6 +94,7 @@ function guideCommand(): CommandDefinition {
     name: "guide",
     action: "guide",
     description: "Show migration and usage guidance for pm command families.",
+    intent: "Read focused local guidance for one pm workflow.",
     arguments: [
       { name: "topic", required: false, description: "Optional guide topic." },
     ],
@@ -108,6 +109,7 @@ function completionCommand(): CommandDefinition {
     name: "completion",
     action: "completion",
     description: "Generate shell completion scripts for bash, zsh, and fish.",
+    intent: "Generate a completion script for the selected shell.",
     arguments: [
       {
         name: "shell",
@@ -126,6 +128,7 @@ function completionTagsCommand(): CommandDefinition {
     name: "completion-tags",
     action: "completion-tags",
     description: "Print known tags for completion filters.",
+    intent: "List tag values for lazy shell completion.",
     run: async (context) => runCompletionTagsPackage(context.global),
   };
 }
@@ -135,6 +138,7 @@ function completionStatusesCommand(): CommandDefinition {
     name: "completion-statuses",
     action: "completion-statuses",
     description: "Print runtime status IDs for completion filters.",
+    intent: "List runtime status values for shell completion.",
     run: async (context) => runCompletionStatusesPackage(context.global),
   };
 }
@@ -144,6 +148,7 @@ function completionTypesCommand(): CommandDefinition {
     name: "completion-types",
     action: "completion-types",
     description: "Print runtime item type IDs for completion filters.",
+    intent: "List runtime item types for shell completion.",
     run: async (context) => runCompletionTypesPackage(context.global),
   };
 }

@@ -18,6 +18,11 @@ interface StringCompactionState {
 const MAX_ESTIMATE_ITERATIONS = 8;
 const MAX_COMPACTION_ITERATIONS = 64;
 
+/** Estimate the conservative token cost of a JSON-shaped result. */
+export function estimateReadOutputTokens(result: unknown): number {
+  return Math.ceil(Buffer.byteLength(JSON.stringify(result), "utf8") / 4);
+}
+
 /** Return whether a value is a non-array object record. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -50,9 +55,7 @@ export function updateReadOutputReceiptEstimate(
   let estimate = receipt.estimated_tokens;
   for (let iteration = 0; iteration < MAX_ESTIMATE_ITERATIONS; iteration += 1) {
     receipt.estimated_tokens = estimate;
-    const measured = Math.ceil(
-      Buffer.byteLength(JSON.stringify(result), "utf8") / 4,
-    );
+    const measured = estimateReadOutputTokens(result);
     if (measured === estimate) return;
     estimate = measured;
   }

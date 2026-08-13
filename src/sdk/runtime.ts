@@ -3842,6 +3842,7 @@ async function dispatchAction(
         global,
         activeExtensions,
       );
+  options.resolvedOutputFormat = "json";
   return attachReadOutputContracts(action, options, result);
 }
 

@@ -107,6 +107,8 @@ describe("CLI command exit effect contract", () => {
         "update-many",
         "--full",
         "--json",
+        "--output-budget",
+        "unbounded",
       ]);
       expect(contracts.code).toBe(0);
       expect(JSON.parse(contracts.stdout).command_exit_contracts).toEqual({

@@ -125,6 +125,15 @@ describe("scripts/contracts-snapshot: check/update flows", () => {
     });
     expect(result.failure).toBeNull();
     expect(result.logs.join("\n")).toContain("Contract snapshot is current");
+    expect(result.spawnSync.mock.calls[0]?.[1]).toEqual(
+      expect.arrayContaining([
+        "contracts",
+        "--full",
+        "--output-budget",
+        "unbounded",
+        "--json",
+      ]),
+    );
   });
 
   it("fails when a rendered command has no machine-readable contract", async () => {

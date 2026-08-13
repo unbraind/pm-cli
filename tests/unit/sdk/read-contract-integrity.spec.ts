@@ -164,6 +164,34 @@ describe("SDK read contract integrity", () => {
     ).toThrow(/cannot mix a full item with projected item fields/u);
   });
 
+  it("enforces the shared default cost contract without taxing ordinary get reads", () => {
+    const small = {
+      item: { id: "pm-1", title: "One" },
+      children: [],
+    };
+    expect(applyReadOutputDimensions("get", {}, small)).toBe(small);
+
+    const oversized = {
+      item: { id: "pm-1", body: "context ".repeat(10_000) },
+      children: [],
+    };
+    expect(applyReadOutputDimensions("get", {}, oversized)).toMatchObject({
+      read_output: {
+        budget_source: "default",
+        budget_tokens: 4_000,
+        within_budget: true,
+        strings_compacted: true,
+      },
+    });
+    expect(
+      applyReadOutputDimensions(
+        "get",
+        { outputBudget: "unbounded" },
+        oversized,
+      ),
+    ).toBe(oversized);
+  });
+
   it("keeps row discovery opt-in and measures the final read envelope exactly", () => {
     const session = {
       version: 1 as const,

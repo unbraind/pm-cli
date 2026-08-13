@@ -118,7 +118,15 @@ describe("SDK-first agent command contracts", () => {
       expect(dryDelete.code, dryDelete.stderr).toBe(0);
 
       const contracts = context.runCli(
-        ["contracts", "--command", "get", "--flags-only", "--json"],
+        [
+          "contracts",
+          "--command",
+          "get",
+          "--flags-only",
+          "--json",
+          "--output-budget",
+          "unbounded",
+        ],
         { expectJson: true },
       );
       expect(contracts.code).toBe(0);
@@ -152,7 +160,15 @@ describe("SDK-first agent command contracts", () => {
         "update",
       ]) {
         const commandContracts = context.runCli(
-          ["contracts", "--command", command, "--flags-only", "--json"],
+          [
+            "contracts",
+            "--command",
+            command,
+            "--flags-only",
+            "--json",
+            "--output-budget",
+            "unbounded",
+          ],
           { expectJson: true },
         );
         expect(

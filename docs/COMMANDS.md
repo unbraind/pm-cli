@@ -21,7 +21,29 @@ pm contracts --command <command> --flags-only --json
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon),
 [pm-7nqo6b](../.agents/pm/issues/pm-7nqo6b.toon), and
-[pm-j1r8gl](../.agents/pm/issues/pm-j1r8gl.toon).
+[pm-j1r8gl](../.agents/pm/issues/pm-j1r8gl.toon). Universal command intent and
+default output-budget enforcement are tracked by
+[pm-5t33or](../.agents/pm/features/pm-5t33or.toon),
+[pm-s2h0mq](../.agents/pm/issues/pm-s2h0mq.toon),
+[pm-pmrae8](../.agents/pm/issues/pm-pmrae8.toon), and
+[pm-7i97c3](../.agents/pm/issues/pm-7i97c3.toon).
+
+### Universal read-output ceiling
+
+Every SDK-backed read has a format-aware default token ceiling discovered from
+`pm contracts`. Results already within that ceiling are returned unchanged, so
+the default adds no receipt overhead to ordinary reads. An oversized result is
+degraded deterministically through string compaction, row compaction, and a
+truthful omission envelope; automatic degradation adds `read_output` with
+`budget_source: default`, `budget_tokens`, the final estimate, and the applied
+compaction flags.
+
+Use `--output-budget <tokens>` to request a tighter per-call ceiling. Use
+`--output-budget unbounded` only when the caller deliberately accepts the full
+cost. This cost opt-out is distinct from command-local row controls such as
+`activity --unbounded`, which disable a row limit but do not disable the shared
+token ceiling. `--output-format json` and global `--json` select the declared
+JSON ceiling; TOON uses the smaller default agent ceiling.
 
 ## Command Families
 
@@ -1161,7 +1183,14 @@ Extension policy tokens are explicitly scoped by
 Project-governance setters use the separate `governance_contracts` value
 domains; in particular, workflow enforcement is `off|warn|strict`, not the
 extension policy token `enforce`.
-Use `pm contracts --summary --json` first when bootstrapping in a tight context window; it emits one command and terse intent per row before the agent requests heavier command-specific flags or schemas.
+Use `pm contracts --summary --json` first when bootstrapping in a tight context
+window. `command_summaries` contains exactly one row per advertised command
+path—including aliases and namespace children—with a meaningful intent plus
+`default_max_estimated_tokens` and the format-specific TOON/JSON ceilings.
+Package commands contribute their intent through command registration (falling
+back to the registered description), so agents never need a generic
+`Inspect flags.` placeholder. Request heavier command-specific flags or schemas
+only after selecting the exact path.
 
 ## Completion
 

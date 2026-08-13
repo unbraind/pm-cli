@@ -161,6 +161,7 @@ function searchAdvancedCommand(): CommandDefinition {
     action: "search-advanced",
     description:
       "Enable optional semantic and hybrid search modes via package runtime.",
+    intent: "Search work with package-provided semantic or hybrid retrieval.",
     arguments: [
       {
         name: "keywords",
@@ -180,6 +181,7 @@ function reindexCommand(): CommandDefinition {
     action: "reindex",
     description:
       "Rebuild search artifacts for keyword, semantic, and hybrid modes.",
+    intent: "Refresh search indexes and optionally evaluate retrieval quality.",
     flags: [...reindexFlags],
     run: async (context) =>
       runAdvancedReindexPackage(context.options, context.global),

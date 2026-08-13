@@ -108,8 +108,8 @@ function assertRenderedCommandCoverage(contractSummary, renderedHelp) {
 
 function runContracts() {
   const contracts = runCliJson(
-    ["contracts", "--full"],
-    "pm contracts --full --json",
+    ["contracts", "--full", "--output-budget", "unbounded"],
+    "pm contracts --full --json --output-budget unbounded",
   );
   assertRenderedCommandCoverage(
     contracts,

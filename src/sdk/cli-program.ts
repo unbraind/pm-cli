@@ -37,7 +37,10 @@ export function createPmCliProgram(version: string): Command {
       "Retain comma-separated fields or sections in read output",
     )
     .option("--output-limit <count>", "Bound rows in read output")
-    .option("--output-budget <tokens>", "Bound estimated tokens in read output")
+    .option(
+      "--output-budget <tokens|unbounded>",
+      "Bound estimated tokens in read output or explicitly disable the default ceiling",
+    )
     .option("--output-format <toon|json>", "Select the read-output encoding")
     .option(
       "--output-session <state>",

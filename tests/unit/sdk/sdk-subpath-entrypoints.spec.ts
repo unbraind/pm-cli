@@ -43,7 +43,7 @@ describe("public SDK capability entrypoints", () => {
       }),
     ).toMatchObject({ id: "pm-demo", changedFieldCount: 1 });
     expect(PmClient).toBeTypeOf("function");
-    expect(PM_READ_OUTPUT_SURFACE_CONTRACTS).toHaveLength(20);
+    expect(PM_READ_OUTPUT_SURFACE_CONTRACTS).toHaveLength(22);
     expect(
       isReadOutputBudgetExceeded(
         applyReadOutputDimensions(

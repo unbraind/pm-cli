@@ -61,6 +61,7 @@ export function activate(api: ExtensionApi): void {
     {
       action: "todos-import",
       description: "Import Todo markdown files into pm items.",
+      intent: "Import Todo markdown into audited pm items.",
       failure_hints: [
         "This command reads a directory, not a file. Use --folder <path> to point at the Todo markdown directory.",
         "Use the host-global --author <id> flag when an explicit mutation identity override is required.",
@@ -91,6 +92,7 @@ export function activate(api: ExtensionApi): void {
     {
       action: "todos-export",
       description: "Export pm items into Todo markdown files.",
+      intent: "Export pm items as portable Todo markdown files.",
       failure_hints: [
         "This command writes a directory of markdown files. Use --folder <path> to choose the destination directory.",
       ],

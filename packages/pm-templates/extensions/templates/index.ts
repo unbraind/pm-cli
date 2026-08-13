@@ -293,6 +293,7 @@ export function activate(api: ExtensionApi): void {
     name: "templates",
     action: "templates-list",
     description: "List saved create templates.",
+    intent: "List reusable item-creation templates.",
     run: async (context) => {
       assertListInvocation(context.args, context.options, "templates");
       return runTemplatesListFromRuntime(context.global);
@@ -302,6 +303,7 @@ export function activate(api: ExtensionApi): void {
     name: "templates list",
     action: "templates-list",
     description: "List saved create templates.",
+    intent: "List reusable item-creation templates.",
     run: async (context) => {
       assertListInvocation(context.args, context.options, "templates list");
       return runTemplatesListFromRuntime(context.global);
@@ -311,6 +313,7 @@ export function activate(api: ExtensionApi): void {
     name: "templates save",
     action: "templates-save",
     description: "Save reusable create template defaults.",
+    intent: "Persist reusable defaults for later item creation.",
     arguments: [
       { name: "name", required: true, description: "Template name." },
     ],
@@ -326,6 +329,7 @@ export function activate(api: ExtensionApi): void {
     name: "templates show",
     action: "templates-show",
     description: "Show a saved create template.",
+    intent: "Inspect the defaults stored in one creation template.",
     arguments: [
       { name: "name", required: true, description: "Template name." },
     ],

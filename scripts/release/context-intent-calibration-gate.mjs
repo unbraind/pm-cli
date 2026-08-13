@@ -242,8 +242,16 @@ async function runCursorPage(command, global, after) {
 async function runUnboundedCursorBaseline(command, global) {
   const options =
     command === "list"
-      ? { status: "all", noTruncate: true }
-      : { full: true, limit: String(CURRENT_TRACKER_SCALE + 1) };
+      ? {
+          status: "all",
+          noTruncate: true,
+          outputBudget: "unbounded",
+        }
+      : {
+          full: true,
+          limit: String(CURRENT_TRACKER_SCALE + 1),
+          outputBudget: "unbounded",
+        };
   const raw =
     command === "list"
       ? await runList(undefined, options, global)

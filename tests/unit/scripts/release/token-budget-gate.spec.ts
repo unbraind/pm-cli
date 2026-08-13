@@ -88,6 +88,9 @@ const CORPUS_IDS = [
   "list-default",
   "list-open-default",
   "list-json",
+  "comments-audit-full-history",
+  "notes-depth-heavy",
+  "assurance-run-depth-heavy",
   "get-default",
   "get-json-compact-fields",
   "context-default",
@@ -115,6 +118,9 @@ function manifestForBudget(maxBytes: number): string {
     ["list-default", "list"],
     ["list-open-default", "list"],
     ["list-json", "list"],
+    ["comments-audit-full-history", "comments-audit"],
+    ["notes-depth-heavy", "notes"],
+    ["assurance-run-depth-heavy", "assurance"],
     ["get-default", "get"],
     ["get-json-compact-fields", "get"],
     ["context-default", "context"],
@@ -183,7 +189,21 @@ function commandStdout(args: string[]): string {
       command_summaries: [{ default_max_estimated_tokens: 4_000 }],
     });
   }
-  if (joined.includes("activity --json --full --unbounded")) {
+  if (joined.includes("assurance run preset-operations-readiness")) {
+    return JSON.stringify({
+      gate_id: "preset-operations-readiness",
+      trigger: "ci",
+      dry_run: true,
+      verdict: "warn",
+      exit_code: 0,
+      assertions: [],
+    });
+  }
+  if (
+    joined.includes(
+      "comments-audit --full-history --json --output-budget unbounded",
+    )
+  ) {
     return "x".repeat(20_000);
   }
   if (joined.includes("--for") && joined.includes("--token-budget 256")) {
@@ -216,6 +236,8 @@ function mockRuntime(
     exists?: (targetPath: string) => boolean;
     manifestText?: string;
     stdout?: (args: string[]) => string;
+    status?: (args: string[]) => number;
+    stderr?: (args: string[]) => string;
   } = {},
 ): {
   readFileSync: ReturnType<typeof vi.fn>;
@@ -240,9 +262,9 @@ function mockRuntime(
     };
   });
   const runCommand = vi.fn((_command: string, args: string[]) => ({
-    status: 0,
+    status: options.status ? options.status(args) : 0,
     stdout: options.stdout ? options.stdout(args) : commandStdout(args),
-    stderr: "",
+    stderr: options.stderr ? options.stderr(args) : "",
   }));
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
     const actual = await vi.importActual<Record<string, unknown>>(
@@ -666,14 +688,18 @@ describe("scripts/release/token-budget-gate", () => {
       "scripts/release/token-budget-gate.mjs",
     );
 
-    expect(runtime.runCommand).toHaveBeenCalledTimes(73);
+    expect(runtime.runCommand).toHaveBeenCalledTimes(135);
     const runOptions = runtime.runCommand.mock.calls[0]?.[2] as
       | { env?: Record<string, string | undefined> }
       | undefined;
     expect(runOptions?.env).toMatchObject({
       PM_AUTHOR: "token-budget-gate",
       PM_GLOBAL_PATH: path.join("/tmp/pm-token-budget-test", ".global-pm"),
+      PM_NO_TELEMETRY: "1",
       PM_PATH: path.join("/tmp/pm-token-budget-test", ".agents", "pm"),
+      PM_TELEMETRY_DISABLED: "1",
+      PM_TELEMETRY_OTEL_DISABLED: "1",
+      PM_TELEMETRY_PROMPT: "0",
       PM_TOKEN_BUDGET_SENTINEL: "kept",
     });
     expect(runtime.writeFileSync).toHaveBeenCalledTimes(1);
@@ -698,7 +724,7 @@ describe("scripts/release/token-budget-gate", () => {
     mod.main();
 
     expect(log).toHaveBeenCalledWith(
-      "Token budget gate passed (29 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
+      "Token budget gate passed (32 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
     );
   });
 
@@ -714,7 +740,7 @@ describe("scripts/release/token-budget-gate", () => {
       path.join("/repo", "scripts", "release", "token-budgets.json"),
     );
     expect(log).toHaveBeenCalledWith(
-      "Token budget gate passed (29 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
+      "Token budget gate passed (32 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
     );
   });
 
@@ -900,12 +926,16 @@ describe("scripts/release/token-budget-gate", () => {
     mockRuntime({
       manifestText: manifestForBudget(10_000),
       stdout: (args) =>
-        args.join(" ").includes("activity --json --full --unbounded")
+        args
+          .join(" ")
+          .includes(
+            "comments-audit --full-history --json --output-budget unbounded",
+          )
           ? "bounded"
           : commandStdout(args),
     });
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
-      "negative-control: explicit unbounded activity",
+      "negative-control: explicit unbounded comments-audit",
     );
   });
 
@@ -956,5 +986,75 @@ describe("scripts/release/token-budget-gate", () => {
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
       "Token budget fixture command did not return JSON",
     );
+  });
+
+  it("rejects an allowed nonzero assurance result without its structured report", async () => {
+    mockRuntime({
+      status: (args) =>
+        args.join(" ").includes("assurance run preset-operations-readiness")
+          ? 1
+          : 0,
+      stdout: (args) =>
+        args.join(" ").includes("assurance run preset-operations-readiness")
+          ? ""
+          : commandStdout(args),
+    });
+    process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
+
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "Token budget fixture command did not return JSON",
+    );
+  });
+
+  it("rejects an undeclared assurance exit status with stderr context", async () => {
+    mockRuntime({
+      status: (args) =>
+        args.join(" ").includes("assurance run preset-operations-readiness")
+          ? 2
+          : 0,
+      stderr: (args) =>
+        args.join(" ").includes("assurance run preset-operations-readiness")
+          ? "unexpected usage failure"
+          : "",
+    });
+    process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
+
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "unexpected exit status 2; expected 0 or 1",
+    );
+  });
+
+  it("rejects malformed assurance gate report fields before measurement", async () => {
+    const validReport = {
+      gate_id: "preset-operations-readiness",
+      trigger: "ci",
+      dry_run: true,
+      verdict: "warn",
+      exit_code: 0,
+      assertions: [],
+    };
+    const malformedReports: unknown[] = [
+      "not-an-object",
+      null,
+      { ...validReport, gate_id: "wrong" },
+      { ...validReport, trigger: "manual" },
+      { ...validReport, dry_run: false },
+      { ...validReport, exit_code: 1 },
+      { ...validReport, verdict: "unknown" },
+      { ...validReport, assertions: null },
+    ];
+    process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
+
+    for (const report of malformedReports) {
+      mockRuntime({
+        stdout: (args) =>
+          args.join(" ").includes("assurance run preset-operations-readiness")
+            ? JSON.stringify(report)
+            : commandStdout(args),
+      });
+      await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+        "did not return the expected assurance gate report",
+      );
+    }
   });
 });

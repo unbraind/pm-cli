@@ -291,14 +291,14 @@ try {
   assert(getFields?.body === undefined, "get --fields should omit body unless requested");
   assert(getFields?.linked === undefined, "get --fields should omit linked containers unless requested");
 
-  const listOpenContracts = run("contracts list-open flags", ["contracts", "--command", "list-open", "--flags-only"]);
+  const listOpenContracts = run("contracts list-open flags", ["contracts", "--command", "list-open", "--flags-only", "--output-budget", "unbounded"]);
   assert(listOpenContracts?.runtime_schema === undefined, "contracts list-open flags should omit runtime_schema");
   assert(listOpenContracts?.extension_contracts === undefined, "contracts list-open flags should omit extension_contracts");
   const listOpenFlags = listOpenContracts?.command_flags?.[0]?.flags?.map((entry) => entry.flag) ?? [];
   for (const flag of ["--compact", "--brief", "--full", "--fields", "--include-body"]) {
     assert(listOpenFlags.includes(flag), `contracts list-open flags missing ${flag}`);
   }
-  const searchContracts = run("contracts search flags", ["contracts", "--command", "search", "--flags-only"]);
+  const searchContracts = run("contracts search flags", ["contracts", "--command", "search", "--flags-only", "--output-budget", "unbounded"]);
   const searchFlags = searchContracts?.command_flags?.[0]?.flags?.map((entry) => entry.flag) ?? [];
   for (const flag of ["--mode", "--semantic", "--hybrid", "--include-linked"]) {
     assert(searchFlags.includes(flag), `contracts search flags missing ${flag}`);
@@ -309,6 +309,8 @@ try {
     "search-advanced",
     "--runtime-only",
     "--flags-only",
+    "--output-budget",
+    "unbounded",
   ]);
   const searchAdvancedFlags = searchAdvancedContracts?.command_flags?.[0]?.flags?.map((entry) => entry.flag) ?? [];
   for (const flag of ["--mode", "--semantic", "--hybrid", "--fields", "--limit"]) {
@@ -324,7 +326,7 @@ try {
   ]);
   assert(searchAdvancedKeyword?.mode === "keyword", "search-advanced should default to keyword mode");
   assert(searchAdvancedKeyword?.query === "Dogfood package-first workflow", "search-advanced query parsing drifted");
-  const allFlagContracts = run("contracts all flags", ["contracts", "--flags-only"]);
+  const allFlagContracts = run("contracts all flags", ["contracts", "--flags-only", "--output-budget", "unbounded"]);
   const flagsByCommand = new Map(
     (allFlagContracts?.command_flags ?? []).map((entry) => [
       entry.command,
@@ -483,7 +485,7 @@ try {
   assert(upgradeDryRun?.summary?.requested_cli === true, "upgrade --dry-run did not include CLI planning");
   assert(upgradeDryRun?.summary?.requested_packages === true, "upgrade --dry-run did not include package planning");
 
-  const runtimeContracts = run("sdk import", ["contracts", "--availability-only", "--runtime-only"]);
+  const runtimeContracts = run("sdk import", ["contracts", "--availability-only", "--runtime-only", "--output-budget", "unbounded"]);
   const availableRuntimeActions = new Set(
     (runtimeContracts?.action_availability ?? [])
       .filter((entry) => entry.available === true && entry.invocable === true)
