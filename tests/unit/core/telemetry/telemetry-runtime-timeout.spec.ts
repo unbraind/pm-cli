@@ -1,14 +1,17 @@
 import { createServer } from "node:http";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { _testOnly } from "../../../../src/core/telemetry/runtime.js";
 
 const TELEMETRY_TIMEOUT_ENV = "PM_TELEMETRY_HTTP_TIMEOUT_MS";
+const originalFetch = globalThis.fetch;
 
 describe("telemetry HTTP timeout resolution", () => {
   const originalTimeout = process.env[TELEMETRY_TIMEOUT_ENV];
 
   afterEach(() => {
+    globalThis.fetch = originalFetch;
+    vi.useRealTimers();
     if (originalTimeout === undefined) {
       delete process.env[TELEMETRY_TIMEOUT_ENV];
       return;
@@ -46,6 +49,29 @@ describe("telemetry HTTP timeout resolution", () => {
         "{}",
       ),
     ).rejects.toThrow("telemetry_http_protocol_unsupported_ftp:");
+  });
+
+  it("enforces the deadline when a replaced fetch ignores its abort signal", async () => {
+    vi.useFakeTimers();
+    process.env[TELEMETRY_TIMEOUT_ENV] = "1000";
+    let requestSignal: AbortSignal | null | undefined;
+    globalThis.fetch = (_input, init) => {
+      requestSignal = init?.signal;
+      return new Promise<Response>(() => {});
+    };
+
+    const request = _testOnly.postTelemetryJson(
+      "https://telemetry.invalid/events",
+      { "content-type": "application/json" },
+      "{}",
+    );
+    const rejection = expect(request).rejects.toThrow(
+      "telemetry_http_timeout",
+    );
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    await rejection;
+    expect(requestSignal?.aborted).toBe(true);
   });
 
   it("posts a complete JSON body and returns the response status", async () => {

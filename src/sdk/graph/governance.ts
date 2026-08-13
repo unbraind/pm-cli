@@ -92,23 +92,23 @@ export interface RelationshipCoverageProfile {
   bridge_edges: number;
   /** Milestone nodes whose title explicitly declares an outcome. */
   outcome_nodes: number;
-  /** Active nodes with a typed hierarchy or implements path to an outcome. */
+  /** Active non-outcome nodes with a typed hierarchy or implements path to an outcome. */
   active_outcome_reachable_nodes: number;
-  /** Active nodes without a typed hierarchy or implements path to an outcome. */
+  /** Active non-outcome nodes without a typed hierarchy or implements path to an outcome. */
   active_outcome_unreachable_nodes: number;
   /** Active typed-outcome reachability expressed as integer basis points. */
   active_outcome_reachability_basis_points: number;
-  /** Terminal non-placeholder nodes included in the all-status census. */
+  /** Terminal non-placeholder, non-outcome nodes included in the all-status census. */
   terminal_nodes: number;
-  /** Terminal nodes with a typed hierarchy or implements path to an outcome. */
+  /** Terminal non-outcome nodes with a typed hierarchy or implements path to an outcome. */
   terminal_outcome_reachable_nodes: number;
-  /** Terminal nodes without a typed hierarchy or implements path to an outcome. */
+  /** Terminal non-outcome nodes without a typed hierarchy or implements path to an outcome. */
   terminal_outcome_unreachable_nodes: number;
   /** Terminal typed-outcome reachability expressed as integer basis points. */
   terminal_outcome_reachability_basis_points: number;
-  /** All active and terminal nodes with a typed path to an outcome. */
+  /** All active and terminal non-outcome nodes with a typed path to an outcome. */
   outcome_reachable_nodes: number;
-  /** All active and terminal nodes without a typed path to an outcome. */
+  /** All active and terminal non-outcome nodes without a typed path to an outcome. */
   outcome_unreachable_nodes: number;
   /** All-status typed-outcome reachability expressed as integer basis points. */
   outcome_reachability_basis_points: number;
@@ -697,23 +697,23 @@ interface CoverageTallies {
 interface OutcomeReachabilityProfile {
   /** Explicit outcome milestone count. */
   outcome_nodes: number;
-  /** Active nodes that reach an outcome. */
+  /** Active non-outcome nodes that reach an outcome. */
   active_outcome_reachable_nodes: number;
-  /** Active nodes that do not reach an outcome. */
+  /** Active non-outcome nodes that do not reach an outcome. */
   active_outcome_unreachable_nodes: number;
   /** Active typed-outcome reachability expressed as integer basis points. */
   active_outcome_reachability_basis_points: number;
-  /** Terminal nodes included in the census. */
+  /** Terminal non-outcome nodes included in the census. */
   terminal_nodes: number;
-  /** Terminal nodes that reach an outcome. */
+  /** Terminal non-outcome nodes that reach an outcome. */
   terminal_outcome_reachable_nodes: number;
-  /** Terminal nodes that do not reach an outcome. */
+  /** Terminal non-outcome nodes that do not reach an outcome. */
   terminal_outcome_unreachable_nodes: number;
   /** Terminal typed-outcome reachability expressed as integer basis points. */
   terminal_outcome_reachability_basis_points: number;
-  /** All active and terminal nodes that reach an outcome. */
+  /** All active and terminal non-outcome nodes that reach an outcome. */
   outcome_reachable_nodes: number;
-  /** All active and terminal nodes that do not reach an outcome. */
+  /** All active and terminal non-outcome nodes that do not reach an outcome. */
   outcome_unreachable_nodes: number;
   /** All-status typed-outcome reachability expressed as integer basis points. */
   outcome_reachability_basis_points: number;
@@ -764,6 +764,7 @@ function expandOutcomeReachability(
 /** Count active and terminal nodes against the resolved outcome-reachable set. */
 function tallyOutcomeReachability(
   nodeStates: ReadonlyMap<string, AuditNodeState>,
+  outcomes: ReadonlySet<string>,
   reachable: ReadonlySet<string>,
   signal: AbortSignal | undefined,
 ): Omit<OutcomeReachabilityProfile, "outcome_nodes"> {
@@ -773,6 +774,7 @@ function tallyOutcomeReachability(
   let terminalReachable = 0;
   for (const state of nodeStates.values()) {
     signal?.throwIfAborted();
+    if (outcomes.has(state.id)) continue;
     if (state.missing || state.status === "external") continue;
     if (state.terminal) {
       terminal += 1;
@@ -835,7 +837,7 @@ function profileOutcomeReachability(
   );
   return {
     outcome_nodes: outcomes.size,
-    ...tallyOutcomeReachability(nodeStates, reachable, signal),
+    ...tallyOutcomeReachability(nodeStates, outcomes, reachable, signal),
   };
 }
 

@@ -50,18 +50,61 @@ describe("relationship graph structural governance", () => {
       active_outcome_reachable_nodes: 2,
       active_outcome_unreachable_nodes: 0,
       active_outcome_reachability_basis_points: 10_000,
-      terminal_nodes: 3,
-      terminal_outcome_reachable_nodes: 2,
+      terminal_nodes: 2,
+      terminal_outcome_reachable_nodes: 1,
       terminal_outcome_unreachable_nodes: 1,
-      terminal_outcome_reachability_basis_points: 6_666,
-      outcome_reachable_nodes: 4,
+      terminal_outcome_reachability_basis_points: 5_000,
+      outcome_reachable_nodes: 3,
       outcome_unreachable_nodes: 1,
-      outcome_reachability_basis_points: 8_000,
+      outcome_reachability_basis_points: 7_500,
       finding_subjects_by_code: expect.objectContaining({
         duplicate_dependency_row: 0,
         legacy_duplicate_edge: 0,
         missing_reference_terminal: 0,
       }),
+    });
+  });
+
+  it("excludes active and terminal outcome milestones from reachability populations", () => {
+    const assembly = assembleWorkspaceRelationshipGraph([
+      {
+        id: "pm-active-outcome",
+        title: "Outcome milestone: active objective",
+        status: "open",
+        type: "Milestone",
+      },
+      {
+        id: "pm-active-work",
+        title: "Active outcome work",
+        status: "open",
+        type: "Task",
+        parent: "pm-active-outcome",
+      },
+      {
+        id: "pm-terminal-outcome",
+        title: "Outcome milestone: delivered objective",
+        status: "closed",
+        type: "Milestone",
+      },
+      {
+        id: "pm-terminal-work",
+        title: "Delivered outcome work",
+        status: "closed",
+        type: "Task",
+        parent: "pm-terminal-outcome",
+      },
+    ] as never);
+
+    expect(auditWorkspaceRelationshipGraph(assembly).profile).toMatchObject({
+      outcome_nodes: 2,
+      active_outcome_reachable_nodes: 1,
+      active_outcome_unreachable_nodes: 0,
+      terminal_nodes: 1,
+      terminal_outcome_reachable_nodes: 1,
+      terminal_outcome_unreachable_nodes: 0,
+      outcome_reachable_nodes: 2,
+      outcome_unreachable_nodes: 0,
+      outcome_reachability_basis_points: 10_000,
     });
   });
 
@@ -93,10 +136,10 @@ describe("relationship graph structural governance", () => {
       active_outcome_reachable_nodes: 1,
       active_outcome_unreachable_nodes: 1,
       active_outcome_reachability_basis_points: 5_000,
-      terminal_outcome_reachability_basis_points: 10_000,
-      outcome_reachable_nodes: 2,
+      terminal_outcome_reachability_basis_points: 0,
+      outcome_reachable_nodes: 1,
       outcome_unreachable_nodes: 1,
-      outcome_reachability_basis_points: 6_666,
+      outcome_reachability_basis_points: 5_000,
     });
   });
 
@@ -129,8 +172,8 @@ describe("relationship graph structural governance", () => {
       active_outcome_reachable_nodes: 2,
       active_outcome_unreachable_nodes: 0,
       active_outcome_reachability_basis_points: 10_000,
-      terminal_outcome_reachability_basis_points: 10_000,
-      outcome_reachable_nodes: 3,
+      terminal_outcome_reachability_basis_points: 0,
+      outcome_reachable_nodes: 2,
       outcome_unreachable_nodes: 0,
       outcome_reachability_basis_points: 10_000,
     });

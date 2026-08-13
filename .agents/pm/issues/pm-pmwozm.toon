@@ -6,16 +6,16 @@ status: closed
 priority: 1
 tags[3]: reliability,sdk,telemetry
 created_at: "2026-08-13T01:23:33.814Z"
-updated_at: "2026-08-13T02:26:00.245Z"
-closed_at: "2026-08-13T01:47:17.353Z"
-completed_at: "2026-08-13T01:47:17.353Z"
+updated_at: "2026-08-13T03:25:17.594Z"
+closed_at: "2026-08-13T03:25:17.124Z"
+completed_at: "2026-08-13T03:25:17.124Z"
 author: "harness:codex"
 acceptance_criteria: "A reachable slow cold connection can complete without blocking foreground commands; timeout behavior remains bounded, documented, covered at 100%, and a real local flush drains the preserved queue."
 parent: pm-lnq3
 repro_steps: Run pm telemetry flush against the configured endpoint on a cold route; Node fetch fails within the fixed timeout while curl eventually completes TLS to the same endpoint.
-resolution: Implemented a configurable cold-connect-safe telemetry timeout and a bounded native HTTP POST transport for event and OTLP worker phases.
+resolution: Implemented configurable cold-connect-safe native HTTP delivery plus an independent bounded deadline for replaced fetch adapters.
 expected_result: Background telemetry flushes tolerate realistic cold TLS setup while foreground command latency and fail-closed assurance remain unchanged.
-actual_result: Focused TDD passes 6/6; a live privacy-safe queue flush drained 16 preserved events and cleared failure state while foreground dispatch remains detached.
+actual_result: "A never-settling fetch adapter times out deterministically and observes an aborted signal; live native delivery previously drained preserved events; 7,243 tests and exact coverage pass."
 affected_version: 2026.8.12
 fixed_version: 2026.8.13
 regression: true
@@ -24,11 +24,12 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4vz6mz,related,"2026-08-13T01:23:33.814Z","harness:codex","cli:create:dep",detected
   pm-g4k74y,related,"2026-08-13T01:23:33.814Z","harness:codex","cli:create:dep",detected
   pm-sgmb,related,"2026-08-13T01:23:33.814Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-13T01:23:33.814Z","harness:codex","Duplicate-check evidence: searched all statuses for 'telemetry timeout proxy flush fetch failed' and 'telemetry HTTP timeout reliability'; fully read pm-sgmb, pm-1lgy, and parent pm-lnq3. pm-sgmb is correctly closed for the earlier 2.5s-to-5s fix; this is a new observed regression with distinct configurable/background reliability scope."
   "2026-08-13T01:47:15.898Z","harness:codex","TDD evidence: the new focused test first failed because resolveTelemetryHttpTimeoutMs did not exist. Implementation then exposed Node built-in fetch's independent 10-second connect timeout on the real endpoint. Replaced worker POSTs with node:http/node:https so one bounded AbortSignal covers DNS, family selection, connect, TLS, and response; added Content-Length to avoid chunked-body edge failures. Focused runtime+docs suite passes 6/6."
   "2026-08-13T01:47:16.372Z","harness:codex","Live acceptance evidence: preserved queue flush progressed from 257 to 241 entries, drained 16, recorded last_successful_flush_at=2026-08-13T01:45:27.051Z, and cleared failed-flush fields. A second immediate receipt correctly reported no due entries while retaining the retry-backed queue; no runtime evidence was deleted."
   "2026-08-13T02:26:00.245Z","harness:codex","Final repository verification: 489 files / 7,240 tests pass; exact coverage statements 52,502/52,502, branches 38,556/38,556, functions 10,798/10,798, lines 50,727/50,727. pnpm lint, pnpm quality:static, pnpm typecheck, package artifact gate (1,392 files), native tracker/graph/record assurance, changelog check, and live queue progress all pass."
+  "2026-08-13T03:25:08.032Z","harness:codex","Review follow-up evidence: a replaced fetch adapter that ignores AbortSignal is now bounded by a local deadline race; timeout aborts the supplied signal, rejects with telemetry_http_timeout, and always clears the timer. Focused 19/19 and full 7,243/7,243 tests pass at exact 100/100/100/100 coverage. pnpm typecheck, pnpm lint/static, packed-artifact gate (1,392 files), and temporary package-first dogfood (88 commands) pass."
 files[2]{path,scope,note}:
   src/core/telemetry/runtime.ts,project,Bounded background HTTP timeout contract
   tests/unit/core/telemetry/telemetry-runtime-timeout.spec.ts,project,TDD coverage for timeout normalization and complete HTTP POST delivery
@@ -36,5 +37,5 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-runtime-timeout.spec.ts,project,240
 docs[1]{path,scope,note}:
   docs/CONFIGURATION.md,project,Public timeout environment contract and worker safety semantics
-close_reason: "Bounded worker transport now governs DNS/connect/TLS/response, focused tests pass, docs are current, and live flush progress is proven."
+close_reason: "Delivered bounded native and adapter telemetry deadlines with live delivery evidence, complete regression coverage, and exact repo-wide verification."
 body: ""

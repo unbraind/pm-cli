@@ -331,6 +331,20 @@ function decodeStructuralProfile(
     "terminal_outcome_reachability_basis_points",
     "outcome_reachability_basis_points",
   ] as const;
+  const introducedStructuralFields = [
+    ...countFields,
+    ...rateFields,
+    "finding_subjects_by_code",
+  ] as const;
+  const introducedStructuralFieldCount = introducedStructuralFields.filter(
+    (field) => profile[field] !== undefined,
+  ).length;
+  if (
+    introducedStructuralFieldCount !== 0 &&
+    introducedStructuralFieldCount !== introducedStructuralFields.length
+  ) {
+    return undefined;
+  }
   const validCounts = countFields.every(
     (field) =>
       profile[field] === undefined || isNonnegativeInteger(profile[field]),

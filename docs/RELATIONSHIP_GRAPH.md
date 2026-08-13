@@ -262,7 +262,9 @@ metrics. `articulation_points` and `bridge_edges` reuse the exact cut-structure
 algorithm; outcome metrics count explicit `Milestone` titles beginning with
 `Outcome milestone:` and follow only hierarchy or `implements` edges toward
 them. Active and terminal populations are reported separately, with integer
-basis-point rates and all-status reachable/unreachable totals. Rate or
+basis-point rates and all-status reachable/unreachable totals; the explicit
+outcome milestones are roots, not work subjects, and are excluded from those
+populations. Rate or
 all-status floors are lifecycle-stable; an absolute active-population floor is
 invalid because completing reachable work legitimately moves it into the
 terminal population. `finding_subjects_by_code` includes every known finding

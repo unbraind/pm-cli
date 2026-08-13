@@ -394,6 +394,13 @@ describe("durable graph cache primitives", () => {
             finding_subjects_by_code: { ordering_cycle: -1 },
           },
         }),
+        JSON.stringify({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            finding_subjects_by_code: undefined,
+          },
+        }),
         JSON.stringify(null),
       ]) {
         await writeFile(

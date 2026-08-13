@@ -707,13 +707,28 @@ async function postTelemetryJson(
   // traffic. Production retains the native HTTP transport below so Node's
   // independent built-in-fetch connect timeout cannot preempt our bound.
   if (globalThis.fetch !== NATIVE_FETCH) {
-    const response = await globalThis.fetch(endpoint, {
-      method: "POST",
-      headers,
-      body,
-      signal: AbortSignal.timeout(resolveTelemetryHttpTimeoutMs()),
+    const controller = new AbortController();
+    let timeout!: ReturnType<typeof setTimeout>;
+    const deadline = new Promise<never>((_resolve, reject) => {
+      timeout = setTimeout(() => {
+        controller.abort();
+        reject(new Error("telemetry_http_timeout"));
+      }, resolveTelemetryHttpTimeoutMs());
     });
-    return response.status;
+    try {
+      const response = await Promise.race([
+        globalThis.fetch(endpoint, {
+          method: "POST",
+          headers,
+          body,
+          signal: controller.signal,
+        }),
+        deadline,
+      ]);
+      return response.status;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
   const request =
     url.protocol === "https:"

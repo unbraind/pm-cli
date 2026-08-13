@@ -6,18 +6,19 @@ status: closed
 priority: 1
 tags[4]: "area:ci",gate,governance,measurement
 created_at: "2026-08-07T17:11:52.568Z"
-updated_at: "2026-08-13T01:02:06.859Z"
-closed_at: "2026-08-13T01:02:06.298Z"
-completed_at: "2026-08-13T01:02:06.298Z"
+updated_at: "2026-08-13T03:25:18.749Z"
+closed_at: "2026-08-13T03:25:18.199Z"
+completed_at: "2026-08-13T03:25:18.199Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A declaration may express a floor as well as a ceiling, and the evaluator reports a violation when an observed value falls below a declared floor; The re-baseline path raises a floor toward the observed value and never lowers one, mirroring ceiling behaviour in the opposite direction; Negative controls prove both floor and ceiling violations fail the gate; The total deduplicated directed edge count plus lifecycle-stable all-status typed outcome reachable count and reachability rate are declared as floors; active and terminal partitions remain diagnostic because ordinary completion changes their populations; Failure evidence names the violated polarity and measured subject"
 parent: pm-33cw
 risk: high
 confidence: high
-resolution: Implemented native assurance floors and ceilings with one canonical related-edge source and an ADR-governed advisory boundary for lifecycle-sensitive active partitions.
+resolution: Implemented dual-polarity native assurance with lifecycle-stable typed outcome floors over non-outcome work populations.
 expected_result: "Floor regressions fail with polarity-specific evidence, cannot be weakened by re-baselining, and are not falsely triggered by normal item lifecycle transitions."
-actual_result: "All-status typed outcome reachability holds at 2,438 of 2,453 non-outcome items (9,938 basis points); lower count and rate controls fail, while active and terminal populations remain visible diagnostics."
+actual_result: "All-status typed outcome reachability holds at 2,434 of 2,449 non-outcome work items (9,938 basis points); explicit outcome roots are excluded and lower controls fail."
+fixed_version: 2026.8.13
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-bzmeaa,related,"2026-08-07T17:11:52.568Z","harness:claude-code","cli:create:dep",detected
   pm-e5yupa,related,"2026-08-07T17:11:52.568Z","harness:claude-code","cli:create:dep",detected
@@ -26,7 +27,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-ips23h,discovered_from,"2026-08-07T17:11:52.568Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-07T17:11:52.568Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-07T17:11:52.568Z","harness:claude-code","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-07T17:23:37.509Z","harness:claude-code","Partially delivered 2026-08-07 by child pm-z0cfor, which is closed with linked script, declaration and spec artifacts. AC1, AC2, AC3 and AC5 are satisfied: a declaration may carry a floor, the evaluator reports floor_undercut, the re-baseline path raises floors and never lowers them, the negative control proves both directions fail, and the violation line names its polarity.\n\nAC4 is half satisfied and the remaining half is genuinely blocked rather than deferred. graph-profile-edges-floor is declared at 11,318 and graph-profile-nodes-floor at 2,368, both baselined from the gate's own commit view, so a change that strips typed relationships now fails before merge. The second clause of AC4 — the count of active items resolving to an outcome, declared as a floor — cannot be written yet, because the only graph surface this gate can read is the audit profile and that object exposes no reachability field. pm-4vz6mz owns exposing it. This item stays open on that clause alone.\n\nWorth recording for whoever picks it up: the polarity fix makes the enforcement layer able to protect a magnitude in both directions, and a magnitude is still all it can protect. Typed reachability, dominance and articulation are properties of paths, trees and connectivity, and none of them is an integer compared against another integer. That is the general form, recorded as horizon AF on pm-doxj, and it is upstream of this item rather than inside it."
   "2026-08-12T22:09:15.237Z","harness:codex","Start evidence 2026-08-13: the closed pm-z0cfor predecessor already delivered dual polarity; this branch owns only the remaining acceptance clause by exposing terminal outcome reachability in graph audit and ratcheting it with a native assurance floor."
   "2026-08-12T23:27:44.939Z","harness:codex","Completion evidence: the native assurance gate declares total directed edge count, active outcome reachability, terminal outcome reachability, and outcome node count as floors. All floor assertions pass at the live corpus values (12,103 edges; 335 active reachable; 2,103 terminal reachable; 6 outcomes), every assertion has a proven failing negative control, and the linked structural suite passes 3/3. The prior child pm-z0cfor already proved floor rebasing and polarity-specific failure text; this tranche delivers the sole remaining outcome-reachability clause."
@@ -34,6 +35,7 @@ comments[7]{created_at,author,text}:
   "2026-08-12T23:57:35.745Z","harness:codex","Final corrected-head evidence: pnpm lint passed with zero clones, strict 100% docstring/static quality, native tracker-context-quality (37/37 assertions with negative controls), graph composition, record integrity, public-surface, token-budget, and package-boundary gates. Full coverage passed 488 files / 7,236 tests at exact 100% statements (52,448/52,448), branches (38,516/38,516), functions (10,787/10,787), and lines (50,676/50,676). Linked structural tests passed through sandboxed pm test. Packed artifact, npx smoke (13 packages), and package-first dogfood (88 commands) passed. The lifecycle-stable floor is 2,438 reachable of 2,453 non-outcome items at 9,938 basis points; both lowered negative controls fail."
   "2026-08-13T00:01:40.558Z","harness:codex","Implementation PR: https://github.com/unbraind/pm-cli/pull/992 — lifecycle-stable all-status typed outcome reachability floors and corrected recursive acceptance."
   "2026-08-13T01:01:49.095Z","harness:codex","Review-fix evidence: duplicate related-edge measurements/assertions were consolidated onto edges-related; active-only sparsity and outcome-unreachable assertions are warning diagnostics under closed ADR pm-dczodv, while stable all-status outcomes and structural/integrity assertions remain blocking. Native tracker-context-quality and graph-composition gates pass."
+  "2026-08-13T03:25:09.048Z","harness:codex","Review follow-up evidence: explicit outcome milestones are now graph roots only and are excluded from active, terminal, and all-status work populations. Fixtures cover both active and terminal outcome roots. Native all-status assurance passes at 2,434 reachable of 2,449 non-outcome items (9,938 basis points), with a failing 2,433 negative control. Full 7,243-test exact 100/100/100/100 coverage, lint/static, packed artifact, and 88-command temporary dogfood pass."
 learnings[2]{created_at,author,text}:
   "2026-08-12T23:27:45.401Z","harness:codex","A quality floor is only trustworthy when its measurement is typed: hierarchy and implements edges may establish outcome reachability, while associative related edges must remain a negative control or graph enrichment can counterfeit strategy."
   "2026-08-12T23:46:18.250Z","harness:codex","Absolute floors over active or terminal graph populations are lifecycle-variant: closing reachable work reduces the active count and raises the terminal count without losing structure. Enforce floors over the all-status non-outcome population and its integer basis-point rate; retain lifecycle partitions for diagnosis."
@@ -49,5 +51,5 @@ test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
 docs[2]{path,scope,note}:
   docs/RELATIONSHIP_GRAPH.md,project,Raw population versus stable rate semantics
   docs/TESTING.md,project,Lifecycle-stable floor policy
-close_reason: "Completed in PR #992: stable native floors/ceilings block regressions, active lifecycle partitions warn, duplicate measurements are removed, and native gates pass."
+close_reason: Delivered lifecycle-stable dual-polarity reachability floors over non-outcome work populations with negative controls and exact verification.
 body: ""

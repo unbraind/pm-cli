@@ -1424,16 +1424,16 @@
       "negative_control": {
         "cases": [
           {
-            "observed": 2438,
+            "observed": 2434,
             "expected": "pass"
           },
           {
-            "observed": 2437,
+            "observed": 2433,
             "expected": "fail"
           }
         ]
       },
-      "floor": 2438
+      "floor": 2434
     },
     {
       "id": "graph-outcome-unreachable-ceiling",
