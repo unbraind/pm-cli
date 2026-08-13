@@ -5,6 +5,13 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@toon-format/toon@4.1.0'
   - tsx@4.23.8 || 4.23.11
+  - jscpd-darwin-arm64@5.0.15
+  - jscpd-darwin-x64@5.0.15
+  - jscpd-linux-arm64-gnu@5.0.15
+  - jscpd-linux-x64-gnu@5.0.15
+  - jscpd-linux-x64-musl@5.0.15
+  - jscpd-windows-x64-msvc@5.0.15
+  - jscpd@5.0.15
 
 overrides:
   '@opentelemetry/core': '>=2.8.0 <3.0.0'
