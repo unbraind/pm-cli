@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:ci",gate,governance,graph,measurement
 created_at: "2026-08-07T17:12:24.771Z"
-updated_at: "2026-08-13T03:27:10.678Z"
+updated_at: "2026-08-13T04:20:38.032Z"
 closed_at: "2026-08-13T03:25:19.355Z"
 completed_at: "2026-08-13T03:25:19.355Z"
 author: "harness:claude-code"
@@ -29,7 +29,7 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-mfy1ux,related,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
   pm-t4d7nz,implements,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-07T17:12:24.771Z","harness:claude-code","cli:create:dep",detected
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-08-12T22:09:13.324Z","harness:codex","Start evidence 2026-08-13: actively implementing the full structural-automation acceptance criteria with audit-profile cut structure, all-status terminal-to-outcome reachability, native assurance declarations, a graph-operation consumer ledger, and negative controls."
   "2026-08-12T22:46:35.622Z","harness:codex","Token-efficiency evidence: graph audit --summary grows from 409 to 554 estimated tokens (+145) to carry cut structure, typed outcome reachability, terminal reachability, and exhaustive finding-code counts. The increase is intentional and bounded in scripts/release/token-budgets.json; these fields replace repeated follow-up graph commands for automated and agent consumers."
   "2026-08-12T22:52:56.636Z","harness:codex","SDK compatibility evidence: the public surface registry classifies the always-present RelationshipCoverageProfile expansion as two signature changes (aggregate and graph subpath). The acknowledgement records that existing fields and semantics remain unchanged while structural and typed-outcome fields are added intentionally; no finding-code union change or unrelated surface drift remains."
@@ -39,6 +39,7 @@ comments[9]{created_at,author,text}:
   "2026-08-13T01:08:51.595Z","harness:codex","Manual acceptance after review: in an isolated temporary tracker, created an explicit outcome milestone and child work item, saved a graph audit baseline, removed all newly introduced structural fields to simulate a pre-change persisted baseline, and reran graph audit. The CLI decoded the legacy file, preserved same_snapshot=true, and returned outcome_nodes=1 plus active_outcome_reachable_nodes=2. Temporary data was then removed. Packed artifact gate also passed for @unbrained/pm-cli 2026.8.12 (1,392 files)."
   "2026-08-13T03:25:09.978Z","harness:codex","Review follow-up evidence: durable graph baselines now accept only either a fully legacy profile with every introduced structural field absent or a complete current profile; partial structural persistence fails closed. Outcome roots are excluded from reachability populations. Focused graph/cache/telemetry tests pass 19/19; full suite passes 490 files / 7,243 tests with statements 52,516/52,516, branches 38,562/38,562, functions 10,801/10,801, lines 50,740/50,740. Lint/static, packed artifact, and temporary 88-command dogfood pass."
   "2026-08-13T03:27:10.678Z","harness:codex","Changelog evidence: latest available pm-changelog 2026.8.12 generated CHANGELOG.md from full closed-item history; immediate --check reports unchanged (2,062 included items, 366,193 bytes)."
+  "2026-08-13T04:20:38.032Z","harness:codex","Merged/release evidence: PR #992 squash-merged to main as 0132ed74b. Auto Release created the sole v2026.8.13 tag at release commit 95ebc5266; downstream Release run 31666022667 passed. Independent verify-published passed npm metadata, npx/bunx pm+default+pm-mcp dispatch, bin coverage, negative controls, and GitHub release metadata. Cold installed-agent acceptance passed 10 lifecycle/context steps under both npm and Bun."
 learnings[1]{created_at,author,text}:
   "2026-08-12T23:27:46.448Z","harness:codex",Graph governance should project expensive structural properties once into a bounded audit profile and cache that shared snapshot across assertions; this makes structural enforcement both cheaper and harder for consumers to misinterpret.
 files[8]{path,scope,note}:
