@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
+import { EXPECTED_QUALITY_STATIC_SCRIPT } from "../helpers/releaseContracts.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -42,7 +43,10 @@ describe("release automation contract", () => {
       "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/bundle-cli.mjs && node scripts/finalize-build.mjs",
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
-      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 113 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/surface-replication-gate.mjs && node scripts/release/absence-tolerance-gate.mjs && node scripts/release/token-budget-gate.mjs && node scripts/release/context-intent-calibration-gate.mjs && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded",
+      EXPECTED_QUALITY_STATIC_SCRIPT,
+    );
+    expect(packageJson.scripts?.["quality:context-eval"]).toBe(
+      "pnpm build && node scripts/release/repository-assurance.mjs repository-context-quality --trigger ci --json && pnpm quality:token-surface",
     );
     expect(packageJson.scripts?.["quality:token-budget"]).toBe(
       "node scripts/release/token-budget-gate.mjs",
@@ -460,7 +464,9 @@ describe("release automation contract", () => {
     );
     expect(workflow).toContain("pnpm changelog:pm");
     expect(workflow).toContain("pnpm changelog:pm:check");
-    expect(workflow).toContain("Exact-tag changelog recovery changed unexpected tracked paths");
+    expect(workflow).toContain(
+      "Exact-tag changelog recovery changed unexpected tracked paths",
+    );
     expect(workflow).toContain("':(exclude)CHANGELOG.md'");
     expect(workflow).toContain(
       "':(exclude).agents/pm/extensions/.managed-extensions.json'",

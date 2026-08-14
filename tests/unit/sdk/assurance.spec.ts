@@ -29,6 +29,7 @@ import {
 import {
   AssuranceEvaluationRefusalError,
   AssuranceMutationRefusalError,
+  AssuranceSourceResolutionError,
 } from "../../../src/sdk/governance/assurance-mutation-error.js";
 import {
   getWorkspaceHistoryPath,
@@ -1188,6 +1189,137 @@ describe("assurance SDK", () => {
         trigger: "ci",
       }),
     ).rejects.toBeInstanceOf(AssuranceEvaluationRefusalError);
+
+    const externalMeasurement: AssuranceMeasurementDefinition = {
+      id: "external-score",
+      source: { kind: "graph", operation: "audit", field: "missing" },
+    };
+    const externalAssertion: AssuranceAssertionDefinition = {
+      ...assertion,
+      id: "external-score-required",
+      measurement_id: externalMeasurement.id,
+      equals: 1,
+      ceiling: undefined,
+      negative_control: {
+        cases: [
+          { observed: 1, expected: "pass" },
+          { observed: 0, expected: "fail" },
+        ],
+      },
+    };
+    const externalGate: AssuranceGateDefinition = {
+      ...gate,
+      id: "external-quality",
+      assertion_ids: [externalAssertion.id],
+    };
+    const externalDocument = {
+      version: 1 as const,
+      measurements: [externalMeasurement],
+      assertions: [externalAssertion],
+      gates: [externalGate],
+    };
+    const sourceFailure = new AssuranceSourceResolutionError(
+      "missing graph field",
+      {
+        source_kind: "graph",
+        field: "missing",
+      },
+    );
+    await expect(
+      evaluateAssuranceGate(
+        externalGate.id,
+        externalDocument,
+        {
+          ...evaluationContext(),
+          external: async () => Promise.reject(sourceFailure),
+        },
+        { trigger: "ci" },
+      ),
+    ).rejects.toMatchObject({
+      cause: {
+        cause: sourceFailure,
+        measurement_id: "external-score",
+      },
+      context: {
+        measurement_id: "external-score",
+        source_kind: "graph",
+        field: "missing",
+      },
+    });
+
+    const unstableOwnerFailure = new AssuranceSourceResolutionError(
+      "missing graph field",
+      {
+        source_kind: "graph",
+        field: "missing",
+      },
+    );
+    let ownerReads = 0;
+    Object.defineProperty(unstableOwnerFailure, "measurement_id", {
+      configurable: true,
+      get: () => (ownerReads++ === 0 ? externalMeasurement.id : undefined),
+    });
+    await expect(
+      evaluateAssuranceGate(
+        externalGate.id,
+        externalDocument,
+        {
+          ...evaluationContext(),
+          external: async () => Promise.reject(unstableOwnerFailure),
+        },
+        { trigger: "ci" },
+      ),
+    ).rejects.toMatchObject({
+      context: { measurement_id: externalMeasurement.id },
+    });
+
+    const derivedMeasurement: AssuranceMeasurementDefinition = {
+      id: "derived-external-score",
+      source: {
+        kind: "derived",
+        expression: { measurement: externalMeasurement.id },
+      },
+    };
+    await expect(
+      evaluateAssuranceGate(
+        externalGate.id,
+        {
+          ...externalDocument,
+          measurements: [externalMeasurement, derivedMeasurement],
+          assertions: [
+            { ...externalAssertion, measurement_id: derivedMeasurement.id },
+          ],
+        },
+        {
+          ...evaluationContext(),
+          external: async () => {
+            throw new AssuranceSourceResolutionError("missing graph field", {
+              source_kind: "graph",
+              field: "missing",
+            });
+          },
+        },
+        { trigger: "ci" },
+      ),
+    ).rejects.toMatchObject({
+      context: {
+        measurement_id: externalMeasurement.id,
+        source_kind: "graph",
+        field: "missing",
+      },
+    });
+    const runtimeFault = new Error("unexpected provider fault");
+    await expect(
+      evaluateAssuranceGate(
+        externalGate.id,
+        externalDocument,
+        {
+          ...evaluationContext(),
+          external: async () => Promise.reject(runtimeFault),
+        },
+        { trigger: "ci" },
+      ),
+    ).rejects.toBe(runtimeFault);
   });
 
   it("applies scope and owner-aware lifetime without weakening held guarantees", async () => {

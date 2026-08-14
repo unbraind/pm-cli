@@ -1,6 +1,6 @@
 # SDK Context Integrity
 
-Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), and [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon).
+Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), and [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon).
 
 ## Agent Quick Context
 
@@ -73,6 +73,24 @@ The structured `option_scope` is `declared_on_path`, `declared_elsewhere`, or
 `declared_nowhere`; accepting command paths are included only for the second
 case, while the third names the nearest current-path spellings and explicitly
 terminates the otherwise-unbounded command search.
+
+## Executable recovery-reference coverage
+
+Structured refusal guidance is a forward-reference contract, not decorative
+text. `verifyPmRecoveryReferences` accepts obligations derived from real error
+envelopes and observations produced by executing a retry, resolving a declared
+command path, or linking prose to an already executed recovery. Its report
+includes the total obligation set, pass fraction, sorted findings, and stable
+coverage buckets for `suggested_retry`, `candidate_command`, `example`, and
+`next_step`, including zero-population buckets.
+
+The repository integration corpus drives real CLI refusals, executes the
+emitted retry in a temporary tracker, compares candidate commands with the
+unbounded runtime contract enumeration, and binds examples and next steps to
+those proofs. A seeded unreachable observation must lower the pass fraction
+and produce `unreachable_reference`. The same corpus is a provider-backed
+blocking assertion in `repository-context-quality`, so a well-formed but broken
+recovery promise cannot pass CI merely because its text or target flag exists.
 
 ## Row discovery and exact output receipts
 

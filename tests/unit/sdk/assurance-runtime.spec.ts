@@ -200,6 +200,17 @@ describe("assurance workspace runtime", () => {
           field: "path",
         }),
       ).rejects.toThrow("finite number or string array");
+      await expect(
+        context.external({
+          kind: "health",
+          check: "settings",
+          field: "missing.value",
+        }),
+      ).rejects.toMatchObject({
+        source_kind: "health",
+        check: "settings",
+        field: "missing.value",
+      });
     });
   });
 

@@ -7,6 +7,34 @@
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 
+/** Machine-readable location of a refused assurance evaluation. */
+export interface AssuranceEvaluationRefusalContext {
+  /** Gate being evaluated. */
+  gate_id?: string;
+  /** Assertion whose measurement failed. */
+  assertion_id?: string;
+  /** Measurement whose source failed. */
+  measurement_id?: string;
+  /** Measurement source discriminant. */
+  source_kind?: string;
+  /** Field selected from a graph, validate, or health result. */
+  field?: string;
+  /** Validate or health check selected by the source. */
+  check?: string;
+}
+
+/** Machine-readable location of a failed measurement source resolution. */
+export interface AssuranceSourceResolutionContext {
+  /** Measurement that owns the failed source, once evaluation identifies it. */
+  measurement_id?: string;
+  /** Measurement source discriminant. */
+  source_kind: string;
+  /** Field selected from the source result. */
+  field: string;
+  /** Optional validate or health check selector. */
+  check?: string;
+}
+
 /** Expected declaration-validation or mutation-policy refusal. */
 export class AssuranceMutationRefusalError extends TypeError {
   /** Create one typed refusal while retaining TypeError compatibility for SDK callers. */
@@ -18,10 +46,39 @@ export class AssuranceMutationRefusalError extends TypeError {
 
 /** Expected gate-policy refusal caused by an incomplete or disallowed provider contract. */
 export class AssuranceEvaluationRefusalError extends TypeError {
+  /** Structured evaluation location retained across CLI, SDK, and MCP. */
+  public readonly context: AssuranceEvaluationRefusalContext;
+
   /** Create one typed refusal while retaining TypeError compatibility for SDK callers. */
-  constructor(message: string) {
+  constructor(
+    message: string,
+    context: AssuranceEvaluationRefusalContext = {},
+  ) {
     super(message);
     this.name = "AssuranceEvaluationRefusalError";
+    this.context = context;
+  }
+}
+
+/** Expected failure to resolve one declared external measurement source. */
+export class AssuranceSourceResolutionError extends TypeError {
+  /** Measurement that owns the failed source, once evaluation identifies it. */
+  public readonly measurement_id?: string;
+  /** Measurement source discriminant. */
+  public readonly source_kind: string;
+  /** Field selected from the source result. */
+  public readonly field: string;
+  /** Optional validate or health check selector. */
+  public readonly check?: string;
+
+  /** Create one source-local refusal before gate context is attached. */
+  constructor(message: string, context: AssuranceSourceResolutionContext) {
+    super(message);
+    this.name = "AssuranceSourceResolutionError";
+    this.measurement_id = context.measurement_id;
+    this.source_kind = context.source_kind;
+    this.field = context.field;
+    this.check = context.check;
   }
 }
 
@@ -53,6 +110,7 @@ export async function normalizeAssuranceEvaluation<T>(
       throw new PmCliError(error.message, EXIT_CODE.USAGE, {
         code: "invalid_argument_value",
         reason: "assurance_evaluation_refused",
+        ...error.context,
       });
     }
     throw error;

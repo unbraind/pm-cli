@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { definePmErrorCodeCatalog } from "../../../src/sdk/error-code-catalog.js";
-import { verifyPmRefusalReachability } from "../../../src/sdk/agent/refusal-reachability.js";
+import {
+  verifyPmRecoveryReferences,
+  verifyPmRefusalReachability,
+} from "../../../src/sdk/agent/refusal-reachability.js";
 
 const catalog = definePmErrorCodeCatalog([
   {
@@ -90,5 +93,95 @@ describe("refusal reachability", () => {
       "wrong_error_code",
       "wrong_exit_class",
     ]);
+  });
+});
+
+describe("recovery-reference reachability", () => {
+  const obligations = [
+    {
+      id: "unknown:suggested-retry:0",
+      probe_id: "unknown",
+      kind: "suggested_retry" as const,
+      value: "pm schema add-type Example --json",
+    },
+    {
+      id: "unknown:candidate-command:0",
+      probe_id: "unknown",
+      kind: "candidate_command" as const,
+      value: "schema",
+    },
+  ];
+
+  it("reports complete per-kind coverage for executable promises", () => {
+    expect(
+      verifyPmRecoveryReferences(obligations, [
+        {
+          id: obligations[0].id,
+          reachable: true,
+          proof: "executed",
+        },
+        {
+          id: obligations[1].id,
+          reachable: true,
+          proof: "declared_command_path",
+        },
+      ]),
+    ).toMatchObject({
+      ok: true,
+      declared_reference_count: 2,
+      observed_reference_count: 2,
+      pass_fraction: 1,
+      coverage_by_kind: [
+        { kind: "suggested_retry", declared: 1, observed: 1, passed: 1 },
+        { kind: "candidate_command", declared: 1, observed: 1, passed: 1 },
+        { kind: "example", declared: 0, observed: 0, passed: 0 },
+        { kind: "next_step", declared: 0, observed: 0, passed: 0 },
+      ],
+      findings: [],
+    });
+    expect(verifyPmRecoveryReferences([], [])).toMatchObject({
+      ok: true,
+      pass_fraction: 1,
+    });
+  });
+
+  it("fails closed for missing, duplicate, unreachable, and undeclared proof", () => {
+    const report = verifyPmRecoveryReferences(obligations, [
+      { id: obligations[0].id, reachable: false, proof: "executed" },
+      { id: obligations[0].id, reachable: true, proof: "executed" },
+      { id: "orphan", reachable: true, proof: "linked_execution" },
+    ]);
+    expect(report).toMatchObject({ ok: false, pass_fraction: 0 });
+    expect(report.findings.map(({ kind }) => kind)).toEqual([
+      "undeclared_observation",
+      "missing_observation",
+      "duplicate_observation",
+      "unreachable_reference",
+    ]);
+  });
+
+  it("does not let one observation discharge duplicate obligation ids", () => {
+    const duplicate = { ...obligations[1]!, id: obligations[0]!.id };
+    const unique = { ...obligations[1]!, id: "unique-command" };
+    const report = verifyPmRecoveryReferences(
+      [obligations[0]!, duplicate, unique],
+      [
+        { id: obligations[0]!.id, reachable: true, proof: "executed" },
+        { id: unique.id, reachable: true, proof: "declared_command_path" },
+      ],
+    );
+    expect(report).toMatchObject({
+      ok: false,
+      declared_reference_count: 3,
+      observed_reference_count: 2,
+      pass_fraction: 0.5,
+      coverage_by_kind: [
+        { kind: "suggested_retry", declared: 1, observed: 0, passed: 0 },
+        { kind: "candidate_command", declared: 2, observed: 1, passed: 1 },
+        { kind: "example", declared: 0, observed: 0, passed: 0 },
+        { kind: "next_step", declared: 0, observed: 0, passed: 0 },
+      ],
+      findings: [expect.objectContaining({ kind: "duplicate_obligation" })],
+    });
   });
 });

@@ -21,6 +21,7 @@ import type {
 import { runGraph, type GraphCommandOptions } from "../graph/run.js";
 import { runHealth } from "./health.js";
 import { runValidate } from "./validate.js";
+import { AssuranceSourceResolutionError } from "./assurance-mutation-error.js";
 import {
   getActiveExtensionRegistrations,
   resolvePortableWorkspaceContext,
@@ -170,7 +171,12 @@ async function runRegisteredProvider(
   }
 }
 
-function valueAtPath(input: unknown, field: string): AssuranceValue {
+function valueAtPath(
+  input: unknown,
+  field: string,
+  sourceKind: string,
+  check?: string,
+): AssuranceValue {
   let current: unknown = input;
   for (const segment of field.split(".")) {
     if (
@@ -178,7 +184,10 @@ function valueAtPath(input: unknown, field: string): AssuranceValue {
       current === null ||
       Array.isArray(current)
     ) {
-      throw new TypeError(`assurance field ${field} is not present`);
+      throw new AssuranceSourceResolutionError(
+        `assurance field ${field} is not present`,
+        { source_kind: sourceKind, field, ...(check ? { check } : {}) },
+      );
     }
     current = (current as Record<string, unknown>)[segment];
   }
@@ -189,8 +198,9 @@ function valueAtPath(input: unknown, field: string): AssuranceValue {
   ) {
     return current;
   }
-  throw new TypeError(
+  throw new AssuranceSourceResolutionError(
     `assurance field ${field} must resolve to a finite number or string array`,
+    { source_kind: sourceKind, field, ...(check ? { check } : {}) },
   );
 }
 
@@ -205,16 +215,20 @@ function checkValue(
   },
   checkName: string,
   field: string,
+  sourceKind: "validate" | "health",
 ): AssuranceExternalMeasurementResult {
   const check = result.checks.find((entry) => entry.name === checkName);
   if (!check)
-    throw new TypeError(`assurance check ${checkName} is not present`);
+    throw new AssuranceSourceResolutionError(
+      `assurance check ${checkName} is not present`,
+      { source_kind: sourceKind, field, check: checkName },
+    );
   const value =
     field === "status" || field === "ok"
       ? check.ok
         ? 0
         : 1
-      : valueAtPath(check.details, field);
+      : valueAtPath(check.details, field, sourceKind, checkName);
   return { value, population_size: 1, cost: result.checks.length };
 }
 
@@ -349,7 +363,7 @@ export async function createAssuranceWorkspaceContext(
         }
         const result = await pending;
         return {
-          value: valueAtPath(result, source.field),
+          value: valueAtPath(result, source.field, source.kind),
           population_size: items.length,
           cost: items.length,
         };
@@ -357,12 +371,12 @@ export async function createAssuranceWorkspaceContext(
       if (source.kind === "validate") {
         validateRun ??= runValidate({ counts: true }, global);
         const result = await validateRun;
-        return checkValue(result, source.check, source.field);
+        return checkValue(result, source.check, source.field, source.kind);
       }
       if (source.kind === "health") {
         healthRun ??= runHealth(global, { checkOnly: true, full: true });
         const result = await healthRun;
-        return checkValue(result, source.check, source.field);
+        return checkValue(result, source.check, source.field, source.kind);
       }
       const hostProvider = options.providers?.[source.provider];
       if (hostProvider) return hostProvider(source);

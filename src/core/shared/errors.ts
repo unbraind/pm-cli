@@ -56,6 +56,16 @@ export interface PmCliErrorContext {
   reason?: string;
   /** Metadata field responsible for a validation failure, when known. */
   field?: string;
+  /** Assurance gate whose evaluation was refused, when known. */
+  gate_id?: string;
+  /** Assurance assertion whose evaluation was refused, when known. */
+  assertion_id?: string;
+  /** Assurance measurement whose source could not resolve, when known. */
+  measurement_id?: string;
+  /** Assurance measurement source kind involved in a refusal, when known. */
+  source_kind?: string;
+  /** Validate or health check selected by an assurance source, when known. */
+  check?: string;
   /** Serialization format involved in a parse failure. */
   format?: string;
   /** Item format version involved in a compatibility failure. */

@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Assurance gates preserve zero-valued counts and report actionable source failures ([pm-xmmafu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xmmafu.toon))
 - A budget-truncated read is resumable on one surface and terminal on five, and the only recovery the envelope names is to abandon the budget that truncated it ([pm-8nev0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nev0o.toon))
 - Surface replication gate scopes trigger activation to relevant diff content ([pm-mrhwow](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrhwow.toon))
 - Ranking explanation is sized by the workspace rather than by the answer: explaining two returned rows emits one entry per active item and ignores the token budget entirely ([pm-okgxwa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-okgxwa.toon))
