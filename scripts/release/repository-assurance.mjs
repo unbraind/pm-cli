@@ -97,7 +97,10 @@ export async function resolveRepositoryQualityMeasurement(
     args: [...prefix.args, ...(entry.provider_args ?? [])],
   };
   const timeout = entry.provider_timeout_ms ?? DEFAULT_ADAPTER_TIMEOUT_MS;
-  if (!Number.isInteger(timeout) || timeout <= 0) {
+  const timeoutIsValid = [Number.isInteger(timeout), timeout > 0].every(
+    Boolean,
+  );
+  if (!timeoutIsValid) {
     throw new TypeError(
       `Repository assurance key ${source.key} has invalid provider_timeout_ms ${String(timeout)}`,
     );
