@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:testing",cache,ci,cross-platform,regression,windows
 created_at: "2026-08-14T06:11:37.472Z"
-updated_at: "2026-08-14T08:28:56.602Z"
+updated_at: "2026-08-14T10:02:45.069Z"
 closed_at: "2026-08-14T08:28:44.356Z"
 completed_at: "2026-08-14T08:28:44.356Z"
 author: "harness:codex"
@@ -25,10 +25,11 @@ regression: true
 customer_impact: The nightly signal cannot distinguish a product regression from a platform-specific fixture bug.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-j668gl,incident_from,"2026-08-14T06:11:37.472Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-14T06:11:37.472Z","harness:codex","Duplicate check evidence: searched all statuses for GH-1011, the exact test name, stat-matched collection cache, and Windows Node 24. The closed pm-j668gl is the prior harness-noise family and is linked as recurrence rather than reopened."
   "2026-08-14T07:55:40.346Z","harness:codex","Local implementation evidence: the cache fixture now uses path.join for the canonical type-folder key and retains the authoritative re-read assertion. Linked validate suite passed 95/95; final repo coverage passed 7,288 tests at exact 100/100/100/100. Hosted Windows exact-head proof remains pending on the PR matrix, so this item stays in progress."
   "2026-08-14T08:28:43.374Z","harness:codex","Hosted evidence: PR https://github.com/unbraind/pm-cli/pull/1013 at exact head 8beb34a269f08fca28748960531b8b74656c86a4 passed Windows regression (Node 24) in 2m50s, plus the full cross-platform matrix. This completes the successor exact-head requirement without weakening the authoritative re-read assertion."
+  "2026-08-14T10:02:45.069Z","harness:codex","Delivery closeout 2026-08-14: PR #1013 exact head cd6d04061 merged to main as a7f68fb84 with Windows Node 24, the complete cross-platform runtime matrix, coverage, and static gates green. The cache fixture regression remains closed, released, and unclaimed."
 files[1]{path,scope,note}:
   tests/unit/commands/validate-command.spec.ts,project,platform-native cache key fixture
 tests[1]{command,scope,timeout_seconds}:

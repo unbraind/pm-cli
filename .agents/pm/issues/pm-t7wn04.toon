@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: ci,determinism,local-vs-hosted,negative-control,output-contract,telemetry
 created_at: "2026-08-13T14:26:56.628Z"
-updated_at: "2026-08-14T09:31:41.059Z"
+updated_at: "2026-08-14T10:02:46.000Z"
 closed_at: "2026-08-14T08:28:47.916Z"
 completed_at: "2026-08-14T08:28:47.916Z"
 author: "harness:claude-code"
@@ -24,13 +24,14 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-rtn5h6,implements,"2026-08-13T14:26:56.628Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-13T14:26:56.628Z","harness:claude-code","cli:create:dep",detected
   pm-zlv8jl,verifies,"2026-08-13T14:26:56.628Z","harness:claude-code","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-13T15:27:27.544Z","harness:codex","Implementation boundary confirmed: token-budget gate environment must explicitly disable telemetry so health/output verdicts do not depend on ambient queue/network state; representative-gate changes will follow shared runtime enforcement."
   "2026-08-13T17:12:52.045Z","harness:codex","Evidence for telemetry-independence tranche: token-budget measurement explicitly disables telemetry, persists a 32-surface format-aware ratchet, and includes a same-run 10,465-token negative control that must exceed the 6,000-token JSON default. Focused gate tests and exact 7,262-test coverage passed. Isolated import-cost and CLI-transport performance gates passed with ratchets unchanged; loaded composite runs showed transient host-load overruns, so no threshold was weakened. This item remains open because per-gate hosted/local equivalence and a declared health warning-collection bound remain to be completed."
   "2026-08-14T06:51:28.567Z","harness:codex","Implementation evidence: every health projection now carries warning_count, warning_limit=100, and warnings_truncated; strict-exit defaults to bounded summary output while --full remains explicit. The existing telemetry-disabled token gate remains green, removing both unbounded warning inflation and ambient host queue dependence from the measured surface."
   "2026-08-14T07:55:42.531Z","harness:codex","Current evidence: health warnings are capped at 100 for every projection with warning_count/warning_limit/warnings_truncated receipts; strict-exit defaults to summary; the telemetry-disabled token gate, 82 linked health/token tests, token-surface gate, and complete static chain pass locally. Hosted/local exact-head equivalence remains active work on the PR matrix."
   "2026-08-14T08:28:47.099Z","harness:codex","Exact-head equivalence evidence: local coverage, static/token, typecheck, compatibility/smoke, security, and focused negative-control suites passed before push; PR https://github.com/unbraind/pm-cli/pull/1013 head 8beb34a269f08fca28748960531b8b74656c86a4 then passed Gates (static), coverage, typecheck, compatibility, smokes, Ubuntu/macOS runtimes, and Windows. Hosted-only scanners are explicitly represented by their named matrix checks rather than claimed as local equivalents. The telemetry-disabled token gate and warning_limit=100 receipts remove the original ambient divergence."
   "2026-08-14T09:31:41.059Z","harness:codex","Live telemetry closeout: pm telemetry flush drained 1 queued entry (before=1, after=0), reported queue_progressed=true and queue_empty=true, and recorded last_successful_flush_at=2026-08-14T09:31:05.269Z with no last failure. The final local quality:static chain passed on this tree."
+  "2026-08-14T10:02:46.000Z","harness:codex","Delivery closeout 2026-08-14: PR #1013 exact head cd6d04061 merged to main as a7f68fb84 with local and hosted static/token verdicts aligned and all hosted checks green. Final live telemetry flush drained 1 queued entry to zero at 2026-08-14T09:59:51.345Z with queue_progressed=true and queue_empty=true. The immutable published release verifier passed for the sole v2026.8.14 release, and both npx and bunx consumers reported 2026.8.14; no second daily release was created."
 files[6]{path,scope,note}:
   scripts/release/token-budget-gate.mjs,project,ambient telemetry disabled for deterministic health output
   scripts/release/token-budgets.json,project,telemetry-independent 32-surface baseline

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:cli","area:sdk",assurance,contracts,discoverability,regression
 created_at: "2026-08-14T06:11:31.628Z"
-updated_at: "2026-08-14T09:31:38.825Z"
+updated_at: "2026-08-14T10:02:43.407Z"
 closed_at: "2026-08-14T09:03:19.420Z"
 completed_at: "2026-08-14T09:03:19.420Z"
 author: "harness:codex"
@@ -25,13 +25,14 @@ regression: true
 customer_impact: A project can store and advertise a quality gate whose measurement can never be evaluated.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-py7qv2,discovered_from,"2026-08-14T06:11:31.628Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-14T06:11:31.628Z","harness:codex","Duplicate check evidence: searched all 2,485 statuses for GH-1008 and the exact unknown source.kind behavior. Existing pm-py7qv2 covers truthful evaluation of supported sources, not declaration-time vocabulary validation or scoped discovery."
   "2026-08-14T06:17:51.230Z","harness:codex","TDD red evidence: focused assurance SDK test now proves unknown measurement source.kind is accepted by the runtime validator instead of returning a typed refusal with the supported vocabulary (2 failures observed before production fix)."
   "2026-08-14T07:55:39.330Z","harness:codex","Completion evidence: exported ASSURANCE_MEASUREMENT_SOURCE_KINDS is the single 9-kind vocabulary, registry writes validate before persistence, command-scoped contracts expose the full vocabulary without default-budget truncation, and packed CLI invalid-source mutation returned typed exit 2. Linked 59-test assurance/contracts run and final exact 7,288-test coverage passed."
   "2026-08-14T09:03:15.217Z","harness:codex","Review-closeout evidence: CodeRabbit's exact-message finding is fixed with tests that compare AssuranceMutationRefusalError against the exported measurement-source vocabulary; the 115-test focused review suite passes, contracts and SDK surface checks are current, and the earlier packed invalid-source refusal remains typed exit 2 with no persistence."
   "2026-08-14T09:30:31.137Z","harness:codex","SDK usability follow-through: assurance declarations, actions, presets, runtime composition, and typed refusal classes are now exported through the focused sdk/governance entrypoint as well as the aggregate SDK. The published-subpath regression verifies the exact missing-trigger typed class, and the assurance guide documents host classification without message parsing. Static quality and the 7,288-test reduced-worker run passed before a concurrent coverage-directory collision; final collision-free exact coverage remains the commit gate."
   "2026-08-14T09:31:38.825Z","harness:codex","Final repository proof after the public governance-subpath export correction: 493 files / 7,288 tests passed at exact 100/100/100/100 coverage; lint, zero-clone duplication, 100% docstrings, package-boundary, SDK parity, generated contracts, and public-surface checks passed. The packed consumer classified both root and @unbrained/pm-cli/sdk/governance assurance refusals with no raw TypeError."
+  "2026-08-14T10:02:43.407Z","harness:codex","Delivery closeout 2026-08-14: PR #1013 exact head cd6d04061 merged to main as a7f68fb84. The public governance subpath and exact refusal contracts passed the full 7,288-test 100/100/100/100 run, every hosted gate, and the final commit-pinned CodeRabbit review with no actionable issues."
 files[5]{path,scope,note}:
   src/sdk/cli-contracts/runtime-contracts.ts,project,command-scoped assurance contracts
   src/sdk/governance.ts,project,Focused governance subpath exports for assurance host composition

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-14T07:11:28.225Z"
-updated_at: "2026-08-14T09:31:39.837Z"
+updated_at: "2026-08-14T10:02:44.146Z"
 closed_at: "2026-08-14T09:03:24.524Z"
 completed_at: "2026-08-14T09:03:24.524Z"
 author: "harness:codex"
@@ -17,12 +17,13 @@ expected_result: "A replication set activates only when relevant contract lines 
 actual_result: "The gate now supports changed_lines_contain_any markers, ignores proven unrelated hunks, activates on relevant added or removed lines, and treats unavailable diff evidence as active."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-kmnvug,discovered_from,"2026-08-14T07:11:28.225Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-14T07:11:28.225Z","harness:codex","Duplicate check: searched all statuses for surface replication false-positive activation,trigger scope,unrelated file changes,and content-aware triggers. pm-kmnvug fixed shared non-trigger activation but does not address unrelated hunks inside an explicitly shared trigger file; no item tracks that distinct residual."
   "2026-08-14T07:18:30.525Z","harness:codex","TDD/quality evidence: the existing full pnpm quality:static chain reproduced false activation of annotation-mutation-receipts from an outputBudget-only hunk. New focused tests prove relevant diff markers activate, unrelated hunks stay inactive, missing diff evidence activates fail-closed, and malformed trigger objects are refused. The real changeset now reports zero unrelated active replication sets."
   "2026-08-14T07:55:45.881Z","harness:codex","Completion evidence: replication triggers accept changed_lines_contain_any, relevant diff markers activate every required-member ratchet, unrelated shared-file hunks do not, missing diff evidence activates fail-closed, malformed objects fail declaration validation, and a no-default-branch Git fixture is covered. Real changeset gate, linked 15-test suite, complete static chain, and exact coverage all pass."
   "2026-08-14T09:03:16.889Z","harness:codex","Review-closeout evidence: CodeRabbit identified deleted trigger paths as missing from the changed-file census. All three git diff filters now include D, and the focused regression deletes a structured trigger file, proves the replication set activates, and verifies the missing-member violation. The 15-test gate suite and full 115-test review set pass."
   "2026-08-14T09:31:39.837Z","harness:codex","Final gate evidence: the real surface-replication gate and its deleted-trigger negative control passed inside the exact 7,288-test coverage run; the complete lint/quality:static chain also passed with no active recurrence violations."
+  "2026-08-14T10:02:44.145Z","harness:codex","Delivery closeout 2026-08-14: PR #1013 exact head cd6d04061 merged to main as a7f68fb84. Deleted-trigger coverage, fail-closed replication behavior, and real-changeset negative controls passed locally and in hosted CI. All review threads are resolved; the final CodeRabbit inspection found no actionable issue."
 learnings[1]{created_at,author,text}:
   "2026-08-14T07:55:46.540Z","harness:codex","A file path is too coarse to be a replication trigger when one shared registry owns unrelated contracts. Content-scoped added/removed-line markers preserve fail-closed coupling without requiring artificial edits; absence of diff evidence must activate, not skip, the set."
 files[3]{path,scope,note}:
