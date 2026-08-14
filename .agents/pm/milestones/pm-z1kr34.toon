@@ -1,0 +1,29 @@
+id: pm-z1kr34
+title: "Outcome milestone: federated agent fabric — bounded context and conflict-safe coordination across workspaces and thousands of agents"
+description: Prove that pm can coordinate thousands of agents across many repositories and decades of work without a central authority becoming a correctness or availability requirement. This milestone composes the existing scale federation allocation identity merge-safety and fleet-context lineages into one measurable organizational outcome.
+type: Milestone
+status: open
+priority: 3
+tags[10]: "area:concurrency","area:federation",context-management,fleet,"horizon:far",milestone,multi-agent,outcome,roadmap,scale
+created_at: "2026-08-14T14:35:08.974Z"
+updated_at: "2026-08-14T14:35:08.974Z"
+deadline: "2032-12-31T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 86400
+acceptance_criteria: A reference deployment coordinates at least one thousand concurrent agents across at least one hundred federated workspaces with no lost acknowledged mutation; Cross-workspace context dependency resolution and work allocation remain bounded by declared latency memory and token budgets at million-item aggregate scale; Branch and workspace convergence is property-tested across mixed client versions failure injection partitions retries and independent merge orderings; Every conflict dropped value and policy decision has a machine-readable receipt and an immutable evidence path; The federation has no mandatory central service for correctness and documents explicit consistency availability and privacy tradeoffs
+goal: project management = context management
+objective: Scale correct agent collaboration from one repository to a federated organizational context fabric
+value: Organizations can coordinate large heterogeneous agent fleets without losing local ownership merge safety or bounded context
+impact: Unifies workspace federation fleet allocation context amortization cross-version compatibility and convergence guarantees
+outcome: A proven federated agent fabric with measurable correctness performance and recovery properties
+why_now: Federation allocation and thousand-agent work are individually tracked but the outcome ladder has no gate that composes them after proven single-workspace scale
+parent: pm-doxj
+risk: critical
+confidence: low
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-o87av6,blocked_by,"2026-08-14T14:35:08.974Z","harness:codex","cli:create:dep",detected
+  pm-odohgb,blocked_by,"2026-08-14T14:35:08.974Z","harness:codex","cli:create:dep",detected
+  pm-t4d7nz,blocked_by,"2026-08-14T14:35:08.974Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-14T14:35:08.974Z","harness:codex","Duplicate check evidence 2026-08-14: exact all-status phrase search returned zero and existing federation fleet and scale items are delivery owners rather than a portfolio outcome gate."
+body: ""

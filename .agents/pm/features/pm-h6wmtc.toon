@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[7]: compliance,durability,governance,history,long-horizon,privacy,retention
 created_at: "2026-07-26T17:06:59.506Z"
-updated_at: "2026-07-26T17:06:59.506Z"
+updated_at: "2026-08-14T14:36:43.158Z"
 author: "harness:claude-code"
 estimated_minutes: 900
 acceptance_criteria: "The workspace can declare retention classes and schedules as configuration, and the classification of an item or field is data rather than convention; An erasure request resolves to a deterministic set of streams, entries and fields, and the operation reports exactly what it destroyed and what it preserved; A stream that has been redacted and then compacted still verifies end to end for a reader holding only the format specification and the published verification rule; The policy distinguishes what may be destroyed from what must survive — the fact that a mutation occurred, its ordering, its author class, and the chain linkage — so proof of process survives destruction of content; Destructive policy operations are themselves recorded as audited events that cannot be removed by a later run of the same policy; A tombstone is left wherever content was removed so a later reader sees a deliberate absence and not silent corruption; Small workspaces with no declared policy behave exactly as today with no new required configuration"
@@ -19,17 +19,47 @@ why_now: "Redaction, compaction and repair have all shipped independently; the p
 parent: pm-o2kc
 risk: high
 confidence: low
-dependencies[12]{id,kind,created_at,author,source_kind}:
-  pm-34w8za,related,"2026-07-26T17:06:59.506Z",null,null
-  pm-3z0k,related,"2026-07-26T17:06:59.506Z",null,null
-  pm-4jk8kx,related,"2026-07-26T17:06:59.506Z",null,null
-  pm-e5yupa,related,"2026-07-26T17:06:59.506Z",null,null
-  pm-klo8,related,"2026-07-26T17:06:59.506Z",null,null
-  pm-mj42og,related,"2026-07-26T17:06:59.506Z",null,null
-  pm-nb4zwz,related,"2026-07-26T17:06:59.506Z",null,null
-  pm-o2kc,implements,"2026-07-26T17:06:59.506Z",null,null
-  pm-t4d7nz,verifies,"2026-07-26T17:06:59.506Z",null,null
-  pm-w7ccmv,verifies,"2026-07-26T17:06:59.506Z",null,null
-  pm-wlqxg3,related,"2026-07-26T17:06:59.506Z",null,null
-  pm-xc68,related,"2026-07-26T17:06:59.506Z",null,null
+dependencies[13]:
+  - id: pm-34w8za
+    kind: related
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-3z0k
+    kind: related
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-4jk8kx
+    kind: related
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-e5yupa
+    kind: related
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-klo8
+    kind: related
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-mj42og
+    kind: related
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-nb4zwz
+    kind: related
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-o2kc
+    kind: implements
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-t4d7nz
+    kind: verifies
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-w7ccmv
+    kind: verifies
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-wlqxg3
+    kind: related
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-xc68
+    kind: related
+    created_at: "2026-07-26T17:06:59.506Z"
+  - id: pm-ljrh29
+    kind: implements
+    created_at: "2026-08-14T14:36:42.952Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: ""

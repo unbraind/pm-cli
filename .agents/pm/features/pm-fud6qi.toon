@@ -6,14 +6,14 @@ status: open
 priority: 2
 tags[3]: context-algorithms,ranking,self-improvement
 created_at: "2026-08-05T18:09:44.534Z"
-updated_at: "2026-08-14T10:14:37.613Z"
+updated_at: "2026-08-14T14:36:34.141Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A ranked candidate set is computed from tracked data alone and is reproducible from the same workspace state; Every candidate carries the evidence that produced its rank, so a human or agent can refute it; Ranking degrades sensibly from a few items to a million and never requires a full-corpus scan per query; The ranker is a declared member of the context algorithm portfolio rather than a private heuristic"
 parent: pm-o0sqz5
 risk: medium
 confidence: medium
-dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-2vs1za,related,"2026-08-05T18:10:24.317Z","harness:claude-code","cli:update:dep",detected
   pm-4k6b,blocked_by,"2026-08-05T18:10:24.317Z","harness:claude-code","cli:update:dep",detected
   pm-7ob5,related,"2026-08-05T18:10:24.317Z","harness:claude-code","cli:update:dep",detected
@@ -22,4 +22,5 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-chahyq,blocked_by,"2026-08-05T18:10:24.317Z","harness:claude-code","cli:update:dep",detected
   pm-g8t7b9,blocked_by,"2026-08-05T18:10:24.317Z","harness:claude-code","cli:update:dep",detected
   pm-o0sqz5,implements,"2026-08-05T18:10:24.317Z","harness:claude-code","cli:update:dep",detected
+  pm-zzylb9,implements,"2026-08-14T14:36:33.951Z","harness:codex","cli:update:dep",detected
 body: ""

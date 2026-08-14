@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[6]: "area:sdk","area:storage",federation,long-horizon,multi-agent,scale
 created_at: "2026-07-25T12:30:34.401Z"
-updated_at: "2026-07-27T04:11:20.652Z"
+updated_at: "2026-08-14T14:36:35.266Z"
 author: "harness:claude-code"
 estimated_minutes: 1200
 acceptance_criteria: "A workspace declares peers by repository coordinate, and cross-workspace references are first-class identifiers distinguishable from local ones in every projection; Peer state is a locally cached, integrity-verified snapshot of the peer's public projection, and every read reports the snapshot's age; Aggregation across peers is a bounded read-side fold that honors the token budget and reports partial results with named missing peers rather than failing; Writes to a peer workspace are impossible through federation, asserted by a test that attempts every mutation path against a federated reference; A cross-workspace dependency cycle is detected and reported as a fact with the participating workspaces named, never as a crash or a silent drop; An unreachable peer degrades to last-known state with explicit staleness, and a workspace with no peers behaves exactly as it does today, proven by snapshot; Federated identifiers survive merge, history replay, and format migration with the same guarantees as local identifiers"
@@ -18,19 +18,53 @@ outcome: "An organization runs one tracker per repository and still gets program
 parent: pm-o2kc
 risk: high
 confidence: 50
-dependencies[14]{id,kind,created_at,author,source_kind}:
-  pm-3oqjnc,related,"2026-07-25T12:30:34.401Z",null,null
-  pm-4jk8kx,related,"2026-07-25T12:30:34.401Z",null,null
-  pm-9rxu,related,"2026-07-25T12:30:34.401Z",null,null
-  pm-is1a,implements,"2026-07-25T12:30:34.401Z",null,null
-  pm-mn4zas,related,"2026-07-25T12:30:34.401Z",null,null
-  pm-o2kc,related,"2026-07-25T12:30:34.401Z",null,null
-  pm-t4d7nz,related,"2026-07-25T12:30:34.401Z",null,null
-  pm-801d,related,"2026-07-25T12:35:32.102Z",null,null
-  pm-g608fc,related,"2026-07-25T12:35:32.102Z",null,null
-  pm-o87av6,related,"2026-07-25T12:35:32.102Z",null,null
-  pm-plwm,related,"2026-07-25T12:35:32.102Z",null,null
-  pm-szv11n,related,"2026-07-25T12:35:32.102Z",null,null
-  pm-g5sx,related,"2026-07-26T10:04:37.418Z",null,null
-  pm-g8t7b9,supersedes,"2026-07-27T04:11:20.354Z",null,null
+dependencies[15]:
+  - id: pm-3oqjnc
+    kind: related
+    created_at: "2026-07-25T12:30:34.401Z"
+  - id: pm-4jk8kx
+    kind: related
+    created_at: "2026-07-25T12:30:34.401Z"
+  - id: pm-9rxu
+    kind: related
+    created_at: "2026-07-25T12:30:34.401Z"
+  - id: pm-is1a
+    kind: implements
+    created_at: "2026-07-25T12:30:34.401Z"
+  - id: pm-mn4zas
+    kind: related
+    created_at: "2026-07-25T12:30:34.401Z"
+  - id: pm-o2kc
+    kind: related
+    created_at: "2026-07-25T12:30:34.401Z"
+  - id: pm-t4d7nz
+    kind: related
+    created_at: "2026-07-25T12:30:34.401Z"
+  - id: pm-801d
+    kind: related
+    created_at: "2026-07-25T12:35:32.102Z"
+  - id: pm-g608fc
+    kind: related
+    created_at: "2026-07-25T12:35:32.102Z"
+  - id: pm-o87av6
+    kind: related
+    created_at: "2026-07-25T12:35:32.102Z"
+  - id: pm-plwm
+    kind: related
+    created_at: "2026-07-25T12:35:32.102Z"
+  - id: pm-szv11n
+    kind: related
+    created_at: "2026-07-25T12:35:32.102Z"
+  - id: pm-g5sx
+    kind: related
+    created_at: "2026-07-26T10:04:37.418Z"
+  - id: pm-g8t7b9
+    kind: supersedes
+    created_at: "2026-07-27T04:11:20.354Z"
+  - id: pm-z1kr34
+    kind: implements
+    created_at: "2026-08-14T14:36:35.036Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: ""

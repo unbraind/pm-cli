@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: all-status,audit,backfill,graph,plan,relationships,resumable
 created_at: "2026-07-13T21:59:23.505Z"
-updated_at: "2026-08-10T12:19:55.507Z"
+updated_at: "2026-08-14T14:48:47.505Z"
 author: codex-root
 estimated_minutes: 1800
 acceptance_criteria: "Every item is classified as correctly connected, intentional root, intentional archive or isolate, waived with rationale, or remediation debt with an exact next action; All legacy edge kinds and aliases are mapped to canonical semantics with source evidence; ambiguous relationships remain investigations rather than guessed rewrites; Execution is partitioned into bounded cursor-based waves with snapshots, checkpoints, deterministic ordering, idempotency, resume, rollback-by-new-event, and multi-agent claim boundaries; Active strategic lineages are enriched before terminal history; closed or canceled items change only in dedicated changelog-safe batches coordinated with pm-e9zh; Every mutation records author, timestamp, rationale, source evidence, confidence, previous meaning, and resulting validation evidence in immutable history; Post-wave audits show no new duplicates, dangling endpoints, false order cycles, history drift, or unexplained policy violations and publish graph-quality deltas; The process is benchmarked and token-bounded for one million items and safe under concurrent agents without full-memory or full-output requirements"
@@ -19,22 +19,52 @@ why_now: "The baseline identifies meaningful graph debt, but direct bulk mutatio
 parent: pm-6x7o
 risk: high
 confidence: medium
-dependencies[8]{id,kind,created_at}:
-  pm-6x7o,blocked_by,"2026-07-13T21:59:23.505Z"
-  pm-doxj,related,"2026-07-13T21:59:23.505Z"
-  pm-e9zh,related,"2026-07-13T21:59:23.505Z"
-  pm-uid0,related,"2026-07-13T21:59:23.505Z"
-  pm-bzmeaa,related,"2026-07-25T00:00:24.497Z"
-  pm-hnc9w7,related,"2026-07-25T00:00:24.497Z"
-  pm-s5e04g,related,"2026-07-25T00:00:24.497Z"
-  pm-6x7o,implements,"2026-07-26T05:57:39.993Z"
-comments[6]{created_at,author,text}:
+dependencies[11]:
+  - id: pm-6x7o
+    kind: blocked_by
+    created_at: "2026-07-13T21:59:23.505Z"
+  - id: pm-doxj
+    kind: related
+    created_at: "2026-07-13T21:59:23.505Z"
+  - id: pm-e9zh
+    kind: related
+    created_at: "2026-07-13T21:59:23.505Z"
+  - id: pm-uid0
+    kind: related
+    created_at: "2026-07-13T21:59:23.505Z"
+  - id: pm-bzmeaa
+    kind: related
+    created_at: "2026-07-25T00:00:24.497Z"
+  - id: pm-hnc9w7
+    kind: related
+    created_at: "2026-07-25T00:00:24.497Z"
+  - id: pm-s5e04g
+    kind: related
+    created_at: "2026-07-25T00:00:24.497Z"
+  - id: pm-6x7o
+    kind: implements
+    created_at: "2026-07-26T05:57:39.993Z"
+  - id: pm-zzylb9
+    kind: verifies
+    created_at: "2026-08-14T14:37:37.884Z"
+    author: "harness:codex"
+  - id: pm-z1kr34
+    kind: verifies
+    created_at: "2026-08-14T14:37:38.634Z"
+    author: "harness:codex"
+  - id: pm-ljrh29
+    kind: verifies
+    created_at: "2026-08-14T14:37:39.237Z"
+    author: "harness:codex"
+comments[8]{created_at,author,text}:
   "2026-07-13T21:59:23.505Z",codex-root,"Duplicate check 2026-07-13: prior all-status audits are completed point-in-time reviews and pm-e9zh owns terminal resolution evidence; none owns a future resumable typed-relationship reconstruction program. This plan starts only after pm-6x7o."
   "2026-07-31T10:17:21.616Z","harness:codex","Live reconstruction input 2026-07-31: complete all-status/current-state and immutable-activity snapshots were reviewed before mutation; no active isolate, missing active endpoint, parent-scope duplicate, or active ordering cycle exists. Wave 1 received only evidence-backed active prerequisites and semantic implementation/verification/provenance edges. The remaining 11 graph findings are terminal-only information and stay in the dedicated changelog-safe waves; no closed item was rewritten opportunistically."
   "2026-08-01T20:21:49.469Z","harness:codex","Current reconstruction checkpoint 2026-08-01: live graph has 2,266 nodes including three historical missing endpoints, 10,495 deduplicated directed edges, one connected component, zero active isolates, and zero active degree-one nodes. Stored dependencies total 8,872: related 5,403, implements 2,147, discovered_from 291, parent 275, blocked_by 238, blocks 231, verifies 181, supersedes 56, related_to 40, child 8, incident_from 2. The 11 audit findings are informational terminal-only debt: one legacy duplicate class, one retired sentinel class, eight historical ordering-cycle components, and three dangling terminal references. Active enrichment can proceed with evidence-backed typed edges; terminal cleanup remains isolated in pm-hnc9w7, pm-lnrk, and pm-s5e04g so history and changelog truth are preserved."
   "2026-08-01T20:25:23.217Z","harness:codex","Checkpoint result 2026-08-01: typed enrichment added four ordering prerequisites and six verification relationships, plus the versioned recurrence lineage for pm-449do9. Edge count increased from 10,495 to 10,515 while active isolate and degree-one counts stayed zero. The change is semantic rather than density-driven: capture and identity now order provenance reads and analytics; judged corpora order context evaluation; quality, recovery, exit, parity, and SDK exemplars point to the outcomes they prove."
   "2026-08-04T09:33:43.851Z","harness:codex","Graph checkpoint 2026-08-04: fresh live audit after the holistic ecosystem review has 2,316 nodes and 10,891 deduplicated directed edges in one connected component, zero active isolates, zero active degree-one nodes, ten execution layers, and critical-path length nine. Typed edges include 2,229 implements, 353 discovered_from, 204 verifies, 58 supersedes, 2,143 parent, 550 blocked_by, 241 blocks, eight child, and three incident_from; related is 5,102 and was not inflated for density. The same 11 informational legacy findings remain: one duplicate-edge class, one retired no-blocker sentinel class, eight terminal ordering-cycle components, and three references to a missing terminal node. The 14 duplicate clusters at threshold 0.92 remain historical issue-code or intentional lineage candidates; none of the audit's new owners entered a cluster."
   "2026-08-10T12:19:55.475Z","harness:claude-code","Wave progress 2026-08-10. Three bounded, evidence-backed batches landed under this plan, each verified before the next began, and the terminal-record precondition this plan deferred behind is now measured rather than assumed.\nBatch 1, strategic layer: 63 implements edges from every capability and delivery-epoch epic to the outcome milestone its own recorded domain names, 8 supersedes edges resolving the duplicated v1 milestone encoding canonical-over-archived, and 1 era-succession join from the roadmap apex to the v1 build epic. Batch 2, parentless-terminal lineage: 118 implements edges routing every terminal item holding no hierarchy up-edge to the capability epic its title names, classified on the title with discovery-channel tags stripped and 23 assignments corrected by review. Batch 3, apex bypass: 31 implements edges giving review-pass containers and recent PR-cycle findings an outcome path through the capability layer.\nVerification after each batch: pm graph audit for new findings, and the tracker measurement ratchet for bound violations. Batch 1 produced one duplicate dependency row against a ceiling of zero — pm-u9d0 already carried the edge in the nested on-disk encoding, which the batch's dedupe reader did not parse — and it was removed and re-added as a single row before continuing. That is the only defect the three batches produced, and it is the origin of the pm-v3f1n4 evidence recorded the same day.\nZero generic related edges were added for connectivity, per this plan's own constraint. Where evidence was ambiguous nothing was written: the duplicate-consolidation extractor found 31 sibling mentions across 9 canonical anchors and produced 0 new edges because all were already promoted, and the filed-by-pass extractor was abandoned after inspection showed the phrasings include negative statements such as a comment recording what was deliberately not filed, which a regex inverts into exactly the wrong edge.\nConsequence for Wave 2 sequencing. pm-lnrk's precondition that terminal mutation be changelog-safe is met: 220 edges across mostly terminal holders changed no changelog section membership, only intra-section row order, which regeneration in the same commit heals. The remaining honest blockers are pm-c90tfh for ordering edges and pm-ob9z4y for the 1,750-pair prose-versus-edge gap that cannot be closed by extraction."
+  "2026-08-14T14:41:37.485Z","harness:codex","Portfolio organization checkpoint 2026-08-14: the user-requested capability surface is already partitioned into canonical, individually specified owners rather than a duplicate mega-item. Command simplification is pm-n7rr with token-budget contracts pm-5t33or; SDK-first CLI/MCP parity is pm-usfg; optimal bounded context is pm-4k6b; typed all-status graph governance is pm-96h7; recursive measured self-improvement is pm-o0sqz5; history-derived local/hosted CI recurrence is pm-1qkivy; automatic cross-harness provenance is pm-c0lrdm under the identity programme; million-item and thousand-agent scale is pm-o87av6 plus federation pm-odohgb; universal workflow primitives are pm-t4d7nz; provable immutable/restorable history is pm-w7ccmv; and duplicate-sweep scalability is pm-pshhry. New milestone pm-zzylb9 makes self-improvement measurable through 2029, pm-z1kr34 makes federated agent operation measurable through 2032, and pm-ljrh29 makes multi-decade continuity measurable through 2036. These outcomes reuse existing implementation programmes via typed implements/verifies/blocked_by edges and do not duplicate their feature scope."
+  "2026-08-14T14:48:44.443Z","harness:codex","Verification checkpoint 2026-08-14: complete unbounded read returned 2,492 unique items with 343 open, 1 in progress, 2,134 closed, and 14 canceled before releasing this claim; 10,446 dependency rows had zero missing targets, self-links, or duplicate rows. The only exact normalized-title collision remains three already-canceled accidental probe records. Graph audit has zero findings across 12,272 deduplicated edges; all nodes form one acyclic component with 12 layers, critical path length 11, no active isolates or degree-one nodes, and 99.70 percent active outcome reachability. Strict unbounded validation is ok with no omissions, no lifecycle/active-cycle/stale-blocker/reference/history/storage errors; warnings remain the classified historical metadata, resolution, issue-code, and linked-path debt, not newly fabricated placeholders. Workspace hash-chain verification passed. pnpm build, direct pnpm changelog:pm:check, pnpm security:scan, full pm health, and published v2026.8.14 npm/npx/bunx/MCP verification passed. The changelog command was removed from linked schema-sandbox tests after correctly failing against an empty sandbox; the retained linked build and security tests pass."
 notes[2]:
   - created_at: "2026-07-25T00:00:23.513Z"
     author: maintainer-agent
@@ -43,16 +73,28 @@ notes[2]:
     author: "harness:claude-code"
     text: "Graph measurement and enrichment pass on 2026-07-25, following the earlier measurement recorded in the preceding note. Method is unchanged and remains canonical: parse the .toon corpus directly (dependencies[N]{...} CSV blocks, not the CLI renderer, which is far too slow past two hundred items), build two undirected graphs - all-kinds and semantic-only, meaning every kind except parent and child - and breadth-first search each from the Milestone-type roots. Hierarchy-inclusive reachability always flatters; report semantic-only.\n\nBefore this pass: 3,832 workspace edges, 1,811 semantic edges, 36 active items at semantic degree one, semantic depth 6, zero unreachable, zero zero-degree. After: 3,989 workspace edges, 1,872 semantic edges, 28 active items at semantic degree one, semantic depth 6, zero unreachable, zero zero-degree. The 28 remaining degree-one items are exactly the deliberate Semgrep two-level hub topology (members to file representative to rule-class representative) and must never be given fabricated edges.\n\nThe substantive change this pass was edge-kind diversity rather than edge count. Two registered relationship kinds had never been used in this workspace: implements had zero edges and verifies had eight. They now carry ten and nineteen. The distinction encoded is worth preserving because graph queries depend on it: `implements` points from a delivery item to the story or accepted decision it realises, so traversing incoming implements edges on a story answers what work would satisfy it; `verifies` points from a gate, benchmark, or harness to the property it supplies evidence for, so traversing incoming verifies edges on an outcome milestone answers what would prove the gate is met. Every outcome milestone now has at least one incoming verifies edge, which makes the milestone ladder traversable in the evidence direction and not only in the ownership direction.\n\nThe other structural gain was the consolidation family. Thirteen children of the simplification epic held exactly one semantic edge each - blocked_by the alias shim - which made them indistinguishable from one another to any graph algorithm. Each now carries the defects and owners it actually absorbs (calendar relocation to the duration-parsing defect and the calendar service collision; ops grouping to the three diagnostics-surface defects; annotation facets to the linked-test ordering and stdin conventions, and so on). Those edges are class relationships that already existed in the ledger prose and are now machine-readable.\n\nStanding caution repeated from the first pass: isolate and degree counters measure attachment, not explanation. `pm graph audit` reported zero isolated and zero degree-leq-one active nodes both before and after this pass, while the semantic measurements above moved substantially. Strategic reachability, eccentricity, and shortest typed path to a milestone are the metrics that matter and they are owned by pm-bzmeaa."
     edited_at: "2026-07-25T06:32:42.325Z"
+learnings[2]{created_at,author,text}:
+  "2026-08-14T14:41:35.887Z","harness:codex","Completeness claims at repository scale require reading the JSON envelope, not only increasing row limits: an apparently large limit can still return has_more or a null continuation under a bounded output budget. Use --output-budget unbounded for evidence sweeps, record the envelope, and treat an algorithmic safety refusal such as the duplicate all-pairs bound as a product finding rather than evidence of uniqueness."
+  "2026-08-14T14:41:36.544Z","harness:codex","Graph quality is semantic and evidence-gated, not a density target. Preserve historical ambiguity, prefer implements/verifies/blocked_by/discovered_from/supersedes edges, and add long-horizon outcomes only when existing execution programmes lack a measurable destination; generic related edges should be migrated only with explicit evidence."
+tests[2]{command,scope,timeout_seconds}:
+  pnpm build,project,240
+  "pnpm security:scan",project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mst29vtd-0ebv7l,test,failed,"2026-08-14T14:47:16.591Z","2026-08-14T14:47:34.993Z","2026-08-14T14:47:34.993Z",2,1,0
+  test-local-mst2al7t-tsvxg0,test,passed,"2026-08-14T14:47:53.994Z","2026-08-14T14:48:07.913Z","2026-08-14T14:48:07.913Z",2,0,0
 plan_mode: approved
-plan_resume_context: "Current checkpoint 2026-08-03: 2,296 items, 43,816 immutable events, 10,761 deduplicated graph edges, one component, zero active isolates, zero active degree-one nodes, ten layers, and only eleven classified informational legacy findings. Every active item has AC, estimate, risk, confidence, and dependencies; the roadmap is the sole intentional parent root. Three unique future features were filed for automatic semantic session attribution, cross-harness provenance adapters, and history-derived CI recurrence. Terminal metadata and links remain evidence-batched under pm-e9zh, pm-j8z6, pm-hnc9w7, and pm-lnrk."
-plan_validation[1]{text,command,expected}:
+plan_resume_context: "Checkpoint 2026-08-14: 2,492 items and the full immutable corpus were read without omissions. Graph: 12,272 deduplicated edges, one acyclic component, 12 layers, zero findings, zero active isolates, and 99.70 percent active outcome reachability. Active core metadata is complete; historical strict metadata, resolution, issue-code, and linked-path debt stays evidence-batched under existing owners. Command grammar/token, SDK-first provenance, history, scale/federation, recurrence CI, and self-improvement all have canonical programmes. New evidence-gated outcomes: pm-zzylb9 through 2029, pm-z1kr34 through 2032, pm-ljrh29 through 2036. Next work begins at plan-step-003 and must migrate generic edges only from explicit evidence, never to raise density."
+plan_validation[2]{text,command,expected}:
   All-status baseline must remain reproducible and append-only before any terminal enrichment batch.,pm validate --check-history-drift --check-storage-integrity --check-lifecycle --check-resolution --counts --json,"Zero history-chain, storage-integrity, lifecycle, active-blocker, and active-cycle errors; historical metadata debt remains explicitly classified rather than placeholder-normalized."
-plan_decisions[1]{ts,author,decision,rationale,evidence}:
+  Re-run complete tracker graph history metadata duplicate and storage proof after organization and before publication.,pm validate --check-history-drift --check-storage-integrity --check-lifecycle --check-resolution --counts --json && pm graph audit --summary --json && pm graph analyze --summary --json,No history drift storage failure lifecycle cycle missing endpoint duplicate dependency row or new graph finding. Historical metadata warnings remain classified and new milestones are outcome-reachable through typed edges.
+plan_decisions[2]{ts,author,decision,rationale,evidence}:
   "2026-08-03T11:10:30.966Z","harness:codex","Optimize relationship semantics, reachability, and explainability rather than raw edge density.","The graph is already one connected component with no active isolates. Adding weak related edges would inflate degree while degrading planning, impact, and critical-path meaning.","2026-08-03 graph audit: 10,704 deduplicated directed edges, zero active isolates, 67 redundant edges, ten layers, and only informational legacy findings."
-plan_discoveries[3]{ts,author,text}:
+  "2026-08-14T14:37:23.050Z","harness:codex",Extend the outcome ladder beyond universal-domain capability with measured self-improvement federated agent operation and multi-decade continuity.,The existing ladder ended in 2028 while already-canonical programmes explicitly target recursive improvement federation thousands-agent coordination compatibility retention and cryptographic longevity. Outcome milestones make those programme results traversable and evidence-gated without duplicating their implementation scope.,Exact all-status searches found no existing milestone for measured self-improvement federated agent fabric or multi-decade continuity. Created pm-zzylb9 pm-z1kr34 and pm-ljrh29 with typed implementation and verification edges to existing owners.
+plan_discoveries[4]{ts,author,text}:
   "2026-08-03T11:10:31.658Z","harness:codex","Automatic author harness and instance detection works for current Codex mutations, but model, effort, role, and topic are all explicitly null; corpus-wide topic and role observations remain zero."
   "2026-08-03T11:11:51.782Z","harness:codex","Correction to the preceding provenance discovery: automatic harness and instance detection works for current Codex mutations, whose model, effort, role, and topic are all explicitly null. Across all 43,787 events, model is present on 0, effort on 702, role on 37, and topic on 0; role is sparse, not zero. Immutable history preserves the superseded statement and this correction."
   "2026-08-03T11:29:07.574Z","harness:codex","Fresh hybrid reindex completed, but its checked-in 10-query relevance evaluation failed 6 queries at average nDCG@5 0.7014 while the separately wired 5-query k=10 retrieval CI gate passed at nDCG 0.8327. Canonical owner pm-p1g43q now records the split; future context/retrieval work must converge fixture topology, thresholds, k, and published metrics rather than treating either result as universal."
+  "2026-08-14T14:37:22.528Z","harness:codex","Live all-status checkpoint 2026-08-14: 2,489 pre-enrichment items and 49,544 immutable events were read completely with no unreadable records or history drift. The graph had 2,489 recorded nodes and 12,246 deduplicated directed edges in one connected acyclic component with 12 layers and no active isolate. Generic related still represented 45.5 percent while semantic edges represented 7.4 percent. Exact normalized-title review found only the three already-canceled accidental probe duplicates. The built-in duplicate sweep could not execute the all-status corpus because its million-pair safety bound is exceeded and is already owned by pm-pshhry. Strict metadata and linked-file warnings are predominantly historical debt already partitioned into canonical owners and were not placeholder-normalized."
 plan_steps[8]:
   - id: plan-step-001
     order: 1
@@ -194,9 +236,9 @@ plan_steps[8]:
     title: Graduate outcome milestones through evidence-gated horizons
     status: pending
     created_at: "2026-08-03T11:10:30.374Z"
-    updated_at: "2026-08-03T11:10:30.374Z"
+    updated_at: "2026-08-14T14:37:39.237Z"
     body: "Promote grammar, SDK completeness, provable history, proven scale, general availability, and universal-domain outcomes only when their measurable exit criteria pass; preserve the living roadmap as the sole portfolio root."
-    linked_items[7]:
+    linked_items[10]:
       - id: pm-m08hza
         kind: depends_on
       - id: pm-j82fd3
@@ -217,6 +259,15 @@ plan_steps[8]:
       - id: pm-t4d7nz
         kind: verifies
         note: Long-horizon outcome milestones
+      - id: pm-zzylb9
+        kind: verifies
+        note: Long-horizon measured self-improvement outcome
+      - id: pm-z1kr34
+        kind: verifies
+        note: Long-horizon federated agent fabric outcome
+      - id: pm-ljrh29
+        kind: verifies
+        note: Long-horizon multi-decade continuity outcome
   - id: plan-step-008
     order: 8
     title: Convert historical defect recurrence into shared CI policy

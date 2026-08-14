@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: cryptography,durability,history,long-term,provenance,storage
 created_at: "2026-07-26T10:46:36.121Z"
-updated_at: "2026-07-26T10:51:59.883Z"
+updated_at: "2026-08-14T14:36:44.005Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Each recorded entry names the digest algorithm that produced its hashes, and verification selects the function per entry rather than assuming one globally; Legacy entries with no label are verified under a declared default, and that default is stated in the format specification rather than implied by code; A second algorithm is exercised end to end in tests — written, chained, merged, verified, and replayed — proving the mechanism works before it is needed; Migration guidance states what changes and what does not when the default algorithm advances, including the effect on the portable attestation bundle and on any already-exported proof; The change states its format_version implications and leaves already-written streams verifiable without modification"
@@ -19,15 +19,41 @@ why_now: "Every entry written before the label exists becomes a legacy case that
 parent: pm-o2kc
 risk: medium
 confidence: 75
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-10l1vm,related,"2026-07-26T10:46:36.121Z",null,null
-  pm-3z0k,related,"2026-07-26T10:46:36.121Z",null,null
-  pm-4jk8kx,related,"2026-07-26T10:46:36.121Z",null,null
-  pm-e5yupa,related,"2026-07-26T10:46:36.121Z",null,null
-  pm-o2kc,implements,"2026-07-26T10:46:36.121Z",null,null
-  pm-pae3wo,related,"2026-07-26T10:46:36.121Z",null,null
-  pm-u14c,related,"2026-07-26T10:46:36.121Z",null,null
-  pm-w7ccmv,verifies,"2026-07-26T10:46:36.121Z",null,null
-  pm-hg0k,related,"2026-07-26T10:46:59.162Z",null,null
-  pm-hg0k,discovered_from,"2026-07-26T10:51:59.677Z",null,null
+dependencies[11]:
+  - id: pm-10l1vm
+    kind: related
+    created_at: "2026-07-26T10:46:36.121Z"
+  - id: pm-3z0k
+    kind: related
+    created_at: "2026-07-26T10:46:36.121Z"
+  - id: pm-4jk8kx
+    kind: related
+    created_at: "2026-07-26T10:46:36.121Z"
+  - id: pm-e5yupa
+    kind: related
+    created_at: "2026-07-26T10:46:36.121Z"
+  - id: pm-o2kc
+    kind: implements
+    created_at: "2026-07-26T10:46:36.121Z"
+  - id: pm-pae3wo
+    kind: related
+    created_at: "2026-07-26T10:46:36.121Z"
+  - id: pm-u14c
+    kind: related
+    created_at: "2026-07-26T10:46:36.121Z"
+  - id: pm-w7ccmv
+    kind: verifies
+    created_at: "2026-07-26T10:46:36.121Z"
+  - id: pm-hg0k
+    kind: related
+    created_at: "2026-07-26T10:46:59.162Z"
+  - id: pm-hg0k
+    kind: discovered_from
+    created_at: "2026-07-26T10:51:59.677Z"
+  - id: pm-ljrh29
+    kind: implements
+    created_at: "2026-08-14T14:36:43.856Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: ""

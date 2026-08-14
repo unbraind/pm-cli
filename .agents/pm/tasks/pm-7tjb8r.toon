@@ -6,14 +6,14 @@ status: open
 priority: 2
 tags[3]: agent-loop,contract,self-improvement
 created_at: "2026-08-05T18:09:49.597Z"
-updated_at: "2026-08-14T10:14:36.903Z"
+updated_at: "2026-08-14T14:36:33.144Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "The cycle is runnable end to end from published SDK surface, with no step that only exists as prose in a doc; A cycle that lands a change without moving its declared metric closes as such, and that outcome is queryable; Cycle receipts are ordinary tracked items, so the loop is visible to the same graph and context algorithms as any other work; The contract is exercised against this repository as the first environment before it is offered as a general capability"
 parent: pm-o0sqz5
 risk: medium
 confidence: medium
-dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-chahyq,blocked_by,"2026-08-05T18:10:27.594Z","harness:claude-code","cli:update:dep",detected
   pm-e1vkee,related,"2026-08-05T18:10:27.594Z","harness:claude-code","cli:update:dep",detected
   pm-fud6qi,blocked_by,"2026-08-05T18:10:27.594Z","harness:claude-code","cli:update:dep",detected
@@ -24,4 +24,5 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-pww8ax,verifies,"2026-08-05T18:10:27.594Z","harness:claude-code","cli:update:dep",detected
   pm-t8a0x1,related,"2026-08-05T18:10:27.594Z","harness:claude-code","cli:update:dep",detected
   pm-usfg,blocked_by,"2026-08-05T18:10:27.594Z","harness:claude-code","cli:update:dep",detected
+  pm-zzylb9,verifies,"2026-08-14T14:36:32.842Z","harness:codex","cli:update:dep",detected
 body: ""

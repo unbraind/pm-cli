@@ -1,0 +1,30 @@
+id: pm-ljrh29
+title: "Outcome milestone: multi-decade continuity — readable, migratable, privacy-governed proof across generations of formats and cryptography"
+description: Prove that a pm workspace remains understandable verifiable restorable and governable across decades of schema format cryptographic organizational and legal change. This milestone composes existing history attestation compatibility format migration retention and lawful-erasure work into a long-lived institutional-memory outcome.
+type: Milestone
+status: open
+priority: 3
+tags[9]: "area:history","area:privacy",continuity,"horizon:far",immutability,milestone,outcome,roadmap,standards
+created_at: "2026-08-14T14:35:39.995Z"
+updated_at: "2026-08-14T14:35:39.995Z"
+deadline: "2036-12-31T00:00:00.000Z"
+author: "harness:codex"
+estimated_minutes: 129600
+acceptance_criteria: A multi-decade synthetic corpus spanning every supported format and schema generation is readable queryable and independently verifiable by the public SDK; Every format cryptographic and schema migration is lossless resumable idempotent and represented by new immutable evidence rather than silent rewrite; Retention lawful erasure archival and proof-preserving redaction policies have executable conformance tests and explicit jurisdiction-neutral extension points; Cryptographic algorithm agility is declared in the proof format and at least one full algorithm migration is proven without invalidating prior attestations; Restoration at sampled versions across the complete supported window reproduces item workspace and relationship state byte-equivalently where the contract promises byte identity
+goal: project management = context management
+objective: Preserve trustworthy institutional context across generations of software organizations and policy
+value: The tracker remains a durable source of truth rather than becoming an unreadable archive after format or cryptographic change
+impact: Connects immutable history portability compatibility migration retention and privacy into one evidence-gated continuity contract
+outcome: A publicly specified and independently testable multi-decade continuity guarantee
+why_now: Provable history ends at restoration under current contracts while already-tracked compatibility erasure and cryptographic agility work has no later portfolio outcome
+parent: pm-doxj
+risk: critical
+confidence: low
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-bbk8we,blocked_by,"2026-08-14T14:35:39.995Z","harness:codex","cli:create:dep",detected
+  pm-e5yupa,blocked_by,"2026-08-14T14:35:39.995Z","harness:codex","cli:create:dep",detected
+  pm-h6wmtc,blocked_by,"2026-08-14T14:35:39.995Z","harness:codex","cli:create:dep",detected
+  pm-w7ccmv,blocked_by,"2026-08-14T14:35:39.995Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-14T14:35:39.995Z","harness:codex","Duplicate check evidence 2026-08-14: exact all-status phrase search returned zero and existing compatibility retention and cryptographic items are distinct delivery slices rather than a continuity outcome milestone."
+body: ""

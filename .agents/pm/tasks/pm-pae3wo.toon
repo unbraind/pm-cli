@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: ci,compatibility,format-version,migration,multi-agent,quality-gate,storage
 created_at: "2026-07-24T23:47:05.940Z"
-updated_at: "2026-07-31T10:16:08.267Z"
+updated_at: "2026-08-14T14:36:45.158Z"
 author: maintainer-agent
 estimated_minutes: 1500
 acceptance_criteria: "The matrix covers at least the previous two release lines writing and the current build reading, plus the reverse direction; Forward-incompatible reads fail loudly with an actionable error rather than silently misparsing or dropping fields; Backward-compatible reads preserve unknown fields on round-trip so an older reader cannot destroy a newer writer's data; Merge drivers are exercised across version skew, not only within one version; The declared compatibility window is documented and the matrix fails when the code drifts from the declaration"
@@ -19,7 +19,7 @@ why_now: "The format_version field exists and migrations are planned, but there 
 parent: pm-o2kc
 risk: medium
 confidence: medium
-dependencies[13]:
+dependencies[14]:
   - id: pm-a8lnoh
     kind: related
     created_at: "2026-07-24T23:47:05.940Z"
@@ -59,6 +59,12 @@ dependencies[13]:
   - id: pm-dj98
     kind: verifies
     created_at: "2026-07-31T10:16:08.010Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ljrh29
+    kind: verifies
+    created_at: "2026-08-14T14:36:44.990Z"
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
