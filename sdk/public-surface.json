@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1513,
+    "covered_symbols": 1597,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1514
+    "required_symbols": 1598
   },
   "breaking_acknowledgements": [
     {
@@ -496,6 +496,29 @@
       ],
       "package_version": "2026.8.13",
       "reason": "Additive optional read-output receipts and explicit alias semantics for executable recovery contracts"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContractsResult",
+        "signature ./sdk:HealthResult",
+        "signature ./sdk/governance:HealthResult",
+        "signature ./sdk/runtime:ContractsResult",
+        "signature ./sdk/runtime:HealthResult"
+      ],
+      "package_version": "2026.8.14",
+      "reason": "Additive optional health and assurance contract fields; no existing member was removed or narrowed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmReadOutputBudgetExceeded",
+        "signature ./sdk:PmReadOutputTruncationDisclosure",
+        "signature ./sdk/contracts:PmReadOutputBudgetExceeded",
+        "signature ./sdk/contracts:PmReadOutputTruncationDisclosure",
+        "signature ./sdk/core:PmReadOutputBudgetExceeded",
+        "signature ./sdk/runtime:PmReadOutputBudgetExceeded"
+      ],
+      "package_version": "2026.8.14",
+      "reason": "Additive optional health, assurance, and read-recovery contract fields; no existing member was removed or narrowed."
     }
   ],
   "entrypoints": {
@@ -587,7 +610,7 @@
           "signature": "{ applyValidateFix: typeof applyValidateFix; applyValidateFixes: typeof applyValidateFixes; attachValidateFixHints: typeof attachValidateFixHints; buildCommandReferencesCheck: typeof buildCommandReferencesCheck; buildDependencyReferencesCheck: typeof buildDependencyReferencesCheck; buildCloseReasonBackfillRows: typeof buildCloseReasonBackfillRows; buildFilesCheck: typeof buildFilesCheck; buildLifecycleCheck: typeof buildLifecycleCheck; buildLifecycleDependencyGraph: typeof buildLifecycleDependencyGraph; buildLifecycleParentGraph: typeof buildLifecycleParentGraph; buildEstimateBackfillRows: typeof buildEstimateBackfillRows; buildMetadataCounts: typeof buildMetadataCounts; buildMissingFieldOccurrences: typeof buildMissingFieldOccurrences; buildOrphanedPathRows: typeof buildOrphanedPathRows; classifyOrphanedPath: typeof classifyOrphanedPath; collectDefaultProjectFileCandidates: typeof collectDefaultProjectFileCandidates; collectTrackedGitFileCandidates: typeof collectTrackedGitFileCandidates; detectLifecycleDependencyCycles: typeof detectLifecycleDependencyCycles; detectLifecycleParentCycles: typeof detectLifecycleParentCycles; escapeRegExp: typeof escapeRegExp; extractItemIds: typeof extractItemIds; findLifecycleDependencyCycleComponents: typeof findLifecycleDependencyCycleComponents; isMetadataFieldMissing: typeof isMetadataFieldMissing; linkedArtifactPathExceedsFilesystemLimits: typeof linkedArtifactPathExceedsFilesystemLimits; listFilesRecursive: typeof listFilesRecursive; resolveDependencyCycleSeverity: typeof resolveDependencyCycleSeverity; resolveParentCycleSeverity: typeof resolveParentCycleSeverity; resolveFileScanMode: typeof resolveFileScanMode; resolveLifecycleDependencyCycleSamplePath: typeof resolveLifecycleDependencyCycleSamplePath; resolveRequestedChecks: typeof resolveRequestedChecks; resolveValidateMetadataProfile: typeof resolveValidateMetadataProfile; resolveWorkspaceRoot: typeof resolveWorkspaceRoot; sharedDirectoryPrefixLength: typeof sharedDirectoryPrefixLength; summarizeOrphanedPathRows: typeof summarizeOrphanedPathRows; summarizeDuplicateIssueCodes: typeof summarizeDuplicateIssueCodes; toMeaningfulString: typeof toMeaningfulString; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "acceptAssuranceProposals",
           "signature": "(pmRoot: string, proposals: readonly AssuranceDerivedProposal[], options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, proposals: readonly AssuranceDerivedProposal[], options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt>"
@@ -1031,7 +1054,7 @@
           "signature": "(baseCriteria: readonly string[], add: readonly string[] | undefined, remove: readonly string[] | undefined) => { criteria: string[]; unmatchedRemovals: string[]; } | calls: (baseCriteria: readonly string[], add: readonly string[] | undefined, remove: readonly string[] | undefined) => { criteria: string[]; unmatchedRemovals: string[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "applyAssurancePreset",
           "signature": "(pmRoot: string, id: AssurancePresetId, ownerItemId: string, options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, id: AssurancePresetId, ownerItemId: string, options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt>"
@@ -1361,19 +1384,19 @@
           "signature": "(adapter: RelationshipGraphAdapter, options?: { workspace?: string; }) => Promise<RelationshipGraphAdapterConformanceReport> | calls: (adapter: RelationshipGraphAdapter, options?: { workspace?: string; }) => Promise<RelationshipGraphAdapterConformanceReport>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_ACTIONS",
           "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\"]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_DECLARATION_KINDS",
           "signature": "readonly [\"measurement\", \"assertion\", \"gate\"]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_DOCUMENT_VERSION",
           "signature": "1"
@@ -1385,19 +1408,25 @@
           "signature": "CliFlagContract[]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_GATE_TRIGGERS",
           "signature": "readonly [\"pre-commit\", \"pre-push\", \"pre-merge\", \"ci\", \"pre-release\", \"post-release\", \"scheduled\", \"on-claim\", \"on-close\"]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
+          "kind": "value",
+          "name": "ASSURANCE_MEASUREMENT_SOURCE_KINDS",
+          "signature": "readonly [\"items\", \"dependency_kind\", \"graph\", \"validate\", \"health\", \"history\", \"links\", \"provider\", \"derived\"]"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_PRESET_IDS",
           "signature": "readonly [\"software-delivery\", \"research\", \"agent-evaluation\", \"operations\"]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceAction",
           "signature": "export type AssuranceAction = (typeof ASSURANCE_ACTIONS)[number];"
@@ -1415,283 +1444,295 @@
           "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceArithmeticExpression",
           "signature": "export interface AssuranceArithmeticExpression { operator: \"add\" | \"subtract\" | \"multiply\" | \"divide\" | \"min\" | \"max\"; operands: AssuranceDerivedExpression[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceAssertionDefinition",
           "signature": "export interface AssuranceAssertionDefinition { id: string; measurement_id: string; owner_item_id: string; scope: AssuranceScope; ceiling?: number; floor?: number; equals?: AssuranceValue; zero?: true; monotone_nondecreasing?: number; monotone_nonincreasing?: number; subset_of?: string[]; lifetime?: AssuranceLifetime; retire_reason?: string; enforcement: AssuranceEnforcement; negative_control: AssuranceNegativeControl; authorization_decision?: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "assuranceAssertionUpdateIsLoosening",
           "signature": "(before: AssuranceAssertionDefinition, after: AssuranceAssertionDefinition) => boolean | calls: (before: AssuranceAssertionDefinition, after: AssuranceAssertionDefinition) => boolean"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceAssertionVerdict",
           "signature": "export interface AssuranceAssertionVerdict { assertion_id: string; measurement_id: string; measurement_definition_fingerprint: string; scope: AssuranceScope; population_size: number; observed: AssuranceValue; bound: AssuranceBound; distance: number | null; verdict: \"pass\" | \"fail\" | \"retired\"; enforcement: AssuranceEnforcement; negative_control_proven: boolean; cost: AssuranceMeasurementCost; contributors: string[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceBound",
           "signature": "export interface AssuranceBound { polarity: \"ceiling\" | \"floor\" | \"equals\" | \"zero\" | \"monotone_nondecreasing\" | \"monotone_nonincreasing\" | \"subset_of\"; value: AssuranceValue; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceBundleMutationReceipt",
           "signature": "export interface AssuranceBundleMutationReceipt { changed: boolean; created_ids: string[]; unchanged_ids: string[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceDeclaration",
           "signature": "export type AssuranceDeclaration = AssuranceMeasurementDefinition | AssuranceAssertionDefinition | AssuranceGateDefinition;"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceDeclarationBundle",
           "signature": "export interface AssuranceDeclarationBundle { measurements: AssuranceMeasurementDefinition[]; assertions: AssuranceAssertionDefinition[]; gates: AssuranceGateDefinition[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceDeclarationKind",
           "signature": "export type AssuranceDeclarationKind = \"measurement\" | \"assertion\" | \"gate\";"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceDependencyKindSource",
           "signature": "export interface AssuranceDependencyKindSource { kind: \"dependency_kind\"; dependency_kind: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceDependencyRecord",
           "signature": "export interface AssuranceDependencyRecord { id: string; kind: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceDerivedExpression",
           "signature": "export type AssuranceDerivedExpression = AssuranceMeasurementReference | AssuranceLiteralExpression | AssuranceArithmeticExpression;"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceDerivedProposal",
           "signature": "export interface AssuranceDerivedProposal { id: string; population_size: number; scope: AssuranceScope; observed: number; declarations: AssuranceDeclarationBundle; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceDerivedSource",
           "signature": "export interface AssuranceDerivedSource { kind: \"derived\"; expression: AssuranceDerivedExpression; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceDocument",
           "signature": "export interface AssuranceDocument { version: typeof ASSURANCE_DOCUMENT_VERSION; measurements: AssuranceMeasurementDefinition[]; assertions: AssuranceAssertionDefinition[]; gates: AssuranceGateDefinition[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceEnforcement",
           "signature": "export type AssuranceEnforcement = \"block\" | \"warn\" | \"observe\";"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceEvaluationContext",
           "signature": "export interface AssuranceEvaluationContext { tree_id: string; items: AssuranceItemRecord[]; history: AssuranceHistoryRecord[]; terminal_statuses?: string[]; provider_capabilities?: Readonly<Record<string, { cost_class: AssuranceProviderCostClass; network: boolean; }>>; external: (source: AssuranceGraphSource | AssuranceValidateSource | AssuranceHealthSource | AssuranceProviderSource) => Promise<AssuranceExternalMeasurementResult>; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
+          "kind": "class",
+          "name": "AssuranceEvaluationRefusalError",
+          "signature": "export declare class AssuranceEvaluationRefusalError extends TypeError { constructor(message: string); }"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceExternalMeasurementResult",
           "signature": "export interface AssuranceExternalMeasurementResult { value: AssuranceValue; population_size: number; cost: number; contributors?: string[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceGateDefinition",
           "signature": "export interface AssuranceGateDefinition { id: string; assertion_ids: string[]; triggers: AssuranceGateTrigger[]; description?: string; provider_policy?: { allowed_providers: string[]; triggers: Partial<Record<AssuranceGateTrigger, { max_cost_class: AssuranceProviderCostClass; allow_network: boolean; }>>; }; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceGateTrigger",
           "signature": "export type AssuranceGateTrigger = (typeof ASSURANCE_GATE_TRIGGERS)[number];"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceGateVerdict",
           "signature": "export interface AssuranceGateVerdict { gate_id: string; tree_id: string; trigger: AssuranceGateTrigger; dry_run: boolean; evaluated_at: string; verdict: \"pass\" | \"warn\" | \"block\"; exit_code: 0 | 1; assertions: AssuranceAssertionVerdict[]; cost: AssuranceMeasurementCost; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceGraphSource",
           "signature": "export interface AssuranceGraphSource { kind: \"graph\"; operation: string; field: string; parameters?: Record<string, string | number | boolean>; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceHealthSource",
           "signature": "export interface AssuranceHealthSource { kind: \"health\"; check: string; field: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceHistoryRecord",
           "signature": "export interface AssuranceHistoryRecord { op: string; author: string; agent_harness?: string; agent_model?: string; [key: string]: unknown; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceHistorySource",
           "signature": "export interface AssuranceHistorySource { kind: \"history\"; op?: string; author?: string; harness?: string; model?: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceItemRecord",
           "signature": "export interface AssuranceItemRecord { id: string; status: string; type: string; tags?: string[]; priority?: string | number; dependencies?: AssuranceDependencyRecord[]; files?: object[]; tests?: object[]; docs?: object[]; [key: string]: unknown; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceItemsSource",
           "signature": "export interface AssuranceItemsSource { kind: \"items\"; statuses?: string[]; types?: string[]; tags?: string[]; field?: string; equals?: string | number | boolean | null; state?: \"present\" | \"missing\"; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceLifetime",
           "signature": "export type AssuranceLifetime = \"hold\" | \"retire\";"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceLinksSource",
           "signature": "export interface AssuranceLinksSource { kind: \"links\"; link: \"files\" | \"tests\" | \"docs\"; state: \"present\" | \"missing\"; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceLiteralExpression",
           "signature": "export interface AssuranceLiteralExpression { literal: number; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceMeasurementCost",
           "signature": "export interface AssuranceMeasurementCost { units: number; items_scanned: number; history_entries: number; provider_calls: number; duration_ms: number; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceMeasurementDefinition",
           "signature": "export interface AssuranceMeasurementDefinition { id: string; description?: string; source: AssuranceMeasurementSource; max_cost?: number; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceMeasurementReference",
           "signature": "export interface AssuranceMeasurementReference { measurement: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceMeasurementResult",
           "signature": "export interface AssuranceMeasurementResult { id: string; definition_fingerprint: string; value: AssuranceValue; population_size: number; cost: AssuranceMeasurementCost; contributors: string[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceMeasurementSource",
           "signature": "export type AssuranceMeasurementSource = AssuranceItemsSource | AssuranceDependencyKindSource | AssuranceGraphSource | AssuranceValidateSource | AssuranceHealthSource | AssuranceHistorySource | AssuranceLinksSource | AssuranceProviderSource | AssuranceDerivedSource;"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceMutationOptions",
           "signature": "export interface AssuranceMutationOptions { author?: string; message?: string; authorized_decision_ids?: string[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceMutationReceipt",
           "signature": "export interface AssuranceMutationReceipt { changed: boolean; action: \"created\" | \"updated\" | \"removed\"; kind: AssuranceDeclarationKind; id: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
+          "kind": "class",
+          "name": "AssuranceMutationRefusalError",
+          "signature": "export declare class AssuranceMutationRefusalError extends TypeError { constructor(message: string); }"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceNegativeControl",
           "signature": "export interface AssuranceNegativeControl { cases: AssuranceNegativeControlCase[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceNegativeControlCase",
           "signature": "export interface AssuranceNegativeControlCase { observed: AssuranceValue; expected: \"pass\" | \"fail\"; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssurancePreset",
           "signature": "export interface AssurancePreset { id: AssurancePresetId; title: string; description: string; declarations: AssuranceDeclarationBundle; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssurancePresetId",
           "signature": "export type AssurancePresetId = (typeof ASSURANCE_PRESET_IDS)[number];"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceProviderCostClass",
           "signature": "export type AssuranceProviderCostClass = \"low\" | \"medium\" | \"high\";"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceProviderResolver",
           "signature": "export type AssuranceProviderResolver = (source: AssuranceProviderSource) => Promise<AssuranceExternalMeasurementResult>;"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceProviderSource",
           "signature": "export interface AssuranceProviderSource { kind: \"provider\"; provider: string; key: string; parameters?: Record<string, string | number | boolean | null>; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceScope",
           "signature": "export type AssuranceScope = { kind: \"all\"; } | { kind: \"active\"; } | { kind: \"filter\"; measurement_id: string; };"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceValidateSource",
           "signature": "export interface AssuranceValidateSource { kind: \"validate\"; check: string; field: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "AssuranceValue",
           "signature": "export type AssuranceValue = number | string[];"
@@ -3134,7 +3175,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; relationship_kind_contracts?: Array<{ canonical: string; aliases: string[]; inverse?: string; ordering: boolean; hierarchy: boolean; }>; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; relationship_kind_contracts?: Array<{ canonical: string; aliases: string[]; inverse?: string; ordering: boolean; hierarchy: boolean; }>; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; assurance_contracts?: { measurement_source_kinds: readonly string[]; gate_triggers: readonly string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
         },
         {
           "classification": "supported",
@@ -3239,19 +3280,19 @@
           "signature": "CliFlagContract[]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "createAssurancePreset",
           "signature": "(id: AssurancePresetId, ownerItemId: string) => AssurancePreset | calls: (id: AssurancePresetId, ownerItemId: string) => AssurancePreset"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "createAssuranceWorkspaceContext",
           "signature": "(pmRoot: string, options?: CreateAssuranceWorkspaceContextOptions) => Promise<AssuranceEvaluationContext> | calls: (pmRoot: string, options?: CreateAssuranceWorkspaceContextOptions) => Promise<AssuranceEvaluationContext>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "CreateAssuranceWorkspaceContextOptions",
           "signature": "export interface CreateAssuranceWorkspaceContextOptions { tree_id?: string; include_history?: boolean; resolve_tree?: boolean; providers?: Readonly<Record<string, AssuranceProviderResolver>>; provider_capabilities?: AssuranceEvaluationContext[\"provider_capabilities\"]; trigger?: string; }"
@@ -3275,7 +3316,7 @@
           "signature": "(shape: Readonly<CorpusShape>) => CorpusShapeMeasurement | calls: (shape: Readonly<CorpusShape>) => CorpusShapeMeasurement"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "createEmptyAssuranceDocument",
           "signature": "() => AssuranceDocument | calls: () => AssuranceDocument"
@@ -3489,6 +3530,12 @@
           "kind": "function",
           "name": "decodeQueryCursor",
           "signature": "(cursor: unknown, expectedFingerprint: string) => string | calls: (cursor: unknown, expectedFingerprint: string) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "decodeQueryCursorEnvelope",
+          "signature": "(cursor: unknown) => QueryCursorEnvelope | calls: (cursor: unknown) => QueryCursorEnvelope"
         },
         {
           "classification": "supported",
@@ -3845,7 +3892,7 @@
           "signature": "export interface DepsTreeNode { id: string; title?: string; type?: ItemType; status?: ItemStatus; via?: string; missing: boolean; cycle: boolean; truncated?: boolean; collapsed?: boolean; dependencies: DepsTreeNode[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "deriveAssuranceProposals",
           "signature": "(context: AssuranceEvaluationContext, ownerItemId: string) => Promise<AssuranceDerivedProposal[]> | calls: (context: AssuranceEvaluationContext, ownerItemId: string) => Promise<AssuranceDerivedProposal[]>"
@@ -4241,13 +4288,13 @@
           "signature": "export interface EvalResult { k: number; query_count: number; aggregate: { ndcg: number; mrr: number; precision: number; recall: number; }; queries: EvalQueryReport[]; fail_under?: number; passed: boolean; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "evaluateAssuranceAssertion",
           "signature": "(definition: AssuranceAssertionDefinition, measurement: AssuranceMeasurementResult, options?: { owner_terminal?: boolean; }) => AssuranceAssertionVerdict | calls: (definition: AssuranceAssertionDefinition, measurement: AssuranceMeasurementResult, options?: { owner_terminal?: boolean; }) => AssuranceAssertionVerdict"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "evaluateAssuranceGate",
           "signature": "(gateId: string, document: AssuranceDocument, context: AssuranceEvaluationContext, options: { trigger: AssuranceGateTrigger; dry_run?: boolean; }) => Promise<AssuranceGateVerdict> | calls: (gateId: string, document: AssuranceDocument, context: AssuranceEvaluationContext, options: { trigger: AssuranceGateTrigger; dry_run?: boolean; }) => Promise<AssuranceGateVerdict>"
@@ -4259,7 +4306,7 @@
           "signature": "(input: ContextRankingEvaluationInput) => ContextRankingEvaluation | calls: (input: ContextRankingEvaluationInput) => ContextRankingEvaluation"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "evaluateMeasurement",
           "signature": "(definition: AssuranceMeasurementDefinition, context: AssuranceEvaluationContext, definitions?: AssuranceMeasurementDefinition[]) => Promise<AssuranceMeasurementResult> | calls: (definition: AssuranceMeasurementDefinition, context: AssuranceEvaluationContext, definitions?: AssuranceMeasurementDefinition[]) => Promise<AssuranceMeasurementResult>"
@@ -5363,7 +5410,7 @@
           "signature": "() => ExtensionRegistrationRegistry | null | calls: () => ExtensionRegistrationRegistry | null"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "getAssuranceDeclaration",
           "signature": "(pmRoot: string, kind: AssuranceDeclarationKind, id: string) => Promise<AssuranceDeclaration> | calls: (pmRoot: string, kind: AssuranceDeclarationKind, id: string) => Promise<AssuranceDeclaration>"
@@ -5840,7 +5887,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warnings: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -6911,13 +6958,13 @@
           "signature": "(pmRoot: string, preferredFormat?: ItemFormat, typeToFolder?: Record<string, string>, warnings?: string[], schema?: RuntimeSchemaSettings) => Promise<ItemMetadata[]> | calls: (pmRoot: string, preferredFormat?: ItemFormat, typeToFolder?: Record<string, string>, warnings?: string[], schema?: RuntimeSchemaSettings) => Promise<ItemMetadata[]>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "listAssuranceDeclarations",
           "signature": "(pmRoot: string, kind: AssuranceDeclarationKind) => Promise<{ items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [\"items\"]; jq_selector: \".items[]\"; }; }> | calls: (pmRoot: string, kind: AssuranceDeclarationKind) => Promise<{ items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [\"items\"]; jq_selector: \".items[]\"; }; }>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "listAssuranceVerdicts",
           "signature": "(pmRoot: string, options?: { gate_id?: string; limit?: number; }) => Promise<AssuranceGateVerdict[]> | calls: (pmRoot: string, options?: { gate_id?: string; limit?: number; }) => Promise<AssuranceGateVerdict[]>"
@@ -7485,6 +7532,18 @@
           "kind": "function",
           "name": "normalizeAnnotationTransportOptions",
           "signature": "(options: Record<string, unknown>) => Record<string, unknown> | calls: (options: Record<string, unknown>) => Record<string, unknown>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "normalizeAssuranceEvaluation",
+          "signature": "<T>(operation: () => Promise<T>) => Promise<T> | calls: <T>(operation: () => Promise<T>) => Promise<T>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "normalizeAssuranceMutation",
+          "signature": "<T>(operation: () => Promise<T>) => Promise<T> | calls: <T>(operation: () => Promise<T>) => Promise<T>"
         },
         {
           "classification": "advanced_export",
@@ -9134,7 +9193,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputBudgetExceeded",
-          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; }; read_output: PmReadOutputReceipt; }"
+          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; recovery: { outputBudget: \"unbounded\"; }; }; read_output: PmReadOutputReceipt; }"
         },
         {
           "classification": "supported",
@@ -9224,7 +9283,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputTruncationDisclosure",
-          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; restore_with: string; }"
+          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; continuation_cursor_rebased: boolean; restore_with: string; recovery: { cli: \"--output-budget unbounded\"; sdk: { outputBudget: \"unbounded\"; }; mcp: { outputBudget: \"unbounded\"; }; }; }"
         },
         {
           "classification": "advanced_export",
@@ -9701,7 +9760,7 @@
           "signature": "(result: ValidateResult) => ValidateCountsResult | calls: (result: ValidateResult) => ValidateCountsResult"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "promoteAssuranceAssertion",
           "signature": "(pmRoot: string, definition: AssuranceAssertionDefinition, enforcement: Exclude<AssuranceEnforcement, \"observe\">, options?: { author?: string; message?: string; }) => Promise<Awaited<ReturnType<typeof putAssuranceDeclaration>>> | calls: (pmRoot: string, definition: AssuranceAssertionDefinition, enforcement: Exclude<AssuranceEnforcement, \"observe\">, options?: { author?: string; message?: string; }) => Promise<Awaited<ReturnType<typeof putAssuranceDeclaration>>>"
@@ -9737,13 +9796,13 @@
           "signature": "(cacheRoot: string, currentGeneration: string) => CompileCachePruneResult | calls: (cacheRoot: string, currentGeneration: string) => CompileCachePruneResult"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "putAssuranceDeclaration",
           "signature": "(pmRoot: string, kind: AssuranceDeclarationKind, definition: AssuranceDeclaration, options?: AssuranceMutationOptions) => Promise<AssuranceMutationReceipt> | calls: (pmRoot: string, kind: AssuranceDeclarationKind, definition: AssuranceDeclaration, options?: AssuranceMutationOptions) => Promise<AssuranceMutationReceipt>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "putAssuranceDeclarationBundle",
           "signature": "(pmRoot: string, bundle: AssuranceDeclarationBundle, options?: AssuranceMutationOptions) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, bundle: AssuranceDeclarationBundle, options?: AssuranceMutationOptions) => Promise<AssuranceBundleMutationReceipt>"
@@ -9753,6 +9812,12 @@
           "kind": "value",
           "name": "QUERY_CURSOR_CONTRACT",
           "signature": "Readonly<{ version: 1; max_length: 4096; }>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "QueryCursorEnvelope",
+          "signature": "export interface QueryCursorEnvelope { version: number; fingerprint: string; after_id: string; after_index?: number; snapshot?: string; }"
         },
         {
           "classification": "supported",
@@ -10037,7 +10102,7 @@
           "signature": "(item: AfterCommandAffectedItem) => void | calls: (item: AfterCommandAffectedItem) => void"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "recordAssuranceVerdict",
           "signature": "(pmRoot: string, verdict: AssuranceGateVerdict, options?: AssuranceMutationOptions) => Promise<void> | calls: (pmRoot: string, verdict: AssuranceGateVerdict, options?: AssuranceMutationOptions) => Promise<void>"
@@ -10877,7 +10942,7 @@
           "signature": "export interface ReminderShortcutOptions extends SchedulingShortcutCommonOptions { at?: string; text?: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "removeAssuranceDeclaration",
           "signature": "(pmRoot: string, kind: AssuranceDeclarationKind, id: string, options?: AssuranceMutationOptions) => Promise<AssuranceMutationReceipt> | calls: (pmRoot: string, kind: AssuranceDeclarationKind, id: string, options?: AssuranceMutationOptions) => Promise<AssuranceMutationReceipt>"
@@ -11753,13 +11818,13 @@
           "signature": "(id: string, options: AppendCommandOptions, global: GlobalOptions) => Promise<AppendResult> | calls: (id: string, options: AppendCommandOptions, global: GlobalOptions) => Promise<AppendResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runAssuranceAction",
           "signature": "(input: AssuranceActionInput, global?: Pick<GlobalOptions, \"path\">) => Promise<AssuranceActionResult> | calls: (input: AssuranceActionInput, global?: Pick<GlobalOptions, \"path\">) => Promise<AssuranceActionResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runAssuranceDispatch",
           "signature": "(args: Record<string, unknown>, options: Record<string, unknown>, global: GlobalOptions) => Promise<AssuranceActionResult> | calls: (args: Record<string, unknown>, options: Record<string, unknown>, global: GlobalOptions) => Promise<AssuranceActionResult>"
@@ -14321,13 +14386,13 @@
           "signature": "CliFlagContract[]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "validateAssertionDefinition",
           "signature": "(definition: AssuranceAssertionDefinition) => AssuranceAssertionDefinition | calls: (definition: AssuranceAssertionDefinition) => AssuranceAssertionDefinition"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "validateAssuranceDocument",
           "signature": "(document: AssuranceDocument) => AssuranceDocument | calls: (document: AssuranceDocument) => AssuranceDocument"
@@ -14363,7 +14428,7 @@
           "signature": "export interface ValidateFixesSummary { mode: \"apply\" | \"dry_run\"; auto_fix: boolean; prune_missing: boolean; granted_fix_scopes: string[]; planned_count: number; applied_count: number; gated_count: number; failed_count: number; planned_fixes: Array<Record<string, unknown>>; applied_fixes: Array<Record<string, unknown>>; gated_fixes: Array<Record<string, unknown>>; failed_fixes: Array<Record<string, unknown>>; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "validateGateDefinition",
           "signature": "(definition: AssuranceGateDefinition) => AssuranceGateDefinition | calls: (definition: AssuranceGateDefinition) => AssuranceGateDefinition"
@@ -14381,7 +14446,7 @@
           "signature": "(paths: string[], workspaceRoot?: string) => Promise<LinkedPathValidation> | calls: (paths: string[], workspaceRoot?: string) => Promise<LinkedPathValidation>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "validateMeasurementDefinition",
           "signature": "(definition: AssuranceMeasurementDefinition) => AssuranceMeasurementDefinition | calls: (definition: AssuranceMeasurementDefinition) => AssuranceMeasurementDefinition"
@@ -17390,7 +17455,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputBudgetExceeded",
-          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; }; read_output: PmReadOutputReceipt; }"
+          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; recovery: { outputBudget: \"unbounded\"; }; }; read_output: PmReadOutputReceipt; }"
         },
         {
           "classification": "contract_data",
@@ -17468,7 +17533,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputTruncationDisclosure",
-          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; restore_with: string; }"
+          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; continuation_cursor_rebased: boolean; restore_with: string; recovery: { cli: \"--output-budget unbounded\"; sdk: { outputBudget: \"unbounded\"; }; mcp: { outputBudget: \"unbounded\"; }; }; }"
         },
         {
           "classification": "contract_data",
@@ -18710,7 +18775,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputBudgetExceeded",
-          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; }; read_output: PmReadOutputReceipt; }"
+          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; recovery: { outputBudget: \"unbounded\"; }; }; read_output: PmReadOutputReceipt; }"
         },
         {
           "classification": "supported",
@@ -19086,6 +19151,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "acceptAssuranceProposals",
+          "signature": "(pmRoot: string, proposals: readonly AssuranceDerivedProposal[], options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, proposals: readonly AssuranceDerivedProposal[], options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt>"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "AcknowledgeUnknownAuthorEventsOptions",
           "signature": "export interface AcknowledgeUnknownAuthorEventsOptions { events?: UnknownAuthorHistoryEvent[]; all_actionable?: boolean; attributed_author: string; reviewer: string; reason: string; }"
@@ -19104,9 +19175,393 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "applyAssurancePreset",
+          "signature": "(pmRoot: string, id: AssurancePresetId, ownerItemId: string, options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, id: AssurancePresetId, ownerItemId: string, options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt>"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "ASSURANCE_ACTIONS",
+          "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "ASSURANCE_DECLARATION_KINDS",
+          "signature": "readonly [\"measurement\", \"assertion\", \"gate\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "ASSURANCE_DOCUMENT_VERSION",
+          "signature": "1"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "ASSURANCE_GATE_TRIGGERS",
+          "signature": "readonly [\"pre-commit\", \"pre-push\", \"pre-merge\", \"ci\", \"pre-release\", \"post-release\", \"scheduled\", \"on-claim\", \"on-close\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "ASSURANCE_MEASUREMENT_SOURCE_KINDS",
+          "signature": "readonly [\"items\", \"dependency_kind\", \"graph\", \"validate\", \"health\", \"history\", \"links\", \"provider\", \"derived\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "ASSURANCE_PRESET_IDS",
+          "signature": "readonly [\"software-delivery\", \"research\", \"agent-evaluation\", \"operations\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceAction",
+          "signature": "export type AssuranceAction = (typeof ASSURANCE_ACTIONS)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceActionInput",
+          "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; limit?: number | string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; preset?: string; owner?: string; apply?: boolean; enforcement?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceActionResult",
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceArithmeticExpression",
+          "signature": "export interface AssuranceArithmeticExpression { operator: \"add\" | \"subtract\" | \"multiply\" | \"divide\" | \"min\" | \"max\"; operands: AssuranceDerivedExpression[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceAssertionDefinition",
+          "signature": "export interface AssuranceAssertionDefinition { id: string; measurement_id: string; owner_item_id: string; scope: AssuranceScope; ceiling?: number; floor?: number; equals?: AssuranceValue; zero?: true; monotone_nondecreasing?: number; monotone_nonincreasing?: number; subset_of?: string[]; lifetime?: AssuranceLifetime; retire_reason?: string; enforcement: AssuranceEnforcement; negative_control: AssuranceNegativeControl; authorization_decision?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "assuranceAssertionUpdateIsLoosening",
+          "signature": "(before: AssuranceAssertionDefinition, after: AssuranceAssertionDefinition) => boolean | calls: (before: AssuranceAssertionDefinition, after: AssuranceAssertionDefinition) => boolean"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceAssertionVerdict",
+          "signature": "export interface AssuranceAssertionVerdict { assertion_id: string; measurement_id: string; measurement_definition_fingerprint: string; scope: AssuranceScope; population_size: number; observed: AssuranceValue; bound: AssuranceBound; distance: number | null; verdict: \"pass\" | \"fail\" | \"retired\"; enforcement: AssuranceEnforcement; negative_control_proven: boolean; cost: AssuranceMeasurementCost; contributors: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceBound",
+          "signature": "export interface AssuranceBound { polarity: \"ceiling\" | \"floor\" | \"equals\" | \"zero\" | \"monotone_nondecreasing\" | \"monotone_nonincreasing\" | \"subset_of\"; value: AssuranceValue; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceBundleMutationReceipt",
+          "signature": "export interface AssuranceBundleMutationReceipt { changed: boolean; created_ids: string[]; unchanged_ids: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceDeclaration",
+          "signature": "export type AssuranceDeclaration = AssuranceMeasurementDefinition | AssuranceAssertionDefinition | AssuranceGateDefinition;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceDeclarationBundle",
+          "signature": "export interface AssuranceDeclarationBundle { measurements: AssuranceMeasurementDefinition[]; assertions: AssuranceAssertionDefinition[]; gates: AssuranceGateDefinition[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceDeclarationKind",
+          "signature": "export type AssuranceDeclarationKind = \"measurement\" | \"assertion\" | \"gate\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceDependencyKindSource",
+          "signature": "export interface AssuranceDependencyKindSource { kind: \"dependency_kind\"; dependency_kind: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceDependencyRecord",
+          "signature": "export interface AssuranceDependencyRecord { id: string; kind: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceDerivedExpression",
+          "signature": "export type AssuranceDerivedExpression = AssuranceMeasurementReference | AssuranceLiteralExpression | AssuranceArithmeticExpression;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceDerivedProposal",
+          "signature": "export interface AssuranceDerivedProposal { id: string; population_size: number; scope: AssuranceScope; observed: number; declarations: AssuranceDeclarationBundle; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceDerivedSource",
+          "signature": "export interface AssuranceDerivedSource { kind: \"derived\"; expression: AssuranceDerivedExpression; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceDocument",
+          "signature": "export interface AssuranceDocument { version: typeof ASSURANCE_DOCUMENT_VERSION; measurements: AssuranceMeasurementDefinition[]; assertions: AssuranceAssertionDefinition[]; gates: AssuranceGateDefinition[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceEnforcement",
+          "signature": "export type AssuranceEnforcement = \"block\" | \"warn\" | \"observe\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceEvaluationContext",
+          "signature": "export interface AssuranceEvaluationContext { tree_id: string; items: AssuranceItemRecord[]; history: AssuranceHistoryRecord[]; terminal_statuses?: string[]; provider_capabilities?: Readonly<Record<string, { cost_class: AssuranceProviderCostClass; network: boolean; }>>; external: (source: AssuranceGraphSource | AssuranceValidateSource | AssuranceHealthSource | AssuranceProviderSource) => Promise<AssuranceExternalMeasurementResult>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "class",
+          "name": "AssuranceEvaluationRefusalError",
+          "signature": "export declare class AssuranceEvaluationRefusalError extends TypeError { constructor(message: string); }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceExternalMeasurementResult",
+          "signature": "export interface AssuranceExternalMeasurementResult { value: AssuranceValue; population_size: number; cost: number; contributors?: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceGateDefinition",
+          "signature": "export interface AssuranceGateDefinition { id: string; assertion_ids: string[]; triggers: AssuranceGateTrigger[]; description?: string; provider_policy?: { allowed_providers: string[]; triggers: Partial<Record<AssuranceGateTrigger, { max_cost_class: AssuranceProviderCostClass; allow_network: boolean; }>>; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceGateTrigger",
+          "signature": "export type AssuranceGateTrigger = (typeof ASSURANCE_GATE_TRIGGERS)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceGateVerdict",
+          "signature": "export interface AssuranceGateVerdict { gate_id: string; tree_id: string; trigger: AssuranceGateTrigger; dry_run: boolean; evaluated_at: string; verdict: \"pass\" | \"warn\" | \"block\"; exit_code: 0 | 1; assertions: AssuranceAssertionVerdict[]; cost: AssuranceMeasurementCost; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceGraphSource",
+          "signature": "export interface AssuranceGraphSource { kind: \"graph\"; operation: string; field: string; parameters?: Record<string, string | number | boolean>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceHealthSource",
+          "signature": "export interface AssuranceHealthSource { kind: \"health\"; check: string; field: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceHistoryRecord",
+          "signature": "export interface AssuranceHistoryRecord { op: string; author: string; agent_harness?: string; agent_model?: string; [key: string]: unknown; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceHistorySource",
+          "signature": "export interface AssuranceHistorySource { kind: \"history\"; op?: string; author?: string; harness?: string; model?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceItemRecord",
+          "signature": "export interface AssuranceItemRecord { id: string; status: string; type: string; tags?: string[]; priority?: string | number; dependencies?: AssuranceDependencyRecord[]; files?: object[]; tests?: object[]; docs?: object[]; [key: string]: unknown; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceItemsSource",
+          "signature": "export interface AssuranceItemsSource { kind: \"items\"; statuses?: string[]; types?: string[]; tags?: string[]; field?: string; equals?: string | number | boolean | null; state?: \"present\" | \"missing\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceLifetime",
+          "signature": "export type AssuranceLifetime = \"hold\" | \"retire\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceLinksSource",
+          "signature": "export interface AssuranceLinksSource { kind: \"links\"; link: \"files\" | \"tests\" | \"docs\"; state: \"present\" | \"missing\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceLiteralExpression",
+          "signature": "export interface AssuranceLiteralExpression { literal: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceMeasurementCost",
+          "signature": "export interface AssuranceMeasurementCost { units: number; items_scanned: number; history_entries: number; provider_calls: number; duration_ms: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceMeasurementDefinition",
+          "signature": "export interface AssuranceMeasurementDefinition { id: string; description?: string; source: AssuranceMeasurementSource; max_cost?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceMeasurementReference",
+          "signature": "export interface AssuranceMeasurementReference { measurement: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceMeasurementResult",
+          "signature": "export interface AssuranceMeasurementResult { id: string; definition_fingerprint: string; value: AssuranceValue; population_size: number; cost: AssuranceMeasurementCost; contributors: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceMeasurementSource",
+          "signature": "export type AssuranceMeasurementSource = AssuranceItemsSource | AssuranceDependencyKindSource | AssuranceGraphSource | AssuranceValidateSource | AssuranceHealthSource | AssuranceHistorySource | AssuranceLinksSource | AssuranceProviderSource | AssuranceDerivedSource;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceMutationOptions",
+          "signature": "export interface AssuranceMutationOptions { author?: string; message?: string; authorized_decision_ids?: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceMutationReceipt",
+          "signature": "export interface AssuranceMutationReceipt { changed: boolean; action: \"created\" | \"updated\" | \"removed\"; kind: AssuranceDeclarationKind; id: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "class",
+          "name": "AssuranceMutationRefusalError",
+          "signature": "export declare class AssuranceMutationRefusalError extends TypeError { constructor(message: string); }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceNegativeControl",
+          "signature": "export interface AssuranceNegativeControl { cases: AssuranceNegativeControlCase[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceNegativeControlCase",
+          "signature": "export interface AssuranceNegativeControlCase { observed: AssuranceValue; expected: \"pass\" | \"fail\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssurancePreset",
+          "signature": "export interface AssurancePreset { id: AssurancePresetId; title: string; description: string; declarations: AssuranceDeclarationBundle; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssurancePresetId",
+          "signature": "export type AssurancePresetId = (typeof ASSURANCE_PRESET_IDS)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceProviderCostClass",
+          "signature": "export type AssuranceProviderCostClass = \"low\" | \"medium\" | \"high\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceProviderResolver",
+          "signature": "export type AssuranceProviderResolver = (source: AssuranceProviderSource) => Promise<AssuranceExternalMeasurementResult>;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceProviderSource",
+          "signature": "export interface AssuranceProviderSource { kind: \"provider\"; provider: string; key: string; parameters?: Record<string, string | number | boolean | null>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceScope",
+          "signature": "export type AssuranceScope = { kind: \"all\"; } | { kind: \"active\"; } | { kind: \"filter\"; measurement_id: string; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceValidateSource",
+          "signature": "export interface AssuranceValidateSource { kind: \"validate\"; check: string; field: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AssuranceValue",
+          "signature": "export type AssuranceValue = number | string[];"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "classifyHistoryAuthorEvent",
           "signature": "(parsed: unknown) => \"actionable_unknown\" | \"attributed\" | \"legacy_unknown\" | calls: (parsed: unknown) => \"attributed\" | \"legacy_unknown\" | \"actionable_unknown\""
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "createAssurancePreset",
+          "signature": "(id: AssurancePresetId, ownerItemId: string) => AssurancePreset | calls: (id: AssurancePresetId, ownerItemId: string) => AssurancePreset"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "createAssuranceWorkspaceContext",
+          "signature": "(pmRoot: string, options?: CreateAssuranceWorkspaceContextOptions) => Promise<AssuranceEvaluationContext> | calls: (pmRoot: string, options?: CreateAssuranceWorkspaceContextOptions) => Promise<AssuranceEvaluationContext>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "CreateAssuranceWorkspaceContextOptions",
+          "signature": "export interface CreateAssuranceWorkspaceContextOptions { tree_id?: string; include_history?: boolean; resolve_tree?: boolean; providers?: Readonly<Record<string, AssuranceProviderResolver>>; provider_capabilities?: AssuranceEvaluationContext[\"provider_capabilities\"]; trigger?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "createEmptyAssuranceDocument",
+          "signature": "() => AssuranceDocument | calls: () => AssuranceDocument"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "deriveAssuranceProposals",
+          "signature": "(context: AssuranceEvaluationContext, ownerItemId: string) => Promise<AssuranceDerivedProposal[]> | calls: (context: AssuranceEvaluationContext, ownerItemId: string) => Promise<AssuranceDerivedProposal[]>"
         },
         {
           "classification": "supported",
@@ -19131,6 +19586,24 @@
           "kind": "interface",
           "name": "DuplicateItemIdRow",
           "signature": "export interface DuplicateItemIdRow { id: string; paths: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateAssuranceAssertion",
+          "signature": "(definition: AssuranceAssertionDefinition, measurement: AssuranceMeasurementResult, options?: { owner_terminal?: boolean; }) => AssuranceAssertionVerdict | calls: (definition: AssuranceAssertionDefinition, measurement: AssuranceMeasurementResult, options?: { owner_terminal?: boolean; }) => AssuranceAssertionVerdict"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateAssuranceGate",
+          "signature": "(gateId: string, document: AssuranceDocument, context: AssuranceEvaluationContext, options: { trigger: AssuranceGateTrigger; dry_run?: boolean; }) => Promise<AssuranceGateVerdict> | calls: (gateId: string, document: AssuranceDocument, context: AssuranceEvaluationContext, options: { trigger: AssuranceGateTrigger; dry_run?: boolean; }) => Promise<AssuranceGateVerdict>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateMeasurement",
+          "signature": "(definition: AssuranceMeasurementDefinition, context: AssuranceEvaluationContext, definitions?: AssuranceMeasurementDefinition[]) => Promise<AssuranceMeasurementResult> | calls: (definition: AssuranceMeasurementDefinition, context: AssuranceEvaluationContext, definitions?: AssuranceMeasurementDefinition[]) => Promise<AssuranceMeasurementResult>"
         },
         {
           "classification": "supported",
@@ -19207,6 +19680,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "getAssuranceDeclaration",
+          "signature": "(pmRoot: string, kind: AssuranceDeclarationKind, id: string) => Promise<AssuranceDeclaration> | calls: (pmRoot: string, kind: AssuranceDeclarationKind, id: string) => Promise<AssuranceDeclaration>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "getMutationActionContract",
           "signature": "(action: string) => MutationActionContract | undefined | calls: (action: string) => MutationActionContract | undefined"
         },
@@ -19220,7 +19699,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warnings: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -19279,6 +19758,18 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "listAssuranceDeclarations",
+          "signature": "(pmRoot: string, kind: AssuranceDeclarationKind) => Promise<{ items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [\"items\"]; jq_selector: \".items[]\"; }; }> | calls: (pmRoot: string, kind: AssuranceDeclarationKind) => Promise<{ items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [\"items\"]; jq_selector: \".items[]\"; }; }>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "listAssuranceVerdicts",
+          "signature": "(pmRoot: string, options?: { gate_id?: string; limit?: number; }) => Promise<AssuranceGateVerdict[]> | calls: (pmRoot: string, options?: { gate_id?: string; limit?: number; }) => Promise<AssuranceGateVerdict[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "listMutationActions",
           "signature": "() => string[] | calls: () => string[]"
         },
@@ -19305,6 +19796,18 @@
           "kind": "type",
           "name": "MutationHistoryScope",
           "signature": "export type MutationHistoryScope = \"item\" | \"workspace\" | \"history\" | \"conditional\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "normalizeAssuranceEvaluation",
+          "signature": "<T>(operation: () => Promise<T>) => Promise<T> | calls: <T>(operation: () => Promise<T>) => Promise<T>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "normalizeAssuranceMutation",
+          "signature": "<T>(operation: () => Promise<T>) => Promise<T> | calls: <T>(operation: () => Promise<T>) => Promise<T>"
         },
         {
           "classification": "supported",
@@ -19344,6 +19847,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "promoteAssuranceAssertion",
+          "signature": "(pmRoot: string, definition: AssuranceAssertionDefinition, enforcement: Exclude<AssuranceEnforcement, \"observe\">, options?: { author?: string; message?: string; }) => Promise<Awaited<ReturnType<typeof putAssuranceDeclaration>>> | calls: (pmRoot: string, definition: AssuranceAssertionDefinition, enforcement: Exclude<AssuranceEnforcement, \"observe\">, options?: { author?: string; message?: string; }) => Promise<Awaited<ReturnType<typeof putAssuranceDeclaration>>>"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "ProvenanceResolverHealthOutcome",
           "signature": "export interface ProvenanceResolverHealthOutcome { harness: string; dimension: string; resolver: string; attempts: number; successes: number; }"
@@ -19362,6 +19871,24 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "putAssuranceDeclaration",
+          "signature": "(pmRoot: string, kind: AssuranceDeclarationKind, definition: AssuranceDeclaration, options?: AssuranceMutationOptions) => Promise<AssuranceMutationReceipt> | calls: (pmRoot: string, kind: AssuranceDeclarationKind, definition: AssuranceDeclaration, options?: AssuranceMutationOptions) => Promise<AssuranceMutationReceipt>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "putAssuranceDeclarationBundle",
+          "signature": "(pmRoot: string, bundle: AssuranceDeclarationBundle, options?: AssuranceMutationOptions) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, bundle: AssuranceDeclarationBundle, options?: AssuranceMutationOptions) => Promise<AssuranceBundleMutationReceipt>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "recordAssuranceVerdict",
+          "signature": "(pmRoot: string, verdict: AssuranceGateVerdict, options?: AssuranceMutationOptions) => Promise<void> | calls: (pmRoot: string, verdict: AssuranceGateVerdict, options?: AssuranceMutationOptions) => Promise<void>"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "ReindexOptions",
           "signature": "export interface ReindexOptions { mode?: string; progress?: boolean; full?: boolean; }"
@@ -19375,6 +19902,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "removeAssuranceDeclaration",
+          "signature": "(pmRoot: string, kind: AssuranceDeclarationKind, id: string, options?: AssuranceMutationOptions) => Promise<AssuranceMutationReceipt> | calls: (pmRoot: string, kind: AssuranceDeclarationKind, id: string, options?: AssuranceMutationOptions) => Promise<AssuranceMutationReceipt>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "resolveUnknownAuthorAcknowledgmentSelector",
           "signature": "(rawEvents: readonly string[], allActionable: boolean) => { events: UnknownAuthorHistoryEvent[]; all_actionable: boolean; } | calls: (rawEvents: readonly string[], allActionable: boolean) => { events: UnknownAuthorHistoryEvent[]; all_actionable: boolean; }"
         },
@@ -19383,6 +19916,18 @@
           "kind": "interface",
           "name": "ResurrectedItemRow",
           "signature": "export interface ResurrectedItemRow { id: string; deleted_at: string; deleted_by: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runAssuranceAction",
+          "signature": "(input: AssuranceActionInput, global?: Pick<GlobalOptions, \"path\">) => Promise<AssuranceActionResult> | calls: (input: AssuranceActionInput, global?: Pick<GlobalOptions, \"path\">) => Promise<AssuranceActionResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runAssuranceDispatch",
+          "signature": "(args: Record<string, unknown>, options: Record<string, unknown>, global: GlobalOptions) => Promise<AssuranceActionResult> | calls: (args: Record<string, unknown>, options: Record<string, unknown>, global: GlobalOptions) => Promise<AssuranceActionResult>"
         },
         {
           "classification": "supported",
@@ -19590,6 +20135,18 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "validateAssertionDefinition",
+          "signature": "(definition: AssuranceAssertionDefinition) => AssuranceAssertionDefinition | calls: (definition: AssuranceAssertionDefinition) => AssuranceAssertionDefinition"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "validateAssuranceDocument",
+          "signature": "(document: AssuranceDocument) => AssuranceDocument | calls: (document: AssuranceDocument) => AssuranceDocument"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "ValidateCheck",
           "signature": "export interface ValidateCheck { name: ValidateCheckName; status: ValidateStatus; ok: boolean; details: Record<string, unknown>; }"
@@ -19617,6 +20174,18 @@
           "kind": "interface",
           "name": "ValidateFixesSummary",
           "signature": "export interface ValidateFixesSummary { mode: \"apply\" | \"dry_run\"; auto_fix: boolean; prune_missing: boolean; granted_fix_scopes: string[]; planned_count: number; applied_count: number; gated_count: number; failed_count: number; planned_fixes: Array<Record<string, unknown>>; applied_fixes: Array<Record<string, unknown>>; gated_fixes: Array<Record<string, unknown>>; failed_fixes: Array<Record<string, unknown>>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "validateGateDefinition",
+          "signature": "(definition: AssuranceGateDefinition) => AssuranceGateDefinition | calls: (definition: AssuranceGateDefinition) => AssuranceGateDefinition"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "validateMeasurementDefinition",
+          "signature": "(definition: AssuranceMeasurementDefinition) => AssuranceMeasurementDefinition | calls: (definition: AssuranceMeasurementDefinition) => AssuranceMeasurementDefinition"
         },
         {
           "classification": "supported",
@@ -21793,6 +22362,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "decodeQueryCursorEnvelope",
+          "signature": "(cursor: unknown) => QueryCursorEnvelope | calls: (cursor: unknown) => QueryCursorEnvelope"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "decodeQueryCursorState",
           "signature": "(cursor: unknown, expectedFingerprint: string) => QueryCursorState | calls: (cursor: unknown, expectedFingerprint: string) => QueryCursorState"
         },
@@ -22245,6 +22820,12 @@
           "kind": "value",
           "name": "QUERY_CURSOR_CONTRACT",
           "signature": "Readonly<{ version: 1; max_length: 4096; }>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "QueryCursorEnvelope",
+          "signature": "export interface QueryCursorEnvelope { version: number; fingerprint: string; after_id: string; after_index?: number; snapshot?: string; }"
         },
         {
           "classification": "supported",
@@ -23066,7 +23647,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; relationship_kind_contracts?: Array<{ canonical: string; aliases: string[]; inverse?: string; ordering: boolean; hierarchy: boolean; }>; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; relationship_kind_contracts?: Array<{ canonical: string; aliases: string[]; inverse?: string; ordering: boolean; hierarchy: boolean; }>; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; assurance_contracts?: { measurement_source_kinds: readonly string[]; gate_triggers: readonly string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
         },
         {
           "classification": "supported",
@@ -23504,7 +24085,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warnings: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -24128,7 +24709,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputBudgetExceeded",
-          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; }; read_output: PmReadOutputReceipt; }"
+          "signature": "export interface PmReadOutputBudgetExceeded { output_budget_exceeded: { omitted_result: true; reason: \"requested_budget_infeasible\"; restore_with: string; recovery: { outputBudget: \"unbounded\"; }; }; read_output: PmReadOutputReceipt; }"
         },
         {
           "classification": "supported",

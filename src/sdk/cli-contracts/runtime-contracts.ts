@@ -177,6 +177,10 @@ import {
   type PmCommandExitOutcomeContract,
 } from "./command-exit-contracts.js";
 import { BUILTIN_RELATIONSHIP_KINDS } from "../relationship-kinds/contract.js";
+import {
+  ASSURANCE_GATE_TRIGGERS,
+  ASSURANCE_MEASUREMENT_SOURCE_KINDS,
+} from "../governance/assurance.js";
 
 /** Documents the contracts command options payload exchanged by command, SDK, and package integrations. */
 export interface ContractsCommandOptions {
@@ -315,6 +319,11 @@ export interface ContractsResult {
     create_modes: string[];
     close_validation_modes: string[];
     workflow_enforcement_modes: string[];
+  };
+  /** Authoritative assurance declaration vocabularies for SDK and host validation. */
+  assurance_contracts?: {
+    measurement_source_kinds: readonly string[];
+    gate_triggers: readonly string[];
   };
   // pm-4os2: static MCP tool surface (tool names, required fields, inputSchema
   // shapes) so the contract golden file catches unintended MCP schema drift.
@@ -2088,7 +2097,9 @@ function resolveContractsSelection(
     fullOutput,
     omitUnfilteredSchema: unfilteredDefaultBriefMode,
     omitUnfilteredCommandFlags: unfilteredDefaultBriefMode,
-    omitUnfilteredCommanderAliases: unfilteredDefaultBriefMode,
+    omitUnfilteredCommanderAliases:
+      unfilteredDefaultBriefMode ||
+      (selectedCommand !== undefined && !fullOutput),
   };
 }
 
@@ -2764,7 +2775,9 @@ function createContractsResult(
 function attachRuntimeContractsResult(
   result: ContractsResult,
   runtime: ContractsRuntimeContext,
+  selection: ContractsSelection,
 ): void {
+  const selectedCommand = selection.selectedCommand;
   result.runtime_schema = {
     statuses: runtime.statusRegistry.definitions.map(
       (definition) => definition.id,
@@ -2774,18 +2787,24 @@ function attachRuntimeContractsResult(
     canceled_status: runtime.statusRegistry.canceled_status,
     types: [...runtime.typeRegistry.types],
     fields_by_command: Object.fromEntries(
-      [...runtime.runtimeFieldRegistry.command_to_fields.entries()].map(
-        ([command, definitions]) => [
+      [...runtime.runtimeFieldRegistry.command_to_fields.entries()]
+        .filter(
+          ([command]) =>
+            selectedCommand === undefined || command === selectedCommand,
+        )
+        .map(([command, definitions]) => [
           command,
           [
             ...new Set(
               definitions.map((definition) => `--${definition.cli_flag}`),
             ),
           ].sort((left, right) => left.localeCompare(right)),
-        ],
-      ),
+        ]),
     ),
   };
+  if (selectedCommand !== undefined && !selection.fullOutput) {
+    return;
+  }
   result.extension_contracts = {
     capabilities: [...PM_EXTENSION_CAPABILITY_CONTRACTS],
     services: [...PM_EXTENSION_SERVICE_NAME_CONTRACTS],
@@ -2900,7 +2919,9 @@ function attachCommanderAliasContractsResult(
     result.commander_aliases = buildCommanderAliasSurface();
     return;
   }
-  result.commander_aliases_omitted_reason = "unfiltered_default_brief";
+  result.commander_aliases_omitted_reason = selection.selectedCommand
+    ? "command_scoped"
+    : "unfiltered_default_brief";
 }
 
 /** Attach the compact agent-facing command semantics shared by summary and full projections. */
@@ -2961,7 +2982,7 @@ export async function runContracts(
   }
   const commandAliases = buildCommandAliasSurface(commands);
   if (!(selection.flagsOnly && !selection.fullOutput)) {
-    attachRuntimeContractsResult(result, runtime);
+    attachRuntimeContractsResult(result, runtime, selection);
   }
   attachSchemaContractsResult(
     result,
@@ -2977,6 +2998,12 @@ export async function runContracts(
     commandAliases,
   );
   attachCommanderAliasContractsResult(result, selection);
+  if (selection.selectedCommand === "assurance" || selection.fullOutput) {
+    result.assurance_contracts = {
+      measurement_source_kinds: [...ASSURANCE_MEASUREMENT_SOURCE_KINDS],
+      gate_triggers: [...ASSURANCE_GATE_TRIGGERS],
+    };
+  }
 
   // pm-4os2: snapshot the static MCP tool surface in the full projection so
   // `pnpm contracts:check` (CI static gate) fails on unintended inputSchema

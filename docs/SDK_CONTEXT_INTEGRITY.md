@@ -145,6 +145,12 @@ harness/dimension/kind counts, and never echoes the historical value.
 - an AST-derived denominator of identical named rule bodies, declared coverage,
   and a non-decreasing detected-cluster floor.
 
+Trigger entries may constrain a shared file with `changed_lines_contain_any`.
+The set then activates only when an added or removed diff line carries one of
+those contract markers. Missing diff evidence fails closed and activates the
+set, while an unrelated hunk in the same shared table does not force artificial
+edits across every replicated member.
+
 Query waivers directly with:
 
 ```bash

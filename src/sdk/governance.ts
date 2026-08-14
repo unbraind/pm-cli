@@ -5,6 +5,11 @@
  */
 export * from "./governance/gc.js";
 export * from "./governance/health.js";
+export * from "./governance/assurance.js";
+export * from "./governance/assurance-action.js";
+export * from "./governance/assurance-mutation-error.js";
+export * from "./governance/assurance-presets.js";
+export * from "./governance/assurance-runtime.js";
 export {
   runReindex,
   type ReindexOptions,

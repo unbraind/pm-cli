@@ -25,7 +25,9 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   outputLimit: {
     anyOf: [{ type: "integer", minimum: 1 }, { const: "unbounded" }],
   },
-  outputBudget: { type: "integer", minimum: 1 },
+  outputBudget: {
+    anyOf: [{ type: "integer", minimum: 1 }, { const: "unbounded" }],
+  },
   outputFormat: { type: "string", enum: ["json", "toon"] },
   outputSession: {
     anyOf: [
@@ -989,8 +991,9 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     examples: [10, "unbounded"],
   },
   outputBudget: {
-    description: "Universal estimated-token ceiling for a read result.",
-    examples: [600, 1200],
+    description:
+      "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
+    examples: [600, 1200, "unbounded"],
   },
   outputFormat: {
     description: "Universal read-result encoding selector.",

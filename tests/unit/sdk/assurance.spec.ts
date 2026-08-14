@@ -4,6 +4,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  ASSURANCE_GATE_TRIGGERS,
+  ASSURANCE_MEASUREMENT_SOURCE_KINDS,
   assuranceAssertionUpdateIsLoosening,
   createEmptyAssuranceDocument,
   evaluateAssuranceAssertion,
@@ -24,7 +26,10 @@ import {
   type AssuranceGateDefinition,
   type AssuranceMeasurementDefinition,
 } from "../../../src/sdk/governance/assurance.js";
-import { AssuranceEvaluationRefusalError } from "../../../src/sdk/governance/assurance-mutation-error.js";
+import {
+  AssuranceEvaluationRefusalError,
+  AssuranceMutationRefusalError,
+} from "../../../src/sdk/governance/assurance-mutation-error.js";
 import {
   getWorkspaceHistoryPath,
   WORKSPACE_HISTORY_ID,
@@ -159,6 +164,26 @@ describe("assurance SDK", () => {
     expect(() =>
       validateGateDefinition({ ...gate, assertion_ids: [] }),
     ).toThrow("at least one assertion");
+    expect(() =>
+      validateGateDefinition({
+        ...gate,
+        assertion_ids: undefined,
+      } as unknown as AssuranceGateDefinition),
+    ).toThrowError(
+      new AssuranceMutationRefusalError(
+        "gate.assertion_ids is required and must be an array",
+      ),
+    );
+    expect(() =>
+      validateGateDefinition({
+        ...gate,
+        triggers: undefined,
+      } as unknown as AssuranceGateDefinition),
+    ).toThrowError(
+      new AssuranceMutationRefusalError(
+        `gate.triggers is required and must be an array of ${ASSURANCE_GATE_TRIGGERS.join(", ")}`,
+      ),
+    );
   });
 
   it("rejects invalid source, scope, cost, reference, and registry contracts", () => {
@@ -210,6 +235,30 @@ describe("assurance SDK", () => {
         source: { kind: "provider", provider: "valid", key: "Bad Key" },
       }),
     ).toThrow("stable lowercase id");
+    expect(() =>
+      validateMeasurementDefinition({
+        id: "unknown-source",
+        source: { kind: "unknown" },
+      } as unknown as AssuranceMeasurementDefinition),
+    ).toThrow(AssuranceMutationRefusalError);
+    expect(() =>
+      validateMeasurementDefinition({
+        id: "unknown-source",
+        source: { kind: "unknown" },
+      } as unknown as AssuranceMeasurementDefinition),
+    ).toThrow(
+      "measurement.source.kind must be one of items, dependency_kind, graph, validate, health, history, links, provider, derived",
+    );
+    expect(() =>
+      validateMeasurementDefinition({
+        id: "missing-source",
+        source: null,
+      } as unknown as AssuranceMeasurementDefinition),
+    ).toThrowError(
+      new AssuranceMutationRefusalError(
+        `measurement.source.kind must be one of ${ASSURANCE_MEASUREMENT_SOURCE_KINDS.join(", ")}`,
+      ),
+    );
     expect(() =>
       validateAssertionDefinition({ ...assertion, owner_item_id: " " }),
     ).toThrow("owner_item_id");
@@ -285,6 +334,16 @@ describe("assurance SDK", () => {
     ).toThrow("stable lowercase id");
     expect(() => validateGateDefinition({ ...gate, triggers: [] })).toThrow(
       "at least one trigger",
+    );
+    expect(() =>
+      validateGateDefinition({
+        ...gate,
+        triggers: ["unknown"],
+      } as unknown as AssuranceGateDefinition),
+    ).toThrowError(
+      new AssuranceMutationRefusalError(
+        `gate trigger must be one of ${ASSURANCE_GATE_TRIGGERS.join(", ")}`,
+      ),
     );
 
     const document = {
@@ -968,7 +1027,7 @@ describe("assurance SDK", () => {
         },
         context,
       ),
-    ).rejects.toThrow("unsupported assurance source");
+    ).rejects.toThrow("measurement.source.kind must be one of");
   });
 
   it("supports every assertion polarity and enforcement result", () => {

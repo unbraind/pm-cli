@@ -440,6 +440,7 @@ async function runHealthAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
   const result = await runHealth(globalOptions, {
     strictDirectories: Boolean(options.strictDirectories),
     requireMergeDrivers: Boolean(options.requireMergeDrivers),
@@ -450,14 +451,13 @@ async function runHealthAction(
     verboseStaleItems: Boolean(options.verboseStaleItems),
     verboseAuthorEvents: Boolean(options.verboseAuthorEvents),
     brief: Boolean(options.brief),
-    summary: Boolean(options.summary),
+    summary: Boolean(options.summary) || strictExit,
     skipVectors: Boolean(options.skipVectors),
     skipIntegrity: Boolean(options.skipIntegrity),
     skipDrift: Boolean(options.skipDrift),
     full: Boolean(options.full),
   });
   printResult(result, globalOptions);
-  const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
   if (strictExit && !result.ok) {
     setActiveCommandResult({
       ...result,
@@ -1100,7 +1100,7 @@ export function registerOperationCommands(program: Command): void {
     )
     .option(
       "--strict-exit",
-      "Return non-zero exit when health is not ok (advisory telemetry warnings are excluded; see warnings[])",
+      "Return non-zero exit when health is not ok and default to actionable summary output; use --full for complete details",
     )
     .option("--fail-on-warn", "Alias for --strict-exit")
     .action(runHealthAction);

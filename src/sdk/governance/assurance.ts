@@ -45,6 +45,19 @@ export const ASSURANCE_GATE_TRIGGERS = [
   "on-close",
 ] as const;
 
+/** Supported discriminants for built-in, delegated, and derived measurements. */
+export const ASSURANCE_MEASUREMENT_SOURCE_KINDS = [
+  "items",
+  "dependency_kind",
+  "graph",
+  "validate",
+  "health",
+  "history",
+  "links",
+  "provider",
+  "derived",
+] as const;
+
 /** Gate lifecycle trigger. */
 export type AssuranceGateTrigger = (typeof ASSURANCE_GATE_TRIGGERS)[number];
 
@@ -727,7 +740,23 @@ export function validateMeasurementDefinition(
   if (definition.max_cost !== undefined) {
     requireFiniteNonNegative(definition.max_cost, "measurement.max_cost");
   }
-  const source = definition.source;
+  const candidateSource = definition.source as unknown;
+  if (Object.prototype.toString.call(candidateSource) !== "[object Object]") {
+    throw new AssuranceMutationRefusalError(
+      `measurement.source.kind must be one of ${ASSURANCE_MEASUREMENT_SOURCE_KINDS.join(", ")}`,
+    );
+  }
+  const sourceKind = Reflect.get(candidateSource as object, "kind") as unknown;
+  if (
+    !ASSURANCE_MEASUREMENT_SOURCE_KINDS.includes(
+      sourceKind as (typeof ASSURANCE_MEASUREMENT_SOURCE_KINDS)[number],
+    )
+  ) {
+    throw new AssuranceMutationRefusalError(
+      `measurement.source.kind must be one of ${ASSURANCE_MEASUREMENT_SOURCE_KINDS.join(", ")}`,
+    );
+  }
+  const source = candidateSource as AssuranceMeasurementSource;
   if (source.kind === "items") {
     validateItemsMeasurementSource(source);
   }
@@ -854,6 +883,11 @@ export function validateGateDefinition(
   definition: AssuranceGateDefinition,
 ): AssuranceGateDefinition {
   requireStableId(definition.id, "gate.id");
+  if (!Array.isArray(definition.assertion_ids)) {
+    throw new AssuranceMutationRefusalError(
+      "gate.assertion_ids is required and must be an array",
+    );
+  }
   if (definition.assertion_ids.length === 0) {
     throw new AssuranceMutationRefusalError(
       "gate requires at least one assertion",
@@ -861,10 +895,22 @@ export function validateGateDefinition(
   }
   for (const id of definition.assertion_ids)
     requireStableId(id, "gate.assertion_id");
+  if (!Array.isArray(definition.triggers)) {
+    throw new AssuranceMutationRefusalError(
+      `gate.triggers is required and must be an array of ${ASSURANCE_GATE_TRIGGERS.join(", ")}`,
+    );
+  }
   if (definition.triggers.length === 0) {
     throw new AssuranceMutationRefusalError(
       "gate requires at least one trigger",
     );
+  }
+  for (const trigger of definition.triggers) {
+    if (!ASSURANCE_GATE_TRIGGERS.includes(trigger)) {
+      throw new AssuranceMutationRefusalError(
+        `gate trigger must be one of ${ASSURANCE_GATE_TRIGGERS.join(", ")}`,
+      );
+    }
   }
   if (definition.provider_policy) {
     validateGateProviderPolicy(definition.provider_policy);
@@ -1308,18 +1354,13 @@ async function evaluateMeasurementInternal(
     const builtin = sourceResult(definition, context);
     if (builtin !== null) {
       result = builtin;
-    } else if (
-      definition.source.kind === "graph" ||
-      definition.source.kind === "validate" ||
-      definition.source.kind === "health" ||
-      definition.source.kind === "provider"
-    ) {
-      result = await context.external(definition.source);
-      providerCalls = 1;
     } else {
-      throw new TypeError(
-        `unsupported assurance source ${definition.source.kind}`,
+      result = await context.external(
+        definition.source as Parameters<
+          AssuranceEvaluationContext["external"]
+        >[0],
       );
+      providerCalls = 1;
     }
   }
   const ownCost: AssuranceMeasurementCost = {

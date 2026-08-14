@@ -6,7 +6,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { isFileMissingError, pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
+import {
+  isFileMissingError,
+  pathExists,
+  readFileIfExists,
+} from "../../core/fs/fs-utils.js";
 import {
   activateExtensions,
   getActiveExtensionRegistrations,
@@ -139,6 +143,10 @@ export interface HealthResult {
   checks: HealthCheck[];
   /** Number of warning entries represented by this result. */
   warning_count?: number;
+  /** Maximum warning rows retained in every projection. */
+  warning_limit?: number;
+  /** Whether warning rows were omitted after the declared limit. */
+  warnings_truncated?: boolean;
   /** Value that configures or reports warnings for this contract. */
   warnings: string[];
   /** Value that configures or reports projection for this contract. */
@@ -237,6 +245,7 @@ type ItemWithBody = Awaited<
 >[number];
 const STALE_VECTORIZATION_SUMMARY_LIMIT = 25;
 const BRIEF_HEALTH_DETAIL_LIMIT = 8;
+const HEALTH_WARNING_LIMIT = 100;
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join(
   "runtime",
   "telemetry",
@@ -2064,13 +2073,15 @@ async function buildHistoryDriftCheck(
     ...hashMismatches.map((id) => `history_drift_hash_mismatch:${id}`),
     ...chainMismatches.map((id) => `history_drift_chain_mismatch:${id}`),
     ...workspaceStateMismatches.map(
-      (documentPath) => `history_drift_workspace_state_mismatch:${documentPath}`,
+      (documentPath) =>
+        `history_drift_workspace_state_mismatch:${documentPath}`,
     ),
     ...workspaceStateMissing.map(
       (documentPath) => `history_drift_workspace_state_missing:${documentPath}`,
     ),
     ...workspaceStateUnreadable.map(
-      (documentPath) => `history_drift_workspace_state_unreadable:${documentPath}`,
+      (documentPath) =>
+        `history_drift_workspace_state_unreadable:${documentPath}`,
     ),
   ];
   return {
@@ -2867,10 +2878,34 @@ function projectHealthResult(
   options: RunHealthOptions,
   summaryMode: boolean,
 ): HealthResult {
-  if (summaryMode) {
-    return applySummaryHealthProjection(result);
-  }
-  return options.brief === true ? applyBriefHealthProjection(result) : result;
+  const warningCount = result.warning_count ?? result.warnings.length;
+  const boundedResult: HealthResult = {
+    ...result,
+    warning_count: warningCount,
+    warning_limit: HEALTH_WARNING_LIMIT,
+    warnings_truncated: warningCount > HEALTH_WARNING_LIMIT,
+    warnings: result.warnings.slice(0, HEALTH_WARNING_LIMIT),
+  };
+  const projected = summaryMode
+    ? applySummaryHealthProjection(boundedResult)
+    : options.brief === true
+      ? applyBriefHealthProjection(boundedResult)
+      : boundedResult;
+  return {
+    ...projected,
+    warning_count: warningCount,
+    warning_limit: HEALTH_WARNING_LIMIT,
+    warnings_truncated: warningCount > projected.warnings.length,
+    ...(projected.projection
+      ? {
+          projection: {
+            ...projected.projection,
+            warning_count: warningCount,
+            warnings_truncated: warningCount > projected.warnings.length,
+          },
+        }
+      : {}),
+  };
 }
 
 /** Implements run health for the public runtime surface of this module. */

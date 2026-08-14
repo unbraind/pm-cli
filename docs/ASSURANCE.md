@@ -1,6 +1,6 @@
 # Project Assurance Primitives
 
-Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-uhv1m5](../.agents/pm/features/pm-uhv1m5.toon), [pm-m7bb7r](../.agents/pm/features/pm-m7bb7r.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon)
+Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-uhv1m5](../.agents/pm/features/pm-uhv1m5.toon), [pm-m7bb7r](../.agents/pm/features/pm-m7bb7r.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-88mo8m](../.agents/pm/issues/pm-88mo8m.toon), [pm-atnfh4](../.agents/pm/issues/pm-atnfh4.toon), [pm-xmmafu](../.agents/pm/issues/pm-xmmafu.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon)
 
 ## Agent Quick Context
 
@@ -42,6 +42,14 @@ Measurements support these built-in sources:
 | `links`           | Count items with present or missing file, test, or documentation evidence.                                                               |
 | `derived`         | Combine numeric measurements with deterministic arithmetic and cycle detection.                                                          |
 | `provider`        | Delegate a measurement to an explicitly supplied host/package resolver.                                                                  |
+
+`ASSURANCE_MEASUREMENT_SOURCE_KINDS` and `ASSURANCE_GATE_TRIGGERS` are the
+public SDK constants for these closed vocabularies. Runtime validation rejects
+missing arrays and unknown discriminants with `AssuranceMutationRefusalError`;
+it never persists an unrecognized source or leaks an incidental JavaScript
+property-access error. Hosts that generate forms or package schemas can obtain
+the same values from `pm contracts --command assurance --json` under
+`assurance_contracts`.
 
 Each measurement may declare `max_cost`. Evaluation fails closed when the total abstract compute units exceed that ceiling. Every result reports units, scanned items, scanned history rows, provider calls, duration, population size, and contributors.
 
@@ -263,14 +271,25 @@ await pm.assurance({
 });
 ```
 
-For direct host composition, use `evaluateMeasurement`, `evaluateAssuranceGate`, `createAssuranceWorkspaceContext`, the preset/derivation helpers, and the audited declaration/verdict helpers exported from `@unbrained/pm-cli/sdk`. Active extension registrations are discovered automatically. Embedding hosts may additionally pass stable resolver ids and matching `provider_capabilities` to `createAssuranceWorkspaceContext`; an absent resolver or capability fails loudly. The core evaluator bounds concurrent assertions and expression operands, and workspace history loading uses bounded concurrency; item-only callers can explicitly skip history and Git identity resolution.
+For direct host composition, use `evaluateMeasurement`, `evaluateAssuranceGate`, `createAssuranceWorkspaceContext`, the preset/derivation helpers, and the audited declaration/verdict helpers exported from `@unbrained/pm-cli/sdk` and its focused `@unbrained/pm-cli/sdk/governance` entrypoint. Active extension registrations are discovered automatically. Embedding hosts may additionally pass stable resolver ids and matching `provider_capabilities` to `createAssuranceWorkspaceContext`; an absent resolver or capability fails loudly. The core evaluator bounds concurrent assertions and expression operands, and workspace history loading uses bounded concurrency; item-only callers can explicitly skip history and Git identity resolution.
+
+`AssuranceMutationRefusalError` and `AssuranceEvaluationRefusalError` are
+exported from both `@unbrained/pm-cli/sdk` and
+`@unbrained/pm-cli/sdk/governance`, so hosts can classify expected declaration
+or evaluation refusals without parsing messages.
 
 Generic SDK and MCP dispatch use `action: "assurance"` with `subcommand` set to `list`, `show`, `put`, `remove`, `run`, `verdicts`, `presets`, `apply`, `derive`, or `promote`. Discover the current machine contract instead of copying parameter lists:
 
 ```bash
 pm contracts --action assurance --schema-only --json
 pm contracts --command assurance --flags-only --json
+pm contracts --command assurance --json
 ```
+
+Command-scoped contract output omits unrelated extension, governance,
+relationship, and Commander-alias catalogs unless `--full` is requested. This
+keeps the selected action schema and its assurance vocabularies complete under
+the default output budget instead of truncating the very enum a caller needs.
 
 ## Verdict Contract
 

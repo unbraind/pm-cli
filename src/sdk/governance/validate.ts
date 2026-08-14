@@ -1308,9 +1308,7 @@ function buildMetadataCounts(
     const missing = missingByField[field];
     const value = missing ? missing.length : 0;
     const countKey = METADATA_COUNT_KEY_BY_FIELD[field];
-    if (value > 0 && countKey) {
-      counts[countKey] = value;
-    }
+    counts[countKey] = value;
   }
   return counts;
 }
@@ -1438,9 +1436,10 @@ function buildMetadataCheck(
     duplicateIssueCodeSummary.warnings,
   );
 
-  // Zero-suppress counts to reduce agent token cost (telemetry pm-tylj).
-  // Only emit counts for the ACTIVE required fields of the resolved profile so a
-  // looser profile (e.g. core) never reports missing reviewer/risk/sprint/etc.
+  // Emit an explicit numeric predicate for every ACTIVE required field. Stable
+  // zeroes let assurance consumers distinguish a passing metric from an absent
+  // contract key without exposing any per-item diagnostic rows.
+  // A looser profile (e.g. core) still never reports reviewer/risk/sprint/etc.
   // Defensive guards (Gemini high #1, PR #78 follow-up): a future settings
   // shape could include an unsupported field in required_fields — fall back
   // to 0 instead of throwing TypeError, and skip writing when the count-key
@@ -3280,8 +3279,7 @@ async function buildStorageIntegrityCheck(
       `validate_merge_decisions_unreviewed:${pendingMergeDecisions.length}`,
     );
   }
-  const status =
-    errorCount > 0 ? "error" : warnings.length > 0 ? "warn" : "ok";
+  const status = errorCount > 0 ? "error" : warnings.length > 0 ? "warn" : "ok";
   return {
     check: {
       name: "storage_integrity",

@@ -1037,6 +1037,30 @@
     "validate",
     "workspace"
   ],
+  "assurance_contracts": {
+    "gate_triggers": [
+      "pre-commit",
+      "pre-push",
+      "pre-merge",
+      "ci",
+      "pre-release",
+      "post-release",
+      "scheduled",
+      "on-claim",
+      "on-close"
+    ],
+    "measurement_source_kinds": [
+      "items",
+      "dependency_kind",
+      "graph",
+      "validate",
+      "health",
+      "history",
+      "links",
+      "provider",
+      "derived"
+    ]
+  },
   "command_aliases": [
     {
       "aliases": [
@@ -20178,13 +20202,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -20593,13 +20625,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -21064,13 +21104,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -22003,13 +22051,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -22268,13 +22324,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -22521,13 +22585,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -22911,13 +22983,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -23257,13 +23337,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -23608,13 +23696,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -23863,13 +23959,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -24518,13 +24622,21 @@
             ]
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -24958,13 +25070,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -25313,13 +25433,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -26575,9 +26703,16 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
-            "minimum": 1,
-            "type": "integer"
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling, or unbounded to return the complete read result."
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -27388,13 +27523,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -28650,13 +28793,21 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -32313,13 +32464,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -35380,13 +35539,21 @@
             ]
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -36011,13 +36178,21 @@
             ]
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -36642,13 +36817,21 @@
             ]
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -37273,13 +37456,21 @@
             ]
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -37904,13 +38095,21 @@
             ]
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -38535,13 +38734,21 @@
             ]
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -39166,13 +39373,21 @@
             ]
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -39797,13 +40012,21 @@
             ]
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -40149,13 +40372,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -40493,13 +40724,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -40882,13 +41121,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -41220,13 +41467,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -41565,13 +41820,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -42011,13 +42274,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -42561,13 +42832,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -42881,13 +43160,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -43175,13 +43462,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -44740,13 +45035,21 @@
             "type": "string"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -47180,13 +47483,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -47478,13 +47789,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -47965,13 +48284,21 @@
             ]
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -48234,13 +48561,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -48524,13 +48859,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -50124,13 +50467,21 @@
             "type": "array"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -50337,13 +50688,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -50659,13 +51018,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -51680,13 +52047,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -52321,13 +52696,21 @@
             "type": "boolean"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
             "examples": [
               600,
-              1200
-            ],
-            "minimum": 1,
-            "type": "integer"
+              1200,
+              "unbounded"
+            ]
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",

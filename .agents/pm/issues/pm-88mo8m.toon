@@ -1,0 +1,52 @@
+id: pm-88mo8m
+title: "GH-1007: assurance gate declarations omit trigger and escape the typed refusal contract"
+description: "The assurance SDK accepts a structurally incomplete gate far enough to dereference trigger.length, so CLI and MCP callers receive a raw V8 TypeError instead of a stable declaration-validation refusal. Fix the SDK declaration boundary first and keep every transport aligned."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:cli","area:sdk",assurance,contracts,recovery,regression
+created_at: "2026-08-14T06:11:30.658Z"
+updated_at: "2026-08-14T09:31:42.126Z"
+closed_at: "2026-08-14T08:51:52.838Z"
+completed_at: "2026-08-14T08:51:52.838Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: CLI and MCP normalize the same SDK error into the documented usage refusal without a raw TypeError; Missing and invalid trigger cases enumerate the same supported vocabulary; Focused unit integration and temporary packed-consumer tests exercise the exact omission path; Sentry classifies the refusal as expected usage rather than an unclassified runtime fault; The public SDK declaration validator rejects missing gate.triggers with a stable typed error naming gate.triggers and the supported trigger vocabulary
+parent: pm-1jzupz
+risk: high
+confidence: 98
+reporter: GitHub issue #1007
+severity: high
+resolution: fixed
+expected_result: Missing gate.triggers is rejected before persistence with a stable typed refusal naming the field and supported trigger vocabulary.
+actual_result: "The public assurance validator now rejects missing gate.triggers before dereference with a stable typed invalid_argument_value refusal; CLI and MCP preserve exit/code 2 and enumerate all supported triggers, while fixed-head replays leave Sentry PM-CLI-34 unchanged."
+affected_version: 2026.8.14
+regression: true
+customer_impact: Agents cannot distinguish a correctable declaration error from corruption or a product crash.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9yhl2v,discovered_from,"2026-08-14T06:11:30.658Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-08-14T06:11:30.658Z","harness:codex","Duplicate check evidence: searched all 2,485 statuses for GH-1007 and the exact missing-trigger TypeError. No dedicated item existed; the closest closed lineage pm-9yhl2v fixed evaluation-time unsupported triggers, not declaration-time omission."
+  "2026-08-14T06:17:50.677Z","harness:codex","TDD red evidence: focused assurance SDK test now proves missing assertion_ids/triggers produce raw TypeError instead of AssuranceMutationRefusalError (2 failures observed before production fix)."
+  "2026-08-14T07:55:38.327Z","harness:codex","Completion evidence: SDK validation now rejects missing assertion_ids/triggers arrays and invalid trigger vocabulary with AssuranceMutationRefusalError; CLI normalization produced stable exit 2 in the packed temporary project (no raw TypeError). The same 9-trigger vocabulary is published by command-scoped contracts. Linked assurance tests passed; final repo coverage passed 7,288 tests at exact 100/100/100/100."
+  "2026-08-14T08:30:18.314Z","harness:codex","Live Sentry baseline before exact-head replay: unresolved issue PM-CLI-34 (https://unbrained.sentry.io/issues/140606819/) is the reported missing-gate TypeError, count=3, firstSeen 2026-08-14T05:11:29Z, lastSeen 2026-08-14T05:12:15Z, release pm-cli@2026.8.14, tagged pm.error_code=unclassified_runtime_error and pm.exit_code=1. Final acceptance must replay the omission on the fixed exact head, observe typed exit 2, and verify this issue does not advance."
+  "2026-08-14T08:51:51.359Z","harness:codex","Exact-head acceptance evidence: a freshly packed npm consumer invoked the missing gate.triggers path and returned exit 2 with code invalid_argument_value plus the complete pre-commit, pre-push, pre-merge, ci, pre-release, post-release, scheduled, on-claim, on-close vocabulary. Direct JSON-RPC processRpcLine replay returned isError=true with structured code 2 and the same typed detail, with no raw TypeError. Sentry PM-CLI-34 remained unresolved at count=3 and lastSeen=2026-08-14T05:12:15.844Z after both fixed-head replays, proving the expected-usage refusal no longer advances the unclassified runtime issue. The focused 115-test review suite, hosted exact-head checks, contracts, SDK surface, token surface, and surface replication gates passed. The temporary packed directory was removed after verification."
+  "2026-08-14T09:31:42.126Z","harness:codex","Final live observability confirmation: Sentry PM-CLI-34 remains count=3 and lastSeen=2026-08-14T05:12:15.844Z after fixed-head CLI/MCP/packed replays. The final 7,288-test run passed at exact 100/100/100/100, including the missing after_index cursor branch and package-subpath typed-refusal coverage."
+files[6]{path,scope,note}:
+  src/mcp/tool-definitions.ts,project,MCP pm_run output-budget schema parity for direct assurance calls
+  src/sdk/governance.ts,project,Public root and governance-subpath refusal error exports
+  src/sdk/governance/assurance.ts,project,typed gate and source validation
+  tests/unit/sdk/assurance.spec.ts,project,malformed declaration regression coverage
+  tests/unit/sdk/read-output-transport.spec.ts,project,MCP transport schema regression coverage
+  tests/unit/sdk/sdk-subpath-entrypoints.spec.ts,project,Package export-map refusal classification coverage
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/read-output-transport.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/sdk-subpath-entrypoints.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mssngaeu-ny5l43,test,passed,"2026-08-14T07:52:28.130Z","2026-08-14T07:52:39.606Z","2026-08-14T07:52:39.606Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated by pm-changelog 2026.8.12 from closed tracker state
+  docs/ASSURANCE.md,project,typed refusal and vocabulary contract
+close_reason: "Fixed the SDK declaration boundary and verified CLI, MCP, packed-consumer, contract, and Sentry behavior on the reviewed head."
+body: ""

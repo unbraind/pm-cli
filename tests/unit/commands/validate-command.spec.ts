@@ -431,7 +431,8 @@ describe("runValidate", () => {
     ]);
     expect(
       validateInternals.buildMetadataCounts(metadataPolicy, missingByField),
-    ).toMatchObject({
+    ).toEqual({
+      missing_author: 0,
       missing_acceptance_criteria: 2,
       closed_missing_close_reason: 1,
       missing_estimated_minutes: 1,
@@ -1377,8 +1378,8 @@ describe("runValidate", () => {
         missing_estimated_minutes_item_ids?: string[];
         missing_acceptance_criteria_item_ids?: string[];
       };
-      expect(details.counts.missing_estimated_minutes).toBeUndefined();
-      expect(details.counts.missing_acceptance_criteria).toBeUndefined();
+      expect(details.counts.missing_estimated_minutes).toBe(0);
+      expect(details.counts.missing_acceptance_criteria).toBe(0);
       expect(details.missing_estimated_minutes_item_ids ?? []).not.toContain(
         closedId,
       );
@@ -2193,7 +2194,7 @@ describe("runValidate", () => {
           closed_missing_close_reason: number;
         };
       };
-      expect(details.counts.missing_estimated_minutes).toBeUndefined();
+      expect(details.counts.missing_estimated_minutes).toBe(0);
       expect(details.counts.closed_missing_close_reason).toBe(1);
     });
   });
@@ -3347,7 +3348,8 @@ describe("runValidate", () => {
         >;
       };
       const cachedTests =
-        collectionsCache.collections[`tasks/${id}.toon`]?.collections.tests;
+        collectionsCache.collections[path.join("tasks", `${id}.toon`)]
+          ?.collections.tests;
       expect(cachedTests).toHaveLength(2);
       cachedTests?.reverse();
       await writeFile(

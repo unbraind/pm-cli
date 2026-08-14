@@ -25,6 +25,10 @@ import {
   attachReadOutputSessionReceipt,
   parseReadOutputSession,
 } from "../../../src/sdk/read-output-session.js";
+import {
+  decodeQueryCursorState,
+  encodeQueryCursor,
+} from "../../../src/sdk/pagination.js";
 
 describe("read output contracts", () => {
   it("declares the same four dimensions on every read surface", () => {
@@ -89,6 +93,16 @@ describe("read output contracts", () => {
   it("resolves format-aware default ceilings and an explicit unbounded escape hatch", () => {
     expect(resolveReadOutputDimensions("list", {})).toMatchObject({
       cost: { source: "default", value: 4_000 },
+    });
+    expect(resolveReadOutputDimensions("list-all", {})).toMatchObject({
+      command: "list",
+      cost: { source: "intent", value: "unbounded" },
+    });
+    expect(
+      resolveReadOutputDimensions("list", { truncate: false }),
+    ).toMatchObject({
+      amount: { source: "legacy", value: "unbounded" },
+      cost: { source: "intent", value: "unbounded" },
     });
     expect(
       resolveReadOutputDimensions("comments-audit", {
@@ -234,6 +248,8 @@ describe("read output contracts", () => {
       output_budget_exceeded: {
         omitted_result: true,
         reason: "requested_budget_infeasible",
+        restore_with: "Unbounded",
+        recovery: { outputBudget: "unbounded" },
       },
       read_output: {
         command: "stats",
@@ -1071,7 +1087,7 @@ describe("read output contracts", () => {
       }));
     const rowCompacted = applyReadOutputDimensions(
       "list",
-      { outputBudget: 700 },
+      { outputBudget: 650 },
       {
         items: makeRows("item"),
         related: makeRows("related"),
@@ -1099,6 +1115,155 @@ describe("read output contracts", () => {
     expect(rowCompacted.count).toBe(
       rowCompacted.items.length + rowCompacted.related.length,
     );
+
+    const paginated = applyReadOutputDimensions(
+      "list",
+      { outputBudget: 650 },
+      {
+        items: makeRows("page"),
+        count: 8,
+        total: 20,
+        applied_limit: 8,
+        has_more: true,
+        truncated: true,
+        next_cursor: encodeQueryCursor("list-fingerprint", "page-7", 7),
+        row_contract: { command: "list", row_keys: ["items"] },
+      },
+    );
+    if (isReadOutputBudgetExceeded(paginated)) {
+      throw new Error("Expected a cursor-rebased compacted page.");
+    }
+    const retainedLast = paginated.items.at(-1);
+    expect(paginated.output_budget_truncation).toMatchObject({
+      continuation_cursor_rebased: true,
+      recovery: {
+        cli: "--output-budget unbounded",
+        sdk: { outputBudget: "unbounded" },
+        mcp: { outputBudget: "unbounded" },
+      },
+    });
+    expect(
+      decodeQueryCursorState(String(paginated.next_cursor), "list-fingerprint"),
+    ).toEqual({
+      after_id: retainedLast?.id,
+      after_index: paginated.items.length - 1,
+    });
+    expect(paginated.applied_limit).toBe(paginated.items.length);
+
+    const rawCursor = (value: unknown): string =>
+      Buffer.from(JSON.stringify(value)).toString("base64url");
+    const compactPage = (
+      nextCursor: string,
+      items: unknown[] = makeRows("defensive"),
+    ) =>
+      applyReadOutputDimensions(
+        "list",
+        { outputBudget: 550 },
+        {
+          items,
+          next_cursor: nextCursor,
+          has_more: true,
+          row_contract: { command: "list", row_keys: ["items"] },
+        },
+      );
+    for (const malformedCursor of [
+      "not-json",
+      rawCursor(null),
+      rawCursor([]),
+      rawCursor({}),
+      rawCursor({ version: 2, fingerprint: "scope", after_index: 7 }),
+      rawCursor({ version: 1, after_index: 7 }),
+      rawCursor({ version: 1, fingerprint: 7, after_index: 7 }),
+      rawCursor({ version: 1, fingerprint: "scope" }),
+      rawCursor({ version: 1, fingerprint: "scope", after_id: "row-7" }),
+      rawCursor({ version: 1, fingerprint: "scope", after_index: 1.5 }),
+      rawCursor({ version: 1, fingerprint: "scope", after_index: -1 }),
+    ]) {
+      const defensive = compactPage(malformedCursor);
+      expect(defensive).toMatchObject({
+        output_budget_truncation: { continuation_cursor_rebased: false },
+      });
+    }
+    for (const invalidLastRow of [
+      "x".repeat(600),
+      null,
+      ["x".repeat(600)],
+      { detail: "x".repeat(600) },
+      { id: 7, detail: "x".repeat(600) },
+      { id: "", detail: "x".repeat(600) },
+    ]) {
+      const defensive = compactPage(
+        encodeQueryCursor("scope", "row-7", 7),
+        Array.from({ length: 1_000 }, () =>
+          structuredClone(invalidLastRow),
+        ),
+      );
+      if (isReadOutputBudgetExceeded(defensive)) {
+        throw new Error("Expected defensive row compaction, not omission.");
+      }
+      const retainedLastRow = defensive.items.at(-1);
+      expect(
+        Object.prototype.toString.call(retainedLastRow) !== "[object Object]" ||
+          typeof Reflect.get(retainedLastRow as object, "id") !== "string" ||
+          Reflect.get(retainedLastRow as object, "id").length === 0,
+      ).toBe(true);
+      expect(defensive).toMatchObject({
+        output_budget_truncation: { continuation_cursor_rebased: false },
+      });
+    }
+    const negativeRebase = compactPage(encodeQueryCursor("scope", "row-0", 0));
+    expect(negativeRebase).toMatchObject({
+      output_budget_truncation: { continuation_cursor_rebased: false },
+    });
+    const unrelatedRowsCompacted = applyReadOutputDimensions(
+      "list",
+      { outputBudget: 550 },
+      {
+        items: [{ id: "kept" }],
+        related: makeRows("related-only"),
+        next_cursor: encodeQueryCursor("scope", "kept", 0),
+        has_more: true,
+        row_contract: { command: "list", row_keys: ["items", "related"] },
+      },
+    );
+    expect(unrelatedRowsCompacted).toMatchObject({
+      items: [{ id: "kept" }],
+      output_budget_truncation: { continuation_cursor_rebased: false },
+    });
+    const continuedFromInput = applyReadOutputDimensions(
+      "list",
+      {
+        outputBudget: 550,
+        after: encodeQueryCursor("list-fingerprint", "previous", 9),
+      },
+      {
+        items: makeRows("continued"),
+        next_cursor: null,
+        has_more: false,
+        row_contract: { command: "list", row_keys: ["items"] },
+      },
+    );
+    if (isReadOutputBudgetExceeded(continuedFromInput)) {
+      throw new Error("Expected the input cursor to be rebased.");
+    }
+    expect(
+      decodeQueryCursorState(
+        String(continuedFromInput.next_cursor),
+        "list-fingerprint",
+      ),
+    ).toEqual({
+      after_id: continuedFromInput.items.at(-1)?.id,
+      after_index: 9 + continuedFromInput.items.length,
+    });
+    const snapshotted = compactPage(
+      encodeQueryCursor("snapshot-scope", "page-7", 7, "tree-1"),
+    );
+    if (isReadOutputBudgetExceeded(snapshotted)) {
+      throw new Error("Expected the snapshot cursor to be rebased.");
+    }
+    expect(
+      decodeQueryCursorState(String(snapshotted.next_cursor), "snapshot-scope"),
+    ).toMatchObject({ snapshot: "tree-1" });
 
     const withoutCount = applyReadOutputDimensions(
       "list",

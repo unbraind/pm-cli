@@ -35,7 +35,10 @@ import {
   PM_TOOL_PARAMETERS_SCHEMA_VERSION,
   resolveSubcommandFlagContractsForCommand,
 } from "../../../src/sdk/cli-contracts.js";
-import { PM_TOOL_PARAMETER_PROPERTIES } from "../../../src/sdk/cli-contracts/tool-parameter-tables.js";
+import {
+  PM_TOOL_PARAMETER_METADATA,
+  PM_TOOL_PARAMETER_PROPERTIES,
+} from "../../../src/sdk/cli-contracts/tool-parameter-tables.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -146,6 +149,17 @@ describe("content + governance filter contract surface", () => {
         type: "boolean",
       });
     }
+  });
+
+  it("keeps the MCP output-budget escape hatch aligned with CLI and SDK", () => {
+    expect(PM_TOOL_PARAMETER_PROPERTIES.outputBudget).toEqual({
+      anyOf: [{ type: "integer", minimum: 1 }, { const: "unbounded" }],
+    });
+    expect(PM_TOOL_PARAMETER_METADATA.outputBudget?.examples).toEqual([
+      600,
+      1200,
+      "unbounded",
+    ]);
   });
 });
 
@@ -1586,6 +1600,20 @@ describe("contracts command runtime", () => {
       expect(runtimeContracts.runtime_schema.fields_by_command.list).toEqual(
         expect.arrayContaining(["--customer-segment"]),
       );
+
+      const scopedRuntimeContracts = await runContracts(
+        { command: "list" },
+        {
+          ...GLOBAL_OPTIONS,
+          path: context.pmPath,
+        },
+      );
+      expect(
+        scopedRuntimeContracts.runtime_schema.fields_by_command.list,
+      ).toEqual(expect.arrayContaining(["--customer-segment"]));
+      expect(
+        Object.keys(scopedRuntimeContracts.runtime_schema.fields_by_command),
+      ).toEqual(["list"]);
     });
   });
 
@@ -1637,11 +1665,43 @@ describe("contracts command runtime", () => {
       }),
     ]);
     expect(result.commands).toEqual(["list"]);
+    expect(result.extension_contracts).toBeUndefined();
+    expect(result.governance_contracts).toBeUndefined();
+    expect(result.relationship_kind_contracts).toBeUndefined();
+    expect(result.commander_aliases).toBeUndefined();
     const oneOf = (result.schema?.oneOf ?? []) as Array<{
       properties?: { action?: { const?: string } };
     }>;
     expect(oneOf).toHaveLength(1);
     expect(oneOf[0]?.properties?.action?.const).toBe("list");
+  });
+
+  it("publishes the authoritative assurance source and trigger vocabularies", async () => {
+    const result = await runContracts({ command: "assurance" }, GLOBAL_OPTIONS);
+    expect(result.assurance_contracts).toEqual({
+      measurement_source_kinds: [
+        "items",
+        "dependency_kind",
+        "graph",
+        "validate",
+        "health",
+        "history",
+        "links",
+        "provider",
+        "derived",
+      ],
+      gate_triggers: [
+        "pre-commit",
+        "pre-push",
+        "pre-merge",
+        "ci",
+        "pre-release",
+        "post-release",
+        "scheduled",
+        "on-claim",
+        "on-close",
+      ],
+    });
   });
 
   it("supports lightweight flags-only and availability-only projections", async () => {
