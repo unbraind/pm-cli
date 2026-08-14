@@ -280,7 +280,12 @@ runtime authority:
 
 ```ts
 await runAssuranceAction(
-  { action: "run", id: "repository-quality", trigger: "ci", dry_run: true },
+  {
+    action: "run",
+    id: "repository-static-quality",
+    trigger: "ci",
+    dry_run: true,
+  },
   { path: ".agents/pm" },
   {
     workspace: {

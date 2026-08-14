@@ -181,6 +181,14 @@ describe("gate registry", () => {
       validateGateRegistry(declared, { repoRoot: root }),
     ).resolves.toEqual([]);
 
+    declared.automation_inventory.provider_checks[0].provider =
+      declared.automation_inventory.gate_scripts[0].provider;
+    await expect(
+      validateGateRegistry(declared, { repoRoot: root }),
+    ).resolves.toContain("automation_inventory:provider:duplicate");
+    declared.automation_inventory.provider_checks[0].provider =
+      "repository-quality/recovery";
+
     const typedGate = declared.automation_inventory.gate_scripts[2];
     declared.automation_inventory.gate_scripts[2] = {
       path: typedGate.path,

@@ -1247,6 +1247,32 @@ describe("assurance SDK", () => {
       },
     });
 
+    const unstableOwnerFailure = new AssuranceSourceResolutionError(
+      "missing graph field",
+      {
+        source_kind: "graph",
+        field: "missing",
+      },
+    );
+    let ownerReads = 0;
+    Object.defineProperty(unstableOwnerFailure, "measurement_id", {
+      configurable: true,
+      get: () => (ownerReads++ === 0 ? externalMeasurement.id : undefined),
+    });
+    await expect(
+      evaluateAssuranceGate(
+        externalGate.id,
+        externalDocument,
+        {
+          ...evaluationContext(),
+          external: async () => Promise.reject(unstableOwnerFailure),
+        },
+        { trigger: "ci" },
+      ),
+    ).rejects.toMatchObject({
+      context: { measurement_id: externalMeasurement.id },
+    });
+
     const derivedMeasurement: AssuranceMeasurementDefinition = {
       id: "derived-external-score",
       source: {
@@ -1277,7 +1303,7 @@ describe("assurance SDK", () => {
       ),
     ).rejects.toMatchObject({
       context: {
-        measurement_id: derivedMeasurement.id,
+        measurement_id: externalMeasurement.id,
         source_kind: "graph",
         field: "missing",
       },

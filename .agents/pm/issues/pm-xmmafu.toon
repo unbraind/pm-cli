@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: assurance,ci,governance,validate
 created_at: "2026-08-14T05:38:19.838Z"
-updated_at: "2026-08-14T21:59:25.432Z"
+updated_at: "2026-08-14T22:33:43.827Z"
 closed_at: "2026-08-14T20:28:46.593Z"
 completed_at: "2026-08-14T20:28:46.593Z"
 author: "harness:claude-code"
@@ -23,7 +23,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-b1w8vr,discovered_from,"2026-08-14T05:38:19.838Z","harness:claude-code","cli:create:dep",detected
   pm-py7qv2,blocked_by,"2026-08-14T05:38:19.838Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-14T05:38:19.838Z","harness:claude-code","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-14T07:55:41.519Z","harness:codex","Tranche evidence: validation now emits declared required-metadata counters even at zero, preserving assurance predicates after successful remediation; focused validate suite passed 95/95 and exact repo coverage passed. Residual acceptance remains for a fully contextualized unresolved-field refusal naming gate/assertion/measurement/field, so this item returns open rather than being closed prematurely."
   "2026-08-14T19:13:52.575Z","harness:codex","Implementation start 2026-08-14: complete the residual acceptance by replacing raw unresolved-field errors with a typed assurance refusal carrying gate, assertion, measurement, source kind, and field; prove zero-population close-reason ceilings through the CLI/SDK action boundary."
   "2026-08-14T20:28:45.827Z","harness:codex","Evidence 2026-08-14: validation zero populations remain explicit; the public assurance action now returns a typed evaluation refusal carrying gate_id, assertion_id, measurement_id, source_kind, check, and field for unresolved sources; valid close_reason zero populations evaluate to pass. Linked tests passed 113 assertions across validate/action/runtime. Whole repository coverage passed 7,308 tests at exact 100/100/100/100."
@@ -31,6 +31,7 @@ comments[7]{created_at,author,text}:
   "2026-08-14T20:52:17.281Z","harness:codex","Review evidence: corrected the public release-note title through the canonical PM record; nested derived-source failures now preserve the innermost measurement owner rather than attributing the source to the outer derived measurement."
   "2026-08-14T21:13:11.570Z","harness:codex","Review verification: derived external-source regression proves the typed refusal retains measurement_id=external-score rather than the outer derived measurement; whole-repository exact coverage remains 100/100/100/100."
   "2026-08-14T21:59:25.432Z","harness:codex","Review evidence for PR #1015 exact-head amendment: source-resolution context is a named exported SDK type; ES2022 Error.cause now preserves the original source failure through both enrichment and gate refusal without changing public constructor parameters; gate refusals use the assertion-owned measurement id and tests prove the cause chain. The SDK surface gate classified the inline-object-to-named-interface spelling as textual, accepted the explicit structurally-compatible rationale, and then verified zero drift. CHANGELOG.md is now linked through pm and regeneration with pm-changelog 2026.8.12 was unchanged. Focused tests and full exact 100/100/100/100 coverage passed."
+  "2026-08-14T22:33:43.827Z","harness:codex","Review evidence: nested assurance source failures now preserve the innermost error.measurement_id and fall back to the active definition only when owner metadata is unavailable. The negative control exercises that fallback without coverage exemptions; derived-source expectations prove the inner owner is retained. Focused assurance tests passed 8/8 and full coverage passed 7,313 tests at 100/100/100/100 (53,192 statements, 39,232 branches, 10,929 functions, 51,369 lines)."
 files[8]{path,scope,note}:
   sdk/public-surface.json,project,Additive named source-resolution context export with structurally compatible constructor contract
   src/core/shared/errors.ts,project,Typed assurance refusal location fields

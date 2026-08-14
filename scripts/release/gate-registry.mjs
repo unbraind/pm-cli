@@ -296,10 +296,10 @@ async function validateGateScriptInventory(
   gateScripts,
   discoveredScripts,
   root,
+  providers,
   violations,
 ) {
   const declaredScripts = new Set();
-  const providerKeys = new Set();
   for (const entry of gateScripts) {
     const disposition = entry?.disposition;
     const rowValid =
@@ -310,10 +310,10 @@ async function validateGateScriptInventory(
     if (!rowValid) violations.push("automation_inventory:gate_script:invalid");
     if (typeof entry?.path === "string") declaredScripts.add(entry.path);
     if (disposition === "reduced_to_provider") {
-      if (providerKeys.has(entry.provider)) {
+      if (providers.has(entry.provider)) {
         violations.push("automation_inventory:provider:duplicate");
       }
-      providerKeys.add(entry.provider);
+      providers.add(entry.provider);
       await validateNegativeControl(
         { id: entry.provider, negative_control: entry.negative_control },
         root,
@@ -337,20 +337,28 @@ async function validateGateScriptInventory(
 }
 
 /** Validate non-gate executables exposed as repository assurance providers. */
-async function validateProviderChecks(providerChecks, root, violations) {
+async function validateProviderChecks(
+  providerChecks,
+  root,
+  providers,
+  violations,
+) {
   if (providerChecks === undefined) return;
   if (!Array.isArray(providerChecks)) {
     violations.push("automation_inventory:provider_checks:invalid");
     return;
   }
-  const providers = new Set();
   for (const entry of providerChecks) {
+    const duplicateProvider = providers.has(entry?.provider);
+    if (duplicateProvider) {
+      violations.push("automation_inventory:provider:duplicate");
+    }
     const valid =
       entry?.kind === "provider_check" &&
       typeof entry.path === "string" &&
       entry.path.startsWith("scripts/") &&
       validProviderDisposition(entry) &&
-      !providers.has(entry.provider);
+      !duplicateProvider;
     if (!valid) {
       violations.push("automation_inventory:provider_check:invalid");
       continue;
@@ -417,13 +425,20 @@ async function validateAutomationInventory(inventory, root, violations) {
       .filter((file) => /(?:-gate|gate-registry)\.(?:[cm]?[jt]s)$/u.test(file))
       .map((file) => `scripts/release/${file}`),
   );
+  const providers = new Set();
   await validateGateScriptInventory(
     inventory.gate_scripts,
     discoveredScripts,
     root,
+    providers,
     violations,
   );
-  await validateProviderChecks(inventory.provider_checks, root, violations);
+  await validateProviderChecks(
+    inventory.provider_checks,
+    root,
+    providers,
+    violations,
+  );
   validateGraphOperationInventory(inventory.graph_operations, violations);
 }
 
@@ -464,7 +479,7 @@ export async function validateGateRegistry(registry, options = {}) {
   return violations.sort();
 }
 
-/** Print discovered inventory or enforce the committed registry. */
+/** Count migrated, provider-backed, retained, and provider-check entries. */
 function automationInventoryCounts(registry) {
   const gateScripts = registry.automation_inventory?.gate_scripts ?? [];
   return {
