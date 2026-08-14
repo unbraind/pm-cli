@@ -126,9 +126,7 @@ describe("real-entrypoint refusal reachability", () => {
         "pm schema add-type Example --json",
       );
       const suggestedRetry = envelope.recovery!.suggested_retry!;
-      expect(
-        context.runCli(suggestedRetry.split(" ").slice(1)).code,
-      ).toBe(0);
+      expect(context.runCli(suggestedRetry.split(" ").slice(1)).code).toBe(0);
 
       const optionResult = context.runCli([
         "deps",
@@ -152,9 +150,6 @@ describe("real-entrypoint refusal reachability", () => {
         { expectJson: true },
       ).json as { commands: string[] };
       const declaredCommandPaths = new Set(contracts.commands);
-      const declaredCommandRoots = new Set(
-        contracts.commands.map((command) => command.split(" ")[0]!),
-      );
       const obligations: PmRecoveryReferenceObligation[] = [
         {
           id: "schema:suggested-retry:0",
@@ -195,7 +190,7 @@ describe("real-entrypoint refusal reachability", () => {
           if (obligation.kind === "candidate_command") {
             return {
               id: obligation.id,
-              reachable: declaredCommandRoots.has(obligation.value),
+              reachable: declaredCommandPaths.has(obligation.value),
               proof: "declared_command_path",
             };
           }
@@ -207,8 +202,7 @@ describe("real-entrypoint refusal reachability", () => {
               id: obligation.id,
               reachable:
                 obligation.value === suggestedRetry ||
-                declaredCommandPaths.has(commandPath) ||
-                declaredCommandRoots.has(commandPath.split(" ")[0]!),
+                declaredCommandPaths.has(commandPath),
               proof:
                 obligation.value === suggestedRetry
                   ? "linked_execution"
@@ -240,9 +234,7 @@ describe("real-entrypoint refusal reachability", () => {
       expect(verifyPmRecoveryReferences(obligations, broken)).toMatchObject({
         ok: false,
         pass_fraction: 0.9,
-        findings: [
-          expect.objectContaining({ kind: "unreachable_reference" }),
-        ],
+        findings: [expect.objectContaining({ kind: "unreachable_reference" })],
       });
     });
   });

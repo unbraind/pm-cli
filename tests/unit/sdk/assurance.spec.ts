@@ -1235,6 +1235,43 @@ describe("assurance SDK", () => {
       ),
     ).rejects.toMatchObject({
       context: {
+        measurement_id: "external-score",
+        source_kind: "graph",
+        field: "missing",
+      },
+    });
+
+    const derivedMeasurement: AssuranceMeasurementDefinition = {
+      id: "derived-external-score",
+      source: {
+        kind: "derived",
+        expression: { measurement: externalMeasurement.id },
+      },
+    };
+    await expect(
+      evaluateAssuranceGate(
+        externalGate.id,
+        {
+          ...externalDocument,
+          measurements: [externalMeasurement, derivedMeasurement],
+          assertions: [
+            { ...externalAssertion, measurement_id: derivedMeasurement.id },
+          ],
+        },
+        {
+          ...evaluationContext(),
+          external: async () => {
+            throw new AssuranceSourceResolutionError("missing graph field", {
+              source_kind: "graph",
+              field: "missing",
+            });
+          },
+        },
+        { trigger: "ci" },
+      ),
+    ).rejects.toMatchObject({
+      context: {
+        measurement_id: externalMeasurement.id,
         source_kind: "graph",
         field: "missing",
       },

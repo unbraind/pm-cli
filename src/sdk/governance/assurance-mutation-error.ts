@@ -50,6 +50,8 @@ export class AssuranceEvaluationRefusalError extends TypeError {
 
 /** Expected failure to resolve one declared external measurement source. */
 export class AssuranceSourceResolutionError extends TypeError {
+  /** Measurement that owns the failed source, once evaluation identifies it. */
+  public readonly measurement_id?: string;
   /** Measurement source discriminant. */
   public readonly source_kind: string;
   /** Field selected from the source result. */
@@ -60,10 +62,16 @@ export class AssuranceSourceResolutionError extends TypeError {
   /** Create one source-local refusal before gate context is attached. */
   constructor(
     message: string,
-    context: { source_kind: string; field: string; check?: string },
+    context: {
+      measurement_id?: string;
+      source_kind: string;
+      field: string;
+      check?: string;
+    },
   ) {
     super(message);
     this.name = "AssuranceSourceResolutionError";
+    this.measurement_id = context.measurement_id;
     this.source_kind = context.source_kind;
     this.field = context.field;
     this.check = context.check;

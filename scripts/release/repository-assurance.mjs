@@ -11,10 +11,21 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { runAssuranceAction } from "../../dist/sdk/governance.js";
-import { commandFor, fail, flagBool, flagString, parseFlags, repoRoot, runCommand } from "./utils.mjs";
+import {
+  commandFor,
+  fail,
+  flagBool,
+  flagString,
+  parseFlags,
+  repoRoot,
+  runCommand,
+} from "./utils.mjs";
 
 /** Stable provider id declared by repository assurance measurements. */
 export const REPOSITORY_QUALITY_PROVIDER = "repository-quality";
+
+/** Default wall-clock bound for one repository quality adapter process. */
+const DEFAULT_ADAPTER_TIMEOUT_MS = 300_000;
 
 const DEFAULT_REGISTRY_PATH = path.join(
   repoRoot,
@@ -28,60 +39,69 @@ export async function readRepositoryProviderEntries(
   registryPath = DEFAULT_REGISTRY_PATH,
 ) {
   const registry = JSON.parse(await readFile(registryPath, "utf8"));
-  return new Map(
-    [
-      ...(registry.automation_inventory?.gate_scripts ?? []),
-      ...(registry.automation_inventory?.provider_checks ?? []),
-    ]
-      .filter(
-        (entry) =>
-          (entry.disposition === "reduced_to_provider" ||
-            entry.kind === "provider_check") &&
-          entry.provider.startsWith(`${REPOSITORY_QUALITY_PROVIDER}/`),
-      )
-      .map((entry) => [
-        entry.provider.slice(REPOSITORY_QUALITY_PROVIDER.length + 1),
-        entry,
-      ]),
-  );
+  const entries = new Map();
+  for (const entry of [
+    ...(registry.automation_inventory?.gate_scripts ?? []),
+    ...(registry.automation_inventory?.provider_checks ?? []),
+  ]) {
+    if (
+      entry.disposition !== "reduced_to_provider" &&
+      entry.kind !== "provider_check"
+    ) {
+      continue;
+    }
+    if (typeof entry.provider !== "string") {
+      throw new TypeError(
+        `Repository assurance inventory ${String(entry.path)} has no string provider`,
+      );
+    }
+    if (!entry.provider.startsWith(`${REPOSITORY_QUALITY_PROVIDER}/`)) {
+      continue;
+    }
+    const key = entry.provider.slice(REPOSITORY_QUALITY_PROVIDER.length + 1);
+    const existing = entries.get(key);
+    if (existing) {
+      throw new TypeError(
+        `Repository assurance provider ${entry.provider} is duplicated by ${String(existing.path)} and ${String(entry.path)}`,
+      );
+    }
+    entries.set(key, entry);
+  }
+  return entries;
 }
 
 /** Resolve one provider measurement by executing its inventoried adapter. */
 export async function resolveRepositoryQualityMeasurement(
   source,
-  {
-    entries,
-    registryPath = DEFAULT_REGISTRY_PATH,
-    execute = runCommand,
-  } = {},
+  { entries, registryPath = DEFAULT_REGISTRY_PATH, execute = runCommand } = {},
 ) {
   if (source.provider !== REPOSITORY_QUALITY_PROVIDER) {
-    throw new TypeError(`Unsupported repository assurance provider ${source.provider}`);
+    throw new TypeError(
+      `Unsupported repository assurance provider ${source.provider}`,
+    );
   }
   const providerEntries =
     entries ?? (await readRepositoryProviderEntries(registryPath));
   const entry = providerEntries.get(source.key);
   if (!entry) {
-    throw new TypeError(`Repository assurance key ${source.key} is not declared`);
+    throw new TypeError(
+      `Repository assurance key ${source.key} is not declared`,
+    );
   }
   const scriptPath = path.join(repoRoot, entry.path);
-  const executable = entry.path.endsWith(".mts")
-    ? {
-        command: commandFor("pnpm"),
-        args: ["exec", "tsx", scriptPath, ...(entry.provider_args ?? [])],
-      }
-    : {
-        command: process.execPath,
-        args: [scriptPath, ...(entry.provider_args ?? [])],
-      };
+  const prefix = entry.path.endsWith(".mts")
+    ? { command: commandFor("pnpm"), args: ["exec", "tsx", scriptPath] }
+    : { command: process.execPath, args: [scriptPath] };
+  const executable = {
+    command: prefix.command,
+    args: [...prefix.args, ...(entry.provider_args ?? [])],
+  };
+  const timeout = entry.provider_timeout_ms ?? DEFAULT_ADAPTER_TIMEOUT_MS;
   if (entry.provider_negative_args) {
     const negativeResult = execute(
       executable.command,
-      [
-        ...executable.args.slice(0, entry.path.endsWith(".mts") ? 3 : 1),
-        ...entry.provider_negative_args,
-      ],
-      { allowFailure: true, capture: true },
+      [...prefix.args, ...entry.provider_negative_args],
+      { allowFailure: true, capture: true, timeout },
     );
     if (negativeResult.status !== 0) {
       return {
@@ -94,11 +114,11 @@ export async function resolveRepositoryQualityMeasurement(
       };
     }
   }
-  const result = execute(
-    executable.command,
-    executable.args,
-    { allowFailure: true, capture: true },
-  );
+  const result = execute(executable.command, executable.args, {
+    allowFailure: true,
+    capture: true,
+    timeout,
+  });
   const detail = [result.stderr, result.stdout]
     .map((value) => value.trim())
     .find((value) => value.length > 0);
@@ -109,7 +129,9 @@ export async function resolveRepositoryQualityMeasurement(
     contributors:
       result.status === 0
         ? []
-        : [`${entry.path}:exit:${result.status}${detail ? `:${detail.slice(0, 500)}` : ""}`],
+        : [
+            `${entry.path}:exit:${result.status}${detail ? `:${detail.slice(0, 500)}` : ""}`,
+          ],
   };
 }
 
@@ -169,7 +191,7 @@ export async function main(
     : {
         gate_id: result.gate_id,
         verdict: result.verdict,
-        assertions: result.assertions_total,
+        assertions_total: result.assertions_total,
       };
 }
 

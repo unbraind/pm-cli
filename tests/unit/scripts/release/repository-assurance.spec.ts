@@ -4,8 +4,10 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import { withTempDir } from "../../../helpers/temp.js";
+import { commandFor } from "../../../../scripts/release/utils.mjs";
 
-const loadModule = () => import("../../../../scripts/release/repository-assurance.mjs");
+const loadModule = () =>
+  import("../../../../scripts/release/repository-assurance.mjs");
 
 describe("repository assurance provider host", () => {
   it("reads only repository provider migrations", async () => {
@@ -74,6 +76,54 @@ describe("repository assurance provider host", () => {
           ],
         ]),
       );
+
+      await writeFile(
+        registryPath,
+        JSON.stringify({
+          automation_inventory: {
+            gate_scripts: [
+              {
+                path: "scripts/release/missing-provider.mjs",
+                disposition: "reduced_to_provider",
+              },
+            ],
+          },
+        }),
+      );
+      await expect(
+        loadModule().then((module) =>
+          module.readRepositoryProviderEntries(registryPath),
+        ),
+      ).rejects.toThrow(
+        "scripts/release/missing-provider.mjs has no string provider",
+      );
+
+      await writeFile(
+        registryPath,
+        JSON.stringify({
+          automation_inventory: {
+            gate_scripts: [
+              {
+                path: "scripts/release/first.mjs",
+                disposition: "reduced_to_provider",
+                provider: "repository-quality/example",
+              },
+              {
+                path: "scripts/release/second.mjs",
+                disposition: "reduced_to_provider",
+                provider: "repository-quality/example",
+              },
+            ],
+          },
+        }),
+      );
+      await expect(
+        loadModule().then((module) =>
+          module.readRepositoryProviderEntries(registryPath),
+        ),
+      ).rejects.toThrow(
+        "repository-quality/example is duplicated by scripts/release/first.mjs and scripts/release/second.mjs",
+      );
     });
   });
 
@@ -91,6 +141,7 @@ describe("repository assurance provider host", () => {
           path: "scripts/release/example-gate.mjs",
           provider_args: ["--strict"],
           provider_negative_args: ["--negative-control"],
+          provider_timeout_ms: 12_345,
         },
       ],
       [
@@ -127,7 +178,9 @@ describe("repository assurance provider host", () => {
       ),
     ).resolves.toMatchObject({
       value: 0,
-      contributors: [expect.stringContaining("example-gate.mts:exit:2:regressed")],
+      contributors: [
+        expect.stringContaining("example-gate.mts:exit:2:regressed"),
+      ],
     });
     expect(execute.mock.calls[0][1]).toEqual([
       expect.stringContaining("example-gate.mjs"),
@@ -142,16 +195,28 @@ describe("repository assurance provider host", () => {
       "tsx",
       expect.stringContaining("example-gate.mts"),
     ]);
+    expect(execute.mock.calls[2][0]).toBe(commandFor("pnpm"));
+    expect(execute.mock.calls[1][0]).toBe(process.execPath);
+    expect(execute.mock.calls[0][2]).toMatchObject({ timeout: 12_345 });
+    expect(execute.mock.calls[1][2]).toMatchObject({ timeout: 12_345 });
+    expect(execute.mock.calls[2][2]).toMatchObject({ timeout: 300_000 });
   });
 
   it("executes default repository inventory and preserves empty failure detail", async () => {
     const module = await loadModule();
+    const defaultExecute = vi
+      .fn()
+      .mockReturnValue({ status: 0, stdout: "", stderr: "" });
     await expect(
-      module.resolveRepositoryQualityMeasurement({
-        provider: module.REPOSITORY_QUALITY_PROVIDER,
-        key: "absence-tolerance",
-      }),
+      module.resolveRepositoryQualityMeasurement(
+        {
+          provider: module.REPOSITORY_QUALITY_PROVIDER,
+          key: "absence-tolerance",
+        },
+        { execute: defaultExecute },
+      ),
     ).resolves.toMatchObject({ value: 1, population_size: 1 });
+    expect(defaultExecute).toHaveBeenCalled();
 
     const execute = vi
       .fn()
@@ -228,10 +293,10 @@ describe("repository assurance provider host", () => {
   it("refuses undeclared providers and keys", async () => {
     const module = await loadModule();
     await expect(
-      module.resolveRepositoryQualityMeasurement(
-        { provider: "other", key: "static" },
-        { entries: new Map() },
-      ),
+      module.resolveRepositoryQualityMeasurement({
+        provider: "other",
+        key: "static",
+      }),
     ).rejects.toThrow("Unsupported repository assurance provider");
     await expect(
       module.resolveRepositoryQualityMeasurement(
@@ -259,14 +324,14 @@ describe("repository assurance provider host", () => {
       const module = await loadModule();
 
       await expect(
-        module.main(
-          ["repository-static-quality", "--trigger", "pre-release"],
-          { registryPath, runAction },
-        ),
+        module.main(["repository-static-quality", "--trigger", "pre-release"], {
+          registryPath,
+          runAction,
+        }),
       ).resolves.toEqual({
         gate_id: "repository-static-quality",
         verdict: "pass",
-        assertions: 2,
+        assertions_total: 2,
       });
       expect(runAction).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -280,12 +345,16 @@ describe("repository assurance provider host", () => {
             providers: expect.objectContaining({
               "repository-quality": expect.any(Function),
             }),
+            provider_capabilities: {
+              "repository-quality": { cost_class: "high", network: false },
+            },
           }),
         }),
       );
-      const provider = runAction.mock.calls[0][2].workspace.providers[
-        module.REPOSITORY_QUALITY_PROVIDER
-      ];
+      const provider =
+        runAction.mock.calls[0][2].workspace.providers[
+          module.REPOSITORY_QUALITY_PROVIDER
+        ];
       await expect(
         provider({
           provider: module.REPOSITORY_QUALITY_PROVIDER,
@@ -299,7 +368,10 @@ describe("repository assurance provider host", () => {
     const module = await loadModule();
     await expect(module.main(["--help"])).resolves.toHaveProperty("usage");
     await expect(module.main([])).rejects.toThrow("requires a gate id");
-    const registryPath = path.join(process.cwd(), "scripts/release/gate-registry.json");
+    const registryPath = path.join(
+      process.cwd(),
+      "scripts/release/gate-registry.json",
+    );
     const pass = {
       gate_id: "repository-context-quality",
       verdict: "warn",
@@ -332,7 +404,10 @@ describe("repository assurance provider host", () => {
     const write = vi.fn();
     await expect(
       module.runRepositoryAssuranceEntrypoint({
-        argv: ["node", path.resolve("scripts/release/repository-assurance.mjs")],
+        argv: [
+          "node",
+          path.resolve("scripts/release/repository-assurance.mjs"),
+        ],
         run: vi.fn().mockResolvedValue({ ok: true }),
         write,
       }),
@@ -341,7 +416,10 @@ describe("repository assurance provider host", () => {
     const onError = vi.fn();
     await expect(
       module.runRepositoryAssuranceEntrypoint({
-        argv: ["node", path.resolve("scripts/release/repository-assurance.mjs")],
+        argv: [
+          "node",
+          path.resolve("scripts/release/repository-assurance.mjs"),
+        ],
         run: vi.fn().mockRejectedValue(new Error("failed")),
         onError,
       }),
@@ -366,11 +444,9 @@ describe("repository assurance provider host", () => {
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
-    const exit = vi
-      .spyOn(process, "exit")
-      .mockImplementation((() => {
-        throw new Error("exit called");
-      }) as typeof process.exit);
+    const exit = vi.spyOn(process, "exit").mockImplementation((() => {
+      throw new Error("exit called");
+    }) as typeof process.exit);
     await expect(
       module.runRepositoryAssuranceEntrypoint({
         argv: [

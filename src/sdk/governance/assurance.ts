@@ -1422,7 +1422,20 @@ function evaluateMeasurementCached(
     definitions,
     stack,
     state,
-  );
+  ).catch((error: unknown) => {
+    if (
+      error instanceof AssuranceSourceResolutionError &&
+      error.measurement_id === undefined
+    ) {
+      throw new AssuranceSourceResolutionError(error.message, {
+        measurement_id: definition.id,
+        source_kind: error.source_kind,
+        field: error.field,
+        ...(error.check ? { check: error.check } : {}),
+      });
+    }
+    throw error;
+  });
   state.cache.set(definition.id, evaluation);
   return evaluation;
 }
@@ -1549,11 +1562,11 @@ async function evaluateGateMeasurement(
     if (error instanceof AssuranceSourceResolutionError) {
       const checkLocation = error.check ? ` check ${error.check}` : "";
       throw new AssuranceEvaluationRefusalError(
-        `assurance gate ${gateId} assertion ${assertionId} measurement ${definition.id} source ${error.source_kind}${checkLocation} field ${error.field} could not resolve: ${error.message}`,
+        `assurance gate ${gateId} assertion ${assertionId} measurement ${error.measurement_id!} source ${error.source_kind}${checkLocation} field ${error.field} could not resolve: ${error.message}`,
         {
           gate_id: gateId,
           assertion_id: assertionId,
-          measurement_id: definition.id,
+          measurement_id: error.measurement_id!,
           source_kind: error.source_kind,
           field: error.field,
           ...(error.check ? { check: error.check } : {}),

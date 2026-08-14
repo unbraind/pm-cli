@@ -579,6 +579,15 @@
       ],
       "package_version": "2026.8.14",
       "reason": "Additive host-provider runtime options and typed assurance refusal location context for pm-4ok4ex and pm-xmmafu"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AssuranceSourceResolutionError",
+        "signature ./sdk:PmRecoveryReferenceFinding",
+        "signature ./sdk/governance:AssuranceSourceResolutionError"
+      ],
+      "package_version": "2026.8.14",
+      "reason": "Expose duplicate-obligation refusal and innermost source-owner metadata so recursive assurance cannot overstate coverage or misattribute failures"
     }
   ],
   "entrypoints": {
@@ -1801,7 +1810,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "AssuranceSourceResolutionError",
-          "signature": "export declare class AssuranceSourceResolutionError extends TypeError { readonly source_kind: string; readonly field: string; readonly check?: string; constructor(message: string, context: { source_kind: string; field: string; check?: string; }); }"
+          "signature": "export declare class AssuranceSourceResolutionError extends TypeError { readonly measurement_id?: string; readonly source_kind: string; readonly field: string; readonly check?: string; constructor(message: string, context: { measurement_id?: string; source_kind: string; field: string; check?: string; }); }"
         },
         {
           "classification": "supported",
@@ -9397,7 +9406,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmRecoveryReferenceFinding",
-          "signature": "export interface PmRecoveryReferenceFinding { kind: \"duplicate_observation\" | \"missing_observation\" | \"unreachable_reference\" | \"undeclared_observation\"; reference_id: string; detail: string; }"
+          "signature": "export interface PmRecoveryReferenceFinding { kind: \"duplicate_obligation\" | \"duplicate_observation\" | \"missing_observation\" | \"unreachable_reference\" | \"undeclared_observation\"; reference_id: string; detail: string; }"
         },
         {
           "classification": "advanced_export",
@@ -19735,7 +19744,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "AssuranceSourceResolutionError",
-          "signature": "export declare class AssuranceSourceResolutionError extends TypeError { readonly source_kind: string; readonly field: string; readonly check?: string; constructor(message: string, context: { source_kind: string; field: string; check?: string; }); }"
+          "signature": "export declare class AssuranceSourceResolutionError extends TypeError { readonly measurement_id?: string; readonly source_kind: string; readonly field: string; readonly check?: string; constructor(message: string, context: { measurement_id?: string; source_kind: string; field: string; check?: string; }); }"
         },
         {
           "classification": "supported",

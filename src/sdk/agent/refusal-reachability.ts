@@ -99,6 +99,7 @@ export interface PmRecoveryReferenceKindCoverage {
 export interface PmRecoveryReferenceFinding {
   /** Stable finding kind for assurance and CI. */
   kind:
+    | "duplicate_obligation"
     | "duplicate_observation"
     | "missing_observation"
     | "unreachable_reference"
@@ -209,7 +210,20 @@ export function verifyPmRecoveryReferences(
   observations: readonly PmRecoveryReferenceObservation[],
 ): PmRecoveryReferenceReport {
   const findings: PmRecoveryReferenceFinding[] = [];
-  const declaredIds = new Set(obligations.map(({ id }) => id));
+  const declaredIds = new Set<string>();
+  const duplicateIds = new Set<string>();
+  for (const obligation of obligations) {
+    if (declaredIds.has(obligation.id)) {
+      duplicateIds.add(obligation.id);
+      findings.push({
+        kind: "duplicate_obligation",
+        reference_id: obligation.id,
+        detail: `Recovery obligation ${obligation.id} was declared more than once.`,
+      });
+      continue;
+    }
+    declaredIds.add(obligation.id);
+  }
   const observationsById = new Map<string, PmRecoveryReferenceObservation>();
   for (const observation of observations) {
     if (observationsById.has(observation.id)) {
@@ -230,6 +244,7 @@ export function verifyPmRecoveryReferences(
     }
   }
   for (const obligation of obligations) {
+    if (duplicateIds.has(obligation.id)) continue;
     const observation = observationsById.get(obligation.id);
     if (!observation) {
       findings.push({
@@ -250,6 +265,7 @@ export function verifyPmRecoveryReferences(
       (obligation) => obligation.kind === kind,
     );
     const kindObservations = kindObligations
+      .filter((obligation) => !duplicateIds.has(obligation.id))
       .map((obligation) => observationsById.get(obligation.id))
       .filter(
         (observation): observation is PmRecoveryReferenceObservation =>

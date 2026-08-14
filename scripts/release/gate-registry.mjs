@@ -187,8 +187,8 @@ function validLocalExecutable(executable) {
 /** Validate whether one step forbids skips or names its sole explicit skip flag. */
 function validLocalSkipPolicy(step) {
   return step?.skip_policy === "forbidden"
-      ? step.optional_flag === undefined
-      : step?.skip_policy === "optional" &&
+    ? step.optional_flag === undefined
+    : step?.skip_policy === "optional" &&
         typeof step.optional_flag === "string" &&
         step.optional_flag.startsWith("--skip-");
 }
@@ -268,7 +268,10 @@ function validProviderDisposition(entry) {
     typeof entry.provider === "string" &&
     /^repository-quality\/[a-z0-9][a-z0-9-]*$/u.test(entry.provider) &&
     validArguments(entry.provider_args, false) &&
-    validArguments(entry.provider_negative_args, true)
+    validArguments(entry.provider_negative_args, true) &&
+    (entry.provider_timeout_ms === undefined ||
+      (Number.isInteger(entry.provider_timeout_ms) &&
+        entry.provider_timeout_ms > 0))
   );
 }
 
@@ -356,7 +359,9 @@ async function validateProviderChecks(providerChecks, root, violations) {
     try {
       await readFile(path.join(root, entry.path), "utf8");
     } catch {
-      violations.push(`automation_inventory:provider_check:${entry.path}:missing`);
+      violations.push(
+        `automation_inventory:provider_check:${entry.path}:missing`,
+      );
     }
     await validateNegativeControl(
       { id: entry.provider, negative_control: entry.negative_control },
@@ -389,7 +394,9 @@ function validateGraphOperationInventory(graphOperations, violations) {
   }
   for (const operation of GRAPH_SUBCOMMAND_VALUES) {
     if (!declaredOperations.has(operation))
-      violations.push(`automation_inventory:graph_operation:${operation}:undeclared`);
+      violations.push(
+        `automation_inventory:graph_operation:${operation}:undeclared`,
+      );
   }
 }
 
@@ -407,9 +414,7 @@ async function validateAutomationInventory(inventory, root, violations) {
   }
   const discoveredScripts = new Set(
     (await readdir(path.join(root, "scripts", "release")))
-      .filter((file) =>
-        /(?:-gate|gate-registry)\.(?:[cm]?[jt]s)$/u.test(file),
-      )
+      .filter((file) => /(?:-gate|gate-registry)\.(?:[cm]?[jt]s)$/u.test(file))
       .map((file) => `scripts/release/${file}`),
   );
   await validateGateScriptInventory(
@@ -496,9 +501,7 @@ export async function main(argv = process.argv.slice(2)) {
     );
   }
   const registered = [
-    ...new Set(
-      registry.gates.flatMap((gate) => gate.pipelines),
-    ),
+    ...new Set(registry.gates.flatMap((gate) => gate.pipelines)),
   ].sort();
   if (flags.has("inventory")) {
     return { registered, workflow_jobs: discovered };

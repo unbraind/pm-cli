@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[6]: agent-ux,"area:ci","area:sdk",assurance,contracts,recovery
 created_at: "2026-08-13T21:18:07.562Z"
-updated_at: "2026-08-14T20:32:24.596Z"
+updated_at: "2026-08-14T21:13:10.802Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#a2f8b0a51404c50fa9d328f4"
 author: "harness:claude-code"
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-j82fd3,implements,"2026-08-13T21:18:19.039Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,implements,"2026-08-13T21:18:19.039Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-13T21:18:19.039Z","harness:claude-code","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-08-13T22:07:15.361Z","harness:codex","Progress evidence: the contract now declares replacement versus behavior_preserving semantics instead of inferring strength from prose. An executable temporary-tracker corpus derives and runs all 22 exact projection-mode replacements, comparing both spellings after only receipt/volatile metadata removal. The corpus caught --collapse <value> and health --check-only as independent execution semantics; both are excluded from false replacement mapping and --collapse now emits truthful weaker guidance. Remaining scope before this general feature can close: derive and execute the other forward-reference kinds, declare the full obligation set as assurance data, and add the cross-kind negative-control gate."
   "2026-08-13T22:27:26.637Z","harness:codex","Assurance evidence: tracker-context-quality initially blocked because the new executable migration spec was test-command linked but not file-owned. Added explicit project file ownership; preserved the pre-existing one-path orphan ceiling rather than weakening the ratchet."
   "2026-08-13T23:17:37.958Z","harness:codex","Verification evidence for this PR tranche: derived and executed all 22 replacement promises across list/search/get/health/deps/graph/history/activity/validate/events/contracts in a real temporary tracker; exact legacy-versus-canonical projections match after removing only invocation receipts and volatile run metadata. Linked PM tests passed 20/20. Full repository coverage passed 7,280 tests at exact 100/100/100/100. Packed npm acceptance exercised canonical CLI normalization and the public SDK, with independent npx and bunx dispatch succeeding. The broader feature remains open for the other forward-reference kinds and its cross-kind assurance negative control."
@@ -34,6 +34,8 @@ comments[11]{created_at,author,text}:
   "2026-08-14T19:13:55.121Z","harness:codex","Implementation start 2026-08-14: derive the remaining forward-reference vocabulary from typed contracts, execute command-path and recovery obligations in isolated workspaces, expose coverage as assurance data, and add a negative control that proves a broken reference blocks."
   "2026-08-14T20:29:42.511Z","harness:codex","Tranche evidence 2026-08-14: the SDK now models suggested_retry, candidate_command, example, and next_step obligations with per-kind coverage and stable findings. The integration corpus executes a real emitted retry in an isolated tracker, validates six candidate paths against the live unbounded command contract, and records 10/10 reachability; a seeded broken reference reduces pass_fraction to 0.9 and blocks repository-context-quality. All four linked test commands passed. The broader feature remains active through PR review; full generator-derived coverage of every emitted reference family remains the honest residual."
   "2026-08-14T20:32:24.595Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1015 — typed cross-kind recovery reachability with executable retry/path proof and assurance enforcement."
+  "2026-08-14T20:52:19.046Z","harness:codex","Review implementation: recovery-reference assurance now rejects duplicate obligation ids without allowing one observation to discharge multiple promises; integration validation requires complete declared candidate command paths and no longer accepts arbitrary subcommands through root-only matching."
+  "2026-08-14T21:13:10.802Z","harness:codex","Review verification: the full repository suite passed 495 files and 7,309 tests at exact 100% coverage: 53,181 statements, 39,226 branches, 10,929 functions, and 51,358 lines. The executable repository-context gate passed all four provider assertions, including recovery-reference coverage; token surface passed 79 surfaces."
 learnings[1]{created_at,author,text}:
   "2026-08-13T22:07:15.884Z","harness:codex","A migration flag can belong to a universal output dimension without being replaceable by the universal option. Promise strength must be explicit contract data: parsing a well-formed hint or checking that its target flag exists cannot distinguish projection equivalence from preserved traversal, grouping, side-effect, cursor, or streaming semantics."
 files[12]{path,scope,note}:
