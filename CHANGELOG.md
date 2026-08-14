@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Unsupported assurance triggers bypass the typed evaluation-refusal boundary and surface as high-severity Sentry faults ([pm-9yhl2v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9yhl2v.toon))
 - A single transient per-test timeout fails the whole pipeline: 1,942 tests share one uniform 30s budget, no retry is configured, and the only diagnosis path is decoding a blob artifact ([pm-rizqb6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rizqb6.toon))
 - The degradation ladder only sees top-level arrays, so the governance reads whose bulk is nested skip every intermediate rung and return nothing at all ([pm-kyjdne](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kyjdne.toon))
 - A budget-truncated read reports that rows are missing without a cursor, a recovery, or any sign that it overrode the caller's explicit request for all of them ([pm-jt8aa2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jt8aa2.toon))
@@ -12,7 +13,6 @@
 - Exact command-path summaries expose intent, flags, and format-aware output ceilings ([pm-pmrae8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmrae8.toon))
 - Default output ceilings bind representative read surfaces with depth-heavy negative controls ([pm-s2h0mq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s2h0mq.toon))
 - Two of the three ci-triggered assurance gates never ran on a pull request, so the append-only history assertion that carries the immutability guarantee was evaluated only after merge ([pm-fhifkc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fhifkc.toon))
-- Unsupported assurance triggers bypass the typed evaluation-refusal boundary and surface as high-severity Sentry faults ([pm-9yhl2v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9yhl2v.toon))
 - The ordering-cycle finding names the items in the cycle and not the contradiction that creates it, so its remediation hint cannot be executed without re-deriving the cause by hand ([pm-xvt7ps](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xvt7ps.toon))
 - The edge-count floor is denominated over a population that includes the edges the graph itself calls redundant, so repairing 73 witnessed implied ordering rows and silently relaxing the guard are the same privileged act ([pm-9gzr4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9gzr4r.toon))
 - The graph node floor counts materialized placeholders, so its negative control declares the fully repaired corpus a failure and the gate passes only while a dangling reference exists ([pm-mfvsng](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mfvsng.toon))
