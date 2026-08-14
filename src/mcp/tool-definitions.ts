@@ -45,9 +45,9 @@ const READ_OUTPUT_TOOL_PROPERTIES = {
       "Universal read row ceiling, or unbounded to disable the shared ceiling.",
   },
   outputBudget: {
-    type: "integer",
-    minimum: 1,
-    description: "Universal estimated-token ceiling for a read result.",
+    anyOf: [{ type: "integer", minimum: 1 }, { const: "unbounded" }],
+    description:
+      "Universal estimated-token ceiling, or unbounded to return the complete read result.",
   },
   outputFormat: {
     type: "string",

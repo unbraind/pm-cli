@@ -52,15 +52,15 @@ function changedFilesFromGit(root) {
   const base = resolveDefaultBranchBase(root);
   if (base) {
     for (const file of gitLines(
-      ["diff", "--name-only", "--diff-filter=ACMR", `${base}...HEAD`],
+      ["diff", "--name-only", "--diff-filter=ACMRD", `${base}...HEAD`],
       root,
     )) {
       changed.add(file);
     }
   }
   for (const args of [
-    ["diff", "--name-only", "--diff-filter=ACMR"],
-    ["diff", "--cached", "--name-only", "--diff-filter=ACMR"],
+    ["diff", "--name-only", "--diff-filter=ACMRD"],
+    ["diff", "--cached", "--name-only", "--diff-filter=ACMRD"],
     ["ls-files", "--others", "--exclude-standard"],
   ]) {
     for (const file of gitLines(args, root)) changed.add(file);

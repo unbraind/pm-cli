@@ -12,9 +12,11 @@ import {
   isReadOutputBudgetExceeded,
 } from "@unbrained/pm-cli/sdk/core";
 import {
+  AssuranceMutationRefusalError,
   runReindex,
   runUpgrade,
   runValidate,
+  validateGateDefinition,
 } from "@unbrained/pm-cli/sdk/governance";
 import { runGraph } from "@unbrained/pm-cli/sdk/graph";
 import { mergeItemDocuments } from "@unbrained/pm-cli/sdk/merge";
@@ -59,6 +61,16 @@ describe("public SDK capability entrypoints", () => {
       ),
     ).toBe(true);
     expect(runValidate).toBeTypeOf("function");
+    expect(AssuranceMutationRefusalError).toBeTypeOf("function");
+    expect(sdk.AssuranceMutationRefusalError).toBeTypeOf("function");
+    expect(() =>
+      validateGateDefinition({
+        id: "quality",
+        assertion_ids: ["quality-assertion"],
+      } as never),
+    ).toThrow(
+      AssuranceMutationRefusalError,
+    );
     expect(runReindex).toBeTypeOf("function");
     expect(runUpgrade).toBeTypeOf("function");
     expect(runGraph).toBeTypeOf("function");

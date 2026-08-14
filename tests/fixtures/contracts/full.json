@@ -26703,9 +26703,16 @@
             "type": "object"
           },
           "outputBudget": {
-            "description": "Universal estimated-token ceiling for a read result.",
-            "minimum": 1,
-            "type": "integer"
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling, or unbounded to return the complete read result."
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",

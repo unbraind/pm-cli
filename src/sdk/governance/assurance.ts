@@ -897,7 +897,7 @@ export function validateGateDefinition(
     requireStableId(id, "gate.assertion_id");
   if (!Array.isArray(definition.triggers)) {
     throw new AssuranceMutationRefusalError(
-      "gate.triggers is required and must be an array",
+      `gate.triggers is required and must be an array of ${ASSURANCE_GATE_TRIGGERS.join(", ")}`,
     );
   }
   if (definition.triggers.length === 0) {

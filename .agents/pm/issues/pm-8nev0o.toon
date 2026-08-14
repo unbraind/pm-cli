@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: context,output-budget,pagination,scale
 created_at: "2026-08-14T05:11:18.919Z"
-updated_at: "2026-08-14T07:56:15.640Z"
+updated_at: "2026-08-14T09:31:37.946Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A read truncated by the output budget emits a continuation cursor that resumes the same query at the first withheld row, on every row-producing surface that emits has_more; The envelope distinguishes limit truncation from budget truncation in the pagination contract itself, so a caller reading only the declared pagination keys can tell a resumable page from a terminal one; No recovery instruction for a budget truncation names an unbounded re-read as the sole path, and the declared recovery cost is bounded by a stated multiple of the budget rather than by the corpus; A regression test walks pm list-closed to completion on a workspace larger than the default budget using only cursors, and asserts total rows delivered equals total, with peak response size bounded; The assurance verdict surface is covered by the same contract, so a gate reading its own evidence rows under a budget either receives every assertion or receives a cursor to the rest"
@@ -18,18 +18,26 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-j82fd3,implements,"2026-08-14T05:11:18.919Z","harness:claude-code","cli:create:dep",detected
   pm-jt8aa2,discovered_from,"2026-08-14T05:11:18.919Z","harness:claude-code","cli:create:dep",detected
   pm-o87av6,implements,"2026-08-14T05:11:18.919Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-14T06:51:28.004Z","harness:codex","Implementation evidence: list-all and --no-truncate now imply unbounded cost unless an explicit canonical budget overrides them; budget-compacted producer pages rebase next_cursor to the last retained item and disclose structured CLI/SDK/MCP recovery, preventing skipped hidden rows. MCP outputBudget now accepts the same unbounded escape hatch as CLI and SDK."
   "2026-08-14T07:55:44.180Z","harness:codex","Tranche evidence: top-level item producer pages now rebase a continuation cursor to the last retained row and disclose structured CLI/SDK/MCP recovery; list-all and --no-truncate returned 45/45 rows in a packed temporary project; linked tests and exact coverage pass. Residual acceptance remains for cursor-native continuation across every nested row-producing and assurance-verdict surface, so this item returns open."
+  "2026-08-14T09:31:37.946Z","harness:codex","Final verification evidence for the delivered tranche: the exact uncommitted head passed 493 test files / 7,288 tests with exact coverage 52,942/52,942 statements, 38,963/38,963 branches, 10,875/10,875 functions, and 51,131/51,131 lines. Lint, zero-clone jscpd over 991 files, 100% docstrings, SDK parity, surface replication, bounded-output/token, graph, record-integrity, and contract snapshot gates passed. The item remains open and unclaimed because recursive continuation across every row-producing and assurance surface is intentionally not claimed complete by this tranche."
 learnings[1]{created_at,author,text}:
   "2026-08-14T07:55:47.229Z","harness:codex",Budget compaction must rebase a producer cursor to the last row actually emitted. Returning the producer's original page-end cursor after dropping rows creates a silent data-loss gap even when has_more remains true.
-files[4]{path,scope,note}:
+files[10]{path,scope,note}:
+  sdk/public-surface.json,project,Generated supported SDK cursor decoder surface snapshot
+  src/mcp/tool-definitions.ts,project,MCP unbounded output-budget recovery schema parity
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,MCP complete-result recovery option
+  src/sdk/pagination.ts,project,Shared cursor envelope validation for budget-compacted continuation recovery
   src/sdk/read-output-contracts.ts,project,complete list intent and cost precedence
+  tests/fixtures/contracts/full.json,project,Generated MCP unbounded output-budget schema contract
   tests/unit/commands/contracts-command.spec.ts,project,transport recovery contract coverage
+  tests/unit/sdk/pagination.spec.ts,project,Shared cursor-envelope decoder regression coverage
   tests/unit/sdk/read-output-contracts.spec.ts,project,list-all and no-truncate completeness tests
-tests[1]{command,scope,timeout_seconds}:
+  tests/unit/sdk/read-output-transport.spec.ts,project,SDK and MCP output-budget schema parity coverage
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/read-output-transport.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mssni2fy-tk155k,test,passed,"2026-08-14T07:53:54.235Z","2026-08-14T07:54:02.590Z","2026-08-14T07:54:02.590Z",1,0,0
 docs[1]{path,scope,note}:

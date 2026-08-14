@@ -26,7 +26,10 @@ import {
   type PmReadOutputSessionReceipt,
   type PmReadOutputSessionState,
 } from "./read-output-session.js";
-import { encodeQueryCursor } from "./pagination.js";
+import {
+  decodeQueryCursorEnvelope,
+  encodeQueryCursor,
+} from "./pagination.js";
 
 /** Stable output dimensions shared by every read surface. */
 export const PM_READ_OUTPUT_DIMENSIONS = [
@@ -1252,7 +1255,7 @@ function omitReadOutputForBudget(
     output_budget_exceeded: {
       omitted_result: true,
       reason: "requested_budget_infeasible",
-      restore_with: "Recovery.",
+      restore_with: "Unbounded",
       recovery: { outputBudget: "unbounded" },
     },
     read_output: minimalReceipt,
@@ -1355,28 +1358,17 @@ function rebaseBudgetCompactedCursor(
     return false;
   }
   const retainedCount = projected.items.length;
-  if (![retainedCount > 0, retainedCount < originalItemCount].every(Boolean))
+  if (retainedCount === 0 || retainedCount >= originalItemCount) {
     return false;
-  let decoded: unknown;
+  }
+  let cursor;
   try {
-    decoded = JSON.parse(Buffer.from(cursorSource, "base64url").toString());
+    cursor = decodeQueryCursorEnvelope(cursorSource);
   } catch {
     return false;
   }
-  if (Object.prototype.toString.call(decoded) !== "[object Object]") {
-    return false;
-  }
-  const cursor = decoded as Record<string, unknown>;
   const sourceIndex = cursor.after_index;
-  if (
-    ![
-      cursor.version === 1,
-      typeof cursor.fingerprint === "string",
-      Number.isSafeInteger(sourceIndex),
-      Number(sourceIndex) >= 0,
-    ].every(Boolean)
-  )
-    return false;
+  if (sourceIndex === undefined) return false;
   const last = projected.items.at(-1);
   if (Object.prototype.toString.call(last) !== "[object Object]") {
     return false;
@@ -1384,14 +1376,14 @@ function rebaseBudgetCompactedCursor(
   const lastId = Reflect.get(last as object, "id") as unknown;
   if (typeof lastId !== "string" || lastId.length === 0) return false;
   const afterIndex = cursorContinuesExistingPage
-    ? Number(sourceIndex) - (originalItemCount - retainedCount)
-    : Number(sourceIndex) + retainedCount;
+    ? sourceIndex - (originalItemCount - retainedCount)
+    : sourceIndex + retainedCount;
   if (afterIndex < 0) return false;
   projected.next_cursor = encodeQueryCursor(
-    cursor.fingerprint as string,
+    cursor.fingerprint,
     lastId,
     afterIndex,
-    typeof cursor.snapshot === "string" ? cursor.snapshot : undefined,
+    cursor.snapshot,
   );
   if (typeof projected.applied_limit === "number") {
     projected.applied_limit = retainedCount;

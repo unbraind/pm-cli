@@ -2,13 +2,13 @@ id: pm-k47yqn
 title: "GH-1011: Windows Node 24 nightly cache fixture loses the authoritative linked-test collection"
 description: "The Windows Node 24 nightly fails because a cache-regression test addresses the seeded item through a hardcoded tasks path even when the runtime type folder differs, leaving cachedTests undefined. Repair the fixture through canonical SDK path resolution and preserve the product assertion that authoritative linked-test order defeats a stat-matched stale cache."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[6]: "area:testing",cache,ci,cross-platform,regression,windows
 created_at: "2026-08-14T06:11:37.472Z"
-updated_at: "2026-08-14T07:55:40.346Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#2443c841b7809c528c9d9fbe"
+updated_at: "2026-08-14T08:28:56.602Z"
+closed_at: "2026-08-14T08:28:44.356Z"
+completed_at: "2026-08-14T08:28:44.356Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: The test resolves the seeded item document through the same canonical type-folder contract used by production; The original authoritative re-read assertion remains intact and fails under a deliberately stale cache negative control; Windows and POSIX focused runs pass without OS-specific path literals; The nightly issue is linked to this item and a rerun or successor exact-head run is green; Recurrence is typed incident_from the prior Windows harness-hardening lineage
@@ -17,20 +17,23 @@ risk: high
 confidence: 96
 reporter: GitHub issue #1011
 severity: high
+resolution: fixed
 expected_result: The cache-order regression runs and passes on every supported nightly platform and Node version using canonical item path semantics.
-actual_result: "Windows Node 24 fails before exercising product behavior because cachedTests is undefined at validate-command.spec.ts:3351."
+actual_result: Canonical path joining preserves the authoritative cached-test collection on Windows and POSIX; PR #1013 head 8beb34a269f08fca28748960531b8b74656c86a4 passed Windows regression (Node 24).
 affected_version: 2026.8.14
 regression: true
 customer_impact: The nightly signal cannot distinguish a product regression from a platform-specific fixture bug.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-j668gl,incident_from,"2026-08-14T06:11:37.472Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-14T06:11:37.472Z","harness:codex","Duplicate check evidence: searched all statuses for GH-1011, the exact test name, stat-matched collection cache, and Windows Node 24. The closed pm-j668gl is the prior harness-noise family and is linked as recurrence rather than reopened."
   "2026-08-14T07:55:40.346Z","harness:codex","Local implementation evidence: the cache fixture now uses path.join for the canonical type-folder key and retains the authoritative re-read assertion. Linked validate suite passed 95/95; final repo coverage passed 7,288 tests at exact 100/100/100/100. Hosted Windows exact-head proof remains pending on the PR matrix, so this item stays in progress."
+  "2026-08-14T08:28:43.374Z","harness:codex","Hosted evidence: PR https://github.com/unbraind/pm-cli/pull/1013 at exact head 8beb34a269f08fca28748960531b8b74656c86a4 passed Windows regression (Node 24) in 2m50s, plus the full cross-platform matrix. This completes the successor exact-head requirement without weakening the authoritative re-read assertion."
 files[1]{path,scope,note}:
   tests/unit/commands/validate-command.spec.ts,project,platform-native cache key fixture
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mssngyhc-7pizg4,test,passed,"2026-08-14T07:52:53.729Z","2026-08-14T07:53:10.800Z","2026-08-14T07:53:10.800Z",1,0,0
+close_reason: Canonical path joining fixes the cache fixture and the exact-head Windows Node 24 regression job is green.
 body: ""

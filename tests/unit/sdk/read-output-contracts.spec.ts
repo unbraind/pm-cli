@@ -248,6 +248,8 @@ describe("read output contracts", () => {
       output_budget_exceeded: {
         omitted_result: true,
         reason: "requested_budget_infeasible",
+        restore_with: "Unbounded",
+        recovery: { outputBudget: "unbounded" },
       },
       read_output: {
         command: "stats",
@@ -1173,6 +1175,7 @@ describe("read output contracts", () => {
       rawCursor({ version: 1, after_index: 7 }),
       rawCursor({ version: 1, fingerprint: 7, after_index: 7 }),
       rawCursor({ version: 1, fingerprint: "scope" }),
+      rawCursor({ version: 1, fingerprint: "scope", after_id: "row-7" }),
       rawCursor({ version: 1, fingerprint: "scope", after_index: 1.5 }),
       rawCursor({ version: 1, fingerprint: "scope", after_index: -1 }),
     ]) {
@@ -1191,12 +1194,19 @@ describe("read output contracts", () => {
     ]) {
       const defensive = compactPage(
         encodeQueryCursor("scope", "row-7", 7),
-        Array.from({ length: 8 }, (_, index) =>
-          index === 3
-            ? structuredClone(invalidLastRow)
-            : { id: `valid-${index}`, detail: "x".repeat(600) },
+        Array.from({ length: 1_000 }, () =>
+          structuredClone(invalidLastRow),
         ),
       );
+      if (isReadOutputBudgetExceeded(defensive)) {
+        throw new Error("Expected defensive row compaction, not omission.");
+      }
+      const retainedLastRow = defensive.items.at(-1);
+      expect(
+        Object.prototype.toString.call(retainedLastRow) !== "[object Object]" ||
+          typeof Reflect.get(retainedLastRow as object, "id") !== "string" ||
+          Reflect.get(retainedLastRow as object, "id").length === 0,
+      ).toBe(true);
       expect(defensive).toMatchObject({
         output_budget_truncation: { continuation_cursor_rebased: false },
       });

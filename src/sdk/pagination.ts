@@ -14,11 +14,17 @@ const QUERY_CURSOR_VERSION = 1;
 const MAX_CURSOR_LENGTH = 4096;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 
-interface QueryCursorEnvelope {
+/** Validated transport envelope carried by an opaque query cursor. */
+export interface QueryCursorEnvelope {
+  /** Serialized cursor contract version. */
   version: number;
+  /** Stable fingerprint of the query semantics that produced the cursor. */
   fingerprint: string;
+  /** Stable id of the last row emitted by the producer. */
   after_id: string;
+  /** Zero-based position of the last emitted row when available. */
   after_index?: number;
+  /** Opaque producer-defined snapshot token for stable continuation. */
   snapshot?: string;
 }
 
@@ -132,11 +138,10 @@ function isQueryCursorEnvelope(value: unknown): value is QueryCursorEnvelope {
   );
 }
 
-/** Decode and validate complete cursor state against a query fingerprint. */
-export function decodeQueryCursorState(
+/** Decode and validate an opaque cursor without imposing caller query identity. */
+export function decodeQueryCursorEnvelope(
   cursor: unknown,
-  expectedFingerprint: string,
-): QueryCursorState {
+): QueryCursorEnvelope {
   if (typeof cursor !== "string") {
     throw invalidCursor("Query cursor is malformed.");
   }
@@ -157,7 +162,15 @@ export function decodeQueryCursorState(
   if (!isQueryCursorEnvelope(parsed)) {
     throw invalidCursor("Query cursor version or payload is unsupported.");
   }
-  const envelope = parsed;
+  return parsed;
+}
+
+/** Decode and validate complete cursor state against a query fingerprint. */
+export function decodeQueryCursorState(
+  cursor: unknown,
+  expectedFingerprint: string,
+): QueryCursorState {
+  const envelope = decodeQueryCursorEnvelope(cursor);
   if (envelope.fingerprint !== expectedFingerprint) {
     throw invalidCursor(
       `Query cursor does not match the current filters, sort, or query (${envelope.fingerprint} != ${expectedFingerprint}).`,

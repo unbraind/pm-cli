@@ -831,6 +831,24 @@ describe("surface replication gate", () => {
       "untracked.txt",
     ]);
 
+    runGit(root, ["restore", "src/cli/b.ts"]);
+    await rm(path.join(root, "src", "sdk", "a.ts"));
+    const deletionConfig = declaration();
+    deletionConfig.sets[0]!.triggers = [
+      {
+        path: "src/sdk/a.ts",
+        changed_lines_contain_any: ["sharedContract"],
+      },
+    ];
+    const deletionReport = await validateSurfaceReplication(deletionConfig, {
+      repoRoot: root,
+    });
+    expect(deletionReport.changed_files).toContain("src/sdk/a.ts");
+    expect(deletionReport.active_sets).toHaveLength(1);
+    expect(deletionReport.violations).toContain(
+      "set:fixture-surface:member:src/sdk/a.ts:missing:<file>",
+    );
+
     const noBaseRoot = await fixtureRoot();
     runGit(noBaseRoot, ["init", "-b", "feature"]);
     runGit(noBaseRoot, ["config", "user.email", "fixture@example.test"]);

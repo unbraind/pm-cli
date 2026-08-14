@@ -3,6 +3,7 @@ import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   QUERY_CURSOR_CONTRACT,
   createQueryFingerprint,
+  decodeQueryCursorEnvelope,
   decodeQueryCursorState,
   decodeQueryCursor,
   encodeQueryCursor,
@@ -60,6 +61,13 @@ describe("SDK query pagination", () => {
     );
 
     const cursor = encodeQueryCursor(first, "pm-second", 1, "revision-7");
+    expect(decodeQueryCursorEnvelope(cursor)).toEqual({
+      version: 1,
+      fingerprint: first,
+      after_id: "pm-second",
+      after_index: 1,
+      snapshot: "revision-7",
+    });
     expect(decodeQueryCursor(cursor, first)).toBe("pm-second");
     expect(decodeQueryCursorState(cursor, first)).toEqual({
       after_id: "pm-second",
@@ -102,11 +110,18 @@ describe("SDK query pagination", () => {
       invalidPayload,
       unsupported,
       emptyId,
-      mismatched,
     ]) {
+      expect(() => decodeQueryCursorEnvelope(cursor)).toThrow(PmCliError);
       expect(() => decodeQueryCursor(cursor, fingerprint)).toThrow(PmCliError);
     }
+    expect(decodeQueryCursorEnvelope(mismatched)).toMatchObject({
+      fingerprint: createQueryFingerprint("list", { status: "closed" }),
+    });
+    expect(() => decodeQueryCursor(mismatched, fingerprint)).toThrow(
+      PmCliError,
+    );
     for (const cursor of [null, undefined, 42, {}]) {
+      expect(() => decodeQueryCursorEnvelope(cursor)).toThrow(PmCliError);
       expect(() => decodeQueryCursor(cursor, fingerprint)).toThrow(PmCliError);
     }
     const invalidIndex = Buffer.from(

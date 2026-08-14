@@ -271,7 +271,12 @@ await pm.assurance({
 });
 ```
 
-For direct host composition, use `evaluateMeasurement`, `evaluateAssuranceGate`, `createAssuranceWorkspaceContext`, the preset/derivation helpers, and the audited declaration/verdict helpers exported from `@unbrained/pm-cli/sdk`. Active extension registrations are discovered automatically. Embedding hosts may additionally pass stable resolver ids and matching `provider_capabilities` to `createAssuranceWorkspaceContext`; an absent resolver or capability fails loudly. The core evaluator bounds concurrent assertions and expression operands, and workspace history loading uses bounded concurrency; item-only callers can explicitly skip history and Git identity resolution.
+For direct host composition, use `evaluateMeasurement`, `evaluateAssuranceGate`, `createAssuranceWorkspaceContext`, the preset/derivation helpers, and the audited declaration/verdict helpers exported from `@unbrained/pm-cli/sdk` and its focused `@unbrained/pm-cli/sdk/governance` entrypoint. Active extension registrations are discovered automatically. Embedding hosts may additionally pass stable resolver ids and matching `provider_capabilities` to `createAssuranceWorkspaceContext`; an absent resolver or capability fails loudly. The core evaluator bounds concurrent assertions and expression operands, and workspace history loading uses bounded concurrency; item-only callers can explicitly skip history and Git identity resolution.
+
+`AssuranceMutationRefusalError` and `AssuranceEvaluationRefusalError` are
+exported from both `@unbrained/pm-cli/sdk` and
+`@unbrained/pm-cli/sdk/governance`, so hosts can classify expected declaration
+or evaluation refusals without parsing messages.
 
 Generic SDK and MCP dispatch use `action: "assurance"` with `subcommand` set to `list`, `show`, `put`, `remove`, `run`, `verdicts`, `presets`, `apply`, `derive`, or `promote`. Discover the current machine contract instead of copying parameter lists:
 

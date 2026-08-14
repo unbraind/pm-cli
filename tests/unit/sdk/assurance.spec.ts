@@ -4,6 +4,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  ASSURANCE_GATE_TRIGGERS,
+  ASSURANCE_MEASUREMENT_SOURCE_KINDS,
   assuranceAssertionUpdateIsLoosening,
   createEmptyAssuranceDocument,
   evaluateAssuranceAssertion,
@@ -162,16 +164,26 @@ describe("assurance SDK", () => {
     expect(() =>
       validateGateDefinition({ ...gate, assertion_ids: [] }),
     ).toThrow("at least one assertion");
-    for (const missingCollection of [
-      { ...gate, assertion_ids: undefined },
-      { ...gate, triggers: undefined },
-    ]) {
-      expect(() =>
-        validateGateDefinition(
-          missingCollection as unknown as AssuranceGateDefinition,
-        ),
-      ).toThrow(AssuranceMutationRefusalError);
-    }
+    expect(() =>
+      validateGateDefinition({
+        ...gate,
+        assertion_ids: undefined,
+      } as unknown as AssuranceGateDefinition),
+    ).toThrowError(
+      new AssuranceMutationRefusalError(
+        "gate.assertion_ids is required and must be an array",
+      ),
+    );
+    expect(() =>
+      validateGateDefinition({
+        ...gate,
+        triggers: undefined,
+      } as unknown as AssuranceGateDefinition),
+    ).toThrowError(
+      new AssuranceMutationRefusalError(
+        `gate.triggers is required and must be an array of ${ASSURANCE_GATE_TRIGGERS.join(", ")}`,
+      ),
+    );
   });
 
   it("rejects invalid source, scope, cost, reference, and registry contracts", () => {
@@ -242,7 +254,11 @@ describe("assurance SDK", () => {
         id: "missing-source",
         source: null,
       } as unknown as AssuranceMeasurementDefinition),
-    ).toThrow("measurement.source.kind must be one of");
+    ).toThrowError(
+      new AssuranceMutationRefusalError(
+        `measurement.source.kind must be one of ${ASSURANCE_MEASUREMENT_SOURCE_KINDS.join(", ")}`,
+      ),
+    );
     expect(() =>
       validateAssertionDefinition({ ...assertion, owner_item_id: " " }),
     ).toThrow("owner_item_id");
@@ -324,7 +340,11 @@ describe("assurance SDK", () => {
         ...gate,
         triggers: ["unknown"],
       } as unknown as AssuranceGateDefinition),
-    ).toThrow("gate trigger must be one of");
+    ).toThrowError(
+      new AssuranceMutationRefusalError(
+        `gate trigger must be one of ${ASSURANCE_GATE_TRIGGERS.join(", ")}`,
+      ),
+    );
 
     const document = {
       version: 1 as const,
