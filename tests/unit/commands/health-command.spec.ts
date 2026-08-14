@@ -3169,6 +3169,30 @@ describe("runHealth", () => {
     });
   });
 
+  it("bounds every health warning projection with an explicit completeness receipt", () => {
+    type HealthResult = Parameters<
+      typeof healthInternals.projectHealthResult
+    >[0];
+    const warnings = Array.from(
+      { length: 101 },
+      (_, index) => `diagnostic_${index}`,
+    );
+    const projected = healthInternals.projectHealthResult(
+      {
+        ok: false,
+        checks: [],
+        warnings,
+        generated_at: "2026-08-14T00:00:00.000Z",
+      } as HealthResult,
+      {},
+      false,
+    );
+    expect(projected.warning_count).toBe(101);
+    expect(projected.warning_limit).toBe(100);
+    expect(projected.warnings).toHaveLength(100);
+    expect(projected.warnings_truncated).toBe(true);
+  });
+
   it("full flag overrides skip flags", async () => {
     await withTempPmPath(async (context) => {
       const health = await runHealth(
@@ -3378,9 +3402,7 @@ describe("runHealth", () => {
 
       const health = await runHealth({ path: context.pmPath }, { brief: true });
       expect(
-        health.checks.every(
-          (check) => check.ok === (check.status === "ok"),
-        ),
+        health.checks.every((check) => check.ok === (check.status === "ok")),
       ).toBe(true);
       const locksCheck = health.checks.find((check) => check.name === "locks");
       expect(locksCheck?.status).toBe("warn");

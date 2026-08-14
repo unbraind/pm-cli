@@ -35,7 +35,15 @@
       "id": "get-output-selector-contract",
       "owner": "pm-0k19l7",
       "description": "Keep get field and section projection aligned across the SDK implementation, public documentation, and acceptance evidence.",
-      "triggers": ["src/sdk/read-output-contracts.ts"],
+      "triggers": [
+        {
+          "path": "src/sdk/read-output-contracts.ts",
+          "changed_lines_contain_any": [
+            "applyGetIncludeProjection",
+            "Unknown --output-include selector(s) for get"
+          ]
+        }
+      ],
       "required_changed_members": [
         "src/sdk/read-output-contracts.ts",
         "tests/unit/sdk/read-contract-integrity.spec.ts",
@@ -75,7 +83,10 @@
         "src/cli/register-annotations.ts",
         "src/sdk/cli-contracts/flag-contracts.ts",
         "src/sdk/cli-contracts/tool-schema.ts",
-        "src/sdk/cli-contracts/tool-parameter-tables.ts",
+        {
+          "path": "src/sdk/cli-contracts/tool-parameter-tables.ts",
+          "changed_lines_contain_any": ["full: { type: \"boolean\" }"]
+        },
         "src/sdk/completion.ts"
       ],
       "required_changed_members": [
@@ -205,7 +216,16 @@
       "id": "health-vector-refresh-boundary",
       "owner": "pm-tu71",
       "description": "Keep health read-only by default and prove provider I/O is explicit, bounded, and skippable.",
-      "triggers": ["src/sdk/governance/health.ts"],
+      "triggers": [
+        {
+          "path": "src/sdk/governance/health.ts",
+          "changed_lines_contain_any": [
+            "resolveVectorRefreshPolicy",
+            "refreshVectors",
+            "noRefresh"
+          ]
+        }
+      ],
       "required_changed_members": [
         "src/sdk/governance/health.ts",
         "tests/unit/sdk/health-vector-boundary.spec.ts",

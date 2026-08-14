@@ -35,17 +35,21 @@ function gitLines(args, root) {
     .filter(Boolean);
 }
 
-function changedFilesFromGit(root) {
-  const changed = new Set();
-  let base = null;
+function resolveDefaultBranchBase(root) {
   for (const candidate of ["origin/main", "main", "origin/master", "master"]) {
     try {
-      [base] = gitLines(["merge-base", "HEAD", candidate], root);
-      if (base) break;
+      const [base] = gitLines(["merge-base", "HEAD", candidate], root);
+      if (base) return base;
     } catch {
       // Try the next locally available default-branch reference.
     }
   }
+  return null;
+}
+
+function changedFilesFromGit(root) {
+  const changed = new Set();
+  const base = resolveDefaultBranchBase(root);
   if (base) {
     for (const file of gitLines(
       ["diff", "--name-only", "--diff-filter=ACMR", `${base}...HEAD`],
@@ -65,6 +69,44 @@ function changedFilesFromGit(root) {
     throw new Error("Unable to resolve a base revision or worktree changes.");
   }
   return [...changed].sort();
+}
+
+function changedLinesFromGit(root, changedFiles) {
+  const base = resolveDefaultBranchBase(root);
+  const changedLines = {};
+  for (const file of changedFiles) {
+    const patches = [];
+    for (const args of [
+      ...(base === null
+        ? []
+        : [["diff", "--unified=0", `${base}...HEAD`, "--", file]]),
+      ["diff", "--unified=0", "--", file],
+      ["diff", "--cached", "--unified=0", "--", file],
+    ]) {
+      try {
+        patches.push(
+          execFileSync("git", args, {
+            cwd: root,
+            encoding: "utf8",
+            stdio: ["ignore", "pipe", "ignore"],
+          }),
+        );
+      } catch {
+        // Missing patches remain unknown and therefore activate scoped triggers.
+      }
+    }
+    const lines = patches
+      .join("\n")
+      .split(/\r?\n/u)
+      .filter(
+        (line) =>
+          (line.startsWith("+") && !line.startsWith("+++")) ||
+          (line.startsWith("-") && !line.startsWith("---")),
+      )
+      .map((line) => line.slice(1));
+    if (lines.length > 0) changedLines[file] = lines;
+  }
+  return changedLines;
 }
 
 async function collectTypeScriptFiles(directory) {
@@ -235,6 +277,21 @@ function validateMemberShape(member, label, violations) {
   return true;
 }
 
+function isTriggerDeclaration(trigger) {
+  return (
+    (typeof trigger === "string" && trigger.length > 0) ||
+    (typeof trigger === "object" &&
+      trigger !== null &&
+      typeof trigger.path === "string" &&
+      trigger.path.length > 0 &&
+      Array.isArray(trigger.changed_lines_contain_any) &&
+      trigger.changed_lines_contain_any.length > 0 &&
+      trigger.changed_lines_contain_any.every(
+        (pattern) => typeof pattern === "string" && pattern.length > 0,
+      ))
+  );
+}
+
 function isReplicationSetDeclaration(set) {
   return (
     typeof set === "object" &&
@@ -243,11 +300,20 @@ function isReplicationSetDeclaration(set) {
     /^pm-[a-z0-9]+$/u.test(set.owner ?? "") &&
     Array.isArray(set.triggers) &&
     set.triggers.length > 0 &&
-    set.triggers.every(
-      (trigger) => typeof trigger === "string" && trigger.length > 0,
-    ) &&
+    set.triggers.every(isTriggerDeclaration) &&
     Array.isArray(set.members) &&
     set.members.length > 0
+  );
+}
+
+function triggerActivates(trigger, changedFiles, changedLines) {
+  const triggerPath = typeof trigger === "string" ? trigger : trigger.path;
+  if (!changedFiles.includes(triggerPath)) return false;
+  if (typeof trigger === "string") return true;
+  const lines = changedLines[triggerPath];
+  if (lines === undefined) return true;
+  return trigger.changed_lines_contain_any.some((pattern) =>
+    lines.some((line) => line.includes(pattern)),
   );
 }
 
@@ -413,7 +479,13 @@ async function refusalInventory(config, root) {
   };
 }
 
-async function validateActiveSets(config, changedFiles, root, today) {
+async function validateActiveSets(
+  config,
+  changedFiles,
+  changedLines,
+  root,
+  today,
+) {
   const reports = [];
   const violations = [];
   const waivers = [];
@@ -424,7 +496,11 @@ async function validateActiveSets(config, changedFiles, root, today) {
     }
     if (normalized.set === null) continue;
     const { memberPaths, requiredPaths, set } = normalized;
-    if (!changedFiles.some((file) => set.triggers.includes(file))) {
+    if (
+      !set.triggers.some((trigger) =>
+        triggerActivates(trigger, changedFiles, changedLines),
+      )
+    ) {
       continue;
     }
     for (const memberPath of requiredPaths) {
@@ -471,6 +547,11 @@ async function validateActiveSets(config, changedFiles, root, today) {
 export async function validateSurfaceReplication(config, options = {}) {
   const root = options.repoRoot ?? repoRoot;
   const changedFiles = options.changedFiles ?? changedFilesFromGit(root);
+  const changedLines =
+    options.changedLines ??
+    (options.changedFiles === undefined
+      ? changedLinesFromGit(root, changedFiles)
+      : {});
   const today = options.today ?? new Date().toISOString().slice(0, 10);
   const violations = [];
   if (
@@ -488,6 +569,7 @@ export async function validateSurfaceReplication(config, options = {}) {
   const activeSets = await validateActiveSets(
     config,
     changedFiles,
+    changedLines,
     root,
     today,
   );

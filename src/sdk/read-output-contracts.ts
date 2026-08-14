@@ -26,6 +26,7 @@ import {
   type PmReadOutputSessionReceipt,
   type PmReadOutputSessionState,
 } from "./read-output-session.js";
+import { encodeQueryCursor } from "./pagination.js";
 
 /** Stable output dimensions shared by every read surface. */
 export const PM_READ_OUTPUT_DIMENSIONS = [
@@ -200,8 +201,16 @@ export interface PmReadOutputTruncationDisclosure {
   overridden_dimensions: PmReadOutputDimension[];
   /** Declared or nested collection paths reduced by budget degradation. */
   compacted_row_paths: string[];
+  /** Whether next_cursor was moved back to the last row that survived compaction. */
+  continuation_cursor_rebased: boolean;
   /** Executable recovery instruction for retrieving the complete result. */
   restore_with: string;
+  /** Transport-specific machine recovery options. */
+  recovery: {
+    cli: "--output-budget unbounded";
+    sdk: { outputBudget: "unbounded" };
+    mcp: { outputBudget: "unbounded" };
+  };
 }
 
 /** Result returned when the requested cost ceiling cannot fit useful content. */
@@ -214,6 +223,8 @@ export interface PmReadOutputBudgetExceeded {
     reason: "requested_budget_infeasible";
     /** Human- and agent-readable recovery instruction. */
     restore_with: string;
+    /** Transport-specific machine recovery options. */
+    recovery: { outputBudget: "unbounded" };
   };
   /** Exact receipt for the bounded omission envelope. */
   read_output: PmReadOutputReceipt;
@@ -811,6 +822,9 @@ export function resolveReadOutputDimensions(
     options.outputBudget ?? options.output_budget,
     legacyByDimension.cost,
   );
+  const completeResultIntent =
+    command.trim().toLowerCase().replaceAll(/\s+/gu, " ").split(" ")[0] ===
+      "list-all" || legacyByDimension.amount?.flag === "--no-truncate";
   const budget = resolvePmCommandOutputBudget(command, {
     generateFallback: true,
   });
@@ -828,11 +842,17 @@ export function resolveReadOutputDimensions(
       options.outputLimit ?? options.output_limit,
       legacyByDimension.amount,
     ),
-    cost: explicitCost ?? {
-      source: "default",
-      value:
-        budget.default_max_estimated_tokens_by_format[resolvedOutputFormat],
-    },
+    cost:
+      explicitCost ??
+      (completeResultIntent
+        ? { source: "intent", value: "unbounded" }
+        : {
+            source: "default",
+            value:
+              budget.default_max_estimated_tokens_by_format[
+                resolvedOutputFormat
+              ],
+          }),
     encoding,
     legacy_aliases_used: legacyAliasesUsed,
     migration_hints: migrationHints,
@@ -1232,7 +1252,8 @@ function omitReadOutputForBudget(
     output_budget_exceeded: {
       omitted_result: true,
       reason: "requested_budget_infeasible",
-      restore_with: "Increase --output-budget or narrow the read.",
+      restore_with: "Recovery.",
+      recovery: { outputBudget: "unbounded" },
     },
     read_output: minimalReceipt,
   };
@@ -1271,7 +1292,9 @@ function canReturnReadOutputUnchanged(
     (dimension) => resolved[dimension]?.source === "canonical",
   ).length;
   if (resolved.cost?.value === "unbounded") {
-    return canonicalRequestedCount === 1;
+    return (
+      canonicalRequestedCount === (resolved.cost.source === "canonical" ? 1 : 0)
+    );
   }
   if (resolved.cost?.source === "legacy" && canonicalRequestedCount === 0) {
     return true;
@@ -1299,6 +1322,7 @@ function attachReadOutputTruncationDisclosure(
     source: PmReadOutputDimensionSource | "session";
     tokens: number;
   },
+  continuationCursorRebased: boolean,
 ): void {
   if (!receipt.rows_compacted) return;
   const overridden =
@@ -1309,9 +1333,70 @@ function attachReadOutputTruncationDisclosure(
     budget_tokens: bindingBudget.tokens,
     overridden_dimensions: overridden,
     compacted_row_paths: receipt.compacted_row_paths!,
+    continuation_cursor_rebased: continuationCursorRebased,
     restore_with:
       "Re-run with --output-budget unbounded for the complete result.",
+    recovery: {
+      cli: "--output-budget unbounded",
+      sdk: { outputBudget: "unbounded" },
+      mcp: { outputBudget: "unbounded" },
+    },
   };
+}
+
+/** Rebase a producer cursor when budget compaction removes rows from its page. */
+function rebaseBudgetCompactedCursor(
+  projected: Record<string, unknown>,
+  originalItemCount: number,
+  cursorSource: unknown,
+  cursorContinuesExistingPage: boolean,
+): boolean {
+  if (typeof cursorSource !== "string" || !Array.isArray(projected.items)) {
+    return false;
+  }
+  const retainedCount = projected.items.length;
+  if (![retainedCount > 0, retainedCount < originalItemCount].every(Boolean))
+    return false;
+  let decoded: unknown;
+  try {
+    decoded = JSON.parse(Buffer.from(cursorSource, "base64url").toString());
+  } catch {
+    return false;
+  }
+  if (Object.prototype.toString.call(decoded) !== "[object Object]") {
+    return false;
+  }
+  const cursor = decoded as Record<string, unknown>;
+  const sourceIndex = cursor.after_index;
+  if (
+    ![
+      cursor.version === 1,
+      typeof cursor.fingerprint === "string",
+      Number.isSafeInteger(sourceIndex),
+      Number(sourceIndex) >= 0,
+    ].every(Boolean)
+  )
+    return false;
+  const last = projected.items.at(-1);
+  if (Object.prototype.toString.call(last) !== "[object Object]") {
+    return false;
+  }
+  const lastId = Reflect.get(last as object, "id") as unknown;
+  if (typeof lastId !== "string" || lastId.length === 0) return false;
+  const afterIndex = cursorContinuesExistingPage
+    ? Number(sourceIndex) - (originalItemCount - retainedCount)
+    : Number(sourceIndex) + retainedCount;
+  if (afterIndex < 0) return false;
+  projected.next_cursor = encodeQueryCursor(
+    cursor.fingerprint as string,
+    lastId,
+    afterIndex,
+    typeof cursor.snapshot === "string" ? cursor.snapshot : undefined,
+  );
+  if (typeof projected.applied_limit === "number") {
+    projected.applied_limit = retainedCount;
+  }
+  return true;
 }
 
 /** Apply universal field, row, and token bounds and attach an exact receipt. */
@@ -1333,6 +1418,13 @@ export function applyReadOutputDimensions<
   }
   const bindingBudget = resolveBindingReadOutputBudget(resolved, session);
   let projected = projectReadOutputRows(result, resolved, session);
+  const originalItemCount = Array.isArray(projected.items)
+    ? projected.items.length
+    : 0;
+  const cursorContinuesExistingPage = typeof projected.next_cursor === "string";
+  const cursorSource = cursorContinuesExistingPage
+    ? projected.next_cursor
+    : options.after;
   const receipt: PmReadOutputReceipt = {
     contract_version: 1,
     command: resolved.command,
@@ -1367,11 +1459,18 @@ export function applyReadOutputDimensions<
       receipt,
       bindingBudget.tokens,
     );
+    const continuationCursorRebased = rebaseBudgetCompactedCursor(
+      projected,
+      originalItemCount,
+      cursorSource,
+      cursorContinuesExistingPage,
+    );
     attachReadOutputTruncationDisclosure(
       projected,
       resolved,
       receipt,
       bindingBudget,
+      continuationCursorRebased,
     );
     if (session !== undefined) {
       projected = attachReadOutputSessionContracts(projected, session, receipt);

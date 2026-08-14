@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Contract-declared output token budgets: every command declares a default ceiling and degrades deterministically instead of emitting unbounded output ([pm-5t33or](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-5t33or.toon))
+
+### Fixed
+
+- Surface replication gate scopes trigger activation to relevant diff content ([pm-mrhwow](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrhwow.toon))
+- GH-1008: assurance measurements accept unknown source kinds and contracts hide the valid vocabulary ([pm-atnfh4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-atnfh4.toon))
+- GH-1007: assurance gate declarations omit trigger and escape the typed refusal contract ([pm-88mo8m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-88mo8m.toon))
+
 ## 2026.8.14 - 2026-08-14
 
 ### Fixed

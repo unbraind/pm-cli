@@ -2,11 +2,13 @@ id: pm-t7wn04
 title: "A CI-wired quality gate is red on a clean checkout of main and green in hosted CI for the same commit, because its measured output carries a telemetry warning whose presence depends on whether the local flush reached the network"
 description: "Measured 2026-08-13 at commit 44d204cf6 with a clean working tree, the tree hosted CI reports green.\n\npnpm quality:token-budget fails locally, deterministically, on two consecutive runs: 'health-default: 181 estimated tokens exceeds budget 152 tokens (health --check-only)'. The same command is wired into ci.yml and the CI run for that commit succeeded. So the local and hosted verdicts of one quality gate disagree about one tree, and the disagreement is not flakiness in the ordinary sense because each side is individually stable.\n\nThe cause is in what the measured command reports. The gate seeds an isolated fixture with its own PM_PATH and its own PM_GLOBAL_PATH, then runs roughly thirty pm commands against it before measuring health --check-only. Telemetry is enabled by default and each of those commands enqueues an event under the fixture's own global path. If the detached flush worker drains the queue before the measurement, health reports ten checks and warning_count 0 at 549 bytes. If it does not, health reports telemetry warn with a telemetry_queue_pending:N warning row and the output grows past the ratcheted 152-token snapshot. Reproduced directly: a freshly initialised isolated fixture emits warning_count 1 with telemetry_queue_pending:3 at 594 bytes, and the same fixture seeded with 27 items and a drained queue emits warning_count 0 at 549 bytes.\n\nSo the gate's verdict is a function of network reachability and worker scheduling on the machine that runs it. On a hosted runner the queue behaves one way and on a developer or agent workstation another, and neither is wrong about its own machine.\n\nThree consequences, in increasing order of importance.\n\nThe immediate one is that the documented pre-push check is unusable: an agent following the working rules runs the local gate, sees a red that hosted CI will never reproduce, and has no way to tell it apart from a real overrun it introduced.\n\nThe second is that the same mechanism runs in the other direction. A genuine output regression that happens to land while the queue is empty on the runner is invisible to hosted CI for exactly the same reason.\n\nThe third is that the warning list health emits is itself unbounded: N pending events produce a warning row, and the surface is measured against a byte snapshot with no relationship to the contract ceiling of 6,000 tokens that health declares. That is the same measurement the assurance registry downgraded from block to warn for health-telemetry-zero, so the one detector that would have flagged a permanently warning telemetry check has already been relaxed.\n\nThis is the local half of the boundary defect class: the property being asserted is a property of the product, and the measurement is a property of the machine."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[6]: ci,determinism,local-vs-hosted,negative-control,output-contract,telemetry
 created_at: "2026-08-13T14:26:56.628Z"
-updated_at: "2026-08-14T05:29:19.591Z"
+updated_at: "2026-08-14T07:55:42.532Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#2443c841b7809c528c9d9fbe"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The token-budget gate's measured surfaces are independent of ambient host state: telemetry is disabled, or its queue is drained deterministically, or health output is measured with the telemetry check excluded and the exclusion declared; A negative control proves the gate produces the same verdict on a runner and on a workstation for the same tree; The local and hosted invocations of every quality gate are proven equivalent, or the divergence is declared per gate with a reason; health's warning collection carries a declared bound so an unbounded warning population cannot silently inflate a measured surface"
@@ -19,13 +21,23 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-rtn5h6,implements,"2026-08-13T14:26:56.628Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-13T14:26:56.628Z","harness:claude-code","cli:create:dep",detected
   pm-zlv8jl,verifies,"2026-08-13T14:26:56.628Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-13T15:27:27.544Z","harness:codex","Implementation boundary confirmed: token-budget gate environment must explicitly disable telemetry so health/output verdicts do not depend on ambient queue/network state; representative-gate changes will follow shared runtime enforcement."
   "2026-08-13T17:12:52.045Z","harness:codex","Evidence for telemetry-independence tranche: token-budget measurement explicitly disables telemetry, persists a 32-surface format-aware ratchet, and includes a same-run 10,465-token negative control that must exceed the 6,000-token JSON default. Focused gate tests and exact 7,262-test coverage passed. Isolated import-cost and CLI-transport performance gates passed with ratchets unchanged; loaded composite runs showed transient host-load overruns, so no threshold was weakened. This item remains open because per-gate hosted/local equivalence and a declared health warning-collection bound remain to be completed."
-files[3]{path,scope,note}:
+  "2026-08-14T06:51:28.567Z","harness:codex","Implementation evidence: every health projection now carries warning_count, warning_limit=100, and warnings_truncated; strict-exit defaults to bounded summary output while --full remains explicit. The existing telemetry-disabled token gate remains green, removing both unbounded warning inflation and ambient host queue dependence from the measured surface."
+  "2026-08-14T07:55:42.531Z","harness:codex","Current evidence: health warnings are capped at 100 for every projection with warning_count/warning_limit/warnings_truncated receipts; strict-exit defaults to summary; the telemetry-disabled token gate, 82 linked health/token tests, token-surface gate, and complete static chain pass locally. Hosted/local exact-head equivalence remains active work on the PR matrix."
+files[6]{path,scope,note}:
   scripts/release/token-budget-gate.mjs,project,ambient telemetry disabled for deterministic health output
   scripts/release/token-budgets.json,project,telemetry-independent 32-surface baseline
+  src/sdk/governance/health.ts,project,declared health warning population bound
+  tests/integration/release-readiness-runtime.spec.ts,project,stable health JSON warning-bound ordering
+  tests/unit/commands/health-command.spec.ts,project,warning completeness receipt tests
   tests/unit/scripts/release/token-budget-gate.spec.ts,project,telemetry environment regression proof
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/token-budget-gate.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts tests/unit/scripts/release/token-budget-gate.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mssnhvle-3gs1i8,test,passed,"2026-08-14T07:53:29.385Z","2026-08-14T07:53:53.714Z","2026-08-14T07:53:53.714Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/READ_OUTPUT_CONTRACTS.md,project,host-independent warning bound
 body: ""

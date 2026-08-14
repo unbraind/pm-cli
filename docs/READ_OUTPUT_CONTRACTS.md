@@ -1,17 +1,17 @@
 # Universal Read Output Contracts
 
-Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-eugaqy](../.agents/pm/issues/pm-eugaqy.toon), [pm-jt8aa2](../.agents/pm/issues/pm-jt8aa2.toon), and [pm-kyjdne](../.agents/pm/issues/pm-kyjdne.toon).
+Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-eugaqy](../.agents/pm/issues/pm-eugaqy.toon), [pm-jt8aa2](../.agents/pm/issues/pm-jt8aa2.toon), [pm-kyjdne](../.agents/pm/issues/pm-kyjdne.toon), [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon), and [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon).
 
 ## Agent Quick Context
 
 Every built-in read surface uses four output dimensions: what to include, how much to return, how much the result may cost, and how to encode it. The same canonical controls work through the CLI, SDK, MCP, generated schemas, runtime contracts, and shell completions.
 
-| Dimension | CLI                             | SDK and MCP     | Meaning                                                                |
-| --------- | ------------------------------- | --------------- | ---------------------------------------------------------------------- |
-| Include   | `--output-include <csv>`        | `outputInclude` | Retain named fields or sections, or select a declared projection mode. |
-| Amount    | `--output-limit <n\|unbounded>` | `outputLimit`   | Bound shared row collections.                                          |
-| Cost      | `--output-budget <tokens>`      | `outputBudget`  | Fail closed when even the compact result cannot fit.                   |
-| Encoding  | `--output-format <toon\|json>`  | `outputFormat`  | Select the CLI renderer and record the requested encoding.             |
+| Dimension | CLI                              | SDK and MCP     | Meaning                                                                |
+| --------- | -------------------------------- | --------------- | ---------------------------------------------------------------------- |
+| Include   | `--output-include <csv>`         | `outputInclude` | Retain named fields or sections, or select a declared projection mode. |
+| Amount    | `--output-limit <n\|unbounded>`  | `outputLimit`   | Bound shared row collections.                                          |
+| Cost      | `--output-budget <n\|unbounded>` | `outputBudget`  | Fail closed when even the compact result cannot fit.                   |
+| Encoding  | `--output-format <toon\|json>`   | `outputFormat`  | Select the CLI renderer and record the requested encoding.             |
 
 The contract covers `list`, `context`, `search`, `get`, `next`, `health`, `deps`, `graph`, `history`, `activity`, `validate`, `events`, `contracts`, `comments`, `notes`, `files`, `docs`, `stats`, and `aggregate`, including list aliases and `ctx`.
 
@@ -117,6 +117,12 @@ tracker content.
 
 Resolution is deterministic: canonical controls win over command-local compatibility options, which win over intent defaults, which win over command defaults. Existing options such as `--fields`, `--limit`, `--token-budget`, `--format`, `--brief`, and `--full` remain accepted. Contract output marks them as hidden compatibility aliases and supplies a migration hint; traversal, cursor, side-effect, and streaming controls instead receive an explicit behavior-preservation hint because a static output control cannot replace their semantics. Callers that omit the four shaping dimensions retain the established data projection; the one intentional envelope correction is that repeated `row_contract` metadata is now opt-in.
 
+Completeness spellings preserve their established promise. `pm list-all` and
+list-family `--no-truncate` imply an unbounded cost dimension when the caller
+does not supply `--output-budget`; they cannot silently return a budget-trimmed
+subset while claiming to return every matched row. An explicit canonical
+budget still has precedence and may request a bounded result deliberately.
+
 ```bash
 pm list-open --output-include id,title,status --output-limit 10
 pm context --for orient --output-budget 900 --output-format toon
@@ -127,7 +133,15 @@ pm contracts --full --json
 
 Every projected result carries a `read_output` receipt with the requested dimensions, precedence, observed compatibility aliases, deterministic estimated token count, string/row compaction signals, and budget outcome. Budget degradation discovers nested arrays as well as declared result rows, so validation diagnostics and other governance payloads compact their inner findings before the useful result is omitted. `compacted_row_paths` names every reduced collection without redefining those nested arrays as ordinary pagination rows.
 
-When rows are dropped to satisfy a ceiling, the result also carries `output_budget_truncation`, naming the binding budget and its source, any explicitly requested dimension the budget overrode, every compacted collection path, and an executable recovery instruction — a default ceiling can override an explicit `--output-limit unbounded`, and that override is reported rather than silent. If no useful content can fit, `PmReadOutputBudgetExceeded` provides a discriminated omission result and reports `omitted_result_estimated_tokens`, the last useful-result estimate before omission; use `isReadOutputBudgetExceeded` before accessing result-specific fields. Universal controls are rejected on mutation commands and on the mutation mode of hybrid commands such as `comments`, `notes`, `files`, and `docs`.
+When rows are dropped to satisfy a ceiling, the result also carries `output_budget_truncation`, naming the binding budget and its source, any explicitly requested dimension the budget overrode, every compacted collection path, and executable CLI/SDK/MCP recovery options — a default ceiling can override an explicit `--output-limit unbounded`, and that override is reported rather than silent. If a producer supplied an opaque item-page cursor, compaction rebases it to the last row actually returned and reports `continuation_cursor_rebased: true`; following the cursor therefore cannot skip rows removed from the middle of a producer page. If no useful content can fit, `PmReadOutputBudgetExceeded` provides a discriminated omission result, a compact `{ outputBudget: "unbounded" }` recovery object, and `omitted_result_estimated_tokens`, the last useful-result estimate before omission; use `isReadOutputBudgetExceeded` before accessing result-specific fields. Universal controls are rejected on mutation commands and on the mutation mode of hybrid commands such as `comments`, `notes`, `files`, and `docs`.
+
+Diagnostic gates retain bounded, actionable predicates. Every metadata field
+required by the active validation profile emits a numeric count, including
+zero, so assurance expressions can distinguish a clean check from a missing
+key. Health retains at most 100 warning rows and reports `warning_count`,
+`warning_limit`, and `warnings_truncated`; `--strict-exit` defaults to summary
+projection unless `--full` is explicit, keeping the failing check identities
+and warning codes inside the ordinary budget.
 
 ## SDK and Package Usage
 

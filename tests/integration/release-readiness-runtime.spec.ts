@@ -2213,6 +2213,9 @@ describe("release readiness runtime coverage", () => {
         "checks",
         "warnings",
         "generated_at",
+        "warning_count",
+        "warning_limit",
+        "warnings_truncated",
         "omission_receipt",
       ]);
 
@@ -2531,9 +2534,7 @@ describe("release readiness runtime coverage", () => {
         },
       );
       expect(reasonlessCloseResult.code).toBe(EXIT_CODE.USAGE);
-      expect(reasonlessCloseResult.stderr).toContain(
-        "close_reason_required",
-      );
+      expect(reasonlessCloseResult.stderr).toContain("close_reason_required");
 
       const autoRouteCloseResult = context.runCli(
         [

@@ -312,6 +312,52 @@ describe("surface replication gate", () => {
     expect(report.active_sets).toEqual([]);
   });
 
+  it("scopes shared trigger files to relevant changed lines and fails closed without diff evidence", async () => {
+    const root = await fixtureRoot();
+    await writeFile(
+      path.join(root, "src", "sdk", "a.ts"),
+      "sharedContract\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(root, "src", "cli", "b.ts"),
+      "sharedContract\n",
+      "utf8",
+    );
+    const config = declaration();
+    config.sets[0]!.triggers = [
+      {
+        path: "src/sdk/a.ts",
+        changed_lines_contain_any: ["sharedContract"],
+      },
+    ];
+
+    const unrelated = await validateSurfaceReplication(config, {
+      repoRoot: root,
+      changedFiles: ["src/sdk/a.ts"],
+      changedLines: { "src/sdk/a.ts": ["unrelatedOutputBudget"] },
+      today: "2026-08-14",
+    });
+    expect(unrelated.ok).toBe(true);
+    expect(unrelated.active_sets).toEqual([]);
+
+    for (const changedLines of [
+      { "src/sdk/a.ts": ["sharedContract changed"] },
+      {},
+    ]) {
+      const active = await validateSurfaceReplication(config, {
+        repoRoot: root,
+        changedFiles: ["src/sdk/a.ts"],
+        changedLines,
+        today: "2026-08-14",
+      });
+      expect(active.ok).toBe(false);
+      expect(active.violations).toContain(
+        "set:fixture-surface:member:src/cli/b.ts:unchanged",
+      );
+    }
+  });
+
   it("fails when an annotation trigger changes without the tool parameter table", async () => {
     const config = JSON.parse(
       await readFile(
@@ -521,6 +567,26 @@ describe("surface replication gate", () => {
             triggers: null,
             members: [],
           },
+          ...[
+            null,
+            {},
+            { path: "" },
+            { path: "src/sdk/a.ts" },
+            { path: "src/sdk/a.ts", changed_lines_contain_any: [] },
+            {
+              path: "src/sdk/a.ts",
+              changed_lines_contain_any: [""],
+            },
+            {
+              path: "src/sdk/a.ts",
+              changed_lines_contain_any: [7],
+            },
+          ].map((trigger, index) => ({
+            id: `bad-trigger-${index}`,
+            owner: "pm-fixture",
+            triggers: [trigger],
+            members: [],
+          })),
           {
             id: "bad-members",
             owner: "pm-fixture",
@@ -775,6 +841,21 @@ describe("surface replication gate", () => {
     await expect(
       validateSurfaceReplication(declaration(), { repoRoot: noBaseRoot }),
     ).rejects.toThrow("Unable to resolve a base revision");
+
+    await writeFile(
+      path.join(noBaseRoot, "untracked.txt"),
+      "changed\n",
+      "utf8",
+    );
+    await expect(
+      validateSurfaceReplication(
+        { ...declaration(), sets: [] },
+        { repoRoot: noBaseRoot },
+      ),
+    ).resolves.toMatchObject({
+      ok: true,
+      changed_files: ["untracked.txt"],
+    });
   });
 
   it("treats a missing CLI source tree as an empty refusal inventory", async () => {

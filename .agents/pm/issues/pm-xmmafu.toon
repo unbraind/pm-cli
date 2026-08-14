@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: assurance,ci,governance,validate
 created_at: "2026-08-14T05:38:19.838Z"
-updated_at: "2026-08-14T05:38:19.838Z"
+updated_at: "2026-08-14T07:56:14.028Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "A validation count that a check declares is emitted whenever that check runs, carrying the value zero rather than being omitted, so absence of a key means the contract does not apply and never means the population is empty; Every assurance measurement whose bound is a ceiling of zero is proven to resolve while the bound holds, by a negative control that evaluates the measurement against a population of exactly zero; An assurance measurement whose source field cannot be resolved fails with a typed refusal naming the gate, the assertion, the measurement and the unresolved field, and never as an unhandled error advising the operator to retry; The close-reason ceiling survives its own remediation: a regression test drives the closed-missing-close-reason population to zero and asserts the gate returns a pass verdict rather than an error"
@@ -18,4 +18,15 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-b1w8vr,discovered_from,"2026-08-14T05:38:19.838Z","harness:claude-code","cli:create:dep",detected
   pm-py7qv2,blocked_by,"2026-08-14T05:38:19.838Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-14T05:38:19.838Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-14T07:55:41.519Z","harness:codex","Tranche evidence: validation now emits declared required-metadata counters even at zero, preserving assurance predicates after successful remediation; focused validate suite passed 95/95 and exact repo coverage passed. Residual acceptance remains for a fully contextualized unresolved-field refusal naming gate/assertion/measurement/field, so this item returns open rather than being closed prematurely."
+files[2]{path,scope,note}:
+  src/sdk/governance/validate.ts,project,stable zero-valued metadata predicates
+  tests/unit/commands/validate-command.spec.ts,project,zero-count and cache portability regressions
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mssnhcfk-1u2q7z,test,passed,"2026-08-14T07:53:11.286Z","2026-08-14T07:53:28.880Z","2026-08-14T07:53:28.880Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/READ_OUTPUT_CONTRACTS.md,project,zero predicate semantics
 body: ""
