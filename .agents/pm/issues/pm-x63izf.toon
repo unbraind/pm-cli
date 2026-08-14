@@ -6,11 +6,13 @@ status: open
 priority: 1
 tags[3]: "area:ci","area:release","kind:observability"
 created_at: "2026-08-10T15:59:53.854Z"
-updated_at: "2026-08-10T16:04:07.091Z"
+updated_at: "2026-08-14T10:15:08.284Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The gate runner records a structured failure document naming the failing gate, its exit status, and its captured verdict, at a path supplied by the environment; The blocked-release issue renders its cause from that document when it exists, including the blocking issue identifiers and the per-issue reason the gate assigned; The preflight configuration detection is retained only as the fallback used when no failure document was produced; No part of the mechanism classifies failures by matching patterns against log or message text; A negative control proves the rendered cause changes when the recorded gate verdict changes, and that a missing document still yields the preflight fallback"
 parent: pm-u9d0
+risk: high
+confidence: high
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-23lmm5,related,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected
   pm-2f80fn,discovered_from,"2026-08-10T15:59:53.854Z","harness:claude-code","cli:create:dep",detected

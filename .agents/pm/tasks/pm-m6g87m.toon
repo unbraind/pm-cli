@@ -1,12 +1,12 @@
 id: pm-m6g87m
 title: "copy, merge and item have no declared home, and merge additionally collides with the git merge-driver namespace it already owns"
-description: ""
+description: "Disposition copy, merge, and item within the target noun grammar without feature loss, while separating item-level merge from the Git merge-driver namespace. Preserve every current spelling as an alias and record each destination in the generated command census."
 type: Task
 status: open
 priority: 2
 tags[4]: cli-grammar,consolidation,item-lifecycle,namespace
 created_at: "2026-08-05T18:07:48.835Z"
-updated_at: "2026-08-05T18:08:46.164Z"
+updated_at: "2026-08-14T10:14:38.180Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "copy and item are placed under a declared noun with their capability unchanged; The merge name resolves its double duty explicitly: git integration versus item-level merge is disambiguated in the grammar and in the ADR, or one of the two is renamed with an alias; The disposition of each is recorded in the destination table from the census task"

@@ -4,9 +4,9 @@ description: "pm delete retains the history stream and the item is fully recover
 type: Issue
 status: open
 priority: 3
-tags: []
+tags[5]: "area:cli","area:sdk",history,recovery,tombstone
 created_at: "2026-07-25T20:41:21.338Z"
-updated_at: "2026-07-28T22:39:26.116Z"
+updated_at: "2026-08-14T10:15:07.106Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A read of a tombstoned id reports the tombstone as structured state - that the id existed, that it was deleted, and when - rather than an undifferentiated not-found, in both human and JSON output; The error names the recovery path with a runnable command, at minimum pm get --at and pm restore for the highest recorded version, following the recovery-bundle contract already used elsewhere; A not-found for an id with no history stream stays distinct from a tombstone hit, so the two cases are never conflated; The distinction is available through the SDK read primitives, not only rendered in the CLI, so MCP and other hosts inherit it; Disclosure respects the diagnostic output budget and adds no cost to the common not-found path where no stream exists"

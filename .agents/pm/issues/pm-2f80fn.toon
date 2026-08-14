@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agent-ux,changelog,diagnostics,release,token-efficiency
 created_at: "2026-08-10T12:11:45.027Z"
-updated_at: "2026-08-10T12:15:36.569Z"
+updated_at: "2026-08-14T10:15:09.600Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The drift refusal reports whether any item entered or left the changelog, as an explicit boolean, not inferred from counts; The refusal names the affected release sections and a bounded sample of moved rows with before and after positions; Counts come first and the sample is capped, so the diagnostic stays within the command output budget; A regeneration whose only difference is intra-section row order is reported as order-only in the refusal text"
@@ -16,6 +16,7 @@ value: Retires the do-not-touch-closed-items convention by letting an agent see 
 impact: Blocks the terminal-record graph enrichment programme and every closed-item metadata burn-down behind it
 outcome: A drift refusal distinguishes membership change from row reordering and is actionable without a manual diff
 why_now: Measured 2026-08-10 while establishing whether historical graph enrichment is changelog-safe; the check was the only thing that could not answer
+parent: pm-u9d0
 reviewer: maintainer-review
 risk: low
 confidence: high

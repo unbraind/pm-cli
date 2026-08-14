@@ -1,12 +1,12 @@
 id: pm-d2wfig
 title: "Derived scheduling: propagate milestone deadlines backward through the ordering graph so every gating item carries a latest-start date instead of only six dates existing in the whole plan"
-description: ""
+description: Derive latest-start dates and time-based slack by propagating milestone deadlines backward through the ordering graph using recorded estimates. Report over-committed paths and unknown-estimate residuals explicitly while keeping the computation bounded from scratch workspaces through million-item portfolios.
 type: Feature
 status: open
 priority: 1
 tags[5]: analytics,governance,graph,planning,scheduling
 created_at: "2026-08-13T08:53:22.763Z"
-updated_at: "2026-08-13T08:53:57.276Z"
+updated_at: "2026-08-14T10:14:32.485Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "Latest-start dates are derived for every item on an ordering path to a dated item, from that item's deadline and the estimates on the path, and are reported as derived rather than stored as authored deadlines; Slack is reported in time units alongside the existing topological layer slack, so an item with layer slack and no date slack is distinguishable from one with both; A path whose accumulated estimates cannot fit between now and the gated deadline is reported as an over-committed path, naming the deadline, the path and the shortfall; Items with no estimate are reported as an explicit unschedulable residual rather than being treated as zero-duration, so the derivation never silently manufactures feasibility; Derivation is bounded and stays inside the graph analytics token and latency budgets at million-item scale, and degrades to a declared partial result rather than a full scan; A negative control proves the over-commitment finding fires when a deadline is moved earlier than its path allows and clears when it is moved back"

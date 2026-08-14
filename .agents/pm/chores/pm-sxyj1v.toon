@@ -4,9 +4,9 @@ description: "Every behavioural constant in the product was chosen while looking
 type: Chore
 status: open
 priority: 2
-tags: []
+tags[5]: "area:governance",calibration,configuration,context-algorithms,scale
 created_at: "2026-07-29T04:54:34.898Z"
-updated_at: "2026-07-29T04:55:02.918Z"
+updated_at: "2026-08-14T10:15:06.489Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "Every numeric constant that affects runtime behaviour is declared as data with a unit, a provenance note, and exactly one label from invariant, calibrated, or arbitrary, and the declaration is machine-readable rather than a comment; A calibrated constant names the corpus it was fitted against and the procedure that would refit it, so a different installation can reproduce the fit rather than inherit the number; An arbitrary constant may govern a presentation default but may not be load-bearing on any correctness claim, and a test asserts that no arbitrary-labelled constant is read by a validation, integrity, or governance code path; A CI gate rejects a new numeric literal on a behavioural path that arrives without a label, so the population cannot grow while it is being dispositioned, with an explicit allowlist for build-gate thresholds that are out of scope and a recorded reason for each; The inventory states its own coverage: how many behavioural constants were found, how many carry each label, and which source areas were searched, so the residual is measurable rather than assumed complete; The three constants already known to be hazardous are labelled first and correctly: the recency weight that promotes every maintenance sweep, the worklist truncation that hides an actionable subset, and the golden-query set that certifies retrieval against one vocabulary"

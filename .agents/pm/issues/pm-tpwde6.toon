@@ -4,9 +4,9 @@ description: "The current Beads export consumed by pm-beads may omit comment bod
 type: Issue
 status: open
 priority: 1
-tags: []
+tags[5]: "area:extensions",comments,history,migration,pm-beads
 created_at: "2026-08-02T14:10:55.004Z"
-updated_at: "2026-08-02T14:10:55.004Z"
+updated_at: "2026-08-14T10:15:03.728Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: A source fixture with comments and events imports every body and event with record/content parity; incomplete export formats fail closed with actionable guidance; immutable backup and source/target parity gates are documented and tested; package and installed-consumer acceptance pass

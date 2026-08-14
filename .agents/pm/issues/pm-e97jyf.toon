@@ -4,9 +4,9 @@ description: "The 2026-08-04 audit linked existing sandbox-safe repository comma
 type: Issue
 status: open
 priority: 1
-tags: []
+tags[4]: "area:tests",environment-parity,linked-tests,regression
 created_at: "2026-08-04T09:30:07.005Z"
-updated_at: "2026-08-04T09:30:24.732Z"
+updated_at: "2026-08-14T10:15:01.796Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Per-test execution context is explicit, persisted, and visible before command execution.; Self-sandboxing repository test and benchmark commands have parity between direct and linked execution without access to real tracker data.; Merge and scale regression fixtures cover schema, tracker-copy, and self-sandboxing modes with guided recovery.; The runner distinguishes assertion failure caused by execution context from an actual product gate regression."

@@ -1,12 +1,12 @@
 id: pm-wfskfn
 title: "search and search-advanced are two top-level spellings of one noun, which the grammar charter forbids: advanced retrieval must be a facet of search, not a sibling command"
-description: ""
+description: "Make advanced retrieval a facet of the search noun rather than a second top-level command. The extension must register into the shared search contract, preserve search-advanced as a hidden alias, and emit one bounded migration hint with capability parity proof."
 type: Task
 status: open
 priority: 2
 tags[3]: cli-grammar,consolidation,search
 created_at: "2026-08-05T18:07:35.264Z"
-updated_at: "2026-08-05T18:08:44.751Z"
+updated_at: "2026-08-14T10:14:39.441Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: Advanced retrieval is reachable as a facet or subcommand of the search noun with identical capability; search-advanced keeps working as a hidden alias with a one-line migration hint; The package that provides advanced search registers into the search noun rather than claiming a second top-level name

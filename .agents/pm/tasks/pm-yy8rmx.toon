@@ -1,12 +1,12 @@
 id: pm-yy8rmx
 title: "Command-destination census: 14 of 76 canonical commands have no declared home in the target grammar, so the surface can be frozen with its shape still undecided"
-description: ""
+description: "Generate a complete destination census from the live command contracts so every canonical command has exactly one target noun, consolidation owner, package owner, or justified keep-as-is disposition. Gate both missing and stale rows before the grammar can be frozen."
 type: Task
 status: open
 priority: 1
 tags[4]: census,cli-grammar,consolidation,governance
 created_at: "2026-08-05T18:07:17.752Z"
-updated_at: "2026-08-05T18:22:13.347Z"
+updated_at: "2026-08-14T10:14:34.442Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "A checked-in destination table maps every canonical command emitted by pm contracts to exactly one of: a target noun, a named consolidation child, package-owned, or an explicit keep-as-is disposition with a reason; A gate fails when a command exists with no destination row, and fails when a destination row names a command the surface no longer emits; The census is recomputed from pm contracts at gate time, never hand-maintained; The 14 currently undeclared commands each carry a filed disposition before the grammar freeze in pm-agou can be declared complete"

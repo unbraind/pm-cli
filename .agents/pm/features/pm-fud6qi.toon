@@ -1,12 +1,12 @@
 id: pm-fud6qi
 title: "Improvement-candidate synthesis: rank the next change to pm from evidence already recorded — recurrence, escape, blocked fan-out, cycle time and token cost — instead of from filing recency"
-description: ""
+description: "Rank the next improvement from recorded recurrence, defect escape, blocked fan-out, cycle time, value, risk, and token cost rather than filing recency. Every recommendation must expose its evidence and counterfactuals, remain reproducible, and use bounded indexed computation across tiny and million-item workspaces."
 type: Feature
 status: open
 priority: 2
 tags[3]: context-algorithms,ranking,self-improvement
 created_at: "2026-08-05T18:09:44.534Z"
-updated_at: "2026-08-05T18:10:24.482Z"
+updated_at: "2026-08-14T10:14:37.613Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A ranked candidate set is computed from tracked data alone and is reproducible from the same workspace state; Every candidate carries the evidence that produced its rank, so a human or agent can refute it; Ranking degrades sensibly from a few items to a million and never requires a full-corpus scan per query; The ranker is a declared member of the context algorithm portfolio rather than a private heuristic"

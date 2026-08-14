@@ -1,12 +1,12 @@
 id: pm-y0htkd
 title: "MCP update keys and CLI update flags diverge in name (linkedFile/linkedTest vs --file/--test), so an agent that reads the MCP contract and writes a CLI command produces a guaranteed unknown-option refusal"
-description: ""
+description: Unify MCP update keys and CLI update flags through the shared contract vocabulary so linkedFile and linkedTest resolve to accepted CLI spellings or registered aliases. Add cross-surface parity enforcement and actionable unknown-option recovery without removing either capability.
 type: Issue
 status: open
 priority: 2
 tags[5]: agent-ux,"area:contracts","area:mcp",cross-surface-parity,defect-recurrence
 created_at: "2026-08-10T05:53:35.894Z"
-updated_at: "2026-08-10T06:10:14.848Z"
+updated_at: "2026-08-14T10:14:36.309Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Every MCP declared key resolves to a CLI flag, via a shared name or a registered alias; A parity gate fails when an MCP declared key has no CLI flag or alias that accepts it; The unknown-option recovery names the accepted flag for a known cross-surface synonym"

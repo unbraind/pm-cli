@@ -6,24 +6,25 @@ status: open
 priority: 1
 tags[5]: code-scanning,context-management,security,semgrep,triage
 created_at: "2026-07-06T18:56:14.728Z"
-updated_at: "2026-07-25T20:44:38.064Z"
+updated_at: "2026-08-14T10:18:31.590Z"
 author: codex-cli-agent
 estimated_minutes: 240
 acceptance_criteria: "Every Semgrep finding from the CSV has a linked pm Issue with Semgrep ID, rule, severity, status, platform link, code link, autotriage metadata, and rule description."
 parent: pm-qwoy
 risk: high
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-3u2x,related,"2026-07-24T23:54:07.117Z",null,null
-  pm-6ixn,related,"2026-07-24T23:54:07.117Z",null,null
-  pm-ngjd,related,"2026-07-24T23:54:07.117Z",null,null
-  pm-qwoy,related,"2026-07-24T23:54:07.117Z",null,null
-  pm-6ixn,implements,"2026-07-25T20:44:37.794Z",null,null
-comments[4]{created_at,author,text}:
+dependencies[5]{id,kind,created_at}:
+  pm-3u2x,related,"2026-07-24T23:54:07.117Z"
+  pm-6ixn,related,"2026-07-24T23:54:07.117Z"
+  pm-ngjd,related,"2026-07-24T23:54:07.117Z"
+  pm-qwoy,related,"2026-07-24T23:54:07.117Z"
+  pm-6ixn,implements,"2026-07-25T20:44:37.794Z"
+comments[5]{created_at,author,text}:
   "2026-07-06T18:57:11.617Z",codex-cli-agent,"Evidence: imported 40 Semgrep Code findings from Semgrep_Code_Combined_Findings_2026_07_06.csv as child Issue items. Duplicate check before import found no existing Semgrep tracker items or Semgrep finding IDs in .agents/pm. Verification after import: pm search semgrep --status all --limit 60 returns 41 items (parent + 40 children); pm list --status all --parent pm-oz8u --limit 60 returns 40 child issues."
   "2026-07-06T19:36:47.451Z",codex-cli-agent,"Evidence update: imported the downloaded Semgrep 2026-07-06 CSV as one parent task plus 40 child Issue items, after all-status duplicate checks found no existing Semgrep lineage. Redacted the local absolute download path from the imported pm history/item metadata with pm history-redact; rg no longer finds the original local CSV path in tracked pm data. Verification: pm search semgrep --status all --limit 60 returns 41 items and pm list --status all --parent pm-oz8u --limit 60 returns 40 child issues; security:scan reports no credential-like secrets."
   "2026-07-24T12:17:13.096Z",claude-code-agent,"Whole-system audit evidence: active-only dedupe-audit found six fuzzy title clusters (29 candidate items, 23 merge suggestions), all within this imported Semgrep batch. Exact-title and parent-scope modes found zero. Manual comparison of pm-dtn1 and pm-y49x confirms distinct Semgrep finding IDs and distinct RegExp argument flows despite the same file/line signature; treat the fuzzy clusters as triage groups, not proven duplicates, and preserve external finding identity until each full record is reconciled against current Semgrep state."
   "2026-07-25T02:02:13.608Z","harness:codex","Evidence: completed the coordinated high-severity Semgrep remediation family. Generated Claude/Codex MCP wrappers select npx.cmd on Windows and spawn argv with shell disabled; the unused release shell option was removed. Full security scan, generator fixtures, wrapper execution tests, and 100% coverage pass."
+  "2026-08-14T10:18:31.590Z","harness:codex","Duplicate-scan disposition 2026-08-14: the active fuzzy sweep still returns the same six clusters and 23 merge suggestions, all within this imported Semgrep batch. Full item bodies and compact histories confirm identical file-line signatures but distinct external finding IDs. The prior 2026-07-24 manual flow comparison remains the decisive evidence: these are triage groups, not proven duplicates. Preserve each external identity until a fresh Semgrep reconciliation proves the underlying flows or platform records have converged; no duplicate closures were performed."
 learnings[1]{created_at,author,text}:
   "2026-07-25T02:02:16.799Z","harness:codex",Cross-platform Node command wrappers should select the Windows .cmd shim explicitly and keep shell disabled; argv must remain structured from generation through execution.
 files[4]{path,scope,note}:

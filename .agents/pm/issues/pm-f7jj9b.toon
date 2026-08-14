@@ -4,9 +4,9 @@ description: "The pm-beads preserve-source-ids path changes the casing of import
 type: Issue
 status: open
 priority: 1
-tags: []
+tags[5]: "area:extensions",identity,migration,pm-beads,source-preservation
 created_at: "2026-08-02T14:11:08.877Z"
-updated_at: "2026-08-02T14:11:08.877Z"
+updated_at: "2026-08-14T10:15:03.118Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Mixed-case and lowercase Beads IDs round-trip without spelling changes; all dependency, parent, comment, and history references resolve to the preserved IDs; collision detection remains fail-closed across case-sensitive and case-insensitive filesystems; Windows, Linux, package, and installed-consumer tests pass"

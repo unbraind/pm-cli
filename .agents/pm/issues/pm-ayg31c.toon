@@ -1,12 +1,12 @@
 id: pm-ayg31c
 title: "Typed-outcome reachability admits three of ten edge kinds, so the four semantic kinds the ontology exists to express contribute nothing to the invariant they were minted to satisfy"
-description: ""
+description: "Typed outcome reachability currently evaluates only hierarchy and implements edges, so correctly modeled supersedes, discovered_from, verifies, and incident_from relations do not improve the invariant. Make the admitted kinds declarative, widen the basis with negative controls, and migrate its ratchets in one recorded step."
 type: Issue
 status: open
 priority: 1
 tags[5]: governance,graph,measurement,ontology,reachability
 created_at: "2026-08-13T08:33:42.357Z"
-updated_at: "2026-08-13T14:30:22.472Z"
+updated_at: "2026-08-14T10:14:31.975Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The set of edge kinds admitted by typed-outcome reachability is declared data rather than implicit in the governance implementation, and is reported alongside the reachability numbers; Every kind the ontology marks semantic can carry reachability, so supersedes, discovered_from, verifies and incident_from each contribute; An archived item joined to its replacement by the semantically correct kind is reachable, proven by the eleven canceled items currently counted unreachable; The basis change is measured as a delta on the existing reachability numbers, and the floors are re-declared over the new basis in one recorded step rather than drifting; A negative control proves the reachability score still falls when an item is genuinely disconnected, so widening the basis does not make the invariant unfailable"

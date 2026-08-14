@@ -1,12 +1,12 @@
 id: pm-7tjb8r
 title: "Self-improvement cycle contract: one runnable observe-propose-gate-land-remeasure turn whose receipt is a tracked item, so improvement is auditable rather than narrated"
-description: ""
+description: "Define one executable observe-propose-gate-land-remeasure cycle over the public SDK, with each receipt stored as an ordinary tracked item. Exercise the contract against pm-cli first and preserve zero-movement outcomes so self-improvement remains auditable rather than promotional narration."
 type: Task
 status: open
 priority: 2
 tags[3]: agent-loop,contract,self-improvement
 created_at: "2026-08-05T18:09:49.597Z"
-updated_at: "2026-08-05T18:10:27.721Z"
+updated_at: "2026-08-14T10:14:36.903Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "The cycle is runnable end to end from published SDK surface, with no step that only exists as prose in a doc; A cycle that lands a change without moving its declared metric closes as such, and that outcome is queryable; Cycle receipts are ordinary tracked items, so the loop is visible to the same graph and context algorithms as any other work; The contract is exercised against this repository as the first environment before it is offered as a general capability"

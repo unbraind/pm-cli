@@ -4,9 +4,9 @@ description: "Complete and continuously verify the repository-wide invariant tha
 type: Chore
 status: open
 priority: 2
-tags: []
+tags[5]: archive,"area:github",recurrence,traceability,verification
 created_at: "2026-08-04T09:16:47.188Z"
-updated_at: "2026-08-04T10:00:27.145Z"
+updated_at: "2026-08-14T10:15:05.800Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "A read-only full census reports every GitHub issue and pull request and the exact comment-linked count.; Every artifact has a verified comment linking a live canonical pm item; ambiguous historical artifacts have documented manual mapping decisions.; Backfill is resumable and idempotent, uses conservative pacing, and never reports an attempted comment as successful without read-back.; A regression check detects newly created GitHub artifacts without a PM link comment."

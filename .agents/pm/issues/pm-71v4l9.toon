@@ -1,12 +1,12 @@
 id: pm-71v4l9
 title: "Changelog safety for closed-item writes is gated on the wrong field: the generator buckets by release tag, so the risky population is 337 items and not the 1,475 the closed_at rule protects"
-description: ""
+description: "Closed-item write safety currently keys on closed_at even though changelog grouping is determined by release attribution, producing an oversized safe-write ban and an underspecified risky population. Replace the premise with a preflight over the actual changelog key, measurable counts, negative controls, and corrected operating guidance."
 type: Issue
 status: open
 priority: 1
 tags[5]: changelog,governance,history,measurement,release
 created_at: "2026-08-13T08:36:36.894Z"
-updated_at: "2026-08-13T08:44:18.296Z"
+updated_at: "2026-08-14T10:14:33.142Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The changelog-safety precondition is stated over the field the generator buckets by, and the statement cites the generator invocation that establishes it; A command classifies any candidate item set as changelog-safe or changelog-risky before the write, so a wave does not have to reason about it from prose; The risky population is reported as a number the project can watch, and shrinks as release attribution is backfilled rather than as closed_at is backfilled; A negative control proves a genuinely risky write is refused or flagged: touching a closed item with no release value must be distinguishable from touching one that has it; The operating documentation that currently states the closed_at rule is corrected, so the next wave does not re-derive the wrong premise"

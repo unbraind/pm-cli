@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: ci-gate,context-management,graph,measurement-ratchet,tracker-governance
 created_at: "2026-08-10T12:12:23.720Z"
-updated_at: "2026-08-11T13:58:01.421Z"
+updated_at: "2026-08-14T10:15:08.978Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A census resolves prose identifier mentions to real items and reports pairs holding no edge of any kind, counts first with a capped sample; Ledger surfaces, negative-statement phrasings and analysis subjects are exemptible with a recorded reason; an exemption is data, never a silent skip; The unexempted gap is declared as a ceiling so a pass may shrink it or leave it but never grow it, with a negative control proving the ceiling fails when exceeded; The gate runs in quality:static so a new item that names work it does not depend on fails before merge, not at release; The census is bounded in tokens and latency and stays within budget at million-item scale, reading each item once"
@@ -16,6 +16,7 @@ value: "Turns a 1,750-pair blind spot into an owned number that shrinks monotoni
 impact: "Every graph algorithm, context assembly and impact query currently reads an incomplete graph and cannot report by how much"
 outcome: The unexempted prose-versus-edge gap is enforced as a ceiling that a productive pass cannot grow
 why_now: "Measured 2026-08-10 during the strategic-ladder wave, which shrank the gap from 2,333 to 1,750 and showed the remainder is not safely automatable"
+parent: pm-96h7
 reviewer: maintainer-review
 risk: medium
 confidence: high

@@ -1,12 +1,12 @@
 id: pm-fmy9ih
 title: "Four top-level commands implement one concept: dedupe-audit, dedupe-merge, duplicates and comments-audit are separate nouns for finding and reconciling duplicate content"
-description: ""
+description: "Consolidate dedupe-audit, dedupe-merge, duplicates, and comments-audit into one duplicate-governance noun with explicit discovery and reconciliation verbs. Preserve all legacy spellings as hidden aliases and prove the consolidated contract retains every detection, annotation, and merge capability."
 type: Task
 status: open
 priority: 2
 tags[3]: cli-grammar,consolidation,dedupe
 created_at: "2026-08-05T18:07:22.401Z"
-updated_at: "2026-08-05T18:08:43.967Z"
+updated_at: "2026-08-14T10:14:40.063Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Duplicate discovery and reconciliation present as one noun with verbs, with every current spelling preserved as a hidden alias that prints one migration hint; comments-audit is resolved either into the same noun or into the item annotation facet surface, with the choice recorded; No detection, merge, or audit capability is removed; contract coverage before and after is proven equal"

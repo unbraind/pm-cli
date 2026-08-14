@@ -4,9 +4,9 @@ description: "The linked-file staleness check reports a permanent warning that n
 type: Issue
 status: open
 priority: 1
-tags: []
+tags[5]: "area:governance",diagnostics,linked-files,scalability,staleness
 created_at: "2026-07-29T04:34:08.230Z"
-updated_at: "2026-07-29T04:34:39.036Z"
+updated_at: "2026-08-14T10:15:04.536Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The files check partitions stale linked paths by holder lifecycle exactly as dependency_references does, emitting an active count, a legacy closed count, and a legacy terminal count, and it reports status ok when the active partition is empty; The worklist denominator names what it counts: a path count and a link count are separate scalars, the emitted array declares which of the two it is truncating, and no output presents a link-shaped numerator against a path-shaped denominator; One row carries both halves of a repair: for every reported path the holder ids and the inferred destination candidates travel together, so no caller has to join two independently truncated arrays keyed by path; The default summary mode and the verbose mode differ only in length, never in schema, proven by a test that asserts the same row type in both; A stored link that cannot be a workspace-relative path is classified as malformed and excluded from basename move inference, proven by a negative-control fixture holding a comma-joined multi-path literal and a path-colon-note literal, neither of which may produce a moved classification with a destination; The active partition of the repository tracker stays at zero after the fix, and a newly created open item linking a nonexistent path moves it to one, proving the partition is live rather than hardcoded"
