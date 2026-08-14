@@ -261,6 +261,7 @@ describe("pm cli error guidance context plumbing", () => {
         unknownOptionOtherCommands: ["create", "list", "list-all", "search"],
         unknownOptionOtherCommandsTotal: 7,
         unknownOptionOtherCommandsTruncated: true,
+        unknownOptionScope: "declared_elsewhere",
       },
     );
     expect(envelope.code).toBe("unknown_option");
@@ -274,6 +275,7 @@ describe("pm cli error guidance context plumbing", () => {
       candidate_commands: ["create", "list", "list-all", "search"],
       candidate_commands_total: 7,
       candidate_commands_truncated: true,
+      option_scope: "declared_elsewhere",
     });
 
     const guidance = formatCommanderErrorForDisplay(
@@ -289,6 +291,29 @@ describe("pm cli error guidance context plumbing", () => {
     expect(guidance).toContain("--type is accepted by create, list, list-all");
     expect(guidance).not.toContain("run that command instead");
     expect(guidance).toContain("candidate_commands_truncated: true");
+    expect(guidance).toContain("option_scope: declared_elsewhere");
+  });
+
+  it("states when an unknown option spelling exists nowhere in the lexicon", () => {
+    const envelope = formatCommanderErrorForJson(
+      "unknown option '--definitely-not-declared'",
+      "list-open",
+      "Task|Issue",
+      2,
+      {
+        unknownOptionSuggestions: ["--deadline-after"],
+        unknownOptionScope: "declared_nowhere",
+      },
+    );
+
+    expect(envelope.required).toContain("exists nowhere");
+    expect(envelope.next_steps).toContain(
+      "--definitely-not-declared is not declared on any command path. Use a nearest supported option on list-open, or inspect that command's help.",
+    );
+    expect(envelope.recovery).toMatchObject({
+      suggested_flags: ["--deadline-after"],
+      option_scope: "declared_nowhere",
+    });
   });
 
   it("applies runtime unknown-command guidance examples for commander errors", () => {

@@ -17585,6 +17585,57 @@
     },
     {
       "aliases": [],
+      "canonical_code": "read_output_cursor_command_mismatch",
+      "class": "usage",
+      "code": "read_output_cursor_command_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Read output cursor command mismatch condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/read-output/continuation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "read_output_cursor_invalid",
+      "class": "usage",
+      "code": "read_output_cursor_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Read output cursor invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/read-output/continuation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "read_output_cursor_stale",
+      "class": "usage",
+      "code": "read_output_cursor_stale",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Read output cursor stale condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/read-output/continuation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "redundant_edge",
       "class": "generic_failure",
       "code": "redundant_edge",
@@ -20218,6 +20269,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -20640,6 +20696,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -21119,6 +21180,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -22067,6 +22133,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -22340,6 +22411,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -22600,6 +22676,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -22999,6 +23080,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -23352,6 +23438,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -23712,6 +23803,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -23974,6 +24070,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -24638,6 +24739,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -25086,6 +25192,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -25448,6 +25559,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -26714,6 +26830,11 @@
             ],
             "description": "Universal estimated-token ceiling, or unbounded to return the complete read result."
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned after budget compaction of a declared row collection.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -27538,6 +27659,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -28809,6 +28935,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -29005,6 +29136,7 @@
   },
   "read_output_dimensions": [
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "list",
       "dimensions": {
         "amount": {
@@ -29108,6 +29240,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "context",
       "dimensions": {
         "amount": {
@@ -29193,6 +29326,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "search",
       "dimensions": {
         "amount": {
@@ -29278,6 +29412,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "get",
       "dimensions": {
         "amount": {
@@ -29351,6 +29486,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "next",
       "dimensions": {
         "amount": {
@@ -29417,6 +29553,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "health",
       "dimensions": {
         "amount": {
@@ -29481,6 +29618,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "deps",
       "dimensions": {
         "amount": {
@@ -29572,6 +29710,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "graph",
       "dimensions": {
         "amount": {
@@ -29649,6 +29788,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "history",
       "dimensions": {
         "amount": {
@@ -29715,6 +29855,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "activity",
       "dimensions": {
         "amount": {
@@ -29787,6 +29928,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "validate",
       "dimensions": {
         "amount": {
@@ -29839,6 +29981,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "events",
       "dimensions": {
         "amount": {
@@ -29899,6 +30042,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "contracts",
       "dimensions": {
         "amount": {
@@ -29951,6 +30095,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "comments",
       "dimensions": {
         "amount": {
@@ -29997,6 +30142,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "notes",
       "dimensions": {
         "amount": {
@@ -30043,6 +30189,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "files",
       "dimensions": {
         "amount": {
@@ -30101,6 +30248,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "docs",
       "dimensions": {
         "amount": {
@@ -30140,6 +30288,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "stats",
       "dimensions": {
         "amount": {
@@ -30179,6 +30328,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "aggregate",
       "dimensions": {
         "amount": {
@@ -30218,6 +30368,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "package-manage",
       "dimensions": {
         "amount": {
@@ -30257,6 +30408,7 @@
       ]
     },
     {
+      "budget_retention_policy": "ordered_prefix",
       "command": "comments-audit",
       "dimensions": {
         "amount": {
@@ -30296,6 +30448,7 @@
       ]
     },
     {
+      "budget_retention_policy": "verdict_priority",
       "command": "assurance",
       "dimensions": {
         "amount": {
@@ -32479,6 +32632,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -35555,6 +35713,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -36193,6 +36356,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -36833,6 +37001,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -37471,6 +37644,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -38111,6 +38289,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -38749,6 +38932,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -39389,6 +39577,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -40028,6 +40221,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -40388,6 +40586,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -40739,6 +40942,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -41137,6 +41345,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -41482,6 +41695,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -41835,6 +42053,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -42289,6 +42512,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -42848,6 +43076,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -43176,6 +43409,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -43477,6 +43715,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -45050,6 +45293,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -47499,6 +47747,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -47804,6 +48057,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -48300,6 +48558,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -48576,6 +48839,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -48874,6 +49142,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -50483,6 +50756,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -50703,6 +50981,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -51033,6 +51316,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
@@ -52063,6 +52351,11 @@
               "unbounded"
             ]
           },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",
             "enum": [
@@ -52711,6 +53004,11 @@
               1200,
               "unbounded"
             ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
           },
           "outputFormat": {
             "description": "Universal read-result encoding selector.",

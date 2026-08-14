@@ -82,7 +82,15 @@
         "src/sdk/learnings.ts",
         "src/cli/register-annotations.ts",
         "src/sdk/cli-contracts/flag-contracts.ts",
-        "src/sdk/cli-contracts/tool-schema.ts",
+        {
+          "path": "src/sdk/cli-contracts/tool-schema.ts",
+          "changed_lines_contain_any": [
+            "\"full\"",
+            "comments:",
+            "notes:",
+            "learnings:"
+          ]
+        },
         {
           "path": "src/sdk/cli-contracts/tool-parameter-tables.ts",
           "changed_lines_contain_any": ["full: { type: \"boolean\" }"]
@@ -135,7 +143,7 @@
         },
         {
           "path": "src/sdk/cli-contracts/tool-schema.ts",
-          "contains_all": ["\"full\"", "4.4.1"]
+          "contains_all": ["\"full\"", "PM_TOOL_PARAMETERS_SCHEMA_VERSION"]
         },
         {
           "path": "src/sdk/cli-contracts/tool-parameter-tables.ts",

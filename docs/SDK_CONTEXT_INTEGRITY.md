@@ -1,6 +1,6 @@
 # SDK Context Integrity
 
-Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), and [pm-5t33or](../.agents/pm/features/pm-5t33or.toon).
+Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), and [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon).
 
 ## Agent Quick Context
 
@@ -54,7 +54,25 @@ rows. This lets governance envelopes reduce diagnostic findings before
 omitting the whole verdict without redefining a nested tag or remediation list
 as a pagination row. Receipts name every `compacted_row_paths` entry; a complete
 omission also records the useful result's pre-omission estimate, while the
-universal recovery remains `--output-budget unbounded`.
+recovery names a bounded budget increase when no declared row path can resume.
+
+Budget-compacted declared rows instead publish a bounded `outputCursor`
+continuation on every transport. The cursor resumes the first withheld row and
+rejects a command, path, row-total, or stable-identity mismatch. This gives SDK
+and package loops a recursive self-improvement primitive: consume a bounded
+page, update context, and continue without abandoning the ceiling.
+
+`context --explain-ranking` projects explanations to the focus rows actually
+served. `candidate_count` records the scorer population and `omitted_count`
+records explanations intentionally withheld, while each returned row retains
+its rank, baseline rank, score, and per-signal contributions. Explanation cost
+therefore scales with the answer rather than with the active workspace.
+
+Unknown-option recovery is likewise derived from the declared flag lexicon.
+The structured `option_scope` is `declared_on_path`, `declared_elsewhere`, or
+`declared_nowhere`; accepting command paths are included only for the second
+case, while the third names the nearest current-path spellings and explicitly
+terminates the otherwise-unbounded command search.
 
 ## Row discovery and exact output receipts
 

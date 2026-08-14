@@ -192,6 +192,7 @@ export function getGlobalOptions(command: Command): GlobalOptions {
     outputLimit: readStringCommandOption(opts, "outputLimit"),
     outputBudget: readStringCommandOption(opts, "outputBudget"),
     outputSession: readStringCommandOption(opts, "outputSession"),
+    outputCursor: readStringCommandOption(opts, "outputCursor"),
     ...(opts.outputRowContract === true ? { outputRowContract: true } : {}),
     ...(opts.outputFormat === "toon" || opts.outputFormat === "json"
       ? { outputFormat: opts.outputFormat }

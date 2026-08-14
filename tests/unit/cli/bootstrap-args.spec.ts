@@ -92,6 +92,7 @@ describe("parseBootstrapGlobalOptions", () => {
         "--output-format=json",
         "--output-session",
         '{"version":1}',
+        "--output-cursor=cursor-1",
         "--output-row-contract",
       ]),
     ).toMatchObject({
@@ -100,6 +101,7 @@ describe("parseBootstrapGlobalOptions", () => {
       outputBudget: "800",
       outputFormat: "json",
       outputSession: '{"version":1}',
+      outputCursor: "cursor-1",
       outputRowContract: true,
     });
     expect(
@@ -109,6 +111,7 @@ describe("parseBootstrapGlobalOptions", () => {
         "--output-budget=",
         "--output-format=yaml",
         "--output-session=",
+        "--output-cursor=",
       ]),
     ).toEqual({
       path: undefined,

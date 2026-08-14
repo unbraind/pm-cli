@@ -5,6 +5,10 @@
 ### Fixed
 
 - Surface replication gate scopes trigger activation to relevant diff content ([pm-mrhwow](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrhwow.toon))
+- Ranking explanation is sized by the workspace rather than by the answer: explaining two returned rows emits one entry per active item and ignores the token budget entirely ([pm-okgxwa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-okgxwa.toon))
+- The unknown-option refusal asserts the option belongs on another command path without checking, so a spelling that exists nowhere sends the reader on an unbounded search ([pm-in23qu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-in23qu.toon))
+- The gate verdict withholds its evidence as a declaration-order prefix, so the assertion that produced a blocking verdict can be the row the default read drops ([pm-e5gl05](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e5gl05.toon))
+- A budget-truncated read is resumable on one surface and terminal on five, and the only recovery the envelope names is to abandon the budget that truncated it ([pm-8nev0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nev0o.toon))
 - GH-1008: assurance measurements accept unknown source kinds and contracts hide the valid vocabulary ([pm-atnfh4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-atnfh4.toon))
 - GH-1007: assurance gate declarations omit trigger and escape the typed refusal contract ([pm-88mo8m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-88mo8m.toon))
 - A CI-wired quality gate is red on a clean checkout of main and green in hosted CI for the same commit, because its measured output carries a telemetry warning whose presence depends on whether the local flush reached the network ([pm-t7wn04](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t7wn04.toon))

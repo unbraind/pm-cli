@@ -15,6 +15,7 @@ import {
 } from "../../../src/core/shared/author.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { recordClaimedWorkAttribution } from "../../../src/core/session/session-state.js";
+import type { ContextRelevanceReport } from "../../../src/sdk/context-relevance.js";
 import { readSettings } from "../../../src/core/store/settings.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
 import {
@@ -70,13 +71,56 @@ function createContextRankingItems(context: TempPmContext): string[] {
 
 describe("context relevance command integration", () => {
   it("keeps feature-store diagnostics optional for SDK summary callers", () => {
-    expect(
-      toContextRankingSummary({
-        model: "default-weighted-v1",
-        available_signals: [],
-        ranked: [],
+    const summary = toContextRankingSummary({
+      model: "default-weighted-v1",
+      available_signals: [],
+      ranked: [],
+    });
+    expect(summary).not.toHaveProperty("feature_store");
+    expect(summary).toMatchObject({ candidate_count: 0, omitted_count: 0 });
+  });
+
+  it("keeps ranking explanations answer-sized as the candidate corpus grows", () => {
+    const ranked: ContextRelevanceReport<ItemMetadata>["ranked"] = Array.from(
+      { length: 10_000 },
+      (_, index) => ({
+        id: `pm-scale-${String(index).padStart(5, "0")}`,
+        item: relevanceItem(`pm-scale-${String(index).padStart(5, "0")}`),
+        signals: { priority_pressure: 1 },
+        baseline_rank: index + 1,
+        rank: index + 1,
+        score: 1 - index / 10_000,
+        contributions: { priority_pressure: 1 },
       }),
-    ).not.toHaveProperty("feature_store");
+    );
+    const servedItemIds = new Set([ranked[0]!.id, ranked[1]!.id]);
+    const small = toContextRankingSummary(
+      {
+        model: "default-weighted-v1",
+        available_signals: ["priority_pressure"],
+        ranked: ranked.slice(0, 100),
+      },
+      undefined,
+      servedItemIds,
+    );
+    const large = toContextRankingSummary(
+      {
+        model: "default-weighted-v1",
+        available_signals: ["priority_pressure"],
+        ranked,
+      },
+      undefined,
+      servedItemIds,
+    );
+
+    expect(large.items).toEqual(small.items);
+    expect(large).toMatchObject({
+      candidate_count: 10_000,
+      omitted_count: 9_998,
+    });
+    expect(
+      JSON.stringify(large).length - JSON.stringify(small).length,
+    ).toBeLessThan(16);
   });
 
   it("derives normalized metadata signals for diverse project items", () => {
@@ -244,6 +288,20 @@ describe("context relevance command integration", () => {
       expect(explainedContext.ranking?.model).toBe("default-weighted-v1");
       expect(explainedContext.ranking?.available_signals).toContain(
         "priority_pressure",
+      );
+      const contextRowIds = [
+        ...explainedContext.high_level,
+        ...explainedContext.low_level,
+        ...explainedContext.blocked_fallback,
+      ].map((entry) => entry.id);
+      expect(explainedContext.ranking?.items.map((entry) => entry.id)).toEqual(
+        contextRowIds,
+      );
+      expect(explainedContext.ranking?.candidate_count).toBeGreaterThanOrEqual(
+        contextRowIds.length,
+      );
+      expect(explainedContext.ranking?.omitted_count).toBe(
+        explainedContext.ranking!.candidate_count - contextRowIds.length,
       );
       expect(explainedNext.ranking?.items.map((entry) => entry.id)).toEqual(
         [

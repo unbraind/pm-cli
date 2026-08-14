@@ -80,6 +80,7 @@ const CLI_TRANSPORT_FLAGS = new Set([
   "--output-budget",
   "--output-format",
   "--output-session",
+  "--output-cursor",
   "--output-row-contract",
   "--no-changed-fields",
   "--no-extensions",

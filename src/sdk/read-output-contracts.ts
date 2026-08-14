@@ -16,8 +16,20 @@ import {
   boundReadOutputRows,
   countReadOutputRows,
   mapReadOutputRows,
+  readOutputRowCollections,
   readOutputRowPaths,
 } from "./read-output-rows.js";
+import {
+  applyReadOutputContinuation,
+  decodeReadOutputContinuationCursor,
+  encodeReadOutputContinuationCursor,
+  prioritizeAssuranceAssertions,
+  readOutputCollectionFingerprint,
+} from "./read-output/continuation.js";
+export {
+  decodeReadOutputContinuationCursor,
+  encodeReadOutputContinuationCursor,
+} from "./read-output/continuation.js";
 import {
   applyReadOutputSessionReferences,
   attachReadOutputSessionReceipt,
@@ -26,10 +38,7 @@ import {
   type PmReadOutputSessionReceipt,
   type PmReadOutputSessionState,
 } from "./read-output-session.js";
-import {
-  decodeQueryCursorEnvelope,
-  encodeQueryCursor,
-} from "./pagination.js";
+import { decodeQueryCursorEnvelope, encodeQueryCursor } from "./pagination.js";
 
 /** Stable output dimensions shared by every read surface. */
 export const PM_READ_OUTPUT_DIMENSIONS = [
@@ -83,6 +92,8 @@ export interface PmReadOutputOptions {
   outputFormat?: "json" | "toon";
   /** Caller-carried cross-call budget and served-fact state. */
   outputSession?: string | PmReadOutputSessionState;
+  /** Opaque continuation returned after a budget-compacted declared row path. */
+  outputCursor?: string;
   /** Include row selector and encoding discovery metadata. */
   outputRowContract?: boolean;
 }
@@ -121,6 +132,8 @@ export interface PmReadOutputSurfaceContract {
   dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>;
   /** Deterministic precedence from strongest caller declaration to fallback. */
   precedence: readonly ["canonical", "legacy", "intent", "default"];
+  /** Stable policy used before budget compaction selects retained rows. */
+  budget_retention_policy: "ordered_prefix" | "verdict_priority";
 }
 
 /** Source that selected an effective output dimension. */
@@ -206,14 +219,61 @@ export interface PmReadOutputTruncationDisclosure {
   compacted_row_paths: string[];
   /** Whether next_cursor was moved back to the last row that survived compaction. */
   continuation_cursor_rebased: boolean;
+  /** Whether at least one declared row collection can be resumed within the budget. */
+  continuation_available: boolean;
+  /** Maximum next-page useful-result budget relative to the current budget. */
+  recovery_budget_multiplier: 1;
+  /** Bounded continuation instructions for every compacted declared row path. */
+  continuations: PmReadOutputContinuation[];
   /** Executable recovery instruction for retrieving the complete result. */
   restore_with: string;
   /** Transport-specific machine recovery options. */
-  recovery: {
-    cli: "--output-budget unbounded";
-    sdk: { outputBudget: "unbounded" };
-    mcp: { outputBudget: "unbounded" };
-  };
+  recovery:
+    | {
+        /** Opaque value supplied through each declared transport binding. */
+        cursor: string;
+        /** CLI option accepting cursor. */
+        cli: "--output-cursor";
+        /** SDK option field accepting cursor. */
+        sdk: "outputCursor";
+        /** MCP input field accepting cursor. */
+        mcp: "outputCursor";
+      }
+    | {
+        cli: string;
+        sdk: { outputBudget: number };
+        mcp: { outputBudget: number };
+      };
+}
+
+/** One resumable declared-row collection withheld by budget compaction. */
+export interface PmReadOutputContinuation {
+  /** Dot-delimited declared row path being resumed. */
+  path: string;
+  /** Opaque cursor accepted by CLI, SDK, and MCP outputCursor inputs. */
+  cursor: string;
+  /** Rows retained from this path in the current response. */
+  retained_rows: number;
+  /** Rows remaining after the current response. */
+  remaining_rows: number;
+  /** Total rows in the stable collection snapshot. */
+  total_rows: number;
+}
+
+/** Versioned, command-bound cursor payload for one stable declared row collection. */
+export interface PmReadOutputCursorEnvelope {
+  /** Serialized cursor format version. */
+  version: 1;
+  /** Canonical read surface that produced the cursor. */
+  command: PmReadOutputSurface;
+  /** Dot-delimited declared row path being continued. */
+  path: string;
+  /** Zero-based index of the first withheld row. */
+  offset: number;
+  /** Stable pre-projection denominator for the row collection. */
+  total_rows: number;
+  /** Stable identity fingerprint used to refuse stale continuation. */
+  fingerprint: string;
 }
 
 /** Result returned when the requested cost ceiling cannot fit useful content. */
@@ -250,7 +310,9 @@ export type PmReadOutputResultFor<Result, Options> =
     ? PmReadOutputResult<Result>
     : "outputSession" extends keyof Options
       ? PmReadOutputResult<Result>
-      : Result;
+      : "outputCursor" extends keyof Options
+        ? PmReadOutputResult<Result>
+        : Result;
 
 const READ_OUTPUT_PRECEDENCE = [
   "canonical",
@@ -274,6 +336,7 @@ export const PM_READ_OUTPUT_OPTION_FLAGS: readonly string[] = Object.freeze(
 /** Canonical control that composes the four per-call dimensions across reads. */
 export const PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS = Object.freeze([
   "--output-session",
+  "--output-cursor",
   "--output-row-contract",
 ] as const);
 
@@ -438,6 +501,8 @@ function buildSurfaceContract(
     command,
     dimensions,
     precedence: READ_OUTPUT_PRECEDENCE,
+    budget_retention_policy:
+      command === "assurance" ? "verdict_priority" : "ordered_prefix",
   });
 }
 
@@ -486,6 +551,8 @@ const CANONICAL_OPTION_KEYS = [
   "output_format",
   "outputSession",
   "output_session",
+  "outputCursor",
+  "output_cursor",
   "outputRowContract",
   "output_row_contract",
 ] as const;
@@ -536,6 +603,12 @@ const READ_OUTPUT_VALUE_VALIDATORS = [
       return true;
     },
     message: "--output-session must be a valid session-state object.",
+  },
+  {
+    keys: ["outputCursor", "output_cursor"],
+    valid: (value: unknown): boolean =>
+      typeof value === "string" && value.trim().length > 0,
+    message: "--output-cursor requires a non-empty continuation cursor.",
   },
 ] as const;
 
@@ -871,6 +944,8 @@ const ENVELOPE_KEYS = new Set([
   "applied_bound",
   "applied_limit",
   "completeness",
+  "continuation_kind",
+  "continuation_path",
   "continuation_contract",
   "count",
   "filters",
@@ -879,6 +954,7 @@ const ENVELOPE_KEYS = new Set([
   "now",
   "omission_receipt",
   "projection",
+  "budget_retention_policy",
   "row_contract",
   "sorting",
   "total",
@@ -1170,6 +1246,7 @@ function projectReadOutputRows(
   result: Record<string, unknown>,
   resolved: PmResolvedReadOutputDimensions,
   session: PmReadOutputSessionState | undefined,
+  cursor: PmReadOutputCursorEnvelope | undefined,
 ): Record<string, unknown> {
   let projected = { ...result };
   if (resolved.include?.source === "canonical") {
@@ -1179,6 +1256,10 @@ function projectReadOutputRows(
       resolved.include.value,
     );
   }
+  if (resolved.command === "assurance") {
+    projected = prioritizeAssuranceAssertions(projected);
+  }
+  projected = applyReadOutputContinuation(projected, resolved.command, cursor);
   if (resolved.amount?.source === "canonical") {
     projected = applyAmountBound(projected, resolved.amount.value);
   }
@@ -1326,10 +1407,55 @@ function attachReadOutputTruncationDisclosure(
     tokens: number;
   },
   continuationCursorRebased: boolean,
+  collectionsBeforeBudget: ReadonlyMap<
+    string,
+    { rows: number; totalRows: number; baseOffset: number; fingerprint: string }
+  >,
 ): void {
   if (!receipt.rows_compacted) return;
   const overridden =
     resolved.amount?.value === "unbounded" ? (["amount"] as const) : [];
+  const afterByPath = new Map(
+    readOutputRowCollections(projected).map((collection) => [
+      collection.path,
+      Array.isArray(collection.value)
+        ? collection.value.length
+        : Object.keys(collection.value).length,
+    ]),
+  );
+  const continuations = [...collectionsBeforeBudget.entries()].flatMap(
+    ([path, before]) => {
+      // Budget compaction preserves every declared collection and shortens its
+      // contents, so each pre-budget path has a post-budget cardinality.
+      const retainedRows = afterByPath.get(path)!;
+      if (retainedRows >= before.rows) return [];
+      const offset = before.baseOffset + retainedRows;
+      return [
+        {
+          path,
+          cursor: encodeReadOutputContinuationCursor({
+            command: resolved.command,
+            path,
+            offset,
+            total_rows: before.totalRows,
+            fingerprint: before.fingerprint,
+          }),
+          retained_rows: retainedRows,
+          remaining_rows: before.totalRows - offset,
+          total_rows: before.totalRows,
+        },
+      ];
+    },
+  );
+  const primary = continuations[0];
+  if (primary && typeof projected.next_cursor !== "string") {
+    projected.next_cursor = primary.cursor;
+  }
+  projected.continuation_kind = continuationCursorRebased
+    ? "producer_cursor"
+    : primary
+      ? "output_cursor"
+      : "none";
   projected.output_budget_truncation = {
     reason: "output_budget_reached",
     budget_source: bindingBudget.source,
@@ -1337,13 +1463,24 @@ function attachReadOutputTruncationDisclosure(
     overridden_dimensions: overridden,
     compacted_row_paths: receipt.compacted_row_paths!,
     continuation_cursor_rebased: continuationCursorRebased,
-    restore_with:
-      "Re-run with --output-budget unbounded for the complete result.",
-    recovery: {
-      cli: "--output-budget unbounded",
-      sdk: { outputBudget: "unbounded" },
-      mcp: { outputBudget: "unbounded" },
-    },
+    continuation_available: continuations.length > 0,
+    recovery_budget_multiplier: 1,
+    continuations,
+    restore_with: primary
+      ? "Use recovery binding."
+      : "Increase --output-budget because no declared row collection can be continued.",
+    recovery: primary
+      ? {
+          cursor: primary.cursor,
+          cli: "--output-cursor",
+          sdk: "outputCursor",
+          mcp: "outputCursor",
+        }
+      : {
+          cli: "--output-budget 1200",
+          sdk: { outputBudget: 1200 },
+          mcp: { outputBudget: 1200 },
+        },
   };
 }
 
@@ -1391,6 +1528,101 @@ function rebaseBudgetCompactedCursor(
   return true;
 }
 
+interface ReadOutputContinuationState {
+  collectionsBeforeBudget: ReadonlyMap<
+    string,
+    { rows: number; totalRows: number; baseOffset: number; fingerprint: string }
+  >;
+  originalItemCount: number;
+  cursorContinuesExistingPage: boolean;
+  cursorSource: unknown;
+}
+
+function captureReadOutputContinuationState(
+  projected: Record<string, unknown>,
+  cursor: PmReadOutputCursorEnvelope | undefined,
+  options: Record<string, unknown>,
+): ReadOutputContinuationState {
+  const collectionsBeforeBudget = new Map(
+    readOutputRowCollections(projected).map((collection) => {
+      const rows = Array.isArray(collection.value)
+        ? collection.value.length
+        : Object.keys(collection.value).length;
+      const continued = cursor?.path === collection.path;
+      return [
+        collection.path,
+        {
+          rows,
+          totalRows: continued ? cursor.total_rows : rows,
+          baseOffset: continued ? cursor.offset : 0,
+          fingerprint: continued
+            ? cursor.fingerprint
+            : readOutputCollectionFingerprint(
+                collection.path,
+                collection.value,
+              ),
+        },
+      ];
+    }),
+  );
+  const cursorContinuesExistingPage = typeof projected.next_cursor === "string";
+  return {
+    collectionsBeforeBudget,
+    originalItemCount: Array.isArray(projected.items)
+      ? projected.items.length
+      : 0,
+    cursorContinuesExistingPage,
+    cursorSource: cursorContinuesExistingPage
+      ? projected.next_cursor
+      : options.after,
+  };
+}
+
+function compactReadOutputProjection(
+  projected: Record<string, unknown>,
+  resolved: PmResolvedReadOutputDimensions,
+  receipt: PmReadOutputReceipt,
+  bindingBudget: {
+    source: PmReadOutputDimensionSource | "session";
+    tokens: number;
+  },
+  session: PmReadOutputSessionState | undefined,
+  continuationState: ReadOutputContinuationState,
+): Record<string, unknown> {
+  const assuranceMinimumRows =
+    resolved.command === "assurance" && Array.isArray(projected.assertions)
+      ? projected.assertions.filter(
+          (row) => isRecord(row) && row.verdict !== "pass",
+        ).length
+      : 0;
+  let compacted = compactReadOutputToBudget(
+    projected,
+    receipt,
+    bindingBudget.tokens,
+    assuranceMinimumRows > 0
+      ? new Map([["assertions", assuranceMinimumRows]])
+      : new Map(),
+  );
+  const continuationCursorRebased = rebaseBudgetCompactedCursor(
+    compacted,
+    continuationState.originalItemCount,
+    continuationState.cursorSource,
+    continuationState.cursorContinuesExistingPage,
+  );
+  attachReadOutputTruncationDisclosure(
+    compacted,
+    resolved,
+    receipt,
+    bindingBudget,
+    continuationCursorRebased,
+    continuationState.collectionsBeforeBudget,
+  );
+  if (session !== undefined) {
+    compacted = attachReadOutputSessionContracts(compacted, session, receipt);
+  }
+  return compacted;
+}
+
 /** Apply universal field, row, and token bounds and attach an exact receipt. */
 export function applyReadOutputDimensions<
   Result extends Record<string, unknown>,
@@ -1404,19 +1636,25 @@ export function applyReadOutputDimensions<
   const session = parseReadOutputSession(
     options.outputSession ?? options.output_session,
   );
+  const rawCursor = options.outputCursor ?? options.output_cursor;
+  const cursor =
+    typeof rawCursor === "string"
+      ? decodeReadOutputContinuationCursor(rawCursor)
+      : undefined;
   const requested = requestedDimensions(resolved);
-  if (canReturnReadOutputUnchanged(resolved, requested, session, result)) {
+  if (
+    cursor === undefined &&
+    canReturnReadOutputUnchanged(resolved, requested, session, result)
+  ) {
     return result;
   }
   const bindingBudget = resolveBindingReadOutputBudget(resolved, session);
-  let projected = projectReadOutputRows(result, resolved, session);
-  const originalItemCount = Array.isArray(projected.items)
-    ? projected.items.length
-    : 0;
-  const cursorContinuesExistingPage = typeof projected.next_cursor === "string";
-  const cursorSource = cursorContinuesExistingPage
-    ? projected.next_cursor
-    : options.after;
+  let projected = projectReadOutputRows(result, resolved, session, cursor);
+  const continuationState = captureReadOutputContinuationState(
+    projected,
+    cursor,
+    options,
+  );
   const receipt: PmReadOutputReceipt = {
     contract_version: 1,
     command: resolved.command,
@@ -1446,27 +1684,14 @@ export function applyReadOutputDimensions<
     bindingBudget !== undefined &&
     receipt.estimated_tokens > bindingBudget.tokens
   ) {
-    projected = compactReadOutputToBudget(
-      projected,
-      receipt,
-      bindingBudget.tokens,
-    );
-    const continuationCursorRebased = rebaseBudgetCompactedCursor(
-      projected,
-      originalItemCount,
-      cursorSource,
-      cursorContinuesExistingPage,
-    );
-    attachReadOutputTruncationDisclosure(
+    projected = compactReadOutputProjection(
       projected,
       resolved,
       receipt,
       bindingBudget,
-      continuationCursorRebased,
+      session,
+      continuationState,
     );
-    if (session !== undefined) {
-      projected = attachReadOutputSessionContracts(projected, session, receipt);
-    }
   }
   if (
     bindingBudget !== undefined &&

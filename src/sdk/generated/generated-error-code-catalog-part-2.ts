@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "merge_conflict_markers_detected",
-    meaning: "Merge conflict markers detected condition.",
-    stability: "stable",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/item/item-format.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_conflict_markers_detected",
-    aliases: ["history_merge_conflict_markers_detected"],
-  },
-  {
     code: "merge_decisions_unreviewed",
     meaning: "Merge decisions unreviewed condition.",
     stability: "provisional",
@@ -395,6 +382,45 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/environment/project-runtime-compatibility.ts"],
     emitting_commands: ["*"],
     canonical_code: "project_runtime_stale_read",
+    aliases: [],
+  },
+  {
+    code: "read_output_cursor_command_mismatch",
+    meaning: "Read output cursor command mismatch condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/read-output/continuation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "read_output_cursor_command_mismatch",
+    aliases: [],
+  },
+  {
+    code: "read_output_cursor_invalid",
+    meaning: "Read output cursor invalid condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/read-output/continuation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "read_output_cursor_invalid",
+    aliases: [],
+  },
+  {
+    code: "read_output_cursor_stale",
+    meaning: "Read output cursor stale condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/read-output/continuation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "read_output_cursor_stale",
     aliases: [],
   },
   {

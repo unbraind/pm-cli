@@ -113,6 +113,8 @@ export {
   PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS,
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
   applyReadOutputDimensions,
+  decodeReadOutputContinuationCursor,
+  encodeReadOutputContinuationCursor,
   isReadOutputBudgetExceeded,
   resolveReadOutputDimensions,
   resolveReadOutputEncoding,
@@ -127,6 +129,8 @@ export {
 } from "./read-output-session.js";
 export type {
   PmReadOutputBudgetExceeded,
+  PmReadOutputContinuation,
+  PmReadOutputCursorEnvelope,
   PmReadOutputDimension,
   PmReadOutputLegacyAlias,
   PmReadOutputOptions,

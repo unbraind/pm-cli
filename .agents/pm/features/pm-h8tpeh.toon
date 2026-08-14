@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:ci","area:sdk",assurance,contracts,recovery
 created_at: "2026-08-13T21:18:07.562Z"
-updated_at: "2026-08-13T23:53:27.994Z"
+updated_at: "2026-08-14T12:57:51.748Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "The corpus of emitted forward references is derived from the contract tables that generate them, never hand written, and reports its own size and coverage per reference kind; Every reference asserting a replacement spelling is executed and proven to produce the same result as the spelling it replaces, excluding the receipt that records which spelling was used; Every reference asserting a recovery is executed and proven to recover, and every reference naming a command path is proven against the declared path set; The obligation set is declared as assurance data with a ratcheted pass fraction and a negative control that fails when a known-good reference is broken; Behaviour-preserving references, which explicitly retain different semantics, are separated from replacement references in the contract table and carry the weaker obligation by declaration rather than by inference"
@@ -20,26 +20,33 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-j82fd3,implements,"2026-08-13T21:18:19.039Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,implements,"2026-08-13T21:18:19.039Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,implements,"2026-08-13T21:18:19.039Z","harness:claude-code","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-13T22:07:15.361Z","harness:codex","Progress evidence: the contract now declares replacement versus behavior_preserving semantics instead of inferring strength from prose. An executable temporary-tracker corpus derives and runs all 22 exact projection-mode replacements, comparing both spellings after only receipt/volatile metadata removal. The corpus caught --collapse <value> and health --check-only as independent execution semantics; both are excluded from false replacement mapping and --collapse now emits truthful weaker guidance. Remaining scope before this general feature can close: derive and execute the other forward-reference kinds, declare the full obligation set as assurance data, and add the cross-kind negative-control gate."
   "2026-08-13T22:27:26.637Z","harness:codex","Assurance evidence: tracker-context-quality initially blocked because the new executable migration spec was test-command linked but not file-owned. Added explicit project file ownership; preserved the pre-existing one-path orphan ceiling rather than weakening the ratchet."
   "2026-08-13T23:17:37.958Z","harness:codex","Verification evidence for this PR tranche: derived and executed all 22 replacement promises across list/search/get/health/deps/graph/history/activity/validate/events/contracts in a real temporary tracker; exact legacy-versus-canonical projections match after removing only invocation receipts and volatile run metadata. Linked PM tests passed 20/20. Full repository coverage passed 7,280 tests at exact 100/100/100/100. Packed npm acceptance exercised canonical CLI normalization and the public SDK, with independent npx and bunx dispatch succeeding. The broader feature remains open for the other forward-reference kinds and its cross-kind assurance negative control."
   "2026-08-13T23:21:03.759Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1005 at implementation commit a4b33ccb3. The PR combines executable migration contracts, nested budget receipts, token-gate correction, generated SDK/contracts/changelog artifacts, and all-status GitHub/PM lineage."
   "2026-08-13T23:53:26.657Z","harness:codex","PR #1005 exact implementation head 079303e2e passed every hosted deterministic gate, including aggregate exact coverage, Codecov patch, static quality, typecheck, compatibility, smokes, Windows, CodeQL, Semgrep, Trivy, TruffleHog, and benchmarks. No inline review threads exist. CodeRabbit and Sourcery were explicitly quota-limited and hosted Greptile produced no response surface; these are provider limitations, not approvals. This executable recovery tranche is delivered for review while the broader feature remains open for cross-kind forward-reference and assurance-negative-control continuation."
+  "2026-08-14T11:04:49.120Z","harness:codex","Implementation start 2026-08-14: recovery references in this tranche will become executable across CLI, SDK, and MCP, with positive replay and invalid/stale cursor negative controls rather than prose-only promises."
+  "2026-08-14T12:39:42.839Z","harness:codex","Executable-recovery evidence: bounded output now publishes one recovery.cursor plus declared CLI, SDK, and MCP bindings; the real temporary list-closed acceptance walks every page through the emitted value and rejects malformed, stale, and cross-command cursors. The broader cross-kind forward-reference corpus remains residual."
+  "2026-08-14T12:57:50.456Z","harness:codex","Tranche closeout: this PR executes the new bounded cursor recovery through the real CLI and verifies malformed/stale/cross-command failures, extending the forward-reference corpus beyond migration hints. The general feature remains open because other emitted recovery/next-step kinds and the cross-kind assurance pass-fraction gate are not yet complete."
 learnings[1]{created_at,author,text}:
   "2026-08-13T22:07:15.884Z","harness:codex","A migration flag can belong to a universal output dimension without being replaceable by the universal option. Promise strength must be explicit contract data: parsing a well-formed hint or checking that its target flag exists cannot distinguish projection equivalence from preserved traversal, grouping, side-effect, cursor, or streaming semantics."
-files[5]{path,scope,note}:
+files[7]{path,scope,note}:
   src/cli/main.ts,project,CLI projection-mode forwarding
   src/sdk/read-output-contracts.ts,project,Typed replacement versus behavior-preserving migration promises
   src/sdk/runtime.ts,project,SDK and MCP projection-mode forwarding
   tests/unit/sdk/read-contract-integrity.spec.ts,project,Replicated consumer contract for explicit migration semantics
+  tests/unit/sdk/read-output-contracts.spec.ts,project,SDK cursor recovery and negative controls
   tests/unit/sdk/read-output-migration-hints.spec.ts,project,Executable cross-kind migration matrix that runs every declared projection replacement against a real temporary tracker
-tests[2]{command,scope,timeout_seconds}:
+  tests/unit/sdk/read-output-transport.spec.ts,project,Executable real-CLI recovery promise replay
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-migration-hints.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts,project,240
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-migration-hints.spec.ts tests/unit/sdk/read-output-transport.spec.ts,project,240
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mss2d8v9-7j0mbi,test,passed,"2026-08-13T22:02:13.183Z","2026-08-13T22:02:25.701Z","2026-08-13T22:02:25.701Z",1,0,0
   test-local-mss4q9be-3wcuqg,test,passed,"2026-08-13T23:08:06.996Z","2026-08-13T23:08:32.042Z","2026-08-13T23:08:32.042Z",2,0,0
+  test-local-mssvd2in-n5cf67,test,passed,"2026-08-14T11:33:25.993Z","2026-08-14T11:34:06.335Z","2026-08-14T11:34:06.335Z",3,0,0
 docs[2]{path,scope,note}:
   docs/READ_OUTPUT_CONTRACTS.md,project,Executable replacement and weaker behavior-preservation semantics
   docs/SDK_CONTEXT_INTEGRITY.md,project,Replicated replacement-versus-behavior contract

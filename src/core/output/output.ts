@@ -46,6 +46,8 @@ export interface OutputOptions {
   outputFormat?: "toon" | "json";
   /** Caller-carried cross-call budget and served-item state. */
   outputSession?: string;
+  /** Opaque budget-compaction continuation cursor. */
+  outputCursor?: string;
   /** Include machine-readable row location and row-encoding metadata. */
   outputRowContract?: boolean;
   /** Fallback output format used when callers do not provide an override. */
@@ -502,6 +504,7 @@ function formatEffectiveOutput(
         ["outputBudget", options.outputBudget],
         ["outputFormat", options.outputFormat],
         ["outputSession", options.outputSession],
+        ["outputCursor", options.outputCursor],
         ["outputRowContract", options.outputRowContract],
       ].filter(
         (entry): entry is [string, string | boolean] => entry[1] !== undefined,

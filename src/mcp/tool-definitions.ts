@@ -57,6 +57,12 @@ const READ_OUTPUT_TOOL_PROPERTIES = {
   outputSession: {
     ...CANONICAL_OUTPUT_SESSION_TOOL_PROPERTY,
   },
+  outputCursor: {
+    type: "string",
+    minLength: 1,
+    description:
+      "Opaque continuation cursor returned after budget compaction of a declared row collection.",
+  },
 } as const;
 
 /** MCP transport parameters layered over every canonical action schema. */

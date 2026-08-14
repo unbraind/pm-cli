@@ -16,7 +16,10 @@ export interface PmReadOutputRowCollection {
 const BUDGET_METADATA_ROOT_KEYS = new Set([
   "applied_bound",
   "completeness",
+  "budget_retention_policy",
   "continuation_contract",
+  "continuation_kind",
+  "continuation_path",
   "filters",
   "omission_receipt",
   "output_budget_truncation",
@@ -63,6 +66,22 @@ function replaceValueAtPath(
   }
   target[segments.at(-1)!] = replacement;
   return root;
+}
+
+/** Replace one declared row collection with a suffix beginning at an offset. */
+export function sliceReadOutputRowCollection(
+  result: Record<string, unknown>,
+  rowPath: string,
+  offset: number,
+): Record<string, unknown> {
+  const collection = readOutputRowCollections(result).find(
+    (entry) => entry.path === rowPath,
+  );
+  if (!collection) return result;
+  const replacement = Array.isArray(collection.value)
+    ? collection.value.slice(offset)
+    : Object.fromEntries(Object.entries(collection.value).slice(offset));
+  return replaceValueAtPath(result, rowPath, replacement);
 }
 
 /** Resolve declared row paths, falling back to top-level array properties. */

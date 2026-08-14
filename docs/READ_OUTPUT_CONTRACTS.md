@@ -1,6 +1,6 @@
 # Universal Read Output Contracts
 
-Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-eugaqy](../.agents/pm/issues/pm-eugaqy.toon), [pm-jt8aa2](../.agents/pm/issues/pm-jt8aa2.toon), [pm-kyjdne](../.agents/pm/issues/pm-kyjdne.toon), [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon), and [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon).
+Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-eugaqy](../.agents/pm/issues/pm-eugaqy.toon), [pm-jt8aa2](../.agents/pm/issues/pm-jt8aa2.toon), [pm-kyjdne](../.agents/pm/issues/pm-kyjdne.toon), [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon), [pm-e5gl05](../.agents/pm/issues/pm-e5gl05.toon), and [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon).
 
 ## Agent Quick Context
 
@@ -135,6 +135,32 @@ Every projected result carries a `read_output` receipt with the requested dimens
 
 When rows are dropped to satisfy a ceiling, the result also carries `output_budget_truncation`, naming the binding budget and its source, any explicitly requested dimension the budget overrode, every compacted collection path, and executable CLI/SDK/MCP recovery options — a default ceiling can override an explicit `--output-limit unbounded`, and that override is reported rather than silent. If a producer supplied an opaque item-page cursor, compaction rebases it to the last row actually returned and reports `continuation_cursor_rebased: true`; following the cursor therefore cannot skip rows removed from the middle of a producer page. If no useful content can fit, `PmReadOutputBudgetExceeded` provides a discriminated omission result, a compact `{ outputBudget: "unbounded" }` recovery object, and `omitted_result_estimated_tokens`, the last useful-result estimate before omission; use `isReadOutputBudgetExceeded` before accessing result-specific fields. Universal controls are rejected on mutation commands and on the mutation mode of hybrid commands such as `comments`, `notes`, `files`, and `docs`.
 
+Cursor recovery carries the opaque value once in `recovery.cursor` and declares
+the accepting `cli`, `sdk`, and `mcp` binding beside it. This avoids
+serializing the same cursor once per transport while retaining an executable,
+machine-readable binding for each surface.
+
+Budget-compacted declared row paths are independently resumable. The
+disclosure's `continuations` entries name the row path, retained/remaining/total
+counts, and an opaque cursor. `continuation_kind` distinguishes a rebased
+producer cursor, a universal output cursor, and a terminal page;
+`next_cursor` mirrors the first universal entry for ordinary one-path
+consumers. Replay the same query and budget
+with `--output-cursor <cursor>` / `outputCursor`. The cursor validates the
+command, declared row path, total, and stable row identities before slicing, so
+a mismatched or stale replay fails closed instead of skipping evidence. A
+bounded recovery therefore does not require replacing a 600-token request with
+an unbounded multi-megabyte response;
+`recovery_budget_multiplier: 1` declares that each next page retains the same
+useful-result ceiling.
+
+Assurance declares `budget_retention_policy: verdict_priority`: failing block,
+warn, and observe rows precede retired and passing rows while preserving order
+within each class. `assertions_total` remains the pre-projection denominator,
+and the `assertions` row path uses the same continuation primitive. A blocking
+verdict consequently keeps its causal evidence on the first bounded page even
+when the failing assertion was declared last.
+
 Diagnostic gates retain bounded, actionable predicates. Every metadata field
 required by the active validation profile emits a numeric count, including
 zero, so assurance expressions can distinguish a clean check from a missing
@@ -164,6 +190,7 @@ const result = await pm.list({
     spent_tokens: 0,
     seen_item_ids: [],
   },
+  // Supply outputCursor from output_budget_truncation to fetch the next row page.
 });
 ```
 

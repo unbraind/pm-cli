@@ -102,6 +102,8 @@ export interface CommanderGuidanceContext {
   unknownOptionOtherCommandsTotal?: number;
   /** Whether the structured command candidates reached their own ceiling. */
   unknownOptionOtherCommandsTruncated?: boolean;
+  /** Declared lexicon membership of the rejected option spelling. */
+  unknownOptionScope?: PmCliErrorRecoveryPayload["option_scope"];
   /** Command family whose positional subcommand was split into invalid tokens. */
   unknownSubcommandPath?: string;
   /** Rejected positional subcommand token or token sequence. */
@@ -360,6 +362,13 @@ function normalizeRecoveryPayload(
   if (payload.candidate_commands_truncated === true) {
     normalized.candidate_commands_truncated = true;
   }
+  if (
+    payload.option_scope === "declared_on_path" ||
+    payload.option_scope === "declared_elsewhere" ||
+    payload.option_scope === "declared_nowhere"
+  ) {
+    normalized.option_scope = payload.option_scope;
+  }
   assignRecoveryString(normalized, "suggested_retry", payload.suggested_retry);
   if (
     typeof payload.retry_after_ms === "number" &&
@@ -469,6 +478,9 @@ function renderRecoveryBundle(
   }
   if (normalized.candidate_commands_truncated === true) {
     lines.push("  candidate_commands_truncated: true");
+  }
+  if (normalized.option_scope !== undefined) {
+    lines.push(`  option_scope: ${normalized.option_scope}`);
   }
   appendRecoveryTextLine(lines, "suggested_retry", normalized.suggested_retry);
   if (typeof normalized.retry_after_ms === "number") {
@@ -1273,6 +1285,69 @@ function buildUnsupportedUpdateOptionGuidance(
   });
 }
 
+const UNKNOWN_OPTION_REQUIRED_BY_SCOPE: Record<
+  NonNullable<PmCliErrorRecoveryPayload["option_scope"]>,
+  string
+> = {
+  declared_elsewhere:
+    "Use an option declared on this path, or move the declared option to one of its accepting command paths.",
+  declared_on_path:
+    "Use the option with the value and syntax declared by this command path.",
+  declared_nowhere:
+    "Use a declared option on this command path; this spelling exists nowhere in the command lexicon.",
+};
+
+interface UnknownOptionCandidateContext {
+  otherCommands: string[];
+  optionScope: NonNullable<PmCliErrorRecoveryPayload["option_scope"]>;
+  candidateTotal: number;
+}
+
+function resolveUnknownOptionCandidateContext(
+  context: CommanderGuidanceContext,
+): UnknownOptionCandidateContext {
+  const otherCommands =
+    normalizeContextList(context.unknownOptionOtherCommands) ?? [];
+  return {
+    otherCommands,
+    optionScope:
+      context.unknownOptionScope ??
+      (otherCommands.length > 0 ? "declared_elsewhere" : "declared_nowhere"),
+    candidateTotal:
+      context.unknownOptionOtherCommandsTotal ?? otherCommands.length,
+  };
+}
+
+function buildUnknownOptionNextSteps(
+  optionName: string,
+  commandName: string | undefined,
+  suggestions: string[],
+  candidateContext: UnknownOptionCandidateContext,
+  retryCommand: string | undefined,
+): string[] {
+  const proseCommands = candidateContext.otherCommands.slice(0, 3);
+  const proseRemainder = candidateContext.candidateTotal - proseCommands.length;
+  const proseRemainderText =
+    proseRemainder > 0
+      ? ` and ${String(proseRemainder)} more command path(s)`
+      : "";
+  return [
+    "Run command help to confirm the exact option contracts for this command path.",
+    suggestions.length
+      ? `Nearest supported options: ${suggestions.join(", ")}`
+      : undefined,
+    proseCommands.length
+      ? `${optionName} is accepted by ${proseCommands.join(", ")}${proseRemainderText}. Inspect those command contracts only if you intended a different operation.`
+      : undefined,
+    candidateContext.optionScope === "declared_nowhere"
+      ? `${optionName} is not declared on any command path. Use a nearest supported option on ${commandName ?? "the attempted command"}, or inspect that command's help.`
+      : undefined,
+    retryCommand
+      ? `Replay with suggested correction: ${retryCommand}`
+      : undefined,
+  ].filter((entry): entry is string => typeof entry === "string");
+}
+
 function buildUnknownOptionGuidance(
   message: string,
   commandName: string | undefined,
@@ -1297,28 +1372,15 @@ function buildUnknownOptionGuidance(
       suggestions,
     );
   }
-  const otherCommands =
-    normalizeContextList(guidanceContext.unknownOptionOtherCommands) ?? [];
-  const candidateTotal =
-    guidanceContext.unknownOptionOtherCommandsTotal ?? otherCommands.length;
-  const proseCommands = otherCommands.slice(0, 3);
-  const proseRemainder = candidateTotal - proseCommands.length;
-  let proseRemainderText = "";
-  if (proseRemainder > 0) {
-    proseRemainderText = ` and ${String(proseRemainder)} more command path(s)`;
-  }
-  const nextSteps = [
-    "Run command help to confirm the exact option contracts for this command path.",
-    suggestions.length
-      ? `Nearest supported options: ${suggestions.join(", ")}`
-      : undefined,
-    proseCommands.length
-      ? `${optionName} is accepted by ${proseCommands.join(", ")}${proseRemainderText}. Inspect those command contracts only if you intended a different operation.`
-      : undefined,
-    retryCommand
-      ? `Replay with suggested correction: ${retryCommand}`
-      : undefined,
-  ].filter((entry): entry is string => typeof entry === "string");
+  const candidateContext =
+    resolveUnknownOptionCandidateContext(guidanceContext);
+  const nextSteps = buildUnknownOptionNextSteps(
+    optionName,
+    commandName,
+    suggestions,
+    candidateContext,
+    retryCommand,
+  );
   const examples = [
     retryCommand,
     `pm ${commandName ?? "<command>"} --help`,
@@ -1327,17 +1389,17 @@ function buildUnknownOptionGuidance(
     code: "unknown_option",
     title: `Unknown option ${optionName}`,
     happened: `Commander does not recognize option ${optionName} for this command path.`,
-    required:
-      "Use supported options only, or move option to the correct subcommand.",
+    required: UNKNOWN_OPTION_REQUIRED_BY_SCOPE[candidateContext.optionScope],
     why: "Option contracts are command-specific and intentionally validated.",
     examples,
     nextSteps,
     recovery: buildCommanderRecoveryPayload(context, {
       suggested_flags: suggestions.length > 0 ? suggestions : undefined,
-      candidate_commands: otherCommands,
-      candidate_commands_total: candidateTotal || undefined,
+      candidate_commands: candidateContext.otherCommands,
+      candidate_commands_total: candidateContext.candidateTotal || undefined,
       candidate_commands_truncated:
         guidanceContext.unknownOptionOtherCommandsTruncated,
+      option_scope: candidateContext.optionScope,
     }),
   });
 }

@@ -52,6 +52,7 @@ const PM_TOOL_READ_OUTPUT_PARAMETER_KEYS = [
   "outputBudget",
   "outputFormat",
   "outputSession",
+  "outputCursor",
   "outputRowContract",
 ] as const;
 

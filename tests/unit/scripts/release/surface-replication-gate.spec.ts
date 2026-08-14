@@ -379,6 +379,42 @@ describe("surface replication gate", () => {
     );
   }, 60_000);
 
+  it("does not activate annotation replication for unrelated shared schema lines", async () => {
+    const config = JSON.parse(
+      await readFile(
+        path.resolve("scripts/release/surface-replication-sets.json"),
+        "utf8",
+      ),
+    ) as Record<string, unknown>;
+    config.waivers = [];
+
+    const unrelated = await validateSurfaceReplication(config, {
+      repoRoot: path.resolve("."),
+      changedFiles: ["src/sdk/cli-contracts/tool-schema.ts"],
+      changedLines: {
+        "src/sdk/cli-contracts/tool-schema.ts": ['  "outputCursor",'],
+      },
+      today: "2026-08-14",
+    });
+    expect(unrelated.active_sets).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "annotation-mutation-receipts" }),
+      ]),
+    );
+
+    const relevant = await validateSurfaceReplication(config, {
+      repoRoot: path.resolve("."),
+      changedFiles: ["src/sdk/cli-contracts/tool-schema.ts"],
+      changedLines: {
+        "src/sdk/cli-contracts/tool-schema.ts": ['  "full",'],
+      },
+      today: "2026-08-14",
+    });
+    expect(relevant.violations).toContain(
+      "set:annotation-mutation-receipts:member:src/sdk/annotations.ts:unchanged",
+    );
+  }, 60_000);
+
   it("reports recurrence density, cap overlap, and CLI refusal totals", async () => {
     const root = await fixtureRoot();
     await writeFile(
