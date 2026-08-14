@@ -2,11 +2,13 @@ id: pm-rizqb6
 title: "A single transient per-test timeout fails the whole pipeline: 1,942 tests share one uniform 30s budget, no retry is configured, and the only diagnosis path is decoding a blob artifact"
 description: ""
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: ci,diagnostics,flake,reliability,testing
 created_at: "2026-08-13T09:13:18.162Z"
-updated_at: "2026-08-13T09:13:46.375Z"
+updated_at: "2026-08-14T00:52:29.128Z"
+closed_at: "2026-08-14T00:51:48.524Z"
+completed_at: "2026-08-14T00:51:48.524Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A transient test failure is retried a bounded number of times and the retry is recorded, so a single timeout cannot fail the pipeline on its own; Flake occurrences are recorded with test identity, duration and shard so recurrence is a number that can be watched rather than a memory of having seen it before; Per-test timeout budgets are derived from or checked against observed per-test cost, so a test running near its budget is reported as at-risk before it crosses it under load; The failing test name and error appear in the job summary without decoding the coverage blob artifact; A negative control proves a genuinely failing assertion still fails after retries and is never classified as a flake"
@@ -19,9 +21,33 @@ why_now: "Observed live on commit 1cc62476d, a tracker-and-CHANGELOG-only commit
 parent: pm-33cw
 risk: medium
 confidence: 90
+resolution: "CI retries each failed test once, records flaky and near-timeout evidence per shard, annotates failures, and keeps persistent failures terminal."
+expected_result: "A transient test failure receives one recorded retry with identity, duration, and shard evidence, while a genuine persistent failure still fails the job and is visible without decoding a blob artifact."
+actual_result: "Real child-Vitest controls prove transient recovery and persistent failure semantics; the reporter emits JSON and job summaries, and all focused, full-coverage, static, security, and PM-linked gates pass."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-2kkl,discovered_from,"2026-08-13T09:13:18.162Z","harness:claude-code","cli:create:dep",detected
   pm-33cw,implements,"2026-08-13T09:13:18.162Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-13T09:13:18.162Z","harness:claude-code","cli:create:dep",detected
   pm-zclzll,verifies,"2026-08-13T09:13:18.162Z","harness:claude-code","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-14T00:25:36.993Z","harness:codex","Duplicate check and live evidence: all-status search reused this canonical item; no new item was created. Auto Release run https://github.com/unbraind/pm-cli/actions/runs/31756603098 failed before tag creation with 1 timed-out test / 7,280 passed and then correctly failed the exact coverage gate because no coverage summary existed. Active scope is the Vitest execution/reporting policy and its regression tests only."
+  "2026-08-14T00:35:48.918Z","harness:codex","TDD evidence: the real Vitest child-process control now records a transient first-attempt failure as flaky and exits 0 only after retry; its paired persistent assertion retries once, exits 1, remains flaky=false, and is named in the JSON/job summary. Reporter-only coverage is exact 44/44 statements, 50/50 branches, 11/11 functions, 44/44 lines. Focused workflow/release/original-regression suite passes 49 tests; typecheck and ESLint pass."
+  "2026-08-14T00:51:47.883Z","harness:codex","Verification evidence: CI retains the 30-second per-test timeout with exactly one retry, and the custom reporter emits shard-scoped JSON plus GitHub job-summary identity, duration, timeout, retry, flaky, at-risk, and error fields. The executable transient control passes only on retry and records flaky=true/retry_count=1; the persistent assertion negative control retries once, exits 1, records flaky=false, and remains visible in JSON, summary, and logs. PM-linked acceptance passed 49/49; full repository coverage passed 493 files and 7,284 tests at exact 100/100/100/100; typecheck, ESLint, static/docstring/package/SDK/token/assurance gates, jscpd (0 clones), dependency audit (0 known vulnerabilities), and tracked-secret scan all passed. Manual exact coverage-shard invocation produced the expected reliability-1-4.json artifact and completed test-all-author in 872ms."
+files[9]{path,scope,note}:
+  .github/workflows/ci.yml,project,Shard identity and reliability artifact upload
+  CHANGELOG.md,project,Generated release note from the closed issue
+  scripts/test-reliability-reporter.mts,project,JSON and GitHub summary reliability evidence
+  tests/fixtures/vitest-reliability/persistent.test.ts,project,Persistent assertion negative control
+  tests/fixtures/vitest-reliability/transient.test.ts,project,Transient retry control
+  tests/fixtures/vitest-reliability/vitest.config.ts,project,Repository-config fixture selection
+  tests/integration/vitest-retry-policy.integration.spec.ts,project,Real retry and persistent failure controls
+  tests/unit/scripts/test-reliability-reporter.spec.ts,project,Exact reporter branch coverage
+  vitest.config.ts,project,CI retry and near-timeout policy
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/test-reliability-reporter.spec.ts tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/sdk/test-all-author.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mss8dcrg-s3zoan,test,passed,"2026-08-14T00:50:06.783Z","2026-08-14T00:50:28.444Z","2026-08-14T00:50:28.444Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Operator retry and diagnostics contract
+close_reason: "Bounded CI retry and actionable reliability diagnostics implemented and verified, while persistent failures remain fail-closed."
 body: "## The observed failure\n\nRun 31684928972, workflow CI, commit `1cc62476d` on main. That commit changes only `.agents/pm/**` and the generated `CHANGELOG.md`; no file under `src/`, `scripts/`, `docs/` or `.github/` is touched.\n\n```\nFAIL tests/unit/commands/test-all-command.spec.ts > runTestAll >\n     treats per-test pm_context_mode metadata as part of dedupe identity\nError: Test timed out in 30000ms.\nTest Files  1 failed | 122 passed (123)\n     Tests  1 failed | 1941 passed (1942)\n  Duration  86.90s (transform 16.96s, import 49.51s, tests 166.57s)\n```\n\nEvery other job on the commit passed: CodeQL, CodSpeed, Docs, Security and Script Quality, OSSF Scorecard, and coverage shards 2, 3 and 4.\n\n## Local reproduction attempt\n\n`node scripts/run-tests.mjs test -- tests/unit/commands/test-all-command.spec.ts` passes all 30 tests in the file in 24.30s, tests 21.19s. The heaviest test in the file takes 4,038ms. The test uses `withTempPmPath`, so it operates on a sandboxed tracker and is structurally independent of the tracker data the commit changed.\n\nSo the failure is a timeout under load, not a defect the commit introduced.\n\n## The configuration that turns one timeout into a red branch\n\n`vitest.config.ts` declares `testTimeout: 30_000` and `hookTimeout: 30_000`. There is no `retry` setting, so vitest's default of zero applies. The shard job has `timeout-minutes: 12` and the run itself took 86.9s, so the job was nowhere near its own limit; the per-test budget was the binding constraint.\n\nThe budget is uniform across all 1,942 tests. Most complete in hundreds of milliseconds. A handful spawn subprocesses and are an order of magnitude slower. Under CI contention the slowest of those is the one that crosses 30s, and with no retry, crossing it once is sufficient to fail the pipeline.\n\n## Why the diagnosis path makes this worse\n\nThe shard's console output ends at \"blob report written to .vitest-reports/blob-1.json\" and \"Process completed with exit code 1\". The failing test name is present in the raw log but there is no job summary carrying it, so the practical route to a diagnosis is `gh run view --log-failed` and stripping ANSI escapes, or downloading and decoding the blob artifact. That cost is paid on every red shard regardless of cause, which is precisely the pressure that makes \"rerun and see\" the rational first move.\n\n## Base rate, stated honestly\n\nAcross the last 14 CI runs on main this is the only failure; the two other non-successes were cancellations. So the recurrence rate is not established and this item should not claim the test is chronically flaky. What is established is the policy gap: there is no mechanism that would distinguish a transient timeout from a real failure if it did recur, and no record that would let anyone compute the rate. That is the thing to fix, independently of how often this particular test crosses its budget.\n\n## Boundary\n\nRaising `testTimeout` globally is not the fix. It would hide the at-risk tests rather than report them, and it lengthens the feedback loop for every genuine hang. The fix is bounded retry with the retry recorded, plus a report of tests whose observed cost approaches their budget."

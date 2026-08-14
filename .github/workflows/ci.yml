@@ -295,10 +295,13 @@ jobs:
       - name: Run coverage shard
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
+          PM_TEST_SHARD: ${{ matrix.shard }}/4
         run: >-
           node scripts/run-tests.mjs coverage-shard --
           --shard=${{ matrix.shard }}/4
           --reporter=default
+          --reporter=github-actions
+          --reporter=./scripts/test-reliability-reporter.mts
           --reporter=blob
           --outputFile.blob=.vitest-reports/blob-${{ matrix.shard }}.json
           --coverage.thresholds.lines=0
@@ -311,7 +314,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-blob-${{ matrix.shard }}
-          path: .vitest-reports/blob-${{ matrix.shard }}.json
+          path: |
+            .vitest-reports/blob-${{ matrix.shard }}.json
+            .vitest-reports/reliability-${{ matrix.shard }}-4.json
           if-no-files-found: error
 
   coverage:
