@@ -290,9 +290,11 @@ await runAssuranceAction(
   {
     workspace: {
       include_history: false,
-      providers: { quality: resolveQualityMeasurement },
+      providers: {
+        "repository-quality": resolveRepositoryQualityMeasurement,
+      },
       provider_capabilities: {
-        quality: { cost_class: "high", network: false },
+        "repository-quality": { cost_class: "high", network: false },
       },
     },
   },

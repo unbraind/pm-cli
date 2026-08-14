@@ -80,6 +80,53 @@ function registry() {
   };
 }
 
+function automationRegistry() {
+  return {
+    ...registry(),
+    automation_inventory: {
+      gate_scripts: [
+        {
+          path: "scripts/release/quality-gate.mjs",
+          disposition: "reduced_to_provider",
+          provider: "repository-quality/quality",
+          provider_timeout_ms: 15_000,
+          negative_control: {
+            test: "tests/quality.spec.ts",
+            assertion: "seeded regression",
+          },
+        },
+        {
+          path: "scripts/release/retired-gate.mjs",
+          disposition: "migrated",
+          replacement: "pm assurance run fixture-quality",
+        },
+        {
+          path: "scripts/release/typed-gate.mts",
+          disposition: "retained",
+          reason: "This fixture remains a typed executable quality boundary.",
+        },
+      ],
+      provider_checks: [
+        {
+          kind: "provider_check",
+          path: "scripts/release/quality-gate.mjs",
+          provider: "repository-quality/recovery",
+          provider_args: ["--check"],
+          negative_control: {
+            test: "tests/quality.spec.ts",
+            assertion: "seeded regression",
+          },
+        },
+      ],
+      graph_operations: GRAPH_SUBCOMMAND_VALUES.map((operation) => ({
+        operation,
+        interactive_only_reason:
+          "This fixture operation is intentionally user-invoked only.",
+      })),
+    },
+  };
+}
+
 describe("gate registry", () => {
   it("discovers every stable workflow job without reading display names", async () => {
     const root = await fixtureRoot();
@@ -133,84 +180,43 @@ describe("gate registry", () => {
       path.join(root, "tests", "quality.spec.ts"),
       "seeded regression",
     );
-    const declared = {
-      ...registry(),
-      automation_inventory: {
-        gate_scripts: [
-          {
-            path: "scripts/release/quality-gate.mjs",
-            disposition: "reduced_to_provider",
-            provider: "repository-quality/quality",
-            provider_timeout_ms: 15_000,
-            negative_control: {
-              test: "tests/quality.spec.ts",
-              assertion: "seeded regression",
-            },
-          },
-          {
-            path: "scripts/release/retired-gate.mjs",
-            disposition: "migrated",
-            replacement: "pm assurance run fixture-quality",
-          },
-          {
-            path: "scripts/release/typed-gate.mts",
-            disposition: "retained",
-            reason: "This fixture remains a typed executable quality boundary.",
-          },
-        ],
-        provider_checks: [
-          {
-            kind: "provider_check",
-            path: "scripts/release/quality-gate.mjs",
-            provider: "repository-quality/recovery",
-            provider_args: ["--check"],
-            negative_control: {
-              test: "tests/quality.spec.ts",
-              assertion: "seeded regression",
-            },
-          },
-        ],
-        graph_operations: GRAPH_SUBCOMMAND_VALUES.map((operation) => ({
-          operation,
-          interactive_only_reason:
-            "This fixture operation is intentionally user-invoked only.",
-        })),
-      },
-    };
+    const declared = automationRegistry();
     await expect(
       validateGateRegistry(declared, { repoRoot: root }),
     ).resolves.toEqual([]);
 
-    declared.automation_inventory.provider_checks[0].provider =
-      declared.automation_inventory.gate_scripts[0].provider;
+    const crossInventoryDuplicate = automationRegistry();
+    crossInventoryDuplicate.automation_inventory.provider_checks[0].provider =
+      crossInventoryDuplicate.automation_inventory.gate_scripts[0].provider;
     await expect(
-      validateGateRegistry(declared, { repoRoot: root }),
+      validateGateRegistry(crossInventoryDuplicate, { repoRoot: root }),
     ).resolves.toContain("automation_inventory:provider:duplicate");
-    declared.automation_inventory.provider_checks[0].provider =
-      "repository-quality/recovery";
 
-    const typedGate = declared.automation_inventory.gate_scripts[2];
-    declared.automation_inventory.gate_scripts[2] = {
+    const duplicateGateProvider = automationRegistry();
+    const typedGate =
+      duplicateGateProvider.automation_inventory.gate_scripts[2];
+    duplicateGateProvider.automation_inventory.gate_scripts[2] = {
       path: typedGate.path,
       disposition: "reduced_to_provider",
-      provider: declared.automation_inventory.gate_scripts[0].provider,
+      provider:
+        duplicateGateProvider.automation_inventory.gate_scripts[0].provider,
       negative_control: {
         test: "tests/quality.spec.ts",
         assertion: "seeded regression",
       },
     };
     await expect(
-      validateGateRegistry(declared, { repoRoot: root }),
+      validateGateRegistry(duplicateGateProvider, { repoRoot: root }),
     ).resolves.toContain("automation_inventory:provider:duplicate");
-    declared.automation_inventory.gate_scripts[2] = typedGate;
 
-    declared.automation_inventory.gate_scripts[2].reason = "short";
-    declared.automation_inventory.provider_checks[0].provider = "invalid";
-    declared.automation_inventory.graph_operations[0] = {
+    const invalidFields = automationRegistry();
+    invalidFields.automation_inventory.gate_scripts[2].reason = "short";
+    invalidFields.automation_inventory.provider_checks[0].provider = "invalid";
+    invalidFields.automation_inventory.graph_operations[0] = {
       operation: GRAPH_SUBCOMMAND_VALUES[0],
     } as never;
     await expect(
-      validateGateRegistry(declared, { repoRoot: root }),
+      validateGateRegistry(invalidFields, { repoRoot: root }),
     ).resolves.toEqual(
       expect.arrayContaining([
         "automation_inventory:gate_script:invalid",
@@ -219,26 +225,20 @@ describe("gate registry", () => {
       ]),
     );
 
-    declared.automation_inventory.gate_scripts[2].reason = typedGate.reason;
-    declared.automation_inventory.provider_checks[0].provider =
-      "repository-quality/recovery";
-    declared.automation_inventory.graph_operations[0] = {
-      operation: GRAPH_SUBCOMMAND_VALUES[0],
-      interactive_only_reason:
-        "This fixture operation is intentionally user-invoked only.",
-    };
-    declared.automation_inventory.gate_scripts[0].provider_timeout_ms = 0;
+    const invalidTimeout = automationRegistry();
+    invalidTimeout.automation_inventory.gate_scripts[0].provider_timeout_ms = 0;
     await expect(
-      validateGateRegistry(declared, { repoRoot: root }),
+      validateGateRegistry(invalidTimeout, { repoRoot: root }),
     ).resolves.toContain("automation_inventory:gate_script:invalid");
-    declared.automation_inventory.gate_scripts[0].provider_timeout_ms = 15_000;
 
-    declared.automation_inventory.provider_checks = {} as never;
+    const invalidProviderChecks = automationRegistry();
+    invalidProviderChecks.automation_inventory.provider_checks = {} as never;
     await expect(
-      validateGateRegistry(declared, { repoRoot: root }),
+      validateGateRegistry(invalidProviderChecks, { repoRoot: root }),
     ).resolves.toContain("automation_inventory:provider_checks:invalid");
 
-    declared.automation_inventory.provider_checks = [
+    const missingProviderCheck = automationRegistry();
+    missingProviderCheck.automation_inventory.provider_checks = [
       {
         kind: "provider_check",
         path: "scripts/missing-provider.mjs",
@@ -251,12 +251,13 @@ describe("gate registry", () => {
       },
     ];
     await expect(
-      validateGateRegistry(declared, { repoRoot: root }),
+      validateGateRegistry(missingProviderCheck, { repoRoot: root }),
     ).resolves.toContain(
       "automation_inventory:provider_check:scripts/missing-provider.mjs:missing",
     );
 
-    declared.automation_inventory.gate_scripts = [
+    const retainedMajority = automationRegistry();
+    retainedMajority.automation_inventory.gate_scripts = [
       {
         path: "scripts/release/quality-gate.mjs",
         disposition: "retained",
@@ -274,7 +275,7 @@ describe("gate registry", () => {
       },
     ];
     await expect(
-      validateGateRegistry(declared, { repoRoot: root }),
+      validateGateRegistry(retainedMajority, { repoRoot: root }),
     ).resolves.toContain("automation_inventory:migration_majority_not_met");
   });
 

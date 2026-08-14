@@ -1,13 +1,17 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { withTempDir } from "../../../helpers/temp.js";
 import { commandFor } from "../../../../scripts/release/utils.mjs";
 
 const loadModule = () =>
   import("../../../../scripts/release/repository-assurance.mjs");
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("repository assurance provider host", () => {
   it("reads only repository-scoped provider migrations", async () => {
@@ -414,32 +418,35 @@ describe("repository assurance provider host", () => {
     const module = await loadModule();
     await expect(module.main(["--help"])).resolves.toHaveProperty("usage");
     await expect(module.main([])).rejects.toThrow("requires a gate id");
-    const registryPath = path.join(
-      process.cwd(),
-      "scripts/release/gate-registry.json",
-    );
-    const pass = {
-      gate_id: "repository-context-quality",
-      verdict: "warn",
-      assertions_total: 1,
-      assertions: [],
-    };
-    await expect(
-      module.main(["repository-context-quality", "--json"], {
+    await withTempDir("pm-repository-assurance-", async (root) => {
+      const registryPath = path.join(root, "registry.json");
+      await writeFile(
         registryPath,
-        runAction: vi.fn().mockResolvedValue(pass),
-      }),
-    ).resolves.toBe(pass);
-    await expect(
-      module.main(["repository-context-quality"], {
-        registryPath,
-        runAction: vi.fn().mockResolvedValue({
-          ...pass,
-          verdict: "block",
-          assertions: [{ assertion_id: "failed" }],
+        JSON.stringify({ automation_inventory: { gate_scripts: [] } }),
+      );
+      const pass = {
+        gate_id: "repository-context-quality",
+        verdict: "warn",
+        assertions_total: 1,
+        assertions: [],
+      };
+      await expect(
+        module.main(["repository-context-quality", "--json"], {
+          registryPath,
+          runAction: vi.fn().mockResolvedValue(pass),
         }),
-      }),
-    ).rejects.toThrow("blocked");
+      ).resolves.toBe(pass);
+      await expect(
+        module.main(["repository-context-quality"], {
+          registryPath,
+          runAction: vi.fn().mockResolvedValue({
+            ...pass,
+            verdict: "block",
+            assertions: [{ assertion_id: "failed" }],
+          }),
+        }),
+      ).rejects.toThrow("blocked");
+    });
   });
 
   it("keeps imported and executable entrypoints separate", async () => {
@@ -485,12 +492,11 @@ describe("repository assurance provider host", () => {
       }),
     ).resolves.toBe(true);
     expect(stdout).toHaveBeenCalledWith(expect.stringContaining("usage"));
-    stdout.mockRestore();
 
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
-    const exit = vi.spyOn(process, "exit").mockImplementation((() => {
+    vi.spyOn(process, "exit").mockImplementation((() => {
       throw new Error("exit called");
     }) as typeof process.exit);
     await expect(
@@ -504,7 +510,5 @@ describe("repository assurance provider host", () => {
     expect(consoleError).toHaveBeenCalledWith(
       expect.stringContaining("requires a gate id"),
     );
-    exit.mockRestore();
-    consoleError.mockRestore();
   });
 });
