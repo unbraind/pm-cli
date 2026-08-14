@@ -2,7 +2,7 @@
 
 This page describes safe local tests, linked tests, coverage, and release-readiness checks.
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon), [pm-rizqb6](../.agents/pm/issues/pm-rizqb6.toon).
 
 ## Agent Quick Context
 
@@ -99,6 +99,28 @@ node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts
 ```
 
 Use focused runs while iterating, then run coverage before closure when risk or scope warrants it.
+
+## CI Retry and Timeout Diagnostics
+
+CI retains the 30-second per-test timeout and retries one failed attempt. A
+test that passes only on retry is reported as flaky rather than silently folded
+into the pass count; a persistent assertion still fails after the bounded
+retry. Local runs do not retry, so deterministic failures stay immediate while
+iterating.
+
+Vitest's GitHub reporter emits annotations and retry evidence. The repository
+reliability reporter additionally writes
+`.vitest-reports/reliability-<shard>.json` and appends a job-summary table with
+the test identity, file, duration, effective timeout, retry count, shard, and
+failure detail. Tests completing at or above 80% of their timeout are recorded
+as at-risk before load turns them into timeouts. Coverage shards upload this
+JSON beside their blob report, so recurrence can be measured without decoding
+the coverage artifact or re-reading raw logs.
+
+`PM_TEST_SHARD` supplies a stable shard identity and
+`PM_TEST_RELIABILITY_REPORT_DIR` can redirect the JSON report for an isolated
+harness. These variables affect diagnostics only; they do not change test
+selection, retry count, timeout, or verdicts.
 
 ## Coverage Governance
 

@@ -2,6 +2,10 @@ import { fileURLToPath } from "node:url";
 
 import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
+import TestReliabilityReporter, {
+  TEST_AT_RISK_RATIO,
+  TEST_TIMEOUT_MS,
+} from "./scripts/test-reliability-reporter.mts";
 
 /**
  * Strip the leading runtime shebang from repository `.mjs` and `.mts`
@@ -48,8 +52,8 @@ const coverageReporters = process.env.CI
 // vitest JUnit reporter creates the parent directory before writing, so this is
 // safe even on the non-coverage Windows/nightly subset runs that have no
 // `coverage/` directory yet.
-const testReporters: Array<"default" | "junit"> = process.env.CI
-  ? ["default", "junit"]
+const testReporters = process.env.CI
+  ? ["default", "junit", "github-actions", new TestReliabilityReporter()]
   : ["default"];
 
 // Vitest provides the first-line threshold failure and report generation. The
@@ -95,8 +99,10 @@ export default defineConfig({
       PM_MCP_PROFILE: "full",
     },
     include: ["tests/**/*.spec.ts"],
-    testTimeout: 30_000,
+    testTimeout: TEST_TIMEOUT_MS,
     hookTimeout: 30_000,
+    retry: process.env.CI ? 1 : 0,
+    slowTestThreshold: TEST_TIMEOUT_MS * TEST_AT_RISK_RATIO,
     reporters: testReporters,
     outputFile: { junit: "./coverage/junit.xml" },
     coverage: {

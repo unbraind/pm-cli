@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- A single transient per-test timeout fails the whole pipeline: 1,942 tests share one uniform 30s budget, no retry is configured, and the only diagnosis path is decoding a blob artifact ([pm-rizqb6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rizqb6.toon))
 - The degradation ladder only sees top-level arrays, so the governance reads whose bulk is nested skip every intermediate rung and return nothing at all ([pm-kyjdne](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kyjdne.toon))
 - A budget-truncated read reports that rows are missing without a cursor, a recovery, or any sign that it overrode the caller's explicit request for all of them ([pm-jt8aa2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jt8aa2.toon))
 - The canonical spelling the output contract tells agents to adopt returns every row with every field stripped, and only the one surface that validates its selectors refuses it ([pm-eugaqy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eugaqy.toon))
