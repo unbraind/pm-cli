@@ -19,6 +19,8 @@ import {
   sliceReadOutputRowCollection,
 } from "../read-output-rows.js";
 
+const MAX_READ_OUTPUT_CURSOR_LENGTH = 4096;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -72,6 +74,13 @@ export function encodeReadOutputContinuationCursor(
 export function decodeReadOutputContinuationCursor(
   raw: string,
 ): PmReadOutputCursorEnvelope {
+  if (raw.length > MAX_READ_OUTPUT_CURSOR_LENGTH) {
+    throw new PmCliError(
+      "The read-output continuation cursor is malformed or unsupported.",
+      EXIT_CODE.USAGE,
+      { code: "read_output_cursor_invalid" },
+    );
+  }
   let candidate: unknown;
   try {
     candidate = JSON.parse(Buffer.from(raw, "base64url").toString("utf8"));

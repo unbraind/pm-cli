@@ -1349,9 +1349,14 @@ describe("read output contracts", () => {
       { outputBudget: 400, outputCursor: String(objectRows.next_cursor) },
       structuredClone(objectRowsInput),
     );
-    expect(continuedObjectRows).toMatchObject({
-      graph: { nodes: expect.objectContaining({}) },
-    });
+    const firstObjectKeys = Object.keys(objectRows.graph.nodes);
+    const continuedObjectKeys = Object.keys(continuedObjectRows.graph.nodes);
+    expect(firstObjectKeys.length).toBeGreaterThan(0);
+    expect(continuedObjectKeys.length).toBeGreaterThan(0);
+    expect(continuedObjectKeys[0]).toBe(`pm-${firstObjectKeys.length}`);
+    expect(
+      continuedObjectKeys.filter((key) => firstObjectKeys.includes(key)),
+    ).toEqual([]);
 
     const mixedRows = applyReadOutputDimensions(
       "graph",
@@ -1405,7 +1410,7 @@ describe("read output contracts", () => {
       truncated: true,
       output_budget_truncation: {
         restore_with: expect.any(String),
-        continuation_available: expect.any(Boolean),
+        continuation_available: false,
         overridden_dimensions: ["amount"],
         compacted_row_paths: expect.arrayContaining([
           "checks.0.details.missing_resolution_rows",
@@ -1572,6 +1577,7 @@ describe("read output contracts", () => {
 
     for (const malformed of [
       "not-json",
+      "x".repeat(4097),
       { version: 2 },
       { version: 1, command: "create" },
       { version: 1, command: "list", path: 1 },
