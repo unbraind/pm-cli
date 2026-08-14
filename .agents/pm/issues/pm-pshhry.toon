@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags[5]: "area:search",duplicates,governance,scalability,scale
 created_at: "2026-08-13T14:27:32.403Z"
-updated_at: "2026-08-13T14:27:32.403Z"
+updated_at: "2026-08-14T05:29:18.969Z"
 author: "harness:claude-code"
+estimated_minutes: 480
 acceptance_criteria: "Candidate generation is sub-quadratic: a blocking or locality-sensitive scheme bounds the compared population so the sweep completes at 100k and at 1M items within the published latency tier; The exhaustive path remains available and is declared as such, so a small workspace keeps exact behaviour and a large one keeps a stated recall bound instead of a refusal; The recall of the sub-quadratic scheme is measured against the exhaustive result on a corpus where both can run, and the number is published; pm duplicates with no filters returns an answer on this workspace; The duplicate-check step the create protocol mandates is executable rather than advisory, and the create-time evidence records which mechanism answered"
 parent: pm-9rxu
 risk: high

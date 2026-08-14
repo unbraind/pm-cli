@@ -6,8 +6,9 @@ status: open
 priority: 2
 tags[5]: aggregation,"area:cli","area:query",governance,output-contract
 created_at: "2026-08-13T14:27:59.356Z"
-updated_at: "2026-08-13T14:27:59.356Z"
+updated_at: "2026-08-14T05:29:17.764Z"
 author: "harness:claude-code"
+estimated_minutes: 180
 acceptance_criteria: "Grouping by a set-valued field groups by element: --group-by tags returns one row per distinct tag with the count of items carrying it, and an item with k tags contributes to k rows; The tuple behaviour remains reachable under an explicit spelling if it has a use, and is documented as a distinct operation rather than as the default reading of the field name; The row-count expansion is bounded and the declared ceiling is honoured; The rule for every present and future set-valued field is declared once rather than per field; The 182 untagged closed items are measured as a named population with a disposition"
 parent: pm-33cw
 risk: medium

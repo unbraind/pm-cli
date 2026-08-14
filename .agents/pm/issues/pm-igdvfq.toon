@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-08-14T01:58:48.803Z"
-updated_at: "2026-08-14T01:58:48.803Z"
+updated_at: "2026-08-14T05:29:18.345Z"
 author: "harness:codex"
+estimated_minutes: 360
 acceptance_criteria: A cross-version fixture reproduces the two-writer loop; repair converges or refuses without rewriting an internally consistent supported epoch; diagnostics attribute version incompatibility instead of generic corruption; focused and repository-wide exact coverage remain green
 parent: pm-4jk8kx
 risk: high
