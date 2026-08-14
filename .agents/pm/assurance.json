@@ -1061,16 +1061,16 @@
       "negative_control": {
         "cases": [
           {
-            "observed": 1,
+            "observed": 0,
             "expected": "pass"
           },
           {
-            "observed": 2,
+            "observed": 1,
             "expected": "fail"
           }
         ]
       },
-      "ceiling": 1
+      "ceiling": 0
     },
     {
       "id": "validate-missing-close-reason-ceiling",
