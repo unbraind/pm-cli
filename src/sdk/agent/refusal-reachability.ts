@@ -291,7 +291,7 @@ export function verifyPmRecoveryReferences(
     ok: findings.length === 0,
     declared_reference_count: obligations.length,
     observed_reference_count: observations.length,
-    pass_fraction: obligations.length === 0 ? 1 : passed / obligations.length,
+    pass_fraction: declaredIds.size === 0 ? 1 : passed / declaredIds.size,
     coverage_by_kind: coverageByKind,
     findings,
   };

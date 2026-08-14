@@ -162,18 +162,22 @@ describe("recovery-reference reachability", () => {
 
   it("does not let one observation discharge duplicate obligation ids", () => {
     const duplicate = { ...obligations[1]!, id: obligations[0]!.id };
+    const unique = { ...obligations[1]!, id: "unique-command" };
     const report = verifyPmRecoveryReferences(
-      [obligations[0]!, duplicate],
-      [{ id: obligations[0]!.id, reachable: true, proof: "executed" }],
+      [obligations[0]!, duplicate, unique],
+      [
+        { id: obligations[0]!.id, reachable: true, proof: "executed" },
+        { id: unique.id, reachable: true, proof: "declared_command_path" },
+      ],
     );
     expect(report).toMatchObject({
       ok: false,
-      declared_reference_count: 2,
-      observed_reference_count: 1,
-      pass_fraction: 0,
+      declared_reference_count: 3,
+      observed_reference_count: 2,
+      pass_fraction: 0.5,
       coverage_by_kind: [
         { kind: "suggested_retry", declared: 1, observed: 0, passed: 0 },
-        { kind: "candidate_command", declared: 1, observed: 0, passed: 0 },
+        { kind: "candidate_command", declared: 2, observed: 1, passed: 1 },
         { kind: "example", declared: 0, observed: 0, passed: 0 },
         { kind: "next_step", declared: 0, observed: 0, passed: 0 },
       ],

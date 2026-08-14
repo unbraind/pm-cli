@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: assurance,ci,governance,validate
 created_at: "2026-08-14T05:38:19.838Z"
-updated_at: "2026-08-14T21:13:11.570Z"
+updated_at: "2026-08-14T21:59:25.432Z"
 closed_at: "2026-08-14T20:28:46.593Z"
 completed_at: "2026-08-14T20:28:46.593Z"
 author: "harness:claude-code"
@@ -23,14 +23,16 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-b1w8vr,discovered_from,"2026-08-14T05:38:19.838Z","harness:claude-code","cli:create:dep",detected
   pm-py7qv2,blocked_by,"2026-08-14T05:38:19.838Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-14T05:38:19.838Z","harness:claude-code","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-14T07:55:41.519Z","harness:codex","Tranche evidence: validation now emits declared required-metadata counters even at zero, preserving assurance predicates after successful remediation; focused validate suite passed 95/95 and exact repo coverage passed. Residual acceptance remains for a fully contextualized unresolved-field refusal naming gate/assertion/measurement/field, so this item returns open rather than being closed prematurely."
   "2026-08-14T19:13:52.575Z","harness:codex","Implementation start 2026-08-14: complete the residual acceptance by replacing raw unresolved-field errors with a typed assurance refusal carrying gate, assertion, measurement, source kind, and field; prove zero-population close-reason ceilings through the CLI/SDK action boundary."
   "2026-08-14T20:28:45.827Z","harness:codex","Evidence 2026-08-14: validation zero populations remain explicit; the public assurance action now returns a typed evaluation refusal carrying gate_id, assertion_id, measurement_id, source_kind, check, and field for unresolved sources; valid close_reason zero populations evaluate to pass. Linked tests passed 113 assertions across validate/action/runtime. Whole repository coverage passed 7,308 tests at exact 100/100/100/100."
   "2026-08-14T20:32:25.209Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1015 — typed unresolved-source refusal coordinates and valid-zero gate proof."
   "2026-08-14T20:52:17.281Z","harness:codex","Review evidence: corrected the public release-note title through the canonical PM record; nested derived-source failures now preserve the innermost measurement owner rather than attributing the source to the outer derived measurement."
   "2026-08-14T21:13:11.570Z","harness:codex","Review verification: derived external-source regression proves the typed refusal retains measurement_id=external-score rather than the outer derived measurement; whole-repository exact coverage remains 100/100/100/100."
-files[7]{path,scope,note}:
+  "2026-08-14T21:59:25.432Z","harness:codex","Review evidence for PR #1015 exact-head amendment: source-resolution context is a named exported SDK type; ES2022 Error.cause now preserves the original source failure through both enrichment and gate refusal without changing public constructor parameters; gate refusals use the assertion-owned measurement id and tests prove the cause chain. The SDK surface gate classified the inline-object-to-named-interface spelling as textual, accepted the explicit structurally-compatible rationale, and then verified zero drift. CHANGELOG.md is now linked through pm and regeneration with pm-changelog 2026.8.12 was unchanged. Focused tests and full exact 100/100/100/100 coverage passed."
+files[8]{path,scope,note}:
+  sdk/public-surface.json,project,Additive named source-resolution context export with structurally compatible constructor contract
   src/core/shared/errors.ts,project,Typed assurance refusal location fields
   src/sdk/governance/assurance-mutation-error.ts,project,Typed source-resolution and evaluation refusals
   src/sdk/governance/assurance-runtime.ts,project,Zero-safe field resolution with source identity
@@ -38,13 +40,15 @@ files[7]{path,scope,note}:
   src/sdk/governance/validate.ts,project,stable zero-valued metadata predicates
   tests/unit/commands/validate-command.spec.ts,project,zero-count and cache portability regressions
   tests/unit/sdk/assurance-action.spec.ts,project,Missing-field and valid-zero executable coverage
-tests[2]{command,scope,timeout_seconds}:
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/assurance-action.spec.ts tests/unit/sdk/assurance-runtime.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts,project,240
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mssnhcfk-1u2q7z,test,passed,"2026-08-14T07:53:11.286Z","2026-08-14T07:53:28.880Z","2026-08-14T07:53:28.880Z",1,0,0
   test-local-mste6unk-64kd5p,test,passed,"2026-08-14T20:20:37.408Z","2026-08-14T20:21:08.912Z","2026-08-14T20:21:08.912Z",2,0,0
-docs[2]{path,scope,note}:
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated release note for the zero-valued assurance and actionable source-failure capability
   docs/ASSURANCE.md,project,Typed refusal coordinates and zero-value semantics
   docs/READ_OUTPUT_CONTRACTS.md,project,zero predicate semantics
 close_reason: Resolved the self-defeating zero-population assurance failure with stable zero-valued validation counts and fully contextualized typed refusal coordinates; valid zero gate and missing-field regressions pass through the public SDK action.

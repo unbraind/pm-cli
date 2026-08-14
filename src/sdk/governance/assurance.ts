@@ -28,6 +28,7 @@ import {
   AssuranceEvaluationRefusalError,
   AssuranceMutationRefusalError,
   AssuranceSourceResolutionError,
+  type AssuranceSourceResolutionContext,
 } from "./assurance-mutation-error.js";
 
 /** Current serialized assurance registry format. */
@@ -1427,12 +1428,18 @@ function evaluateMeasurementCached(
       error instanceof AssuranceSourceResolutionError &&
       error.measurement_id === undefined
     ) {
-      throw new AssuranceSourceResolutionError(error.message, {
+      const sourceContext: AssuranceSourceResolutionContext = {
         measurement_id: definition.id,
         source_kind: error.source_kind,
         field: error.field,
         ...(error.check ? { check: error.check } : {}),
-      });
+      };
+      const sourceError = new AssuranceSourceResolutionError(
+        error.message,
+        sourceContext,
+      );
+      sourceError.cause = error;
+      throw sourceError;
     }
     throw error;
   });
@@ -1561,17 +1568,19 @@ async function evaluateGateMeasurement(
   } catch (error: unknown) {
     if (error instanceof AssuranceSourceResolutionError) {
       const checkLocation = error.check ? ` check ${error.check}` : "";
-      throw new AssuranceEvaluationRefusalError(
-        `assurance gate ${gateId} assertion ${assertionId} measurement ${error.measurement_id!} source ${error.source_kind}${checkLocation} field ${error.field} could not resolve: ${error.message}`,
+      const refusal = new AssuranceEvaluationRefusalError(
+        `assurance gate ${gateId} assertion ${assertionId} measurement ${definition.id} source ${error.source_kind}${checkLocation} field ${error.field} could not resolve: ${error.message}`,
         {
           gate_id: gateId,
           assertion_id: assertionId,
-          measurement_id: error.measurement_id!,
+          measurement_id: definition.id,
           source_kind: error.source_kind,
           field: error.field,
           ...(error.check ? { check: error.check } : {}),
         },
       );
+      refusal.cause = error;
+      throw refusal;
     }
     throw error;
   }

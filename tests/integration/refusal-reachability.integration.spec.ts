@@ -216,24 +216,34 @@ describe("real-entrypoint refusal reachability", () => {
           };
         },
       );
+      const declaredByKind = (kind: PmRecoveryReferenceObligation["kind"]) =>
+        obligations.filter((obligation) => obligation.kind === kind).length;
       const report = verifyPmRecoveryReferences(obligations, observations);
       expect(report).toMatchObject({
         ok: true,
         pass_fraction: 1,
-        coverage_by_kind: [
-          { kind: "suggested_retry", declared: 1, passed: 1 },
-          { kind: "candidate_command", declared: 6, passed: 6 },
-          { kind: "example", declared: 2, passed: 2 },
-          { kind: "next_step", declared: 1, passed: 1 },
-        ],
+        coverage_by_kind: (
+          [
+            "suggested_retry",
+            "candidate_command",
+            "example",
+            "next_step",
+          ] as const
+        ).map((kind) => ({
+          kind,
+          declared: declaredByKind(kind),
+          passed: declaredByKind(kind),
+        })),
       });
+      expect(declaredByKind("candidate_command")).toBeGreaterThan(0);
+      expect(declaredByKind("example")).toBeGreaterThan(0);
 
       const broken = observations.map((observation, index) =>
         index === 0 ? { ...observation, reachable: false } : observation,
       );
       expect(verifyPmRecoveryReferences(obligations, broken)).toMatchObject({
         ok: false,
-        pass_fraction: 0.9,
+        pass_fraction: (obligations.length - 1) / obligations.length,
         findings: [expect.objectContaining({ kind: "unreachable_reference" })],
       });
     });

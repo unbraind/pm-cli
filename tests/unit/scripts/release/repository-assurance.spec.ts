@@ -10,7 +10,7 @@ const loadModule = () =>
   import("../../../../scripts/release/repository-assurance.mjs");
 
 describe("repository assurance provider host", () => {
-  it("reads only repository provider migrations", async () => {
+  it("reads only repository-scoped provider migrations", async () => {
     await withTempDir("pm-repository-assurance-", async (root) => {
       const registryPath = path.join(root, "registry.json");
       await writeFile(
@@ -49,7 +49,12 @@ describe("repository assurance provider host", () => {
           ],
         ]),
       );
+    });
+  });
 
+  it("reads provider-check entries", async () => {
+    await withTempDir("pm-repository-assurance-", async (root) => {
+      const registryPath = path.join(root, "registry.json");
       await writeFile(
         registryPath,
         JSON.stringify({
@@ -76,7 +81,12 @@ describe("repository assurance provider host", () => {
           ],
         ]),
       );
+    });
+  });
 
+  it("rejects migrated entries without a provider", async () => {
+    await withTempDir("pm-repository-assurance-", async (root) => {
+      const registryPath = path.join(root, "registry.json");
       await writeFile(
         registryPath,
         JSON.stringify({
@@ -97,7 +107,12 @@ describe("repository assurance provider host", () => {
       ).rejects.toThrow(
         "scripts/release/missing-provider.mjs has no string provider",
       );
+    });
+  });
 
+  it("rejects duplicate repository providers", async () => {
+    await withTempDir("pm-repository-assurance-", async (root) => {
+      const registryPath = path.join(root, "registry.json");
       await writeFile(
         registryPath,
         JSON.stringify({
@@ -200,6 +215,37 @@ describe("repository assurance provider host", () => {
     expect(execute.mock.calls[0][2]).toMatchObject({ timeout: 12_345 });
     expect(execute.mock.calls[1][2]).toMatchObject({ timeout: 12_345 });
     expect(execute.mock.calls[2][2]).toMatchObject({ timeout: 300_000 });
+  });
+
+  it("rejects malformed adapter timeouts before process execution", async () => {
+    const module = await loadModule();
+    for (const timeout of [0, -1, 1.5, "1000"]) {
+      const execute = vi.fn();
+      await expect(
+        module.resolveRepositoryQualityMeasurement(
+          {
+            provider: module.REPOSITORY_QUALITY_PROVIDER,
+            key: "invalid-timeout",
+          },
+          {
+            entries: new Map([
+              [
+                "invalid-timeout",
+                {
+                  path: "scripts/release/example-gate.mjs",
+                  provider_negative_args: ["--negative-control"],
+                  provider_timeout_ms: timeout,
+                },
+              ],
+            ]),
+            execute,
+          },
+        ),
+      ).rejects.toThrow(
+        `invalid-timeout has invalid provider_timeout_ms ${String(timeout)}`,
+      );
+      expect(execute).not.toHaveBeenCalled();
+    }
   });
 
   it("executes default repository inventory and preserves empty failure detail", async () => {

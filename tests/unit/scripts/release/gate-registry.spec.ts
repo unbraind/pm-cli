@@ -211,10 +211,19 @@ describe("gate registry", () => {
       ]),
     );
 
+    declared.automation_inventory.gate_scripts[2].reason = typedGate.reason;
+    declared.automation_inventory.provider_checks[0].provider =
+      "repository-quality/recovery";
+    declared.automation_inventory.graph_operations[0] = {
+      operation: GRAPH_SUBCOMMAND_VALUES[0],
+      interactive_only_reason:
+        "This fixture operation is intentionally user-invoked only.",
+    };
     declared.automation_inventory.gate_scripts[0].provider_timeout_ms = 0;
     await expect(
       validateGateRegistry(declared, { repoRoot: root }),
     ).resolves.toContain("automation_inventory:gate_script:invalid");
+    declared.automation_inventory.gate_scripts[0].provider_timeout_ms = 15_000;
 
     declared.automation_inventory.provider_checks = {} as never;
     await expect(

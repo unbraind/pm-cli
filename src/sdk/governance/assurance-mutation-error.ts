@@ -23,6 +23,18 @@ export interface AssuranceEvaluationRefusalContext {
   check?: string;
 }
 
+/** Machine-readable location of a failed measurement source resolution. */
+export interface AssuranceSourceResolutionContext {
+  /** Measurement that owns the failed source, once evaluation identifies it. */
+  measurement_id?: string;
+  /** Measurement source discriminant. */
+  source_kind: string;
+  /** Field selected from the source result. */
+  field: string;
+  /** Optional validate or health check selector. */
+  check?: string;
+}
+
 /** Expected declaration-validation or mutation-policy refusal. */
 export class AssuranceMutationRefusalError extends TypeError {
   /** Create one typed refusal while retaining TypeError compatibility for SDK callers. */
@@ -60,15 +72,7 @@ export class AssuranceSourceResolutionError extends TypeError {
   public readonly check?: string;
 
   /** Create one source-local refusal before gate context is attached. */
-  constructor(
-    message: string,
-    context: {
-      measurement_id?: string;
-      source_kind: string;
-      field: string;
-      check?: string;
-    },
-  ) {
+  constructor(message: string, context: AssuranceSourceResolutionContext) {
     super(message);
     this.name = "AssuranceSourceResolutionError";
     this.measurement_id = context.measurement_id;

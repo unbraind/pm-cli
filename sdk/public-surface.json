@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1604,
+    "covered_symbols": 1605,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1605
+    "required_symbols": 1606
   },
   "breaking_acknowledgements": [
     {
@@ -588,6 +588,14 @@
       ],
       "package_version": "2026.8.14",
       "reason": "Expose duplicate-obligation refusal and innermost source-owner metadata so recursive assurance cannot overstate coverage or misattribute failures"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AssuranceSourceResolutionError",
+        "signature ./sdk/governance:AssuranceSourceResolutionError"
+      ],
+      "package_version": "2026.8.14",
+      "reason": "AssuranceSourceResolutionContext names the existing structurally identical constructor object contract without changing runtime behavior, parameter order, or assignability"
     }
   ],
   "entrypoints": {
@@ -1808,9 +1816,15 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceSourceResolutionContext",
+          "signature": "export interface AssuranceSourceResolutionContext { measurement_id?: string; source_kind: string; field: string; check?: string; }"
+        },
+        {
+          "classification": "supported",
           "kind": "class",
           "name": "AssuranceSourceResolutionError",
-          "signature": "export declare class AssuranceSourceResolutionError extends TypeError { readonly measurement_id?: string; readonly source_kind: string; readonly field: string; readonly check?: string; constructor(message: string, context: { measurement_id?: string; source_kind: string; field: string; check?: string; }); }"
+          "signature": "export declare class AssuranceSourceResolutionError extends TypeError { readonly measurement_id?: string; readonly source_kind: string; readonly field: string; readonly check?: string; constructor(message: string, context: AssuranceSourceResolutionContext); }"
         },
         {
           "classification": "supported",
@@ -19742,9 +19756,15 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "AssuranceSourceResolutionContext",
+          "signature": "export interface AssuranceSourceResolutionContext { measurement_id?: string; source_kind: string; field: string; check?: string; }"
+        },
+        {
+          "classification": "supported",
           "kind": "class",
           "name": "AssuranceSourceResolutionError",
-          "signature": "export declare class AssuranceSourceResolutionError extends TypeError { readonly measurement_id?: string; readonly source_kind: string; readonly field: string; readonly check?: string; constructor(message: string, context: { measurement_id?: string; source_kind: string; field: string; check?: string; }); }"
+          "signature": "export declare class AssuranceSourceResolutionError extends TypeError { readonly measurement_id?: string; readonly source_kind: string; readonly field: string; readonly check?: string; constructor(message: string, context: AssuranceSourceResolutionContext); }"
         },
         {
           "classification": "supported",

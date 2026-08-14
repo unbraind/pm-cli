@@ -1218,22 +1218,28 @@ describe("assurance SDK", () => {
       assertions: [externalAssertion],
       gates: [externalGate],
     };
+    const sourceFailure = new AssuranceSourceResolutionError(
+      "missing graph field",
+      {
+        source_kind: "graph",
+        field: "missing",
+      },
+    );
     await expect(
       evaluateAssuranceGate(
         externalGate.id,
         externalDocument,
         {
           ...evaluationContext(),
-          external: async () => {
-            throw new AssuranceSourceResolutionError("missing graph field", {
-              source_kind: "graph",
-              field: "missing",
-            });
-          },
+          external: async () => Promise.reject(sourceFailure),
         },
         { trigger: "ci" },
       ),
     ).rejects.toMatchObject({
+      cause: {
+        cause: sourceFailure,
+        measurement_id: "external-score",
+      },
       context: {
         measurement_id: "external-score",
         source_kind: "graph",
@@ -1271,7 +1277,7 @@ describe("assurance SDK", () => {
       ),
     ).rejects.toMatchObject({
       context: {
-        measurement_id: externalMeasurement.id,
+        measurement_id: derivedMeasurement.id,
         source_kind: "graph",
         field: "missing",
       },
