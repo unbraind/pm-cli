@@ -27,6 +27,7 @@ import { MAX_ASSURANCE_VERDICT_LIMIT } from "./assurance-limits.js";
 import {
   AssuranceEvaluationRefusalError,
   AssuranceMutationRefusalError,
+  AssuranceSourceResolutionError,
 } from "./assurance-mutation-error.js";
 
 /** Current serialized assurance registry format. */
@@ -1535,6 +1536,34 @@ function enforceGateProviderPolicy(
   }
 }
 
+async function evaluateGateMeasurement(
+  gateId: string,
+  assertionId: string,
+  definition: AssuranceMeasurementDefinition,
+  context: AssuranceEvaluationContext,
+  definitions: AssuranceMeasurementDefinition[],
+): Promise<AssuranceMeasurementResult> {
+  try {
+    return await evaluateMeasurement(definition, context, definitions);
+  } catch (error: unknown) {
+    if (error instanceof AssuranceSourceResolutionError) {
+      const checkLocation = error.check ? ` check ${error.check}` : "";
+      throw new AssuranceEvaluationRefusalError(
+        `assurance gate ${gateId} assertion ${assertionId} measurement ${definition.id} source ${error.source_kind}${checkLocation} field ${error.field} could not resolve: ${error.message}`,
+        {
+          gate_id: gateId,
+          assertion_id: assertionId,
+          measurement_id: definition.id,
+          source_kind: error.source_kind,
+          field: error.field,
+          ...(error.check ? { check: error.check } : {}),
+        },
+      );
+    }
+    throw error;
+  }
+}
+
 /** Evaluate a named gate into one presentation-independent verdict document. */
 export async function evaluateAssuranceGate(
   gateId: string,
@@ -1583,7 +1612,9 @@ export async function evaluateAssuranceGate(
         const scopeDefinition = document.measurements.find(
           (entry) => entry.id === scopeMeasurementId,
         )!;
-        const scope = await evaluateMeasurement(
+        const scope = await evaluateGateMeasurement(
+          gateDefinition.id,
+          assertionDefinition.id,
           scopeDefinition,
           context,
           document.measurements,
@@ -1604,7 +1635,9 @@ export async function evaluateAssuranceGate(
         );
       return evaluateAssuranceAssertion(
         assertionDefinition,
-        await evaluateMeasurement(
+        await evaluateGateMeasurement(
+          gateDefinition.id,
+          assertionDefinition.id,
           measurementDefinition,
           scopedContext,
           document.measurements,

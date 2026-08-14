@@ -604,6 +604,96 @@
         "field": "profile.finding_subjects_by_code.legacy_ordering_storage_contradiction"
       },
       "max_cost": 100000
+    },
+    {
+      "id": "repository-absence-tolerance-pass",
+      "description": "Repository provider adapter absence-tolerance pass receipt.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "absence-tolerance"
+      },
+      "max_cost": 1
+    },
+    {
+      "id": "repository-agent-task-token-pass",
+      "description": "Repository provider adapter agent-task-token pass receipt.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "agent-task-token"
+      },
+      "max_cost": 1
+    },
+    {
+      "id": "repository-context-eval-pass",
+      "description": "Repository provider adapter context-eval pass receipt.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "context-eval"
+      },
+      "max_cost": 1
+    },
+    {
+      "id": "repository-context-intent-calibration-pass",
+      "description": "Repository provider adapter context-intent-calibration pass receipt.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "context-intent-calibration"
+      },
+      "max_cost": 1
+    },
+    {
+      "id": "repository-docs-skills-pass",
+      "description": "Repository provider adapter docs-skills pass receipt.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "docs-skills"
+      },
+      "max_cost": 1
+    },
+    {
+      "id": "repository-retrieval-eval-pass",
+      "description": "Repository provider adapter retrieval-eval pass receipt.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "retrieval-eval"
+      },
+      "max_cost": 1
+    },
+    {
+      "id": "repository-static-quality-pass",
+      "description": "Repository provider adapter static-quality pass receipt.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "static-quality"
+      },
+      "max_cost": 1
+    },
+    {
+      "id": "repository-token-budget-pass",
+      "description": "Repository provider adapter token-budget pass receipt.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "token-budget"
+      },
+      "max_cost": 1
+    },
+    {
+      "id": "repository-recovery-reference-pass",
+      "description": "Executable cross-kind recovery-reference corpus pass receipt.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "recovery-reference"
+      },
+      "max_cost": 1
     }
   ],
   "assertions": [
@@ -1602,6 +1692,213 @@
           }
         ]
       }
+    },
+    {
+      "id": "repository-absence-tolerance-required",
+      "measurement_id": "repository-absence-tolerance-pass",
+      "owner_item_id": "pm-4ok4ex",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "repository-agent-task-token-required",
+      "measurement_id": "repository-agent-task-token-pass",
+      "owner_item_id": "pm-4ok4ex",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "repository-context-eval-required",
+      "measurement_id": "repository-context-eval-pass",
+      "owner_item_id": "pm-4ok4ex",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "repository-context-intent-calibration-required",
+      "measurement_id": "repository-context-intent-calibration-pass",
+      "owner_item_id": "pm-4ok4ex",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "repository-docs-skills-required",
+      "measurement_id": "repository-docs-skills-pass",
+      "owner_item_id": "pm-4ok4ex",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "repository-retrieval-eval-required",
+      "measurement_id": "repository-retrieval-eval-pass",
+      "owner_item_id": "pm-4ok4ex",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "repository-static-quality-required",
+      "measurement_id": "repository-static-quality-pass",
+      "owner_item_id": "pm-4ok4ex",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "repository-token-budget-required",
+      "measurement_id": "repository-token-budget-pass",
+      "owner_item_id": "pm-4ok4ex",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "repository-recovery-reference-required",
+      "measurement_id": "repository-recovery-reference-pass",
+      "owner_item_id": "pm-h8tpeh",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
     }
   ],
   "gates": [
@@ -1682,6 +1979,65 @@
         "ci",
         "pre-release"
       ]
+    },
+    {
+      "id": "repository-static-quality",
+      "assertion_ids": [
+        "repository-static-quality-required",
+        "repository-absence-tolerance-required",
+        "repository-token-budget-required",
+        "repository-context-intent-calibration-required",
+        "repository-docs-skills-required"
+      ],
+      "triggers": [
+        "ci",
+        "pre-release"
+      ],
+      "description": "SDK-native composition of deterministic repository static-quality providers.",
+      "provider_policy": {
+        "allowed_providers": [
+          "repository-quality"
+        ],
+        "triggers": {
+          "ci": {
+            "max_cost_class": "high",
+            "allow_network": false
+          },
+          "pre-release": {
+            "max_cost_class": "high",
+            "allow_network": false
+          }
+        }
+      }
+    },
+    {
+      "id": "repository-context-quality",
+      "assertion_ids": [
+        "repository-context-eval-required",
+        "repository-retrieval-eval-required",
+        "repository-agent-task-token-required",
+        "repository-recovery-reference-required"
+      ],
+      "triggers": [
+        "ci",
+        "pre-release"
+      ],
+      "description": "SDK-native composition of deterministic repository context and recovery-reference providers.",
+      "provider_policy": {
+        "allowed_providers": [
+          "repository-quality"
+        ],
+        "triggers": {
+          "ci": {
+            "max_cost_class": "high",
+            "allow_network": false
+          },
+          "pre-release": {
+            "max_cost_class": "high",
+            "allow_network": false
+          }
+        }
+      }
     }
   ]
 }

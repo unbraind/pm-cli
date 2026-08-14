@@ -1,6 +1,6 @@
 # Project Assurance Primitives
 
-Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-uhv1m5](../.agents/pm/features/pm-uhv1m5.toon), [pm-m7bb7r](../.agents/pm/features/pm-m7bb7r.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-88mo8m](../.agents/pm/issues/pm-88mo8m.toon), [pm-atnfh4](../.agents/pm/issues/pm-atnfh4.toon), [pm-xmmafu](../.agents/pm/issues/pm-xmmafu.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon)
+Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-uhv1m5](../.agents/pm/features/pm-uhv1m5.toon), [pm-m7bb7r](../.agents/pm/features/pm-m7bb7r.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-88mo8m](../.agents/pm/issues/pm-88mo8m.toon), [pm-atnfh4](../.agents/pm/issues/pm-atnfh4.toon), [pm-xmmafu](../.agents/pm/issues/pm-xmmafu.toon), [pm-4ok4ex](../.agents/pm/tasks/pm-4ok4ex.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon)
 
 ## Agent Quick Context
 
@@ -273,10 +273,41 @@ await pm.assurance({
 
 For direct host composition, use `evaluateMeasurement`, `evaluateAssuranceGate`, `createAssuranceWorkspaceContext`, the preset/derivation helpers, and the audited declaration/verdict helpers exported from `@unbrained/pm-cli/sdk` and its focused `@unbrained/pm-cli/sdk/governance` entrypoint. Active extension registrations are discovered automatically. Embedding hosts may additionally pass stable resolver ids and matching `provider_capabilities` to `createAssuranceWorkspaceContext`; an absent resolver or capability fails loudly. The core evaluator bounds concurrent assertions and expression operands, and workspace history loading uses bounded concurrency; item-only callers can explicitly skip history and Git identity resolution.
 
+Hosts that want the normal action transport and its audited registry lookup can
+pass the same adapters as the third `runAssuranceAction` argument. The request
+and project path remain transport data; resolver capabilities remain explicit
+runtime authority:
+
+```ts
+await runAssuranceAction(
+  { action: "run", id: "repository-quality", trigger: "ci", dry_run: true },
+  { path: ".agents/pm" },
+  {
+    workspace: {
+      include_history: false,
+      providers: { quality: resolveQualityMeasurement },
+      provider_capabilities: {
+        quality: { cost_class: "high", network: false },
+      },
+    },
+  },
+);
+```
+
+This is the migration boundary for repository automation: scripts may remain
+focused process adapters, while assertion composition, provider policy,
+negative controls, lifecycle triggers, and verdicts move into ordinary
+assurance declarations. `scripts/release/gate-registry.json` records every
+gate script as migrated, provider-backed, or retained and fails unless the
+migrated/provider-backed population is the majority.
+
 `AssuranceMutationRefusalError` and `AssuranceEvaluationRefusalError` are
 exported from both `@unbrained/pm-cli/sdk` and
 `@unbrained/pm-cli/sdk/governance`, so hosts can classify expected declaration
-or evaluation refusals without parsing messages.
+or evaluation refusals without parsing messages. Source-resolution refusals
+also carry the gate, assertion, measurement, source kind, field, and optional
+health/validate check, so a zero value remains distinct from an absent or
+mistyped field.
 
 Generic SDK and MCP dispatch use `action: "assurance"` with `subcommand` set to `list`, `show`, `put`, `remove`, `run`, `verdicts`, `presets`, `apply`, `derive`, or `promote`. Discover the current machine contract instead of copying parameter lists:
 

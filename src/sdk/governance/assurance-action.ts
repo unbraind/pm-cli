@@ -42,7 +42,10 @@ import {
   normalizeAssuranceEvaluation,
   normalizeAssuranceMutation,
 } from "./assurance-mutation-error.js";
-import { createAssuranceWorkspaceContext } from "./assurance-runtime.js";
+import {
+  createAssuranceWorkspaceContext,
+  type CreateAssuranceWorkspaceContextOptions,
+} from "./assurance-runtime.js";
 import { resolvePmRoot } from "../runtime-primitives.js";
 import { parseRuntimeInteger, readRuntimeString } from "../runtime-input.js";
 
@@ -106,6 +109,15 @@ export interface AssuranceActionInput {
   apply?: boolean;
   /** Explicit next assertion enforcement level. */
   enforcement?: string;
+}
+
+/** Embedding-host capabilities used only while evaluating assurance actions. */
+export interface AssuranceActionRuntimeOptions {
+  /** Workspace adapters and provider capabilities supplied by an SDK host. */
+  workspace?: Omit<
+    CreateAssuranceWorkspaceContextOptions,
+    "tree_id" | "trigger"
+  >;
 }
 
 /** Result union returned by transport-neutral assurance execution. */
@@ -379,6 +391,7 @@ async function runAdoptionAction(
 async function runGateAction(
   input: AssuranceActionInput,
   pmRoot: string,
+  runtime: AssuranceActionRuntimeOptions,
 ): Promise<AssuranceGateVerdict> {
   if (!input.id) {
     throw new PmCliError("assurance run requires a gate id", EXIT_CODE.USAGE);
@@ -399,6 +412,7 @@ async function runGateAction(
   const [document, workspaceContext] = await Promise.all([
     readDocument(pmRoot),
     createAssuranceWorkspaceContext(pmRoot, {
+      ...runtime.workspace,
       tree_id: input.tree,
       trigger,
     }),
@@ -422,6 +436,7 @@ async function runGateAction(
 export async function runAssuranceAction(
   input: AssuranceActionInput,
   global: Pick<GlobalOptions, "path"> = {},
+  runtime: AssuranceActionRuntimeOptions = {},
 ): Promise<AssuranceActionResult> {
   const action = parseAction(input.action);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
@@ -437,7 +452,7 @@ export async function runAssuranceAction(
     return runVerdictsAction(input, pmRoot);
   }
   if (action === "run") {
-    return runGateAction(input, pmRoot);
+    return runGateAction(input, pmRoot, runtime);
   }
   const kind = parseKind(input.kind);
   if (action === "list") return listAssuranceDeclarations(pmRoot, kind);

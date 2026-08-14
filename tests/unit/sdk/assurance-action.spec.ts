@@ -368,6 +368,259 @@ describe("assurance action transport", () => {
     });
   });
 
+  it("runs host-provided measurements through the public action transport", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "measurement",
+          id: "repository-quality",
+          definition: {
+            id: "repository-quality",
+            source: {
+              kind: "provider",
+              provider: "quality-host",
+              key: "static",
+            },
+          },
+        },
+        global,
+      );
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "assertion",
+          id: "repository-quality-required",
+          definition: {
+            ...assertion,
+            id: "repository-quality-required",
+            measurement_id: "repository-quality",
+            equals: 1,
+            floor: undefined,
+            negative_control: {
+              cases: [
+                { observed: 1, expected: "pass" },
+                { observed: 0, expected: "fail" },
+              ],
+            },
+          },
+        },
+        global,
+      );
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "gate",
+          id: "repository-quality-gate",
+          definition: {
+            id: "repository-quality-gate",
+            assertion_ids: ["repository-quality-required"],
+            triggers: ["ci"],
+            provider_policy: {
+              allowed_providers: ["quality-host"],
+              triggers: {
+                ci: { max_cost_class: "high", allow_network: false },
+              },
+            },
+          },
+        },
+        global,
+      );
+      const provider = vi.fn().mockResolvedValue({
+        value: 1,
+        population_size: 1,
+        cost: 1,
+        contributors: [],
+      });
+
+      await expect(
+        runAssuranceAction(
+          {
+            action: "run",
+            id: "repository-quality-gate",
+            trigger: "ci",
+            dry_run: true,
+          },
+          global,
+          {
+            workspace: {
+              include_history: false,
+              providers: { "quality-host": provider },
+              provider_capabilities: {
+                "quality-host": { cost_class: "high", network: false },
+              },
+            },
+          },
+        ),
+      ).resolves.toMatchObject({ verdict: "pass" });
+      expect(provider).toHaveBeenCalledWith({
+        kind: "provider",
+        provider: "quality-host",
+        key: "static",
+      });
+    });
+  });
+
+  it("names the complete gate location when a declared source field cannot resolve", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "measurement",
+          id: "missing-metadata-count",
+          definition: {
+            id: "missing-metadata-count",
+            source: {
+              kind: "validate",
+              check: "metadata",
+              field: "counts.not_declared",
+            },
+          },
+        },
+        global,
+      );
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "assertion",
+          id: "missing-metadata-count-ceiling",
+          definition: {
+            id: "missing-metadata-count-ceiling",
+            measurement_id: "missing-metadata-count",
+            owner_item_id: "pm-owner",
+            scope: { kind: "all" },
+            ceiling: 0,
+            enforcement: "block",
+            negative_control: {
+              cases: [
+                { observed: 0, expected: "pass" },
+                { observed: 1, expected: "fail" },
+              ],
+            },
+          },
+        },
+        global,
+      );
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "gate",
+          id: "metadata-completeness",
+          definition: {
+            id: "metadata-completeness",
+            assertion_ids: ["missing-metadata-count-ceiling"],
+            triggers: ["ci"],
+          },
+        },
+        global,
+      );
+
+      await expect(
+        runAssuranceAction(
+          {
+            action: "run",
+            id: "metadata-completeness",
+            trigger: "ci",
+            dry_run: true,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          code: "invalid_argument_value",
+          reason: "assurance_evaluation_refused",
+          gate_id: "metadata-completeness",
+          assertion_id: "missing-metadata-count-ceiling",
+          measurement_id: "missing-metadata-count",
+          source_kind: "validate",
+          check: "metadata",
+          field: "counts.not_declared",
+        },
+      });
+    });
+  });
+
+  it("keeps a zero close-reason population measurable through a blocking gate", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "measurement",
+          id: "missing-close-reasons",
+          definition: {
+            id: "missing-close-reasons",
+            source: {
+              kind: "validate",
+              check: "metadata",
+              field: "counts.closed_missing_close_reason",
+            },
+          },
+        },
+        global,
+      );
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "assertion",
+          id: "missing-close-reasons-ceiling",
+          definition: {
+            id: "missing-close-reasons-ceiling",
+            measurement_id: "missing-close-reasons",
+            owner_item_id: "pm-owner",
+            scope: { kind: "all" },
+            ceiling: 0,
+            enforcement: "block",
+            negative_control: {
+              cases: [
+                { observed: 0, expected: "pass" },
+                { observed: 1, expected: "fail" },
+              ],
+            },
+          },
+        },
+        global,
+      );
+      await runAssuranceAction(
+        {
+          action: "put",
+          kind: "gate",
+          id: "close-reason-completeness",
+          definition: {
+            id: "close-reason-completeness",
+            assertion_ids: ["missing-close-reasons-ceiling"],
+            triggers: ["ci"],
+          },
+        },
+        global,
+      );
+
+      await expect(
+        runAssuranceAction(
+          {
+            action: "run",
+            id: "close-reason-completeness",
+            trigger: "ci",
+            dry_run: true,
+          },
+          global,
+        ),
+      ).resolves.toMatchObject({
+        verdict: "pass",
+        assertions: [
+          expect.objectContaining({
+            assertion_id: "missing-close-reasons-ceiling",
+            observed: 0,
+          }),
+        ],
+      });
+    });
+  });
+
   it("keeps CRUD and generic dispatch projections aligned", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const global = { path: pmPath };

@@ -9,23 +9,40 @@
       },
       {
         "path": "scripts/release/absence-tolerance-gate.mjs",
-        "disposition": "retained",
-        "reason": "Exercises package absence and degraded-tool behavior across process boundaries."
+        "disposition": "reduced_to_provider",
+        "provider": "repository-quality/absence-tolerance",
+        "negative_control": {
+          "test": "tests/unit/scripts/release/absence-tolerance-gate.spec.ts",
+          "assertion": "fails upward on a regression"
+        }
       },
       {
         "path": "scripts/release/agent-task-token-gate.mjs",
-        "disposition": "retained",
-        "reason": "Computes source-corpus token budgets that are not tracker-native measurements."
+        "disposition": "reduced_to_provider",
+        "provider": "repository-quality/agent-task-token",
+        "provider_negative_args": ["--negative-control"],
+        "negative_control": {
+          "test": "tests/unit/scripts/release/agent-task-token-gate.spec.ts",
+          "assertion": "accepts an exact per-task baseline and detects a seeded regression"
+        }
       },
       {
         "path": "scripts/release/context-eval-gate.mjs",
-        "disposition": "retained",
-        "reason": "Runs the external golden-query retrieval corpus and fail-under evaluation."
+        "disposition": "reduced_to_provider",
+        "provider": "repository-quality/context-eval",
+        "negative_control": {
+          "test": "tests/unit/scripts/release/context-eval-gate.spec.ts",
+          "assertion": "fails closed for missing, malformed, unseedable, and regressed inputs"
+        }
       },
       {
         "path": "scripts/release/context-intent-calibration-gate.mjs",
-        "disposition": "retained",
-        "reason": "Calibrates intent contracts over checked-in fixtures outside tracker state."
+        "disposition": "reduced_to_provider",
+        "provider": "repository-quality/context-intent-calibration",
+        "negative_control": {
+          "test": "tests/unit/scripts/release/context-intent-calibration-gate.spec.ts",
+          "assertion": "negative control escaped detection"
+        }
       },
       {
         "path": "scripts/release/coverage-threshold-gate.mjs",
@@ -34,8 +51,12 @@
       },
       {
         "path": "scripts/release/docs-skills-gate.mjs",
-        "disposition": "retained",
-        "reason": "Checks documentation links and skill contracts across repository files."
+        "disposition": "reduced_to_provider",
+        "provider": "repository-quality/docs-skills",
+        "negative_control": {
+          "test": "tests/unit/scripts/release/docs-skills-gate.spec.ts",
+          "assertion": "main --links-only with broken link emits json + fail"
+        }
       },
       {
         "path": "scripts/release/gate-registry.mjs",
@@ -59,8 +80,13 @@
       },
       {
         "path": "scripts/release/retrieval-eval-gate.mjs",
-        "disposition": "retained",
-        "reason": "Executes end-to-end retrieval quality against isolated CLI workspaces."
+        "disposition": "reduced_to_provider",
+        "provider": "repository-quality/retrieval-eval",
+        "provider_negative_args": ["--negative-control"],
+        "negative_control": {
+          "test": "tests/unit/scripts/release/retrieval-eval-gate.spec.ts",
+          "assertion": "runs the built CLI gate and its impossible-threshold negative control"
+        }
       },
       {
         "path": "scripts/release/sentry-telemetry-gate.mjs",
@@ -74,13 +100,50 @@
       },
       {
         "path": "scripts/release/static-quality-gate.mts",
-        "disposition": "retained",
-        "reason": "Enforces repository-wide lint suppression, coverage pragma, complexity, and docstring budgets from TypeScript source."
+        "disposition": "reduced_to_provider",
+        "provider": "repository-quality/static-quality",
+        "provider_args": [
+          "--max-eslint-suppressions",
+          "113",
+          "--max-coverage-ignore-pragmas",
+          "477",
+          "--min-docstring-coverage",
+          "100",
+          "--min-exported-docstring-coverage",
+          "100",
+          "--min-member-docstring-coverage",
+          "100"
+        ],
+        "negative_control": {
+          "test": "tests/unit/scripts/release/static-quality-gate.spec.ts",
+          "assertion": "checkSdkImportBoundary fails closed on computed dynamic imports and require calls"
+        }
       },
       {
         "path": "scripts/release/token-budget-gate.mjs",
-        "disposition": "retained",
-        "reason": "Measures serialized command fixtures and continuation token envelopes."
+        "disposition": "reduced_to_provider",
+        "provider": "repository-quality/token-budget",
+        "negative_control": {
+          "test": "tests/unit/scripts/release/token-budget-gate.spec.ts",
+          "assertion": "fails when the unbounded negative control no longer exceeds the default contract"
+        }
+      }
+    ],
+    "provider_checks": [
+      {
+        "kind": "provider_check",
+        "path": "scripts/run-tests.mjs",
+        "provider": "repository-quality/recovery-reference",
+        "provider_args": [
+          "test",
+          "--",
+          "tests/unit/sdk/refusal-reachability.spec.ts",
+          "tests/integration/refusal-reachability.integration.spec.ts"
+        ],
+        "negative_control": {
+          "test": "tests/unit/sdk/refusal-reachability.spec.ts",
+          "assertion": "fails closed for missing, duplicate, unreachable, and undeclared proof"
+        }
       }
     ],
     "graph_operations": [
@@ -118,17 +181,8 @@
         "skip_policy": "forbidden"
       },
       {
-        "id": "docs-skills-gate",
-        "gates": ["documentation"],
-        "executable": {
-          "command": "node",
-          "args": ["scripts/release/docs-skills-gate.mjs"]
-        },
-        "skip_policy": "forbidden"
-      },
-      {
         "id": "static-quality-gate",
-        "gates": ["static-quality", "tracker-context-quality"],
+        "gates": ["documentation", "static-quality", "tracker-context-quality"],
         "executable": { "command": "pnpm", "args": ["quality:static"] },
         "skip_policy": "forbidden"
       },

@@ -3,7 +3,10 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { PM_ERROR_CODE_CATALOG } from "../../src/sdk/generated-error-code-catalog.js";
 import {
+  verifyPmRecoveryReferences,
   verifyPmRefusalReachability,
+  type PmRecoveryReferenceObligation,
+  type PmRecoveryReferenceObservation,
   type PmRefusalProbeObservation,
 } from "../../src/sdk/agent/refusal-reachability.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
@@ -97,7 +100,7 @@ describe("real-entrypoint refusal reachability", () => {
     });
   });
 
-  it("classifies the split schema action trap with a copy-pasteable retry", async () => {
+  it("executes and measures every recovery-reference kind emitted by real refusals", async () => {
     await withTempPmPath(async (context) => {
       const result = context.runCli([
         "schema",
@@ -109,6 +112,8 @@ describe("real-entrypoint refusal reachability", () => {
       expect(result.code).toBe(2);
       const envelope = JSON.parse(result.stderr) as {
         code: string;
+        examples?: string[];
+        next_steps?: string[];
         recovery?: {
           allowed_values?: string[];
           suggested_retry?: string;
@@ -120,6 +125,125 @@ describe("real-entrypoint refusal reachability", () => {
       expect(envelope.recovery?.suggested_retry).toBe(
         "pm schema add-type Example --json",
       );
+      const suggestedRetry = envelope.recovery!.suggested_retry!;
+      expect(
+        context.runCli(suggestedRetry.split(" ").slice(1)).code,
+      ).toBe(0);
+
+      const optionResult = context.runCli([
+        "deps",
+        "--add",
+        "related:pm-x",
+        "--json",
+      ]);
+      expect(optionResult.code).toBe(2);
+      const optionEnvelope = JSON.parse(optionResult.stderr) as {
+        recovery?: { candidate_commands?: string[] };
+      };
+      const contracts = context.runCli(
+        [
+          "--no-extensions",
+          "contracts",
+          "--flags-only",
+          "--json",
+          "--output-budget",
+          "unbounded",
+        ],
+        { expectJson: true },
+      ).json as { commands: string[] };
+      const declaredCommandPaths = new Set(contracts.commands);
+      const declaredCommandRoots = new Set(
+        contracts.commands.map((command) => command.split(" ")[0]!),
+      );
+      const obligations: PmRecoveryReferenceObligation[] = [
+        {
+          id: "schema:suggested-retry:0",
+          probe_id: "schema-split-action",
+          kind: "suggested_retry",
+          value: suggestedRetry,
+        },
+        ...(optionEnvelope.recovery?.candidate_commands ?? []).map(
+          (value, index) => ({
+            id: `deps:candidate-command:${index}`,
+            probe_id: "cross-command-unknown-option",
+            kind: "candidate_command" as const,
+            value,
+          }),
+        ),
+        ...(envelope.examples ?? []).map((value, index) => ({
+          id: `schema:example:${index}`,
+          probe_id: "schema-split-action",
+          kind: "example" as const,
+          value,
+        })),
+        ...(envelope.next_steps ?? []).map((value, index) => ({
+          id: `schema:next-step:${index}`,
+          probe_id: "schema-split-action",
+          kind: "next_step" as const,
+          value,
+        })),
+      ];
+      const observations: PmRecoveryReferenceObservation[] = obligations.map(
+        (obligation) => {
+          if (obligation.kind === "suggested_retry") {
+            return {
+              id: obligation.id,
+              reachable: true,
+              proof: "executed",
+            };
+          }
+          if (obligation.kind === "candidate_command") {
+            return {
+              id: obligation.id,
+              reachable: declaredCommandRoots.has(obligation.value),
+              proof: "declared_command_path",
+            };
+          }
+          if (obligation.kind === "example") {
+            const commandPath = obligation.value
+              .replace(/^pm\s+/u, "")
+              .split(/\s+(?:--|<)/u)[0]!;
+            return {
+              id: obligation.id,
+              reachable:
+                obligation.value === suggestedRetry ||
+                declaredCommandPaths.has(commandPath) ||
+                declaredCommandRoots.has(commandPath.split(" ")[0]!),
+              proof:
+                obligation.value === suggestedRetry
+                  ? "linked_execution"
+                  : "declared_command_path",
+            };
+          }
+          return {
+            id: obligation.id,
+            reachable: obligation.value.includes(suggestedRetry),
+            proof: "linked_execution",
+          };
+        },
+      );
+      const report = verifyPmRecoveryReferences(obligations, observations);
+      expect(report).toMatchObject({
+        ok: true,
+        pass_fraction: 1,
+        coverage_by_kind: [
+          { kind: "suggested_retry", declared: 1, passed: 1 },
+          { kind: "candidate_command", declared: 6, passed: 6 },
+          { kind: "example", declared: 2, passed: 2 },
+          { kind: "next_step", declared: 1, passed: 1 },
+        ],
+      });
+
+      const broken = observations.map((observation, index) =>
+        index === 0 ? { ...observation, reachable: false } : observation,
+      );
+      expect(verifyPmRecoveryReferences(obligations, broken)).toMatchObject({
+        ok: false,
+        pass_fraction: 0.9,
+        findings: [
+          expect.objectContaining({ kind: "unreachable_reference" }),
+        ],
+      });
     });
   });
 });

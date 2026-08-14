@@ -256,6 +256,23 @@ function validateLocalPreflight(localPreflight, gateIds, violations) {
 }
 
 /** Test whether one gate-script disposition is complete and truthful. */
+function validProviderDisposition(entry) {
+  const validArguments = (argumentsValue, requireNonEmpty) =>
+    argumentsValue === undefined ||
+    (Array.isArray(argumentsValue) &&
+      (!requireNonEmpty || argumentsValue.length > 0) &&
+      argumentsValue.every(
+        (argument) => typeof argument === "string" && argument.length > 0,
+      ));
+  return (
+    typeof entry.provider === "string" &&
+    /^repository-quality\/[a-z0-9][a-z0-9-]*$/u.test(entry.provider) &&
+    validArguments(entry.provider_args, false) &&
+    validArguments(entry.provider_negative_args, true)
+  );
+}
+
+/** Test whether one gate-script disposition is complete and truthful. */
 function validGateScriptDisposition(entry, disposition, discoveredScripts) {
   if (disposition === "migrated") {
     return (
@@ -266,20 +283,20 @@ function validGateScriptDisposition(entry, disposition, discoveredScripts) {
   }
   if (!discoveredScripts.has(entry.path)) return false;
   if (disposition === "reduced_to_provider") {
-    return (
-      typeof entry.provider === "string" && entry.provider.trim().length >= 3
-    );
+    return validProviderDisposition(entry);
   }
   return typeof entry.reason === "string" && entry.reason.trim().length >= 20;
 }
 
 /** Validate every current and retired release-gate script disposition. */
-function validateGateScriptInventory(
+async function validateGateScriptInventory(
   gateScripts,
   discoveredScripts,
+  root,
   violations,
 ) {
   const declaredScripts = new Set();
+  const providerKeys = new Set();
   for (const entry of gateScripts) {
     const disposition = entry?.disposition;
     const rowValid =
@@ -289,10 +306,63 @@ function validateGateScriptInventory(
       validGateScriptDisposition(entry, disposition, discoveredScripts);
     if (!rowValid) violations.push("automation_inventory:gate_script:invalid");
     if (typeof entry?.path === "string") declaredScripts.add(entry.path);
+    if (disposition === "reduced_to_provider") {
+      if (providerKeys.has(entry.provider)) {
+        violations.push("automation_inventory:provider:duplicate");
+      }
+      providerKeys.add(entry.provider);
+      await validateNegativeControl(
+        { id: entry.provider, negative_control: entry.negative_control },
+        root,
+        violations,
+      );
+    }
   }
   for (const script of discoveredScripts) {
     if (!declaredScripts.has(script))
       violations.push(`automation_inventory:gate_script:${script}:undeclared`);
+  }
+  const migratedOrProvider = gateScripts.filter((entry) =>
+    ["migrated", "reduced_to_provider"].includes(entry.disposition),
+  ).length;
+  const retained = gateScripts.filter(
+    (entry) => entry.disposition === "retained",
+  ).length;
+  if (migratedOrProvider <= retained) {
+    violations.push("automation_inventory:migration_majority_not_met");
+  }
+}
+
+/** Validate non-gate executables exposed as repository assurance providers. */
+async function validateProviderChecks(providerChecks, root, violations) {
+  if (providerChecks === undefined) return;
+  if (!Array.isArray(providerChecks)) {
+    violations.push("automation_inventory:provider_checks:invalid");
+    return;
+  }
+  const providers = new Set();
+  for (const entry of providerChecks) {
+    const valid =
+      entry?.kind === "provider_check" &&
+      typeof entry.path === "string" &&
+      entry.path.startsWith("scripts/") &&
+      validProviderDisposition(entry) &&
+      !providers.has(entry.provider);
+    if (!valid) {
+      violations.push("automation_inventory:provider_check:invalid");
+      continue;
+    }
+    providers.add(entry.provider);
+    try {
+      await readFile(path.join(root, entry.path), "utf8");
+    } catch {
+      violations.push(`automation_inventory:provider_check:${entry.path}:missing`);
+    }
+    await validateNegativeControl(
+      { id: entry.provider, negative_control: entry.negative_control },
+      root,
+      violations,
+    );
   }
 }
 
@@ -342,11 +412,13 @@ async function validateAutomationInventory(inventory, root, violations) {
       )
       .map((file) => `scripts/release/${file}`),
   );
-  validateGateScriptInventory(
+  await validateGateScriptInventory(
     inventory.gate_scripts,
     discoveredScripts,
+    root,
     violations,
   );
+  await validateProviderChecks(inventory.provider_checks, root, violations);
   validateGraphOperationInventory(inventory.graph_operations, violations);
 }
 
@@ -388,6 +460,24 @@ export async function validateGateRegistry(registry, options = {}) {
 }
 
 /** Print discovered inventory or enforce the committed registry. */
+function automationInventoryCounts(registry) {
+  const gateScripts = registry.automation_inventory?.gate_scripts ?? [];
+  return {
+    migrated_gate_script_count: gateScripts.filter(
+      (entry) => entry.disposition === "migrated",
+    ).length,
+    provider_gate_script_count: gateScripts.filter(
+      (entry) => entry.disposition === "reduced_to_provider",
+    ).length,
+    retained_gate_script_count: gateScripts.filter(
+      (entry) => entry.disposition === "retained",
+    ).length,
+    provider_check_count:
+      registry.automation_inventory?.provider_checks?.length ?? 0,
+  };
+}
+
+/** Print discovered inventory or enforce the committed registry. */
 export async function main(argv = process.argv.slice(2)) {
   const { flags } = parseFlags(argv);
   const registryFlag = flags.get("registry");
@@ -418,10 +508,7 @@ export async function main(argv = process.argv.slice(2)) {
     registered_gate_count: registry.gates.length,
     enforced_pipeline_count: discovered.length,
     claim_count: registry.claims?.length ?? 0,
-    migrated_gate_script_count:
-      registry.automation_inventory?.gate_scripts.filter(
-        (entry) => entry.disposition === "migrated",
-      ).length ?? 0,
+    ...automationInventoryCounts(registry),
     declared_graph_operation_count:
       registry.automation_inventory?.graph_operations.length ?? 0,
   };
