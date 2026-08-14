@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1597,
+    "covered_symbols": 1601,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1598
+    "required_symbols": 1602
   },
   "breaking_acknowledgements": [
     {
@@ -519,6 +519,55 @@
       ],
       "package_version": "2026.8.14",
       "reason": "Additive optional health, assurance, and read-recovery contract fields; no existing member was removed or narrowed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:AssuranceGateVerdict",
+        "signature ./sdk:BootstrapGlobalOptions",
+        "signature ./sdk:ContextRankingSummary",
+        "signature ./sdk:GlobalOptions",
+        "signature ./sdk:PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
+        "signature ./sdk:PmCliErrorRecoveryPayload",
+        "signature ./sdk:PmReadOutputOptions",
+        "signature ./sdk:PmReadOutputResultFor",
+        "signature ./sdk:PmReadOutputSurfaceContract",
+        "signature ./sdk:PmReadOutputTruncationDisclosure",
+        "signature ./sdk:toContextRankingSummary",
+        "signature ./sdk/contracts:PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
+        "signature ./sdk/contracts:PmReadOutputOptions",
+        "signature ./sdk/contracts:PmReadOutputResultFor",
+        "signature ./sdk/contracts:PmReadOutputSurfaceContract",
+        "signature ./sdk/contracts:PmReadOutputTruncationDisclosure",
+        "signature ./sdk/core:PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
+        "signature ./sdk/core:PmReadOutputOptions",
+        "signature ./sdk/core:PmReadOutputResultFor",
+        "signature ./sdk/core:PmReadOutputSurfaceContract",
+        "signature ./sdk/governance:AssuranceGateVerdict",
+        "signature ./sdk/query:ContextRankingSummary",
+        "signature ./sdk/query:toContextRankingSummary",
+        "signature ./sdk/runtime:GlobalOptions",
+        "signature ./sdk/runtime:PmReadOutputOptions",
+        "signature ./sdk/runtime:PmReadOutputResultFor",
+        "signature ./sdk/runtime:PmReadOutputSurfaceContract"
+      ],
+      "package_version": "2026.8.14",
+      "reason": "Extend read, assurance, ranking, and recovery contracts with bounded continuation and explicit completeness metadata"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmReadOutputTruncationDisclosure",
+        "signature ./sdk/contracts:PmReadOutputTruncationDisclosure"
+      ],
+      "package_version": "2026.8.14",
+      "reason": "Extend read, assurance, ranking, and recovery contracts with bounded continuation and explicit completeness metadata"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmReadOutputTruncationDisclosure",
+        "signature ./sdk/contracts:PmReadOutputTruncationDisclosure"
+      ],
+      "package_version": "2026.8.14",
+      "reason": "Consolidate cursor recovery into one value with explicit CLI SDK and MCP bindings"
     }
   ],
   "entrypoints": {
@@ -1573,7 +1622,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceGateVerdict",
-          "signature": "export interface AssuranceGateVerdict { gate_id: string; tree_id: string; trigger: AssuranceGateTrigger; dry_run: boolean; evaluated_at: string; verdict: \"pass\" | \"warn\" | \"block\"; exit_code: 0 | 1; assertions: AssuranceAssertionVerdict[]; cost: AssuranceMeasurementCost; }"
+          "signature": "export interface AssuranceGateVerdict { gate_id: string; tree_id: string; trigger: AssuranceGateTrigger; dry_run: boolean; evaluated_at: string; verdict: \"pass\" | \"warn\" | \"block\"; exit_code: 0 | 1; assertions: AssuranceAssertionVerdict[]; assertions_total: number; row_contract: { row_keys: [ \"assertions\" ]; jq_selector: \".assertions[]\"; }; cost: AssuranceMeasurementCost; }"
         },
         {
           "classification": "supported",
@@ -1849,7 +1898,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "BootstrapGlobalOptions",
-          "signature": "export interface BootstrapGlobalOptions { path?: string; noExtensions: boolean; noPager: boolean; json: boolean; quiet: boolean; lean: boolean; tokenAccounting: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; outputRowContract?: boolean; author?: string; authorMissingValue?: true; }"
+          "signature": "export interface BootstrapGlobalOptions { path?: string; noExtensions: boolean; noPager: boolean; json: boolean; quiet: boolean; lean: boolean; tokenAccounting: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; outputCursor?: string; outputRowContract?: boolean; author?: string; authorMissingValue?: true; }"
         },
         {
           "classification": "advanced_export",
@@ -3025,7 +3074,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextRankingSummary",
-          "signature": "export interface ContextRankingSummary { model: string; available_signals: ContextRelevanceSignalName[]; items: Array<{ id: string; rank: number; baseline_rank: number; score: number; contributions: ContextRelevanceContributions; }>; feature_store?: { source: \"derived_index\" | \"scan_fallback\"; cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; generated_at: string; }; }"
+          "signature": "export interface ContextRankingSummary { model: string; available_signals: ContextRelevanceSignalName[]; items: Array<{ id: string; rank: number; baseline_rank: number; score: number; contributions: ContextRelevanceContributions; }>; candidate_count: number; omitted_count: number; feature_store?: { source: \"derived_index\" | \"scan_fallback\"; cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; generated_at: string; }; }"
         },
         {
           "classification": "supported",
@@ -3542,6 +3591,12 @@
           "kind": "function",
           "name": "decodeQueryCursorState",
           "signature": "(cursor: unknown, expectedFingerprint: string) => QueryCursorState | calls: (cursor: unknown, expectedFingerprint: string) => QueryCursorState"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "decodeReadOutputContinuationCursor",
+          "signature": "(raw: string) => PmReadOutputCursorEnvelope | calls: (raw: string) => PmReadOutputCursorEnvelope"
         },
         {
           "classification": "advanced_export",
@@ -4172,6 +4227,12 @@
           "kind": "function",
           "name": "encodeQueryCursor",
           "signature": "(fingerprint: string, afterId: string, afterIndex?: number, snapshot?: string) => string | calls: (fingerprint: string, afterId: string, afterIndex?: number, snapshot?: string) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "encodeReadOutputContinuationCursor",
+          "signature": "(cursor: Omit<PmReadOutputCursorEnvelope, \"version\">) => string | calls: (cursor: Omit<PmReadOutputCursorEnvelope, \"version\">) => string"
         },
         {
           "classification": "advanced_export",
@@ -5521,7 +5582,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "GlobalOptions",
-          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; outputRowContract?: boolean; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
+          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; outputCursor?: string; outputRowContract?: boolean; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
         },
         {
           "classification": "supported",
@@ -8677,7 +8738,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
-          "signature": "readonly [\"--output-session\", \"--output-row-contract\"]"
+          "signature": "readonly [\"--output-session\", \"--output-cursor\", \"--output-row-contract\"]"
         },
         {
           "classification": "supported",
@@ -8875,7 +8936,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorRecoveryPayload",
-          "signature": "export interface PmCliErrorRecoveryPayload { recovery_mode?: \"compact\"; attempted_command?: string; normalized_args?: string[]; parsed_positionals?: Array<{ role: string; value: string; }>; provided_fields?: string[]; missing?: string[]; missing_required_fields?: string[]; suggested_flags?: string[]; allowed_values?: string[]; candidate_commands?: string[]; candidate_commands_total?: number; candidate_commands_truncated?: boolean; suggested_retry?: string; retry_after_ms?: number; fallback_candidates?: Array<{ source: string; command: string; reason: string; }>; next_best_command?: string; }"
+          "signature": "export interface PmCliErrorRecoveryPayload { recovery_mode?: \"compact\"; attempted_command?: string; normalized_args?: string[]; parsed_positionals?: Array<{ role: string; value: string; }>; provided_fields?: string[]; missing?: string[]; missing_required_fields?: string[]; suggested_flags?: string[]; allowed_values?: string[]; candidate_commands?: string[]; candidate_commands_total?: number; candidate_commands_truncated?: boolean; option_scope?: \"declared_on_path\" | \"declared_elsewhere\" | \"declared_nowhere\"; suggested_retry?: string; retry_after_ms?: number; fallback_candidates?: Array<{ source: string; command: string; reason: string; }>; next_best_command?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -9197,6 +9258,18 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputContinuation",
+          "signature": "export interface PmReadOutputContinuation { path: string; cursor: string; retained_rows: number; remaining_rows: number; total_rows: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputCursorEnvelope",
+          "signature": "export interface PmReadOutputCursorEnvelope { version: 1; command: PmReadOutputSurface; path: string; offset: number; total_rows: number; fingerprint: string; }"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputDimension",
           "signature": "export type PmReadOutputDimension = (typeof PM_READ_OUTPUT_DIMENSIONS)[number];"
@@ -9223,7 +9296,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputCursor?: string; outputRowContract?: boolean; }"
         },
         {
           "classification": "supported",
@@ -9241,7 +9314,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : \"outputCursor\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
         },
         {
           "classification": "advanced_export",
@@ -9277,13 +9350,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
-          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"verdict_priority\"; }"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputTruncationDisclosure",
-          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; continuation_cursor_rebased: boolean; restore_with: string; recovery: { cli: \"--output-budget unbounded\"; sdk: { outputBudget: \"unbounded\"; }; mcp: { outputBudget: \"unbounded\"; }; }; }"
+          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; continuation_cursor_rebased: boolean; continuation_available: boolean; recovery_budget_multiplier: 1; continuations: PmReadOutputContinuation[]; restore_with: string; recovery: { cursor: string; cli: \"--output-cursor\"; sdk: \"outputCursor\"; mcp: \"outputCursor\"; } | { cli: string; sdk: { outputBudget: number; }; mcp: { outputBudget: number; }; }; }"
         },
         {
           "classification": "advanced_export",
@@ -13391,6 +13464,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "function",
+          "name": "sliceReadOutputRowCollection",
+          "signature": "(result: Record<string, unknown>, rowPath: string, offset: number) => Record<string, unknown> | calls: (result: Record<string, unknown>, rowPath: string, offset: number) => Record<string, unknown>"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "value",
           "name": "SNAPSHOT_SCHEMA",
           "signature": "\"https://schema.unbrained.dev/pm/workspace-snapshot/v1\""
@@ -13957,7 +14036,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "toContextRankingSummary",
-          "signature": "<TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult) => ContextRankingSummary | calls: <TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult) => ContextRankingSummary"
+          "signature": "<TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult, servedItemIds?: ReadonlySet<string>) => ContextRankingSummary | calls: <TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult, servedItemIds?: ReadonlySet<string>) => ContextRankingSummary"
         },
         {
           "classification": "advanced_export",
@@ -16548,6 +16627,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "decodeReadOutputContinuationCursor",
+          "signature": "(raw: string) => PmReadOutputCursorEnvelope | calls: (raw: string) => PmReadOutputCursorEnvelope"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "definePmCommandOutputBudget",
           "signature": "<TContract extends PmCommandOutputBudgetContract>(contract: TContract) => TContract | calls: <TContract extends PmCommandOutputBudgetContract>(contract: TContract) => TContract"
         },
@@ -16592,6 +16677,12 @@
           "kind": "value",
           "name": "DUPLICATES_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "encodeReadOutputContinuationCursor",
+          "signature": "(cursor: Omit<PmReadOutputCursorEnvelope, \"version\">) => string | calls: (cursor: Omit<PmReadOutputCursorEnvelope, \"version\">) => string"
         },
         {
           "classification": "contract_data",
@@ -17131,7 +17222,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
-          "signature": "readonly [\"--output-session\", \"--output-row-contract\"]"
+          "signature": "readonly [\"--output-session\", \"--output-cursor\", \"--output-row-contract\"]"
         },
         {
           "classification": "contract_data",
@@ -17459,6 +17550,18 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputContinuation",
+          "signature": "export interface PmReadOutputContinuation { path: string; cursor: string; retained_rows: number; remaining_rows: number; total_rows: number; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputCursorEnvelope",
+          "signature": "export interface PmReadOutputCursorEnvelope { version: 1; command: PmReadOutputSurface; path: string; offset: number; total_rows: number; fingerprint: string; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputDimension",
           "signature": "export type PmReadOutputDimension = (typeof PM_READ_OUTPUT_DIMENSIONS)[number];"
@@ -17485,7 +17588,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputCursor?: string; outputRowContract?: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -17503,7 +17606,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : \"outputCursor\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
         },
         {
           "classification": "contract_data",
@@ -17527,13 +17630,13 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
-          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"verdict_priority\"; }"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputTruncationDisclosure",
-          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; continuation_cursor_rebased: boolean; restore_with: string; recovery: { cli: \"--output-budget unbounded\"; sdk: { outputBudget: \"unbounded\"; }; mcp: { outputBudget: \"unbounded\"; }; }; }"
+          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; continuation_cursor_rebased: boolean; continuation_available: boolean; recovery_budget_multiplier: 1; continuations: PmReadOutputContinuation[]; restore_with: string; recovery: { cursor: string; cli: \"--output-cursor\"; sdk: \"outputCursor\"; mcp: \"outputCursor\"; } | { cli: string; sdk: { outputBudget: number; }; mcp: { outputBudget: number; }; }; }"
         },
         {
           "classification": "contract_data",
@@ -18318,6 +18421,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "decodeReadOutputContinuationCursor",
+          "signature": "(raw: string) => PmReadOutputCursorEnvelope | calls: (raw: string) => PmReadOutputCursorEnvelope"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "deleteItem",
           "signature": "(id: string, options?: PmClientFullMutationOptions, clientOptions?: PmClientOptions) => Promise<DeleteResult> | calls: (id: string, options?: PmClientFullMutationOptions, clientOptions?: PmClientOptions) => Promise<DeleteResult>"
         },
@@ -18416,6 +18525,12 @@
           "kind": "function",
           "name": "emptyImportedDocument",
           "signature": "() => ItemDocument | calls: () => ItemDocument"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "encodeReadOutputContinuationCursor",
+          "signature": "(cursor: Omit<PmReadOutputCursorEnvelope, \"version\">) => string | calls: (cursor: Omit<PmReadOutputCursorEnvelope, \"version\">) => string"
         },
         {
           "classification": "supported",
@@ -18715,7 +18830,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS",
-          "signature": "readonly [\"--output-session\", \"--output-row-contract\"]"
+          "signature": "readonly [\"--output-session\", \"--output-cursor\", \"--output-row-contract\"]"
         },
         {
           "classification": "supported",
@@ -18779,6 +18894,18 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputContinuation",
+          "signature": "export interface PmReadOutputContinuation { path: string; cursor: string; retained_rows: number; remaining_rows: number; total_rows: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputCursorEnvelope",
+          "signature": "export interface PmReadOutputCursorEnvelope { version: 1; command: PmReadOutputSurface; path: string; offset: number; total_rows: number; fingerprint: string; }"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputDimension",
           "signature": "export type PmReadOutputDimension = (typeof PM_READ_OUTPUT_DIMENSIONS)[number];"
@@ -18793,7 +18920,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputCursor?: string; outputRowContract?: boolean; }"
         },
         {
           "classification": "supported",
@@ -18811,7 +18938,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : \"outputCursor\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
         },
         {
           "classification": "supported",
@@ -18841,7 +18968,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
-          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"verdict_priority\"; }"
         },
         {
           "classification": "supported",
@@ -19363,7 +19490,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AssuranceGateVerdict",
-          "signature": "export interface AssuranceGateVerdict { gate_id: string; tree_id: string; trigger: AssuranceGateTrigger; dry_run: boolean; evaluated_at: string; verdict: \"pass\" | \"warn\" | \"block\"; exit_code: 0 | 1; assertions: AssuranceAssertionVerdict[]; cost: AssuranceMeasurementCost; }"
+          "signature": "export interface AssuranceGateVerdict { gate_id: string; tree_id: string; trigger: AssuranceGateTrigger; dry_run: boolean; evaluated_at: string; verdict: \"pass\" | \"warn\" | \"block\"; exit_code: 0 | 1; assertions: AssuranceAssertionVerdict[]; assertions_total: number; row_contract: { row_keys: [ \"assertions\" ]; jq_selector: \".assertions[]\"; }; cost: AssuranceMeasurementCost; }"
         },
         {
           "classification": "supported",
@@ -22207,7 +22334,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextRankingSummary",
-          "signature": "export interface ContextRankingSummary { model: string; available_signals: ContextRelevanceSignalName[]; items: Array<{ id: string; rank: number; baseline_rank: number; score: number; contributions: ContextRelevanceContributions; }>; feature_store?: { source: \"derived_index\" | \"scan_fallback\"; cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; generated_at: string; }; }"
+          "signature": "export interface ContextRankingSummary { model: string; available_signals: ContextRelevanceSignalName[]; items: Array<{ id: string; rank: number; baseline_rank: number; score: number; contributions: ContextRelevanceContributions; }>; candidate_count: number; omitted_count: number; feature_store?: { source: \"derived_index\" | \"scan_fallback\"; cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; generated_at: string; }; }"
         },
         {
           "classification": "supported",
@@ -23269,7 +23396,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "toContextRankingSummary",
-          "signature": "<TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult) => ContextRankingSummary | calls: <TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult) => ContextRankingSummary"
+          "signature": "<TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult, servedItemIds?: ReadonlySet<string>) => ContextRankingSummary | calls: <TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult, servedItemIds?: ReadonlySet<string>) => ContextRankingSummary"
         },
         {
           "classification": "supported",
@@ -24043,7 +24170,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "GlobalOptions",
-          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; outputRowContract?: boolean; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
+          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; outputInclude?: string; outputLimit?: string; outputBudget?: string; outputFormat?: \"toon\" | \"json\"; outputSession?: string; outputCursor?: string; outputRowContract?: boolean; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
         },
         {
           "classification": "supported",
@@ -24715,7 +24842,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputOptions",
-          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputRowContract?: boolean; }"
+          "signature": "export interface PmReadOutputOptions { outputInclude?: string | string[]; outputLimit?: string | number | \"unbounded\"; outputBudget?: string | number | \"unbounded\"; outputFormat?: \"json\" | \"toon\"; outputSession?: string | PmReadOutputSessionState; outputCursor?: string; outputRowContract?: boolean; }"
         },
         {
           "classification": "supported",
@@ -24727,7 +24854,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = \"outputBudget\" extends keyof Options ? PmReadOutputResult<Result> : \"outputSession\" extends keyof Options ? PmReadOutputResult<Result> : \"outputCursor\" extends keyof Options ? PmReadOutputResult<Result> : Result;"
         },
         {
           "classification": "supported",
@@ -24745,7 +24872,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
-          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"verdict_priority\"; }"
         },
         {
           "classification": "supported",
@@ -26641,6 +26768,9 @@
     "profile_title_empty",
     "project_runtime_stale_mutation",
     "project_runtime_stale_read",
+    "read_output_cursor_command_mismatch",
+    "read_output_cursor_invalid",
+    "read_output_cursor_stale",
     "redundant_edge",
     "reindex_already_running",
     "reserved_item_field",

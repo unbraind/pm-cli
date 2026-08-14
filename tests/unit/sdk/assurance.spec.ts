@@ -1162,6 +1162,11 @@ describe("assurance SDK", () => {
       dry_run: true,
       verdict: "pass",
       exit_code: 0,
+      assertions_total: 1,
+      row_contract: {
+        row_keys: ["assertions"],
+        jq_selector: ".assertions[]",
+      },
       assertions: [
         {
           assertion_id: "active-issues-ceiling",

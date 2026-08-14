@@ -23,6 +23,7 @@ const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>([
   "--output-budget",
   "--output-format",
   "--output-session",
+  "--output-cursor",
 ]);
 
 const OUTPUT_VALUE_FLAGS = new Set<string>([
@@ -31,6 +32,7 @@ const OUTPUT_VALUE_FLAGS = new Set<string>([
   "--output-budget",
   "--output-format",
   "--output-session",
+  "--output-cursor",
 ]);
 
 /** Whether a global value-consuming flag uses its inline `--flag=value` form. */
@@ -77,6 +79,8 @@ export interface BootstrapGlobalOptions {
   outputFormat?: "toon" | "json";
   /** Caller-carried cross-call budget and served-item state. */
   outputSession?: string;
+  /** Opaque budget-compaction continuation cursor. */
+  outputCursor?: string;
   /** Whether machine-readable row discovery metadata is requested. */
   outputRowContract?: boolean;
   /** Invocation-wide mutation author override. */
@@ -183,6 +187,9 @@ export function parseBootstrapGlobalOptions(
     ...(state.outputValues.get("--output-session") === undefined
       ? {}
       : { outputSession: state.outputValues.get("--output-session") }),
+    ...(state.outputValues.get("--output-cursor") === undefined
+      ? {}
+      : { outputCursor: state.outputValues.get("--output-cursor") }),
     ...(state.author === ""
       ? { authorMissingValue: true }
       : state.author !== undefined

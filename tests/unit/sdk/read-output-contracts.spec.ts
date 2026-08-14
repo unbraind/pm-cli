@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { attachReadOutputContracts } from "../../../src/sdk/context-intent-contracts.js";
 import { updateReadOutputReceiptEstimate } from "../../../src/sdk/read-output-budget.js";
+import { prioritizeAssuranceAssertions } from "../../../src/sdk/read-output/continuation.js";
 import {
   PM_READ_OUTPUT_DIMENSIONS,
   PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS,
   PM_READ_OUTPUT_OPTION_FLAGS,
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
   applyReadOutputDimensions,
+  decodeReadOutputContinuationCursor,
+  encodeReadOutputContinuationCursor,
   isReadOutputBudgetExceeded,
   resolveReadOutputDimensions,
   resolveReadOutputEncoding,
@@ -19,6 +22,7 @@ import {
   mapReadOutputRows,
   readOutputBudgetCollections,
   readOutputRowCollections,
+  sliceReadOutputRowCollection,
 } from "../../../src/sdk/read-output-rows.js";
 import {
   PM_READ_OUTPUT_SESSION_MAX_SEEN_ITEM_IDS,
@@ -47,6 +51,7 @@ describe("read output contracts", () => {
     ]);
     expect(PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS).toEqual([
       "--output-session",
+      "--output-cursor",
       "--output-row-contract",
     ]);
     for (const contract of PM_READ_OUTPUT_SURFACE_CONTRACTS) {
@@ -62,6 +67,11 @@ describe("read output contracts", () => {
       }
       expect(Object.isFrozen(contract)).toBe(true);
       expect(Object.isFrozen(contract.dimensions)).toBe(true);
+      expect(contract.budget_retention_policy).toBe(
+        contract.command === "assurance"
+          ? "verdict_priority"
+          : "ordered_prefix",
+      );
     }
   });
 
@@ -443,9 +453,14 @@ describe("read output contracts", () => {
       [{ outputInclude: " , " }, "requires at least one"],
       [{ outputBudget: 0 }, "positive integer"],
       [{ outputFormat: "yaml" }, "toon or json"],
+      [{ outputCursor: "" }, "non-empty continuation cursor"],
+      [{ output_cursor: 1 }, "non-empty continuation cursor"],
     ] as const) {
       expect(() => validateReadOutputOptions("list", options)).toThrow(message);
     }
+    expect(() =>
+      validateReadOutputOptions("list", { outputCursor: "cursor-1" }),
+    ).not.toThrow();
     expect(() => validateReadOutputOptions("", { outputLimit: 1 })).toThrow(
       "this command is not a read surface",
     );
@@ -938,6 +953,19 @@ describe("read output contracts", () => {
     };
     expect(readOutputRowCollections(result)).toHaveLength(1);
     expect(countReadOutputRows(result)).toBe(4);
+    expect(
+      sliceReadOutputRowCollection(result, "graph.nodes", 2),
+    ).toMatchObject({
+      graph: {
+        nodes: {
+          literal: "value",
+          unidentified: { title: "No id" },
+        },
+      },
+    });
+    expect(sliceReadOutputRowCollection(result, "missing.rows", 1)).toBe(
+      result,
+    );
     const mapped = mapReadOutputRows(result, (row, path, index) => ({
       row,
       path,
@@ -1136,12 +1164,16 @@ describe("read output contracts", () => {
     const retainedLast = paginated.items.at(-1);
     expect(paginated.output_budget_truncation).toMatchObject({
       continuation_cursor_rebased: true,
+      continuation_available: true,
+      recovery_budget_multiplier: 1,
       recovery: {
-        cli: "--output-budget unbounded",
-        sdk: { outputBudget: "unbounded" },
-        mcp: { outputBudget: "unbounded" },
+        cursor: expect.any(String),
+        cli: "--output-cursor",
+        sdk: "outputCursor",
+        mcp: "outputCursor",
       },
     });
+    expect(paginated).toMatchObject({ continuation_kind: "producer_cursor" });
     expect(
       decodeQueryCursorState(String(paginated.next_cursor), "list-fingerprint"),
     ).toEqual({
@@ -1194,9 +1226,7 @@ describe("read output contracts", () => {
     ]) {
       const defensive = compactPage(
         encodeQueryCursor("scope", "row-7", 7),
-        Array.from({ length: 1_000 }, () =>
-          structuredClone(invalidLastRow),
-        ),
+        Array.from({ length: 1_000 }, () => structuredClone(invalidLastRow)),
       );
       if (isReadOutputBudgetExceeded(defensive)) {
         throw new Error("Expected defensive row compaction, not omission.");
@@ -1290,26 +1320,43 @@ describe("read output contracts", () => {
       read_output: { rows_compacted: true },
     });
 
+    const objectRowsInput = {
+      graph: {
+        nodes: Object.fromEntries(
+          Array.from({ length: 16 }, (_, index) => [
+            `pm-${index}`,
+            { id: `pm-${index}`, detail: "x".repeat(600) },
+          ]),
+        ),
+      },
+      row_contract: { command: "graph", row_keys: ["graph.nodes"] },
+    };
     const objectRows = applyReadOutputDimensions(
       "graph",
       { outputBudget: 400 },
-      {
-        graph: {
-          nodes: Object.fromEntries(
-            Array.from({ length: 16 }, (_, index) => [
-              `pm-${index}`,
-              { id: `pm-${index}`, detail: "x".repeat(600) },
-            ]),
-          ),
-        },
-        row_contract: { command: "graph", row_keys: ["graph.nodes"] },
-      },
+      structuredClone(objectRowsInput),
     );
     expect(objectRows).toMatchObject({
       has_more: true,
       truncated: true,
       read_output: { rows_compacted: true },
     });
+    if (isReadOutputBudgetExceeded(objectRows)) {
+      throw new Error("Expected resumable object rows.");
+    }
+    const continuedObjectRows = applyReadOutputDimensions(
+      "graph",
+      { outputBudget: 400, outputCursor: String(objectRows.next_cursor) },
+      structuredClone(objectRowsInput),
+    );
+    const firstObjectKeys = Object.keys(objectRows.graph.nodes);
+    const continuedObjectKeys = Object.keys(continuedObjectRows.graph.nodes);
+    expect(firstObjectKeys.length).toBeGreaterThan(0);
+    expect(continuedObjectKeys.length).toBeGreaterThan(0);
+    expect(continuedObjectKeys[0]).toBe(`pm-${firstObjectKeys.length}`);
+    expect(
+      continuedObjectKeys.filter((key) => firstObjectKeys.includes(key)),
+    ).toEqual([]);
 
     const mixedRows = applyReadOutputDimensions(
       "graph",
@@ -1362,8 +1409,8 @@ describe("read output contracts", () => {
       has_more: true,
       truncated: true,
       output_budget_truncation: {
-        restore_with:
-          "Re-run with --output-budget unbounded for the complete result.",
+        restore_with: expect.any(String),
+        continuation_available: false,
         overridden_dimensions: ["amount"],
         compacted_row_paths: expect.arrayContaining([
           "checks.0.details.missing_resolution_rows",
@@ -1392,6 +1439,192 @@ describe("read output contracts", () => {
       restoredNestedRows.checks[0]?.details
         .missing_resolution_remediation_hints,
     ).toHaveLength(8);
+  });
+
+  it("resumes verdict-prioritized declared rows at the first withheld assertion", () => {
+    expect(prioritizeAssuranceAssertions({ verdict: "pass" })).toEqual({
+      verdict: "pass",
+    });
+    expect(
+      prioritizeAssuranceAssertions({
+        assertions: [
+          { assertion_id: "pass", verdict: "pass" },
+          null,
+          { assertion_id: "retired", verdict: "retired" },
+        ],
+      }).assertions,
+    ).toEqual([
+      { assertion_id: "retired", verdict: "retired" },
+      { assertion_id: "pass", verdict: "pass" },
+      null,
+    ]);
+    const assertions = [
+      ...Array.from({ length: 9 }, (_, index) => ({
+        assertion_id: `pass-${index}`,
+        verdict: "pass",
+        enforcement: "block",
+        detail: "x".repeat(600),
+      })),
+      {
+        assertion_id: "blocking-tail",
+        verdict: "fail",
+        enforcement: "block",
+        detail: "x".repeat(600),
+      },
+      {
+        assertion_id: "warning-tail",
+        verdict: "fail",
+        enforcement: "warn",
+        detail: "x".repeat(600),
+      },
+      {
+        assertion_id: "observed-tail",
+        verdict: "fail",
+        enforcement: "observe",
+        detail: "x".repeat(600),
+      },
+    ];
+    const input = {
+      verdict: "block",
+      assertions,
+      assertions_total: assertions.length,
+      row_contract: { command: "assurance", row_keys: ["assertions"] },
+    };
+    const first = applyReadOutputDimensions(
+      "assurance",
+      { outputBudget: 650 },
+      structuredClone(input),
+    );
+    if (isReadOutputBudgetExceeded(first)) {
+      throw new Error("Expected a resumable assurance page.");
+    }
+    expect(first).toMatchObject({
+      assertions_total: 12,
+      budget_retention_policy: "verdict_priority",
+      continuation_kind: "output_cursor",
+      output_budget_truncation: {
+        continuation_available: true,
+        recovery_budget_multiplier: 1,
+        continuations: [
+          expect.objectContaining({
+            path: "assertions",
+            total_rows: 12,
+          }),
+        ],
+      },
+    });
+    expect(first.assertions[0]).toMatchObject({
+      assertion_id: "blocking-tail",
+      verdict: "fail",
+    });
+    expect(
+      first.assertions
+        .filter((entry) => entry.verdict === "fail")
+        .map((entry) => entry.assertion_id),
+    ).toEqual(["blocking-tail", "warning-tail", "observed-tail"]);
+    const cursor = String(first.next_cursor);
+    expect(decodeReadOutputContinuationCursor(cursor)).toMatchObject({
+      command: "assurance",
+      path: "assertions",
+      offset: first.assertions.length,
+      total_rows: 12,
+    });
+
+    const second = applyReadOutputDimensions(
+      "assurance",
+      { outputBudget: 650, outputCursor: cursor },
+      structuredClone(input),
+    );
+    if (isReadOutputBudgetExceeded(second)) {
+      throw new Error("Expected the next assurance page.");
+    }
+    expect(second.assertions[0]?.assertion_id).toBe(
+      `pass-${first.assertions.length - 3}`,
+    );
+    expect(second.assertions.some((entry) => entry.verdict === "fail")).toBe(
+      false,
+    );
+
+    expect(() =>
+      applyReadOutputDimensions(
+        "assurance",
+        { outputCursor: cursor },
+        { ...structuredClone(input), assertions: assertions.slice(1) },
+      ),
+    ).toThrow("no longer matches");
+    expect(() =>
+      applyReadOutputDimensions(
+        "list",
+        { outputCursor: cursor },
+        { items: [{ id: "pm-1" }] },
+      ),
+    ).toThrow("belongs to assurance");
+    expect(() =>
+      applyReadOutputDimensions(
+        "list",
+        {
+          outputCursor: encodeReadOutputContinuationCursor({
+            command: "list",
+            path: "missing.rows",
+            offset: 0,
+            total_rows: 1,
+            fingerprint: "missing",
+          }),
+        },
+        { items: [{ id: "pm-1" }] },
+      ),
+    ).toThrow("no longer matches");
+
+    for (const malformed of [
+      "not-json",
+      "x".repeat(4097),
+      { version: 2 },
+      { version: 1, command: "create" },
+      { version: 1, command: "list", path: 1 },
+      { version: 1, command: "list", path: "", offset: 0 },
+      { version: 1, command: "list", path: "items", offset: "0" },
+      { version: 1, command: "list", path: "items", offset: -1 },
+      {
+        version: 1,
+        command: "list",
+        path: "items",
+        offset: 0,
+        total_rows: "1",
+      },
+      {
+        version: 1,
+        command: "list",
+        path: "items",
+        offset: 0,
+        total_rows: 0,
+      },
+      {
+        version: 1,
+        command: "list",
+        path: "items",
+        offset: 0,
+        total_rows: 1,
+        fingerprint: 1,
+      },
+      {
+        version: 1,
+        command: "list",
+        path: "items",
+        offset: 0,
+        total_rows: 1,
+        fingerprint: "",
+      },
+    ]) {
+      const malformedCursor =
+        typeof malformed === "string"
+          ? malformed
+          : Buffer.from(JSON.stringify(malformed), "utf8").toString(
+              "base64url",
+            );
+      expect(() => decodeReadOutputContinuationCursor(malformedCursor)).toThrow(
+        "malformed or unsupported",
+      );
+    }
   });
 
   it("bounds token estimation when custom JSON serialization never reaches a fixed point", () => {

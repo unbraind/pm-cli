@@ -2,11 +2,13 @@ id: pm-okgxwa
 title: "Ranking explanation is sized by the workspace rather than by the answer: explaining two returned rows emits one entry per active item and ignores the token budget entirely"
 description: "Measured 2026-07-26 on this workspace at 280 active items. pm context --limit 2 returns 1,784 bytes. Adding --explain-ranking returns 131,187 bytes, a 73-fold amplification to explain two rows, and the JSON form returns 161,179. The breakdown is unambiguous: ranking.items carries 280 entries totalling 102,592 bytes — one per active item in the workspace — while ranking.model is 19 bytes, available_signals 186, feature_store 146, and the whole packing object 499. The explanation therefore describes every candidate the scorer considered rather than the rows the caller received, so its size is a function of workspace size and not of the request. --token-budget does not bound it: the same call at --token-budget 200 and at --token-budget 2000 returns 131,186 and 131,190 bytes respectively. The flag that exists to cap what an agent pays is bypassed by the flag that explains what it paid for, and at the scale the proven-scale milestone targets this output has no upper bound at all."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",context,observability,scale,token-efficiency
 created_at: "2026-07-26T10:54:37.857Z"
-updated_at: "2026-07-26T10:54:37.857Z"
+updated_at: "2026-08-14T12:57:47.667Z"
+closed_at: "2026-08-14T12:57:46.988Z"
+completed_at: "2026-08-14T12:57:46.988Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The explanation covers the rows that were returned, with any wider candidate detail available only when explicitly requested and bounded when it is; The declared token budget applies to the explanation as it applies to the rows, and exceeding it degrades deterministically rather than silently emitting the full set; The explanation's size is proven to scale with the result rather than the workspace, by measuring the same request against workspaces that differ by orders of magnitude; The measurement corpus for the token gate includes this payload, since it is the largest agent-facing output the CLI produces; The explanation remains sufficient to attribute a ranking decision after the reduction, verified against the evaluation harness rather than by inspection"
@@ -19,16 +21,32 @@ why_now: "The relevance engine is where the roadmap is investing, and every sign
 parent: pm-mpbb
 risk: medium
 confidence: 90
-dependencies[11]{id,kind,created_at,author,source_kind}:
-  pm-4k6b,related,"2026-07-26T10:54:37.857Z",null,null
-  pm-5t33or,blocked_by,"2026-07-26T10:54:37.857Z",null,null
-  pm-801d,related,"2026-07-26T10:54:37.857Z",null,null
-  pm-atfm,related,"2026-07-26T10:54:37.857Z",null,null
-  pm-cxr0jb,related,"2026-07-26T10:54:37.857Z",null,null
-  pm-ez1dfg,related,"2026-07-26T10:54:37.857Z",null,null
-  pm-g3n00m,implements,"2026-07-26T10:54:37.857Z",null,null
-  pm-mpbb,implements,"2026-07-26T10:54:37.857Z",null,null
-  pm-o87av6,verifies,"2026-07-26T10:54:37.857Z",null,null
-  pm-t5dt4z,related,"2026-07-26T10:54:37.857Z",null,null
-  pm-z71aoy,related,"2026-07-26T10:54:37.857Z",null,null
+resolution: fixed
+expected_result: "Ranking explanations scale with the returned answer, remain attributable, and stay inside the same output budget rather than growing with the workspace."
+actual_result: Explanations are filtered to served IDs and disclose candidate_count/omitted_count; scale regression proves payload invariance across two orders of magnitude while preserving attribution.
+dependencies[11]{id,kind,created_at}:
+  pm-4k6b,related,"2026-07-26T10:54:37.857Z"
+  pm-5t33or,blocked_by,"2026-07-26T10:54:37.857Z"
+  pm-801d,related,"2026-07-26T10:54:37.857Z"
+  pm-atfm,related,"2026-07-26T10:54:37.857Z"
+  pm-cxr0jb,related,"2026-07-26T10:54:37.857Z"
+  pm-ez1dfg,related,"2026-07-26T10:54:37.857Z"
+  pm-g3n00m,implements,"2026-07-26T10:54:37.857Z"
+  pm-mpbb,implements,"2026-07-26T10:54:37.857Z"
+  pm-o87av6,verifies,"2026-07-26T10:54:37.857Z"
+  pm-t5dt4z,related,"2026-07-26T10:54:37.857Z"
+  pm-z71aoy,related,"2026-07-26T10:54:37.857Z"
+comments[2]{created_at,author,text}:
+  "2026-08-14T11:04:50.402Z","harness:codex","Implementation start 2026-08-14: context ranking explanations will be projected to exactly the focus item rows actually served and disclose candidate/omitted counts. Live reproduction: --limit 2 returned 3 focus rows but 345 explanation rows (~50k JSON characters)."
+  "2026-08-14T12:57:45.589Z","harness:codex","Final verification: ranking explanations now contain only served item IDs plus candidate_count and omitted_count. The same two-row request over 100- and 10,000-candidate workspaces returns identical explanations except bounded counter growth; evaluation, token-surface, and exact coverage gates pass."
+files[2]{path,scope,note}:
+  src/sdk/query/context.ts,project,Answer-sized ranking explanation projection
+  tests/unit/commands/context-relevance-command.spec.ts,project,Explanation cardinality and omission accounting proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/context-relevance-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mssvdmy5-uhxpqm,test,passed,"2026-08-14T11:34:18.611Z","2026-08-14T11:34:32.813Z","2026-08-14T11:34:32.813Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY.md,project,Result-sized explanation semantics
+close_reason: Delivered result-sized attributable ranking explanations with scale and token-gate proof.
 body: ""

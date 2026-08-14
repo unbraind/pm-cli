@@ -47,6 +47,10 @@ export function createPmCliProgram(version: string): Command {
       "Carry a JSON session budget and served-item ledger across read calls",
     )
     .option(
+      "--output-cursor <cursor>",
+      "Resume a budget-compacted declared row collection",
+    )
+    .option(
       "--output-row-contract",
       "Include the machine-readable row selector and TOON encoding contract",
     )

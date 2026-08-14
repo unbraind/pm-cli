@@ -29,6 +29,8 @@ export interface GlobalOptions {
   outputFormat?: "toon" | "json";
   /** Caller-carried cross-call budget and served-item state. */
   outputSession?: string;
+  /** Opaque budget-compaction continuation cursor. */
+  outputCursor?: string;
   /** Include the machine-readable row selector and TOON encoding contract. */
   outputRowContract?: boolean;
   /** Filesystem path used for path resolution. */

@@ -514,6 +514,10 @@ export interface ContextRankingSummary {
     score: number;
     contributions: ContextRelevanceContributions;
   }>;
+  /** Number of candidates considered before answer-sized projection. */
+  candidate_count: number;
+  /** Number of candidate explanations omitted because their rows were not served. */
+  omitted_count: number;
   /** Rebuildable feature-store freshness and provenance. */
   feature_store?: {
     source: "derived_index" | "scan_fallback";
@@ -1081,17 +1085,24 @@ export function toContextPackingSummary(
 export function toContextRankingSummary<TItem>(
   report: ContextRelevanceReport<TItem>,
   featureStore?: ContextSignalStoreReadResult,
+  servedItemIds?: ReadonlySet<string>,
 ): ContextRankingSummary {
+  const ranked =
+    servedItemIds === undefined
+      ? report.ranked
+      : report.ranked.filter((entry) => servedItemIds.has(entry.id));
   return {
     model: report.model,
     available_signals: report.available_signals,
-    items: report.ranked.map((entry) => ({
+    items: ranked.map((entry) => ({
       id: entry.id,
       rank: entry.rank,
       baseline_rank: entry.baseline_rank,
       score: entry.score,
       contributions: entry.contributions,
     })),
+    candidate_count: report.ranked.length,
+    omitted_count: report.ranked.length - ranked.length,
     ...(featureStore
       ? {
           feature_store: {
@@ -2855,6 +2866,13 @@ export async function runContext(
     result.ranking = toContextRankingSummary(
       focusGroups.ranking,
       focusGroups.featureStore,
+      new Set(
+        [
+          ...focusGroups.highLevel,
+          ...focusGroups.lowLevel,
+          ...focusGroups.blockedFallback,
+        ].map((entry) => entry.id),
+      ),
     );
     result.packing = toContextPackingSummary(focusGroups.packing);
   }

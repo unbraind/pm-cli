@@ -2123,6 +2123,7 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
       outputBudget: rawGlobalOptions.outputBudget,
       outputFormat: rawGlobalOptions.outputFormat,
       outputSession: rawGlobalOptions.outputSession,
+      outputCursor: rawGlobalOptions.outputCursor,
     });
     forwardReadOutputIncludeModes(actionCommand, commandPath, globalOptions, commandOptions);
     await maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions);

@@ -67,6 +67,7 @@ function compactRowsToBudget(
   result: Record<string, unknown>,
   receipt: PmReadOutputReceipt,
   budget: number,
+  minimumRowsByPath: ReadonlyMap<string, number>,
 ): void {
   for (
     let iteration = 0;
@@ -76,12 +77,14 @@ function compactRowsToBudget(
     updateReadOutputReceiptEstimate(result, receipt);
     if (receipt.estimated_tokens <= budget) return;
     const candidate = readOutputBudgetCollections(result)
-      .filter(
-        (collection) =>
-          (Array.isArray(collection.value)
-            ? collection.value.length
-            : Object.keys(collection.value).length) > 1,
-      )
+      .filter((collection) => {
+        const length = Array.isArray(collection.value)
+          ? collection.value.length
+          : Object.keys(collection.value).length;
+        return (
+          length > Math.max(1, minimumRowsByPath.get(collection.path) ?? 0)
+        );
+      })
       .map((collection) => ({
         collection,
         length: Array.isArray(collection.value)
@@ -94,13 +97,22 @@ function compactRowsToBudget(
           left.collection.path.localeCompare(right.collection.path),
       )[0]?.collection;
     if (!candidate) return;
+    const minimumRows = Math.max(1, minimumRowsByPath.get(candidate.path) ?? 0);
     if (Array.isArray(candidate.value)) {
       candidate.value.splice(
-        -Math.max(1, Math.ceil(candidate.value.length / 2)),
+        -Math.min(
+          candidate.value.length - minimumRows,
+          Math.max(1, Math.ceil(candidate.value.length / 2)),
+        ),
       );
     } else {
       const keys = Object.keys(candidate.value);
-      for (const key of keys.slice(-Math.max(1, Math.ceil(keys.length / 2)))) {
+      for (const key of keys.slice(
+        -Math.min(
+          keys.length - minimumRows,
+          Math.max(1, Math.ceil(keys.length / 2)),
+        ),
+      )) {
         delete candidate.value[key];
       }
     }
@@ -121,6 +133,7 @@ export function compactReadOutputToBudget(
   result: Record<string, unknown>,
   receipt: PmReadOutputReceipt,
   budget: number,
+  minimumRowsByPath: ReadonlyMap<string, number> = new Map(),
 ): Record<string, unknown> {
   const stringCompactionState: StringCompactionState = { compacted: false };
   const compacted = compactStrings(result, stringCompactionState) as Record<
@@ -129,7 +142,7 @@ export function compactReadOutputToBudget(
   >;
   receipt.strings_compacted = stringCompactionState.compacted;
   compacted.read_output = receipt;
-  compactRowsToBudget(compacted, receipt, budget);
+  compactRowsToBudget(compacted, receipt, budget, minimumRowsByPath);
   updateReadOutputReceiptEstimate(compacted, receipt);
   return compacted;
 }

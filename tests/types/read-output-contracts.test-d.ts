@@ -36,6 +36,7 @@ const options = {
   outputLimit: 2,
   outputBudget: 256,
   outputFormat: "toon",
+  outputCursor: "opaque-cursor",
 } satisfies PmReadOutputOptions &
   CoreReadOutputOptions &
   RuntimeReadOutputOptions;
@@ -94,6 +95,10 @@ const sessionClientRead: Promise<PmReadOutputResult<ListResult>> = client.list({
     seen_item_ids: [],
   },
 });
+const cursorClientRead: Promise<PmReadOutputResult<ListResult>> = client.list({
+  outputCursor: "opaque-cursor",
+});
 void ordinaryClientRead;
 void budgetedClientRead;
 void sessionClientRead;
+void cursorClientRead;

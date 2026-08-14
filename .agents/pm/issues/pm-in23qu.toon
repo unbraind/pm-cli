@@ -2,21 +2,42 @@ id: pm-in23qu
 title: "The unknown-option refusal asserts the option belongs on another command path without checking, so a spelling that exists nowhere sends the reader on an unbounded search"
 description: "When a command is invoked with an option it does not declare, the refusal states that the option is not recognised for this command path, explains that option contracts are command-specific and intentionally validated, and advises the reader either to use supported options only or to move the option to the correct subcommand. Every one of those clauses is scoped to the invoked path, and together they assert that the option may well be valid somewhere else in the grammar. The refusal never checks whether that is true.\n\nTwo distinct failures are therefore rendered identically. In the first, the spelling is declared somewhere in the grammar but not on the path that was invoked; the useful recovery is to name the paths that do accept it. In the second, the spelling is declared on no path at all; the useful recovery is to say exactly that, and to offer the nearest declared spelling on the invoked path. The current text sends the reader hunting for a correct subcommand in both cases, and in the second case that search cannot terminate successfully.\n\nReference instance from this session. A dependency edit used an option carried in maintainer guidance as the bypass required for editing edges on an item one does not own. The refusal directed the reader to move it to the correct subcommand. A search of the source for both the kebab-case flag and its camel-case form returns no match anywhere: the option exists on no command path, in no contract, and in no completion script. The advice was unfollowable, and it was persuasive precisely because it was phrased specifically.\n\nThis is the complement of the cross-surface spelling work rather than a restatement of it. That work governs concepts that do have a spelling on some surface and requires the surfaces to agree or to register aliases. This governs the refusal path for spellings that exist on none, and it becomes decidable only once the lexicon is closed, because membership in the union of CLI flags, MCP declared keys and SDK contract parameter names is what the refusal has to query in order to tell the two cases apart. The lexicon item is therefore the dependency, not the duplicate.\n\nThe scope is the refusal renderer for unknown options, not the individual commands. The recovery envelope already carries structured fields, so the distinction can be expressed as a field rather than only as prose, which also makes it checkable by a gate instead of being reviewed by eye."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: "area:cli","area:errors","kind:ergonomics"
 created_at: "2026-08-10T16:11:24.041Z"
-updated_at: "2026-08-14T10:15:07.735Z"
+updated_at: "2026-08-14T12:57:44.918Z"
+closed_at: "2026-08-14T12:57:44.309Z"
+completed_at: "2026-08-14T12:57:44.309Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "The refusal distinguishes an option declared on this path but misused, an option declared elsewhere in the lexicon, and an option declared nowhere; When the spelling exists elsewhere the refusal names the accepting command paths; When the spelling exists nowhere the refusal says so and offers the nearest declared spelling on the invoked path; The distinction is carried as a structured field in the recovery envelope, not only as prose; A gate checks the scope claim against the declared lexicon, and a negative control fails when a refusal claims a scope the lexicon contradicts"
 parent: pm-mpbb
 risk: medium
 confidence: high
+resolution: fixed
+expected_result: Unknown-option refusals truthfully classify option scope from the declared lexicon and bound recovery to real command paths or local alternatives.
+actual_result: "Structured option_scope, accepting_paths, and path-local suggestions now derive from runtime contracts, with a lexicon contradiction gate and negative controls."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-fs8q9x,blocked_by,"2026-08-10T16:11:24.041Z","harness:claude-code","cli:create:dep",detected
   pm-gy885b,related,"2026-08-10T16:11:24.041Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-08-10T16:11:24.041Z","harness:claude-code","cli:create:dep",detected
   pm-pbyu,implements,"2026-08-10T16:11:24.041Z","harness:claude-code","cli:create:dep",detected
   pm-y0htkd,discovered_from,"2026-08-10T16:11:24.041Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-14T11:04:49.785Z","harness:codex","Implementation start 2026-08-14: unknown-option recovery will use the declared command flag lexicon to distinguish accepted-here, declared-elsewhere, and declared-nowhere scope, retaining bounded candidate command paths and current-path spelling guidance. Live reproductions captured --command elsewhere versus a nonexistent flag."
+  "2026-08-14T12:57:42.813Z","harness:codex","Final verification: unknown-option recovery is derived from the command lexicon and emits option_scope as declared_on_path, elsewhere, or nowhere; elsewhere includes accepting command paths and nowhere uses only on-path nearest spellings. Contract negative controls and full exact coverage pass."
+files[5]{path,scope,note}:
+  src/cli/commander-usage.ts,project,Declared cross-command flag lexicon scope derivation
+  src/cli/error-guidance.ts,project,Scope-specific unknown-option recovery
+  src/core/shared/errors.ts,project,Structured option_scope recovery contract
+  tests/unit/cli/error-guidance.spec.ts,project,Elsewhere and nowhere recovery projections
+  tests/unit/cli/unknown-option-scope-contract.spec.ts,project,Lexicon agreement gate and negative control
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/cli/unknown-option-scope-contract.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mssvdbm7-5if0lj,test,passed,"2026-08-14T11:34:06.963Z","2026-08-14T11:34:18.127Z","2026-08-14T11:34:18.127Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY.md,project,Lexicon-scoped refusal contract
+close_reason: Delivered structured lexicon-backed option scope and bounded truthful recovery guidance.
 body: ""

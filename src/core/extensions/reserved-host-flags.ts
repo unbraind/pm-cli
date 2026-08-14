@@ -25,6 +25,7 @@ export const RESERVED_EXTENSION_HOST_FLAGS: readonly ReservedExtensionHostFlag[]
     { flag: "--output-budget", value_name: "tokens" },
     { flag: "--output-format", value_name: "toon|json" },
     { flag: "--output-session", value_name: "state" },
+    { flag: "--output-cursor", value_name: "cursor" },
     { flag: "--output-row-contract" },
     { flag: "--quiet" },
     { flag: "--no-changed-fields" },

@@ -2,20 +2,41 @@ id: pm-e5gl05
 title: "The gate verdict withholds its evidence as a declaration-order prefix, so the assertion that produced a blocking verdict can be the row the default read drops"
 description: "The gate verdict is a conclusion published together with the evidence that produced it. Under the default output budget the conclusion is always retained and the evidence is cut to a prefix in declaration order, so the assertion that produced a blocking verdict is not guaranteed to appear in the answer that reports the block.\n\n## What is measured\n\nAt HEAD build 2026.8.14, gate tracker-context-quality, which declares forty assertions.\n\n    pm assurance run tracker-context-quality --trigger ci --dry-run --json\n      verdict     \"pass\"\n      exit_code   0\n      has_more    true\n      truncated   true\n      output_budget_truncation.reason           \"output_budget_reached\"\n      output_budget_truncation.budget_tokens    6000\n      output_budget_truncation.compacted_row_paths  [\"assertions\", ...]\n      assertions  20 rows\n\n    same command with --output-budget unbounded\n      assertions  40 rows\n\nHalf the evidence is withheld. The scalar verdict is computed over all forty and stays correct in both readings, so nothing about the conclusion is wrong. What is wrong is that the reader cannot recover which assertion the conclusion rests on.\n\n## Three separate properties are missing, and each one alone would be enough\n\nFirst, there is no denominator. The envelope emits has_more true and no total. pm list on the same workspace emits total 343 beside count 85. Here the reader sees twenty rows and a boolean. Twenty of twenty and twenty of forty are the same response.\n\nSecond, there is no cursor. next_cursor is not null on this surface, it is absent from the envelope entirely, so the pagination contract does not even nominally apply. The declared recovery is the unbounded re-read, which for this gate costs approximately 502 kilobytes because every assertion carries its full contributors edge list.\n\nThird, and this is the one that matters operationally, the retained subset is a prefix of the declaration order rather than a selection ranked by what the reader needs. Observed ordering: position 1 is implements-floor, position 20 is validate-orphaned-paths-ceiling, position 40 is graph-outcome-reachability-basis-points-floor. Nothing hoists a failing assertion into the retained window. Today all forty pass, so the tail is uninformative and the cut is harmless. On the day one of assertions 21 through 40 blocks, the default read returns twenty passing assertions, verdict block, and no row explaining it.\n\n## Why this is the exact failure shape the release pipeline already suffers\n\npm-x63izf owns the finding that the blocked-release alert derives its cause from configuration preflight and therefore prints \"inspect the failed workflow logs\" while the gate's own machine-readable verdict sits unread in the same job. The remedy assumed the verdict is a complete artifact once someone reads it. This item is the layer underneath: when that verdict is read at its default budget, it may not contain the blocking row. Fixing the alert to read the verdict is necessary and, without this, not sufficient.\n\n## Why a prefix is the wrong retention rule for a verdict\n\nFor a listing, a prefix is a defensible page: rows are homogeneous and the caller can continue. For a verdict, rows are not homogeneous. Exactly one class of row explains the answer, that class is rare, and it is the only class a reader under budget pressure is reading for. A retention rule that ignores verdict severity spends the entire budget on rows that agree with each other.\n\nThe general form of this is already recorded as signal candidate (43) on pm-4k6b, coverage-preserving budget truncation, which states that when a read cannot return everything the retained subset should be selected to represent the withheld one rather than to be its prefix. This item is that candidate's first concrete instance, on this project's own quality gate, where the cost of the prefix rule is that a block becomes unexplainable.\n\n## Scope note\n\nThis is a retention-policy and disclosure defect on one proof-bearing surface. The general absence of a continuation cursor after a budget truncation across the list family is a separate mechanism and is owned by pm-8nev0o; this item does not restate it and is not closed by it."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: assurance,ci,governance,output-budget
 created_at: "2026-08-14T05:16:25.084Z"
-updated_at: "2026-08-14T05:16:25.084Z"
+updated_at: "2026-08-14T12:57:42.011Z"
+closed_at: "2026-08-14T12:57:41.426Z"
+completed_at: "2026-08-14T12:57:41.426Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "When a gate verdict is truncated, the retained assertion rows are ranked so that every assertion whose verdict is not pass appears before any assertion that passed, and a blocking verdict always ships with the rows that caused it; The verdict envelope emits the total assertion count evaluated alongside the rows retained, so a reader can compute what fraction of the evidence is present without a second invocation; The verdict envelope participates in the declared pagination contract rather than omitting its keys, so the absence of a continuation is stated rather than implied; A regression test evaluates a gate whose only failing assertion is declared last, reads the verdict at the default budget, and asserts the failing row is present in the retained set; The retention rule is declared as data on the surface rather than implied by row order, so a reader can tell which selection policy produced the retained subset"
 parent: pm-1jzupz
 risk: high
 confidence: 90
+resolution: fixed
+expected_result: A truncated verdict retains every non-passing cause before passing evidence and states the full evaluated denominator and retention policy.
+actual_result: "Assurance prioritizes all non-passing assertions, preserves their enforcement order, reports assertions_total and verdict_priority, and exposes bounded continuation for withheld evidence."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,implements,"2026-08-14T05:16:25.084Z","harness:claude-code","cli:create:dep",detected
   pm-8nev0o,discovered_from,"2026-08-14T05:16:25.084Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-14T05:16:25.084Z","harness:claude-code","cli:create:dep",detected
   pm-x63izf,discovered_from,"2026-08-14T05:16:25.084Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-14T11:04:48.413Z","harness:codex","Implementation start 2026-08-14: assurance output will declare verdict-priority retention, stable non-pass-before-pass ordering, assertion denominator/row contract, and bounded continuation so blocking evidence cannot disappear behind passing prefix rows."
+  "2026-08-14T12:57:40.023Z","harness:codex","Final verification: assurance now declares assertions_total and budget_retention_policy=verdict_priority, retains block/warn/observe failures before passing evidence, and continues the remaining assertions with the universal cursor. The failing-tail regression and full exact coverage pass."
+files[5]{path,scope,note}:
+  src/sdk/governance/assurance.ts,project,Assertion denominator and row selector
+  src/sdk/read-output-budget.ts,project,Non-pass evidence retention floor
+  src/sdk/read-output/continuation.ts,project,Verdict-priority stable ordering
+  tests/unit/sdk/assurance.spec.ts,project,Assurance denominator contract proof
+  tests/unit/sdk/read-output-contracts.spec.ts,project,Failing-tail retention and continuation proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mssvc6re-59qcey,test,passed,"2026-08-14T11:33:11.030Z","2026-08-14T11:33:25.177Z","2026-08-14T11:33:25.177Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/READ_OUTPUT_CONTRACTS.md,project,Verdict-priority retention semantics
+close_reason: "Delivered causal verdict retention, denominator metadata, declared policy, and resumable remaining evidence."
 body: ""

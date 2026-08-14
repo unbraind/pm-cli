@@ -62,6 +62,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
       },
     ],
   },
+  outputCursor: { type: "string", minLength: 1 },
   outputRowContract: { type: "boolean" },
   path: { type: "string" },
   pmExecutable: { type: "string" },
@@ -1011,6 +1012,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
         seen_item_ids: [],
       },
     ],
+  },
+  outputCursor: {
+    description:
+      "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
   },
   outputRowContract: {
     description:

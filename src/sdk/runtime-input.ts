@@ -123,6 +123,7 @@ export function actionGlobalOptions(
     outputLimit: readRuntimeScalarString(args, "outputLimit"),
     outputBudget: readRuntimeScalarString(args, "outputBudget"),
     outputSession: readRuntimeString(args, "outputSession"),
+    outputCursor: readRuntimeString(args, "outputCursor"),
     outputFormat:
       outputFormat === "json" || outputFormat === "toon"
         ? outputFormat
@@ -215,6 +216,7 @@ const UNIVERSAL_READ_OUTPUT_OPTION_KEYS = [
   "outputBudget",
   "outputFormat",
   "outputSession",
+  "outputCursor",
 ] as const;
 
 /** Reconcile MCP array/scalar option spellings with CLI flag expectations. */

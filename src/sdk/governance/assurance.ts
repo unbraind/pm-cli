@@ -522,6 +522,13 @@ export interface AssuranceGateVerdict {
   exit_code: 0 | 1;
   /** Per-assertion receipts. */
   assertions: AssuranceAssertionVerdict[];
+  /** Total assertions evaluated before any transport projection or compaction. */
+  assertions_total: number;
+  /** Stable selector for iterating assertion evidence across transports. */
+  row_contract: {
+    row_keys: ["assertions"];
+    jq_selector: ".assertions[]";
+  };
   /** Aggregate compute receipt. */
   cost: AssuranceMeasurementCost;
 }
@@ -1621,6 +1628,11 @@ export async function evaluateAssuranceGate(
     verdict: blocking ? "block" : warning ? "warn" : "pass",
     exit_code: blocking ? 1 : 0,
     assertions,
+    assertions_total: assertions.length,
+    row_contract: {
+      row_keys: ["assertions"],
+      jq_selector: ".assertions[]",
+    },
     cost: sumCosts(
       assertions.map((entry) => entry.cost),
       Math.max(0, ...assertions.map((entry) => entry.cost.duration_ms)),

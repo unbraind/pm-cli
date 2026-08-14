@@ -29,6 +29,11 @@ export interface PmCliErrorRecoveryPayload {
   candidate_commands_total?: number;
   /** Whether additional accepting command paths were omitted from this payload. */
   candidate_commands_truncated?: boolean;
+  /** Declared lexicon membership of an option rejected by the attempted path. */
+  option_scope?:
+    | "declared_on_path"
+    | "declared_elsewhere"
+    | "declared_nowhere";
   /** Value that configures or reports suggested retry for this contract. */
   suggested_retry?: string;
   /** Elapsed time in milliseconds for retry after. */

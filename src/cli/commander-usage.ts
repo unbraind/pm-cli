@@ -825,6 +825,7 @@ function resolveUnknownOptionSuggestions(
   match: RegExpMatchArray | null;
   suggestions: string[] | undefined;
   otherCommands: string[];
+  scope: "declared_on_path" | "declared_elsewhere" | "declared_nowhere";
 } {
   const match = message.match(/unknown option '([^']+)'/i);
   const suggestions =
@@ -837,10 +838,21 @@ function resolveUnknownOptionSuggestions(
           ),
         ])
       : undefined;
+  const otherCommands = match
+    ? findOtherCommandsForFlag(match[1], commandName)
+    : [];
+  const declaredOnPath =
+    match !== null &&
+    collectKnownLongFlags(commandName).includes(normalizeLongFlag(match[1]));
   return {
     match,
     suggestions,
-    otherCommands: match ? findOtherCommandsForFlag(match[1], commandName) : [],
+    otherCommands,
+    scope: declaredOnPath
+      ? "declared_on_path"
+      : otherCommands.length > 0
+        ? "declared_elsewhere"
+        : "declared_nowhere",
   };
 }
 
@@ -987,6 +999,7 @@ export async function resolveCommanderUsageContext(
         : undefined,
     unknownOptionOtherCommandsTruncated:
       unknownOption.otherCommands.length > 12 || undefined,
+    unknownOptionScope: unknownOption.scope,
     suggestedRetryCommand,
     verifiedCollectionItemId: workspaceUsage.verifiedCollectionItemId,
     ...splitSchemaSubcommand,
@@ -1021,6 +1034,7 @@ export async function formatCommanderUsageMessage(
     unknownOptionOtherCommands,
     unknownOptionOtherCommandsTotal,
     unknownOptionOtherCommandsTruncated,
+    unknownOptionScope,
     unknownSubcommandPath,
     unknownSubcommandToken,
     unknownSubcommandAllowedValues,
@@ -1042,6 +1056,7 @@ export async function formatCommanderUsageMessage(
       unknownOptionOtherCommands,
       unknownOptionOtherCommandsTotal,
       unknownOptionOtherCommandsTruncated,
+      unknownOptionScope,
       unknownSubcommandPath,
       unknownSubcommandToken,
       unknownSubcommandAllowedValues,
@@ -1092,6 +1107,7 @@ export async function formatCommanderUsageJson(
         usageContext.unknownOptionOtherCommandsTotal,
       unknownOptionOtherCommandsTruncated:
         usageContext.unknownOptionOtherCommandsTruncated,
+      unknownOptionScope: usageContext.unknownOptionScope,
       unknownSubcommandPath: usageContext.unknownSubcommandPath,
       unknownSubcommandToken: usageContext.unknownSubcommandToken,
       unknownSubcommandAllowedValues:
