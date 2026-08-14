@@ -239,7 +239,9 @@ describe("GitHub workflow contract", () => {
     expect(
       gatesJob.indexOf("node dist/cli.js merge install --no-extensions"),
     ).toBeLessThan(
-      gatesJob.indexOf("node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json"),
+      gatesJob.indexOf(
+        "node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json",
+      ),
     );
     expect(
       gatesJob.match(/node dist\/cli\.js merge install --no-extensions/g),
@@ -257,8 +259,13 @@ describe("GitHub workflow contract", () => {
       "--coverage.thresholds.statements=0",
       "node scripts/run-tests.mjs coverage-shard --",
       "name: coverage-blob-${{ matrix.shard }}",
+      "path: .vitest-reports/blob-${{ matrix.shard }}.json",
+      "name: test-reliability-${{ matrix.shard }}",
+      "path: .vitest-reports/reliability-${{ matrix.shard }}-4.json",
       "if-no-files-found: error",
     ]);
+    expect(coverageJob).not.toContain("test-reliability-");
+    expect(coverageJob).not.toContain("reliability-${{ matrix.shard }}-4.json");
     expectContainsAll(coverageJob, [
       "name: Gates (coverage)",
       "needs: coverage-shards",
@@ -599,9 +606,9 @@ describe("GitHub workflow contract", () => {
         "run: node dist/cli.js merge install --no-extensions",
       ),
     ).toBeLessThan(releaseWorkflow.indexOf("run: pnpm quality:static"));
-    expect(
-      releaseWorkflow.indexOf("pnpm changelog:pm:check"),
-    ).toBeLessThan(releaseWorkflow.indexOf("run: pnpm quality:static"));
+    expect(releaseWorkflow.indexOf("pnpm changelog:pm:check")).toBeLessThan(
+      releaseWorkflow.indexOf("run: pnpm quality:static"),
+    );
     expect(
       releaseWorkflow.match(
         /node dist\/cli\.js merge install --no-extensions/g,
