@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1509,
+    "covered_symbols": 1513,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1510
+    "required_symbols": 1514
   },
   "breaking_acknowledgements": [
     {
@@ -480,6 +480,22 @@
       ],
       "package_version": "2026.8.13",
       "reason": "Intentional SDK contract widening: default output budgets, explicit unbounded opt-out, and assurance/comments-audit read surfaces"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmReadOutputLegacyAlias",
+        "signature ./sdk:PmReadOutputReceipt",
+        "signature ./sdk:PmReadOutputResult",
+        "signature ./sdk/contracts:PmReadOutputLegacyAlias",
+        "signature ./sdk/contracts:PmReadOutputReceipt",
+        "signature ./sdk/contracts:PmReadOutputResult",
+        "signature ./sdk/core:PmReadOutputLegacyAlias",
+        "signature ./sdk/core:PmReadOutputReceipt",
+        "signature ./sdk/core:PmReadOutputResult",
+        "signature ./sdk/runtime:PmReadOutputResult"
+      ],
+      "package_version": "2026.8.13",
+      "reason": "Additive optional read-output receipts and explicit alias semantics for executable recovery contracts"
     }
   ],
   "entrypoints": {
@@ -1067,6 +1083,12 @@
           "kind": "function",
           "name": "applyReadOutputDimensions",
           "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result> | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "applyReadOutputIncludeModes",
+          "signature": "(command: string, includeValue: unknown, commandOptions: Record<string, unknown>) => { selectors: string[]; modes: string[]; } | calls: (command: string, includeValue: unknown, commandOptions: Record<string, unknown>) => { selectors: string[]; modes: string[]; }"
         },
         {
           "classification": "supported",
@@ -7555,6 +7577,12 @@
           "signature": "(input: string) => string | calls: (input: string) => string"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "normalizeReadOutputIncludeModeOptions",
+          "signature": "(command: string, options: Record<string, unknown>) => void | calls: (command: string, options: Record<string, unknown>) => void"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "normalizeReplayPatchOps",
@@ -9130,7 +9158,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputLegacyAlias",
-          "signature": "export interface PmReadOutputLegacyAlias { flag: string; migration_hint: string; visibility: \"hidden_alias\"; }"
+          "signature": "export interface PmReadOutputLegacyAlias { flag: string; semantics?: \"replacement\" | \"behavior_preserving\"; migration_hint: string; visibility: \"hidden_alias\"; }"
         },
         {
           "classification": "supported",
@@ -9142,13 +9170,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; output_budget_truncation?: PmReadOutputTruncationDisclosure; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
         },
         {
           "classification": "supported",
@@ -9191,6 +9219,12 @@
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
           "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputTruncationDisclosure",
+          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; restore_with: string; }"
         },
         {
           "classification": "advanced_export",
@@ -9869,6 +9903,18 @@
           "kind": "function",
           "name": "readLocatedItem",
           "signature": "(item: LocatedItem, options?: { schema?: RuntimeSchemaSettings; extensionFieldNames?: readonly string[]; warnings?: string[]; }) => Promise<{ raw: string; document: ItemDocument; }> | calls: (item: LocatedItem, options?: { schema?: RuntimeSchemaSettings; extensionFieldNames?: readonly string[]; warnings?: string[]; }) => Promise<{ raw: string; document: ItemDocument; }>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "readOutputBudgetCollections",
+          "signature": "(result: Record<string, unknown>) => PmReadOutputRowCollection[] | calls: (result: Record<string, unknown>) => PmReadOutputRowCollection[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "readOutputIncludeModeOptions",
+          "signature": "(command: string) => ReadonlyMap<string, string> | calls: (command: string) => ReadonlyMap<string, string>"
         },
         {
           "classification": "advanced_export",
@@ -16232,6 +16278,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "applyReadOutputIncludeModes",
+          "signature": "(command: string, includeValue: unknown, commandOptions: Record<string, unknown>) => { selectors: string[]; modes: string[]; } | calls: (command: string, includeValue: unknown, commandOptions: Record<string, unknown>) => { selectors: string[]; modes: string[]; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "ASSURANCE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -16832,6 +16884,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "normalizeReadOutputIncludeModeOptions",
+          "signature": "(command: string, options: Record<string, unknown>) => void | calls: (command: string, options: Record<string, unknown>) => void"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "NOTES_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -17356,7 +17414,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputLegacyAlias",
-          "signature": "export interface PmReadOutputLegacyAlias { flag: string; migration_hint: string; visibility: \"hidden_alias\"; }"
+          "signature": "export interface PmReadOutputLegacyAlias { flag: string; semantics?: \"replacement\" | \"behavior_preserving\"; migration_hint: string; visibility: \"hidden_alias\"; }"
         },
         {
           "classification": "contract_data",
@@ -17368,13 +17426,13 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; }"
         },
         {
           "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; output_budget_truncation?: PmReadOutputTruncationDisclosure; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
         },
         {
           "classification": "contract_data",
@@ -17405,6 +17463,12 @@
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
           "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputTruncationDisclosure",
+          "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; restore_with: string; }"
         },
         {
           "classification": "contract_data",
@@ -17471,6 +17535,12 @@
           "kind": "function",
           "name": "readFirstValueFromCommanderOptions",
           "signature": "(options: Record<string, unknown>, contract: CommanderOptionAliasContract) => unknown | calls: (options: Record<string, unknown>, contract: CommanderOptionAliasContract) => unknown"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "readOutputIncludeModeOptions",
+          "signature": "(command: string) => ReadonlyMap<string, string> | calls: (command: string) => ReadonlyMap<string, string>"
         },
         {
           "classification": "contract_data",
@@ -18652,7 +18722,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputLegacyAlias",
-          "signature": "export interface PmReadOutputLegacyAlias { flag: string; migration_hint: string; visibility: \"hidden_alias\"; }"
+          "signature": "export interface PmReadOutputLegacyAlias { flag: string; semantics?: \"replacement\" | \"behavior_preserving\"; migration_hint: string; visibility: \"hidden_alias\"; }"
         },
         {
           "classification": "supported",
@@ -18664,13 +18734,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; result_omitted: boolean; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; output_budget_truncation?: PmReadOutputTruncationDisclosure; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
         },
         {
           "classification": "supported",
@@ -24070,7 +24140,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
+          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; output_budget_truncation?: PmReadOutputTruncationDisclosure; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
         },
         {
           "classification": "supported",

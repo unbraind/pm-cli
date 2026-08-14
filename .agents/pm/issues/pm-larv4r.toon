@@ -1,0 +1,22 @@
+id: pm-larv4r
+title: Make every failing health verdict self-indexing and attach gate severity to findings
+description: "GH-1001 shows ok:false can coexist with checks that appear healthy because the deciding provenance warning lives only in a distant top-level array. Add a compact failed_because contract adjacent to the verdict, attach every warning to an owning or synthetic check, distinguish advisory from gate-failing findings, and require executable remediation for every failing class."
+type: Issue
+status: open
+priority: 1
+tags[4]: agent-ux,health,output-contract,recovery
+created_at: "2026-08-13T22:03:57.836Z"
+updated_at: "2026-08-13T22:03:57.836Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: "Every ok:false health payload names its deciding codes beside ok; every warning is indexed by a check and declares advisory or gate_failing severity; every gate-failing code has executable remediation or an explicit safe-disposition refusal; compact and full JSON/TOON projections preserve the verdict explanation; GH-1001 is linked in evidence"
+parent: pm-33cw
+risk: high
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-33cw,implements,"2026-08-13T22:03:57.836Z","harness:codex","cli:create:dep",detected
+  pm-5q8wa0,discovered_from,"2026-08-13T22:03:57.836Z","harness:codex","cli:create:dep",detected
+  pm-sz6w,verifies,"2026-08-13T22:03:57.836Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-13T22:03:57.836Z","harness:codex","Duplicate check: all-status search found the legacy provenance disposition and remediation registry work, but no item owns self-indexing health verdict causality; GH-1001 is the canonical external report."
+body: ""

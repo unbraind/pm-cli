@@ -13,6 +13,20 @@ export interface PmReadOutputRowCollection {
   value: unknown[] | Record<string, unknown>;
 }
 
+const BUDGET_METADATA_ROOT_KEYS = new Set([
+  "applied_bound",
+  "completeness",
+  "continuation_contract",
+  "filters",
+  "omission_receipt",
+  "output_budget_truncation",
+  "projection",
+  "read_output",
+  "read_session",
+  "row_contract",
+  "sorting",
+]);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -75,6 +89,41 @@ export function readOutputRowCollections(
       ? [{ path: rowPath, value }]
       : [];
   });
+}
+
+/**
+ * Discover every collection the token-budget degradation ladder may reduce.
+ *
+ * Ordinary field and amount projections stay bound to declared row paths (or
+ * top-level array fallbacks), because a nested tag list is not an independent
+ * result row. Budget degradation has a different obligation: it must exhaust
+ * nested content collections before omitting the whole useful result. This
+ * census therefore adds nested arrays while excluding receipt/envelope metadata
+ * whose mutation would make the disclosure itself incomplete.
+ */
+export function readOutputBudgetCollections(
+  result: Record<string, unknown>,
+): PmReadOutputRowCollection[] {
+  const collections = readOutputRowCollections(result);
+  const declaredPaths = new Set(
+    collections.map((collection) => collection.path),
+  );
+  const visit = (value: unknown, path: string): void => {
+    if (Array.isArray(value)) {
+      if (!declaredPaths.has(path)) {
+        collections.push({ path, value });
+      }
+      value.forEach((entry, index) => visit(entry, `${path}.${index}`));
+      return;
+    }
+    if (!isRecord(value)) return;
+    for (const [key, entry] of Object.entries(value)) {
+      if (path.length === 0 && BUDGET_METADATA_ROOT_KEYS.has(key)) continue;
+      visit(entry, path.length === 0 ? key : `${path}.${key}`);
+    }
+  };
+  visit(result, "");
+  return collections;
 }
 
 /** Count array entries and object-map values across declared row collections. */

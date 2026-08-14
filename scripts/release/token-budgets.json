@@ -69,11 +69,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 20304,
-      "baseline_estimated_tokens": 5076,
-      "baseline_lines": 835,
-      "max_bytes": 22335,
-      "max_estimated_tokens": 5584
+      "baseline_bytes": 20770,
+      "baseline_estimated_tokens": 5193,
+      "baseline_lines": 854,
+      "max_bytes": 22848,
+      "max_estimated_tokens": 5713
     },
     {
       "id": "contracts-flags-json",
@@ -84,11 +84,11 @@
       ],
       "kind": "discovery",
       "scale_tier": "static",
-      "baseline_bytes": 645,
-      "baseline_estimated_tokens": 162,
-      "baseline_lines": 27,
-      "max_bytes": 710,
-      "max_estimated_tokens": 179
+      "baseline_bytes": 23491,
+      "baseline_estimated_tokens": 5873,
+      "baseline_lines": 1179,
+      "max_bytes": 25841,
+      "max_estimated_tokens": 6461
     },
     {
       "id": "list-default",
@@ -145,11 +145,11 @@
       ],
       "kind": "answer",
       "scale_tier": "depth-heavy",
-      "baseline_bytes": 15714,
-      "baseline_estimated_tokens": 3929,
-      "baseline_lines": 434,
-      "max_bytes": 17286,
-      "max_estimated_tokens": 4322,
+      "baseline_bytes": 25770,
+      "baseline_estimated_tokens": 6443,
+      "baseline_lines": 670,
+      "max_bytes": 28348,
+      "max_estimated_tokens": 7088,
       "command": "comments-audit",
       "contract_max_estimated_tokens": 6000
     },

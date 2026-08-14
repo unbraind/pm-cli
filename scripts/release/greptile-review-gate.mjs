@@ -21,16 +21,24 @@ import { commandFor, flagBool, flagString, parseFlags } from "./utils.mjs";
 const GREPTILE = commandFor("greptile");
 const DEFAULT_TIMEOUT_MS = 600000;
 const CLEAN_REVIEW_PATTERN = /no review comments\.?$/i;
+const REVIEW_UNAVAILABLE_PATTERN =
+  /^(?:error:\s*)?free_reviews_limit_reached\.?$/imu;
 
 function parseGateOptions(argv) {
   const { flags } = parseFlags(argv);
-  const parsedTimeoutMs = Number.parseInt(flagString(flags, "timeout-ms", String(DEFAULT_TIMEOUT_MS)), 10);
+  const parsedTimeoutMs = Number.parseInt(
+    flagString(flags, "timeout-ms", String(DEFAULT_TIMEOUT_MS)),
+    10,
+  );
   return {
     help: flags.get("help") || flags.get("h"),
     outputJson: flagBool(flags, "json", false),
     reportOnly: flagBool(flags, "report-only", false),
     base: flagString(flags, "base", flagString(flags, "branch", "")),
-    timeoutMs: Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0 ? parsedTimeoutMs : DEFAULT_TIMEOUT_MS,
+    timeoutMs:
+      Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0
+        ? parsedTimeoutMs
+        : DEFAULT_TIMEOUT_MS,
   };
 }
 
@@ -46,7 +54,8 @@ function runGreptile(args, timeoutMs) {
     stdout: result.stdout ?? "",
     stderr: result.stderr ?? "",
     timedOut: result.error?.code === "ETIMEDOUT",
-    spawnFailed: result.error !== undefined && result.error.code !== "ETIMEDOUT",
+    spawnFailed:
+      result.error !== undefined && result.error.code !== "ETIMEDOUT",
   };
 }
 
@@ -80,11 +89,19 @@ function main() {
   // never blocks CI environments without a Greptile token.
   const whoami = runGreptile(["whoami"], 60000);
   if (whoami.spawnFailed) {
-    report(options.outputJson, { ok: true, skipped: true, reason: "greptile CLI not installed" }, 0);
+    report(
+      options.outputJson,
+      { ok: true, skipped: true, reason: "greptile CLI not installed" },
+      0,
+    );
     return;
   }
   if (whoami.status !== 0) {
-    report(options.outputJson, { ok: true, skipped: true, reason: "greptile CLI not authenticated" }, 0);
+    report(
+      options.outputJson,
+      { ok: true, skipped: true, reason: "greptile CLI not authenticated" },
+      0,
+    );
     return;
   }
 
@@ -101,28 +118,70 @@ function main() {
   // progress or warning text and must not turn a clean review into findings.
   const clean = CLEAN_REVIEW_PATTERN.test(stdoutOutput);
   if (review.timedOut) {
-    report(options.outputJson, { ok: true, skipped: true, reason: `greptile review timed out after ${options.timeoutMs}ms` }, 0);
+    report(
+      options.outputJson,
+      {
+        ok: true,
+        skipped: true,
+        reason: `greptile review timed out after ${options.timeoutMs}ms`,
+      },
+      0,
+    );
+    return;
+  }
+  if (REVIEW_UNAVAILABLE_PATTERN.test(output)) {
+    report(
+      options.outputJson,
+      {
+        ok: true,
+        skipped: true,
+        reason: "greptile free review quota exhausted",
+      },
+      0,
+    );
     return;
   }
   if (review.status !== 0) {
     if (output.length === 0 || clean) {
-      report(options.outputJson, { ok: true, skipped: true, reason: `greptile review did not complete (exit ${review.status ?? "null"})` }, 0);
+      report(
+        options.outputJson,
+        {
+          ok: true,
+          skipped: true,
+          reason: `greptile review did not complete (exit ${review.status ?? "null"})`,
+        },
+        0,
+      );
       return;
     }
     report(
       options.outputJson,
-      { ok: false, skipped: false, reason: `greptile reported review findings before exiting ${review.status ?? "null"}`, review: output },
+      {
+        ok: false,
+        skipped: false,
+        reason: `greptile reported review findings before exiting ${review.status ?? "null"}`,
+        review: output,
+      },
       options.reportOnly ? 0 : 1,
     );
     return;
   }
   if (clean) {
-    report(options.outputJson, { ok: true, skipped: false, findings: 0, review: output }, 0);
+    report(
+      options.outputJson,
+      { ok: true, skipped: false, findings: 0, review: output },
+      0,
+    );
     return;
   }
   report(
     options.outputJson,
-    { ok: false, skipped: false, reason: "greptile reported review findings", review: output },
+    {
+      ok: false,
+      skipped: false,
+      reason: "greptile reported review findings",
+      review: output,
+    },
     options.reportOnly ? 0 : 1,
   );
 }

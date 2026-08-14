@@ -1,0 +1,45 @@
+id: pm-kyjdne
+title: "The degradation ladder only sees top-level arrays, so the governance reads whose bulk is nested skip every intermediate rung and return nothing at all"
+description: "compactRowsToBudget reduces the largest row collection until the estimate fits the ceiling. readOutputRowPaths resolves which collections those are: a declared row_contract when present, and otherwise the top-level array properties of the result. Governance reads do not put their bulk at the top level, so for those commands the ladder has almost nothing to reduce and falls straight through to the last rung, which omits the entire result.\n\nMeasured 2026-08-13 at HEAD build 2026.8.13, on the exact invocation AGENTS.md prescribes for diagnostics:\n\n  pm validate --check-resolution --check-history-drift --json\n\nUnbounded, this is 81,108 bytes, about 20,277 estimated tokens against a governance JSON ceiling of 9,000. Its array collections are:\n\n  295   checks.0.details.missing_resolution_rows\n  295   checks.0.details.missing_resolution_remediation_hints\n    2   checks\n    1   warnings\n\nBoth 295-row collections are two levels below the root, so neither is visible to row discovery. The only reducible collection is checks, which halves from 2 to 1 and then falls under the length > 1 guard. The one surviving check still carries both 295-row arrays, the estimate is still far above the ceiling, and the result is discarded whole.\n\nWhat the caller receives is two keys: output_budget_exceeded and read_output. So the diagnostic the project routes its own agents to returns no verdict, no ok field, and no findings in JSON at the default budget. The result is recoverable with --output-budget unbounded, which the envelope does name, so this is a recovery cost rather than a dead end; but the recovery is the whole 20,277 tokens, because the intermediate rungs that exist to avoid exactly that were unreachable.\n\nThe receipt cannot explain its own decision. omitReadOutputForBudget builds a minimal receipt and then estimates it, so the emitted values are estimated_tokens 125, budget_tokens 9000, result_omitted true. The number reported is the size of the refusal, not the size of what was refused, and read as written the receipt says a 125-token result was dropped for exceeding a 9,000-token ceiling.\n\nThis is the mechanism behind pm-5t33or's second and fifth criteria rather than a restatement of them: the ladder is declared and implemented, and it is inapplicable to the shape most governance output actually has. It is also why the shape question is not cosmetic — a nested payload is not merely more expensive to read, it is unreachable by every bound the contract provides except the one that returns nothing."
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:sdk",contracts,governance,output-contract,token-efficiency
+created_at: "2026-08-13T21:25:10.666Z"
+updated_at: "2026-08-13T23:17:38.890Z"
+closed_at: "2026-08-13T22:02:41.081Z"
+completed_at: "2026-08-13T22:02:41.081Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "Row-collection discovery reaches nested collections, so a command whose payload sits below the top level is reducible by the same ladder as one whose payload sits at it; The whole-result omission rung is reachable only after every earlier rung has been applied and has failed to fit, proven by a case whose bulk is nested; The omission receipt reports the estimated size of the result that was omitted, not the size of the envelope that reports the omission; The AGENTS.md-prescribed diagnostic invocation returns a machine-readable verdict at the default budget, or the recommendation names the budget it needs; A regression test drives a real nested-payload governance read past its ceiling and asserts the rung that fired"
+parent: pm-33cw
+risk: high
+confidence: high
+resolution: "Extended the universal budget ladder with recursive nested collection discovery while preserving declared pagination row semantics, added truthful pre-omission size and compaction-path receipts, and made truncation recovery universal."
+expected_result: "Nested governance payloads degrade through strings and nested row collections before whole-result omission, and the default validate diagnostic returns a usable machine verdict."
+actual_result: "The 2,477-item validate diagnostic fits at the 9,000-token default after two nested arrays compact, reports both paths and a working unbounded recovery; focused tests pass."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,discovered_from,"2026-08-13T21:25:19.159Z","harness:claude-code","cli:update:dep",detected
+  pm-9rgaal,implements,"2026-08-13T21:25:19.159Z","harness:claude-code","cli:update:dep",detected
+  pm-cha95z,implements,"2026-08-13T21:25:19.159Z","harness:claude-code","cli:update:dep",detected
+  pm-jt8aa2,discovered_from,"2026-08-13T21:25:19.159Z","harness:claude-code","cli:update:dep",detected
+  pm-o87av6,implements,"2026-08-13T21:25:19.159Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-13T22:02:39.987Z","harness:codex","Evidence: recursive budget collection discovery now compacts nested validation findings before whole-result omission; receipts disclose sorted compacted_row_paths and the pre-omission useful-result estimate. The linked unit suite passed 27/27. The AGENTS.md diagnostic ran against an auto-seeded 2,477-item tracker at the 9,000-token default, returned exit 0 with a machine-readable verdict instead of omission, compacted checks.0.details.missing_resolution_rows and remediation_hints, estimated 5,943 tokens, and supplied an executable --output-budget unbounded restoration."
+  "2026-08-13T23:17:38.890Z","harness:codex","Final integrated evidence: full repository coverage passed 7,280 tests at exact 100/100/100/100; static quality, package artifact, tracked-secret scan, dependency audit, generated changelog check, contract snapshots, temporary packed CLI/SDK acceptance, npx and bunx dispatch all passed. Manual isolated tracker evidence retained at /tmp/pm-cli-manual-vomADM."
+files[3]{path,scope,note}:
+  src/sdk/read-output-budget.ts,project,Ladder that can only reduce discovered collections
+  src/sdk/read-output-contracts.ts,project,Omission receipt estimating its own envelope
+  src/sdk/read-output-rows.ts,project,Row-path discovery limited to top-level arrays
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts,project,240
+  node dist/cli.js validate --check-resolution --check-history-drift --json,project,120
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mss2bncv-6fpn4m,test,failed,"2026-08-13T22:01:02.111Z","2026-08-13T22:01:11.167Z","2026-08-13T22:01:11.167Z",1,1,0
+  test-local-mss2cyty-spa3xd,test,passed,"2026-08-13T22:01:20.701Z","2026-08-13T22:02:12.694Z","2026-08-13T22:02:12.694Z",2,0,0
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated pm-changelog record for the completed nested budget contract
+  docs/READ_OUTPUT_CONTRACTS.md,project,Nested governance payload and recovery contract
+  docs/SDK_CONTEXT_INTEGRITY.md,project,Replicated nested budget integrity contract
+close_reason: "Nested governance payloads now traverse the complete degradation ladder with truthful receipts; focused SDK tests and the live 2,477-item validate acceptance both passed."
+body: ""

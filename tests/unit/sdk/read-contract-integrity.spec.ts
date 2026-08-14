@@ -12,6 +12,7 @@ import { _testOnlyHealthCommand } from "../../../src/sdk/governance/health.js";
 import {
   applyReadOutputDimensions,
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
+  readOutputIncludeModeOptions,
 } from "../../../src/sdk/read-output-contracts.js";
 import { attachReadOutputContracts } from "../../../src/sdk/context-intent-contracts.js";
 
@@ -28,6 +29,26 @@ describe("SDK read contract integrity", () => {
         encoding: { canonical_option: "--output-format", applicable: true },
       },
     });
+  });
+
+  it("keeps exact projection replacements separate from execution semantics", () => {
+    expect(readOutputIncludeModeOptions("list").get("brief")).toBe("brief");
+    expect(readOutputIncludeModeOptions("deps").has("collapse")).toBe(false);
+    expect(readOutputIncludeModeOptions("health").has("check_only")).toBe(
+      false,
+    );
+    expect(
+      PM_READ_OUTPUT_SURFACE_CONTRACTS.find(
+        (contract) => contract.command === "deps",
+      )?.dimensions.include.legacy_aliases,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          flag: "--collapse",
+          semantics: "behavior_preserving",
+        }),
+      ]),
+    );
   });
 
   it("projects the primary get entity with the same bare-field grammar as collections", () => {

@@ -2,23 +2,28 @@ id: pm-e02lgu
 title: "Quota-aware branch protection: external AI review limits must never block merges"
 description: "Keep deterministic repository-owned quality and security gates required, but remove quota-limited external AI review contexts from branch protection whenever their free quota is exhausted or the service is unavailable. PR review bots remain advisory and must still be triggered, reviewed, reacted to, and documented when available."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: "area:ci","area:github",quota-safety,review-automation
 created_at: "2026-07-21T18:06:39.089Z"
-updated_at: "2026-08-09T01:24:46.774Z"
+updated_at: "2026-08-13T23:56:08.182Z"
+closed_at: "2026-08-13T23:53:24.943Z"
+completed_at: "2026-08-13T23:53:24.943Z"
 author: codex-derived-context-20260721
 estimated_minutes: 45
 acceptance_criteria: "Live main protection does not require Greptile, CodeRabbit, Gemini, Sourcery, or other quota-limited AI review contexts; deterministic build, coverage, compatibility, smoke, security, platform, Codecov, and CodeFactor checks remain required; PR #633 auto-merges without an admin bypass; the exact before/after required-check inventory and quota evidence are recorded."
 parent: pm-92if
 risk: medium
 confidence: high
+resolution: The review gate now classifies the exact Greptile free_reviews_limit_reached provider response as an unavailable advisory review while preserving failure for genuine findings.
+expected_result: Quota exhaustion is reported explicitly as skipped provider capacity and never blocks otherwise-green delivery or masquerades as code feedback.
+actual_result: "Real authenticated Greptile quota output returns ok=true, skipped=true, reason=greptile free review quota exhausted; findings fixtures still fail and exact coverage remains 100%."
 dependencies[4]{id,kind,created_at}:
   pm-0fxa,related,"2026-07-21T18:09:42.707Z"
   pm-bkcv,related,"2026-07-21T18:09:42.707Z"
   pm-wo8,related,"2026-07-21T18:09:42.707Z"
   pm-92if,implements,"2026-07-26T05:55:30.315Z"
-comments[8]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-07-21T18:06:39.089Z",codex-derived-context-20260721,"Duplicate check: searched all statuses for quota-limited review required branch protection, Greptile Review branch protection, and unavailable quota required checks. Existing pm-92if owns quality policy and historical pm-bkcv/pm-0fxa own earlier Greptile/review tooling, but no active item owns fail-open branch protection when a paid/free review quota is exhausted; this is the canonical policy item."
   "2026-07-21T18:09:44.027Z",codex-derived-context-20260721,"Live GitHub evidence 2026-07-21: Greptile CLI returned free_reviews_limit_reached; main branch protection required Greptile Review despite no status context, blocking otherwise-green PR #633. Removed only Greptile Review via the required-status-context API. The 18 deterministic requirements remain strict: build foundation, three runtime smokes, coverage/typecheck/static/compat/smoke gates, Windows regression, docs, CodeQL analysis, Trivy, ShellCheck, PSScriptAnalyzer, actionlint, Codecov patch, and CodeFactor. CodeRabbit/Gemini/Sourcery were already advisory."
   "2026-07-21T21:36:59.151Z",codex-relationship-backfill-20260721,"Current-head evidence 2026-07-21: committed SDK backfill bundle 3b8ae4b7 passed all deterministic release stages, including exact 100/100/100/100 coverage, secret scan, packed npx smoke, and 88-command package-first dogfood. The final advisory Greptile CLI stage alone returned free_reviews_limit_reached. PR bot triggers will still be attempted and documented; quota failure must not weaken deterministic required checks or be misreported as a code failure."
@@ -27,4 +32,18 @@ comments[8]{created_at,author,text}:
   "2026-07-25T11:57:38.744Z","harness:codex","PR #707 reviewer evidence: both GitHub @greptileai requests remained silent, and the authenticated repository Greptile gate returned free_reviews_limit_reached without a code finding. Required CI/security/coverage gates on exact head 7c1921db remained green. This is the existing canonical quota-aware branch-protection lineage; no duplicate item was created."
   "2026-08-03T23:02:13.633Z","harness:codex","PR #886 review availability evidence 2026-08-04: both hosted @greptileai requests produced no review surface, while the authenticated local review gate returned free_reviews_limit_reached and exit 1 with the misleading reason 'reported review findings'. Exact implementation head e824afc76897839f01089c6ae4dc8ee6418b6654 passed every deterministic hosted build, coverage, static, compatibility, platform, security, and smoke check; all six actionable CodeRabbit findings were fixed, acknowledged inline, and resolved. This is the existing canonical parser/quota limitation, not a code finding or duplicate work item."
   "2026-08-09T01:24:46.774Z","harness:codex","PR #944 provider evidence 2026-08-09: exact implementation commit b6678b8 passed every hosted deterministic build, coverage, static, compatibility, platform, security, analysis, and smoke check. All 16 actionable CodeRabbit findings were fixed, reacted to, acknowledged inline, confirmed by the bot, and resolved. CodeRabbit re-review and Sourcery were quota-limited; hosted Greptile produced no review surface. The local release dry-run passed exact 7,089-test 100/100/100/100 coverage, secrets, packed npx smoke, and 88-command temporary dogfood, then Greptile returned free_reviews_limit_reached and the known misleading reported-findings reason. Before/after proof remained v2026.8.8 for Git tag, GitHub release, and npm, so dry-run published nothing. This is the canonical quota/parser limitation, not a code finding."
+  "2026-08-13T23:45:39.460Z","harness:codex","Duplicate-check and live evidence: all-status searches for Greptile quota, review-provider unavailability, and free-review limits resolve to this canonical item. On PR #1005 exact head 079303e2e, the authenticated local gate received literal 'error: free_reviews_limit_reached.' and mislabeled it as review findings; hosted @greptileai produced no response surface. Implementing the long-recorded parser hardening here without creating duplicate work."
+  "2026-08-13T23:53:24.122Z","harness:codex","Implementation and verification evidence: the Greptile gate now recognizes only the explicit line-level free_reviews_limit_reached sentinel as unavailable free review capacity, returns ok=true/skipped=true with reason 'greptile free review quota exhausted', and still fails genuine findings output. The linked 19-test suite passed; a real authenticated invocation returned the corrected typed skip. Full validation passed 491 files / 7,281 tests and exact 100/100/100/100 coverage (52,824 statements, 38,831 branches, 10,854 functions, 51,020 lines), followed by the strict static-quality chain."
+  "2026-08-13T23:55:26.401Z","harness:codex","Changelog evidence: pm-changelog 2026.8.12 detected the newly closed item as stale generated history; regenerating CHANGELOG.md through the extension and linking the generated documentation to this item."
+  "2026-08-13T23:56:08.182Z","harness:codex","Changelog evidence: pm-changelog 2026.8.12 detected the newly closed item as stale generated history; regenerated CHANGELOG.md through the extension and linked the generated documentation to this item."
+files[2]{path,scope,note}:
+  scripts/release/greptile-review-gate.mjs,project,Classify explicit provider quota exhaustion as unavailable review capacity
+  tests/unit/scripts/release/greptile-review-gate.spec.ts,project,Regression coverage for live free_reviews_limit_reached response
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/greptile-review-gate.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mss64847-yekoay,test,passed,"2026-08-13T23:47:14.949Z","2026-08-13T23:47:23.287Z","2026-08-13T23:47:23.287Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated release history entry for completed quota-aware review gate
+close_reason: Implemented and verified quota-aware Greptile response classification without weakening genuine-finding failures; exact coverage and static quality pass.
 body: ""

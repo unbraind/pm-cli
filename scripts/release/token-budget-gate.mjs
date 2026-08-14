@@ -448,6 +448,25 @@ export function measureOutput(stdout) {
   };
 }
 
+/**
+ * Resolve the SDK-owned estimate that a JSON answer receipt proves, falling
+ * back to rendered transport bytes for unchanged or non-JSON results.
+ *
+ * Pretty-print whitespace is governed by the independent byte ratchet. It is
+ * not useful-result data and must not make a truthful `within_budget` receipt
+ * fail the command contract that produced it.
+ */
+export function readOutputContractEstimate(stdout, format, fallback) {
+  if (format !== "json") return fallback;
+  try {
+    const parsed = JSON.parse(stdout);
+    const estimate = parsed?.read_output?.estimated_tokens;
+    return Number.isFinite(estimate) && estimate >= 0 ? estimate : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function resolveDeclaredBudget(cliPath, command, format, options) {
   const result = runCliJson(
     cliPath,
@@ -517,6 +536,7 @@ function measureCorpus(cliPath) {
       }
       const stdout = result.stdout;
       const format = entry.args.includes("--json") ? "json" : "toon";
+      const renderedMeasurement = measureOutput(stdout);
       const contractBudgetKey = `${entry.command}:${format}`;
       const contractMaxEstimatedTokens =
         entry.kind === "answer"
@@ -531,7 +551,16 @@ function measureCorpus(cliPath) {
         ...(contractMaxEstimatedTokens === undefined
           ? {}
           : { contract_max_estimated_tokens: contractMaxEstimatedTokens }),
-        ...measureOutput(stdout),
+        ...renderedMeasurement,
+        ...(entry.kind === "answer"
+          ? {
+              contract_estimated_tokens: readOutputContractEstimate(
+                stdout,
+                format,
+                renderedMeasurement.estimated_tokens,
+              ),
+            }
+          : {}),
         ...(entry.intent
           ? { intent_receipt: JSON.parse(stdout).context_intent }
           : {}),
@@ -671,17 +700,24 @@ function isMalformedBudget(budget, requireAnswerRatchet) {
 }
 
 function measurementViolation(measurement, budget) {
+  const {
+    contract_estimated_tokens: contractEstimate = measurement.estimated_tokens,
+  } = measurement;
   if (measurement.intent) {
     const receipt = measurement.intent_receipt;
+    if (!receipt) {
+      return `${measurement.id}: intent receipt did not prove a feasible delivered result (${measurement.args.join(" ")})`;
+    }
     if (
-      !receipt ||
-      receipt.declaration_feasible !== true ||
-      receipt.result_omitted !== false ||
-      receipt.within_budget !== true ||
-      !Number.isFinite(receipt.estimated_tokens) ||
-      !Number.isFinite(receipt.token_budget) ||
-      measurement.estimated_tokens > receipt.token_budget ||
-      receipt.estimated_tokens > receipt.token_budget
+      [
+        receipt.declaration_feasible !== true,
+        receipt.result_omitted !== false,
+        receipt.within_budget !== true,
+        !Number.isFinite(receipt.estimated_tokens),
+        !Number.isFinite(receipt.token_budget),
+        measurement.estimated_tokens > receipt.token_budget,
+        receipt.estimated_tokens > receipt.token_budget,
+      ].includes(true)
     ) {
       return `${measurement.id}: intent receipt did not prove a feasible delivered result (${measurement.args.join(" ")})`;
     }
@@ -694,9 +730,9 @@ function measurementViolation(measurement, budget) {
   }
   if (
     measurement.kind === "answer" &&
-    measurement.estimated_tokens > measurement.contract_max_estimated_tokens
+    contractEstimate > measurement.contract_max_estimated_tokens
   ) {
-    return `${measurement.id}: ${measurement.estimated_tokens} estimated tokens exceeds ${measurement.command} contract ${measurement.contract_max_estimated_tokens} tokens (${measurement.args.join(" ")})`;
+    return `${measurement.id}: ${contractEstimate} contract-estimated tokens exceeds ${measurement.command} contract ${measurement.contract_max_estimated_tokens} tokens (${measurement.args.join(" ")})`;
   }
   if (measurement.estimated_tokens > budget.max_estimated_tokens) {
     return `${measurement.id}: ${measurement.estimated_tokens} estimated tokens exceeds budget ${budget.max_estimated_tokens} tokens (${measurement.args.join(" ")})`;

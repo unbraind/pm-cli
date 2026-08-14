@@ -80,7 +80,7 @@ import {
   type PmContextIntentPackageModule,
 } from "./context-intent-runtime.js";
 import {
-  validateReadOutputOptions,
+  normalizeReadOutputIncludeModeOptions, validateReadOutputOptions,
   type PmReadOutputOptions,
   type PmReadOutputResultFor,
 } from "./read-output-contracts.js";
@@ -3823,6 +3823,7 @@ async function dispatchAction(
 ): Promise<unknown> {
   const options = optionsWithAuthor(args, action);
   validateReadOutputOptions(action, options);
+  normalizeReadOutputIncludeModeOptions(action, options);
   const ctx: McpActionDispatchContext = {
     action,
     args,

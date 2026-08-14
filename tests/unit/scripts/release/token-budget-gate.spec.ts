@@ -13,6 +13,7 @@ type TokenBudgetMeasurement = {
   args: string[];
   bytes: number;
   estimated_tokens: number;
+  contract_estimated_tokens?: number;
   lines?: number;
   max_lines?: number;
   kind?: "discovery" | "answer";
@@ -56,6 +57,11 @@ type TokenBudgetGateModule = {
     estimated_tokens: number;
     lines: number;
   };
+  readOutputContractEstimate: (
+    stdout: string,
+    format: string,
+    fallback: number,
+  ) => number;
   budgetForMeasurement: (
     measurement: TokenBudgetMeasurement,
     multiplier: number,
@@ -325,6 +331,26 @@ describe("scripts/release/token-budget-gate", () => {
     });
   });
 
+  it("uses JSON read receipts for command contracts without hiding transport bytes", async () => {
+    const mod = await loadModule();
+    const pretty = JSON.stringify(
+      { rows: ["x".repeat(200)], read_output: { estimated_tokens: 40 } },
+      null,
+      2,
+    );
+    expect(mod.measureOutput(pretty).estimated_tokens).toBeGreaterThan(40);
+    expect(mod.readOutputContractEstimate(pretty, "json", 100)).toBe(40);
+    expect(mod.readOutputContractEstimate(pretty, "toon", 100)).toBe(100);
+    expect(mod.readOutputContractEstimate("not-json", "json", 100)).toBe(100);
+    expect(
+      mod.readOutputContractEstimate(
+        JSON.stringify({ read_output: { estimated_tokens: -1 } }),
+        "json",
+        100,
+      ),
+    ).toBe(100);
+  });
+
   it("builds budget entries with explicit headroom", async () => {
     const mod = await loadModule();
     const measurement: TokenBudgetMeasurement = {
@@ -543,8 +569,40 @@ describe("scripts/release/token-budget-gate", () => {
         },
       ),
     ).toEqual([
-      "context-answer: 5 estimated tokens exceeds context contract 4 tokens (context)",
+      "context-answer: 5 contract-estimated tokens exceeds context contract 4 tokens (context)",
     ]);
+
+    expect(
+      mod.compareBudgets(
+        [
+          {
+            id: "context-answer",
+            args: ["context"],
+            kind: "answer",
+            command: "context",
+            contract_max_estimated_tokens: 4,
+            bytes: 20,
+            estimated_tokens: 5,
+            contract_estimated_tokens: 4,
+          },
+        ],
+        {
+          ...manifest,
+          budgets: [
+            {
+              id: "context-answer",
+              args: ["context"],
+              kind: "answer",
+              scale_tier: "medium",
+              baseline_bytes: 20,
+              baseline_estimated_tokens: 5,
+              command: "context",
+              contract_max_estimated_tokens: 4,
+            },
+          ],
+        },
+      ),
+    ).toEqual([]);
 
     expect(
       mod.compareBudgets(
@@ -602,6 +660,25 @@ describe("scripts/release/token-budget-gate", () => {
         },
       ],
     };
+    expect(
+      mod.compareBudgets(
+        [
+          {
+            id: "context-intent",
+            args: ["context", "--for", "orient"],
+            kind: "answer",
+            command: "context",
+            contract_max_estimated_tokens: 4_000,
+            bytes: 400,
+            estimated_tokens: 100,
+            intent: true,
+          },
+        ],
+        intentManifest,
+      ),
+    ).toEqual([
+      "context-intent: intent receipt did not prove a feasible delivered result (context --for orient)",
+    ]);
     for (const intentReceipt of [
       {
         declaration_feasible: true,

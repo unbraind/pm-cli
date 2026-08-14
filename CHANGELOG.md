@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- The degradation ladder only sees top-level arrays, so the governance reads whose bulk is nested skip every intermediate rung and return nothing at all ([pm-kyjdne](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kyjdne.toon))
+- A budget-truncated read reports that rows are missing without a cursor, a recovery, or any sign that it overrode the caller's explicit request for all of them ([pm-jt8aa2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jt8aa2.toon))
+- The canonical spelling the output contract tells agents to adopt returns every row with every field stripped, and only the one surface that validates its selectors refuses it ([pm-eugaqy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eugaqy.toon))
 - Every core and first-party package command declares an attributable agent intent ([pm-7i97c3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7i97c3.toon))
 - Exact command-path summaries expose intent, flags, and format-aware output ceilings ([pm-pmrae8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmrae8.toon))
 - Default output ceilings bind representative read surfaces with depth-heavy negative controls ([pm-s2h0mq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s2h0mq.toon))
@@ -20,6 +23,7 @@
 
 ### Other
 
+- Quota-aware branch protection: external AI review limits must never block merges ([pm-e02lgu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-e02lgu.toon))
 - Refresh compatible Greptile 3.4, TypeScript-ESLint 8.67, and jscpd 5.0.15 tooling ([pm-87hmdw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-87hmdw.toon))
 - Isolate the merge SDK bundle from focused-entrypoint chunk fanout ([pm-m9gu9r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-m9gu9r.toon))
 - The Windows nightly leg cannot separate product defects from harness noise: 744 hardcoded POSIX path literals and 203 raw errno strings in the suite fail on Windows for reasons unrelated to pm behaviour ([pm-j668gl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-j668gl.toon))
