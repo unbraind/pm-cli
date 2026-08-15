@@ -347,7 +347,7 @@ export interface AcknowledgeUnknownAuthorEventsOptions {
 export interface UnknownAuthorAcknowledgmentPlanCoordinate extends UnknownAuthorHistoryEvent {
   /** SHA-256 of the exact immutable JSONL source line. */
   source_event_hash: string;
-  /** Whether applying the plan would append a new disposition for this row. */
+  /** Whether the row is undispositioned or an explicit apply would supersede it. */
   disposition: "actionable" | "already_acknowledged";
 }
 
@@ -357,9 +357,9 @@ export interface UnknownAuthorAcknowledgmentPlan {
   selection: { kind: "events" | "all_actionable" };
   /** Complete number of unique selected coordinates. */
   selected_count: number;
-  /** Coordinates that would receive a new disposition. */
+  /** Selected coordinates not covered by an earlier disposition. */
   actionable_count: number;
-  /** Coordinates already covered by an earlier disposition. */
+  /** Coordinates an explicit-events apply would supersede. */
   already_acknowledged_count: number;
   /** Coordinate rows omitted only from this bounded preview. */
   omitted_count: number;
@@ -375,7 +375,7 @@ export interface UnknownAuthorAcknowledgmentResult {
   dry_run: boolean;
   /** Whether an append-only workspace event was written. */
   mutated: boolean;
-  /** Number of newly acknowledged coordinates. */
+  /** Number of coordinates written to the appended disposition. */
   acknowledged: number;
   /** Effect-aware command outcome. */
   outcome: "preview" | "effect" | "no_effect" | "partial_effect";
@@ -718,10 +718,14 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
       },
     );
   }
-  const actionableEvents = resolved.completeCoordinates
-    .filter(({ disposition }) => disposition === "actionable")
+  const eventsToAcknowledge = resolved.completeCoordinates
+    .filter(
+      ({ disposition }) =>
+        resolved.plan.selection.kind === "events" ||
+        disposition === "actionable",
+    )
     .map(({ item_id, line }) => ({ item_id, line }));
-  if (actionableEvents.length === 0) {
+  if (eventsToAcknowledge.length === 0) {
     return {
       dry_run: false,
       mutated: false,
@@ -738,7 +742,7 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
     author: reviewer,
     context: {
       author_acknowledgment: {
-        events: actionableEvents,
+        events: eventsToAcknowledge,
         attributed_author: attributedAuthor,
       },
     },
@@ -749,12 +753,14 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
   return {
     dry_run: false,
     mutated: true,
-    acknowledged: actionableEvents.length,
+    acknowledged: eventsToAcknowledge.length,
     outcome:
+      resolved.plan.actionable_count > 0 &&
       resolved.plan.already_acknowledged_count > 0
         ? "partial_effect"
         : "effect",
     exit_code:
+      resolved.plan.actionable_count > 0 &&
       resolved.plan.already_acknowledged_count > 0
         ? EXIT_CODE.PARTIAL_EFFECT
         : EXIT_CODE.SUCCESS,

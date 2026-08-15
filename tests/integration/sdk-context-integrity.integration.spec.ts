@@ -185,6 +185,64 @@ describe("SDK context integrity transports", () => {
       );
       expect(acknowledged.code).toBe(0);
       expect(acknowledged.json).toMatchObject({ acknowledged: 1 });
+      const correctionPreview = context.runCli(
+        [
+          "history-author-acknowledge",
+          "--event",
+          `_workspace:${String(unknownLine)}`,
+          "--dry-run",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const corrected = context.runCli(
+        [
+          "history-author-acknowledge",
+          "--event",
+          `_workspace:${String(unknownLine)}`,
+          "--plan-fingerprint",
+          (
+            correctionPreview.json as {
+              plan: { plan_fingerprint: string };
+            }
+          ).plan.plan_fingerprint,
+          "--attributed-author",
+          "corrected-fixture-agent",
+          "--reviewer",
+          "fixture-maintainer",
+          "--reason",
+          "Supersede the prior workspace attribution.",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(corrected).toMatchObject({
+        code: 0,
+        json: { acknowledged: 1, outcome: "effect" },
+      });
+      const dispositionEvents = (
+        await readFile(workspaceHistoryPath, "utf8")
+      )
+        .trim()
+        .split(/\r?\n/u)
+        .map(
+          (line) =>
+            JSON.parse(line) as {
+              context?: {
+                author_acknowledgment?: {
+                  attributed_author?: string;
+                  events?: Array<{ item_id: string; line: number }>;
+                };
+              };
+            },
+        )
+        .filter((event) => event.context?.author_acknowledgment);
+      expect(
+        dispositionEvents.at(-1)?.context?.author_acknowledgment,
+      ).toEqual({
+        attributed_author: "corrected-fixture-agent",
+        events: [{ item_id: "_workspace", line: unknownLine }],
+      });
       await expect(
         scanHistoryAuthorAttribution(context.pmPath),
       ).resolves.toMatchObject({

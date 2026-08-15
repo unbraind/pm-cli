@@ -217,12 +217,18 @@
           "path": "tests/integration/sdk-context-integrity.integration.spec.ts",
           "contains_all": [
             "round-trips an actionable _workspace coordinate",
-            "history-author-acknowledge"
+            "history-author-acknowledge",
+            "corrected-fixture-agent"
           ]
         },
         {
           "path": "docs/SDK_CONTEXT_INTEGRITY.md",
-          "contains_all": ["_workspace:<line>", "history-author-acknowledge"]
+          "contains_all": [
+            "_workspace:<line>",
+            "history-author-acknowledge",
+            "context.author_acknowledgment.events",
+            "supersedes the earlier attribution"
+          ]
         }
       ]
     },

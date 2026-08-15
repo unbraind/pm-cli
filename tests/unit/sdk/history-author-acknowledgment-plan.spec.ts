@@ -179,7 +179,7 @@ describe("history author acknowledgement plans", () => {
     });
   });
 
-  it("reports no effect, partial effect, and selection drift without mutation", async () => {
+  it("supersedes explicit dispositions and rejects selection drift", async () => {
     const pmRoot = await createTracker();
     const firstPlan = await planUnknownAuthorHistoryAcknowledgment(pmRoot, {
       events: [{ item_id: "pm-plan", line: 1 }],
@@ -199,16 +199,41 @@ describe("history author acknowledgement plans", () => {
       acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
         events: [{ item_id: "pm-plan", line: 1 }],
         plan_fingerprint: alreadyPlan.plan_fingerprint,
-        attributed_author: "original-agent",
+        attributed_author: "corrected-agent",
         reviewer: "maintainer",
-        reason: "No duplicate disposition.",
+        reason: "Correct the prior attribution.",
       }),
     ).resolves.toMatchObject({
-      mutated: false,
-      acknowledged: 0,
-      outcome: "no_effect",
-      exit_code: 6,
+      mutated: true,
+      acknowledged: 1,
+      outcome: "effect",
+      exit_code: 0,
     });
+    const workspaceEvents = (await readFile(
+      path.join(pmRoot, "history", "_workspace.jsonl"),
+      "utf8",
+    ))
+      .trim()
+      .split(/\r?\n/u)
+      .map(
+        (line) =>
+          JSON.parse(line) as {
+            context?: {
+              author_acknowledgment?: {
+                attributed_author?: string;
+                events?: Array<{ item_id: string; line: number }>;
+              };
+            };
+          },
+      );
+    expect(
+      workspaceEvents.map(
+        (event) => event.context?.author_acknowledgment?.attributed_author,
+      ),
+    ).toEqual(["original-agent", "corrected-agent"]);
+    expect(
+      workspaceEvents.at(-1)?.context?.author_acknowledgment?.events,
+    ).toEqual([{ item_id: "pm-plan", line: 1 }]);
 
     const mixedPlan = await planUnknownAuthorHistoryAcknowledgment(pmRoot, {
       events: [
@@ -229,9 +254,32 @@ describe("history author acknowledgement plans", () => {
       }),
     ).resolves.toMatchObject({
       mutated: true,
-      acknowledged: 1,
+      acknowledged: 2,
       outcome: "partial_effect",
       exit_code: 7,
+    });
+
+    const emptyBulkPlan = await planUnknownAuthorHistoryAcknowledgment(pmRoot, {
+      all_actionable: true,
+    });
+    expect(emptyBulkPlan).toMatchObject({
+      selected_count: 0,
+      actionable_count: 0,
+      already_acknowledged_count: 0,
+    });
+    await expect(
+      acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+        all_actionable: true,
+        plan_fingerprint: emptyBulkPlan.plan_fingerprint,
+        attributed_author: "original-agent",
+        reviewer: "maintainer",
+        reason: "Confirm the bulk selector is empty.",
+      }),
+    ).resolves.toMatchObject({
+      mutated: false,
+      acknowledged: 0,
+      outcome: "no_effect",
+      exit_code: 6,
     });
 
     const driftRoot = await createTracker();

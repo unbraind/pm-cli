@@ -148,7 +148,17 @@ pm history-author-acknowledge \
   --reason "Verified workspace provenance"
 ```
 
-Preview coordinates are bounded with `--limit`, but the fingerprint and counts always cover the complete selection. Plans distinguish already acknowledged coordinates, and apply reports `effect`, `no_effect` (exit 6), or `partial_effect` (exit 7) while appending only newly actionable rows. The SDK exposes `planUnknownAuthorHistoryAcknowledgment`, `resolveUnknownAuthorAcknowledgmentSelector`, and `parseUnknownAuthorHistoryEventCoordinates` so packages never need a private copy of this grammar. Health and validate map actionable unknown-author warnings directly to this append-only acknowledgment command instead of sending callers through another diagnostic loop.
+Preview coordinates are bounded with `--limit`, but the fingerprint and counts always cover the complete selection. Plans distinguish already acknowledged coordinates, and apply reports `effect`, `no_effect` (exit 6), or `partial_effect` (exit 7). Bulk selection appends only newly actionable rows, while explicit coordinates may append a superseding disposition as described below. The SDK exposes `planUnknownAuthorHistoryAcknowledgment`, `resolveUnknownAuthorAcknowledgmentSelector`, and `parseUnknownAuthorHistoryEventCoordinates` so packages never need a private copy of this grammar. Health and validate map actionable unknown-author warnings directly to this append-only acknowledgment command instead of sending callers through another diagnostic loop.
+
+An explicit `--event` selection is also the append-only correction path: if a
+coordinate already has a disposition, preview marks it
+`already_acknowledged`, and fingerprint-bound apply appends a later disposition
+that supersedes the earlier attribution. Recover the original coordinates from
+`context.author_acknowledgment.events` in the applicable
+`history/_workspace.jsonl` record, preview those same coordinates, and apply the
+fresh fingerprint with the corrected author and review evidence. By contrast,
+`--all-actionable` intentionally selects only undispositioned rows; an empty
+bulk selection remains `no_effect` and never repeats existing dispositions.
 
 ## Health provider boundary
 
