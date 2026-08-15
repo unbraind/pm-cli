@@ -27212,6 +27212,7 @@
     "workflow_transition_malformed",
     "workflow_type_empty",
     "workflow_type_unknown",
+    "workspace_history_chain_invalid",
     "workspace_history_state_conflict",
     "workspace_root_pm_path",
     "workspace_snapshot_force_required",

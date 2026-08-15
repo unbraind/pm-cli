@@ -1663,6 +1663,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "workspace_history_chain_invalid",
+    meaning: "Workspace history chain invalid condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/history/workspace-history.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "workspace_history_chain_invalid",
+    aliases: [],
+  },
+  {
     code: "workspace_history_state_conflict",
     meaning: "Workspace history state conflict condition.",
     stability: "stable",
