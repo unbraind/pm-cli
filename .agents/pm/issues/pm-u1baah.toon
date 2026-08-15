@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: "area:ci",gate,release,ux
 created_at: "2026-08-07T06:28:26.696Z"
-updated_at: "2026-08-15T04:41:31.898Z"
+updated_at: "2026-08-15T05:14:05.212Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#217bde283203d510dd91ecae"
 author: "harness:claude-code"
@@ -22,13 +22,14 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,implements,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-08-11T13:52:32.238Z","harness:claude-code","cli:update:dep",detected
   pm-q6n8sj,related,"2026-08-11T13:52:32.238Z","harness:claude-code","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-11T13:52:31.175Z","harness:claude-code","Reproduced in production on 2026-08-11, and it blocked the scheduled daily cut.\n\nSequence, all times UTC:\n\n- 04:02:48 the scheduled Auto Release run 31457243436 checked out main. HEAD was 3791ff12f74ff3f09c6062adca92ab8848d57ba7, a single-parent commit with no associated pull request.\n- 04:02:52 pull request 972 merged as 39d60f244779e8c4a451948988a0facbc48df824, four seconds after the checkout.\n- 04:09:37 hosted-analysis-gate refused with reason \"DeepScan status is missing for the exact commit\". The candidate carried exactly one commit status, codecov/patch, and no DeepScan or CodeFactor check run. Both fallbacks were unavailable: no second parent, and no pull request whose tree matched.\n- 04:09:38 blocker issue 973 opened. RECORDED_FAILURE_STAGE was hosted-analysis-gate, so the pm-x63izf fix reported the gate's own verdict rather than the preflight guess.\n- 04:12:23 blocker 973 closed, retry run 31457749989 started, checked out 39d60f24, and the same gate passed through the matching-pull-request fallback.\n- 04:21:18 v2026.8.11 tagged. npm shows 2026.8.11 as latest, and all three npx and bunx dispatch forms run it.\n\nSo the release succeeded only because the candidate changed between the two attempts. Nothing about 3791ff12 became releasable, and nothing ever will.\n\nPopulation measured the same day against the commits API rather than a subject-line heuristic: of the 103 commits on main since 2026-08-04, 37 have no associated pull request. That is 36 percent. main's HEAD at the time of measurement, 250b4030b4d246bdb6cb5f3ffb1fd1949be013c5, is one of them, so the default branch was sitting in an unreleasable state in the middle of an ordinary working day with no surface reporting it.\n\nThat last point is the half this item's acceptance criteria did not yet cover. AC1 requires the release pipeline to report releasability before it builds, which is a check inside a release attempt. Between attempts there is a window of up to 24 hours in which main is unreleasable and the only thing that will ever say so is tomorrow's 04:02 run. A new criterion has been added for that.\n"
   "2026-08-15T04:14:50.218Z","harness:codex","Production reproduction 2026-08-15: scheduled Auto Release run 31861502082 on main 592e5918 failed after exact coverage, packed npx, and package-first dogfood because DeepScan status was missing for the exact commit. Blocker GH-1017 is the live external report. PR #1016 is now merged at 26feeed14; no v2026.8.15 tag/package exists, so same-day uniqueness remains intact while this canonical item is actively fixed."
   "2026-08-15T04:19:42.982Z","harness:codex","Implementation evidence: hosted-analysis now emits a structured reviewed_pull_request_analyzer_evidence contract, succeeds for merge commit 26feeed14809 via identical-tree reviewed head e7e9b86afd7c, and explicitly refuses failed direct-main SHA 592e5918ca36 before build. Auto Release performs the check before toolchain setup; CI exposes Release analyzer readiness (main) on every product-relevant push. Focused unit/integration suite passed 79/79."
   "2026-08-15T04:38:17.090Z","harness:codex","Verification evidence: exact coverage passed across 500 files and 7,338 tests at statements 53,346/53,346, branches 39,357/39,357, functions 10,957/10,957, and lines 51,514/51,514. The repository-wide static quality pipeline passed, including build, package boundary, SDK parity, surface replication, tracker context, gate registry, SDK/CLI cost snapshots, graph composition, and record integrity."
   "2026-08-15T04:40:06.541Z","harness:codex","Manual isolated evidence: pnpm dogfood:package-first created /tmp/pm-dogfood-fp3TcV, installed the packed CLI and packages, and passed 88 commands including init, extension installation, package scaffolding/typecheck, linked-test execution, and upgrade flows. pnpm typecheck passed all core, type-test, package, and example projects. pnpm security:scan found no credential-like secrets in tracked files."
   "2026-08-15T04:41:31.898Z","harness:codex","Delivery: PR #1018 https://github.com/unbraind/pm-cli/pull/1018 carries the release analyzer provenance contract at initial implementation commit d834f23d4. Hosted checks and exact-head bot review are pending; the item remains in progress until merge and release recovery evidence are complete."
+  "2026-08-15T05:14:05.212Z","harness:codex","Review loop evidence: CodeRabbit identified three valid findings on PR #1018. The implementation now requires the merge parent to equal the unique reviewed PR head before identical-tree analyzer evidence can be reused, refuses an analyzer-clean identical-tree direct-push merge without that association, disables persisted checkout credentials in the main-readiness job, and records coverage through the canonical sandbox runner. Focused tests pass 90/90; current exact coverage passes 500 files and 7,339 tests at 100/100/100/100; repository static quality passes with CodeFactor-parity complexity 16 or lower."
 files[7]{path,scope,note}:
   .github/workflows/auto-release.yml,project,Pre-build release analyzer readiness
   .github/workflows/ci.yml,project,Continuous main-branch release readiness observability
@@ -39,11 +40,11 @@ files[7]{path,scope,note}:
   tests/unit/scripts/release/run-gates.spec.ts,project,Mandatory analyzer preflight ordering regressions
 tests[6]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/integration/release-automation-contract.spec.ts,project,240
-  "pnpm test:coverage",project,420
   "pnpm quality:static",project,420
   "pnpm dogfood:package-first",project,240
   pnpm typecheck,project,120
   "pnpm security:scan",project,120
+  node scripts/run-tests.mjs coverage,project,420
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Reviewed-PR arrival and direct-main refusal policy
 body: ""

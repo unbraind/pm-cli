@@ -197,8 +197,8 @@ function readCommitTree(repository, sha) {
   return typeof treeSha === "string" && SHA_PATTERN.test(treeSha) ? treeSha.toLowerCase() : null;
 }
 
-/** Resolve the unique reviewed PR head that GitHub squash-merged as this commit. */
-function readSquashPullRequestHead(repository, sha) {
+/** Resolve the unique reviewed PR head that GitHub merged as this commit. */
+function readReviewedPullRequestHead(repository, sha) {
   const result = runCaptured(GH, ["api", `repos/${repository}/commits/${sha}/pulls?per_page=100`]);
   if (result.status !== 0) {
     return null;
@@ -240,10 +240,15 @@ function resolveAnalyzerEvidence(repository, sha, initialEvidence) {
   if (!deepScanMissing || !codeFactorMissing) {
     return exact;
   }
+  const reviewedHead = readReviewedPullRequestHead(repository, sha);
   const mergeParent = runCaptured(GIT, ["rev-parse", `${sha}^2`]);
   const exactTree = runCaptured(GIT, ["rev-parse", `${sha}^{tree}`]);
   const parentSha = mergeParent.stdout.trim().toLowerCase();
-  if (mergeParent.status === 0 && SHA_PATTERN.test(parentSha) && exactTree.status === 0) {
+  if (
+    mergeParent.status === 0 &&
+    reviewedHead === parentSha &&
+    exactTree.status === 0
+  ) {
     const parentTree = runCaptured(GIT, ["rev-parse", `${parentSha}^{tree}`]);
     if (parentTree.status === 0 && exactTree.stdout.trim() === parentTree.stdout.trim()) {
       const parentEvidence = readAnalyzerEvidence(repository, parentSha);
@@ -256,20 +261,19 @@ function resolveAnalyzerEvidence(repository, sha, initialEvidence) {
       }
     }
   }
-  const squashHead = readSquashPullRequestHead(repository, sha);
-  if (squashHead === null) {
+  if (reviewedHead === null) {
     return exact;
   }
   const exactGitHubTree = readCommitTree(repository, sha);
-  const squashHeadTree = readCommitTree(repository, squashHead);
-  if (exactGitHubTree === null || squashHeadTree === null || exactGitHubTree !== squashHeadTree) {
+  const reviewedHeadTree = readCommitTree(repository, reviewedHead);
+  if (exactGitHubTree === null || reviewedHeadTree === null || exactGitHubTree !== reviewedHeadTree) {
     return exact;
   }
-  const squashEvidence = readAnalyzerEvidence(repository, squashHead);
-  return squashEvidence.ok
+  const reviewedHeadEvidence = readAnalyzerEvidence(repository, reviewedHead);
+  return reviewedHeadEvidence.ok
     ? {
-        ...squashEvidence,
-        analyzedSha: squashHead,
+        ...reviewedHeadEvidence,
+        analyzedSha: reviewedHead,
         analysisSource: "identical_tree_squash_pr_head",
       }
     : exact;

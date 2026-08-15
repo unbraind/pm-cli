@@ -225,6 +225,21 @@ describe("scripts/release/hosted-analysis-gate", () => {
           stderr: "",
         };
       }
+      if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+        return {
+          status: 0,
+          stdout: JSON.stringify([
+            {
+              state: "closed",
+              merged_at: "2026-08-15T04:00:00Z",
+              merge_commit_sha: SHA,
+              base: { ref: "main" },
+              head: { sha: parentSha },
+            },
+          ]),
+          stderr: "",
+        };
+      }
       const parentResponse = successfulAnalyzerResponse(target, parentSha);
       if (parentResponse !== null) {
         return parentResponse;
@@ -247,6 +262,44 @@ describe("scripts/release/hosted-analysis-gate", () => {
       analysis_source: "identical_tree_merge_parent",
     });
     expect(process.exitCode).toBe(0);
+  });
+
+  it("rejects an identical-tree merge parent without a reviewed pull-request association", async () => {
+    const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
+    const spawnSync = vi.fn((_command: string, args: string[]) => {
+      const target = String(args[1] ?? "");
+      if (args[0] === "rev-parse") {
+        if (target.endsWith("^2")) return { status: 0, stdout: `${PARENT_SHA}\n`, stderr: "" };
+        if (target.endsWith("^{tree}")) return { status: 0, stdout: `${treeSha}\n`, stderr: "" };
+        return { status: 0, stdout: `${SHA}\n`, stderr: "" };
+      }
+      if (target.endsWith("/protection")) {
+        return { status: 0, stdout: JSON.stringify(STRICT_PROTECTION), stderr: "" };
+      }
+      if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+        return { status: 0, stdout: "[]", stderr: "" };
+      }
+      const parentResponse = successfulAnalyzerResponse(target, PARENT_SHA);
+      if (parentResponse !== null) {
+        return parentResponse;
+      }
+      if (target.endsWith("/status")) {
+        return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
+      }
+      if (target.includes("/check-runs")) {
+        return { status: 0, stdout: JSON.stringify({ check_runs: [] }), stderr: "" };
+      }
+      return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
+    });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+
+    const payload = await runJson([], "hostedAnalysisUnreviewedMergeParent");
+    expect(payload).toMatchObject({
+      ok: false,
+      releasable: false,
+      reason: expect.stringContaining("direct-main commits without exact analyzer evidence are not releasable"),
+    });
+    expect(process.exitCode).toBe(1);
   });
 
   it("reuses reviewed analyzer evidence from the merged PR head of an identical-tree squash commit", async () => {
@@ -462,6 +515,21 @@ describe("scripts/release/hosted-analysis-gate", () => {
             stderr: "",
           };
         }
+        if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+          return {
+            status: 0,
+            stdout: JSON.stringify([
+              {
+                state: "closed",
+                merged_at: "2026-08-15T04:00:00Z",
+                merge_commit_sha: SHA,
+                base: { ref: "main" },
+                head: { sha: PARENT_SHA },
+              },
+            ]),
+            stderr: "",
+          };
+        }
         if (target.endsWith("/status")) {
           return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
         }
@@ -496,6 +564,21 @@ describe("scripts/release/hosted-analysis-gate", () => {
         return {
           status: 0,
           stdout: JSON.stringify(STRICT_PROTECTION),
+          stderr: "",
+        };
+      }
+      if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+        return {
+          status: 0,
+          stdout: JSON.stringify([
+            {
+              state: "closed",
+              merged_at: "2026-08-15T04:00:00Z",
+              merge_commit_sha: SHA,
+              base: { ref: "main" },
+              head: { sha: PARENT_SHA },
+            },
+          ]),
           stderr: "",
         };
       }
