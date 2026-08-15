@@ -39,11 +39,18 @@ function successfulAnalyzerResponse(target: string, sha: string, status = 0) {
 
 interface GatePayload {
   ok: boolean;
+  releasable?: boolean;
   reason?: string;
   repository?: string;
   sha?: string;
   analyzed_sha?: string;
   analysis_source?: string;
+  release_precondition?: {
+    id: string;
+    required_arrival: string;
+    direct_main_policy: string;
+    required_analyzers: string[];
+  };
   analyzers?: {
     deepscan: { new_issues: number };
     codefactor: { new_issues: number };
@@ -147,6 +154,11 @@ describe("scripts/release/hosted-analysis-gate", () => {
       ok: true,
       repository: "unbraind/pm-cli",
       sha: SHA,
+      releasable: true,
+      release_precondition: {
+        id: "reviewed_pull_request_analyzer_evidence",
+        direct_main_policy: "refuse_without_exact_commit_analyzer_evidence",
+      },
       analyzers: {
         deepscan: { new_issues: 0 },
         codefactor: { new_issues: 0, outstanding_annotations: 0 },
@@ -399,7 +411,14 @@ describe("scripts/release/hosted-analysis-gate", () => {
       const payload = await runJson([], `hostedAnalysisRejectedSquashFallback-${label}`);
       expect(payload).toMatchObject({
         ok: false,
-        reason: "DeepScan status is missing for the exact commit",
+        releasable: false,
+        reason: expect.stringContaining("Release analyzer provenance precondition failed"),
+        release_precondition: {
+          id: "reviewed_pull_request_analyzer_evidence",
+          required_arrival: "reviewed_pull_request_to_main_or_exact_commit_analysis",
+          direct_main_policy: "refuse_without_exact_commit_analyzer_evidence",
+          required_analyzers: ["CodeFactor", "DeepScan"],
+        },
       });
       expect(process.exitCode).toBe(1);
     },
@@ -456,7 +475,8 @@ describe("scripts/release/hosted-analysis-gate", () => {
       const payload = await runJson([], `hostedAnalysisRejectedMergeFallback-${label}`);
       expect(payload).toMatchObject({
         ok: false,
-        reason: "DeepScan status is missing for the exact commit",
+        releasable: false,
+        reason: expect.stringContaining("direct-main commits without exact analyzer evidence are not releasable"),
       });
       expect(process.exitCode).toBe(1);
     },
@@ -495,7 +515,8 @@ describe("scripts/release/hosted-analysis-gate", () => {
     const payload = await runJson([], "hostedAnalysisUnreadableMergeParentEvidence");
     expect(payload).toMatchObject({
       ok: false,
-      reason: "DeepScan status is missing for the exact commit",
+      releasable: false,
+      reason: expect.stringContaining("Release analyzer provenance precondition failed"),
     });
     expect(process.exitCode).toBe(1);
   });

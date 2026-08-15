@@ -243,6 +243,9 @@ describe("scripts/release/run-gates", () => {
   it("fails a captured gate and includes stdout + stderr detail in the message", async () => {
     const spawnSync = vi.fn((command: string, args: string[]) => {
       const joined = [command, ...args].join(" ");
+      if (joined.includes("hosted-analysis-gate.mjs")) {
+        return { status: 0, stdout: '{"ok":true}', stderr: "" };
+      }
       if (joined.includes("compatibility-check.mjs")) {
         return {
           status: 9,
@@ -280,6 +283,9 @@ describe("scripts/release/run-gates", () => {
   it("fails a gate with no stdout/stderr detail (empty suffix branch)", async () => {
     const spawnSync = vi.fn((command: string, args: string[]) => {
       const joined = [command, ...args].join(" ");
+      if (joined.includes("hosted-analysis-gate.mjs")) {
+        return { status: 0, stdout: '{"ok":true}', stderr: "" };
+      }
       if (joined.includes("build")) {
         return { status: 1, stdout: "", stderr: "" };
       }
@@ -305,6 +311,9 @@ describe("scripts/release/run-gates", () => {
   it("fails a captured gate with only stdout (stderr-empty branch)", async () => {
     const spawnSync = vi.fn((command: string, args: string[]) => {
       const joined = [command, ...args].join(" ");
+      if (joined.includes("hosted-analysis-gate.mjs")) {
+        return { status: 0, stdout: '{"ok":true}', stderr: "" };
+      }
       if (joined.includes("compatibility-check.mjs")) {
         return { status: 3, stdout: "only out", stderr: "" };
       }

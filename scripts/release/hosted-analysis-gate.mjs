@@ -14,6 +14,12 @@ const GH = commandFor("gh");
 const GIT = commandFor("git");
 const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const SHA_PATTERN = /^[0-9a-f]{40}$/i;
+const RELEASE_PRECONDITION = {
+  id: "reviewed_pull_request_analyzer_evidence",
+  required_arrival: "reviewed_pull_request_to_main_or_exact_commit_analysis",
+  direct_main_policy: "refuse_without_exact_commit_analyzer_evidence",
+  required_analyzers: ["CodeFactor", "DeepScan"],
+};
 
 /** Run a command without a shell and retain bounded text output for validation. */
 function runCaptured(command, args) {
@@ -269,6 +275,27 @@ function resolveAnalyzerEvidence(repository, sha, initialEvidence) {
     : exact;
 }
 
+/** Explain the immutable analyzer provenance contract when both results are absent. */
+function explainMissingAnalyzerProvenance(resolvedEvidence) {
+  const bothMissing =
+    !resolvedEvidence.deepScan.ok &&
+    resolvedEvidence.deepScan.reason.startsWith("DeepScan status is missing") &&
+    !resolvedEvidence.codeFactor.ok &&
+    resolvedEvidence.codeFactor.reason.startsWith("CodeFactor check run is missing");
+  if (!bothMissing) {
+    return null;
+  }
+  return {
+    ok: false,
+    releasable: false,
+    reason:
+      "Release analyzer provenance precondition failed: no exact-commit or identical-tree reviewed-PR evidence was found. Release candidates must reach main through a reviewed pull request whose head passed required DeepScan and CodeFactor checks; direct-main commits without exact analyzer evidence are not releasable.",
+    analyzed_sha: resolvedEvidence.analyzedSha,
+    analysis_source: resolvedEvidence.analysisSource,
+    release_precondition: RELEASE_PRECONDITION,
+  };
+}
+
 /** Verify that both analyzer contexts are strict required checks on main. */
 function inspectBranchProtection(protectionPayload) {
   const requiredStatusChecks = protectionPayload.required_status_checks;
@@ -346,6 +373,15 @@ function main() {
 
   const resolvedEvidence = resolveAnalyzerEvidence(repository.value, sha.value, analyzerEvidence);
   const { deepScan, codeFactor } = resolvedEvidence;
+  const provenanceFailure = explainMissingAnalyzerProvenance(resolvedEvidence);
+  if (provenanceFailure !== null) {
+    report(
+      outputJson,
+      { ...provenanceFailure, repository: repository.value, sha: sha.value },
+      1,
+    );
+    return;
+  }
   if (!deepScan.ok) {
     report(outputJson, { ...deepScan, repository: repository.value, sha: sha.value }, 1);
     return;
@@ -367,6 +403,8 @@ function main() {
       sha: sha.value,
       analyzed_sha: resolvedEvidence.analyzedSha,
       analysis_source: resolvedEvidence.analysisSource,
+      releasable: true,
+      release_precondition: RELEASE_PRECONDITION,
       analyzers: {
         deepscan: deepScan.analyzer,
         codefactor: codeFactor.analyzer,

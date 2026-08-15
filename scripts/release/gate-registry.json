@@ -169,6 +169,17 @@
     "command": "pnpm verify:preflight",
     "steps": [
       {
+        "id": "hosted-analysis-gate",
+        "gates": ["static-quality", "release-integrity"],
+        "executable": {
+          "command": "node",
+          "args": ["scripts/release/hosted-analysis-gate.mjs", "--json"],
+          "capture_json": true,
+          "env": { "GH_TOKEN": "{{release_policy_token}}" }
+        },
+        "skip_policy": "forbidden"
+      },
+      {
         "id": "build",
         "gates": ["compilation"],
         "executable": { "command": "pnpm", "args": ["build"] },
@@ -280,17 +291,6 @@
         "optional_flag": "--skip-telemetry-sentry"
       },
       {
-        "id": "hosted-analysis-gate",
-        "gates": ["static-quality"],
-        "executable": {
-          "command": "node",
-          "args": ["scripts/release/hosted-analysis-gate.mjs", "--json"],
-          "capture_json": true,
-          "env": { "GH_TOKEN": "{{release_policy_token}}" }
-        },
-        "skip_policy": "forbidden"
-      },
-      {
         "id": "greptile-review",
         "gates": ["static-quality"],
         "executable": {
@@ -391,6 +391,7 @@
       "owner": "pm-k6t4yb",
       "pipelines": [
         "ci.yml#gates",
+        "ci.yml#release-analyzer-readiness",
         "codspeed.yml#benchmarks",
         "nightly.yml#nightly",
         "release.yml#release",
@@ -584,6 +585,7 @@
       "owner": "pm-k6t4yb",
       "pipelines": [
         "auto-release.yml#auto-release",
+        "ci.yml#release-analyzer-readiness",
         "nightly.yml#nightly",
         "release.yml#release"
       ],
