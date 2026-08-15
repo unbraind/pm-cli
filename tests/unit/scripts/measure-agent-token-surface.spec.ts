@@ -28,6 +28,7 @@ const CONTRACTS = {
   summary_json: "SUMMARY-JSON-PAYLOAD",
   json: "CONTRACTS-JSON-PAYLOAD-LONG",
   full: "CONTRACTS-FULL",
+  bounded_full: "CONTRACTS-BOUNDED-FULL",
 };
 
 interface ExecOverrides {
@@ -58,6 +59,9 @@ function createExecFileSync(overrides: ExecOverrides = {}) {
       return CONTRACTS.summary_json;
     if (key === "contracts --json --no-pager") return CONTRACTS.json;
     if (key === "contracts --full --no-pager") return CONTRACTS.full;
+    if (key === "--output-budget 256 contracts --full --no-pager") {
+      return CONTRACTS.bounded_full;
+    }
     throw new Error(`unexpected execFileSync args: ${key}`);
   });
 }
@@ -119,6 +123,7 @@ function permissiveBaseline(overrides: Record<string, unknown> = {}): string {
         summary_json: 1_000_000,
         json: 1_000_000,
         full: 1_000_000,
+        bounded_full: 1_000_000,
       },
       commands: { ls: 1_000_000, get: 1_000_000 },
       required_commands: ["get", "ls"],
@@ -323,7 +328,7 @@ describe("measure-agent-token-surface", () => {
       report,
       incompleteBaseline,
     );
-    expect(incompleteViolations).toHaveLength(6);
+    expect(incompleteViolations).toHaveLength(7);
     expect(incompleteViolations).toEqual(
       expect.arrayContaining([
         "contracts.summary_toon: missing baseline",
@@ -335,7 +340,7 @@ describe("measure-agent-token-surface", () => {
         ...cleanBaseline,
         surfaces: undefined,
       } as unknown as TokenSurfaceBaseline),
-    ).toHaveLength(10);
+    ).toHaveLength(11);
   });
 
   it("writes an intentional baseline update to an explicit path", async () => {
@@ -395,7 +400,7 @@ describe("measure-agent-token-surface", () => {
         "utf8",
       );
       expect(stdoutWrite).toHaveBeenCalledWith(
-        "Agent token-surface gate passed (10 surfaces).\n",
+        "Agent token-surface gate passed (11 surfaces).\n",
       );
     } finally {
       stdoutWrite.mockRestore();

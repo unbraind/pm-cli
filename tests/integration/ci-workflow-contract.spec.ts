@@ -270,6 +270,8 @@ describe("GitHub workflow contract", () => {
       "name: Gates (coverage)",
       "needs: coverage-shards",
       "persist-credentials: false",
+      "name: Download dist artifact",
+      "name: dist-node24-ubuntu",
       "pattern: coverage-blob-*",
       "merge-multiple: true",
       "path: .vitest-reports",
@@ -279,6 +281,9 @@ describe("GitHub workflow contract", () => {
       "files: ./coverage/lcov.info",
       "files: ./coverage/junit.xml",
     ]);
+    expect(coverageJob.indexOf("name: Download dist artifact")).toBeLessThan(
+      coverageJob.indexOf("node scripts/release/coverage-threshold-gate.mjs"),
+    );
     expectContainsAll(runtimeSmokeJob, [
       "name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})",
       "needs: build-foundation",

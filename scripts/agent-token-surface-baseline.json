@@ -10,7 +10,8 @@
       "summary_toon": 11296,
       "summary_json": 25728,
       "json": 25590,
-      "full": 599
+      "full": 1304366,
+      "bounded_full": 559
     },
     "mcp_tools_list": 48127,
     "required_commands": [
@@ -152,7 +153,7 @@
       "focus": 547,
       "release": 537,
       "duplicates": 535,
-      "history-author-acknowledge": 524,
+      "history-author-acknowledge": 777,
       "copy": 508,
       "workspace": 483,
       "changelog": 381,

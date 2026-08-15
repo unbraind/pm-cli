@@ -215,11 +215,15 @@ const commands = names
 const perCommandBytes = commands.reduce((sum, entry) => sum + entry.bytes, 0);
 
 const contracts = {};
+// Keep the opt-in complete payload and the explicit bounded refusal as
+// separate ratchets: completeness must not masquerade as compactness, and the
+// budgeted recovery envelope must not grow unnoticed.
 for (const [key, args] of Object.entries({
   summary_toon: ["contracts", "--summary"],
   summary_json: ["contracts", "--summary", "--json"],
   json: ["contracts", "--json"],
   full: ["contracts", "--full"],
+  bounded_full: ["--output-budget", "256", "contracts", "--full"],
 })) {
   const bytes = measure(args);
   contracts[key] = { bytes, tokens: tokens(bytes) };

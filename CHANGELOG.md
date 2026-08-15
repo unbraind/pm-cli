@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- GH-1028: history-author-acknowledge bulk mutation lacks dry-run and misreports empty selection ([pm-mcxk8v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mcxk8v.toon))
 - GH-1030: contracts --json --full is wholly omitted by the default output budget ([pm-2qvq7a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qvq7a.toon))
+- GH-1028: history-author-acknowledge bulk mutation lacks dry-run and misreports empty selection ([pm-mcxk8v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mcxk8v.toon))
 - Auto Release blocker closure ignores successful recovery dispatch and reruns the stale tag-push workflow ([pm-db8onn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-db8onn.toon))
 - A commit pushed directly to the default branch can never be released: both analyzer-evidence fallbacks presuppose a pull request, and nothing declares that precondition ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
 
