@@ -6,14 +6,14 @@ status: open
 priority: 1
 tags[5]: "area:concurrency","area:locking",backlog,living-map,pm-cli
 created_at: "2026-07-04T18:47:33.243Z"
-updated_at: "2026-08-10T15:57:56.639Z"
+updated_at: "2026-08-15T13:58:35.219Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "All findings from the 2026-07-03 concurrency review are resolved or explicitly waived: atomic claim test-and-set, bounded lock-wait retry, singleton-file locking, ID-allocation TOCTOU guard, stale-lock takeover race. Parallel multi-agent stress (mutations, claims, config writes) preserves item and history integrity with zero silent lost updates."
 parent: pm-doxj
 risk: medium
 confidence: high
-dependencies[7]:
+dependencies[8]:
   - id: pm-76dnfg
     kind: related
     created_at: "2026-07-24T23:54:41.827Z"
@@ -38,9 +38,16 @@ dependencies[7]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[2]{created_at,author,text}:
+  - id: pm-o2kc
+    kind: blocked_by
+    created_at: "2026-08-15T13:58:33.365Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[3]{created_at,author,text}:
   "2026-07-30T17:17:07.342Z","harness:claude-code","Read-path concurrency measured 2026-07-30 (evening), and the finding is that the read path now takes a global write lock.\n\nEvery pm next and pm context serve appends to the context usage ledger, and the append is guarded by one workspace-wide lock named for the ledger, with a three second wait budget. Twelve concurrent pm next calls completed in 5,145 milliseconds of wall clock against 1,013 milliseconds for a single serial call, so roughly a 2.4-fold speedup where twelve independent reads should be near-linear. No entries were lost and no line in the ledger was unparseable, so this is a throughput ceiling rather than a correctness failure, and the write is correctly wrapped so a lock timeout degrades the signal instead of failing the read.\n\nTwo structural facts make it worth recording here rather than only on the cost item. The lock is taken on a read command, so the concurrency characteristics of reads are now governed by a write path, and a fleet sized for reads will contend on a resource that reads did not previously touch. And the entry itself scales with the corpus: a context serve records one row per open item, 315 today, while its sibling caps at 200, so per-read lock hold time grows with the workspace rather than staying constant.\n\nThis complements rather than duplicates the earlier concurrency evidence on this epic. The 24 concurrent annotation writers on one item that all succeeded were mutation writers contending on an item lock. This is read commands contending on a single shared workspace lock, which is the first case on this epic where reads serialise against each other. The cost and scaling of the ledger are tracked as their own issue, and the correctness of what it records is tracked separately again."
   "2026-08-04T09:19:20.642Z","harness:codex","Fresh multi-agent merge evidence 2026-08-04: pm validate reports merge fence and driver healthy, zero pending merge decisions, zero history drift, zero storage-integrity errors, and no active dangling references. Eight focused merge/lock suites passed 120 tests, including merge-safety installation, driver policy, reconciliation, receipts, CLI registration, command behavior, item-lock coverage, and lock GC. GitHub #889 exposes a separate recovery-guidance gap under pm-fbrz7p; the underlying merge primitives passed."
+  "2026-08-15T13:58:34.452Z","harness:codex","Multi-agent convergence design: represent every mutation as an idempotent operation with stable event identity, causal parents, actor/session provenance, previous hash, and deterministic field semantics. Claims are leases for coordination, not ownership of history; append-only comments/evidence merge freely, set-like tags and typed edges use identity-aware add/remove operations, scalar conflicts retain both proposals plus an explicit resolution event, and terminal transitions require causal preconditions. The Git merge driver must parse and merge PM records by schema rather than line order, preserve both branch histories, reject hash gaps or duplicate event identities, and produce the same current state independent of branch merge order. Test N-branch fan-out/fan-in, simultaneous create/update/close/release, rename and delete-like compensating events, clock skew, retries, partial writes, interrupted rebase, stale leases, and adversarial duplicate IDs. Scale through per-item logs, content-addressed snapshots, incremental indexes, optimistic compare-and-append, and bounded conflict summaries; measure conflict rate, lost-update rate, convergence time, merge amplification, and context freshness at thousands of agents. Never use force ownership or silent last-writer-wins to make a test green."
 notes[4]:
   - created_at: "2026-07-25T06:23:33.064Z"
     author: "harness:claude-code"

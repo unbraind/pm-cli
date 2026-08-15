@@ -1,0 +1,53 @@
+id: pm-k9m6wc
+title: "Published GitHub releases remain mutable, so daily-release immutability is policy-only instead of platform-enforced"
+description: "The sole v2026.8.15 GitHub release is correctly unique and its npm artifact is published, but GitHub reports isImmutable:false. GitHub now supports repository-level immutable releases for future publications, locking release assets and tags and producing release attestations. The release system must enable that control and make the immutable state an executable publication/verification contract without creating a second automatic release in one UTC day."
+type: Issue
+status: open
+priority: 1
+tags[9]: attestation,bunx,github-actions,immutability,negative-control,npm,npx,release,supply-chain
+created_at: "2026-08-15T13:55:57.823Z"
+updated_at: "2026-08-15T14:07:05.702Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "Repository or organization policy enables GitHub release immutability for future releases; publication stages every required asset in a draft before publishing; the release gate verifies the published record is immutable and binds the tag, commit SHA, assets, checksums, and release attestation; a negative control proves the workflow refuses to advertise success when immutability is absent or unverifiable; tag movement, tag deletion, asset mutation, and same-name tag reuse protections are covered by executable evidence where the platform permits; one automatic release per UTC day remains enforced while explicitly manual same-day releases retain their separately governed path; npm latest, npx, bunx, and direct package installation resolve the same version and do not trigger additional publication; recovery behavior is documented for failures before publication because assets cannot be appended afterward; local and hosted gates consume the same SDK contract and emit compact machine-readable receipts; release-health monitoring alerts on policy drift without attempting destructive repair; public documentation explains the immutable-release trust boundary without credentials or host-specific operations."
+goal: "Make every published daily release cryptographically and operationally trustworthy across GitHub, npm, npx, and bunx."
+objective: "Enable GitHub immutable releases and gate every future publication on verifiable tag, asset, attestation, and consumer identity."
+value: Closes the gap between the project's immutable-release promise and the platform state consumers can independently verify.
+impact: "Prevents post-publication tag and asset tampering, strengthens provenance, and makes release integrity machine-checkable."
+outcome: "Future daily releases report immutable state, carry verifiable attestations, and pass exact-artifact consumer checks without duplicate publication."
+why_now: "The live daily release succeeded today but exposed isImmutable:false, and GitHub's supported immutable-release control only protects future publications after it is enabled."
+parent: pm-u9d0
+risk: high
+confidence: high
+severity: high
+environment: "GitHub.com Releases, GitHub Actions auto-release and recovery workflows, npm registry, npx and bunx consumers"
+repro_steps: "Run gh release list with the isImmutable field for v2026.8.15; observe isImmutable:false despite a unique successful daily release. Compare with GitHub's repository immutable-release capability, which applies to future releases."
+expected_result: "Every future published GitHub release is platform-immutable and its exact tag, commit, assets, attestation, npm artifact, npx result, and bunx result are verified by one shared SDK-backed gate."
+actual_result: "v2026.8.15 is unique and published successfully, but GitHub reports isImmutable:false, so tags and assets lack the platform-enforced immutable-release guarantee."
+component: release governance and supply-chain integrity
+regression: false
+customer_impact: Consumers currently depend on repository permissions and workflow discipline to prevent post-publication tag or asset mutation; the GitHub release record does not supply the strongest available tamper-evident guarantee.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7zs0,verifies,"2026-08-15T13:55:57.823Z","harness:codex","cli:create:dep",detected
+  pm-a8zm,discovered_from,"2026-08-15T13:55:57.823Z","harness:codex","cli:create:dep",detected
+  pm-db8onn,discovered_from,"2026-08-15T13:55:57.823Z","harness:codex","cli:create:dep",detected
+  pm-gydv,related,"2026-08-15T13:55:57.823Z","harness:codex","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-08-15T13:55:57.823Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-15T13:55:57.823Z","harness:codex","Duplicate check: complete all-status search and targeted release, immutability, isImmutable, tag, asset, and attestation searches found release reliability, signing, provenance, and one-per-day owners but no item that owns GitHub's platform immutable-release setting or requires isImmutable=true. This issue is limited to that missing enforcement and verification contract; it does not duplicate signing, npm provenance, release recovery, or manual same-day policy work."
+  "2026-08-15T14:07:05.203Z","harness:codex","Linked verification executed on 2026-08-15: npm registry version check passed; GitHub release query executed successfully and returned the current release state, which remains isImmutable:false by design of this open issue. The test proves the observation path is executable; the future gate must additionally assert true after policy enablement and carry a seeded false-state negative control."
+notes[1]{created_at,author,text}:
+  "2026-08-15T13:55:57.823Z","harness:codex","Primary evidence: gh release list reports the sole v2026.8.15 record with isImmutable:false. GitHub's official immutable-release documentation states that the repository setting applies to future releases, locks associated tags and assets, and creates a release attestation; therefore existing releases must not be rewritten or republished to simulate compliance."
+learnings[1]{created_at,author,text}:
+  "2026-08-15T13:55:57.823Z","harness:codex","A unique tag and package plus a successful workflow prove publication identity, but they do not prove platform immutability. Treat GitHub's immutable bit and attestation as separate supply-chain evidence, and perform asset assembly before publication."
+files[2]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,Hosted publication and immutable-state gate owner
+  .github/workflows/release.yml,project,Exact-tag downstream release verification owner
+tests[2]{command,path,scope,note}:
+  npm view @unbrained/pm-cli version --json,.agents/pm,project,Verify the registry version matches the immutable GitHub release
+  "gh release list --limit 20 --json tagName,isImmutable,publishedAt",.agents/pm,project,Verify future releases are unique and platform-immutable
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msug9nac-pc2d6v,test,passed,"2026-08-15T14:05:30.111Z","2026-08-15T14:07:04.740Z","2026-08-15T14:07:04.740Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,"Document draft-first immutable publication,verification,and recovery contract"
+body: ""

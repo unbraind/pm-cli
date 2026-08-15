@@ -6,7 +6,7 @@ status: open
 priority: 0
 tags[6]: backlog,context-management,living-map,pm-cli,post-v0.1,roadmap
 created_at: "2026-05-31T19:41:50.865Z"
-updated_at: "2026-08-14T05:25:41.075Z"
+updated_at: "2026-08-15T13:56:21.271Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: Living backlog reflects the entire ecosystem; every capability epic has defined acceptance and active children; periodic review passes keep zero orphan open items and zero untracked work streams.
@@ -16,7 +16,7 @@ value: A discoverable forward backlog turns the tracker from a completed-work lo
 why_now: Tracker had 902 items but zero open/forward work; pm context returned empty. This milestone seeds the forward layer.
 risk: low
 confidence: high
-dependencies[23]:
+dependencies[24]:
   - id: pm-m08hza
     kind: related
     created_at: "2026-07-22T18:25:12.118Z"
@@ -117,7 +117,13 @@ dependencies[23]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[31]:
+  - id: pm-ljrh29
+    kind: implements
+    created_at: "2026-08-15T13:56:15.804Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[32]:
   - created_at: "2026-07-04T20:56:30.024Z"
     author: codex-agent
     text: "Audit evidence 2026-07-04 continuation: inspected all statuses with pm list --status all, pm stats, pm aggregate, pm validate --check-resolution --check-history-drift, pm health --check-only --summary, pm next, active duplicate-title scan, active parent-link scan, and live gh issue/pr list. Live totals: 1506 pm items, 1514 history streams, 24446 history entries. Status distribution: 37 open, 13 in_progress, 1444 closed, 12 canceled, 0 blocked. Type distribution: 1 Milestone, 81 Epics, 286 Features, 286 Issues, 524 Tasks, 224 Chores, 17 Plans, 50 Decisions, 36 Stories, 1 Reminder. Active structure: 50 active items, zero active non-epic orphans, zero duplicate-looking active titles, pm next ready=36 blocked=0. GitHub cross-check: one open issue GH-427, already tracked by in_progress pm-lt6n; zero open PRs. Existing broad audit lineages pm-y904 and pm-osea are closed with evidence and remain canonical, so no duplicate audit item was created. Residual governance: validate reports validate_resolution_missing_fields:268 on closed historical items, already represented by open pm-e9zh; active metadata filter only flags claimed epic pm-4ak1 for missing estimate/reviewer/sprint/release metadata, noted there without taking over the claim."
@@ -212,6 +218,9 @@ comments[31]:
   - created_at: "2026-08-10T12:19:54.836Z"
     author: "harness:claude-code"
     text: "Horizon AM, 2026-08-10: measure the property the strategic layer claims to provide by walking it, over terminal items too, and treat every number the walk moves as a re-scoring event.\nMethod. Take the invariant the newest structural layer asserts — every item resolves to an outcome milestone through typed edges — and compute it as a traversal rather than trusting the layer's presence. Then, crucially, compute it again after repairing it, and look at what else moved.\nWhat the walk found. The outcome ladder was a sibling set, not a layer: 15 of 89 epics reached an outcome, 1,024 terminal items reached the apex through 154 typed roots without traversing any outcome, and 130 items had no hierarchy up-edge at all. Repair was three evidence-cited waves of implements and supersedes edges, every one derived from the item's own recorded title, description or de-channelled tag vocabulary, with 23 rule-based assignments corrected by review where a keyword named the discovery channel or a homonym rather than the subject. Apex-bypassing items 37 to 0; items reaching no outcome 143 to 11 recorded residuals; rootless 130 to 12; depth-4-or-deeper population 460 to 1,036. Locked in as ratchets the same day: implements floor 2305 to 2544, total edges 11318 to 11847, discovered_from 438 to 463, verifies 233 to 239, and a new supersedes floor at 71 so evolution edges cannot be deleted.\nWhat the second walk found, which is the transferable part. Those waves changed no item's content, and still re-ranked more than 2,000 items on every topology-derived feature a context engine might read. Depth, distance-to-outcome, component size and centrality all moved because the shape of the set moved. So a governance improvement and a relevance regression are indistinguishable in any evaluation whose gold answers were fixed under an older topology. Recorded as pm-4k6b catalog entry (37) with three requirements: topology features are computed against a declared topology version, normalized against the corpus distribution rather than used absolutely, and required to be identically uniform under any pure re-parenting that preserves item content — because a feature that fails that case is ranking on curation effort, and curation effort tracks attention already spent.\nTwo blockers surfaced that were invisible from either side of themselves.\nThe blocks ceiling sits at 243 with zero headroom while pm-1w6scp's acceptance criteria require adding ordering edges, and blocks and blocked_by are the only kinds whose contract sets ordering true. The ceiling cannot tell an evidence-cited sequence edge from a fabricated directional one, so the two accepted properties are mutually unsatisfiable and neither item named the conflict. Filed as pm-c90tfh.\nThe closed-item convention outlived its cause. A dependency row added to a legacy closed item with a null closed_at moved exactly one changelog row, inside its own unchanged release section, with item_count and byte count identical: release-tag attribution holds membership stable and only the intra-section sort on a mutable timestamp churns, which regeneration in the same commit already heals. The reason that took nineteen days to establish is that the drift check says only that the file is out of date and never what moved, so an order-only diff is indistinguishable from an attribution defect. Filed as pm-2f80fn; the seven items marked blocked_by pm-wrbe for changelog reasons are unblocked, proved by 220 typed edges written across mostly terminal holders with no membership change.\nAlso filed: pm-ob9z4y, because the record stores adjacency twice and only one copy is machine-readable — 8,995 prose identifier mentions resolve to real items and 1,750 distinct pairs hold no edge in either direction. That gap is not safely automatable into edges, since ledger surfaces account for 405 of it and pass comments contain negative statements a naive extractor inverts, so it is specified as a census plus a reviewed exemption ledger plus a ceiling in quality:static, which makes the pass that writes prose references pay for them instead of leaving the number to the next sweep."
+  - created_at: "2026-08-15T13:56:20.527Z"
+    author: "harness:codex"
+    text: "Typed-graph rationale: pm-doxj is the intentional hierarchy root and the living portfolio that coordinates the full roadmap through 2036. Adding implements -> pm-ljrh29 records that the roadmap operationalizes the multi-decade continuity outcome; it is not a density edge. Before this edge the sole active outcome-unreachable node was pm-doxj because its milestone connections were generic related links. The semantic edge also makes the root's historical children explainable through the same outcome path while preserving all prior relationships and immutable history."
 notes[141]:
   - created_at: "2026-06-07T10:24:45.228Z"
     author: maintainer-agent
