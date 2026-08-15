@@ -4,12 +4,12 @@
 
 ### Fixed
 
+- Provide an audited repair and severity-migration contract for legacy invalid provenance ([pm-76fkpp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-76fkpp.toon))
+- Detect extension-host pm-cli version skew before a workspace reports healthy ([pm-643e0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-643e0k.toon))
+- Restore strict unknown-key parity for docs linked-artifact additions ([pm-22rzjp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-22rzjp.toon))
 - Surface replication gate scopes trigger activation to relevant diff content ([pm-mrhwow](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrhwow.toon))
 - Make every failing health verdict self-indexing and attach gate severity to findings ([pm-larv4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-larv4r.toon))
 - GH-1004: history-repair remains writer-version-specific across 2026.8.7 and 2026.8.13 ([pm-igdvfq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-igdvfq.toon))
-- Provide an audited repair and severity-migration contract for legacy invalid provenance ([pm-76fkpp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-76fkpp.toon))
-- Restore strict unknown-key parity for docs linked-artifact additions ([pm-22rzjp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-22rzjp.toon))
-- Detect extension-host pm-cli version skew before a workspace reports healthy ([pm-643e0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-643e0k.toon))
 - Assurance gates preserve zero-valued counts and report actionable source failures ([pm-xmmafu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xmmafu.toon))
 - A budget-truncated read is resumable on one surface and terminal on five, and the only recovery the envelope names is to abandon the budget that truncated it ([pm-8nev0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nev0o.toon))
 - Ranking explanation is sized by the workspace rather than by the answer: explaining two returned rows emits one entry per active item and ignores the token budget entirely ([pm-okgxwa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-okgxwa.toon))

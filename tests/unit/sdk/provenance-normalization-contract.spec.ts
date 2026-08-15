@@ -79,13 +79,19 @@ describe("history provenance normalization", () => {
     const second = {
       ...invalidEntry(),
       agent_provenance: {
-        effort: { source: "environment" as const, value: true as unknown as string },
+        effort: {
+          source: "environment" as const,
+          value: true as unknown as string,
+        },
       },
     };
     const third = {
       ...invalidEntry(),
       agent_provenance: {
-        role: { source: "environment" as const, value: false as unknown as string },
+        role: {
+          source: "environment" as const,
+          value: false as unknown as string,
+        },
       },
     };
     const fourth = {
@@ -96,7 +102,10 @@ describe("history provenance normalization", () => {
       },
     };
     const normalized = normalizeInvalidHistoryProvenance([
-      { ...first, agent_provenance: { role: first.agent_provenance?.role ?? null } },
+      {
+        ...first,
+        agent_provenance: { role: first.agent_provenance?.role ?? null },
+      },
       second,
       third,
       fourth,
@@ -186,6 +195,7 @@ describe("history provenance normalization", () => {
         ...entries[0],
         agent_harness: "claude-code",
         agent_provenance: {
+          model: null,
           role: { source: "environment", value: "1" },
         },
       };
@@ -221,7 +231,7 @@ describe("history provenance normalization", () => {
         expect(entry.agent_provenance?.role).toBeUndefined();
         expect(
           Object.values(entry.agent_provenance ?? {}).some(
-            (observation) => observation.value === "1",
+            (observation) => observation?.value === "1",
           ),
         ).toBe(false);
       }

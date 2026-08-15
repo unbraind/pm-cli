@@ -24,7 +24,9 @@ describe("linked artifact assignment contract", () => {
         note: undefined,
       },
     ]);
-    expect(parseAddEntries(["https://example.com/docs?view=full"], "doc")).toEqual([
+    expect(
+      parseAddEntries(["https://example.com/docs?view=full"], "doc"),
+    ).toEqual([
       {
         path: "https://example.com/docs?view=full",
         scope: "project",
@@ -40,6 +42,15 @@ describe("linked artifact assignment contract", () => {
         exitCode: EXIT_CODE.USAGE,
         message:
           '--add does not recognize key "release". Allowed keys: path, scope, note.',
+      }),
+    );
+    expect(() =>
+      parseAddEntries(["owner=https://example.com/docs?view=full"], "doc"),
+    ).toThrowError(
+      expect.objectContaining({
+        exitCode: EXIT_CODE.USAGE,
+        message:
+          '--add does not recognize key "owner". Allowed keys: path, scope, note.',
       }),
     );
     expect(() =>

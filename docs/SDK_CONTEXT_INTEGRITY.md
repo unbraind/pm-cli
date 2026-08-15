@@ -184,10 +184,11 @@ adds a host-version census by resolving the pm-cli package visible from each
 loaded extension; npm/pnpm duplicate-version skew is gate-failing while matching
 workspace-linked and deduplicated copies remain green.
 
-Linked file/doc add parsing uses one SDK allowlist. Bare compatibility is
-available only when a value contains no `=`; assignment-shaped values,
-including malformed URL-plus-note input, must use the declared `path`, `scope`,
-and `note` keys or fail before mutation.
+Linked file/doc add parsing uses one SDK allowlist. Whitespace-free filesystem
+paths and scheme-prefixed URLs remain positional even when a path or query
+contains `=`. Leading assignment syntax, including malformed URL-plus-note
+input, must use the declared `path`, `scope`, and `note` keys or fail before
+mutation.
 
 ## Replication and refusal gate
 

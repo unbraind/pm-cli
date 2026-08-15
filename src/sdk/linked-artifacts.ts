@@ -187,11 +187,10 @@ export function looksLikeStructuredPathEntry(raw: string): boolean {
   if (
     equalsIndex >= 0 &&
     !/\s/u.test(raw) &&
-    (raw.includes("://") ||
+    (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//u.test(raw) ||
       /^(?:[A-Za-z]:[\\/]|[\\/]{1,2}|\.\.?(?:[\\/]))/u.test(raw) ||
       [raw.indexOf("/"), raw.indexOf("\\")].some(
-        (separatorIndex) =>
-          separatorIndex >= 0 && separatorIndex < equalsIndex,
+        (separatorIndex) => separatorIndex >= 0 && separatorIndex < equalsIndex,
       ))
   ) {
     return false;

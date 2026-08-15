@@ -198,7 +198,7 @@ describe("extension host pm-cli version census", () => {
     });
   });
 
-  it("orders external path collisions by version", async () => {
+  it("distinguishes external paths without disclosing their locations", async () => {
     const workspace = await mkdtemp(
       path.join(os.tmpdir(), "pm-extension-version-external-workspace-"),
     );
@@ -237,10 +237,21 @@ describe("extension host pm-cli version census", () => {
       workspace,
       host,
     );
-    expect(census.mismatches.map((copy) => copy.version)).toEqual([
-      "2026.8.12",
-      "2026.8.13",
-    ]);
-    expect(census.mismatches.every((copy) => copy.path.startsWith("<external>/"))).toBe(true);
+    const displayPaths = census.mismatches.map((copy) => copy.path);
+    expect(new Set(displayPaths)).toHaveLength(2);
+    expect(
+      displayPaths.every((displayPath) =>
+        /^<external>\/[a-f0-9]{16}\/pm-cli\/package\.json$/u.test(displayPath),
+      ),
+    ).toBe(true);
+    expect(displayPaths.join("\n")).not.toContain(firstRoot);
+    expect(displayPaths.join("\n")).not.toContain(secondRoot);
+
+    const repeated = await scanExtensionHostVersions(
+      [first, second],
+      workspace,
+      host,
+    );
+    expect(repeated.mismatches).toEqual(census.mismatches);
   });
 });

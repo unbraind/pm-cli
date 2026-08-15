@@ -47,7 +47,14 @@ function displayPackagePath(
   ) {
     return relative.split(path.sep).join("/");
   }
-  return `<external>/${path.basename(path.dirname(packageJsonPath))}/package.json`;
+  const externalPath = path.resolve(packageJsonPath);
+  let fingerprint = 0xcbf29ce484222325n;
+  for (let index = 0; index < externalPath.length; index += 1) {
+    fingerprint ^= BigInt(externalPath.charCodeAt(index));
+    fingerprint = BigInt.asUintN(64, fingerprint * 0x100000001b3n);
+  }
+  const installationId = fingerprint.toString(16).padStart(16, "0");
+  return `<external>/${installationId}/${path.basename(path.dirname(packageJsonPath))}/package.json`;
 }
 
 function dependencyLayout(
@@ -126,10 +133,8 @@ export async function scanExtensionHostVersions(
     }
   }
 
-  const sortedCopies = [...copies.values()].sort(
-    (left, right) =>
-      left.path.localeCompare(right.path) ||
-      left.version.localeCompare(right.version),
+  const sortedCopies = [...copies.values()].sort((left, right) =>
+    left.path.localeCompare(right.path),
   );
   const mismatches =
     hostVersion === undefined
