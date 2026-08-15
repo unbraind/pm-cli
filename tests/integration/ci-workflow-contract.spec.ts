@@ -272,6 +272,7 @@ describe("GitHub workflow contract", () => {
       "persist-credentials: false",
       "name: Download dist artifact",
       "name: dist-node24-ubuntu",
+      "path: dist",
       "pattern: coverage-blob-*",
       "merge-multiple: true",
       "path: .vitest-reports",

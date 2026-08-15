@@ -425,32 +425,27 @@ async function readAcknowledgedUnknownEvents(
   }
 }
 
-/** Resolve one coordinate against its exact immutable source line. */
-async function resolveAcknowledgmentPlanCoordinate(
-  pmRoot: string,
+/** Check whether a coordinate can safely name one immutable history line. */
+function isValidUnknownAuthorHistoryEvent(
+  event: UnknownAuthorHistoryEvent,
+): boolean {
+  return (
+    (event.item_id === WORKSPACE_HISTORY_ID ||
+      /^[a-z0-9][a-z0-9-]*$/iu.test(event.item_id)) &&
+    Number.isSafeInteger(event.line) &&
+    event.line >= 1
+  );
+}
+
+/** Resolve one coordinate against its preloaded immutable source stream. */
+function resolveAcknowledgmentPlanCoordinate(
   event: UnknownAuthorHistoryEvent,
   acknowledgedEvents: ReadonlySet<string>,
-): Promise<UnknownAuthorAcknowledgmentPlanCoordinate> {
-  const invalidCoordinate = [
-    event.item_id === WORKSPACE_HISTORY_ID ||
-      /^[a-z0-9][a-z0-9-]*$/iu.test(event.item_id),
-    Number.isSafeInteger(event.line),
-    event.line >= 1,
-  ].includes(false);
-  if (invalidCoordinate) {
-    refuseAuthorAcknowledgmentArgument(
-      `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
-      { code: "history_author_acknowledge_target_unreadable" },
-    );
-  }
-  let sourceLine: string;
+  sourceLines: readonly string[],
+): UnknownAuthorAcknowledgmentPlanCoordinate {
+  const sourceLine = sourceLines[event.line - 1] ?? "";
   let parsed: unknown;
   try {
-    const raw = await fs.readFile(
-      path.join(pmRoot, "history", `${event.item_id}.jsonl`),
-      "utf8",
-    );
-    sourceLine = raw.split(/\r?\n/u)[event.line - 1] ?? "";
     parsed = JSON.parse(sourceLine);
   } catch {
     refuseAuthorAcknowledgmentArgument(
@@ -510,9 +505,37 @@ async function resolveUnknownAuthorAcknowledgmentPlan(
       : explicitEvents,
   );
   const acknowledgedEvents = await readAcknowledgedUnknownEvents(pmRoot);
-  const completeCoordinates = await Promise.all(
-    selectedEvents.map((event) =>
-      resolveAcknowledgmentPlanCoordinate(pmRoot, event, acknowledgedEvents),
+  const sourceLinesByItem = new Map<string, string[]>();
+  for (const event of selectedEvents) {
+    if (!isValidUnknownAuthorHistoryEvent(event)) {
+      refuseAuthorAcknowledgmentArgument(
+        `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
+        { code: "history_author_acknowledge_target_unreadable" },
+      );
+    }
+    if (sourceLinesByItem.has(event.item_id)) continue;
+    try {
+      sourceLinesByItem.set(
+        event.item_id,
+        (
+          await fs.readFile(
+            path.join(pmRoot, "history", `${event.item_id}.jsonl`),
+            "utf8",
+          )
+        ).split(/\r?\n/u),
+      );
+    } catch {
+      refuseAuthorAcknowledgmentArgument(
+        `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
+        { code: "history_author_acknowledge_target_unreadable" },
+      );
+    }
+  }
+  const completeCoordinates = selectedEvents.map((event) =>
+    resolveAcknowledgmentPlanCoordinate(
+      event,
+      acknowledgedEvents,
+      sourceLinesByItem.get(event.item_id) as string[],
     ),
   );
   const kind = selector.all_actionable === true ? "all_actionable" : "events";

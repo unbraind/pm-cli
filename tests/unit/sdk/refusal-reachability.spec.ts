@@ -242,6 +242,15 @@ describe("recovery-reference reachability", () => {
     expect(new Set(derived.map(({ id }) => id)).size).toBe(derived.length);
   });
 
+  it("keeps raw slash-bearing keys distinct from nested source paths", () => {
+    const derived = derivePmRecoveryReferenceObligations("probe", {
+      "a/b": { examples: ["pm list --status open"] },
+      a: { b: { examples: ["pm list --status closed"] } },
+    });
+    expect(derived).toHaveLength(2);
+    expect(new Set(derived.map(({ id }) => id)).size).toBe(2);
+  });
+
   it("ignores empty recovery references and rejects mismatched semantics", () => {
     expect(
       derivePmRecoveryReferenceObligations("invalid", {

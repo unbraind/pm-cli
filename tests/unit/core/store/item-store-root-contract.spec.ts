@@ -136,13 +136,83 @@ describe("item metadata tracker-root contract", () => {
   });
 
   it("preserves non-missing filesystem failures from the root probe", async () => {
-    const failure = Object.assign(new Error("permission denied"), {
-      code: "EACCES",
+    const failure = Object.assign(new Error("input/output failure"), {
+      code: "EIO",
     });
     vi.spyOn(fs, "stat").mockRejectedValueOnce(failure);
 
     await expect(listAllItemMetadata("/unreadable-tracker")).rejects.toBe(
       failure,
     );
+  });
+
+  it("classifies permissionless and permission-denied roots as unreadable", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-root-contract-"));
+    cleanupRoots.push(root);
+    await fs.chmod(root, 0o000);
+    try {
+      for (const read of [
+        listAllItemMetadata,
+        listAllItemMetadataLight,
+        listAllItemMetadataWithBody,
+      ]) {
+        await expect(read(root)).rejects.toMatchObject({
+          name: "PmCliError",
+          exitCode: EXIT_CODE.GENERIC_FAILURE,
+          code: "tracker_root_unreadable",
+          context: { reason: "unreadable" },
+        });
+      }
+    } finally {
+      await fs.chmod(root, 0o700);
+    }
+
+    const permissionFailure = Object.assign(new Error("permission denied"), {
+      code: "EACCES",
+    });
+    vi.spyOn(fs, "stat").mockRejectedValueOnce(permissionFailure);
+    await expect(
+      listAllItemMetadata("/permission-denied-tracker"),
+    ).rejects.toMatchObject({
+      name: "PmCliError",
+      exitCode: EXIT_CODE.GENERIC_FAILURE,
+      code: "tracker_root_unreadable",
+      context: { reason: "unreadable" },
+    });
+  });
+
+  it("classifies failed directory enumeration and preserves unrelated errors", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-root-contract-"));
+    cleanupRoots.push(root);
+    const opendir = vi.spyOn(fs, "opendir");
+    for (const code of ["EACCES", "EPERM"]) {
+      opendir.mockRejectedValueOnce(
+        Object.assign(new Error("permission denied"), { code }),
+      );
+      await expect(listAllItemMetadata(root)).rejects.toMatchObject({
+        code: "tracker_root_unreadable",
+        context: { reason: "unreadable" },
+      });
+    }
+
+    const inputOutputFailure = Object.assign(new Error("input/output failure"), {
+      code: "EIO",
+    });
+    opendir.mockRejectedValueOnce(inputOutputFailure);
+    await expect(listAllItemMetadata(root)).rejects.toBe(inputOutputFailure);
+  });
+
+  it("requires directory search permission on POSIX roots", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-root-contract-"));
+    cleanupRoots.push(root);
+    await fs.chmod(root, 0o400);
+    try {
+      await expect(listAllItemMetadata(root)).rejects.toMatchObject({
+        code: "tracker_root_unreadable",
+        context: { reason: "unreadable" },
+      });
+    } finally {
+      await fs.chmod(root, 0o700);
+    }
   });
 });

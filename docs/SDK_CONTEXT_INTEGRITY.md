@@ -133,7 +133,7 @@ SDK callers use `fullHistory: true`; MCP callers use `full: true`. The default s
 
 ## Author acknowledgment coordinates
 
-CLI, SDK, and MCP use the same selector and coordinate parser for `history-author-acknowledge`. A coordinate is `<item-id>:<line>` or `_workspace:<line>`, with a positive one-based line number. Exactly one of explicit events or `all_actionable` is required. Applying is a two-step operation: dry-run returns a deterministic SHA-256 over the complete, ordered coordinate set and every exact source-line hash; apply requires that fingerprint and refuses source or selection drift without writing history.
+CLI, SDK, and MCP use the same selector and coordinate parser for `history-author-acknowledge`. A coordinate is `<item-id>:<line>` or `_workspace:<line>`, with a positive one-based line number. Exactly one of explicit events or `all_actionable` is required. Applying is a two-step operation: dry-run returns a deterministic SHA-256 over the complete, ordered coordinate set and every exact source-line hash; apply requires that fingerprint and refuses stale source or selection drift with `CONFLICT` exit 4 before writing history.
 
 ```bash
 pm history-author-acknowledge \

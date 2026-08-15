@@ -2,14 +2,16 @@ id: pm-23xkss
 title: "GH-814/GH-821/GH-1034: SDK metadata reads must distinguish missing, invalid, and unreadable tracker roots from empty"
 description: "Public SDK metadata enumeration silently returns an empty corpus when the supplied tracker root is absent or a regular file. This turns a path error into confident but false project context for graph, search, governance, and extension consumers."
 type: Issue
-status: open
+status: closed
 priority: 0
 tags[7]: "area:sdk","area:storage",context-integrity,error-contract,github-1034,regression,unreadable-root
 created_at: "2026-07-29T21:43:32.888Z"
-updated_at: "2026-08-15T16:25:36.842Z"
+updated_at: "2026-08-15T18:45:14.935Z"
+closed_at: "2026-08-15T18:45:14.907Z"
+completed_at: "2026-08-15T18:45:14.907Z"
 author: "harness:codex"
 estimated_minutes: 180
-acceptance_criteria: listAllItemMetadata and its light and body variants reject missing roots and non-directory roots with stable typed diagnostics; a valid empty tracker remains a successful empty result; CLI query and governance callers preserve their intended domain-level errors; public SDK types documentation focused regression tests and installed-consumer acceptance cover the contract
+acceptance_criteria: "listAllItemMetadata and its light and body variants reject missing roots, non-directory roots, and unreadable roots with stable typed diagnostics; a valid empty tracker remains a successful empty result; permissionless POSIX roots and direct permission-denied probes cannot masquerade as empty project context; CLI query and governance callers preserve their intended domain-level errors; public SDK types, documentation, focused regression tests, and installed-consumer acceptance cover the contract"
 goal: project management = context management
 objective: Make foundational SDK reads fail loudly when their source of truth does not exist
 value: Agents and extensions never mistake an invalid workspace path for a real project with zero work
@@ -18,9 +20,9 @@ why_now: GH-814 demonstrates the ambiguity in the current published SDK and an e
 parent: pm-usfg
 risk: high
 confidence: high
-resolution: Tracker-root validation now inspects existing ancestors after ENOENT so Windows file/child paths retain the non-directory usage contract.
+resolution: Metadata enumeration now validates directory readability and searchability before consulting caches.
 expected_result: Empty valid trackers return an empty corpus while invalid or unreadable roots cannot masquerade as project truth.
-actual_result: "In 2026.8.15, listAllItemMetadata returns an empty array for an existing unreadable tracker root, so consumers cannot distinguish source failure from a valid empty workspace and documented catch fallbacks are unreachable."
+actual_result: "Valid empty roots return []; permissionless or permission-denied roots throw tracker_root_unreadable with exit 1 and reason unreadable; non-permission filesystem errors retain their identity."
 affected_version: 2026.8.15
 fixed_version: next
 component: sdk/storage/item-store
@@ -31,7 +33,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rgaal,implements,"2026-08-03T20:42:20.003Z","harness:claude-code","cli:update:dep",detected
   pm-57ir3b,discovered_from,"2026-08-15T16:25:36.679Z","harness:codex",github-1034,detected
   pm-yrj7qr,discovered_from,"2026-08-15T16:25:36.679Z","harness:codex",github-1034,detected
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-07-29T21:43:32.888Z","harness:codex","Duplicate check evidence 2026-07-29: searched all 2,197 live items across every status for GH-814, listAllItemMetadata, missing metadata root, nonexistent pm root, regular-file tracker root, empty graph, and SDK reader semantics. No item owns this failure mode. Closed SDK-first and graph primitives establish the affected lineage but do not distinguish invalid roots from an empty valid tracker. GitHub: https://github.com/unbraind/pm-cli/issues/814"
   "2026-07-29T22:19:19.094Z","harness:codex","Implementation evidence: all public metadata enumeration variants now accept an existing empty directory but throw stable typed diagnostics for missing and non-directory roots, while preserving unrelated filesystem errors. Focused tests pass 3/3 and full coverage passes 6540/6540 at 100/100/100/100. A packed SDK consumer proved empty returns [] and missing reports tracker_root_missing with reason missing."
   "2026-07-29T22:29:52.730Z","harness:codex","Delivery review: PR #818 https://github.com/unbraind/pm-cli/pull/818 carries typed empty/missing/non-directory tracker-root semantics, SDK documentation, focused tests, full coverage, and isolated packed-consumer proof. GitHub issue #814 is configured to close on merge."
@@ -40,17 +42,22 @@ comments[8]{created_at,author,text}:
   "2026-07-30T08:32:28.313Z","harness:codex","Final evidence for GH-821: focused contract suite passes 6/6; full sandboxed coverage passes 403 files and 6,558 tests at exact 100/100/100/100; strict static/docstring, SDK boundary/parity, token budget, secret, and dependency gates pass; an unrelated packed SDK consumer reports tracker_root_not_directory with exit 2 for file/child traversal. The Windows-specific ENOENT path is deterministically simulated without platform mocks of product behavior."
   "2026-07-30T08:34:06.830Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/823 carries the GH-821 Windows ancestor-path correction on commit 9591e06c2; exact-head Windows/full-matrix and AI review evidence will remain in the PR."
   "2026-08-15T16:25:36.101Z","harness:codex","Regression evidence 2026-08-15: GH-1034 https://github.com/unbraind/pm-cli/issues/1034 reproduces listAllItemMetadata on an existing chmod-000 tracker root returning [] under pm-cli 2026.8.15, indistinguishable from a valid empty tracker. This violates this canonical item's explicit expected-result contract and prevents consumer fallback code from running. All-status searches found this item as the exact owner, so it is reopened rather than duplicated; the late report is documented but not claimed in the current implementation tranche."
-learnings[1]{created_at,author,text}:
+  "2026-08-15T18:10:33.597Z","harness:codex","TDD negative evidence for GH-1034: the focused root-contract suite failed because chmod-000 metadata enumeration resolved [] instead of emitting a typed unreadable-root error. The new expectations cover all three public enumerators plus a direct EACCES root probe."
+  "2026-08-15T18:45:06.046Z","harness:codex","Verification evidence 2026-08-15: all three public metadata enumerators now reject direct EACCES/EPERM, failed directory-open permission, chmod-000, and read-without-search POSIX roots as tracker_root_unreadable/GENERIC_FAILURE while preserving unrelated EIO identity. The linked 9-test contract passed; the full repository passed 7,396 tests at exact 100/100/100/100. A packed public SDK consumer proved a valid empty root returns [] and the same chmod-000 root returns the stable diagnostic."
+learnings[2]{created_at,author,text}:
   "2026-07-29T22:19:19.795Z","harness:codex",An empty item array is project truth only after the SDK proves the supplied tracker root is an existing directory; filesystem discovery failures must remain distinguishable and non-ENOENT errors must retain their original identity.
+  "2026-08-15T18:45:07.232Z","harness:codex","A successful stat and directory type check do not prove a tracker is readable. Metadata truth requires an enumeration probe, plus explicit POSIX mode-bit checks because privileged runtimes can bypass chmod-000 and otherwise turn an intended access failure into a false empty corpus."
 files[2]{path,scope,note}:
   src/core/store/item-store.ts,project,Typed tracker-root validation for all metadata enumerators
   tests/unit/core/store/item-store-root-contract.spec.ts,project,Empty missing invalid and filesystem-error root coverage
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/core/store/item-store-root-contract.spec.ts,project,120
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms6mok4k-8vvd1p,test,passed,"2026-07-29T22:00:02.988Z","2026-07-29T22:00:09.956Z","2026-07-29T22:00:09.956Z",1,0,0
   test-local-ms799ofg-gp98c4,test,passed,"2026-07-30T08:32:19.852Z","2026-07-30T08:32:26.860Z","2026-07-30T08:32:26.860Z",1,0,0
+  test-local-msupyy5c-jiv1vl,test,passed,"2026-08-15T18:38:32.846Z","2026-08-15T18:38:41.760Z","2026-08-15T18:38:41.760Z",1,0,0
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated PM changelog entry for tracker-root truth contracts
   docs/SDK_CONTEXT_TRUTH_CONTRACTS.md,project,Missing invalid and empty tracker semantics
+close_reason: "GH-1034 fixed with typed unreadable-root detection, 9 focused contract tests, exact full coverage, and packed SDK acceptance"
 body: ""

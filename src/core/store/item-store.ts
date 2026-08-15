@@ -132,6 +132,20 @@ function trackerRootNotDirectoryError(pmRoot: string): PmCliError {
   );
 }
 
+function trackerRootUnreadableError(pmRoot: string): PmCliError {
+  return new PmCliError(
+    `Tracker root is not readable at ${pmRoot}.`,
+    EXIT_CODE.GENERIC_FAILURE,
+    {
+      code: "tracker_root_unreadable",
+      reason: "unreadable",
+      nextSteps: [
+        "Grant read and directory-search permission to the tracker root, then retry the SDK read.",
+      ],
+    },
+  );
+}
+
 async function assertMissingMetadataRootAncestors(
   pmRoot: string,
 ): Promise<void> {
@@ -182,10 +196,28 @@ async function assertItemMetadataRoot(pmRoot: string): Promise<void> {
     if (isErrno(error, "ENOTDIR")) {
       throw trackerRootNotDirectoryError(pmRoot);
     }
+    if (isErrno(error, "EACCES") || isErrno(error, "EPERM")) {
+      throw trackerRootUnreadableError(pmRoot);
+    }
     throw error;
   }
   if (!stats.isDirectory()) {
     throw trackerRootNotDirectoryError(pmRoot);
+  }
+  if (
+    process.platform !== "win32" &&
+    ((stats.mode & 0o444) === 0 || (stats.mode & 0o111) === 0)
+  ) {
+    throw trackerRootUnreadableError(pmRoot);
+  }
+  try {
+    const directory = await fs.opendir(pmRoot);
+    await directory.close();
+  } catch (error: unknown) {
+    if (isErrno(error, "EACCES") || isErrno(error, "EPERM")) {
+      throw trackerRootUnreadableError(pmRoot);
+    }
+    throw error;
   }
 }
 

@@ -189,7 +189,9 @@ export function derivePmRecoveryReferenceObligations(
         entries.forEach((candidate, index) => {
           if (typeof candidate !== "string" || candidate.trim().length === 0)
             return;
-          const coordinate = [...path, key, String(index)].join("/");
+          const coordinate = [...path, key, String(index)]
+            .map((segment) => encodeURIComponent(segment))
+            .join("/");
           obligations.push({
             id: `${probeId}:${contract.kind}:${coordinate}`,
             probe_id: probeId,

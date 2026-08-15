@@ -4,10 +4,16 @@
  * Verifies deterministic preview/apply planning for immutable history author
  * acknowledgements without touching the repository tracker.
  */
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import fs, {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   EXIT_CODE,
   PmCliError,
@@ -179,7 +185,34 @@ describe("history author acknowledgement plans", () => {
     });
   });
 
-  it("supersedes explicit dispositions and rejects selection drift", async () => {
+  it("reads each selected history stream once per plan", async () => {
+    const pmRoot = await createTracker();
+    const sourcePath = path.join(pmRoot, "history", "pm-plan.jsonl");
+    const readFileSpy = vi.spyOn(fs, "readFile");
+    await planUnknownAuthorHistoryAcknowledgment(pmRoot, {
+      events: [
+        { item_id: "pm-plan", line: 1 },
+        { item_id: "pm-plan", line: 2 },
+      ],
+    });
+    expect(
+      readFileSpy.mock.calls.filter(([target]) => target === sourcePath),
+    ).toHaveLength(1);
+  });
+
+  it("rejects a selected coordinate whose history stream is unreadable", async () => {
+    const pmRoot = await createTracker();
+    await expect(
+      planUnknownAuthorHistoryAcknowledgment(pmRoot, {
+        events: [{ item_id: "pm-missing", line: 1 }],
+      }),
+    ).rejects.toMatchObject({
+      code: "history_author_acknowledge_target_unreadable",
+      exitCode: EXIT_CODE.USAGE,
+    });
+  });
+
+  it("supersedes an explicit prior disposition", async () => {
     const pmRoot = await createTracker();
     const firstPlan = await planUnknownAuthorHistoryAcknowledgment(pmRoot, {
       events: [{ item_id: "pm-plan", line: 1 }],
@@ -194,6 +227,18 @@ describe("history author acknowledgement plans", () => {
 
     const alreadyPlan = await planUnknownAuthorHistoryAcknowledgment(pmRoot, {
       events: [{ item_id: "pm-plan", line: 1 }],
+    });
+    expect(alreadyPlan).toMatchObject({
+      selected_count: 1,
+      actionable_count: 0,
+      already_acknowledged_count: 1,
+      coordinates: [
+        {
+          item_id: "pm-plan",
+          line: 1,
+          disposition: "already_acknowledged",
+        },
+      ],
     });
     await expect(
       acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
@@ -234,7 +279,20 @@ describe("history author acknowledgement plans", () => {
     expect(
       workspaceEvents.at(-1)?.context?.author_acknowledgment?.events,
     ).toEqual([{ item_id: "pm-plan", line: 1 }]);
+  });
 
+  it("reports a mixed explicit correction as partial effect", async () => {
+    const pmRoot = await createTracker();
+    const firstPlan = await planUnknownAuthorHistoryAcknowledgment(pmRoot, {
+      events: [{ item_id: "pm-plan", line: 1 }],
+    });
+    await acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+      events: [{ item_id: "pm-plan", line: 1 }],
+      plan_fingerprint: firstPlan.plan_fingerprint,
+      attributed_author: "original-agent",
+      reviewer: "maintainer",
+      reason: "Reviewed the first event.",
+    });
     const mixedPlan = await planUnknownAuthorHistoryAcknowledgment(pmRoot, {
       events: [
         { item_id: "pm-plan", line: 2 },
@@ -258,7 +316,20 @@ describe("history author acknowledgement plans", () => {
       outcome: "partial_effect",
       exit_code: 7,
     });
+  });
 
+  it("reports an empty bulk selection as no effect", async () => {
+    const pmRoot = await createTracker();
+    const initialPlan = await planUnknownAuthorHistoryAcknowledgment(pmRoot, {
+      all_actionable: true,
+    });
+    await acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+      all_actionable: true,
+      plan_fingerprint: initialPlan.plan_fingerprint,
+      attributed_author: "original-agent",
+      reviewer: "maintainer",
+      reason: "Disposition every actionable event.",
+    });
     const emptyBulkPlan = await planUnknownAuthorHistoryAcknowledgment(pmRoot, {
       all_actionable: true,
     });
@@ -281,7 +352,9 @@ describe("history author acknowledgement plans", () => {
       outcome: "no_effect",
       exit_code: 6,
     });
+  });
 
+  it("rejects stale plan fingerprints without mutation", async () => {
     const driftRoot = await createTracker();
     const driftPlan = await planUnknownAuthorHistoryAcknowledgment(driftRoot, {
       all_actionable: true,
