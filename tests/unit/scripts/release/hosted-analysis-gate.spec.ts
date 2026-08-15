@@ -85,6 +85,17 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/** Serialize the mock GraphQL slurp envelope while preserving malformed controls. */
+function serializeGraphqlProtection(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "object" && value !== null && "pages" in value) {
+    return JSON.stringify(value.pages);
+  }
+  return JSON.stringify(value);
+}
+
 /** Install deterministic command responses for one hosted-analysis gate run. */
 function mockCommands({
   repository = "unbraind/pm-cli",
@@ -108,19 +119,24 @@ function mockCommands({
     },
   },
   graphqlProtection = {
-    data: {
-      repository: {
-        branchProtectionRules: {
-          nodes: [
-            {
-              pattern: "main",
-              requiresStrictStatusChecks: true,
-              requiredStatusCheckContexts: ["CodeFactor", "DeepScan"],
+    pages: [
+      {
+        data: {
+          repository: {
+            branchProtectionRules: {
+              nodes: [
+                {
+                  pattern: "main",
+                  requiresStrictStatusChecks: true,
+                  requiredStatusCheckContexts: ["CodeFactor", "DeepScan"],
+                },
+              ],
+              pageInfo: { hasNextPage: false, endCursor: "cursor-1" },
             },
-          ],
+          },
         },
       },
-    },
+    ],
   },
   failures = {},
 }: {
@@ -156,10 +172,7 @@ function mockCommands({
     if (args[1] === "graphql") {
       return {
         status: failures.graphqlProtection ?? 0,
-        stdout:
-          typeof graphqlProtection === "string"
-            ? graphqlProtection
-            : JSON.stringify(graphqlProtection),
+        stdout: serializeGraphqlProtection(graphqlProtection),
         stderr: "",
       };
     }
@@ -242,6 +255,45 @@ describe("scripts/release/hosted-analysis-gate", () => {
     expect(
       spawnSync.mock.calls.some(([, args]) => args[0] === "api" && args[1] === "graphql"),
     ).toBe(true);
+    expect(process.exitCode).toBe(0);
+  });
+
+  it("proves exact-main uniqueness across every GraphQL policy page", async () => {
+    mockCommands({
+      failures: { protection: 1 },
+      graphqlProtection: {
+        pages: [
+          {
+            data: {
+              repository: {
+                branchProtectionRules: {
+                  nodes: [
+                    {
+                      pattern: "main",
+                      requiresStrictStatusChecks: true,
+                      requiredStatusCheckContexts: ["CodeFactor", "DeepScan"],
+                    },
+                  ],
+                  pageInfo: { hasNextPage: true, endCursor: "cursor-1" },
+                },
+              },
+            },
+          },
+          {
+            data: {
+              repository: {
+                branchProtectionRules: {
+                  nodes: [{ pattern: "release/*" }],
+                  pageInfo: { hasNextPage: false, endCursor: "cursor-2" },
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
+    const payload = await runJson([], "hostedAnalysisGraphqlProtectionPagination");
+    expect(payload).toMatchObject({ ok: true, branch_protection: { source: "graphql" } });
     expect(process.exitCode).toBe(0);
   });
 
@@ -803,34 +855,185 @@ describe("scripts/release/hosted-analysis-gate", () => {
     },
     {
       label: "missing rules",
-      graphqlProtection: { data: { repository: {} } },
-      expected: "non-array rules payload",
+      graphqlProtection: {
+        pages: [{ data: { repository: {} } }],
+      },
+      expected: "page 1 has no rules array",
     },
     {
       label: "missing exact main rule",
       graphqlProtection: {
-        data: {
-          repository: {
-            branchProtectionRules: { nodes: [{ pattern: "release/*" }] },
+        pages: [
+          {
+            data: {
+              repository: {
+                branchProtectionRules: {
+                  nodes: [{ pattern: "release/*" }],
+                  pageInfo: { hasNextPage: false, endCursor: "cursor-1" },
+                },
+              },
+            },
           },
-        },
+        ],
       },
       expected: "returned 0 exact main rules",
     },
     {
       label: "ambiguous exact main rules",
       graphqlProtection: {
-        data: {
-          repository: {
-            branchProtectionRules: { nodes: [{ pattern: "main" }, { pattern: "main" }] },
+        pages: [
+          {
+            data: {
+              repository: {
+                branchProtectionRules: {
+                  nodes: [{ pattern: "main" }, { pattern: "main" }],
+                  pageInfo: { hasNextPage: false, endCursor: "cursor-1" },
+                },
+              },
+            },
           },
-        },
+        ],
       },
       expected: "returned 2 exact main rules",
     },
   ])("fails closed for GraphQL branch protection with $label", async ({ label, graphqlProtection, expected }) => {
     mockCommands({ graphqlProtection, failures: { protection: 1 } });
     const payload = await runJson([], `hostedAnalysisGraphqlProtection-${label}`);
+    expect(payload.reason).toContain(expected);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it.each([
+    {
+      label: "non-array page envelope",
+      graphqlProtection: {},
+      expected: "returned no paginated policy pages",
+    },
+    {
+      label: "empty page envelope",
+      graphqlProtection: { pages: [] },
+      expected: "returned no paginated policy pages",
+    },
+    {
+      label: "invalid page metadata",
+      graphqlProtection: {
+        pages: [
+          {
+            data: {
+              repository: {
+                branchProtectionRules: { nodes: [], pageInfo: { hasNextPage: "false" } },
+              },
+            },
+          },
+        ],
+      },
+      expected: "invalid pagination metadata",
+    },
+    {
+      label: "truncated last page",
+      graphqlProtection: {
+        pages: [
+          {
+            data: {
+              repository: {
+                branchProtectionRules: {
+                  nodes: [{ pattern: "main" }],
+                  pageInfo: { hasNextPage: true, endCursor: "cursor-1" },
+                },
+              },
+            },
+          },
+        ],
+      },
+      expected: "inconsistent pagination termination",
+    },
+    {
+      label: "unexpected extra page",
+      graphqlProtection: {
+        pages: [
+          {
+            data: {
+              repository: {
+                branchProtectionRules: {
+                  nodes: [],
+                  pageInfo: { hasNextPage: false, endCursor: "cursor-1" },
+                },
+              },
+            },
+          },
+          {
+            data: {
+              repository: {
+                branchProtectionRules: {
+                  nodes: [],
+                  pageInfo: { hasNextPage: false, endCursor: "cursor-2" },
+                },
+              },
+            },
+          },
+        ],
+      },
+      expected: "inconsistent pagination termination",
+    },
+    {
+      label: "missing continuation cursor",
+      graphqlProtection: {
+        pages: [
+          {
+            data: {
+              repository: {
+                branchProtectionRules: {
+                  nodes: [],
+                  pageInfo: { hasNextPage: true, endCursor: "" },
+                },
+              },
+            },
+          },
+          {
+            data: {
+              repository: {
+                branchProtectionRules: {
+                  nodes: [],
+                  pageInfo: { hasNextPage: false, endCursor: "cursor-2" },
+                },
+              },
+            },
+          },
+        ],
+      },
+      expected: "has no continuation cursor",
+    },
+    {
+      label: "duplicate main rule on a later page",
+      graphqlProtection: {
+        pages: [
+          {
+            data: {
+              repository: {
+                branchProtectionRules: {
+                  nodes: [{ pattern: "main" }],
+                  pageInfo: { hasNextPage: true, endCursor: "cursor-1" },
+                },
+              },
+            },
+          },
+          {
+            data: {
+              repository: {
+                branchProtectionRules: {
+                  nodes: [{ pattern: "main" }],
+                  pageInfo: { hasNextPage: false, endCursor: "cursor-2" },
+                },
+              },
+            },
+          },
+        ],
+      },
+      expected: "returned 2 exact main rules",
+    },
+  ])("fails closed for GraphQL pagination with $label", async ({ label, graphqlProtection, expected }) => {
+    mockCommands({ graphqlProtection, failures: { protection: 1 } });
+    const payload = await runJson([], `hostedAnalysisGraphqlPagination-${label}`);
     expect(payload.reason).toContain(expected);
     expect(process.exitCode).toBe(1);
   });
