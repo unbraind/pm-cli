@@ -536,6 +536,11 @@ export async function runHistoryRepair(
   const itemHashVersion = resolveHistoryRepairItemHashVersion(
     provenanceNormalization.entries,
   );
+  const explicitVersionsBefore = new Set(
+    provenanceNormalization.entries
+      .map((entry) => entry.item_hash_version)
+      .filter((version): version is number => version !== undefined),
+  );
   const reanchor = reanchorHistoryEntries(
     provenanceNormalization.entries,
     itemHashVersion,
@@ -651,7 +656,7 @@ export async function runHistoryRepair(
       item_hash_version_before: chainVersionBefore.item_hash_version ?? null,
       item_hash_version_after: itemHashVersion,
       version_disposition:
-        chainVersionBefore.item_hash_version === undefined
+        explicitVersionsBefore.size > 1
           ? "selected_for_ambiguous_stream"
           : "preserved",
     },

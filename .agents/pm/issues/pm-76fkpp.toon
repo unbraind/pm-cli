@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: compatibility,history,provenance,recovery
 created_at: "2026-08-13T22:04:10.579Z"
-updated_at: "2026-08-15T02:06:41.839Z"
-closed_at: "2026-08-15T02:06:41.216Z"
-completed_at: "2026-08-15T02:06:41.216Z"
+updated_at: "2026-08-15T03:01:39.144Z"
+closed_at: "2026-08-15T03:01:38.233Z"
+completed_at: "2026-08-15T03:01:38.233Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: A supported command inventories and dry-runs invalid legacy provenance repairs without exposing raw sensitive values; an authorized apply path preserves hash-chain and workspace replay integrity with an immutable audit receipt; health remediation names the exact command; validation severity cannot become blocking before compatible repair exists and is announced; GH-998 is linked in evidence
@@ -22,11 +22,13 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4a7m,implements,"2026-08-13T22:04:10.579Z","harness:codex","cli:create:dep",detected
   pm-5q8wa0,incident_from,"2026-08-13T22:04:10.579Z","harness:codex","cli:create:dep",detected
   pm-eq9dlw,discovered_from,"2026-08-13T22:04:10.579Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-13T22:04:10.579Z","harness:codex","Duplicate check: pm-eq9dlw fixed capture and pm-5q8wa0 made legacy rows advisory, but both are terminal and neither owns repair or severity migration; GH-998 is the canonical external report."
   "2026-08-14T23:25:31.631Z","harness:codex","Implementation start 2026-08-15: active in the coupled workspace-integrity tranche spanning provenance repair, self-indexing health severity, extension-host version coherence, cross-version history repair, and strict linked-artifact parsing. Only these five canonical regression items are claimed; all other tracker work remains open and unclaimed."
   "2026-08-15T01:56:43.700Z","harness:codex","Delivery evidence 2026-08-15: provenance health now streams a privacy-safe census, classifies invalid legacy values, and exposes dry-run/apply normalization through SDK, CLI, MCP metadata, contracts, and executable remediation. Receipts disclose aggregate mutation evidence without leaking raw author values. Focused linked tests passed 30/30; packed temp-workspace normalization removed the invalid observation and the repaired chain verified; full release verification passed 7,334 tests and exact 100/100/100/100 coverage."
   "2026-08-15T02:06:27.586Z","harness:codex","Review follow-up evidence 2026-08-15: bulk normalization now preserves drifted_streams as the actual drift population instead of conflating it with the provenance-only target union. A temporary legacy-epoch fixture proves drifted_streams=0, provenance_invalid_streams=1, and one repaired dry-run row before apply. Focused test, typecheck, and the complete static assurance chain pass."
+  "2026-08-15T02:58:01.776Z","harness:codex","PR #1016 review evidence 2026-08-15: provenance normalization census now short-circuits on the first invalid observation without allocating a parsed stream array, while intentionally retaining complete reads so repair discovery cannot silently omit later events. Privacy assertions parse repaired events and verify invalid dimensions/values structurally. Focused tests and exact 7,337-test 100/100/100/100 coverage pass."
+  "2026-08-15T03:01:37.092Z","harness:codex","Final review evidence: linked provenance contracts passed 30/30 tests. Census now parses incrementally and stops at the first invalid provenance entry without silently bounding complete repair discovery."
 files[11]{path,scope,note}:
   sdk/public-surface.json,project,reviewed provenance normalization receipt surface
   src/cli/register-mutation.ts,project,Public normalize-provenance flag
@@ -41,12 +43,39 @@ files[11]{path,scope,note}:
   tests/unit/sdk/provenance-normalization-contract.spec.ts,project,Privacy and temporary tracker acceptance
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/provenance-normalization-contract.spec.ts tests/unit/sdk/provenance-health.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,240,Privacy safe dry run apply and history verification
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
-  test-local-mstq4e9k-isesau,test,passed,"2026-08-15T01:54:57.340Z","2026-08-15T01:55:09.752Z","2026-08-15T01:55:09.752Z",1,0,0
-  test-local-mstqj7cl-4pciif,test,passed,"2026-08-15T02:06:28.061Z","2026-08-15T02:06:40.629Z","2026-08-15T02:06:40.629Z",1,0,0
+test_runs[3]:
+  - run_id: test-local-mstq4e9k-isesau
+    kind: test
+    status: passed
+    started_at: "2026-08-15T01:54:57.340Z"
+    finished_at: "2026-08-15T01:55:09.752Z"
+    recorded_at: "2026-08-15T01:55:09.752Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mstqj7cl-4pciif
+    kind: test
+    status: passed
+    started_at: "2026-08-15T02:06:28.061Z"
+    finished_at: "2026-08-15T02:06:40.629Z"
+    recorded_at: "2026-08-15T02:06:40.629Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-all-local-mstsfhar-0p8wl7
+    kind: test-all
+    status: passed
+    started_at: "2026-08-15T02:59:46.077Z"
+    finished_at: "2026-08-15T03:00:07.775Z"
+    recorded_at: "2026-08-15T03:00:07.775Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated by pm-changelog 2026.8.12 from closed tracker state
   docs/COMMANDS.md,project,Operator normalization workflow
   docs/SDK_CONTEXT_INTEGRITY.md,project,SDK normalization receipt
-close_reason: Delivered privacy-safe provenance repair with distinct drift and normalization population semantics.
+close_reason: "Review follow-up complete: provenance normalization and complete first-invalid census behavior are verified."
 body: ""

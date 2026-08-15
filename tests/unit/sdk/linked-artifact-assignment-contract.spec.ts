@@ -17,6 +17,20 @@ describe("linked artifact assignment contract", () => {
         note: undefined,
       },
     ]);
+    expect(parseAddEntries(["C:\\docs\\release=final.md"], "file")).toEqual([
+      {
+        path: "C:\\docs\\release=final.md",
+        scope: "project",
+        note: undefined,
+      },
+    ]);
+    expect(parseAddEntries(["https://example.com/docs?view=full"], "doc")).toEqual([
+      {
+        path: "https://example.com/docs?view=full",
+        scope: "project",
+        note: undefined,
+      },
+    ]);
   });
 
   it("routes every assignment-like value through the shared key allowlist", () => {

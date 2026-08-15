@@ -1534,8 +1534,10 @@ function applyBriefHealthProjection(result: HealthResult): HealthResult {
       details: summarizeHealthCheckDetails(check, BRIEF_HEALTH_DETAIL_LIMIT),
     })),
     warnings: warningsSummary.sample,
-    findings: result.findings.filter((finding) =>
-      warningsSummary.sample.includes(finding.warning),
+    findings: result.findings.filter(
+      (finding) =>
+        warningsSummary.sample.includes(finding.warning) ||
+        result.failed_because.includes(finding.warning),
     ),
     failed_because: result.failed_because,
     projection: {
@@ -1572,8 +1574,10 @@ function applySummaryHealthProjection(result: HealthResult): HealthResult {
       })),
     warning_count: warningsSummary.count,
     warnings: warningsSummary.sample,
-    findings: result.findings.filter((finding) =>
-      warningsSummary.sample.includes(finding.warning),
+    findings: result.findings.filter(
+      (finding) =>
+        warningsSummary.sample.includes(finding.warning) ||
+        result.failed_because.includes(finding.warning),
     ),
     failed_because: result.failed_because,
     projection: {
@@ -2980,8 +2984,12 @@ function projectHealthResult(
     warning_limit: HEALTH_WARNING_LIMIT,
     warnings_truncated: warningCount > HEALTH_WARNING_LIMIT,
     warnings: result.warnings.slice(0, HEALTH_WARNING_LIMIT),
-    findings: (result.findings ?? []).filter((finding) =>
-      result.warnings.slice(0, HEALTH_WARNING_LIMIT).includes(finding.warning),
+    findings: (result.findings ?? []).filter(
+      (finding) =>
+        result.warnings
+          .slice(0, HEALTH_WARNING_LIMIT)
+          .includes(finding.warning) ||
+        result.failed_because.includes(finding.warning),
     ),
   };
   const projected = summaryMode

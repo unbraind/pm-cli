@@ -106,4 +106,38 @@ describe("self-indexing health findings", () => {
       expect(projected.findings).toEqual(result.findings);
     }
   });
+
+  it("retains deciding findings beyond the warning sample limit", () => {
+    const warnings = Array.from(
+      { length: 101 },
+      (_, index) => `synthetic_warning:${index}`,
+    );
+    const decidingWarning = warnings.at(-1) as string;
+    const result: HealthResult = {
+      ok: false,
+      checks: checks(),
+      warnings,
+      findings: [
+        {
+          warning: decidingWarning,
+          code: "synthetic_warning",
+          check: "integrity",
+          severity: "gate_failing",
+          disposition: "no_safe_automatic_remediation",
+        },
+      ],
+      failed_because: [decidingWarning],
+      generated_at: "2026-08-15T00:00:00.000Z",
+    };
+    for (const options of [{}, { brief: true }, { summary: true }]) {
+      const projected = _testOnlyHealthCommand.projectHealthResult(
+        result,
+        options,
+        options.summary === true,
+      );
+      expect(projected.warnings).not.toContain(decidingWarning);
+      expect(projected.failed_because).toEqual([decidingWarning]);
+      expect(projected.findings).toEqual(result.findings);
+    }
+  });
 });

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: ci,install,quality,release,testing
 created_at: "2026-07-25T12:31:34.837Z"
-updated_at: "2026-08-15T01:33:41.596Z"
+updated_at: "2026-08-15T03:01:47.560Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Acceptance installs the exact published artifact from the registry into a clean environment rather than building from the repository; A scripted agent session exercises the full cold-start loop — init, orient, create, claim, annotate, link evidence, close, validate, read context — asserting outcomes and bounded output at each step; The matrix covers the supported operating systems and the supported package managers, including the global-install path that has produced field defects; A failure blocks release advertisement and produces a report identifying the failing step, not merely a failing job; The acceptance session's token cost is recorded so cold-start cost is tracked release over release; The same session runs against the previous release to prove the harness itself is not the cause when a failure appears"
@@ -82,27 +82,36 @@ dependencies[18]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-31T21:34:36.710Z","harness:codex","Delivery evidence 2026-07-31: release automation now installs the exact registry version into unrelated npm and Bun roots, asserts executable containment, and runs a ten-step cold agent lifecycle covering init, orient, create, claim, annotate, evidence linking, close, validate, and context with per-step output bounds and aggregate token cost. Failure reports name the manager and step; unit controls cover containment and budget failures. Live 2026.7.31 acceptance passed for both managers: 10 steps each, 19,568 characters and 4,892 estimated tokens. This item remains active because the hosted OS matrix and previous-release control session are not yet implemented."
   "2026-07-31T21:51:09.098Z","harness:codex","CI portability evidence 2026-07-31: Windows exposed that the installed-agent escape negative control recognized only POSIX node_modules/.bin separators. The fixture now uses node:path separators and derives an outside path on the current drive, preserving the same containment assertion on Windows and POSIX. The focused 8-test verifier suite passes, ESLint passes, and the full 6,623-test coverage run remains exact 100/100/100/100."
   "2026-07-31T22:25:41.756Z","harness:codex","Review-loop release evidence 2026-07-31: registry installs now retry transient failures three times with bounded production backoff, Bun disables lifecycle scripts, synchronous subprocesses enforce timeout/input invariants, pm-mcp initialize has a 60-second deadline, and missing executable coverage fails before any registry execution. Negative controls and exact cross-platform tests pass; the complete 6,625-test suite is 100/100/100/100 and quality:static is green. Hosted OS-matrix and previous-release control acceptance remain open."
   "2026-08-03T11:17:40.251Z","harness:codex","Partial acceptance evidence 2026-08-03: scripts/release/verify-published-release.mjs passed against exact version 2026.8.3 for registry integrity, npx and bunx real command dispatch, both executor MCP handshakes, bin coverage, missing-command negative controls, and GitHub Release metadata. The item remains open because its broader clean-install scripted agent-session and advertisement-order contract was not re-proved by this command alone."
   "2026-08-09T16:21:34.768Z","harness:codex","Published 2026.8.9 acceptance evidence: both npm and Bun clean installs completed init, orient, create, claim, annotate, link evidence, close, validate, read-back, and context-read-back within their output ceilings. The report returned ok:true for both managers, but final temp-root removal raised ENOTEMPTY and made the wrapper exit 1; cleanup ownership is canonical pm-p5u6, so this item remains open for its existing OS-matrix and previous-release residuals."
   "2026-08-15T01:33:29.338Z","harness:codex","Implementation evidence 2026-08-15: the local packed-artifact release gate hung for more than 11 minutes inside npm exec despite a valid tarball. Local-tarball npx/npm execution is now explicitly offline and every subprocess has a 120-second timeout. The 24-test smoke suite passes, including a new negative-control contract that every relevant subprocess is offline and all subprocesses are bounded; the real packed smoke completes in about 15 seconds with version 2026.8.14 and 13 packages. The broader hosted OS-matrix and previous-release residuals remain open on this canonical item."
+  "2026-08-15T02:58:00.044Z","harness:codex","PR #1016 CI correction 2026-08-15: --offline was valid only on a warmed local npm cache and failed a clean GitHub runner with ENOTCACHED for @sentry/node. Local-tarball npm/npx installs now allow dependency resolution while every subprocess retains the 120-second deadline. The 24-test smoke suite, real packed tarball smoke (2026.8.14, 13 packages), typecheck, and exact 7,337-test 100/100/100/100 coverage pass. Hosted OS-matrix and previous-release residuals remain open."
+  "2026-08-15T03:01:46.864Z","harness:codex","Pause evidence: the PR smoke correction and linked acceptance tests are complete (64/64 across two links), but the broader released-artifact OS matrix and previous-release acceptance residuals remain open for future active work."
 notes[1]{created_at,author,text}:
   "2026-07-26T10:48:39.250Z","harness:claude-code","Measured 2026-07-26 against the published 2026.7.26: post-publish verification covers execution only. verify-published-release.mjs runs npx --yes <pkg> --version, npx --yes --package <pkg> -- pm --version, and bunx --bun <pkg> pm --version. No install path is exercised for any manager — not npm install -g, not a project install, not bun add, not pnpm add — so packaging omissions and binary-link defects reach users through a green pipeline. Confirmed working by hand and therefore available as a starting fixture: bun add @unbrained/pm-cli@2026.7.26 links pm, pm-cli, and pm-mcp, and pm init, pm create, and pm list all succeed under the Bun runtime. The third check's invocation shape is separately defective and is owned by pm-lpqln4."
 files[8]{path,scope,note}:
   .github/workflows/release.yml,project,post-publish npm and Bun install gate
   package.json,project,maintainer acceptance script
   scripts/release/verify-installed-agent-session.mjs,project,exact-package ten-step agent acceptance
-  scripts/smoke-npx-from-pack.mjs,project,bounded registry-independent packed CLI smoke
+  scripts/smoke-npx-from-pack.mjs,project,Fresh-runner dependency resolution with bounded subprocess timeout
   tests/integration/ci-workflow-contract.spec.ts,project,release job parity contract
   tests/integration/release-automation-contract.spec.ts,project,hosted workflow contract
   tests/unit/scripts/release/verify-installed-agent-session.spec.ts,project,"step,containment,and budget negative controls"
-  tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,offline and subprocess-timeout negative controls
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,300
+  tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,Fresh-runner dependency resolution and subprocess timeout controls
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: Fresh-runner dependency resolution and subprocess timeout controls
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mstsfhar-0p8wl7,test-all,passed,"2026-08-15T02:59:46.077Z","2026-08-15T03:01:16.882Z","2026-08-15T03:01:16.882Z",2,0,0,1,2
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,installed agent-session acceptance contract
 body: ""

@@ -171,6 +171,21 @@ describe("history provenance normalization", () => {
         ...entries[0],
         agent_harness: "claude-code",
         agent_provenance: {
+          model: { source: "environment", value: "bounded-model" },
+        },
+      };
+      await writeFile(
+        historyPath,
+        `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+        "utf8",
+      );
+      await expect(
+        listInvalidProvenanceHistoryStreamIds(context.pmPath),
+      ).resolves.toEqual([]);
+      entries[0] = {
+        ...entries[0],
+        agent_harness: "claude-code",
+        agent_provenance: {
           role: { source: "environment", value: "1" },
         },
       };
@@ -198,8 +213,18 @@ describe("history provenance normalization", () => {
         },
       });
       const repairedRaw = await readFile(historyPath, "utf8");
-      expect(repairedRaw).not.toContain('"agent_provenance":{"role"');
-      expect(repairedRaw).not.toContain('"value":"1"');
+      const repairedEntries = repairedRaw
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line) as HistoryEntry);
+      for (const entry of repairedEntries) {
+        expect(entry.agent_provenance?.role).toBeUndefined();
+        expect(
+          Object.values(entry.agent_provenance ?? {}).some(
+            (observation) => observation.value === "1",
+          ),
+        ).toBe(false);
+      }
       expect(context.runCli(["history", id, "--verify", "--json"]).code).toBe(
         0,
       );

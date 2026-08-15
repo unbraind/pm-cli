@@ -59,11 +59,11 @@ function assertEqualOutput(label, actual, expected, noun = "output") {
 function buildPackedPmRunner(npm, npx, tarballPath) {
   return (args, options = {}) => {
     try {
-      return runSmokeCommand(npx, ["--offline", "--yes", "--package", tarballPath, "pm", ...args], options);
+      return runSmokeCommand(npx, ["--yes", "--package", tarballPath, "pm", ...args], options);
     } catch (npxError) {
       const output = runSmokeCommand(
         npm,
-        ["exec", "--offline", "--yes", "--package", tarballPath, "--", "pm", ...args],
+        ["exec", "--yes", "--package", tarballPath, "--", "pm", ...args],
         options,
       );
       if (output.length === 0) {
@@ -77,24 +77,24 @@ function buildPackedPmRunner(npm, npx, tarballPath) {
 function assertPackedBinarySmoke(npx, tarballPath, tarballSpec, version) {
   assertEqualOutput(
     "Bare npx package smoke",
-    runSmokeCommand(npx, ["--offline", "--yes", tarballSpec, "--version"]),
+    runSmokeCommand(npx, ["--yes", tarballSpec, "--version"]),
     version,
     "version output",
   );
   assertNonEmptyOutput(
     "Bare npx package smoke",
-    runSmokeCommand(npx, ["--offline", "--yes", tarballSpec, "--help"]),
+    runSmokeCommand(npx, ["--yes", tarballSpec, "--help"]),
     "help",
   );
   assertEqualOutput(
     "pm-cli bin alias smoke",
-    runSmokeCommand(npx, ["--offline", "--yes", "--package", tarballPath, "pm-cli", "--version"]),
+    runSmokeCommand(npx, ["--yes", "--package", tarballPath, "pm-cli", "--version"]),
     version,
     "version output",
   );
   assertNonEmptyOutput(
     "pm-cli bin alias smoke",
-    runSmokeCommand(npx, ["--offline", "--yes", "--package", tarballPath, "pm-cli", "--help"]),
+    runSmokeCommand(npx, ["--yes", "--package", tarballPath, "pm-cli", "--help"]),
     "help",
   );
 }
@@ -205,7 +205,7 @@ function assertPackedTypescriptConsumer(npm, tarballPath, tempRoot) {
       2,
     )}\n`,
   );
-  runSmokeCommand(npm, ["install", "--offline", "--no-audit", "--no-fund", tarballPath], {
+  runSmokeCommand(npm, ["install", "--no-audit", "--no-fund", tarballPath], {
     cwd: consumerRoot,
   });
   runSmokeCommand(

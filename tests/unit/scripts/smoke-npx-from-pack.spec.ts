@@ -179,7 +179,7 @@ describe("smoke-npx-from-pack", () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  it("keeps local-tarball commands offline and bounds every subprocess", async () => {
+  it("allows fresh-runner dependency resolution and bounds every subprocess", async () => {
     vi.doMock("../../../scripts/smoke-cleanup.mjs", () => ({ cleanupTempRoot: vi.fn() }));
     mockFs();
     const execFileSync = buildExecFileSync({});
@@ -193,7 +193,7 @@ describe("smoke-npx-from-pack", () => {
       expect(options?.timeout).toBe(120_000);
       const normalizedCommand = baseCommand(command);
       if (normalizedCommand === "npx" || (normalizedCommand === "npm" && ["exec", "install"].includes(args[0] ?? ""))) {
-        expect(args).toContain("--offline");
+        expect(args).not.toContain("--offline");
       }
     }
   });

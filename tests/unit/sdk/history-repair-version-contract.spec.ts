@@ -1,3 +1,5 @@
+import { readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import jsonPatch from "fast-json-patch";
 import { describe, expect, it } from "vitest";
 import {
@@ -9,6 +11,8 @@ import {
   type ReplayDocument,
 } from "../../../src/core/history/replay.js";
 import type { HistoryEntry, HistoryPatchOp } from "../../../src/types.js";
+import { runHistoryRepair } from "../../../src/sdk/history-repair.js";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 function historyEntry(
   version: 1 | 2,
@@ -80,5 +84,74 @@ describe("history repair hash epoch contract", () => {
   it("falls forward only for an irreconcilably mixed explicit stream", () => {
     const mixed = [historyEntry(1, true), historyEntry(2, true)];
     expect(resolveHistoryRepairItemHashVersion(mixed)).toBe(2);
+  });
+
+  it("keeps one consistent explicit epoch on a drifted stream", () => {
+    const drifted = [
+      { ...historyEntry(1, true), after_hash: "0".repeat(64) },
+    ];
+    expect(resolveHistoryRepairItemHashVersion(drifted)).toBe(1);
+    const repaired = reanchorHistoryEntries(drifted);
+    expect(repaired.itemHashVersion).toBe(1);
+    expect(repaired.explicitItemHashVersion).toBe(true);
+    expect(verifyHistoryChainWithVersion(repaired.entries)).toMatchObject({
+      ok: true,
+      item_hash_version: 1,
+    });
+  });
+
+  it("labels only a mixed explicit repair receipt as ambiguous", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "Mixed epoch receipt",
+          "--description",
+          "History repair receipt fixture",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const id = (created.json as { item: { id: string } }).item.id;
+      context.runCli([
+        "update",
+        id,
+        "--description",
+        "Second history event",
+        "--message",
+        "Create mixed epoch fixture",
+        "--json",
+      ]);
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const entries = (await readFile(historyPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line) as HistoryEntry);
+      entries[0] = { ...entries[0], item_hash_version: 1 };
+      entries[1] = { ...entries[1], item_hash_version: 2 };
+      await writeFile(
+        historyPath,
+        `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+        "utf8",
+      );
+
+      const repaired = await runHistoryRepair(
+        id,
+        { dryRun: true },
+        { path: context.pmPath },
+      );
+      expect(repaired.history).toMatchObject({
+        item_hash_version_before: 2,
+        item_hash_version_after: 2,
+        version_disposition: "selected_for_ambiguous_stream",
+      });
+    });
   });
 });

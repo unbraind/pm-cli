@@ -175,22 +175,19 @@ export async function listInvalidProvenanceHistoryStreamIds(
   for (const file of await listHistoryFiles(pmRoot)) {
     try {
       const content = await fs.readFile(path.join(pmRoot, "history", file), "utf8");
-      const entries = content
-        .split("\n")
-        .filter((line) => line.trim().length > 0)
-        .map(parseHistoryEntry)
-        .filter((entry): entry is Record<string, unknown> => entry !== null);
-      if (
-        entries.some((entry) => {
-          if (!isRecord(entry.agent_provenance)) return false;
-          return Object.values(entry.agent_provenance).some(
-            (observation) =>
-              isRecord(observation) &&
-              invalidProvenanceValueKind(observation.value) !== undefined,
-          );
-        })
-      ) {
-        ids.push(file.slice(0, -".jsonl".length));
+      for (const line of content.split("\n")) {
+        if (line.trim().length === 0) continue;
+        const entry = parseHistoryEntry(line);
+        if (entry === null || !isRecord(entry.agent_provenance)) continue;
+        const invalid = Object.values(entry.agent_provenance).some(
+          (observation) =>
+            isRecord(observation) &&
+            invalidProvenanceValueKind(observation.value) !== undefined,
+        );
+        if (invalid) {
+          ids.push(file.slice(0, -".jsonl".length));
+          break;
+        }
       }
     } catch {
       // Integrity diagnostics own unreadable or malformed streams. This census

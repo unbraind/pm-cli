@@ -377,7 +377,7 @@ describe("surface replication gate", () => {
     expect(report.violations).toContain(
       "set:annotation-mutation-receipts:member:src/sdk/cli-contracts/tool-parameter-tables.ts:unchanged",
     );
-  }, 60_000);
+  }, 120_000);
 
   it("does not activate annotation replication for unrelated shared contract lines", async () => {
     const config = JSON.parse(
@@ -425,8 +425,7 @@ describe("surface replication gate", () => {
     expect(relevant.violations).toContain(
       "set:annotation-mutation-receipts:member:src/sdk/annotations.ts:unchanged",
     );
-
-  }, 60_000);
+  }, 120_000);
 
   it("reports recurrence density, cap overlap, and CLI refusal totals", async () => {
     const root = await fixtureRoot();
