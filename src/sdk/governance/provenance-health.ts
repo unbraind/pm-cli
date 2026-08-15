@@ -5,6 +5,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { HistoryEntry } from "../../types/index.js";
 
 /** Aggregated resolver attempts for one harness provenance dimension. */
 export interface ProvenanceResolverHealthOutcome {
@@ -69,8 +70,131 @@ const INVALID_PROVENANCE_VALUE_CLASSIFIERS: ReadonlyArray<{
   },
 ];
 
+/** Privacy-safe receipt for an explicit provenance normalization pass. */
+export interface ProvenanceNormalizationReceipt {
+  /** Whether at least one immutable event required normalization. */
+  changed: boolean;
+  /** Immutable events whose invalid provenance observations were removed. */
+  events_changed: number;
+  /** Total invalid observations removed without retaining their values. */
+  observations_removed: number;
+  /** Aggregate invalid-value classes removed by the pass. */
+  invalid_values: ProvenanceValueHealthFinding[];
+}
+
+/** Normalized entries plus the privacy-safe mutation receipt. */
+export interface ProvenanceNormalizationResult {
+  /** History entries with invalid bounded observations removed. */
+  entries: HistoryEntry[];
+  /** Aggregate mutation receipt; never includes an observed value. */
+  receipt: ProvenanceNormalizationReceipt;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function invalidProvenanceValueKind(
+  value: unknown,
+): ProvenanceValueHealthFinding["kind"] | undefined {
+  return INVALID_PROVENANCE_VALUE_CLASSIFIERS.find((classifier) =>
+    classifier.matches(value),
+  )?.kind;
+}
+
+/**
+ * Remove only provenance observations whose values violate the bounded domain.
+ * History operations, patches, timestamps, authors, and hashes are retained;
+ * the receipt exposes aggregate classes and counts but never the removed value.
+ */
+export function normalizeInvalidHistoryProvenance(
+  entries: HistoryEntry[],
+): ProvenanceNormalizationResult {
+  const invalidValues = new Map<string, ProvenanceValueHealthFinding>();
+  let eventsChanged = 0;
+  let observationsRemoved = 0;
+  const normalized = entries.map((entry) => {
+    const provenance = isRecord(entry.agent_provenance)
+      ? entry.agent_provenance
+      : undefined;
+    if (provenance === undefined) return entry;
+    const retained: Record<string, unknown> = {};
+    let eventChanged = false;
+    for (const [dimension, observation] of Object.entries(provenance)) {
+      const kind = isRecord(observation)
+        ? invalidProvenanceValueKind(observation.value)
+        : undefined;
+      if (kind === undefined) {
+        retained[dimension] = observation;
+        continue;
+      }
+      eventChanged = true;
+      observationsRemoved += 1;
+      const harness = entry.agent_harness ?? "unknown";
+      const key = `${harness}\0${dimension}\0${kind}`;
+      const aggregate = invalidValues.get(key) ?? {
+        harness,
+        dimension,
+        kind,
+        count: 0,
+      };
+      aggregate.count += 1;
+      invalidValues.set(key, aggregate);
+    }
+    if (!eventChanged) return entry;
+    eventsChanged += 1;
+    const next = { ...entry } as HistoryEntry;
+    if (Object.keys(retained).length === 0) {
+      delete next.agent_provenance;
+    } else {
+      next.agent_provenance = retained as HistoryEntry["agent_provenance"];
+    }
+    return next;
+  });
+  return {
+    entries: normalized,
+    receipt: {
+      changed: eventsChanged > 0,
+      events_changed: eventsChanged,
+      observations_removed: observationsRemoved,
+      invalid_values: [...invalidValues.values()].sort(
+        (left, right) =>
+          left.harness.localeCompare(right.harness) ||
+          left.dimension.localeCompare(right.dimension) ||
+          left.kind.localeCompare(right.kind),
+      ),
+    },
+  };
+}
+
+/** Find every history stream requiring provenance normalization without returning raw values. */
+export async function listInvalidProvenanceHistoryStreamIds(
+  pmRoot: string,
+): Promise<string[]> {
+  const ids: string[] = [];
+  for (const file of await listHistoryFiles(pmRoot)) {
+    try {
+      const content = await fs.readFile(path.join(pmRoot, "history", file), "utf8");
+      for (const line of content.split("\n")) {
+        if (line.trim().length === 0) continue;
+        const entry = parseHistoryEntry(line);
+        if (entry === null || !isRecord(entry.agent_provenance)) continue;
+        const invalid = Object.values(entry.agent_provenance).some(
+          (observation) =>
+            isRecord(observation) &&
+            invalidProvenanceValueKind(observation.value) !== undefined,
+        );
+        if (invalid) {
+          ids.push(file.slice(0, -".jsonl".length));
+          break;
+        }
+      }
+    } catch {
+      // Integrity diagnostics own unreadable or malformed streams. This census
+      // only selects safely parseable streams for the explicit normalizer.
+    }
+  }
+  return ids;
 }
 
 async function listHistoryFiles(pmRoot: string): Promise<string[]> {
@@ -140,9 +264,7 @@ function collectResolverOutcomes(
     : {};
   Object.entries(provenance).forEach(([dimension, observation]) => {
     if (!isRecord(observation)) return;
-    const kind = INVALID_PROVENANCE_VALUE_CLASSIFIERS.find((classifier) =>
-      classifier.matches(observation.value),
-    )?.kind;
+    const kind = invalidProvenanceValueKind(observation.value);
     if (!kind) return;
     const key = `${harness}\0${dimension}\0${kind}`;
     const aggregate = invalidValues.get(key) ?? {

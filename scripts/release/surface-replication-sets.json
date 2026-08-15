@@ -81,7 +81,10 @@
         "src/sdk/notes.ts",
         "src/sdk/learnings.ts",
         "src/cli/register-annotations.ts",
-        "src/sdk/cli-contracts/flag-contracts.ts",
+        {
+          "path": "src/sdk/cli-contracts/flag-contracts.ts",
+          "changed_lines_contain_any": ["--full-history"]
+        },
         {
           "path": "src/sdk/cli-contracts/tool-schema.ts",
           "changed_lines_contain_any": [

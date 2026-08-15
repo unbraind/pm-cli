@@ -15,10 +15,13 @@ import {
   normalizeReplayPatchOps,
   reanchorHistoryEntries,
   replayHash,
+  resolveHistoryRepairItemHashVersion,
   toReplayDocument,
   verifyHistoryChain,
+  verifyHistoryChainWithVersion,
   type ReplayDocument,
 } from "../core/history/replay.js";
+import type { HistoryItemHashVersion } from "../core/history/history.js";
 import { scanHistoryDrift } from "../core/history/drift-scan.js";
 import { invalidateHistoryDriftCache } from "../core/history/drift-cache.js";
 import { readHistoryEntries } from "../core/history/read.js";
@@ -44,6 +47,11 @@ import type {
   ItemMetadata,
 } from "../types/index.js";
 import { resolveHistorySubject } from "./history-redact.js";
+import {
+  listInvalidProvenanceHistoryStreamIds,
+  normalizeInvalidHistoryProvenance,
+  type ProvenanceNormalizationReceipt,
+} from "./governance/provenance-health.js";
 
 /** Documents the history repair command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRepairCommandOptions {
@@ -63,6 +71,8 @@ export interface HistoryRepairCommandOptions {
   auditContextById?: Record<string, Record<string, unknown>>;
   /** Add an audit event even when replay and the current item already match. */
   forceAuditEntry?: boolean;
+  /** Remove bounded-domain-invalid provenance observations and record an aggregate privacy-safe audit receipt. */
+  normalizeProvenance?: boolean;
 }
 
 /** Documents the history repair result payload exchanged by command, SDK, and package integrations. */
@@ -86,12 +96,19 @@ export interface HistoryRepairResult {
     audit_entry_added: boolean;
     verify_ok: boolean;
     verify_errors: string[];
+    item_hash_version_before: number | null;
+    item_hash_version_after: number;
+    version_disposition: "preserved" | "selected_for_ambiguous_stream";
   };
   /** Value that configures or reports item for this contract. */
   item: {
     exists: boolean;
     path: string | null;
     matched_chain_before: boolean | null;
+  };
+  /** Privacy-safe receipt for the explicitly requested provenance normalization mode. */
+  provenance_normalization: ProvenanceNormalizationReceipt & {
+    requested: boolean;
   };
   /** Present when reconciling the chain with the on-disk item discards the replayed effect of earlier history events (GH-603): names the reverted fields and the authors whose mutations the reconciliation overwrites, so cross-author data loss after a lossy merge is loud instead of silent. */
   reconciliation?: HistoryRepairReconciliationReport;
@@ -308,6 +325,7 @@ async function loadHistoryRepairItemReplay(
   subject: Awaited<ReturnType<typeof resolveHistorySubject>>,
   settings: Awaited<ReturnType<typeof readSettings>>,
   historyEntries: HistoryEntry[],
+  itemHashVersion: HistoryItemHashVersion,
 ): Promise<HistoryRepairItemReplayContext> {
   const currentItemPath = subject.located?.itemPath ?? null;
   const loadedItem = subject.located
@@ -328,7 +346,8 @@ async function loadHistoryRepairItemReplay(
   return {
     currentItemReplay,
     currentItemPath,
-    matchedChainBefore: replayHash(currentItemReplay) === lastOriginalAfterHash,
+    matchedChainBefore:
+      replayHash(currentItemReplay, itemHashVersion) === lastOriginalAfterHash,
     currentItemRawBeforeLock: loadedItem.raw,
     loadedItem,
   };
@@ -362,6 +381,8 @@ function buildHistoryRepairEntries(params: {
   message: string;
   auditOperation: string;
   auditContext?: Record<string, unknown>;
+  itemHashVersion: HistoryItemHashVersion;
+  explicitItemHashVersion: boolean;
 }): { rewrittenEntries: HistoryEntry[]; auditEntryAdded: boolean } {
   const rewrittenEntries: HistoryEntry[] = [...params.reanchorEntries];
   if (!params.changed) {
@@ -382,9 +403,12 @@ function buildHistoryRepairEntries(params: {
             params.currentItemReplay,
           ) as HistoryPatchOp[])
         : [],
-    before_hash: replayHash(params.finalReplay),
-    after_hash: replayHash(afterReplay),
+    before_hash: replayHash(params.finalReplay, params.itemHashVersion),
+    after_hash: replayHash(afterReplay, params.itemHashVersion),
     message: params.message,
+    ...(params.explicitItemHashVersion
+      ? { item_hash_version: params.itemHashVersion }
+      : {}),
     ...(params.auditContext === undefined
       ? {}
       : { context: params.auditContext }),
@@ -395,6 +419,7 @@ function buildHistoryRepairEntries(params: {
 function collectHistoryRepairWarnings(
   changed: boolean,
   skippedOps: number,
+  reconciliation: HistoryRepairReconciliationReport | undefined,
 ): string[] {
   const warnings: string[] = [];
   if (!changed) {
@@ -402,6 +427,12 @@ function collectHistoryRepairWarnings(
   }
   if (skippedOps > 0) {
     warnings.push(`history_repair_skipped_unresolvable_ops:${skippedOps}`);
+  }
+  if (reconciliation && reconciliation.discarded_events.length > 0) {
+    warnings.push(
+      `history_repair_reconcile_discards_events:${reconciliation.discarded_events.length}`,
+      `history_repair_discarded_authors:${reconciliation.discarded_authors.join(",")}`,
+    );
   }
   return warnings;
 }
@@ -490,18 +521,43 @@ export async function runHistoryRepair(
   }
 
   const chainBefore = verifyHistoryChain(historyEntries);
-  const reanchor = reanchorHistoryEntries(historyEntries);
+  const chainVersionBefore = verifyHistoryChainWithVersion(historyEntries);
+  const provenanceNormalization = options.normalizeProvenance
+    ? normalizeInvalidHistoryProvenance(historyEntries)
+    : {
+        entries: historyEntries,
+        receipt: {
+          changed: false,
+          events_changed: 0,
+          observations_removed: 0,
+          invalid_values: [],
+        },
+      };
+  const itemHashVersion = resolveHistoryRepairItemHashVersion(
+    provenanceNormalization.entries,
+  );
+  const explicitVersionsBefore = new Set(
+    provenanceNormalization.entries
+      .map((entry) => entry.item_hash_version)
+      .filter((version): version is number => version !== undefined),
+  );
+  const reanchor = reanchorHistoryEntries(
+    provenanceNormalization.entries,
+    itemHashVersion,
+  );
 
   const itemReplayContext = await loadHistoryRepairItemReplay(
     subject,
     settings,
     historyEntries,
+    itemHashVersion,
   );
 
   const finalReplay = reanchor.finalDocument;
   const reconcileNeeded =
     itemReplayContext.currentItemReplay !== null &&
-    replayHash(finalReplay) !== replayHash(itemReplayContext.currentItemReplay);
+    replayHash(finalReplay, itemHashVersion) !==
+    replayHash(itemReplayContext.currentItemReplay, itemHashVersion);
   // GH-603: reconciling toward the on-disk item can silently overwrite the
   // replayed effect of other authors' events (classic after a lossy merge).
   // Surface exactly what is being discarded before any write happens.
@@ -519,6 +575,7 @@ export async function runHistoryRepair(
     reanchor.entriesPatchRepaired > 0,
     reconcileNeeded,
     options.forceAuditEntry === true,
+    provenanceNormalization.receipt.changed,
   ].some(Boolean);
   const author = resolveAuthor(options.author, settings.author_default);
   const dryRun = Boolean(options.dryRun);
@@ -538,7 +595,14 @@ export async function runHistoryRepair(
     author,
     message: repairMessage,
     auditOperation: options.auditOperation ?? "history_repair",
-    auditContext: options.auditContext,
+    auditContext: provenanceNormalization.receipt.changed
+      ? {
+          ...options.auditContext,
+          provenance_normalization: provenanceNormalization.receipt,
+        }
+      : options.auditContext,
+    itemHashVersion,
+    explicitItemHashVersion: reanchor.explicitItemHashVersion,
   });
 
   const historyVerify = verifyHistoryChain(rewrittenEntries);
@@ -549,15 +613,11 @@ export async function runHistoryRepair(
     );
   }
 
-  const warnings = collectHistoryRepairWarnings(changed, reanchor.skippedOps);
-  if (reconciliation && reconciliation.discarded_events.length > 0) {
-    warnings.push(
-      `history_repair_reconcile_discards_events:${reconciliation.discarded_events.length}`,
-    );
-    warnings.push(
-      `history_repair_discarded_authors:${reconciliation.discarded_authors.join(",")}`,
-    );
-  }
+  const warnings = collectHistoryRepairWarnings(
+    changed,
+    reanchor.skippedOps,
+    reconciliation,
+  );
 
   if (changed && !dryRun) {
     warnings.push(
@@ -593,11 +653,21 @@ export async function runHistoryRepair(
       audit_entry_added: auditEntryAdded,
       verify_ok: historyVerify.ok,
       verify_errors: historyVerify.errors,
+      item_hash_version_before: chainVersionBefore.item_hash_version ?? null,
+      item_hash_version_after: itemHashVersion,
+      version_disposition:
+        explicitVersionsBefore.size > 1
+          ? "selected_for_ambiguous_stream"
+          : "preserved",
     },
     item: {
       exists: itemReplayContext.currentItemPath !== null,
       path: itemReplayContext.currentItemPath,
       matched_chain_before: itemReplayContext.matchedChainBefore,
+    },
+    provenance_normalization: {
+      requested: options.normalizeProvenance === true,
+      ...provenanceNormalization.receipt,
     },
     ...(reconciliation ? { reconciliation } : {}),
     warnings: [...new Set(warnings)].sort((left, right) =>
@@ -637,7 +707,9 @@ export interface HistoryRepairAllResult {
   scanned_streams: number;
   /** Value that configures or reports drifted streams for this contract. */
   drifted_streams: number;
-  /** One compact row per drifted stream (clean streams are summarized by the counts only). */
+  /** Streams selected only because invalid provenance required normalization. */
+  provenance_invalid_streams: number;
+  /** One compact row per drifted or provenance-normalization target. */
   streams: HistoryRepairAllStreamResult[];
   /** Value that configures or reports totals for this contract. */
   totals: { repaired: number; skipped_clean: number; failed: number };
@@ -697,11 +769,17 @@ export async function runHistoryRepairAll(
     pmRoot,
     items as Array<ItemMetadata & { body: string }>,
   );
+  const invalidProvenanceIds = options.normalizeProvenance
+    ? await listInvalidProvenanceHistoryStreamIds(pmRoot)
+    : [];
+  const targetedIds = [
+    ...new Set([...drift.driftedItems, ...invalidProvenanceIds]),
+  ].sort((left, right) => left.localeCompare(right));
 
   const streams: HistoryRepairAllStreamResult[] = [];
   const repairWarnings: string[] = [];
   const totals = { repaired: 0, skipped_clean: 0, failed: 0 };
-  for (const driftedId of drift.driftedItems) {
+  for (const driftedId of targetedIds) {
     try {
       const result = await runHistoryRepair(
         driftedId,
@@ -748,6 +826,7 @@ export async function runHistoryRepairAll(
     dry_run: Boolean(options.dryRun),
     scanned_streams: items.length,
     drifted_streams: drift.driftedItems.length,
+    provenance_invalid_streams: invalidProvenanceIds.length,
     streams,
     totals,
     warnings: [...new Set([...itemReadWarnings, ...repairWarnings])].sort(

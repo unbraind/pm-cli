@@ -2,20 +2,65 @@ id: pm-643e0k
 title: Detect extension-host pm-cli version skew before a workspace reports healthy
 description: "GH-1003 proves a project can contain a pinned host @unbrained/pm-cli plus a newer nested extension copy while pm health reports ok. Add an SDK-owned dependency-resolution census and health finding that names privacy-safe package paths and versions whenever an active extension resolves a different host copy, with npm and pnpm layouts covered."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:sdk",dependency-integrity,extensions,health
 created_at: "2026-08-13T22:03:33.719Z"
-updated_at: "2026-08-13T22:03:33.719Z"
+updated_at: "2026-08-15T04:00:03.432Z"
+closed_at: "2026-08-15T04:00:02.665Z"
+completed_at: "2026-08-15T04:00:02.665Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: pm health reports every distinct resolvable @unbrained/pm-cli copy relevant to an installed extension; a host/extension version mismatch cannot return a clean extensions check; clean deduplicated and workspace-linked installs stay green; npm and pnpm nested layouts have temporary-project acceptance coverage; GH-1003 is linked in evidence
 parent: pm-usfg
 risk: high
 confidence: high
+resolution: fixed
+expected_result: Health detects every extension-relevant pm-cli host copy and cannot report a clean extension check when versions differ.
+actual_result: "The SDK census resolves npm, pnpm, and other layouts, deduplicates copies, and emits gate-failing health findings for host-version mismatches."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-iqq0,discovered_from,"2026-08-13T22:03:33.719Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-13T22:03:33.719Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-13T22:03:33.719Z","harness:codex","Duplicate check: exhaustive all-status search found extension authoring and health ancestors but no item owning host-copy version skew; GH-1003 is the canonical external report."
+  "2026-08-14T23:25:37.745Z","harness:codex","Implementation start 2026-08-15: active in the coupled workspace-integrity tranche spanning provenance repair, self-indexing health severity, extension-host version coherence, cross-version history repair, and strict linked-artifact parsing. Only these five canonical regression items are claimed; all other tracker work remains open and unclaimed."
+  "2026-08-15T01:56:44.813Z","harness:codex","Delivery evidence 2026-08-15: the SDK now inventories extension-host pm-cli copies across npm, pnpm, and other dependency layouts, reports mismatches with privacy-safe relative paths, and integrates host-version skew into health findings and gate failure semantics. Focused linked tests passed 64/64; full release verification passed 7,334 tests and exact 100/100/100/100 coverage."
+  "2026-08-15T02:27:13.575Z","harness:codex","Coordination correction 2026-08-15: PR #1016 compact finding-retention review belongs to canonical self-indexing health item pm-larv4r; no new extension-host census change is being made under this item."
+  "2026-08-15T03:38:28.633Z","harness:codex","Review follow-up 2026-08-15: CodeRabbit found that all external extension manifests collapse to the same privacy-safe display path. Reopened the canonical extension-host census item to add deterministic opaque per-installation identity without disclosing raw host paths."
+  "2026-08-15T03:59:03.532Z","harness:codex","Review fix evidence: external pm-cli manifests now receive deterministic 64-bit opaque installation fingerprints, distinct copies remain distinct, raw host paths are absent, and no crypto import is added to the governance entrypoint. The SDK import-cost gate passes."
+  "2026-08-15T04:00:01.902Z","harness:codex","Final exact-head evidence: linked extension/health contracts passed 64/64; deterministic privacy-safe external identities are distinct and stable; SDK entrypoint import-cost and repository static gates pass; full coverage is exact."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,reviewed public extension-host census contract
+  src/sdk/governance.ts,project,Public SDK export
+  src/sdk/governance/extension-host-version.ts,project,Host and extension dependency census primitive
+  src/sdk/governance/health.ts,project,Extension health integration
+  tests/unit/sdk/extension-host-version-health.spec.ts,project,Npm pnpm and dedupe fixtures
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/extension-host-version-health.spec.ts tests/unit/commands/health-command.spec.ts,project,240,Npm pnpm mismatch and health integration
+test_runs[2]:
+  - run_id: test-local-mstq5576-7dudm0
+    kind: test
+    status: passed
+    started_at: "2026-08-15T01:55:22.709Z"
+    finished_at: "2026-08-15T01:55:44.658Z"
+    recorded_at: "2026-08-15T01:55:44.658Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-all-local-mstujr4t-7qoles
+    kind: test-all
+    status: passed
+    started_at: "2026-08-15T03:59:04.705Z"
+    finished_at: "2026-08-15T03:59:36.484Z"
+    recorded_at: "2026-08-15T03:59:36.484Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated by pm-changelog 2026.8.12 from closed tracker state
+  docs/COMMANDS.md,project,Host version census behavior
+  docs/SDK_CONTEXT_INTEGRITY.md,project,SDK extension health contract
+close_reason: "Review follow-up complete: external extension-host copies retain distinct privacy-safe identities without SDK startup-cost regression."
 body: ""

@@ -2,21 +2,66 @@ id: pm-larv4r
 title: Make every failing health verdict self-indexing and attach gate severity to findings
 description: "GH-1001 shows ok:false can coexist with checks that appear healthy because the deciding provenance warning lives only in a distant top-level array. Add a compact failed_because contract adjacent to the verdict, attach every warning to an owning or synthetic check, distinguish advisory from gate-failing findings, and require executable remediation for every failing class."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,health,output-contract,recovery
 created_at: "2026-08-13T22:03:57.836Z"
-updated_at: "2026-08-13T22:03:57.836Z"
+updated_at: "2026-08-15T03:01:44.402Z"
+closed_at: "2026-08-15T03:01:43.618Z"
+completed_at: "2026-08-15T03:01:43.618Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: "Every ok:false health payload names its deciding codes beside ok; every warning is indexed by a check and declares advisory or gate_failing severity; every gate-failing code has executable remediation or an explicit safe-disposition refusal; compact and full JSON/TOON projections preserve the verdict explanation; GH-1001 is linked in evidence"
 parent: pm-33cw
 risk: high
 confidence: high
+resolution: fixed
+expected_result: "Every failing health verdict names its deciding codes, owning checks, severity, and safe remediation disposition in compact and full projections."
+actual_result: "Health now emits findings and failed_because consistently, with generated codes and executable remediation or explicit no-safe-automation disposition."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-33cw,implements,"2026-08-13T22:03:57.836Z","harness:codex","cli:create:dep",detected
   pm-5q8wa0,discovered_from,"2026-08-13T22:03:57.836Z","harness:codex","cli:create:dep",detected
   pm-sz6w,verifies,"2026-08-13T22:03:57.836Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-13T22:03:57.836Z","harness:codex","Duplicate check: all-status search found the legacy provenance disposition and remediation registry work, but no item owns self-indexing health verdict causality; GH-1001 is the canonical external report."
+  "2026-08-14T23:25:35.706Z","harness:codex","Implementation start 2026-08-15: active in the coupled workspace-integrity tranche spanning provenance repair, self-indexing health severity, extension-host version coherence, cross-version history repair, and strict linked-artifact parsing. Only these five canonical regression items are claimed; all other tracker work remains open and unclaimed."
+  "2026-08-15T01:56:45.316Z","harness:codex","Delivery evidence 2026-08-15: every retained health warning now produces a coded self-indexing finding with check ownership, severity, and either an executable remediation or explicit no-safe-automation disposition; failed_because persists through compact projections. Generated catalogs and public SDK contracts were refreshed. Focused linked tests passed 60/60; manual packed health proved findings and failed_because arrays; full release verification passed 7,334 tests and exact 100/100/100/100 coverage."
+  "2026-08-15T02:58:02.317Z","harness:codex","PR #1016 review evidence 2026-08-15: full, brief, and summary health projections now retain structured findings for every deciding failed_because warning even when the top-level warning sample is truncated at 100. A 101-warning negative control proves owning check, severity, and remediation disposition remain adjacent to the failing verdict. Focused tests and exact 7,337-test 100/100/100/100 coverage pass."
+  "2026-08-15T03:01:42.745Z","harness:codex","Final review evidence: linked health contracts passed 61/61 tests. A deciding failed finding is retained even when it falls beyond the warning sample."
+files[7]{path,scope,note}:
+  sdk/public-surface.json,project,reviewed public health finding contract
+  src/core/diagnostics/remediation.ts,project,Shared executable remediation registry
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated diagnostic code surface
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated diagnostic code surface
+  src/sdk/governance/health.ts,project,Self indexing findings and exact failure causes
+  tests/integration/release-readiness-runtime.spec.ts,project,release-readiness health key ordering
+  tests/unit/sdk/health-finding-contract.spec.ts,project,Severity ownership remediation and projection coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/health-command.spec.ts,project,240,Full brief summary verdict and finding parity
+test_runs[2]:
+  - run_id: test-local-mstq5m8s-g4g3gz
+    kind: test
+    status: passed
+    started_at: "2026-08-15T01:55:45.115Z"
+    finished_at: "2026-08-15T01:56:06.748Z"
+    recorded_at: "2026-08-15T01:56:06.748Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-all-local-mstsfhar-0p8wl7
+    kind: test-all
+    status: passed
+    started_at: "2026-08-15T02:59:46.077Z"
+    finished_at: "2026-08-15T03:00:42.008Z"
+    recorded_at: "2026-08-15T03:00:42.008Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated by pm-changelog 2026.8.12 from closed tracker state
+  docs/COMMANDS.md,project,Health finding and failed-because operator contract
+  docs/SDK_CONTEXT_INTEGRITY.md,project,Self indexing SDK health contract
+close_reason: "Review follow-up complete: failed health findings remain self-indexing across every bounded projection."
 body: ""

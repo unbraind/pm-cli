@@ -4,9 +4,14 @@
 
 ### Fixed
 
+- Provide an audited repair and severity-migration contract for legacy invalid provenance ([pm-76fkpp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-76fkpp.toon))
+- Detect extension-host pm-cli version skew before a workspace reports healthy ([pm-643e0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-643e0k.toon))
+- Restore strict unknown-key parity for docs linked-artifact additions ([pm-22rzjp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-22rzjp.toon))
+- Surface replication gate scopes trigger activation to relevant diff content ([pm-mrhwow](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrhwow.toon))
+- Make every failing health verdict self-indexing and attach gate severity to findings ([pm-larv4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-larv4r.toon))
+- GH-1004: history-repair remains writer-version-specific across 2026.8.7 and 2026.8.13 ([pm-igdvfq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-igdvfq.toon))
 - Assurance gates preserve zero-valued counts and report actionable source failures ([pm-xmmafu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xmmafu.toon))
 - A budget-truncated read is resumable on one surface and terminal on five, and the only recovery the envelope names is to abandon the budget that truncated it ([pm-8nev0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nev0o.toon))
-- Surface replication gate scopes trigger activation to relevant diff content ([pm-mrhwow](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrhwow.toon))
 - Ranking explanation is sized by the workspace rather than by the answer: explaining two returned rows emits one entry per active item and ignores the token budget entirely ([pm-okgxwa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-okgxwa.toon))
 - The unknown-option refusal asserts the option belongs on another command path without checking, so a spelling that exists nowhere sends the reader on an unbounded search ([pm-in23qu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-in23qu.toon))
 - The gate verdict withholds its evidence as a declaration-order prefix, so the assertion that produced a blocking verdict can be the row the default read drops ([pm-e5gl05](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e5gl05.toon))
@@ -14,6 +19,10 @@
 - GH-1007: assurance gate declarations omit trigger and escape the typed refusal contract ([pm-88mo8m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-88mo8m.toon))
 - A CI-wired quality gate is red on a clean checkout of main and green in hosted CI for the same commit, because its measured output carries a telemetry warning whose presence depends on whether the local flush reached the network ([pm-t7wn04](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t7wn04.toon))
 - GH-1011: Windows Node 24 nightly cache fixture loses the authoritative linked-test collection ([pm-k47yqn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k47yqn.toon))
+
+### Other
+
+- The agent token-surface harness from pm-a22j is wired into nothing, so output-size regressions like the 33k-token health check land undetected ([pm-dpqa3h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-dpqa3h.toon))
 
 ## 2026.8.14 - 2026-08-14
 
@@ -528,7 +537,6 @@
 - Evaluate Sentry 10.68.0 compatibility and retain 10.67.0 ([pm-r31390](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r31390.toon))
 - Derive ALL MCP tool inputSchemas from \*\_FLAG_CONTRACTS — eliminate hand-declared parallel schema tables (extend the pm_copy pattern) ([pm-xwah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xwah.toon))
 - Generate shell completions, MCP tool registrations, and command reference docs from the contracts table (single source of truth) ([pm-mu8m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mu8m.toon))
-- The agent token-surface harness from pm-a22j is wired into nothing, so output-size regressions like the 33k-token health check land undetected ([pm-dpqa3h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-dpqa3h.toon))
 - Ecosystem review and deep-graph enrichment pass 2026-07-27: all-status census, CLI simplification + token-efficiency + long-term brainstorm, dedupe-checked gap filing ([pm-89qv6b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-89qv6b.toon))
 - Evaluate @toon-format/toon 4 compatibility and item-format migration ([pm-5cgm2z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5cgm2z.toon))
 - ADR amendment: extensible durable agent provenance dimensions and privacy boundaries ([pm-oskdmu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-oskdmu.toon))

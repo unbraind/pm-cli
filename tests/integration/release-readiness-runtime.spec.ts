@@ -2213,6 +2213,8 @@ describe("release readiness runtime coverage", () => {
         "ok",
         "checks",
         "warnings",
+        "findings",
+        "failed_because",
         "generated_at",
         "warning_count",
         "warning_limit",

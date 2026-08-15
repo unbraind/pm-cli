@@ -484,6 +484,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   edit: { type: "integer", minimum: 1 },
   delete: { type: "integer", minimum: 1 },
   dryRun: { type: "boolean" },
+  normalizeProvenance: { type: "boolean" },
   all: { type: "boolean" },
   clear: { type: "boolean" },
   cliOnly: { type: "boolean" },
@@ -1524,6 +1525,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   dryRun: {
     description: "Preview command effects without mutating storage artifacts.",
+  },
+  normalizeProvenance: {
+    description:
+      "For history-repair: remove invalid legacy provenance observations and emit only aggregate privacy-safe repair evidence.",
   },
   all: {
     description:

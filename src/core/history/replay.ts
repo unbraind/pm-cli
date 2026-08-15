@@ -367,11 +367,53 @@ export interface ReanchorResult {
   skippedOps: number;
   /** Value that configures or reports details for this contract. */
   details: ReanchorEntryDetail[];
+  /** Hash epoch retained while rebuilding the stream. */
+  itemHashVersion: HistoryItemHashVersion;
+  /** Whether rewritten entries explicitly carry the hash epoch field. */
+  explicitItemHashVersion: boolean;
+}
+
+/**
+ * Resolve the hash epoch a repair must retain.
+ *
+ * A valid stream is authoritative even when legacy entries omit the version
+ * field. For a broken stream, one consistent explicit epoch remains
+ * authoritative; fully implicit legacy streams stay on epoch 1. Only an
+ * irreconcilably mixed stream falls forward to the current epoch.
+ */
+export function resolveHistoryRepairItemHashVersion(
+  entries: HistoryEntry[],
+): HistoryItemHashVersion {
+  const verified = verifyHistoryChainWithVersion(entries);
+  if (verified.ok && verified.item_hash_version !== undefined) {
+    return verified.item_hash_version;
+  }
+  const explicitVersions = [
+    ...new Set(
+      entries
+        .map((entry) => entry.item_hash_version)
+        .filter(
+          (version): version is HistoryItemHashVersion =>
+            version !== undefined &&
+            (SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
+              version,
+            ),
+        ),
+    ),
+  ];
+  if (explicitVersions.length === 1) {
+    return explicitVersions[0];
+  }
+  if (explicitVersions.length === 0) {
+    return 1;
+  }
+  return CURRENT_HISTORY_ITEM_HASH_VERSION;
 }
 
 /** Re-anchor a drifted history chain: replay every entry from empty, recompute the before/after hashes, and only rewrite a patch when the original op set no longer strictly applies (legacy drift). Clean entries keep their patch verbatim so the on-disk diff stays minimal. The returned chain verifies via verifyHistoryChain. */
 export function reanchorHistoryEntries(
   entries: HistoryEntry[],
+  itemHashVersion = resolveHistoryRepairItemHashVersion(entries),
 ): ReanchorResult {
   const unsupportedIndex = entries.findIndex(
     (entry) =>
@@ -392,10 +434,13 @@ export function reanchorHistoryEntries(
   let entriesPatchRepaired = 0;
   let convertedReplaceToAdd = 0;
   let skippedOps = 0;
+  const explicitItemHashVersion =
+    itemHashVersion !== 1 ||
+    entries.some((entry) => entry.item_hash_version !== undefined);
 
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
-    const beforeHash = replayHash(replay, CURRENT_HISTORY_ITEM_HASH_VERSION);
+    const beforeHash = replayHash(replay, itemHashVersion);
     const strict = tryApplyReplayPatch(replay, entry.patch);
 
     let next: ReplayDocument;
@@ -419,20 +464,25 @@ export function reanchorHistoryEntries(
       entriesPatchRepaired += 1;
     }
 
-    const afterHash = replayHash(next, CURRENT_HISTORY_ITEM_HASH_VERSION);
+    const afterHash = replayHash(next, itemHashVersion);
     const rehashed =
       beforeHash !== entry.before_hash || afterHash !== entry.after_hash;
     if (rehashed) {
       entriesRehashed += 1;
     }
 
-    rewritten.push({
+    const rewrittenEntry: HistoryEntry = {
       ...entry,
       patch: outPatch,
       before_hash: beforeHash,
       after_hash: afterHash,
-      item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
-    });
+    };
+    if (explicitItemHashVersion) {
+      rewrittenEntry.item_hash_version = itemHashVersion;
+    } else {
+      delete rewrittenEntry.item_hash_version;
+    }
+    rewritten.push(rewrittenEntry);
     details.push({
       index: index + 1,
       rehashed,
@@ -451,6 +501,8 @@ export function reanchorHistoryEntries(
     convertedReplaceToAdd,
     skippedOps,
     details,
+    itemHashVersion,
+    explicitItemHashVersion,
   };
 }
 

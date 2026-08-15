@@ -283,6 +283,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
       "Review the actionable coordinates, then record an append-only attribution disposition for the complete current set.",
   },
   {
+    code: "provenance_value_domain_invalid",
+    command: "pm history-repair --all --normalize-provenance",
+    summary:
+      "Remove invalid bounded provenance observations from affected streams and append privacy-safe aggregate repair receipts.",
+  },
+  {
     code: "validate_history_unknown_author_events",
     command:
       'pm history-author-acknowledge --all-actionable --attributed-author "<principal>" --reviewer "<reviewer>" --reason "<evidence>"',

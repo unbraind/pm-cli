@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-14T07:11:28.225Z"
-updated_at: "2026-08-14T12:57:49.789Z"
-closed_at: "2026-08-14T12:57:49.059Z"
-completed_at: "2026-08-14T12:57:49.059Z"
+updated_at: "2026-08-15T03:01:46.246Z"
+closed_at: "2026-08-15T03:01:45.716Z"
+completed_at: "2026-08-15T03:01:45.716Z"
 author: "harness:codex"
 acceptance_criteria: Replication sets may declare content predicates for trigger-file diff hunks; Relevant annotation receipt changes still require every replicated member; Unrelated output-budget changes in the shared table do not activate annotation receipt replication; Negative-control tests prove malformed trigger declarations fail closed
 parent: pm-92if
@@ -17,7 +17,7 @@ expected_result: "A replication set activates only when relevant contract lines 
 actual_result: "The gate now supports changed_lines_contain_any markers, ignores proven unrelated hunks, activates on relevant added or removed lines, and treats unavailable diff evidence as active."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-kmnvug,discovered_from,"2026-08-14T07:11:28.225Z","harness:codex","cli:create:dep",detected
-comments[9]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-08-14T07:11:28.225Z","harness:codex","Duplicate check: searched all statuses for surface replication false-positive activation,trigger scope,unrelated file changes,and content-aware triggers. pm-kmnvug fixed shared non-trigger activation but does not address unrelated hunks inside an explicitly shared trigger file; no item tracks that distinct residual."
   "2026-08-14T07:18:30.525Z","harness:codex","TDD/quality evidence: the existing full pnpm quality:static chain reproduced false activation of annotation-mutation-receipts from an outputBudget-only hunk. New focused tests prove relevant diff markers activate, unrelated hunks stay inactive, missing diff evidence activates fail-closed, and malformed trigger objects are refused. The real changeset now reports zero unrelated active replication sets."
   "2026-08-14T07:55:45.881Z","harness:codex","Completion evidence: replication triggers accept changed_lines_contain_any, relevant diff markers activate every required-member ratchet, unrelated shared-file hunks do not, missing diff evidence activates fail-closed, malformed objects fail declaration validation, and a no-default-branch Git fixture is covered. Real changeset gate, linked 15-test suite, complete static chain, and exact coverage all pass."
@@ -27,18 +27,52 @@ comments[9]{created_at,author,text}:
   "2026-08-14T12:11:41.132Z","harness:codex","Regression evidence 2026-08-14: the universal outputCursor addition changed only unrelated lines in src/sdk/cli-contracts/tool-schema.ts, but annotation-mutation-receipts still uses that shared registry as a whole-file trigger. pnpm quality:static therefore demanded artificial edits across every annotation transport. Reusing this canonical item because its content-scoped trigger acceptance and learning explicitly own this exact false-positive class."
   "2026-08-14T12:16:58.184Z","harness:codex","Focused evidence: annotation tool-schema activation is now content-scoped; an outputCursor-only hunk leaves the set inactive while a changed full marker still requires all annotation members. The 16-test suite and real changeset replication gate pass with no waiver or artificial edits."
   "2026-08-14T12:57:48.251Z","harness:codex","Final verification after live reopen: annotation replication triggers now inspect relevant added/removed hunk content rather than any shared-schema edit. The 16-test gate proves unrelated outputCursor lines stay inactive, annotation markers activate every required member, malformed declarations fail closed, and the real changeset gate passes."
+  "2026-08-15T00:35:41.964Z","harness:codex","Continuation evidence 2026-08-15: adding the unrelated history-repair --normalize-provenance flag to the shared flag-contract registry still activates the annotation-mutation-receipts set because that remaining trigger is whole-file scoped. Reusing this canonical item again; the prior tool-schema fix established the exact semantic-trigger contract, and this pass closes the residual flag-contract gap without a waiver or artificial annotation edits."
+  "2026-08-15T01:56:45.923Z","harness:codex","Delivery evidence 2026-08-15: surface replication activation now evaluates declared semantic content predicates rather than treating any change to a shared contract file as relevant. Negative controls prove unrelated flag/tool-schema edits stay inactive while --full-history changes activate the annotation set. The focused gate passed 16/16, the real diff reports zero active sets, token baselines pass 79 surfaces, and full release verification passed 7,334 tests with exact 100/100/100/100 coverage."
+  "2026-08-15T02:58:00.679Z","harness:codex","Review reliability evidence 2026-08-15: exact coverage showed the two real-worktree semantic-trigger controls take 26-55 seconds under the fully parallel 500-file run although they finish in 7-10 seconds alone. Their test-only timeout is now 120 seconds; no gate threshold, trigger predicate, assertion, or fail-closed behavior changed. The focused 16-test suite and exact 7,337-test coverage pass."
+  "2026-08-15T03:01:45.000Z","harness:codex","Final review evidence: linked surface-replication contracts passed 16/16 tests with unchanged gate thresholds and bounded 120-second test harness timeouts."
 learnings[1]{created_at,author,text}:
   "2026-08-14T07:55:46.540Z","harness:codex","A file path is too coarse to be a replication trigger when one shared registry owns unrelated contracts. Content-scoped added/removed-line markers preserve fail-closed coupling without requiring artificial edits; absence of diff evidence must activate, not skip, the set."
-files[3]{path,scope,note}:
+files[5]{path,scope,note}:
+  scripts/agent-token-surface-baseline.json,project,intentional history-repair flag token baseline
   scripts/release/surface-replication-gate.mjs,project,Evaluate trigger activation against relevant changed lines
   scripts/release/surface-replication-sets.json,project,Declare annotation receipt trigger content
+  tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,release-gate timeout calibrated to measured full transport run
   tests/unit/scripts/release/surface-replication-gate.spec.ts,project,Deleted structured-trigger activation regression coverage
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/surface-replication-gate.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
-  test-local-mssnitjk-wezjxh,test,passed,"2026-08-14T07:54:25.672Z","2026-08-14T07:54:37.712Z","2026-08-14T07:54:37.712Z",1,0,0
+test_runs[3]:
+  - run_id: test-local-mssnitjk-wezjxh
+    kind: test
+    status: passed
+    started_at: "2026-08-14T07:54:25.672Z"
+    finished_at: "2026-08-14T07:54:37.712Z"
+    recorded_at: "2026-08-14T07:54:37.712Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-mstq5zl9-bu3zbs
+    kind: test
+    status: passed
+    started_at: "2026-08-15T01:56:07.216Z"
+    finished_at: "2026-08-15T01:56:24.045Z"
+    recorded_at: "2026-08-15T01:56:24.045Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-all-local-mstsfhar-0p8wl7
+    kind: test-all
+    status: passed
+    started_at: "2026-08-15T02:59:46.077Z"
+    finished_at: "2026-08-15T03:00:58.991Z"
+    recorded_at: "2026-08-15T03:00:58.991Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated by pm-changelog 2026.8.12 from closed tracker state
   docs/SDK_CONTEXT_INTEGRITY.md,project,Document content-scoped replication trigger semantics
-close_reason: "Delivered content-scoped surface replication triggers with relevant, unrelated, and fail-closed negative controls."
+close_reason: "Review follow-up complete: real-worktree replication contracts remain strict and reliable under full-suite load."
 body: ""

@@ -178,9 +178,24 @@ export function looksLikeStructuredPathEntry(raw: string): boolean {
   if (/^(?:[-*+]\s+)?(?:path|scope|note)\s*[:=]/i.test(raw)) {
     return true;
   }
-  // A first-key typo (e.g. `lable=main,path=…`) must still be parsed so the
-  // unknown key is rejected rather than swallowed as a bare path (GH-258).
-  return looksLikeGenericKeyValueEntry(raw);
+  // An equals sign is valid inside filesystem paths and URL query strings.
+  // Preserve unmistakable whitespace-free path/URL shapes while routing
+  // leading assignment syntax through the structured-key allowlist so typos
+  // and malformed URL-plus-note input remain atomic failures (GH-258,
+  // GH-1000).
+  const equalsIndex = raw.indexOf("=");
+  if (
+    equalsIndex >= 0 &&
+    !/\s/u.test(raw) &&
+    (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//u.test(raw) ||
+      /^(?:[A-Za-z]:[\\/]|[\\/]{1,2}|\.\.?(?:[\\/]))/u.test(raw) ||
+      [raw.indexOf("/"), raw.indexOf("\\")].some(
+        (separatorIndex) => separatorIndex >= 0 && separatorIndex < equalsIndex,
+      ))
+  ) {
+    return false;
+  }
+  return raw.includes("=") || looksLikeGenericKeyValueEntry(raw);
 }
 
 function expandBareCommaSeparatedAddEntries(raw: string[]): string[] {

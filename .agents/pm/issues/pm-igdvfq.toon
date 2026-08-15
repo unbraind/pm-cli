@@ -2,11 +2,13 @@ id: pm-igdvfq
 title: "GH-1004: history-repair remains writer-version-specific across 2026.8.7 and 2026.8.13"
 description: "A real post-epoch reproduction shows genuine drift repaired by pm 2026.8.7 is accepted only by that reader, while repair by 2026.8.13 is accepted only by the newer reader; alternating the supported CLIs rewrites the same stream indefinitely and each reports the other's bytes as hash/chain drift."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:history",compatibility,history-repair,regression
 created_at: "2026-08-14T01:58:48.803Z"
-updated_at: "2026-08-14T10:15:01.221Z"
+updated_at: "2026-08-15T03:01:41.986Z"
+closed_at: "2026-08-15T03:01:40.956Z"
+completed_at: "2026-08-15T03:01:40.956Z"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: A cross-version fixture reproduces the two-writer loop; repair converges or refuses without rewriting an internally consistent supported epoch; diagnostics attribute version incompatibility instead of generic corruption; focused and repository-wide exact coverage remain green
@@ -15,8 +17,9 @@ risk: high
 confidence: high
 severity: high
 repro_steps: "On one drifted tracker, alternate published 2026.8.7 and 2026.8.13 history-repair --all, running each version's health --strict-exit after each rewrite as documented in GitHub #1004."
+resolution: fixed
 expected_result: Supported readers either accept one converged repaired representation or the repair command refuses a writer-version-only rewrite with an actionable compatibility diagnostic.
-actual_result: "Repair under 2026.8.7 makes 2026.8.13 fail strict health; repair under 2026.8.13 makes 2026.8.7 fail, and the files differ byte-for-byte."
+actual_result: "History repair now preserves a verified or consistently declared supported hash epoch, keeps fully implicit legacy streams on epoch 1, and falls forward only for irreconcilably mixed explicit epochs; repair receipts expose before/after epoch disposition and converge across supported writers."
 affected_version: 2026.8.13
 component: history hashing and repair compatibility
 regression: true
@@ -25,6 +28,44 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2htk4p,discovered_from,"2026-08-14T01:58:48.803Z","harness:codex","cli:create:dep",detected
   pm-4a7m,blocked_by,"2026-08-14T01:58:48.803Z","harness:codex","cli:create:dep",detected
   pm-85hm,blocked_by,"2026-08-14T01:58:48.803Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-14T01:58:48.803Z","harness:codex","Duplicate check across all PM statuses: searched GH-1004, the exact issue title, 2026.8.7/2026.8.13 repair loops, writer-version hash chains, and reviewed pm-2htk4p plus history-repair lineage. pm-2htk4p/#976 established explicit epochs and newer-reader compatibility, but #1004 is a fresh post-fix reproduction where two supported writers still do not converge. This item is the canonical regression; it remains open and unclaimed because this release closeout does not implement it."
+  "2026-08-14T23:25:40.421Z","harness:codex","Implementation start 2026-08-15: active in the coupled workspace-integrity tranche spanning provenance repair, self-indexing health severity, extension-host version coherence, cross-version history repair, and strict linked-artifact parsing. Only these five canonical regression items are claimed; all other tracker work remains open and unclaimed."
+  "2026-08-15T01:56:44.241Z","harness:codex","Delivery evidence 2026-08-15: history replay detects a consistent hash epoch, preserves implicit v1 streams, reanchors with the detected epoch, and reports before/after version disposition so repairs converge across writer releases. Focused linked tests passed 26/26; full release verification passed static quality, secrets, 7,334 tests, and exact 100/100/100/100 coverage."
+  "2026-08-15T02:27:43.860Z","harness:codex","Timestamp clarification: implementation start was 2026-08-15 Europe/Vienna; the canonical PM event timestamp remains 2026-08-14T23:25:40.421Z UTC. This append-only clarification preserves the original event while making the project timezone explicit."
+  "2026-08-15T02:58:02.914Z","harness:codex","PR #1016 review evidence 2026-08-15: history repair receipts now derive version_disposition from explicit epoch evidence, preserving unambiguous broken legacy/current streams and reserving selected_for_ambiguous_stream for mixed explicit epochs. New drift and mixed-receipt controls pass; focused tests and exact 7,337-test 100/100/100/100 coverage pass."
+  "2026-08-15T03:01:39.888Z","harness:codex","Final review evidence: linked history contracts passed 28/28 tests. Consistent explicit writer epochs remain repairable and mixed epochs emit ambiguous disposition."
+files[4]{path,scope,note}:
+  sdk/public-surface.json,project,reviewed version-stable repair receipt surface
+  src/core/history/replay.ts,project,Version-stable history reanchor primitive
+  src/sdk/history-repair.ts,project,Epoch-aware repair receipts
+  tests/unit/sdk/history-repair-version-contract.spec.ts,project,Cross-version convergence coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history-repair-version-contract.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,180,Version convergence and repair regression suite
+test_runs[2]:
+  - run_id: test-local-mstq4nw9-3v41qu
+    kind: test
+    status: passed
+    started_at: "2026-08-15T01:55:10.225Z"
+    finished_at: "2026-08-15T01:55:22.233Z"
+    recorded_at: "2026-08-15T01:55:22.233Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-all-local-mstsfhar-0p8wl7
+    kind: test-all
+    status: passed
+    started_at: "2026-08-15T02:59:46.077Z"
+    finished_at: "2026-08-15T03:00:19.951Z"
+    recorded_at: "2026-08-15T03:00:19.951Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated by pm-changelog 2026.8.12 from closed tracker state
+  docs/COMMANDS.md,project,Hash epoch repair behavior
+  docs/SDK_CONTEXT_INTEGRITY.md,project,SDK epoch contract
+close_reason: "Review follow-up complete: writer-version disposition now distinguishes consistent broken streams from genuinely mixed epochs."
 body: "Source: https://github.com/unbraind/pm-cli/issues/1004"
