@@ -37,6 +37,23 @@ function successfulAnalyzerResponse(target: string, sha: string, status = 0) {
   return null;
 }
 
+/** Return one unambiguous reviewed pull request merged into main at the candidate. */
+function reviewedPullRequestResponse(headSha = PARENT_SHA) {
+  return {
+    status: 0,
+    stdout: JSON.stringify([
+      {
+        state: "closed",
+        merged_at: "2026-08-15T04:00:00Z",
+        merge_commit_sha: SHA,
+        base: { ref: "main" },
+        head: { sha: headSha },
+      },
+    ]),
+    stderr: "",
+  };
+}
+
 interface GatePayload {
   ok: boolean;
   releasable?: boolean;
@@ -226,19 +243,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
         };
       }
       if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
-        return {
-          status: 0,
-          stdout: JSON.stringify([
-            {
-              state: "closed",
-              merged_at: "2026-08-15T04:00:00Z",
-              merge_commit_sha: SHA,
-              base: { ref: "main" },
-              head: { sha: parentSha },
-            },
-          ]),
-          stderr: "",
-        };
+        return reviewedPullRequestResponse(parentSha);
       }
       const parentResponse = successfulAnalyzerResponse(target, parentSha);
       if (parentResponse !== null) {
@@ -318,19 +323,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
         };
       }
       if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
-        return {
-          status: 0,
-          stdout: JSON.stringify([
-            {
-              state: "closed",
-              merged_at: "2026-07-26T00:02:53Z",
-              merge_commit_sha: SHA,
-              base: { ref: "main" },
-              head: { sha: PARENT_SHA },
-            },
-          ]),
-          stderr: "",
-        };
+        return reviewedPullRequestResponse();
       }
       if (target === `repos/unbraind/pm-cli/commits/${SHA}` || target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}`) {
         return {
@@ -516,19 +509,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
           };
         }
         if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
-          return {
-            status: 0,
-            stdout: JSON.stringify([
-              {
-                state: "closed",
-                merged_at: "2026-08-15T04:00:00Z",
-                merge_commit_sha: SHA,
-                base: { ref: "main" },
-                head: { sha: PARENT_SHA },
-              },
-            ]),
-            stderr: "",
-          };
+          return reviewedPullRequestResponse();
         }
         if (target.endsWith("/status")) {
           return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
@@ -568,19 +549,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
         };
       }
       if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
-        return {
-          status: 0,
-          stdout: JSON.stringify([
-            {
-              state: "closed",
-              merged_at: "2026-08-15T04:00:00Z",
-              merge_commit_sha: SHA,
-              base: { ref: "main" },
-              head: { sha: PARENT_SHA },
-            },
-          ]),
-          stderr: "",
-        };
+        return reviewedPullRequestResponse();
       }
       if (target.endsWith("/status")) {
         statusReads += 1;
