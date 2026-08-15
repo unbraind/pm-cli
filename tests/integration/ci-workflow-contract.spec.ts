@@ -478,6 +478,9 @@ describe("GitHub workflow contract", () => {
       "run: pnpm version:check",
       "run: pnpm security:scan",
       "run: pnpm typecheck",
+      "name: Prepare tracker clone invariants",
+      "node dist/cli.js merge install --no-extensions",
+      "git diff --exit-code -- .gitattributes",
       "if: matrix.os == 'ubuntu-latest' && matrix.node == 24",
       "run: pnpm test:coverage",
       "run: pnpm quality:static",
@@ -496,6 +499,14 @@ describe("GitHub workflow contract", () => {
       2,
     );
     expectExactValidationCacheSteps(nightlyWorkflow, 1);
+    expect(
+      nightlyWorkflow.indexOf("node dist/cli.js merge install --no-extensions"),
+    ).toBeLessThan(nightlyWorkflow.indexOf("run: pnpm quality:static"));
+    expect(
+      nightlyWorkflow.match(
+        /node dist\/cli\.js merge install --no-extensions/g,
+      ),
+    ).toHaveLength(1);
     expect(nightlyWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(nightlyWorkflow, PUBLISH_OR_RELEASE_PATTERNS);

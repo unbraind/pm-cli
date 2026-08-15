@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: perf,quality,sdk,session-2026-05-27
 created_at: "2026-05-27T16:46:49.712Z"
-updated_at: "2026-08-10T11:53:04.852Z"
+updated_at: "2026-08-15T19:53:36.523Z"
 author: maintainer-agent
 release: v2026.5.30
 resolution: "Implemented bundled startup path, agent-friendly get depth alias, package-source/install hardening, and regenerated changelog via pm-changelog."
@@ -91,16 +91,8 @@ comments[23]{created_at,author,text}:
   "2026-05-29T16:09:22.065Z",codex-audit-20260529,"Final CI follow-up verification 2026-05-29: full local release gate re-run passed after the forward fix: build, typecheck, docs/skills, static quality, coverage 1979 tests at 100%, version policy, secret scan, npx smoke, package-first dogfood, npm-pack dry-run, compatibility, and required Sentry/telemetry gate. Sentry threshold remains critical=0 high=4; telemetry finish_error_rate_pct=1.36 and missing error-code rows=0."
   "2026-05-30T05:21:35.554Z",maintainer-agent,"PR #83 (perf/cache-split-and-agent-ux) opened: closes pm-407c/pm-8c2s/pm-jd3v/pm-wr74/pm-7by2/pm-4d1b/pm-bpaj. Light/collections cache split, per-field semantic defaults + partial-settings hardening, executable command aliases (show->get, 312 telemetry events), type synonyms, calendar positional-date routing + impossible-date rejection, explicit semantic refresh contract. Full suite 2003 green + all gates. Awaiting CI + bot review."
   "2026-05-30T05:59:25.473Z",maintainer-agent,"PR #83 MERGED to main 2026-05-30 (merge commit). All CI green across two review rounds (Build, 5 Gates, 4 runtime smokes, CodeRabbit, Sourcery, Docs). Round-1 bot feedback addressed: fixed real impossible-date guard gaps (compact-datetime/Z-suffixed dates), DRY centralization (HEAVY_METADATA_KEYS, findCommandTokenIndex), + test coverage. Closed: pm-407c/pm-8c2s/pm-jd3v/pm-wr74/pm-7by2/pm-4d1b/pm-bpaj. [Unreleased] populated -> daily auto-release will cut next version."
-files[29]{path,scope,note}:
+files[21]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Project pm-changelog managed package metadata refreshed
-  .agents/pm/extensions/pm-changelog/CHANGELOG.md,project,Project pm-changelog package refreshed to 2026.5.29-1
-  .agents/pm/extensions/pm-changelog/dist/cli.js,project,Project pm-changelog package refreshed to 2026.5.29-1
-  .agents/pm/extensions/pm-changelog/dist/extension.js,project,Project pm-changelog package refreshed to 2026.5.29-1
-  .agents/pm/extensions/pm-changelog/dist/extension.js.map,project,Project pm-changelog package refreshed to 2026.5.29-1
-  .agents/pm/extensions/pm-changelog/dist/generator.js,project,Project pm-changelog package refreshed to 2026.5.29-1
-  .agents/pm/extensions/pm-changelog/dist/generator.js.map,project,Project pm-changelog package refreshed to 2026.5.29-1
-  .agents/pm/extensions/pm-changelog/manifest.json,project,Project pm-changelog package refreshed to 2026.5.29-1
-  .agents/pm/extensions/pm-changelog/package.json,project,Project pm-changelog package refreshed to 2026.5.29-1
   CHANGELOG.md,project,Regenerated with pm-changelog package after audit tracker updates
   package.json,project,"Audit performance fix: build script and dev dependency for bundling"
   pnpm-lock.yaml,project,"Audit performance fix: lock esbuild dependency"

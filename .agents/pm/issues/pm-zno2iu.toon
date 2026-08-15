@@ -2,11 +2,13 @@ id: pm-zno2iu
 title: "GH-1019/GH-1020/GH-1021: Node 24 nightly platform regressions after PR #1016"
 description: "The scheduled Node-version matrix failed on macOS, Ubuntu, and Windows at merge commit 26feeed1480955eb20be46785c4ef4210a23916c while the Node 22 and Node 25 Ubuntu controls passed. The three GitHub alerts are one cross-platform regression incident with distinct platform symptoms and established historical predecessors."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[10]: ci-regression,context-integrity,github-1019,github-1020,github-1021,macos,nightly,node24,ubuntu,windows
 created_at: "2026-08-15T10:38:13.941Z"
-updated_at: "2026-08-15T10:56:12.914Z"
+updated_at: "2026-08-15T20:13:48.189Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#1f33602f96278df39ff13767"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: "Add focused regression coverage for all five observed conditions without weakening existing ratchets: macOS privacy-safe external-path projection mismatch; Ubuntu missing-linked-path ceiling 204 greater than 195; Ubuntu health-integrity count 1 greater than 0; Windows stat-matched cache omission of the authoritative linked-test collection; and Windows caller-owned scale-benchmark timeout at 30 seconds. Fix root causes or update invalid fixtures only where the shipped contract changed intentionally; run the focused suites and the full nightly-equivalent matrix; close GitHub issues #1019, #1020, and #1021 with the PM link and exact green run evidence."
@@ -29,8 +31,22 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-k47yqn,discovered_from,"2026-08-15T10:38:13.941Z","harness:codex","cli:create:dep",detected
   pm-kpftft,discovered_from,"2026-08-15T10:38:13.941Z","harness:codex","cli:create:dep",detected
   pm-rizqb6,discovered_from,"2026-08-15T10:38:13.941Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-15T10:38:13.941Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for the exact GitHub issue numbers,run id,platform symptoms,privacy-safe path,stat-matched cache,and timeout lineage found no active item covering this combined run. Closed pm-643e0k,pm-k47yqn,pm-rizqb6,and pm-kpftft are retained as discovered_from predecessors rather than reopened because their recorded fixes remain completed; this item tracks the new regression evidence."
   "2026-08-15T10:41:56.459Z","harness:codex","GitHub linkage evidence 2026-08-15: #1019 https://github.com/unbraind/pm-cli/issues/1019#issuecomment-5301855570, #1020 https://github.com/unbraind/pm-cli/issues/1020#issuecomment-5301855773, and #1021 https://github.com/unbraind/pm-cli/issues/1021#issuecomment-5301855577 each point to this canonical PM item. The three reports remain separate GitHub alerts but share this one regression lineage."
   "2026-08-15T10:56:12.914Z","harness:codex","CodeRabbit review evidence 2026-08-15: finding https://github.com/unbraind/pm-cli/pull/1031#discussion_r3789218620 was valid. Acceptance now enumerates all five conditions separately: macOS projection, both Ubuntu quality predicates, Windows cache omission, and Windows timeout."
+  "2026-08-15T19:54:49.590Z","harness:codex","Exact hosted reproduction evidence: Nightly Validation run 31904051790 at branch head 555bf000dfaf14cb29d62dbeda274c5e2ae17aa1 passed Ubuntu Node 22 and Node 25 controls, then isolated macOS canonical workspace alias projection, Ubuntu fresh-clone merge-driver integrity plus nine ignored pm-changelog installation links, and Windows platform-native cache/POSIX chmod expectations. The prior Windows scale timeout did not recur. Remediation preserves all ratchet bounds: canonicalizes real paths before privacy projection, bootstraps clone-local merge drivers, removes only non-reproducible ignored extension-tree links through immutable pm history, and scopes Unix permission tests without weakening portable EACCES/EPERM coverage. Focused local suite: 4 files, 122 tests passed."
+  "2026-08-15T20:13:48.189Z","harness:codex","Verification evidence: focused Node 24/platform regression suite passed 4 files and 122 tests. Full sandbox coverage passed 504 files and 7,396 tests with exact 100.00% statements (53,572/53,572), branches (39,579/39,579), functions (10,999/10,999), and lines (51,736/51,736). The combined version, changelog, contracts, SDK public-surface, secret scan, ESLint, package artifact, repository static-quality, and dependency audit command completed successfully; npm audit required its configured registry-timeout recovery and reported no known vulnerabilities, while tracker-context-quality remained a nonblocking warning with all enforced bounds green. Manual packed-artifact acceptance in an isolated temporary npm project passed for npx and bunx at 2026.8.15, create/get full unbounded read, history_drift, and storage_integrity. The advisory endpoint separately timed out during the manual npm audit attempt and is recorded as an external availability limitation rather than runtime approval."
+files[6]{path,scope,note}:
+  .github/workflows/nightly.yml,project,Install and verify clone-local merge drivers before hosted static assurance
+  src/sdk/governance/extension-host-version.ts,project,Canonicalize workspace and package paths before privacy-safe host version projection
+  tests/integration/ci-workflow-contract.spec.ts,project,Ratchet nightly merge-fence setup and execution order
+  tests/unit/commands/validate-command.spec.ts,project,Use platform-native metadata collection cache keys in authoritative repair regression
+  tests/unit/core/store/item-store-root-contract.spec.ts,project,Keep POSIX chmod probes platform-scoped while retaining portable typed-error coverage
+  tests/unit/sdk/extension-host-version-health.spec.ts,project,Exercise canonical workspace aliases across extension host census paths
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/extension-host-version-health.spec.ts tests/unit/core/store/item-store-root-contract.spec.ts tests/unit/commands/validate-command.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,180,Focused cross-platform regression suite
+  node scripts/run-tests.mjs coverage,project,1200,Exact repository 100 percent coverage gate
+  "pnpm quality:static",project,1200,Repository assurance including clone-independent tracker context ratchets
+  gh workflow run nightly.yml --ref codex/sdk-context-safety-primitives,project,1200,Hosted Node 24 macOS Ubuntu and Windows acceptance matrix
 body: "## Incident decomposition\n\n- macOS job 94963923783: extension-host realpath test disagrees with the privacy-safe external-path projection introduced by the closed version-skew lineage.\n- Ubuntu job 94963923789: tracker-context-quality blocks on missing-linked-path ceiling growth and one integrity finding; telemetry is warning-only.\n- Windows job 94963923863: authoritative linked-test collection disappears from a stat-matched cache fixture, and the caller-owned scale benchmark exceeds its 30-second budget.\n- Controls: Node 22 and Node 25 Ubuntu jobs pass in the same run.\n\n## Guardrails\n\nDo not relax privacy-safe path redaction, tracker assurance ceilings, authoritative cache semantics, or the uniform timeout budget merely to make the scheduled job green. Establish the current contract and population semantics first, then repair the implementation or fixture."

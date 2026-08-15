@@ -147,24 +147,28 @@ describe("item metadata tracker-root contract", () => {
   });
 
   it("classifies permissionless and permission-denied roots as unreadable", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-root-contract-"));
-    cleanupRoots.push(root);
-    await fs.chmod(root, 0o000);
-    try {
-      for (const read of [
-        listAllItemMetadata,
-        listAllItemMetadataLight,
-        listAllItemMetadataWithBody,
-      ]) {
-        await expect(read(root)).rejects.toMatchObject({
-          name: "PmCliError",
-          exitCode: EXIT_CODE.GENERIC_FAILURE,
-          code: "tracker_root_unreadable",
-          context: { reason: "unreadable" },
-        });
+    if (process.platform !== "win32") {
+      const root = await fs.mkdtemp(
+        path.join(os.tmpdir(), "pm-root-contract-"),
+      );
+      cleanupRoots.push(root);
+      await fs.chmod(root, 0o000);
+      try {
+        for (const read of [
+          listAllItemMetadata,
+          listAllItemMetadataLight,
+          listAllItemMetadataWithBody,
+        ]) {
+          await expect(read(root)).rejects.toMatchObject({
+            name: "PmCliError",
+            exitCode: EXIT_CODE.GENERIC_FAILURE,
+            code: "tracker_root_unreadable",
+            context: { reason: "unreadable" },
+          });
+        }
+      } finally {
+        await fs.chmod(root, 0o700);
       }
-    } finally {
-      await fs.chmod(root, 0o700);
     }
 
     const permissionFailure = Object.assign(new Error("permission denied"), {
@@ -195,24 +199,32 @@ describe("item metadata tracker-root contract", () => {
       });
     }
 
-    const inputOutputFailure = Object.assign(new Error("input/output failure"), {
-      code: "EIO",
-    });
+    const inputOutputFailure = Object.assign(
+      new Error("input/output failure"),
+      {
+        code: "EIO",
+      },
+    );
     opendir.mockRejectedValueOnce(inputOutputFailure);
     await expect(listAllItemMetadata(root)).rejects.toBe(inputOutputFailure);
   });
 
-  it("requires directory search permission on POSIX roots", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-root-contract-"));
-    cleanupRoots.push(root);
-    await fs.chmod(root, 0o400);
-    try {
-      await expect(listAllItemMetadata(root)).rejects.toMatchObject({
-        code: "tracker_root_unreadable",
-        context: { reason: "unreadable" },
-      });
-    } finally {
-      await fs.chmod(root, 0o700);
-    }
-  });
+  it.runIf(process.platform !== "win32")(
+    "requires directory search permission on POSIX roots",
+    async () => {
+      const root = await fs.mkdtemp(
+        path.join(os.tmpdir(), "pm-root-contract-"),
+      );
+      cleanupRoots.push(root);
+      await fs.chmod(root, 0o400);
+      try {
+        await expect(listAllItemMetadata(root)).rejects.toMatchObject({
+          code: "tracker_root_unreadable",
+          context: { reason: "unreadable" },
+        });
+      } finally {
+        await fs.chmod(root, 0o700);
+      }
+    },
+  );
 });
