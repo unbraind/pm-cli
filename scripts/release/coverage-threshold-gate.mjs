@@ -10,64 +10,9 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { findCoverageDeficits } from "../../dist/sdk/governance/coverage-assurance.js";
 
-const COVERAGE_METRICS = ["lines", "branches", "functions", "statements"];
-
-/** Require a coverage report entry to expose an object-shaped metric map. */
-function assertCoverageEntry(file, entry) {
-  if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-    throw new TypeError(`Coverage entry for ${file} must be an object.`);
-  }
-}
-
-/** Require exact non-negative integer coverage counts for one metric. */
-function assertCoverageCounts(file, metric, counts) {
-  if (
-    typeof counts !== "object" ||
-    counts === null ||
-    typeof counts.covered !== "number" ||
-    typeof counts.total !== "number" ||
-    !Number.isInteger(counts.covered) ||
-    !Number.isInteger(counts.total) ||
-    counts.covered < 0 ||
-    counts.total < counts.covered
-  ) {
-    throw new TypeError(`Coverage entry ${file} has invalid ${metric} counts.`);
-  }
-}
-
-/** Return exact uncovered counts for every file and required metric. */
-export function findCoverageDeficits(summary) {
-  if (
-    typeof summary !== "object" ||
-    summary === null ||
-    Array.isArray(summary)
-  ) {
-    throw new TypeError("Coverage summary must be a JSON object.");
-  }
-  if (!("total" in summary)) {
-    throw new TypeError("Coverage summary is missing the total entry.");
-  }
-  const deficits = [];
-  for (const [file, entry] of Object.entries(summary)) {
-    assertCoverageEntry(file, entry);
-    for (const metric of COVERAGE_METRICS) {
-      const counts = entry[metric];
-      assertCoverageCounts(file, metric, counts);
-      const uncovered = counts.total - counts.covered;
-      if (uncovered > 0) {
-        deficits.push({
-          file,
-          metric,
-          uncovered,
-          covered: counts.covered,
-          total: counts.total,
-        });
-      }
-    }
-  }
-  return deficits;
-}
+export { findCoverageDeficits };
 
 /** Load the report, enforce exact coverage, and emit actionable failures. */
 export function main(

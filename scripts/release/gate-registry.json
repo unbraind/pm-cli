@@ -46,8 +46,12 @@
       },
       {
         "path": "scripts/release/coverage-threshold-gate.mjs",
-        "disposition": "retained",
-        "reason": "Validates coverage artifacts with integer uncovered-count negative controls."
+        "disposition": "reduced_to_provider",
+        "provider": "repository-quality/coverage-threshold",
+        "negative_control": {
+          "test": "tests/unit/scripts/release/coverage-threshold-gate.spec.ts",
+          "assertion": "rejects a rounded 100% report using integer uncovered counts"
+        }
       },
       {
         "path": "scripts/release/docs-skills-gate.mjs",
@@ -147,22 +151,70 @@
       }
     ],
     "graph_operations": [
-      { "operation": "ancestors", "interactive_only_reason": "Bounded hierarchy lookup selected by an operator or agent root." },
-      { "operation": "descendants", "interactive_only_reason": "Bounded hierarchy expansion selected by an operator or agent root." },
-      { "operation": "predecessors", "interactive_only_reason": "Ordering lookup requires a caller-selected root and traversal bound." },
-      { "operation": "successors", "interactive_only_reason": "Ordering lookup requires a caller-selected root and traversal bound." },
-      { "operation": "paths", "interactive_only_reason": "Path enumeration requires caller-selected endpoints and cost bounds." },
-      { "operation": "impact", "interactive_only_reason": "Impact analysis is an exploratory projection over a selected root." },
-      { "operation": "analyze", "interactive_only_reason": "Broad graph analysis is an on-demand planning and diagnosis surface." },
-      { "operation": "audit", "automated_consumer": "assurance gate tracker-context-quality" },
-      { "operation": "communities", "interactive_only_reason": "Community detection is exploratory and has caller-selected parameters." },
-      { "operation": "redundancy", "interactive_only_reason": "Redundancy candidates require human or agent remediation judgment." },
-      { "operation": "dominators", "interactive_only_reason": "Dominator analysis requires a caller-selected execution root." },
-      { "operation": "slack", "interactive_only_reason": "Schedule slack depends on a caller-selected planning projection." },
-      { "operation": "centrality", "interactive_only_reason": "Centrality ranking is an on-demand prioritization projection." },
-      { "operation": "articulation", "automated_consumer": "graph audit profile articulation_points and bridge_edges" },
-      { "operation": "plan", "interactive_only_reason": "Remediation plans require explicit review before tracker mutation." },
-      { "operation": "index", "interactive_only_reason": "Durable index lifecycle is explicitly controlled by the workspace operator." }
+      {
+        "operation": "ancestors",
+        "interactive_only_reason": "Bounded hierarchy lookup selected by an operator or agent root."
+      },
+      {
+        "operation": "descendants",
+        "interactive_only_reason": "Bounded hierarchy expansion selected by an operator or agent root."
+      },
+      {
+        "operation": "predecessors",
+        "interactive_only_reason": "Ordering lookup requires a caller-selected root and traversal bound."
+      },
+      {
+        "operation": "successors",
+        "interactive_only_reason": "Ordering lookup requires a caller-selected root and traversal bound."
+      },
+      {
+        "operation": "paths",
+        "interactive_only_reason": "Path enumeration requires caller-selected endpoints and cost bounds."
+      },
+      {
+        "operation": "impact",
+        "interactive_only_reason": "Impact analysis is an exploratory projection over a selected root."
+      },
+      {
+        "operation": "analyze",
+        "interactive_only_reason": "Broad graph analysis is an on-demand planning and diagnosis surface."
+      },
+      {
+        "operation": "audit",
+        "automated_consumer": "assurance gate tracker-context-quality"
+      },
+      {
+        "operation": "communities",
+        "interactive_only_reason": "Community detection is exploratory and has caller-selected parameters."
+      },
+      {
+        "operation": "redundancy",
+        "interactive_only_reason": "Redundancy candidates require human or agent remediation judgment."
+      },
+      {
+        "operation": "dominators",
+        "interactive_only_reason": "Dominator analysis requires a caller-selected execution root."
+      },
+      {
+        "operation": "slack",
+        "interactive_only_reason": "Schedule slack depends on a caller-selected planning projection."
+      },
+      {
+        "operation": "centrality",
+        "interactive_only_reason": "Centrality ranking is an on-demand prioritization projection."
+      },
+      {
+        "operation": "articulation",
+        "automated_consumer": "graph audit profile articulation_points and bridge_edges"
+      },
+      {
+        "operation": "plan",
+        "interactive_only_reason": "Remediation plans require explicit review before tracker mutation."
+      },
+      {
+        "operation": "index",
+        "interactive_only_reason": "Durable index lifecycle is explicitly controlled by the workspace operator."
+      }
     ]
   },
   "local_preflight": {
@@ -484,10 +536,7 @@
     {
       "id": "context-retrieval",
       "owner": "pm-b2hc4x",
-      "pipelines": [
-        "ci.yml#gates",
-        "release.yml#release"
-      ],
+      "pipelines": ["ci.yml#gates", "release.yml#release"],
       "failure_taxonomy": [
         "context_metric_regressed",
         "retrieval_metric_regressed",
@@ -510,10 +559,7 @@
     {
       "id": "documentation",
       "owner": "pm-k6t4yb",
-      "pipelines": [
-        "docs.yml#docs",
-        "release.yml#release"
-      ],
+      "pipelines": ["docs.yml#docs", "release.yml#release"],
       "failure_taxonomy": [
         "documentation_contract_failed",
         "broken_relative_link",
@@ -560,11 +606,7 @@
     {
       "id": "package-consumer",
       "owner": "pm-k6t4yb",
-      "pipelines": [
-        "ci.yml#build-test",
-        "ci.yml#gates",
-        "release.yml#release"
-      ],
+      "pipelines": ["ci.yml#build-test", "ci.yml#gates", "release.yml#release"],
       "failure_taxonomy": [
         "pack_failed",
         "installed_cli_failed",

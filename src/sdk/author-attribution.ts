@@ -3,6 +3,7 @@
  *
  * Provides reusable diagnostics for mutation-author provenance in tracker history.
  */
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -329,11 +330,234 @@ export interface AcknowledgeUnknownAuthorEventsOptions {
   /** Select every currently actionable, undispositioned event in the tracker. */
   all_actionable?: boolean;
   /** Principal attributed by maintainer review. */
-  attributed_author: string;
+  attributed_author?: string;
   /** Reviewer appending the disposition event. */
-  reviewer: string;
+  reviewer?: string;
   /** Evidence-backed rationale for the attribution. */
-  reason: string;
+  reason?: string;
+  /** Resolve and return the selected plan without appending history. */
+  dry_run?: boolean;
+  /** Fingerprint from the exact preview plan being applied. */
+  plan_fingerprint?: string;
+  /** Maximum coordinate rows included in the returned plan. */
+  coordinate_limit?: number;
+}
+
+/** One source-bound coordinate in an author-acknowledgement plan. */
+export interface UnknownAuthorAcknowledgmentPlanCoordinate extends UnknownAuthorHistoryEvent {
+  /** SHA-256 of the exact immutable JSONL source line. */
+  source_event_hash: string;
+  /** Whether applying the plan would append a new disposition for this row. */
+  disposition: "actionable" | "already_acknowledged";
+}
+
+/** Deterministic preview shared by CLI, SDK, and MCP apply paths. */
+export interface UnknownAuthorAcknowledgmentPlan {
+  /** Selector family resolved by the plan. */
+  selection: { kind: "events" | "all_actionable" };
+  /** Complete number of unique selected coordinates. */
+  selected_count: number;
+  /** Coordinates that would receive a new disposition. */
+  actionable_count: number;
+  /** Coordinates already covered by an earlier disposition. */
+  already_acknowledged_count: number;
+  /** Coordinate rows omitted only from this bounded preview. */
+  omitted_count: number;
+  /** Stable ordered prefix of the complete selected set. */
+  coordinates: UnknownAuthorAcknowledgmentPlanCoordinate[];
+  /** SHA-256 over selection kind and every complete source-bound coordinate. */
+  plan_fingerprint: string;
+}
+
+/** Structured preview or apply result for immutable author acknowledgement. */
+export interface UnknownAuthorAcknowledgmentResult {
+  /** Whether this invocation was a read-only preview. */
+  dry_run: boolean;
+  /** Whether an append-only workspace event was written. */
+  mutated: boolean;
+  /** Number of newly acknowledged coordinates. */
+  acknowledged: number;
+  /** Effect-aware command outcome. */
+  outcome: "preview" | "effect" | "no_effect" | "partial_effect";
+  /** Stable shell and transport exit paired with the outcome. */
+  exit_code: 0 | 6 | 7;
+  /** Exact plan used for preview or apply. */
+  plan: UnknownAuthorAcknowledgmentPlan;
+  /** Appended workspace history path when mutation occurred. */
+  history_path?: string;
+}
+
+interface ResolvedUnknownAuthorAcknowledgmentPlan {
+  plan: UnknownAuthorAcknowledgmentPlan;
+  completeCoordinates: UnknownAuthorAcknowledgmentPlanCoordinate[];
+}
+
+/** Deduplicate and deterministically order history coordinates. */
+function normalizeUnknownAuthorHistoryEvents(
+  events: readonly UnknownAuthorHistoryEvent[],
+): UnknownAuthorHistoryEvent[] {
+  return [
+    ...new Map(
+      events.map((event) => [
+        `${event.item_id}:${event.line}`,
+        { item_id: event.item_id, line: event.line },
+      ]),
+    ).values(),
+  ].sort(
+    (left, right) =>
+      left.item_id.localeCompare(right.item_id) || left.line - right.line,
+  );
+}
+
+/** Read the append-only set of previously dispositioned coordinates. */
+async function readAcknowledgedUnknownEvents(
+  pmRoot: string,
+): Promise<Set<string>> {
+  try {
+    return collectAcknowledgedUnknownEvents(
+      await fs.readFile(
+        path.join(pmRoot, "history", "_workspace.jsonl"),
+        "utf8",
+      ),
+    );
+  } catch {
+    return new Set<string>();
+  }
+}
+
+/** Resolve one coordinate against its exact immutable source line. */
+async function resolveAcknowledgmentPlanCoordinate(
+  pmRoot: string,
+  event: UnknownAuthorHistoryEvent,
+  acknowledgedEvents: ReadonlySet<string>,
+): Promise<UnknownAuthorAcknowledgmentPlanCoordinate> {
+  const invalidCoordinate = [
+    event.item_id === WORKSPACE_HISTORY_ID ||
+      /^[a-z0-9][a-z0-9-]*$/iu.test(event.item_id),
+    Number.isSafeInteger(event.line),
+    event.line >= 1,
+  ].includes(false);
+  if (invalidCoordinate) {
+    refuseAuthorAcknowledgmentArgument(
+      `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
+      { code: "history_author_acknowledge_target_unreadable" },
+    );
+  }
+  let sourceLine: string;
+  let parsed: unknown;
+  try {
+    const raw = await fs.readFile(
+      path.join(pmRoot, "history", `${event.item_id}.jsonl`),
+      "utf8",
+    );
+    sourceLine = raw.split(/\r?\n/u)[event.line - 1] ?? "";
+    parsed = JSON.parse(sourceLine);
+  } catch {
+    refuseAuthorAcknowledgmentArgument(
+      `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
+      { code: "history_author_acknowledge_target_unreadable" },
+    );
+  }
+  if (classifyHistoryAuthorEvent(parsed) !== "actionable_unknown") {
+    refuseAuthorAcknowledgmentArgument(
+      `Author acknowledgment target ${event.item_id}:${event.line} is not an actionable unknown-author event.`,
+      { code: "history_author_acknowledge_target_not_actionable" },
+    );
+  }
+  return {
+    ...event,
+    source_event_hash: createHash("sha256").update(sourceLine).digest("hex"),
+    disposition: acknowledgedEvents.has(`${event.item_id}:${event.line}`)
+      ? "already_acknowledged"
+      : "actionable",
+  };
+}
+
+async function resolveUnknownAuthorAcknowledgmentPlan(
+  pmRoot: string,
+  selector: Pick<
+    AcknowledgeUnknownAuthorEventsOptions,
+    "events" | "all_actionable"
+  >,
+  coordinateLimit: number,
+): Promise<ResolvedUnknownAuthorAcknowledgmentPlan> {
+  const explicitEvents = selector.events ?? [];
+  const selectorCount =
+    Number(selector.all_actionable === true) +
+    Number(explicitEvents.length > 0);
+  if (selectorCount === 0) {
+    refuseAuthorAcknowledgmentArgument(
+      "Specify exactly one selector: events or all_actionable.",
+      { code: "history_author_acknowledge_selector_required" },
+    );
+  }
+  if (selectorCount > 1) {
+    refuseAuthorAcknowledgmentArgument(
+      "Author acknowledgment accepts either explicit events or all_actionable, not both.",
+      { code: "history_author_acknowledge_selector_conflict" },
+    );
+  }
+  if (!Number.isSafeInteger(coordinateLimit) || coordinateLimit < 0) {
+    refuseAuthorAcknowledgmentArgument(
+      "Author acknowledgment coordinate_limit must be a non-negative integer.",
+      { code: "history_author_acknowledge_preview_limit_invalid" },
+    );
+  }
+  const selectedEvents = normalizeUnknownAuthorHistoryEvents(
+    selector.all_actionable === true
+      ? ((await scanHistoryAuthorAttribution(pmRoot, 0, true))
+          .actionable_events as UnknownAuthorHistoryEvent[])
+      : explicitEvents,
+  );
+  const acknowledgedEvents = await readAcknowledgedUnknownEvents(pmRoot);
+  const completeCoordinates = await Promise.all(
+    selectedEvents.map((event) =>
+      resolveAcknowledgmentPlanCoordinate(pmRoot, event, acknowledgedEvents),
+    ),
+  );
+  const kind = selector.all_actionable === true ? "all_actionable" : "events";
+  const planFingerprint = createHash("sha256")
+    .update(
+      JSON.stringify({
+        version: 1,
+        selection: kind,
+        coordinates: completeCoordinates,
+      }),
+    )
+    .digest("hex");
+  const actionableCount = completeCoordinates.filter(
+    ({ disposition }) => disposition === "actionable",
+  ).length;
+  return {
+    plan: {
+      selection: { kind },
+      selected_count: completeCoordinates.length,
+      actionable_count: actionableCount,
+      already_acknowledged_count: completeCoordinates.length - actionableCount,
+      omitted_count: Math.max(0, completeCoordinates.length - coordinateLimit),
+      coordinates: completeCoordinates.slice(0, coordinateLimit),
+      plan_fingerprint: planFingerprint,
+    },
+    completeCoordinates,
+  };
+}
+
+/** Resolve a deterministic, source-bound author-acknowledgement preview. */
+export async function planUnknownAuthorHistoryAcknowledgment(
+  pmRoot: string,
+  selector: Pick<
+    AcknowledgeUnknownAuthorEventsOptions,
+    "events" | "all_actionable"
+  >,
+  coordinateLimit = 50,
+): Promise<UnknownAuthorAcknowledgmentPlan> {
+  return (
+    await resolveUnknownAuthorAcknowledgmentPlan(
+      pmRoot,
+      selector,
+      coordinateLimit,
+    )
+  ).plan;
 }
 
 /** Resolve the mutually exclusive CLI and SDK acknowledgment selectors. */
@@ -403,7 +627,7 @@ export function parseUnknownAuthorHistoryEventCoordinates(
 export function acknowledgeUnknownAuthorHistoryEventsFromTransport(
   pmRoot: string,
   input: Record<string, unknown>,
-): Promise<{ acknowledged: number; history_path: string }> {
+): Promise<UnknownAuthorAcknowledgmentResult> {
   const selector = resolveUnknownAuthorAcknowledgmentSelector(
     readRuntimeStringArray(input.historyEvent),
     input.allActionable === true || input.all_actionable === true,
@@ -411,12 +635,22 @@ export function acknowledgeUnknownAuthorHistoryEventsFromTransport(
   return acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
     events: selector.events,
     all_actionable: selector.all_actionable,
+    dry_run: input.dryRun === true || input.dry_run === true,
+    plan_fingerprint:
+      readRuntimeString(input, "planFingerprint") ??
+      readRuntimeString(input, "plan_fingerprint"),
+    coordinate_limit:
+      typeof input.limit === "number"
+        ? input.limit
+        : typeof input.limit === "string"
+          ? Number(input.limit)
+          : undefined,
     attributed_author:
       readRuntimeString(input, "attributedAuthor") ??
       readRuntimeString(input, "attributed_author") ??
-      "",
-    reviewer: readRuntimeString(input, "reviewer") ?? "",
-    reason: readRuntimeString(input, "reason") ?? "",
+      undefined,
+    reviewer: readRuntimeString(input, "reviewer"),
+    reason: readRuntimeString(input, "reason"),
   });
 }
 
@@ -427,32 +661,26 @@ export function acknowledgeUnknownAuthorHistoryEventsFromTransport(
 export async function acknowledgeUnknownAuthorHistoryEvents(
   pmRoot: string,
   options: AcknowledgeUnknownAuthorEventsOptions,
-): Promise<{ acknowledged: number; history_path: string }> {
-  const reviewer = options.reviewer.trim();
-  const attributedAuthor = options.attributed_author.trim();
-  const reason = options.reason.trim();
-  const explicitEvents = options.events ?? [];
-  const selectorCount =
-    Number(options.all_actionable === true) + Number(explicitEvents.length > 0);
-  if (selectorCount === 0) {
-    refuseAuthorAcknowledgmentArgument(
-      "Specify exactly one selector: events or all_actionable.",
-      { code: "history_author_acknowledge_selector_required" },
-    );
+): Promise<UnknownAuthorAcknowledgmentResult> {
+  const reviewer = options.reviewer?.trim() ?? "";
+  const attributedAuthor = options.attributed_author?.trim() ?? "";
+  const reason = options.reason?.trim() ?? "";
+  const resolved = await resolveUnknownAuthorAcknowledgmentPlan(
+    pmRoot,
+    options,
+    options.coordinate_limit ?? 50,
+  );
+  if (options.dry_run === true) {
+    return {
+      dry_run: true,
+      mutated: false,
+      acknowledged: 0,
+      outcome: "preview",
+      exit_code: EXIT_CODE.SUCCESS,
+      plan: resolved.plan,
+    };
   }
-  if (selectorCount > 1) {
-    refuseAuthorAcknowledgmentArgument(
-      "Author acknowledgment accepts either explicit events or all_actionable, not both.",
-      { code: "history_author_acknowledge_selector_conflict" },
-    );
-  }
-  const selectedEvents =
-    options.all_actionable === true
-      ? ((await scanHistoryAuthorAttribution(pmRoot, 0, true))
-          .actionable_events as UnknownAuthorHistoryEvent[])
-      : explicitEvents;
   const requiredValuesMissing = [
-    selectedEvents.length > 0,
     reviewer.length > 0,
     reviewer.toLowerCase() !== "unknown",
     attributedAuthor.length > 0,
@@ -465,50 +693,43 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
       { code: "history_author_acknowledge_required_values_missing" },
     );
   }
-  const uniqueEvents = [
-    ...new Map(
-      selectedEvents.map((event) => [
-        `${event.item_id}:${event.line}`,
-        { item_id: event.item_id, line: event.line },
-      ]),
-    ).values(),
-  ].sort(
-    (left, right) =>
-      left.item_id.localeCompare(right.item_id) || left.line - right.line,
-  );
-  for (const event of uniqueEvents) {
-    const invalidCoordinate = [
-      event.item_id === WORKSPACE_HISTORY_ID ||
-        /^[a-z0-9][a-z0-9-]*$/i.test(event.item_id),
-      Number.isSafeInteger(event.line),
-      event.line >= 1,
-    ].includes(false);
-    if (invalidCoordinate) {
-      refuseAuthorAcknowledgmentArgument(
-        `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
-        { code: "history_author_acknowledge_target_unreadable" },
-      );
-    }
-    let parsed: unknown;
-    try {
-      const raw = await fs.readFile(
-        path.join(pmRoot, "history", `${event.item_id}.jsonl`),
-        "utf8",
-      );
-      const line = raw.split(/\r?\n/)[event.line - 1];
-      parsed = JSON.parse(line ?? "");
-    } catch {
-      refuseAuthorAcknowledgmentArgument(
-        `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
-        { code: "history_author_acknowledge_target_unreadable" },
-      );
-    }
-    if (classifyHistoryAuthorEvent(parsed) !== "actionable_unknown") {
-      refuseAuthorAcknowledgmentArgument(
-        `Author acknowledgment target ${event.item_id}:${event.line} is not an actionable unknown-author event.`,
-        { code: "history_author_acknowledge_target_not_actionable" },
-      );
-    }
+  if (!options.plan_fingerprint?.trim()) {
+    refuseAuthorAcknowledgmentArgument(
+      "Author acknowledgment apply requires plan_fingerprint from a fresh dry-run preview.",
+      {
+        code: "history_author_acknowledge_plan_fingerprint_required",
+        recovery: {
+          suggested_retry:
+            "Rerun history-author-acknowledge with --dry-run, then pass --plan-fingerprint <value>.",
+        },
+      },
+    );
+  }
+  if (options.plan_fingerprint.trim() !== resolved.plan.plan_fingerprint) {
+    throw new PmCliError(
+      "Author acknowledgment selection changed after preview; no history was mutated.",
+      EXIT_CODE.CONFLICT,
+      {
+        code: "history_author_acknowledge_plan_conflict",
+        recovery: {
+          suggested_retry:
+            "Rerun history-author-acknowledge with --dry-run and apply the fresh plan_fingerprint.",
+        },
+      },
+    );
+  }
+  const actionableEvents = resolved.completeCoordinates
+    .filter(({ disposition }) => disposition === "actionable")
+    .map(({ item_id, line }) => ({ item_id, line }));
+  if (actionableEvents.length === 0) {
+    return {
+      dry_run: false,
+      mutated: false,
+      acknowledged: 0,
+      outcome: "no_effect",
+      exit_code: EXIT_CODE.NO_EFFECT,
+      plan: resolved.plan,
+    };
   }
   const settings = await readSettings(pmRoot);
   const appended = await appendWorkspaceAuditEvent({
@@ -517,7 +738,7 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
     author: reviewer,
     context: {
       author_acknowledgment: {
-        events: uniqueEvents,
+        events: actionableEvents,
         attributed_author: attributedAuthor,
       },
     },
@@ -526,7 +747,18 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
     lockWaitMs: settings.locks.wait_ms,
   });
   return {
-    acknowledged: uniqueEvents.length,
+    dry_run: false,
+    mutated: true,
+    acknowledged: actionableEvents.length,
+    outcome:
+      resolved.plan.already_acknowledged_count > 0
+        ? "partial_effect"
+        : "effect",
+    exit_code:
+      resolved.plan.already_acknowledged_count > 0
+        ? EXIT_CODE.PARTIAL_EFFECT
+        : EXIT_CODE.SUCCESS,
+    plan: resolved.plan,
     history_path: appended.historyPath,
   };
 }

@@ -130,6 +130,22 @@ describe("read output contracts", () => {
       command: "assurance",
       cost: { source: "canonical", value: "unbounded" },
     });
+    expect(
+      resolveReadOutputDimensions("contracts", { full: true }),
+    ).toMatchObject({
+      command: "contracts",
+      include: { source: "legacy", value: ["full"] },
+      cost: { source: "intent", value: "unbounded" },
+    });
+    expect(
+      resolveReadOutputDimensions("contracts", {
+        full: true,
+        outputBudget: 256,
+      }),
+    ).toMatchObject({
+      include: { source: "legacy", value: ["full"] },
+      cost: { source: "canonical", value: 256 },
+    });
   });
 
   it("projects fields, bounds rows, and emits an exact machine-readable receipt", () => {

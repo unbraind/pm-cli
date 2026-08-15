@@ -5,10 +5,7 @@
  */
 import type { Command } from "commander";
 import { resolvePmRoot } from "../sdk/runtime-primitives.js";
-import {
-  acknowledgeUnknownAuthorHistoryEvents,
-  resolveUnknownAuthorAcknowledgmentSelector,
-} from "../sdk/author-attribution.js";
+import { acknowledgeUnknownAuthorHistoryEventsFromTransport } from "../sdk/author-attribution.js";
 import {
   collect,
   getGlobalOptions,
@@ -24,21 +21,17 @@ async function runHistoryAuthorAcknowledgeAction(
   const rawEvents = Array.isArray(options.event)
     ? (options.event as string[])
     : [];
-  const selector = resolveUnknownAuthorAcknowledgmentSelector(
-    rawEvents,
-    options.allActionable === true,
-  );
-  const result = await acknowledgeUnknownAuthorHistoryEvents(
+  const result = await acknowledgeUnknownAuthorHistoryEventsFromTransport(
     resolvePmRoot(process.cwd(), globalOptions.path),
     {
-      events: selector.events,
-      all_actionable: selector.all_actionable,
-      attributed_author: readOptionString(
-        options,
-        "attributedAuthor",
-      ) as string,
-      reviewer: readOptionString(options, "reviewer") as string,
-      reason: readOptionString(options, "reason") as string,
+      historyEvent: rawEvents,
+      allActionable: options.allActionable === true,
+      dryRun: options.dryRun === true,
+      planFingerprint: readOptionString(options, "planFingerprint"),
+      limit: options.limit,
+      attributedAuthor: readOptionString(options, "attributedAuthor"),
+      reviewer: readOptionString(options, "reviewer"),
+      reason: readOptionString(options, "reason"),
     },
   );
   printResult(result, globalOptions);
@@ -56,12 +49,15 @@ export function registerHistoryAuthorAcknowledgeCommand(
       collect,
     )
     .option("--all-actionable", "Select all actionable events")
-    .requiredOption(
-      "--attributed-author <value>",
-      "Reviewed principal attribution",
+    .option("--dry-run", "Preview a deterministic source-bound plan")
+    .option(
+      "--plan-fingerprint <sha256>",
+      "Apply the exact fingerprint returned by --dry-run",
     )
-    .requiredOption("--reviewer <value>", "Disposition reviewer")
-    .requiredOption("--reason <value>", "Review evidence")
+    .option("--limit <n>", "Maximum coordinate rows returned in the plan")
+    .option("--attributed-author <value>", "Reviewed principal attribution")
+    .option("--reviewer <value>", "Disposition reviewer")
+    .option("--reason <value>", "Review evidence")
     .description(
       "Append audited dispositions for immutable unknown-author events.",
     )

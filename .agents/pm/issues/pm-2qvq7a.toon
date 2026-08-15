@@ -2,11 +2,13 @@ id: pm-2qvq7a
 title: "GH-1030: contracts --json --full is wholly omitted by the default output budget"
 description: "The explicit complete-contract request pm contracts --json --full deterministically returns only a well-formed output-budget receipt under the default budget. Because stdout remains valid JSON and the actual contract is wholly omitted, downstream consumers can silently interpret missing command/action arrays as empty and publish structurally valid but content-free artifacts."
 type: Issue
-status: open
+status: closed
 priority: 0
 tags[8]: agent-ux,contracts,full-projection,github-1030,json,output-budget,sdk-contract,silent-data-loss
 created_at: "2026-08-15T10:41:12.886Z"
-updated_at: "2026-08-15T10:41:57.903Z"
+updated_at: "2026-08-15T16:21:07.569Z"
+closed_at: "2026-08-15T16:20:44.949Z"
+completed_at: "2026-08-15T16:20:44.949Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: "Reproduce the exact contracts failure in SDK and CLI tests; define an SDK-native precedence rule where explicit complete-result intent defeats an implicit default ceiling while explicit caller budgets still win; make any unavoidable omitted_result=true outcome parser-visible through deterministic nonzero exit and transport semantics; apply the class-wide rule to CLI, SDK, and MCP; add negative controls for bounded partial degradation versus whole-result omission; manually verify packed npm, npx, Bun, and bunx consumers in temporary directories; document recovery and compatibility."
@@ -22,6 +24,7 @@ confidence: high
 severity: critical
 environment: Reproduced on repository main 996313a99bf7df942111cac40b8ada53107dcfe5 and pm-cli 2026.8.15; Linux; default output budget
 repro_steps: Run pm contracts --json --full and inspect top-level keys. Observe only output_budget_exceeded and read_output with omitted_result=true. Run pm --output-budget unbounded contracts --json --full and observe the complete contract payload.
+resolution: "Fixed by centralizing explicit-complete budget precedence and omitted-result failure projection in shared SDK/output primitives, with CLI, SDK, and MCP parity."
 expected_result: "An explicit --full whole-surface read returns the complete contract by default, or fails in a parser-visible way before a consumer can mistake a well-formed receipt for an empty contract. CLI, SDK, and MCP expose one precedence rule and one failure contract."
 actual_result: "The default invocation returns a successful, parseable JSON receipt with the entire result omitted. Live repository reproduction returned two receipt keys; the unbounded recovery returned 26 top-level keys, 131 commands, and 104 actions."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -29,7 +32,25 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-jt8aa2,discovered_from,"2026-08-15T10:41:12.886Z","harness:codex","cli:create:dep",detected
   pm-s2h0mq,discovered_from,"2026-08-15T10:41:12.886Z","harness:codex","cli:create:dep",detected
   pm-x0iv17,discovered_from,"2026-08-15T10:41:12.886Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-15T10:41:12.886Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for contracts --json --full,omitted_result,requested_budget_infeasible,JSON.parse,and GitHub #1030 found no item for this current command-path regression. Open parent pm-5t33or owns the universal budget contract; closed pm-8nev0o,pm-jt8aa2,pm-x0iv17,and pm-s2h0mq provide completed resumability,omission-receipt,full-projection,and default-ceiling lineage. This issue records the newly reproduced cross-surface gap without reopening or duplicating those items."
   "2026-08-15T10:41:57.903Z","harness:codex","GitHub linkage and live reproduction evidence 2026-08-15: https://github.com/unbraind/pm-cli/issues/1030#issuecomment-5301862505 points GitHub #1030 to this canonical PM item. On repository main 996313a99, the bounded invocation returned only output_budget_exceeded/read_output with omitted_result=true; the unbounded control returned 26 top-level keys, 131 commands, and 104 actions."
+  "2026-08-15T14:34:46.759Z","harness:codex","Implementation start 2026-08-15: implement one SDK-native explicit-completeness precedence rule, parser-visible whole-result omission failure semantics, and CLI/SDK/MCP negative controls."
+  "2026-08-15T15:05:14.841Z","harness:codex","TDD evidence: the new complete-intent tests first failed because contracts --full still resolved the implicit default budget and the CLI returned code 0 for a wholly omitted JSON result. Green implementation now resolves explicit complete intent to unbounded only when no canonical caller budget exists; explicit infeasible budgets retain the compact receipt and set process exit 2 across the shared output boundary."
+  "2026-08-15T15:42:09.163Z","harness:codex","Disposable packed-consumer acceptance 2026-08-15: packed the current branch, installed it into isolated npm and Bun projects, and exercised npm CLI, npx, Bun, and bunx. contracts --json --full returned more than 100 commands/actions with exit 0; an explicit 256-token ceiling returned the parseable omitted_result receipt with exit 2; the installed SDK runAction full read returned the complete contract."
+  "2026-08-15T16:20:28.921Z","harness:codex","Final verification 2026-08-15: the exact working tree passed 504 files and 7,387 tests at 100% statements (53,548/53,548), branches (39,560/39,560), functions (10,995/10,995), and lines (51,713/51,713). The linked complete-read suite passed 30/30. Full quality:static passed package boundaries, SDK parity, surface replication, tracker-context assurance, import/transport floors, graph composition, and append-only record integrity. Packed npm, npx, Bun, bunx, CLI, SDK, and explicit bounded-omission controls passed."
+files[6]{path,scope,note}:
+  src/core/output/output.ts,project,Nonzero omission transport
+  src/sdk/read-output-contracts.ts,project,Shared complete-result precedence
+  tests/fixtures/contracts/full.json,project,Generated public contract fixture
+  tests/integration/read-output-completeness.integration.spec.ts,project,CLI SDK MCP completeness regression
+  tests/unit/core/output/output.spec.ts,project,Whole-result omission process-exit regression
+  tests/unit/sdk/read-output-contracts.spec.ts,project,Precedence and omission unit coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts tests/integration/read-output-completeness.integration.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msuksn95-wi46jr,test,passed,"2026-08-15T16:13:35.496Z","2026-08-15T16:13:49.625Z","2026-08-15T16:13:49.625Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/READ_OUTPUT_CONTRACTS.md,project,Completeness and recovery contract
+close_reason: "Completed shared complete-intent precedence and parser-visible whole-result omission semantics across CLI, SDK, and MCP, with packed consumer proof and exact 100% coverage."
 body: "## Verified live evidence\n\nAt main 996313a99bf7df942111cac40b8ada53107dcfe5:\n\n- pm contracts --json --full returns only output_budget_exceeded and read_output.\n- output_budget_exceeded.omitted_result is true and reason is requested_budget_infeasible.\n- pm --output-budget unbounded contracts --json --full returns 26 top-level keys, 131 commands, and 104 actions.\n\n## Contract decision required\n\nThe implementation must distinguish three cases:\n\n1. explicit complete-result intent with no explicit budget: completeness wins;\n2. explicit caller budget: the caller's cost ceiling wins and any omission is disclosed;\n3. whole-result omission: this is a failed read, not a successful bounded projection, and must not be parseable as plausible domain data.\n\nThis rule belongs in the shared SDK read-output primitive, not as a contracts-only bypass.\n\n## Regression lineage\n\nGH-1012 and the closed resumability lineage fixed complete-result handling on list-all. The same semantic class now appears on contracts --full, proving the behavior needs a cross-surface invariant."

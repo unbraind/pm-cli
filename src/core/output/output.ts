@@ -15,7 +15,10 @@ import { isHostOutputSuppressed } from "./output-control.js";
 import { projectMutationResult } from "./mutation-projection.js";
 import { attachReadOutputContracts } from "../../sdk/context-intent-contracts.js";
 import { attachOutputTokenAccounting } from "../../sdk/output-token-accounting.js";
-import { resolveReadOutputEncoding } from "../../sdk/read-output-contracts.js";
+import {
+  isReadOutputBudgetExceeded,
+  resolveReadOutputEncoding,
+} from "../../sdk/read-output-contracts.js";
 import { encode as encodeToon, type JsonValue } from "@toon-format/toon";
 
 const DECLARED_PROCESS_EXIT_CODES = new Set<number>(Object.values(EXIT_CODE));
@@ -194,7 +197,9 @@ function isToonPrimitive(value: unknown): value is JsonValue {
   );
 }
 
-function tabularObjectArray(value: unknown[]): value is Record<string, JsonValue>[] {
+function tabularObjectArray(
+  value: unknown[],
+): value is Record<string, JsonValue>[] {
   if (value.length === 0 || !value.every(isPlainObject)) return false;
   const keys = Object.keys(value[0]!);
   return (
@@ -540,6 +545,9 @@ function formatEffectiveOutput(
     resolvedCommandOptions,
     projectedOutputResult,
   );
+  if (isReadOutputBudgetExceeded(intentOutputResult)) {
+    process.exitCode ||= EXIT_CODE.USAGE;
+  }
   const renderResolvedOutput = (value: unknown): string => {
     if (format === "toon") {
       const markdownDefault = renderDefaultMarkdownResult(value);

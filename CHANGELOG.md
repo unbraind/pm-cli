@@ -4,8 +4,14 @@
 
 ### Fixed
 
+- GH-1028: history-author-acknowledge bulk mutation lacks dry-run and misreports empty selection ([pm-mcxk8v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mcxk8v.toon))
+- GH-1030: contracts --json --full is wholly omitted by the default output budget ([pm-2qvq7a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qvq7a.toon))
 - Auto Release blocker closure ignores successful recovery dispatch and reruns the stale tag-push workflow ([pm-db8onn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-db8onn.toon))
 - A commit pushed directly to the default branch can never be released: both analyzer-evidence fallbacks presuppose a pull request, and nothing declares that precondition ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
+
+### Other
+
+- Retire the bespoke gate scripts onto the assurance primitives, with a recorded per-script disposition so 6,500 lines of external enforcement either moves into the product or says why it cannot ([pm-4ok4ex](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4ok4ex.toon))
 
 ## 2026.8.15 - 2026-08-15
 
@@ -426,7 +432,6 @@
 - GH-824: core-field recovery must name dedicated flags instead of extension activation ([pm-2jtbl8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2jtbl8.toon))
 - CodeFactor fixed-only success payload blocks exact-head release gate ([pm-xcrlkl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xcrlkl.toon))
 - Both declared context intents are unreachable because the intent applier assigns field-group names into the section value domain, and the two validators give contradictory advice ([pm-ai45y9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ai45y9.toon))
-- GH-814: SDK metadata reads must distinguish missing and invalid tracker roots from an empty tracker ([pm-23xkss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-23xkss.toon))
 - The runtime contract enumeration is not closed over the surface it can resolve: 14 rendered commands, including the list-open that AGENTS.md mandates, are contract-backed by name yet absent from every enumeration ([pm-6j7r1a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6j7r1a.toon))
 - GH-817: machine-readable flag contracts need semantic invocation metadata and stdin capability ([pm-11phn1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-11phn1.toon))
 

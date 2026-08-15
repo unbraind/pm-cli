@@ -136,11 +136,43 @@ describe("SDK context integrity transports", () => {
         ]),
       });
 
+      const preview = context.runCli(
+        [
+          "history-author-acknowledge",
+          "--event",
+          `_workspace:${String(unknownLine)}`,
+          "--dry-run",
+          "--limit",
+          "1",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(preview.code).toBe(0);
+      const planFingerprint = (
+        preview.json as { plan: { plan_fingerprint: string } }
+      ).plan.plan_fingerprint;
+      const unboundedPreview = context.runCli(
+        [
+          "history-author-acknowledge",
+          "--event",
+          `_workspace:${String(unknownLine)}`,
+          "--dry-run",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(unboundedPreview).toMatchObject({ code: 0 });
+      expect(unboundedPreview.json).toMatchObject({
+        plan: { plan_fingerprint: planFingerprint, omitted_count: 0 },
+      });
       const acknowledged = context.runCli(
         [
           "history-author-acknowledge",
           "--event",
           `_workspace:${String(unknownLine)}`,
+          "--plan-fingerprint",
+          planFingerprint,
           "--attributed-author",
           "fixture-agent",
           "--reviewer",

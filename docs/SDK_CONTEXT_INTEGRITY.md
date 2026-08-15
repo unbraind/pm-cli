@@ -1,6 +1,6 @@
 # SDK Context Integrity
 
-Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon), [pm-22rzjp](../.agents/pm/issues/pm-22rzjp.toon), [pm-76fkpp](../.agents/pm/issues/pm-76fkpp.toon), [pm-igdvfq](../.agents/pm/issues/pm-igdvfq.toon), [pm-643e0k](../.agents/pm/issues/pm-643e0k.toon), and [pm-larv4r](../.agents/pm/issues/pm-larv4r.toon).
+Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon), [pm-22rzjp](../.agents/pm/issues/pm-22rzjp.toon), [pm-76fkpp](../.agents/pm/issues/pm-76fkpp.toon), [pm-igdvfq](../.agents/pm/issues/pm-igdvfq.toon), [pm-643e0k](../.agents/pm/issues/pm-643e0k.toon), [pm-larv4r](../.agents/pm/issues/pm-larv4r.toon), and [pm-mcxk8v](../.agents/pm/issues/pm-mcxk8v.toon).
 
 ## Agent Quick Context
 
@@ -81,8 +81,13 @@ text. `verifyPmRecoveryReferences` accepts obligations derived from real error
 envelopes and observations produced by executing a retry, resolving a declared
 command path, or linking prose to an already executed recovery. Its report
 includes the total obligation set, pass fraction, sorted findings, and stable
-coverage buckets for `suggested_retry`, `candidate_command`, `example`, and
-`next_step`, including zero-population buckets.
+coverage buckets for `suggested_retry`, `candidate_command`, `example`,
+`next_step`, `migration_hint`, and `restore_with`, including zero-population
+buckets. `derivePmRecoveryReferenceObligations` walks emitted envelopes and
+generated read-output contracts, so tests cannot silently omit a producer
+family. Each obligation declares `recovery`, `replacement`, or
+`behavior_preserving` semantics and its proof must demonstrate the same
+promise.
 
 The repository integration corpus drives real CLI refusals, executes the
 emitted retry in a temporary tracker, compares candidate commands with the
@@ -128,17 +133,22 @@ SDK callers use `fullHistory: true`; MCP callers use `full: true`. The default s
 
 ## Author acknowledgment coordinates
 
-CLI, SDK, and MCP use the same selector and coordinate parser for `history-author-acknowledge`. A coordinate is `<item-id>:<line>` or `_workspace:<line>`, with a positive one-based line number. Exactly one of explicit events or `all_actionable` is required.
+CLI, SDK, and MCP use the same selector and coordinate parser for `history-author-acknowledge`. A coordinate is `<item-id>:<line>` or `_workspace:<line>`, with a positive one-based line number. Exactly one of explicit events or `all_actionable` is required. Applying is a two-step operation: dry-run returns a deterministic SHA-256 over the complete, ordered coordinate set and every exact source-line hash; apply requires that fingerprint and refuses source or selection drift without writing history.
 
 ```bash
 pm history-author-acknowledge \
   --event _workspace:4 \
+  --dry-run
+
+pm history-author-acknowledge \
+  --event _workspace:4 \
+  --plan-fingerprint <sha256-from-preview> \
   --attributed-author import-agent \
   --reviewer maintainer \
   --reason "Verified workspace provenance"
 ```
 
-The SDK exposes `resolveUnknownAuthorAcknowledgmentSelector` and `parseUnknownAuthorHistoryEventCoordinates` so packages never need a private copy of this grammar. Health and validate map actionable unknown-author warnings directly to this append-only acknowledgment command instead of sending callers through another diagnostic loop.
+Preview coordinates are bounded with `--limit`, but the fingerprint and counts always cover the complete selection. Plans distinguish already acknowledged coordinates, and apply reports `effect`, `no_effect` (exit 6), or `partial_effect` (exit 7) while appending only newly actionable rows. The SDK exposes `planUnknownAuthorHistoryAcknowledgment`, `resolveUnknownAuthorAcknowledgmentSelector`, and `parseUnknownAuthorHistoryEventCoordinates` so packages never need a private copy of this grammar. Health and validate map actionable unknown-author warnings directly to this append-only acknowledgment command instead of sending callers through another diagnostic loop.
 
 ## Health provider boundary
 

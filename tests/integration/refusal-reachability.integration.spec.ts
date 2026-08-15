@@ -2,7 +2,9 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { PM_ERROR_CODE_CATALOG } from "../../src/sdk/generated-error-code-catalog.js";
+import { PM_READ_OUTPUT_SURFACE_CONTRACTS } from "../../src/sdk/read-output-contracts.js";
 import {
+  derivePmRecoveryReferenceObligations,
   verifyPmRecoveryReferences,
   verifyPmRefusalReachability,
   type PmRecoveryReferenceObligation,
@@ -150,33 +152,68 @@ describe("real-entrypoint refusal reachability", () => {
         { expectJson: true },
       ).json as { commands: string[] };
       const declaredCommandPaths = new Set(contracts.commands);
+      const budgetResult = context.runCli([
+        "--no-extensions",
+        "contracts",
+        "--json",
+        "--full",
+        "--output-budget",
+        "256",
+      ]);
+      expect(budgetResult.code).toBe(2);
+      const budgetEnvelope = JSON.parse(budgetResult.stdout) as unknown;
+      const unboundedRecovery = context.runCli([
+        "--no-extensions",
+        "contracts",
+        "--json",
+        "--full",
+        "--output-budget",
+        "unbounded",
+      ]);
+      expect(unboundedRecovery.code).toBe(0);
+      const legacyRead = context.runCli(["list", "--json", "--no-truncate"]);
+      const replacementRead = context.runCli([
+        "list",
+        "--json",
+        "--output-limit",
+        "unbounded",
+      ]);
+      expect(replacementRead.code).toBe(legacyRead.code);
+      const legacyLimitRead = context.runCli([
+        "list",
+        "--json",
+        "--limit",
+        "1",
+      ]);
+      const replacementLimitRead = context.runCli([
+        "list",
+        "--json",
+        "--output-limit",
+        "1",
+      ]);
+      expect(replacementLimitRead.code).toBe(legacyLimitRead.code);
+      const listAmountAliases = PM_READ_OUTPUT_SURFACE_CONTRACTS.find(
+        ({ command }) => command === "list",
+      )!.dimensions.amount.legacy_aliases.filter(({ flag }) =>
+        ["--limit", "--no-truncate"].includes(flag),
+      );
       const obligations: PmRecoveryReferenceObligation[] = [
-        {
-          id: "schema:suggested-retry:0",
-          probe_id: "schema-split-action",
-          kind: "suggested_retry",
-          value: suggestedRetry,
-        },
-        ...(optionEnvelope.recovery?.candidate_commands ?? []).map(
-          (value, index) => ({
-            id: `deps:candidate-command:${index}`,
-            probe_id: "cross-command-unknown-option",
-            kind: "candidate_command" as const,
-            value,
-          }),
+        ...derivePmRecoveryReferenceObligations(
+          "schema-split-action",
+          envelope,
         ),
-        ...(envelope.examples ?? []).map((value, index) => ({
-          id: `schema:example:${index}`,
-          probe_id: "schema-split-action",
-          kind: "example" as const,
-          value,
-        })),
-        ...(envelope.next_steps ?? []).map((value, index) => ({
-          id: `schema:next-step:${index}`,
-          probe_id: "schema-split-action",
-          kind: "next_step" as const,
-          value,
-        })),
+        ...derivePmRecoveryReferenceObligations(
+          "cross-command-unknown-option",
+          optionEnvelope,
+        ),
+        ...derivePmRecoveryReferenceObligations(
+          "whole-result-omission",
+          budgetEnvelope,
+        ),
+        ...derivePmRecoveryReferenceObligations(
+          "legacy-read-control",
+          listAmountAliases,
+        ),
       ];
       const observations: PmRecoveryReferenceObservation[] = obligations.map(
         (obligation) => {
@@ -185,6 +222,7 @@ describe("real-entrypoint refusal reachability", () => {
               id: obligation.id,
               reachable: true,
               proof: "executed",
+              semantics: obligation.semantics,
             };
           }
           if (obligation.kind === "candidate_command") {
@@ -192,6 +230,7 @@ describe("real-entrypoint refusal reachability", () => {
               id: obligation.id,
               reachable: declaredCommandPaths.has(obligation.value),
               proof: "declared_command_path",
+              semantics: obligation.semantics,
             };
           }
           if (obligation.kind === "example") {
@@ -207,12 +246,39 @@ describe("real-entrypoint refusal reachability", () => {
                 obligation.value === suggestedRetry
                   ? "linked_execution"
                   : "declared_command_path",
+              semantics: obligation.semantics,
+            };
+          }
+          if (obligation.kind === "restore_with") {
+            return {
+              id: obligation.id,
+              reachable:
+                obligation.value === "Unbounded" &&
+                unboundedRecovery.code === 0,
+              proof: "executed",
+              semantics: obligation.semantics,
+            };
+          }
+          if (obligation.kind === "migration_hint") {
+            return {
+              id: obligation.id,
+              reachable:
+                obligation.semantics === "behavior_preserving"
+                  ? replacementRead.code === legacyRead.code
+                  : replacementLimitRead.code === legacyLimitRead.code,
+              proof: "executed",
+              semantics: obligation.semantics,
             };
           }
           return {
             id: obligation.id,
-            reachable: obligation.value.includes(suggestedRetry),
+            reachable:
+              obligation.value.includes(suggestedRetry) ||
+              (obligation.probe_id === "cross-command-unknown-option" &&
+                (obligation.value.includes("command help") ||
+                  obligation.value.includes("accepted by"))),
             proof: "linked_execution",
+            semantics: obligation.semantics,
           };
         },
       );
@@ -228,6 +294,8 @@ describe("real-entrypoint refusal reachability", () => {
             "candidate_command",
             "example",
             "next_step",
+            "migration_hint",
+            "restore_with",
           ] as const
         ).map((kind) => ({
           kind,
@@ -237,6 +305,8 @@ describe("real-entrypoint refusal reachability", () => {
       });
       expect(declaredByKind("candidate_command")).toBeGreaterThan(0);
       expect(declaredByKind("example")).toBeGreaterThan(0);
+      expect(declaredByKind("migration_hint")).toBeGreaterThan(0);
+      expect(declaredByKind("restore_with")).toBeGreaterThan(0);
 
       const broken = observations.map((observation, index) =>
         index === 0 ? { ...observation, reachable: false } : observation,

@@ -48,10 +48,14 @@ export {
   acknowledgeUnknownAuthorHistoryEventsFromTransport,
   inspectHistoryAuthorStream,
   parseUnknownAuthorHistoryEventCoordinates,
+  planUnknownAuthorHistoryAcknowledgment,
   resolveUnknownAuthorAcknowledgmentSelector,
   scanHistoryAuthorAttribution,
   type AcknowledgeUnknownAuthorEventsOptions,
   type HistoryAuthorAttributionScan,
+  type UnknownAuthorAcknowledgmentPlan,
+  type UnknownAuthorAcknowledgmentPlanCoordinate,
+  type UnknownAuthorAcknowledgmentResult,
   type UnknownAuthorHistoryEvent,
 } from "./author-attribution.js";
 export {
@@ -132,6 +136,12 @@ export {
   type GcCheckpointsSummary,
   type GcLocksSummary,
 } from "./governance/gc.js";
+export {
+  PM_EXACT_COVERAGE_METRICS,
+  findCoverageDeficits,
+  type PmCoverageDeficit,
+  type PmExactCoverageMetric,
+} from "./governance/coverage-assurance.js";
 export {
   _testOnlyHealthCommand,
   runHealth,

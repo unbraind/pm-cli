@@ -3345,6 +3345,16 @@
           "flag": "--all-actionable"
         },
         {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--plan-fingerprint"
+        },
+        {
+          "flag": "--limit",
+          "value_type": "number"
+        },
+        {
           "aliases": [
             "--attributed_author"
           ],
@@ -12344,6 +12354,9 @@
         "json": 3000,
         "toon": 2000
       },
+      "flags": [
+        "--limit"
+      ],
       "intent": "Acknowledge reviewed history authors.",
       "intent_source": "command"
     },
@@ -15946,6 +15959,57 @@
         "sdk/extension/shared.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_author_acknowledge_plan_conflict",
+      "class": "conflict",
+      "code": "history_author_acknowledge_plan_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "History author acknowledge plan conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/author-attribution.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_author_acknowledge_plan_fingerprint_required",
+      "class": "usage",
+      "code": "history_author_acknowledge_plan_fingerprint_required",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "History author acknowledge plan fingerprint required condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/author-attribution.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_author_acknowledge_preview_limit_invalid",
+      "class": "usage",
+      "code": "history_author_acknowledge_preview_limit_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "History author acknowledge preview limit invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/author-attribution.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -44356,6 +44420,10 @@
             ],
             "type": "string"
           },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
           "historyEvent": {
             "description": "Unknown-author history target in <item-id>:<one-based-line> form.",
             "examples": [
@@ -44374,6 +44442,21 @@
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
@@ -44387,6 +44470,14 @@
             "examples": [
               ".agents/pm"
             ],
+            "type": "string"
+          },
+          "planFingerprint": {
+            "description": "Exact SHA-256 returned by a history-author-acknowledge dry-run preview; apply refuses stale or changed source coordinates.",
+            "examples": [
+              "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            ],
+            "pattern": "^[a-f0-9]{64}$",
             "type": "string"
           },
           "pmExecutable": {
@@ -44426,10 +44517,7 @@
           }
         },
         "required": [
-          "action",
-          "attributedAuthor",
-          "reviewer",
-          "reason"
+          "action"
         ],
         "title": "pm action \"history-author-acknowledge\" parameters",
         "type": "object"

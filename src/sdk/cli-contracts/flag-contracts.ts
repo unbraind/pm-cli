@@ -422,6 +422,9 @@ export const HISTORY_REPAIR_FLAG_CONTRACTS: CliFlagContract[] = [
 export const HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--event", repeatable: true },
   { flag: "--all-actionable" },
+  { flag: "--dry-run" },
+  { flag: "--plan-fingerprint" },
+  { flag: "--limit", value_type: "number" },
   { flag: "--attributed-author", aliases: ["--attributed_author"] },
   { flag: "--reviewer" },
   { flag: "--reason" },

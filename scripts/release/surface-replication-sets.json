@@ -98,7 +98,10 @@
           "path": "src/sdk/cli-contracts/tool-parameter-tables.ts",
           "changed_lines_contain_any": ["full: { type: \"boolean\" }"]
         },
-        "src/sdk/completion.ts"
+        {
+          "path": "src/sdk/completion.ts",
+          "changed_lines_contain_any": ["--full-history"]
+        }
       ],
       "required_changed_members": [
         "src/sdk/annotations.ts",
@@ -187,7 +190,7 @@
         "src/sdk/author-attribution.ts",
         "src/cli/register-history-author.ts",
         "src/sdk/runtime.ts",
-        "tests/unit/sdk/read-contract-integrity.spec.ts",
+        "tests/integration/sdk-context-integrity.integration.spec.ts",
         "docs/SDK_CONTEXT_INTEGRITY.md"
       ],
       "members": [
@@ -201,7 +204,7 @@
         },
         {
           "path": "src/cli/register-history-author.ts",
-          "contains_all": ["resolveUnknownAuthorAcknowledgmentSelector"]
+          "contains_all": ["acknowledgeUnknownAuthorHistoryEventsFromTransport"]
         },
         {
           "path": "src/sdk/runtime.ts",
@@ -211,10 +214,10 @@
           ]
         },
         {
-          "path": "tests/unit/sdk/read-contract-integrity.spec.ts",
+          "path": "tests/integration/sdk-context-integrity.integration.spec.ts",
           "contains_all": [
-            "uses one SDK-owned selector and coordinate grammar",
-            "_workspace:4"
+            "round-trips an actionable _workspace coordinate",
+            "history-author-acknowledge"
           ]
         },
         {
@@ -515,7 +518,7 @@
         },
         {
           "path": "src/cli/register-history-author.ts",
-          "contains_all": ["resolveUnknownAuthorAcknowledgmentSelector"]
+          "contains_all": ["acknowledgeUnknownAuthorHistoryEventsFromTransport"]
         },
         {
           "path": "src/sdk/runtime.ts",

@@ -177,6 +177,7 @@ import {
 import {
   acknowledgeUnknownAuthorHistoryEventsFromTransport,
   type AcknowledgeUnknownAuthorEventsOptions,
+  type UnknownAuthorAcknowledgmentResult,
 } from "./author-attribution.js";
 import {
   PROFILE_SUBCOMMANDS,
@@ -1203,14 +1204,13 @@ export class PmClient {
   }
 
   /** Disposition immutable unknown-author events through append-only audit history. */
-  historyAuthorAcknowledge(
-    options: AcknowledgeUnknownAuthorEventsOptions,
-  ): Promise<{ acknowledged: number; history_path: string }> {
+  historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<UnknownAuthorAcknowledgmentResult> {
     return this.runTyped("history-author-acknowledge", {
       historyEvent: (options.events ?? []).map(
         (event) => `${event.item_id}:${String(event.line)}`,
       ),
       allActionable: options.all_actionable === true,
+      dryRun: options.dry_run === true, planFingerprint: options.plan_fingerprint, limit: options.coordinate_limit,
       attributedAuthor: options.attributed_author,
       reviewer: options.reviewer,
       reason: options.reason,

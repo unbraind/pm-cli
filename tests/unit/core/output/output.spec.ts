@@ -87,6 +87,37 @@ describe("core/output/output", () => {
     });
   });
 
+  it("sets a usage exit for infeasible reads without masking prior failures", () => {
+    const previousExitCode = process.exitCode;
+    try {
+      for (const [initial, expected] of [
+        [undefined, EXIT_CODE.USAGE],
+        [EXIT_CODE.SUCCESS, EXIT_CODE.USAGE],
+        [EXIT_CODE.GENERIC_FAILURE, EXIT_CODE.GENERIC_FAILURE],
+      ] as const) {
+        process.exitCode = initial;
+        const rendered = formatOutput(
+          Object.fromEntries(
+            Array.from({ length: 1_000 }, (_, index) => [
+              `field_${String(index)}`,
+              "x".repeat(100),
+            ]),
+          ),
+          { command: "stats", json: true, outputBudget: 256 },
+        );
+        expect(JSON.parse(rendered)).toMatchObject({
+          output_budget_exceeded: {
+            omitted_result: true,
+            reason: "requested_budget_infeasible",
+          },
+        });
+        expect(process.exitCode).toBe(expected);
+      }
+    } finally {
+      process.exitCode = previousExitCode;
+    }
+  });
+
   it("renders deterministic TOON output for nested values", () => {
     const rendered = formatOutput(
       {

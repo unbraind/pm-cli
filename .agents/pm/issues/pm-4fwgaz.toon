@@ -1,0 +1,35 @@
+id: pm-4fwgaz
+title: "GH-1033: read fields selectors can erase identity and requested empty collections"
+description: "A read with --fields targeting an empty collection can omit both the item identity and the requested empty field while returning omission receipts for excluded groups, yielding a successful envelope with no usable domain answer."
+type: Issue
+status: open
+priority: 1
+tags[8]: agent-ux,empty-collections,fields,github-1033,identity,projection,read-output,token-efficiency
+created_at: "2026-08-15T15:27:12.262Z"
+updated_at: "2026-08-15T15:29:22.279Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: "Reproduce every item read alias in CLI, SDK, and MCP; define minimum identity and requested-empty preservation once in the shared projection primitive; distinguish absent, empty, omitted, and inapplicable groups in typed receipts; ensure explicit budgets still bind; add unit, integration, packed-consumer, and executable recovery negative controls; document the compatibility contract and token-cost impact."
+goal: project management = context management
+objective: Make every explicit read projection self-identifying and preserve requested empty collections as meaningful data.
+value: Agents can distinguish an empty requested group from an omitted group without paying for unrelated item context.
+impact: "Successful projected reads can carry neither identity nor requested data, so automation cannot associate, interpret, or safely recover the result."
+outcome: "The shared SDK read projection contract retains minimum identity and explicitly requested empty values across CLI, SDK, MCP, and all item read aliases."
+why_now: GitHub #1033 demonstrates a new silent-data-loss class at the universal projection boundary.
+parent: pm-5t33or
+risk: high
+confidence: high
+severity: high
+environment: Current pm read/get fields projection on 2026-08-15
+repro_steps: "Read an item whose selected linked collection is empty using pm read <id> --fields <group>; inspect the result for the item id, the requested empty collection, and omission semantics."
+expected_result: The result includes stable item identity and the explicitly selected empty collection while omitting only unrequested groups with executable recovery receipts.
+actual_result: "The result can omit id and the requested field and return only groups the caller excluded, despite a zero exit status."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cxr0jb,discovered_from,"2026-08-15T15:27:12.262Z","harness:codex","cli:create:dep",detected
+  pm-p258tx,verifies,"2026-08-15T15:28:50.572Z","harness:codex","cli:update:dep",detected
+  pm-b1w8vr,discovered_from,"2026-08-15T15:28:52.471Z","harness:codex","cli:update:dep",detected
+  pm-x710qm,verifies,"2026-08-15T15:28:54.012Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-15T15:27:12.262Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for GH-1033, fields empty group, requested empty collection, identity projection, and omission receipt found no item for this exact zero-exit projection failure. Closed pm-cxr0jb and pm-p258tx provide intent-projection and omission-receipt lineage; open pm-5t33or is the canonical universal output parent. This issue records the newly reported regression without duplicating those items."
+  "2026-08-15T15:29:22.279Z","harness:codex","GitHub linkage evidence 2026-08-15: https://github.com/unbraind/pm-cli/issues/1033#issuecomment-5302914118 points GitHub #1033 to this canonical PM item after all-status duplicate checks and typed lineage enrichment."
+body: ""

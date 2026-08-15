@@ -8,6 +8,32 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
+    code: "merge_conflict_markers_detected",
+    meaning: "Merge conflict markers detected condition.",
+    stability: "stable",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/item/item-format.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_conflict_markers_detected",
+    aliases: ["history_merge_conflict_markers_detected"],
+  },
+  {
+    code: "merge_decisions_unreviewed",
+    meaning: "Merge decisions unreviewed condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_decisions_unreviewed",
+    aliases: [],
+  },
+  {
     code: "merge_git_config_unwritable",
     meaning: "Merge git config unwritable condition.",
     stability: "stable",
