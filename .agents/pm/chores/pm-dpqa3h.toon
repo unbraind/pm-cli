@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",ci-gate,observability,token-efficiency
 created_at: "2026-07-26T18:28:20.913Z"
-updated_at: "2026-07-27T15:51:44.744Z"
-closed_at: "2026-07-27T14:00:45.668Z"
+updated_at: "2026-08-15T03:22:36.330Z"
+closed_at: "2026-08-15T03:21:37.556Z"
+completed_at: "2026-08-15T03:21:37.556Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A package.json script runs the token-surface harness and a committed baseline artifact records the current surface; A static CI gate diffs measured against baseline and fails when growth exceeds the declared threshold, with a documented baseline-update path; The gate reproduces the currently measured values for health, validate, context, next, get and list-open so the baseline is verifiable"
@@ -21,14 +22,14 @@ risk: low
 confidence: high
 resolution: Turned the dormant token-surface measurement into a versioned committed regression ratchet enforced by context quality CI and release gates.
 expected_result: "Every measured agent-facing surface has a reproducible baseline, documented update path, and automated growth check."
-actual_result: "Ninety-five surfaces and a seventeen-command representative corpus are checked; linked tests, context evaluation, and full coverage pass."
+actual_result: The committed bidirectional token ratchet now passes with 79 active core/changelog surfaces and 81 active surfaces when the CI search extension contributes search-advanced and reindex; both extension commands retain explicit ceilings.
 dependencies[5]{id,kind,created_at}:
   pm-a22j,discovered_from,"2026-07-26T18:29:21.789Z"
   pm-cha95z,related,"2026-07-26T18:29:21.789Z"
   pm-du93sr,verifies,"2026-07-26T18:29:21.789Z"
   pm-mfy1ux,verifies,"2026-07-26T18:29:21.789Z"
   pm-okgxwa,verifies,"2026-07-26T18:29:21.789Z"
-comments[9]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-07-27T14:00:38.252Z","harness:codex","Evidence: promoted the existing measurement into a versioned 95-surface UTF-8 byte ratchet with checked baseline/update modes; wired quality:token-surface into the context quality CI and release gate; expanded the representative command corpus from 14 to 17 with list-open, health summary, and validate counts. Verification: linked tests passed 2/2; context corpus scored 1.0 across NDCG, reciprocal rank, recall, continuity, and token adherence; full repository coverage passed 6,413 tests at 100/100/100/100; static quality and pnpm audit passed."
   "2026-07-27T14:07:53.993Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/774 at implementation head 8173f7f73. Exact-head hosted checks and bot review will follow after this PM evidence is committed."
   "2026-07-27T14:18:29.732Z","harness:codex","Hosted feedback correction for PR #774: the first smoke run proved the new ratchet incorrectly depended on a globally installed pm executable. The script now defaults to this checkout's built dist/cli.js through process.execPath while preserving explicit PM_BIN overrides. The exact context entitlement gate and focused tests pass locally."
@@ -38,6 +39,9 @@ comments[9]{created_at,author,text}:
   "2026-07-27T15:22:34.938Z","harness:codex","Hosted clean-runner correction: v1 treated locally installed extension commands as universally required, so a clean CI runner failed on 19 intentionally absent package surfaces. v2 records the canonical core-command intersection as required while still measuring and bounding active extension commands when present. Proof: project installation passes 95 surfaces; a fresh isolated PM_PATH/PM_GLOBAL_PATH with no project extensions passes 74 surfaces; focused tests and ESLint pass."
   "2026-07-27T15:29:54.101Z","harness:codex","Final coverage correction for v2 classification: added a multi-core-command baseline assertion that exercises deterministic required-command sorting and verifies extension alias exclusion. Focused ratchet tests pass 12/12 and ESLint passes; this covers the only line/function missed by the prior full suite."
   "2026-07-27T15:51:44.744Z","harness:codex","DeepScan correction: reproduced all seven new findings through the analyzer API; each was the same insufficient-null-check root cause from mixing optional surfaces reads with one required access. Normalized the surface map once and added a wholly-missing-map regression assertion, preserving fail-closed diagnostics. Focused contracts/ratchet tests pass 57/57; ESLint, static quality, both token gates, SDK snapshot, entrypoint costs, and transport floor pass."
+  "2026-08-15T03:16:42.868Z","harness:codex","Regression duplicate check 2026-08-15: exact all-status searches for missing commands.search-advanced/reindex baselines found no newer owner. This canonical closed item already owns the bidirectional active-extension token-surface ratchet and its prior clean-runner correction. PR #1016 regenerated the baseline under a pm-changelog-only local topology, while CI intentionally installs search-advanced and exposes both commands; actively fixing that topology mismatch here."
+  "2026-08-15T03:20:02.605Z","harness:codex","PR #1016 CI correction: reproduced the exact smoke failure under the workflow topology. Regenerated the committed token baseline after installing search-advanced so commands.search-advanced and commands.reindex retain explicit ceilings. The gate passes both after uninstall (79 active surfaces) and with the CI extension installed (81 active surfaces); required-command semantics and headroom are unchanged."
+  "2026-08-15T03:21:32.940Z","harness:codex","Final linked evidence: token-surface unit contracts passed 12/12, repository context quality passed all four blocking assertions, and the real ratchet passed in both 79-surface core/changelog and 81-surface CI search-extension topologies."
 files[10]{path,scope,note}:
   package.json,project,static quality and operator scripts
   scripts/agent-token-surface-baseline.json,project,committed all-surface regression ceilings
@@ -52,9 +56,10 @@ files[10]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/measure-agent-token-surface.spec.ts,project,240
   "pnpm quality:context-eval",project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms3amrvd-0vdwxs,test,passed,"2026-07-27T13:58:31.502Z","2026-07-27T13:59:32.762Z","2026-07-27T13:59:32.762Z",2,0,0
+  test-local-mstt75ir-aaeeuk,test,passed,"2026-08-15T03:20:03.138Z","2026-08-15T03:21:17.235Z","2026-08-15T03:21:17.235Z",2,0,0
 docs[1]{path,scope,note}:
   docs/TESTING.md,project,token-surface gate workflow
-close_reason: "Shipped a committed 95-surface token regression baseline, CI/release enforcement, documented update path, and expanded representative command corpus; linked tests, full 100% coverage, static quality, context evaluation, security scan, and dependency audit passed."
+close_reason: "PR #1016 regression fixed: committed token ceilings again cover search-advanced and reindex while extension-absent and extension-present topologies both pass without weakening the bidirectional ratchet."
 body: "## Problem\n\npm-a22j (closed) built scripts/measure-agent-token-surface.mjs: it measures the\nfull agent-facing token surface — root help, every per-command help, the\ncontracts payload family, and the MCP tools/list payload — and emits JSON so a\nratchet can diff it. pm-ksca (closed) then added a covering spec for it.\n\nThe harness is wired into nothing. Repository-wide search for\n`measure-agent-token-surface` outside the script itself returns exactly one\nhit, a historical CHANGELOG line. It has no package.json script, no CI step,\nand no recorded baseline to diff against. Its own header comment tells the\nreader to \"re-run after each consolidation slice lands and diff against the\nrecorded baseline\" — a baseline that is not stored anywhere in the repo.\n\n## Consequence, measured 2026-07-26 on the live workspace\n\nNothing detects token-surface regressions, and they are present:\n\n| command | output | approx tokens |\n|---|---|---|\n| pm graph audit --summary | 1,534 B | ~383 |\n| pm list-open --limit 20 | 4,556 B | ~1,139 |\n| pm get pm-96h7 | 5,365 B | ~1,341 |\n| pm context --limit 10 | 6,195 B | ~1,548 |\n| pm next --limit 5 | 8,799 B | ~2,199 |\n| pm validate | 22,719 B | ~5,679 |\n| **pm health --check-only** | **132,585 B** | **~33,146** |\n\n`pm health --check-only` is the diagnostic AGENTS.md \"When Unsure\" routes\nagents to, and a single invocation costs roughly a sixth of a 200k context\nwindow. That specific regression is owned by pm-du93sr and `graph impact` by\npm-mfy1ux — this item owns the reason such regressions land and persist\nundetected: the instrument that would have caught them on the commit that\nintroduced them runs nowhere.\n\n## Why this is a child of pm-5t33or, not a duplicate\n\npm-5t33or owns the forward design: every command declares a default output\nceiling in its contract and degrades deterministically when it would exceed it.\nThat is the destination. This item is the enabling tranche that can ship\nindependently and immediately: take the harness that already exists and already\nhas a spec, record a committed baseline, and fail CI when the surface grows\nbeyond it. It requires no contract changes and no command behaviour changes,\nand it makes pm-5t33or's rollout measurable slice by slice instead of\nretrospective.\n\n## Direction (not a mandate for the fix)\n\nAdd a package.json script, commit a baseline JSON artifact next to the\nsdk-surface-snapshot baseline that already follows this pattern, and add a\nstatic CI gate that diffs current against baseline with an allowed-growth\nthreshold and a documented update path. The sdk-surface-snapshot gate is the\nworking precedent for exactly this shape."
