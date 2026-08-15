@@ -29,6 +29,7 @@ import {
 } from "../../../../src/core/store/settings.js";
 import { runExtension } from "../../../../src/cli/commands/extension.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import { parseJsonErrorEnvelope } from "../../../helpers/jsonErrorEnvelope.js";
 
 describe("workspace history", () => {
   it("starts an audit-only workspace stream without changing state", async () => {
@@ -159,7 +160,54 @@ describe("workspace history", () => {
           before: { enabled: true },
           after: { enabled: false },
         }),
-      ).rejects.toThrow("Workspace history verification failed");
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.CONFLICT,
+        code: "workspace_history_chain_invalid",
+        context: {
+          reason: "workspace_history_chain_verification_failed",
+          verification_errors: expect.arrayContaining([
+            "verify_failed:before_hash_mismatch:entry_2",
+          ]),
+          recovery: {
+            next_best_command: "pm history _workspace --verify --json",
+          },
+        },
+      });
+    });
+  });
+
+  it("returns a structured CLI conflict for a corrupt workspace chain", async () => {
+    await withTempPmPath(async (context) => {
+      expect(
+        context.runCli(
+          ["config", "project", "set", "author_default", "before", "--json"],
+          { expectJson: true },
+        ).code,
+      ).toBe(0);
+      const historyPath = getWorkspaceHistoryPath(context.pmPath);
+      const rows = (await readFile(historyPath, "utf8")).trimEnd().split("\n");
+      const first = JSON.parse(rows[0]) as { before_hash: string };
+      first.before_hash = "0".repeat(64);
+      rows[0] = JSON.stringify(first);
+      await writeFile(historyPath, `${rows.join("\n")}\n`);
+
+      const refusal = context.runCli(
+        ["config", "project", "set", "author_default", "after", "--json"],
+        { expectJson: true },
+      );
+      expect(refusal.code).toBe(EXIT_CODE.CONFLICT);
+      expect(parseJsonErrorEnvelope(refusal.stderr)).toMatchObject({
+        type: "urn:pm-cli:error:workspace_history_chain_invalid",
+        code: "workspace_history_chain_invalid",
+        exit_code: EXIT_CODE.CONFLICT,
+        verification_errors: [
+          "verify_failed:before_hash_mismatch:entry_1",
+        ],
+        recovery: {
+          next_best_command: "pm history _workspace --verify --json",
+        },
+      });
     });
   });
 
@@ -433,19 +481,31 @@ describe("workspace history", () => {
       );
       await expect(
         inspectWorkspaceHistoryState(context.pmPath),
-      ).rejects.toThrow("Workspace history verification failed");
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.CONFLICT,
+        code: "workspace_history_chain_invalid",
+      });
       await expect(
         reconcileWorkspaceJsonHistory({
           ...common,
           authorizationDecision: "pm-decision",
         }),
-      ).rejects.toThrow("Workspace history verification failed");
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.CONFLICT,
+        code: "workspace_history_chain_invalid",
+      });
       await expect(
         restoreWorkspaceJsonFromHistory({
           ...common,
           targetVersion: 1,
         }),
-      ).rejects.toThrow("Workspace history verification failed");
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.CONFLICT,
+        code: "workspace_history_chain_invalid",
+      });
     });
 
     await withTempPmPath(async (context) => {
@@ -497,7 +557,11 @@ describe("workspace history", () => {
           ...(await readSettings(context.pmPath)),
           author_default: "must-roll-back",
         }),
-      ).rejects.toThrow("Workspace history verification failed");
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.CONFLICT,
+        code: "workspace_history_chain_invalid",
+      });
       expect(await readFile(settingsPath, "utf8")).toBe(beforeRaw);
     });
   });
@@ -560,7 +624,11 @@ describe("workspace history", () => {
           ...common,
           raw: '{"enabled":false}\n',
         }),
-      ).rejects.toThrow("Workspace history verification failed");
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.CONFLICT,
+        code: "workspace_history_chain_invalid",
+      });
       expect(await readFile(filePath, "utf8")).toBe(beforeFailureRaw);
 
       const newPath = path.join(context.pmPath, "new-state.json");
@@ -570,7 +638,11 @@ describe("workspace history", () => {
           filePath: newPath,
           raw: '{"new":true}\n',
         }),
-      ).rejects.toThrow("Workspace history verification failed");
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.CONFLICT,
+        code: "workspace_history_chain_invalid",
+      });
       await expect(readFile(newPath, "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });
@@ -683,7 +755,15 @@ describe("workspace history", () => {
           lockTtlSeconds: 30,
           lockWaitMs: 1000,
         }),
-      ).rejects.toThrow("Workspace history verification failed");
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.CONFLICT,
+        code: "workspace_history_chain_invalid",
+        context: {
+          reason: "workspace_history_chain_verification_failed",
+          verification_errors: ["verify_failed:after_hash_mismatch:entry_1"],
+        },
+      });
       const drift = await scanHistoryDrift(context.pmPath, []);
       expect(drift.chainMismatches).toContain(WORKSPACE_HISTORY_ID);
       expect(drift.driftedItems).toContain(WORKSPACE_HISTORY_ID);

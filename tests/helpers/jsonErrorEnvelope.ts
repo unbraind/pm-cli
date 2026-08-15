@@ -10,6 +10,7 @@ export interface JsonErrorEnvelope {
   why?: string;
   examples?: string[];
   next_steps?: string[];
+  verification_errors?: string[];
   recovery?: Record<string, unknown>;
 }
 

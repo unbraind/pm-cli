@@ -205,6 +205,36 @@ function workspaceDocuments(document: ItemDocument): Record<string, unknown> {
     : {};
 }
 
+/** Refuse a workspace mutation or replay whose append-only chain is invalid. */
+function throwWorkspaceHistoryVerificationFailure(
+  errors: readonly string[],
+): never {
+  throw new PmCliError(
+    `Workspace history verification failed: ${errors.join(", ")}`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "workspace_history_chain_invalid",
+      reason: "workspace_history_chain_verification_failed",
+      verification_errors: [...errors],
+      required:
+        "Repair the _workspace history chain before reading, reconciling, restoring, or appending audited singleton state.",
+      why: "Continuing against an unverifiable append-only stream could hide or compound workspace state corruption.",
+      examples: [
+        "pm history _workspace --verify --json",
+        "pm validate --check-history-drift --fix-hints --json",
+      ],
+      nextSteps: [
+        "Inspect the exact verification_errors and preserve the corrupt stream as evidence.",
+        "Use the history-drift remediation returned by validate before retrying the refused operation.",
+      ],
+      recovery: {
+        recovery_mode: "compact",
+        next_best_command: "pm history _workspace --verify --json",
+      },
+    },
+  );
+}
+
 /** Resolve a governed singleton path and reject paths outside the tracker root. */
 function resolveGovernedDocumentPath(
   pmRoot: string,
@@ -238,9 +268,7 @@ export async function inspectWorkspaceHistoryState(
   );
   const verification = verifyHistoryChain(entries);
   if (!verification.ok) {
-    throw new TypeError(
-      `Workspace history verification failed: ${verification.errors.join(", ")}`,
-    );
+    throwWorkspaceHistoryVerificationFailure(verification.errors);
   }
   const documents = workspaceDocuments(
     entries.length === 0
@@ -296,9 +324,7 @@ async function appendWorkspaceHistoryChangeLocked(
   const entries = await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID);
   const verification = verifyHistoryChain(entries);
   if (!verification.ok) {
-    throw new TypeError(
-      `Workspace history verification failed: ${verification.errors.join(", ")}`,
-    );
+    throwWorkspaceHistoryVerificationFailure(verification.errors);
   }
   const idempotentEntry =
     change.idempotencyKey === undefined
@@ -405,9 +431,7 @@ export async function appendWorkspaceAuditEvent(
     const entries = await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID);
     const verification = verifyHistoryChain(entries);
     if (!verification.ok) {
-      throw new TypeError(
-        `Workspace history verification failed: ${verification.errors.join(", ")}`,
-      );
+      throwWorkspaceHistoryVerificationFailure(verification.errors);
     }
     const beforeDocument: ItemDocument =
       entries.length === 0
@@ -557,9 +581,7 @@ export async function reconcileWorkspaceJsonHistory(
     const entries = await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID);
     const verification = verifyHistoryChain(entries);
     if (!verification.ok) {
-      throw new TypeError(
-        `Workspace history verification failed: ${verification.errors.join(", ")}`,
-      );
+      throwWorkspaceHistoryVerificationFailure(verification.errors);
     }
     const beforeDocument = replayWorkspaceEntries(entries);
     const priorDocuments = workspaceDocuments(beforeDocument);
@@ -637,9 +659,7 @@ export async function restoreWorkspaceJsonFromHistory(
     }
     const verification = verifyHistoryChain(entries);
     if (!verification.ok) {
-      throw new TypeError(
-        `Workspace history verification failed: ${verification.errors.join(", ")}`,
-      );
+      throwWorkspaceHistoryVerificationFailure(verification.errors);
     }
     const target = workspaceDocuments(
       replayWorkspaceEntries(entries, options.targetVersion),

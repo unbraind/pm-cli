@@ -1,6 +1,6 @@
 # SDK Context Integrity
 
-Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon), [pm-22rzjp](../.agents/pm/issues/pm-22rzjp.toon), [pm-76fkpp](../.agents/pm/issues/pm-76fkpp.toon), [pm-igdvfq](../.agents/pm/issues/pm-igdvfq.toon), [pm-643e0k](../.agents/pm/issues/pm-643e0k.toon), [pm-larv4r](../.agents/pm/issues/pm-larv4r.toon), and [pm-mcxk8v](../.agents/pm/issues/pm-mcxk8v.toon).
+Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon), [pm-22rzjp](../.agents/pm/issues/pm-22rzjp.toon), [pm-76fkpp](../.agents/pm/issues/pm-76fkpp.toon), [pm-igdvfq](../.agents/pm/issues/pm-igdvfq.toon), [pm-643e0k](../.agents/pm/issues/pm-643e0k.toon), [pm-larv4r](../.agents/pm/issues/pm-larv4r.toon), [pm-mcxk8v](../.agents/pm/issues/pm-mcxk8v.toon), and [pm-2zkvxm](../.agents/pm/issues/pm-2zkvxm.toon).
 
 ## Agent Quick Context
 
@@ -171,6 +171,14 @@ stream and compares every governed singleton with its latest recorded state.
 That agreement check reads only local history and JSON files: mismatched,
 missing, or unreadable singleton paths become bounded `history_drift` evidence
 without enabling embeddings, vector-store access, or any other provider I/O.
+
+Every SDK operation that requires a valid `_workspace` chain refuses the same
+way when verification fails. The typed `workspace_history_chain_invalid`
+conflict includes `verification_errors` in CLI JSON and SDK error context plus
+an executable `pm history _workspace --verify --json` recovery command. This
+keeps deliberate corruption tests and recoverable tracker drift out of the
+unexpected-runtime-error channel without weakening the fail-closed mutation
+boundary.
 
 Brief and summary check-only health projections use the scalar-only metadata
 reader. Validation uses collection-bearing metadata for evidence and
