@@ -261,8 +261,7 @@ describe("release automation contract", () => {
       'GH_TOKEN="${RELEASE_POLICY_TOKEN:-${GH_TOKEN}}" node scripts/release/hosted-analysis-gate.mjs',
     );
     expect(ciWorkflow).toContain("release-analyzer-readiness:");
-    expect(ciWorkflow).toContain("needs: build-foundation");
-    expect(ciWorkflow).toContain("if: always() && github.event_name == 'push'");
+    expect(ciWorkflow).toContain("if: github.event_name == 'push'");
     expect(ciWorkflow).toContain("name: Release analyzer readiness (main)");
     expect(registry.local_preflight.steps[0]?.id).toBe("hosted-analysis-gate");
   });
