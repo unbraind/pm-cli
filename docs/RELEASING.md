@@ -236,10 +236,12 @@ push to `main` is releasable only if both analyzers attached successful evidence
 to that exact commit; when they did not, the gate explicitly refuses the
 candidate instead of letting the next scheduled release discover the missing
 precondition after expensive work. CI runs `Release analyzer readiness (main)`
-on every product-relevant push to `main`, providing continuous visibility
-between release attempts. Remediate a refused direct-main candidate by landing
-the next tree-changing fix through a reviewed PR; never copy, synthesize, or
-bypass analyzer evidence.
+after build foundation on every product-relevant push to `main`, giving GitHub
+time to publish the immutable merge-to-PR association while still providing
+continuous visibility between release attempts. The readiness job uses
+`always()` so a build failure does not hide analyzer readiness. Remediate a
+refused direct-main candidate by landing the next tree-changing fix through a
+reviewed PR; never copy, synthesize, or bypass analyzer evidence.
 
 ```bash
 # Read-only parity check
