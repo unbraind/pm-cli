@@ -28,7 +28,8 @@ concurrency:
 jobs:
   release-analyzer-readiness:
     name: Release analyzer readiness (main)
-    if: github.event_name == 'push'
+    needs: build-foundation
+    if: always() && github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
