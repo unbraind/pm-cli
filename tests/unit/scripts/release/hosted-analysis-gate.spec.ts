@@ -12,6 +12,18 @@ const STRICT_PROTECTION = {
     checks: [{ context: "CodeFactor" }],
   },
 };
+const EFFECTIVE_BRANCH_SUMMARY = {
+  protected: true,
+  commit: { sha: SHA },
+  protection: {
+    enabled: true,
+    required_status_checks: {
+      contexts: ["DeepScan"],
+      checks: [{ context: "CodeFactor" }],
+      enforcement_level: "non_admins",
+    },
+  },
+};
 const SUCCESSFUL_DEEPSCAN = {
   statuses: [{ context: "DeepScan", state: "success", description: "0 new issues" }],
 };
@@ -75,8 +87,16 @@ interface GatePayload {
   branch_protection?: {
     source: string;
     branch: string;
-    strict: boolean;
+    strict: boolean | null;
+    strict_verified: boolean;
+    verification_scope: string;
     required_analyzers: string[];
+    candidate_tree: {
+      sha: string;
+      analyzed_sha: string;
+      analysis_source: string;
+      exact_or_identical: boolean;
+    };
   };
 }
 
@@ -94,6 +114,45 @@ function serializeGraphqlProtection(value: unknown): string {
     return JSON.stringify(value.pages);
   }
   return JSON.stringify(value);
+}
+
+type MockCommandFailure = Partial<
+  Record<
+    "repo" | "sha" | "statuses" | "checks" | "protection" | "graphqlProtection" | "branchSummary",
+    number
+  >
+>;
+
+/** Return a policy API response when the command targets one of the three policy surfaces. */
+function policyCommandResponse(
+  args: string[],
+  protection: unknown,
+  graphqlProtection: unknown,
+  branchSummary: unknown,
+  failures: MockCommandFailure,
+) {
+  if (String(args[1]).endsWith("/protection")) {
+    return {
+      status: failures.protection ?? 0,
+      stdout: typeof protection === "string" ? protection : JSON.stringify(protection),
+      stderr: "",
+    };
+  }
+  if (args[1] === "graphql") {
+    return {
+      status: failures.graphqlProtection ?? 0,
+      stdout: serializeGraphqlProtection(graphqlProtection),
+      stderr: "",
+    };
+  }
+  if (String(args[1]).endsWith("/branches/main")) {
+    return {
+      status: failures.branchSummary ?? 0,
+      stdout: typeof branchSummary === "string" ? branchSummary : JSON.stringify(branchSummary),
+      stderr: "",
+    };
+  }
+  return null;
 }
 
 /** Install deterministic command responses for one hosted-analysis gate run. */
@@ -138,6 +197,7 @@ function mockCommands({
       },
     ],
   },
+  branchSummary = EFFECTIVE_BRANCH_SUMMARY,
   failures = {},
 }: {
   repository?: string;
@@ -146,7 +206,8 @@ function mockCommands({
   checks?: unknown;
   protection?: unknown;
   graphqlProtection?: unknown;
-  failures?: Partial<Record<"repo" | "sha" | "statuses" | "checks" | "protection" | "graphqlProtection", number>>;
+  branchSummary?: unknown;
+  failures?: MockCommandFailure;
 } = {}) {
   const spawnSync = vi.fn((_command: string, args: string[]) => {
     if (args[0] === "repo") {
@@ -162,19 +223,15 @@ function mockCommands({
         stderr: "",
       };
     }
-    if (String(args[1]).endsWith("/protection")) {
-      return {
-        status: failures.protection ?? 0,
-        stdout: typeof protection === "string" ? protection : JSON.stringify(protection),
-        stderr: "",
-      };
-    }
-    if (args[1] === "graphql") {
-      return {
-        status: failures.graphqlProtection ?? 0,
-        stdout: serializeGraphqlProtection(graphqlProtection),
-        stderr: "",
-      };
+    const policyResponse = policyCommandResponse(
+      args,
+      protection,
+      graphqlProtection,
+      branchSummary,
+      failures,
+    );
+    if (policyResponse !== null) {
+      return policyResponse;
     }
     return {
       status: failures.checks ?? 0,
@@ -224,7 +281,15 @@ describe("scripts/release/hosted-analysis-gate", () => {
         source: "rest",
         branch: "main",
         strict: true,
+        strict_verified: true,
+        verification_scope: "strict_admin_policy",
         required_analyzers: ["CodeFactor", "DeepScan"],
+        candidate_tree: {
+          sha: SHA,
+          analyzed_sha: SHA,
+          analysis_source: "exact_commit",
+          exact_or_identical: true,
+        },
       },
     });
     expect(process.exitCode).toBe(0);
@@ -294,6 +359,32 @@ describe("scripts/release/hosted-analysis-gate", () => {
     });
     const payload = await runJson([], "hostedAnalysisGraphqlProtectionPagination");
     expect(payload).toMatchObject({ ok: true, branch_protection: { source: "graphql" } });
+    expect(process.exitCode).toBe(0);
+  });
+
+  it("recovers unavailable admin policy APIs through the contents-readable branch summary", async () => {
+    const spawnSync = mockCommands({ failures: { protection: 1, graphqlProtection: 1 } });
+    const payload = await runJson([], "hostedAnalysisBranchSummaryFallback");
+    expect(payload).toMatchObject({
+      ok: true,
+      branch_protection: {
+        source: "branch_summary",
+        branch: "main",
+        strict: null,
+        strict_verified: false,
+        verification_scope: "effective_required_checks",
+        required_analyzers: ["CodeFactor", "DeepScan"],
+        candidate_tree: {
+          sha: SHA,
+          analyzed_sha: SHA,
+          analysis_source: "exact_commit",
+          exact_or_identical: true,
+        },
+      },
+    });
+    expect(
+      spawnSync.mock.calls.some(([, args]) => String(args[1]).endsWith("/branches/main")),
+    ).toBe(true);
     expect(process.exitCode).toBe(0);
   });
 
@@ -807,8 +898,8 @@ describe("scripts/release/hosted-analysis-gate", () => {
     { label: "checks", failures: { checks: 1 }, expected: "read check runs" },
     {
       label: "protection",
-      failures: { protection: 1, graphqlProtection: 1 },
-      expected: "either GitHub REST or GraphQL",
+      failures: { protection: 1, graphqlProtection: 1, branchSummary: 1 },
+      expected: "contents-readable branch summary",
     },
   ])("fails when the $label command fails", async ({ label, failures, expected }) => {
     mockCommands({ failures });
@@ -843,6 +934,90 @@ describe("scripts/release/hosted-analysis-gate", () => {
       ...(protection === undefined ? {} : { protection }),
     });
     const payload = await runJson([], `hostedAnalysisMalformed${label}`);
+    expect(payload.reason).toContain(expected);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it.each([
+    {
+      label: "invalid JSON",
+      branchSummary: "{",
+      expected: "main branch summary API returned invalid JSON",
+    },
+    {
+      label: "array payload",
+      branchSummary: [],
+      expected: "main branch summary API returned a non-object",
+    },
+    {
+      label: "unprotected branch",
+      branchSummary: { ...EFFECTIVE_BRANCH_SUMMARY, protected: false },
+      expected: "does not report enabled protection",
+    },
+    {
+      label: "disabled protection",
+      branchSummary: {
+        ...EFFECTIVE_BRANCH_SUMMARY,
+        protection: { ...EFFECTIVE_BRANCH_SUMMARY.protection, enabled: false },
+      },
+      expected: "does not report enabled protection",
+    },
+    {
+      label: "missing branch SHA",
+      branchSummary: { ...EFFECTIVE_BRANCH_SUMMARY, commit: {} },
+      expected: "does not match the release candidate SHA",
+    },
+    {
+      label: "different branch SHA",
+      branchSummary: {
+        ...EFFECTIVE_BRANCH_SUMMARY,
+        commit: { sha: PARENT_SHA },
+      },
+      expected: "does not match the release candidate SHA",
+    },
+    {
+      label: "missing required checks",
+      branchSummary: {
+        ...EFFECTIVE_BRANCH_SUMMARY,
+        protection: { enabled: true },
+      },
+      expected: "has no required status checks",
+    },
+    {
+      label: "unenforced required checks",
+      branchSummary: {
+        ...EFFECTIVE_BRANCH_SUMMARY,
+        protection: {
+          ...EFFECTIVE_BRANCH_SUMMARY.protection,
+          required_status_checks: {
+            ...EFFECTIVE_BRANCH_SUMMARY.protection.required_status_checks,
+            enforcement_level: "off",
+          },
+        },
+      },
+      expected: "does not report enforced required status checks",
+    },
+    {
+      label: "missing analyzer context",
+      branchSummary: {
+        ...EFFECTIVE_BRANCH_SUMMARY,
+        protection: {
+          ...EFFECTIVE_BRANCH_SUMMARY.protection,
+          required_status_checks: {
+            contexts: ["DeepScan"],
+            checks: [],
+            enforcement_level: "everyone",
+          },
+        },
+      },
+      expected: "CodeFactor",
+    },
+  ])("fails closed for branch summary with $label", async ({ label, branchSummary, expected }) => {
+    mockCommands({
+      branchSummary,
+      failures: { protection: 1, graphqlProtection: 1 },
+    });
+    const payload = await runJson([], `hostedAnalysisBranchSummary-${label}`);
     expect(payload.reason).toContain(expected);
     expect(process.exitCode).toBe(1);
   });
