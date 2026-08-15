@@ -197,20 +197,10 @@ function readCommitTree(repository, sha) {
   return typeof treeSha === "string" && SHA_PATTERN.test(treeSha) ? treeSha.toLowerCase() : null;
 }
 
-/** Resolve the unique reviewed PR head that GitHub merged as this commit. */
-function readReviewedPullRequestHead(repository, sha) {
-  const result = runCaptured(GH, ["api", `repos/${repository}/commits/${sha}/pulls?per_page=100`]);
-  if (result.status !== 0) {
-    return null;
-  }
-  let pullRequests;
-  try {
-    pullRequests = JSON.parse(result.stdout);
-  } catch {
-    return null;
-  }
+/** Select the unique reviewed PR head whose immutable merge metadata matches. */
+function selectReviewedPullRequestHead(pullRequests, sha) {
   if (!Array.isArray(pullRequests)) {
-    return null;
+    return { state: "invalid", head: null };
   }
   const candidates = pullRequests.filter(
     (pullRequest) =>
@@ -221,7 +211,43 @@ function readReviewedPullRequestHead(repository, sha) {
       typeof pullRequest.head?.sha === "string" &&
       SHA_PATTERN.test(pullRequest.head.sha),
   );
-  return candidates.length === 1 ? candidates[0].head.sha.toLowerCase() : null;
+  if (candidates.length === 0) {
+    return { state: "missing", head: null };
+  }
+  if (candidates.length > 1) {
+    return { state: "ambiguous", head: null };
+  }
+  return { state: "found", head: candidates[0].head.sha.toLowerCase() };
+}
+
+/** Resolve the unique reviewed PR head that GitHub merged as this commit. */
+function readReviewedPullRequestHead(repository, sha) {
+  const associationResult = runCaptured(GH, ["api", `repos/${repository}/commits/${sha}/pulls?per_page=100`]);
+  let association = { state: "invalid", head: null };
+  if (associationResult.status === 0) {
+    try {
+      association = selectReviewedPullRequestHead(JSON.parse(associationResult.stdout), sha);
+    } catch {
+      association = { state: "invalid", head: null };
+    }
+  }
+  if (association.state === "found" || association.state === "ambiguous") {
+    return association.head;
+  }
+
+  const messageResult = runCaptured(GIT, ["show", "--no-patch", "--format=%B", sha]);
+  const pullRequestNumber = messageResult.stdout.match(/^Merge pull request #([1-9]\d*) from [^\n]+$/m)?.[1];
+  if (messageResult.status !== 0 || pullRequestNumber === undefined) {
+    return null;
+  }
+  const pullRequestResult = runCaptured(GH, ["api", `repos/${repository}/pulls/${pullRequestNumber}`]);
+  if (pullRequestResult.status !== 0) {
+    return null;
+  }
+  const pullRequest = parseObject(pullRequestResult.stdout, "GitHub pull-request API");
+  return pullRequest.ok
+    ? selectReviewedPullRequestHead([pullRequest.value], sha).head
+    : null;
 }
 
 /** Resolve analyzer evidence from an immutable commit with identical-tree provenance. */

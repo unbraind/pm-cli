@@ -236,10 +236,11 @@ push to `main` is releasable only if both analyzers attached successful evidence
 to that exact commit; when they did not, the gate explicitly refuses the
 candidate instead of letting the next scheduled release discover the missing
 precondition after expensive work. CI runs `Release analyzer readiness (main)`
-after build foundation on every product-relevant push to `main`, giving GitHub
-time to publish the immutable merge-to-PR association while still providing
-continuous visibility between release attempts. The readiness job uses
-`always()` so a build failure does not hide analyzer readiness. Remediate a
+on every product-relevant push to `main`, providing continuous visibility
+between release attempts. If GitHub's commit-association endpoint has not yet
+published a new merge, the gate reads the pull-request number from GitHub's
+standard merge message and accepts it only after the immutable PR resource
+confirms that exact merge SHA, `main` base, and reviewed head. Remediate a
 refused direct-main candidate by landing the next tree-changing fix through a
 reviewed PR; never copy, synthesize, or bypass analyzer evidence.
 

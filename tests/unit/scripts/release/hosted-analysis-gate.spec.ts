@@ -269,6 +269,54 @@ describe("scripts/release/hosted-analysis-gate", () => {
     expect(process.exitCode).toBe(0);
   });
 
+  it("validates the merge-message PR when GitHub has not published commit association", async () => {
+    const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
+    const spawnSync = vi.fn((_command: string, args: string[]) => {
+      const target = String(args[1] ?? "");
+      if (args[0] === "show") {
+        return {
+          status: 0,
+          stdout: "Merge pull request #1022 from unbraind/codex/release-readiness-propagation\n",
+          stderr: "",
+        };
+      }
+      if (args[0] === "rev-parse") {
+        if (target.endsWith("^2")) return { status: 0, stdout: `${PARENT_SHA}\n`, stderr: "" };
+        if (target.endsWith("^{tree}")) return { status: 0, stdout: `${treeSha}\n`, stderr: "" };
+        return { status: 0, stdout: `${SHA}\n`, stderr: "" };
+      }
+      if (target.endsWith("/protection")) {
+        return { status: 0, stdout: JSON.stringify(STRICT_PROTECTION), stderr: "" };
+      }
+      if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+        return { status: 0, stdout: "[]", stderr: "" };
+      }
+      if (target === "repos/unbraind/pm-cli/pulls/1022") {
+        const [pullRequest] = JSON.parse(reviewedPullRequestResponse().stdout) as unknown[];
+        return { status: 0, stdout: JSON.stringify(pullRequest), stderr: "" };
+      }
+      const parentResponse = successfulAnalyzerResponse(target, PARENT_SHA);
+      if (parentResponse !== null) return parentResponse;
+      if (target.endsWith("/status")) {
+        return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
+      }
+      if (target.includes("/check-runs")) {
+        return { status: 0, stdout: JSON.stringify({ check_runs: [] }), stderr: "" };
+      }
+      return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
+    });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+
+    const payload = await runJson([], "hostedAnalysisMergeMessageFallback");
+    expect(payload).toMatchObject({
+      ok: true,
+      sha: SHA,
+      analyzed_sha: PARENT_SHA,
+      analysis_source: "identical_tree_merge_parent",
+    });
+    expect(process.exitCode).toBe(0);
+  });
+
   it("rejects an identical-tree merge parent without a reviewed pull-request association", async () => {
     const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
     const spawnSync = vi.fn((_command: string, args: string[]) => {
@@ -379,6 +427,19 @@ describe("scripts/release/hosted-analysis-gate", () => {
         },
       ],
     },
+    { label: "unavailable merge message", pulls: [], mergeMessageStatus: 1 },
+    {
+      label: "unavailable merge pull-request resource",
+      pulls: [],
+      mergeMessage: "Merge pull request #1022 from unbraind/reviewed-head\n",
+      mergePullStatus: 1,
+    },
+    {
+      label: "malformed merge pull-request resource",
+      pulls: [],
+      mergeMessage: "Merge pull request #1022 from unbraind/reviewed-head\n",
+      mergePull: "{",
+    },
     { label: "unavailable squash commit", exactCommitStatus: 1 },
     { label: "malformed squash commit", exactCommit: "{" },
     { label: "missing squash commit tree", exactCommit: {} },
@@ -407,6 +468,10 @@ describe("scripts/release/hosted-analysis-gate", () => {
       headCommitStatus = 0,
       headTree = "c61cdc0c58252072456661a4c08f4b431625f276",
       headEvidenceStatus = 0,
+      mergeMessageStatus = 0,
+      mergeMessage = "",
+      mergePullStatus = 0,
+      mergePull = {},
     }) => {
       const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
       const pullsOutput = typeof pulls === "string" ? pulls : JSON.stringify(pulls);
@@ -416,6 +481,9 @@ describe("scripts/release/hosted-analysis-gate", () => {
           : JSON.stringify(exactCommit ?? { commit: { tree: { sha: treeSha } } });
       const spawnSync = vi.fn((_command: string, args: string[]) => {
         const target = String(args[1] ?? "");
+        if (args[0] === "show") {
+          return { status: mergeMessageStatus, stdout: mergeMessage, stderr: "" };
+        }
         if (args[0] === "rev-parse") {
           if (target.endsWith("^2")) return { status: 1, stdout: "", stderr: "not a merge commit" };
           return { status: 0, stdout: target.endsWith("^{tree}") ? `${treeSha}\n` : `${SHA}\n`, stderr: "" };
@@ -429,6 +497,13 @@ describe("scripts/release/hosted-analysis-gate", () => {
         }
         if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
           return { status: pullsStatus, stdout: pullsOutput, stderr: "" };
+        }
+        if (target === "repos/unbraind/pm-cli/pulls/1022") {
+          return {
+            status: mergePullStatus,
+            stdout: typeof mergePull === "string" ? mergePull : JSON.stringify(mergePull),
+            stderr: "",
+          };
         }
         if (target === `repos/unbraind/pm-cli/commits/${SHA}`) {
           return { status: exactCommitStatus, stdout: exactCommitOutput, stderr: "" };
