@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-1019/GH-1020/GH-1021: Node 24 nightly platform regressions after PR \#1016 ([pm-zno2iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zno2iu.toon))
 - GH-814/GH-821/GH-1034: SDK metadata reads must distinguish missing, invalid, and unreadable tracker roots from empty ([pm-23xkss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-23xkss.toon))
 - GH-1028: history-author-acknowledge bulk mutation lacks dry-run and misreports empty selection ([pm-mcxk8v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mcxk8v.toon))
 - GH-1030: contracts --json --full is wholly omitted by the default output budget ([pm-2qvq7a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qvq7a.toon))
