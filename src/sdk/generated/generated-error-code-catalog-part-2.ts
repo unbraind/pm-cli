@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "merge_decisions_unreviewed",
-    meaning: "Merge decisions unreviewed condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/diagnostics/remediation.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_decisions_unreviewed",
-    aliases: [],
-  },
-  {
     code: "merge_git_config_unwritable",
     meaning: "Merge git config unwritable condition.",
     stability: "stable",
@@ -382,6 +369,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/environment/project-runtime-compatibility.ts"],
     emitting_commands: ["*"],
     canonical_code: "project_runtime_stale_read",
+    aliases: [],
+  },
+  {
+    code: "provenance_value_domain_invalid",
+    meaning: "Provenance value domain invalid condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "provenance_value_domain_invalid",
     aliases: [],
   },
   {

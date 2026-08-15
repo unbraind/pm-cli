@@ -1,6 +1,6 @@
 # SDK Context Integrity
 
-Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), and [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon).
+Tracker: [pm-0k19l7](../.agents/pm/issues/pm-0k19l7.toon), [pm-9stazf](../.agents/pm/issues/pm-9stazf.toon), [pm-tu71](../.agents/pm/issues/pm-tu71.toon), [pm-0xmajx](../.agents/pm/issues/pm-0xmajx.toon), [pm-7rrqsk](../.agents/pm/issues/pm-7rrqsk.toon), [pm-ety1qc](../.agents/pm/issues/pm-ety1qc.toon), [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), [pm-5y05kq](../.agents/pm/issues/pm-5y05kq.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-h97qxd](../.agents/pm/issues/pm-h97qxd.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-in23qu](../.agents/pm/issues/pm-in23qu.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-okgxwa](../.agents/pm/issues/pm-okgxwa.toon), [pm-22rzjp](../.agents/pm/issues/pm-22rzjp.toon), [pm-76fkpp](../.agents/pm/issues/pm-76fkpp.toon), [pm-igdvfq](../.agents/pm/issues/pm-igdvfq.toon), [pm-643e0k](../.agents/pm/issues/pm-643e0k.toon), and [pm-larv4r](../.agents/pm/issues/pm-larv4r.toon).
 
 ## Agent Quick Context
 
@@ -169,6 +169,25 @@ reports an advisory warning only when a resolver was actually attempted but
 never succeeded. The same bounded pass classifies bare boolean and single-digit
 values across every recorded provenance dimension, publishes only aggregate
 harness/dimension/kind counts, and never echoes the historical value.
+
+`historyRepair` and `historyRepairAll` retain the detected history hash epoch
+instead of unconditionally upgrading it. `normalizeProvenance: true` adds a
+privacy-safe repair mode that removes invalid bounded observations and records
+only aggregate counts/classes in the synthetic audit event. The bulk form
+selects both drifted streams and streams requiring provenance normalization.
+
+Health results are self-indexing: every retained warning has a `findings` row
+with its owning check, stable code, severity, and either executable remediation
+or an explicit safe refusal. `failed_because` contains the exact warning tokens
+that decide `ok: false` and survives brief/summary projection. Extension health
+adds a host-version census by resolving the pm-cli package visible from each
+loaded extension; npm/pnpm duplicate-version skew is gate-failing while matching
+workspace-linked and deduplicated copies remain green.
+
+Linked file/doc add parsing uses one SDK allowlist. Bare compatibility is
+available only when a value contains no `=`; assignment-shaped values,
+including malformed URL-plus-note input, must use the declared `path`, `scope`,
+and `note` keys or fail before mutation.
 
 ## Replication and refusal gate
 

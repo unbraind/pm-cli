@@ -5,6 +5,7 @@
  */
 export * from "./governance/gc.js";
 export * from "./governance/health.js";
+export * from "./governance/extension-host-version.js";
 export * from "./governance/assurance.js";
 export * from "./governance/assurance-action.js";
 export * from "./governance/assurance-mutation-error.js";

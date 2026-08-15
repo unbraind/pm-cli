@@ -3447,6 +3447,9 @@
           "flag": "--dry-run"
         },
         {
+          "flag": "--normalize-provenance"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -17580,6 +17583,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/environment/project-runtime-compatibility.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "provenance_value_domain_invalid",
+      "class": "usage",
+      "code": "provenance_value_domain_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Provenance value domain invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
       ],
       "stability": "provisional"
     },
@@ -44121,6 +44141,10 @@
           },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "normalizeProvenance": {
+            "description": "For history-repair: remove invalid legacy provenance observations and emit only aggregate privacy-safe repair evidence.",
             "type": "boolean"
           },
           "path": {

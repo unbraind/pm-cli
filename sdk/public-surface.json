@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1605,
+    "covered_symbols": 1613,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1606
+    "required_symbols": 1614
   },
   "breaking_acknowledgements": [
     {
@@ -596,6 +596,20 @@
       ],
       "package_version": "2026.8.14",
       "reason": "AssuranceSourceResolutionContext names the existing structurally identical constructor object contract without changing runtime behavior, parameter order, or assignability"
+    },
+    {
+      "changes": [
+        "signature ./sdk:_testOnlyHealthCommand",
+        "signature ./sdk:HealthResult",
+        "signature ./sdk:HistoryRepairAllResult",
+        "signature ./sdk:HistoryRepairCommandOptions",
+        "signature ./sdk:HistoryRepairResult",
+        "signature ./sdk/governance:_testOnlyHealthCommand",
+        "signature ./sdk/governance:HealthResult",
+        "signature ./sdk/runtime:HealthResult"
+      ],
+      "package_version": "2026.8.14",
+      "reason": "Add self-indexing health verdicts and version-stable history repair receipts"
     }
   ],
   "entrypoints": {
@@ -630,7 +644,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "_testOnlyHealthCommand",
-          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
+          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildHealthFindings: typeof buildHealthFindings; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
         },
         {
           "classification": "advanced_export",
@@ -4905,6 +4919,18 @@
           "signature": "export interface ExtensionHookRegistry { beforeCommand: Array<RegisteredExtensionHook<BeforeCommandHook>>; beforeMutation: Array<RegisteredExtensionHook<BeforeMutationHook>>; afterCommand: Array<RegisteredExtensionHook<AfterCommandHook>>; onWrite: Array<RegisteredExtensionHook<OnWriteHook>>; onRead: Array<RegisteredExtensionHook<OnReadHook>>; onIndex: Array<RegisteredExtensionHook<OnIndexHook>>; }"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExtensionHostVersionCensus",
+          "signature": "export interface ExtensionHostVersionCensus { host_version: string | null; copies: ExtensionHostVersionCopy[]; mismatches: ExtensionHostVersionCopy[]; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExtensionHostVersionCopy",
+          "signature": "export interface ExtensionHostVersionCopy { version: string; path: string; layout: \"host\" | \"npm\" | \"pnpm\" | \"other\"; consumers: string[]; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ExtensionInstallSourceCandidate",
@@ -5999,8 +6025,14 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "HealthFinding",
+          "signature": "export interface HealthFinding { warning: string; code: string; check: HealthCheck[\"name\"]; severity: \"advisory\" | \"gate_failing\"; remediation?: string; disposition?: \"no_safe_automatic_remediation\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -6234,7 +6266,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairAllResult",
-          "signature": "export interface HistoryRepairAllResult { all: true; dry_run: boolean; scanned_streams: number; drifted_streams: number; streams: HistoryRepairAllStreamResult[]; totals: { repaired: number; skipped_clean: number; failed: number; }; warnings: string[]; generated_at: string; }"
+          "signature": "export interface HistoryRepairAllResult { all: true; dry_run: boolean; scanned_streams: number; drifted_streams: number; provenance_invalid_streams: number; streams: HistoryRepairAllStreamResult[]; totals: { repaired: number; skipped_clean: number; failed: number; }; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "advanced_export",
@@ -6246,7 +6278,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairCommandOptions",
-          "signature": "export interface HistoryRepairCommandOptions { dryRun?: boolean; author?: string; message?: string; force?: boolean; auditOperation?: string; auditContext?: Record<string, unknown>; auditContextById?: Record<string, Record<string, unknown>>; forceAuditEntry?: boolean; }"
+          "signature": "export interface HistoryRepairCommandOptions { dryRun?: boolean; author?: string; message?: string; force?: boolean; auditOperation?: string; auditContext?: Record<string, unknown>; auditContextById?: Record<string, Record<string, unknown>>; forceAuditEntry?: boolean; normalizeProvenance?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -6264,7 +6296,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairResult",
-          "signature": "export interface HistoryRepairResult { id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; reconciliation?: HistoryRepairReconciliationReport; warnings: string[]; generated_at: string; }"
+          "signature": "export interface HistoryRepairResult { id: string; dry_run: boolean; changed: boolean; history: { path: string; entries_scanned: number; chain_drift_before: boolean; entries_rehashed: number; entries_patch_repaired: number; converted_replace_to_add: number; skipped_ops: number; reconciled_with_item: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; item_hash_version_before: number | null; item_hash_version_after: number; version_disposition: \"preserved\" | \"selected_for_ambiguous_stream\"; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; provenance_normalization: ProvenanceNormalizationReceipt & { requested: boolean; }; reconciliation?: HistoryRepairReconciliationReport; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -7115,6 +7147,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "listInvalidProvenanceHistoryStreamIds",
+          "signature": "(pmRoot: string) => Promise<string[]> | calls: (pmRoot: string) => Promise<string[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "listMergeReceipts",
           "signature": "(cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; pmRoot?: string; }) => Promise<MergeDecisionReceipt[]> | calls: (cwd: string, options?: { includeReconciled?: boolean; includeLossless?: boolean; pmRoot?: string; }) => Promise<MergeDecisionReceipt[]>"
         },
@@ -7693,6 +7731,12 @@
           "kind": "function",
           "name": "normalizeExtensionContributionInventory",
           "signature": "(value: unknown) => ExtensionContributionInventory | null | undefined | calls: (value: unknown) => ExtensionContributionInventory | null | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "normalizeInvalidHistoryProvenance",
+          "signature": "(entries: HistoryEntry[]) => ProvenanceNormalizationResult | calls: (entries: HistoryEntry[]) => ProvenanceNormalizationResult"
         },
         {
           "classification": "advanced_export",
@@ -9937,6 +9981,18 @@
           "kind": "interface",
           "name": "ProvenanceCoverageAnalytics",
           "signature": "export interface ProvenanceCoverageAnalytics { descriptors: AgentProvenanceDescriptorCoverage[]; observations: AgentProvenanceDimensionCoverage[]; inert: Array<{ harness: string; dimension: string; explicit_samples: number; }>; undeclared: string[]; warnings: string[]; window: HistoryAnalyticsWindowReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ProvenanceNormalizationReceipt",
+          "signature": "export interface ProvenanceNormalizationReceipt { changed: boolean; events_changed: number; observations_removed: number; invalid_values: ProvenanceValueHealthFinding[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ProvenanceNormalizationResult",
+          "signature": "export interface ProvenanceNormalizationResult { entries: HistoryEntry[]; receipt: ProvenanceNormalizationReceipt; }"
         },
         {
           "classification": "supported",
@@ -12721,6 +12777,12 @@
           "kind": "function",
           "name": "saveGraphAuditBaseline",
           "signature": "(pmRoot: string, snapshot: RelationshipAuditSnapshot) => Promise<void> | calls: (pmRoot: string, snapshot: RelationshipAuditSnapshot) => Promise<void>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "scanExtensionHostVersions",
+          "signature": "(loadedExtensions: readonly LoadedExtension[], workspaceRoot: string, hostPackageRoot?: string) => Promise<ExtensionHostVersionCensus> | calls: (loadedExtensions: readonly LoadedExtension[], workspaceRoot: string, hostPackageRoot?: string) => Promise<ExtensionHostVersionCensus>"
         },
         {
           "classification": "supported",
@@ -19362,7 +19424,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "_testOnlyHealthCommand",
-          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
+          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildHealthFindings: typeof buildHealthFindings; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
         },
         {
           "classification": "supported",
@@ -19876,6 +19938,18 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "ExtensionHostVersionCensus",
+          "signature": "export interface ExtensionHostVersionCensus { host_version: string | null; copies: ExtensionHostVersionCopy[]; mismatches: ExtensionHostVersionCopy[]; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExtensionHostVersionCopy",
+          "signature": "export interface ExtensionHostVersionCopy { version: string; path: string; layout: \"host\" | \"npm\" | \"pnpm\" | \"other\"; consumers: string[]; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "findDuplicateClusters",
           "signature": "(options?: FindDuplicateClustersOptions) => Promise<DuplicateClustersResult> | calls: (options?: FindDuplicateClustersOptions) => Promise<DuplicateClustersResult>"
@@ -19949,8 +20023,14 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "HealthFinding",
+          "signature": "export interface HealthFinding { warning: string; code: string; check: HealthCheck[\"name\"]; severity: \"advisory\" | \"gate_failing\"; remediation?: string; disposition?: \"no_safe_automatic_remediation\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -20021,6 +20101,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "listInvalidProvenanceHistoryStreamIds",
+          "signature": "(pmRoot: string) => Promise<string[]> | calls: (pmRoot: string) => Promise<string[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "listMutationActions",
           "signature": "() => string[] | calls: () => string[]"
         },
@@ -20063,6 +20149,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "normalizeInvalidHistoryProvenance",
+          "signature": "(entries: HistoryEntry[]) => ProvenanceNormalizationResult | calls: (entries: HistoryEntry[]) => ProvenanceNormalizationResult"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "normalizeSimilarityText",
           "signature": "(value: string) => string | calls: (value: string) => string"
         },
@@ -20101,6 +20193,18 @@
           "kind": "function",
           "name": "promoteAssuranceAssertion",
           "signature": "(pmRoot: string, definition: AssuranceAssertionDefinition, enforcement: Exclude<AssuranceEnforcement, \"observe\">, options?: { author?: string; message?: string; }) => Promise<Awaited<ReturnType<typeof putAssuranceDeclaration>>> | calls: (pmRoot: string, definition: AssuranceAssertionDefinition, enforcement: Exclude<AssuranceEnforcement, \"observe\">, options?: { author?: string; message?: string; }) => Promise<Awaited<ReturnType<typeof putAssuranceDeclaration>>>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ProvenanceNormalizationReceipt",
+          "signature": "export interface ProvenanceNormalizationReceipt { changed: boolean; events_changed: number; observations_removed: number; invalid_values: ProvenanceValueHealthFinding[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ProvenanceNormalizationResult",
+          "signature": "export interface ProvenanceNormalizationResult { entries: HistoryEntry[]; receipt: ProvenanceNormalizationReceipt; }"
         },
         {
           "classification": "supported",
@@ -20215,6 +20319,12 @@
           "kind": "function",
           "name": "runValidate",
           "signature": "{ (options: ValidateCommandOptions & { counts: true; }, global: GlobalOptions, services?: ValidateMutationServices): Promise<ValidateCountsResult>; (options: ValidateCommandOptions & { counts?: false; }, global: GlobalOptions, services?: ValidateMutationServices): Promise<ValidateResult>; (options: ValidateCommandOptions, global: GlobalOptions, services?: ValidateMutationServices): Promise<ValidateResult | ValidateCountsResult>; } | calls: (options: ValidateCommandOptions & { counts: true; }, global: GlobalOptions, services?: ValidateMutationServices) => Promise<ValidateCountsResult> ; (options: ValidateCommandOptions & { counts?: false; }, global: GlobalOptions, services?: ValidateMutationServices) => Promise<ValidateResult> ; (options: ValidateCommandOptions, global: GlobalOptions, services?: ValidateMutationServices) => Promise<ValidateResult | ValidateCountsResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "scanExtensionHostVersions",
+          "signature": "(loadedExtensions: readonly LoadedExtension[], workspaceRoot: string, hostPackageRoot?: string) => Promise<ExtensionHostVersionCensus> | calls: (loadedExtensions: readonly LoadedExtension[], workspaceRoot: string, hostPackageRoot?: string) => Promise<ExtensionHostVersionCensus>"
         },
         {
           "classification": "supported",
@@ -24336,7 +24446,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -26892,6 +27002,7 @@
     "profile_title_empty",
     "project_runtime_stale_mutation",
     "project_runtime_stale_read",
+    "provenance_value_domain_invalid",
     "read_output_cursor_command_mismatch",
     "read_output_cursor_invalid",
     "read_output_cursor_stale",

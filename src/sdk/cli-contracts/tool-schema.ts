@@ -726,7 +726,13 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     "history-repair": {
       // Exactly one of `id` (single stream) or `all` (bulk drift repair) is required.
-      optional: ["id", "all", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+      optional: [
+        "id",
+        "all",
+        "dryRun",
+        "normalizeProvenance",
+        ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
+      ],
       oneOfRequired: [["id"], ["all"]],
     },
     "history-author-acknowledge": {

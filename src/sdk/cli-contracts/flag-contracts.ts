@@ -412,6 +412,7 @@ export const HISTORY_REPAIR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
   { flag: "--all" },
   { flag: "--dry-run" },
+  { flag: "--normalize-provenance" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },

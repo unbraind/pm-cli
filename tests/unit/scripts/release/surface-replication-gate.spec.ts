@@ -379,7 +379,7 @@ describe("surface replication gate", () => {
     );
   }, 60_000);
 
-  it("does not activate annotation replication for unrelated shared schema lines", async () => {
+  it("does not activate annotation replication for unrelated shared contract lines", async () => {
     const config = JSON.parse(
       await readFile(
         path.resolve("scripts/release/surface-replication-sets.json"),
@@ -390,9 +390,15 @@ describe("surface replication gate", () => {
 
     const unrelated = await validateSurfaceReplication(config, {
       repoRoot: path.resolve("."),
-      changedFiles: ["src/sdk/cli-contracts/tool-schema.ts"],
+      changedFiles: [
+        "src/sdk/cli-contracts/tool-schema.ts",
+        "src/sdk/cli-contracts/flag-contracts.ts",
+      ],
       changedLines: {
         "src/sdk/cli-contracts/tool-schema.ts": ['  "outputCursor",'],
+        "src/sdk/cli-contracts/flag-contracts.ts": [
+          '  { flag: "--normalize-provenance" },',
+        ],
       },
       today: "2026-08-14",
     });
@@ -404,15 +410,22 @@ describe("surface replication gate", () => {
 
     const relevant = await validateSurfaceReplication(config, {
       repoRoot: path.resolve("."),
-      changedFiles: ["src/sdk/cli-contracts/tool-schema.ts"],
+      changedFiles: [
+        "src/sdk/cli-contracts/tool-schema.ts",
+        "src/sdk/cli-contracts/flag-contracts.ts",
+      ],
       changedLines: {
         "src/sdk/cli-contracts/tool-schema.ts": ['  "full",'],
+        "src/sdk/cli-contracts/flag-contracts.ts": [
+          '  { flag: "--full-history" },',
+        ],
       },
       today: "2026-08-14",
     });
     expect(relevant.violations).toContain(
       "set:annotation-mutation-receipts:member:src/sdk/annotations.ts:unchanged",
     );
+
   }, 60_000);
 
   it("reports recurrence density, cap overlap, and CLI refusal totals", async () => {

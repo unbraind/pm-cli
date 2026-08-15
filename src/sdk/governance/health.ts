@@ -71,9 +71,14 @@ import {
   ITEM_FILE_EXTENSIONS,
   resolveGlobalPmRoot,
   resolvePmRoot,
+  resolveWorkspaceRoot,
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
-import { buildRemediationMap } from "../../core/diagnostics/remediation.js";
+import {
+  buildRemediationMap,
+  resolveRemediation,
+} from "../../core/diagnostics/remediation.js";
+import { scanExtensionHostVersions } from "./extension-host-version.js";
 import {
   scanHistoryAuthorAttribution,
   type HistoryAuthorAttributionScan,
@@ -135,6 +140,22 @@ export interface HealthCheck {
   details: Record<string, unknown>;
 }
 
+/** One warning indexed to the check, severity, and safe next action that decide health. */
+export interface HealthFinding {
+  /** Original stable warning token. */
+  warning: string;
+  /** Stable colon-delimited warning code. */
+  code: string;
+  /** Health check that owns the finding. */
+  check: HealthCheck["name"];
+  /** Whether the finding blocks the top-level health verdict. */
+  severity: "advisory" | "gate_failing";
+  /** Executable remediation when one is safe and fully specified. */
+  remediation?: string;
+  /** Explicit refusal when automatic remediation would require operator choices. */
+  disposition?: "no_safe_automatic_remediation";
+}
+
 /** Documents the health result payload exchanged by command, SDK, and package integrations. */
 export interface HealthResult {
   /** Whether the operation completed without a blocking failure. */
@@ -149,6 +170,10 @@ export interface HealthResult {
   warnings_truncated?: boolean;
   /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** Every retained warning indexed to its owning check and severity. */
+  findings: HealthFinding[];
+  /** Exact gate-failing warning tokens that make `ok` false. */
+  failed_because: string[];
   /** Value that configures or reports projection for this contract. */
   projection?: {
     mode: "brief" | "summary" | "full";
@@ -265,7 +290,7 @@ const TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS = [
   "x-pm-telemetry-max-version",
 ] as const;
 
-/** Advisory warnings are surfaced for visibility but never flip overall health to not-ok. Telemetry is opt-out, non-critical observability: a queued/unreachable telemetry endpoint or corrupt local telemetry state is not a project-health failure and must not block agents that gate on `pm health` `ok`. History over-compaction-threshold warnings are likewise advisory maintenance hints — a deep stream is healthy, just a candidate for `pm history-compact`. Invalid legacy provenance values remain immutable diagnostic evidence: write-time resolvers reject new invalid values, while health reports the bounded aggregate without requiring truthful history to be rewritten. */
+/** Advisory warnings are surfaced for visibility but never flip overall health to not-ok. Telemetry is opt-out, non-critical observability: a queued/unreachable telemetry endpoint or corrupt local telemetry state is not a project-health failure and must not block agents that gate on `pm health` `ok`. History over-compaction-threshold warnings are likewise advisory maintenance hints — a deep stream is healthy, just a candidate for `pm history-compact`. Invalid legacy provenance remains advisory until an operator explicitly applies the privacy-safe history normalizer. */
 function isAdvisoryHealthWarning(
   warning: string,
   requireMergeDrivers = false,
@@ -1044,6 +1069,10 @@ async function buildExtensionCheck(
   const loadedSummaries = loadResult.loaded.map((extension) =>
     summarizeLoadedExtension(extension),
   );
+  const hostVersionCensus = await scanExtensionHostVersions(
+    loadResult.loaded,
+    resolveWorkspaceRoot(pmRoot),
+  );
   const activationResult = await activateExtensions({
     ...loadResult,
     loaded: loadResult.loaded,
@@ -1149,6 +1178,7 @@ async function buildExtensionCheck(
     ...projectManagedState.warnings,
     ...globalManagedState.warnings,
     ...updateCoverageWarnings,
+    ...hostVersionCensus.warnings,
   ];
   const capabilityGuidance =
     collectUnknownCapabilityGuidance(extensionWarnings);
@@ -1186,6 +1216,7 @@ async function buildExtensionCheck(
           : {}),
         capability_contract: capabilityContract,
         capability_guidance: capabilityGuidance,
+        host_version_census: hostVersionCensus,
       } as Record<string, unknown>,
     },
     warnings: extensionWarnings,
@@ -1357,6 +1388,7 @@ const HEALTH_DETAIL_SUMMARIZERS = {
         details.capability_guidance,
         limit,
       ),
+      host_version_census: details.host_version_census,
     };
   },
   storage: (details, limit) => {
@@ -1502,6 +1534,10 @@ function applyBriefHealthProjection(result: HealthResult): HealthResult {
       details: summarizeHealthCheckDetails(check, BRIEF_HEALTH_DETAIL_LIMIT),
     })),
     warnings: warningsSummary.sample,
+    findings: result.findings.filter((finding) =>
+      warningsSummary.sample.includes(finding.warning),
+    ),
+    failed_because: result.failed_because,
     projection: {
       mode: "brief",
       warning_count: warningsSummary.count,
@@ -1536,6 +1572,10 @@ function applySummaryHealthProjection(result: HealthResult): HealthResult {
       })),
     warning_count: warningsSummary.count,
     warnings: warningsSummary.sample,
+    findings: result.findings.filter((finding) =>
+      warningsSummary.sample.includes(finding.warning),
+    ),
+    failed_because: result.failed_because,
     projection: {
       mode: "summary",
       warning_count: warningsSummary.count,
@@ -2799,8 +2839,10 @@ function buildHealthRemediationSources(params: {
   directoryState: HealthDirectoryState;
   normalizedSettingsReadWarnings: string[];
   settingWarnings: string[];
+  normalizedItemReadWarnings: string[];
   telemetryCheck: HealthCheckResult;
   extensionCheck: HealthCheckResult;
+  historyPolicyWarnings: string[];
   historySummary: HistoryStreamSummary;
   authorAttributionWarnings: string[];
   staleInProgressWarnings: string[];
@@ -2814,11 +2856,12 @@ function buildHealthRemediationSources(params: {
     settings: params.normalizedSettingsReadWarnings,
     directories: params.directoryState.missingDirs.map(
       (dir) => `missing_directory:${dir}`,
-    ),
+    ).concat(params.directoryState.hookWarnings),
     settings_values: params.settingWarnings,
     telemetry: params.telemetryCheck.warnings,
     extensions: params.extensionCheck.warnings,
     storage: [
+      ...params.historyPolicyWarnings,
       ...params.historySummary.over_threshold.map(
         (id) => `history_stream_over_compact_threshold:${id}`,
       ),
@@ -2827,10 +2870,62 @@ function buildHealthRemediationSources(params: {
       ...params.provenanceWarnings,
     ],
     locks: params.locksCheck.warnings,
-    integrity: params.integrityCheck.warnings,
+    integrity: [
+      ...params.normalizedItemReadWarnings,
+      ...params.integrityCheck.warnings,
+    ],
     history_drift: params.historyDriftCheck.warnings,
     vectorization: params.vectorizationCheck.warnings,
   };
+}
+
+/** Index every warning to exactly one health check, severity, and safe next action. */
+function buildHealthFindings(params: {
+  warnings: string[];
+  checks: HealthCheck[];
+  remediationSources: Record<HealthCheck["name"], string[]>;
+  requireMergeDrivers: boolean;
+}): HealthFinding[] {
+  const owners = new Map<string, HealthCheck["name"]>();
+  for (const [check, warnings] of Object.entries(
+    params.remediationSources,
+  ) as Array<[HealthCheck["name"], string[]]>) {
+    for (const warning of warnings) {
+      if (!owners.has(warning)) owners.set(warning, check);
+    }
+  }
+  const checksByName = new Map(
+    params.checks.map((check) => [check.name, check] as const),
+  );
+  const findings = params.warnings.map((warning): HealthFinding => {
+    const check = owners.get(warning) ?? "integrity";
+    const code = resolveRemediation(warning)?.code ?? warningCode(warning);
+    const details = checksByName.get(check)?.details;
+    const remediationMap =
+      typeof details?.remediation_map === "object" &&
+      details.remediation_map !== null
+        ? (details.remediation_map as Record<string, unknown>)
+        : {};
+    const remediation = remediationMap[code];
+    const severity = isAdvisoryHealthWarning(
+      warning,
+      params.requireMergeDrivers,
+    )
+      ? "advisory"
+      : "gate_failing";
+    return {
+      warning,
+      code,
+      check,
+      severity,
+      ...(typeof remediation === "string"
+        ? { remediation }
+        : severity === "gate_failing"
+          ? { disposition: "no_safe_automatic_remediation" as const }
+          : {}),
+    };
+  });
+  return findings;
 }
 
 function rewriteBulkHealthRemediation(params: {
@@ -2885,6 +2980,9 @@ function projectHealthResult(
     warning_limit: HEALTH_WARNING_LIMIT,
     warnings_truncated: warningCount > HEALTH_WARNING_LIMIT,
     warnings: result.warnings.slice(0, HEALTH_WARNING_LIMIT),
+    findings: (result.findings ?? []).filter((finding) =>
+      result.warnings.slice(0, HEALTH_WARNING_LIMIT).includes(finding.warning),
+    ),
   };
   const projected = summaryMode
     ? applySummaryHealthProjection(boundedResult)
@@ -3054,23 +3152,26 @@ export async function runHealth(
     historyDriftCheck,
     vectorizationCheck,
   });
+  const remediationSources = buildHealthRemediationSources({
+    directoryState,
+    normalizedSettingsReadWarnings,
+    settingWarnings,
+    normalizedItemReadWarnings,
+    telemetryCheck,
+    extensionCheck,
+    historyPolicyWarnings: historyPolicy.warnings,
+    historySummary,
+    authorAttributionWarnings,
+    staleInProgressWarnings: staleInProgress.warnings,
+    provenanceWarnings,
+    locksCheck,
+    integrityCheck,
+    historyDriftCheck,
+    vectorizationCheck,
+  });
   attachHealthRemediationMaps({
     checks,
-    remediationSources: buildHealthRemediationSources({
-      directoryState,
-      normalizedSettingsReadWarnings,
-      settingWarnings,
-      telemetryCheck,
-      extensionCheck,
-      historySummary,
-      authorAttributionWarnings,
-      staleInProgressWarnings: staleInProgress.warnings,
-      provenanceWarnings,
-      locksCheck,
-      integrityCheck,
-      historyDriftCheck,
-      vectorizationCheck,
-    }),
+    remediationSources,
     historyDriftedCount: extractHistoryDriftedCount(historyDriftCheck),
     overThresholdCount: historySummary.over_threshold.length,
   });
@@ -3082,10 +3183,18 @@ export async function runHealth(
     (warning) =>
       !isAdvisoryHealthWarning(warning, options.requireMergeDrivers === true),
   );
+  const findings = buildHealthFindings({
+    warnings: normalizedWarnings,
+    checks,
+    remediationSources,
+    requireMergeDrivers: options.requireMergeDrivers === true,
+  });
   const result: HealthResult = {
     ok: blockingWarnings.length === 0,
     checks,
     warnings: normalizedWarnings,
+    findings,
+    failed_because: blockingWarnings,
     generated_at: nowIso(),
   };
   return projectHealthResult(result, options, skipPolicy.summaryMode);
@@ -3094,6 +3203,7 @@ export async function runHealth(
 /** Public contract for test only health command, shared by SDK and presentation-layer consumers. */
 export const _testOnlyHealthCommand = {
   buildExtensionHealthTriageSummary,
+  buildHealthFindings,
   buildCapabilityContractMetadata,
   buildStaleInProgressHealthSummary,
   buildVectorizationProviderDetails,

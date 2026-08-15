@@ -178,9 +178,12 @@ export function looksLikeStructuredPathEntry(raw: string): boolean {
   if (/^(?:[-*+]\s+)?(?:path|scope|note)\s*[:=]/i.test(raw)) {
     return true;
   }
-  // A first-key typo (e.g. `lable=main,path=…`) must still be parsed so the
-  // unknown key is rejected rather than swallowed as a bare path (GH-258).
-  return looksLikeGenericKeyValueEntry(raw);
+  // Bare-path compatibility is deliberately limited to values with no `=`.
+  // Any assignment-like value must pass the structured-key allowlist so a
+  // typo or malformed URL cannot be persisted as an opaque path (GH-258,
+  // GH-1000). Keep the generic helper in this predicate as executable
+  // documentation for SDK callers that distinguish leading key/value input.
+  return raw.includes("=") || looksLikeGenericKeyValueEntry(raw);
 }
 
 function expandBareCommaSeparatedAddEntries(raw: string[]): string[] {

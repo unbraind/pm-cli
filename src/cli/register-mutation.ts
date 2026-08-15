@@ -2873,6 +2873,10 @@ export function registerMutationCommands(
       "--dry-run",
       "Preview the re-anchor impact without writing the history file",
     )
+    .option(
+      "--normalize-provenance",
+      "Remove invalid provenance; return aggregate-only evidence",
+    )
     .option("--author <value>", "Mutation author")
     .option(
       "--message <value>",
@@ -2899,6 +2903,7 @@ export function registerMutationCommands(
           message:
             typeof options.message === "string" ? options.message : undefined,
           force: Boolean(options.force),
+          normalizeProvenance: options.normalizeProvenance === true,
         };
         // history-repair only re-anchors the audit stream; item content is untouched,
         // so search caches do not need invalidation.

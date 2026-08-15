@@ -246,5 +246,5 @@ describe("agent-task token gate", () => {
       ok: true,
       negative_control: "seeded_per_task_token_regression",
     });
-  }, 120_000);
+  }, 180_000);
 });

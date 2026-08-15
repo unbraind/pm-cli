@@ -60,7 +60,7 @@ function handleNpmExec(args: string[], pm: (commandName: string, pmArgs: string[
 }
 
 function handleBareNpxPackage(args: string[], responses: ExecResponses): string | undefined {
-  if (!String(args[1] ?? "").startsWith("file:")) {
+  if (!args.some((arg) => arg.startsWith("file:"))) {
     return undefined;
   }
   if (responses.directResponse) {
@@ -135,7 +135,8 @@ function runExecFileSyncMock(
 function buildExecFileSync(responses: ExecResponses) {
   const state: ExecState = { npxVersionFailedOnce: false };
   const pm = responses.pmResponse ?? ((c: string) => defaultPm(c));
-  return vi.fn((command: string, args: string[]) => runExecFileSyncMock(command, args, responses, state, pm));
+  return vi.fn((command: string, args: string[], _options?: { timeout?: number }) =>
+    runExecFileSyncMock(command, args, responses, state, pm));
 }
 
 function mockFs() {
@@ -176,6 +177,25 @@ describe("smoke-npx-from-pack", () => {
     await harness.importModule(SCRIPT);
     expect(cleanupTempRoot).toHaveBeenCalledTimes(1);
     expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it("keeps local-tarball commands offline and bounds every subprocess", async () => {
+    vi.doMock("../../../scripts/smoke-cleanup.mjs", () => ({ cleanupTempRoot: vi.fn() }));
+    mockFs();
+    const execFileSync = buildExecFileSync({});
+    vi.doMock("node:child_process", () => ({ execFileSync }));
+
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    process.argv = ["node", SCRIPT_ABS];
+    await harness.importModule(SCRIPT);
+
+    for (const [command, args, options] of execFileSync.mock.calls) {
+      expect(options?.timeout).toBe(120_000);
+      const normalizedCommand = baseCommand(command);
+      if (normalizedCommand === "npx" || (normalizedCommand === "npm" && ["exec", "install"].includes(args[0] ?? ""))) {
+        expect(args).toContain("--offline");
+      }
+    }
   });
 
   it("throws when npm pack produces no tarball name", async () => {
@@ -299,7 +319,7 @@ describe("smoke-npx-from-pack", () => {
     mockFs();
     const execFileSync = vi.fn((command: string, args: string[]) => {
       if (command === "npm.cmd" && args[0] === "pack") return "pm-cli-2026.6.14.tgz\n";
-      if (command === "npx.cmd" && String(args[1] ?? "").startsWith("file:")) {
+      if (command === "npx.cmd" && args.some((arg) => arg.startsWith("file:"))) {
         if (args.includes("--version")) return "2026.6.14\n";
         if (args.includes("--help")) return "Usage: pm\n";
       }

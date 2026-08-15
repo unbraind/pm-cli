@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { cleanupTempRoot } from "./smoke-cleanup.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const COMMAND_TIMEOUT_MS = 120_000;
 
 function resolveCommand(base) {
   return process.platform === "win32" ? `${base}.cmd` : base;
@@ -26,12 +27,13 @@ function runSmokeCommand(command, args, options = {}) {
   return execFileSync(command, args, {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
+    timeout: COMMAND_TIMEOUT_MS,
     ...options,
   }).trim();
 }
 
 function packCurrentPackage(npm, tempRoot) {
-  const packOutput = execFileSync(npm, ["pack", "--silent", "--pack-destination", tempRoot], { encoding: "utf8" })
+  const packOutput = runSmokeCommand(npm, ["pack", "--silent", "--pack-destination", tempRoot])
     .trim()
     .split("\n")
     .filter((line) => line.trim().length > 0);
@@ -57,9 +59,13 @@ function assertEqualOutput(label, actual, expected, noun = "output") {
 function buildPackedPmRunner(npm, npx, tarballPath) {
   return (args, options = {}) => {
     try {
-      return runSmokeCommand(npx, ["--yes", "--package", tarballPath, "pm", ...args], options);
+      return runSmokeCommand(npx, ["--offline", "--yes", "--package", tarballPath, "pm", ...args], options);
     } catch (npxError) {
-      const output = runSmokeCommand(npm, ["exec", "--yes", "--package", tarballPath, "--", "pm", ...args], options);
+      const output = runSmokeCommand(
+        npm,
+        ["exec", "--offline", "--yes", "--package", tarballPath, "--", "pm", ...args],
+        options,
+      );
       if (output.length === 0) {
         throw new Error(`npx fallback produced empty output.\n${readCommandError(npxError)}`);
       }
@@ -69,15 +75,28 @@ function buildPackedPmRunner(npm, npx, tarballPath) {
 }
 
 function assertPackedBinarySmoke(npx, tarballPath, tarballSpec, version) {
-  assertEqualOutput("Bare npx package smoke", runSmokeCommand(npx, ["--yes", tarballSpec, "--version"]), version, "version output");
-  assertNonEmptyOutput("Bare npx package smoke", runSmokeCommand(npx, ["--yes", tarballSpec, "--help"]), "help");
   assertEqualOutput(
-    "pm-cli bin alias smoke",
-    runSmokeCommand(npx, ["--yes", "--package", tarballPath, "pm-cli", "--version"]),
+    "Bare npx package smoke",
+    runSmokeCommand(npx, ["--offline", "--yes", tarballSpec, "--version"]),
     version,
     "version output",
   );
-  assertNonEmptyOutput("pm-cli bin alias smoke", runSmokeCommand(npx, ["--yes", "--package", tarballPath, "pm-cli", "--help"]), "help");
+  assertNonEmptyOutput(
+    "Bare npx package smoke",
+    runSmokeCommand(npx, ["--offline", "--yes", tarballSpec, "--help"]),
+    "help",
+  );
+  assertEqualOutput(
+    "pm-cli bin alias smoke",
+    runSmokeCommand(npx, ["--offline", "--yes", "--package", tarballPath, "pm-cli", "--version"]),
+    version,
+    "version output",
+  );
+  assertNonEmptyOutput(
+    "pm-cli bin alias smoke",
+    runSmokeCommand(npx, ["--offline", "--yes", "--package", tarballPath, "pm-cli", "--help"]),
+    "help",
+  );
 }
 
 function createPackedSmokeProject(tempRoot) {
@@ -186,7 +205,7 @@ function assertPackedTypescriptConsumer(npm, tarballPath, tempRoot) {
       2,
     )}\n`,
   );
-  runSmokeCommand(npm, ["install", "--no-audit", "--no-fund", tarballPath], {
+  runSmokeCommand(npm, ["install", "--offline", "--no-audit", "--no-fund", tarballPath], {
     cwd: consumerRoot,
   });
   runSmokeCommand(
