@@ -2,11 +2,13 @@ id: pm-db8onn
 title: Auto Release blocker closure ignores successful recovery dispatch and reruns the stale tag-push workflow
 description: "After v2026.8.5 was successfully recovered by workflow_dispatch run 31001951195, closing GitHub blocker #898 started Auto Release run 31002881238. Its same-day recovery query filtered Release runs to event=push and selected failed historical tag-push run 30994468126, ignoring the newer successful workflow_dispatch run. It reran the stale tag workflow, failed static quality on historical checkout state, and reopened a resolved blocker."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[6]: "area:release",auto-release,exact-tag-recovery,github-actions,reliability,run-selection
 created_at: "2026-08-05T11:59:56.790Z"
-updated_at: "2026-08-05T12:05:56.620Z"
+updated_at: "2026-08-15T09:37:22.239Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#217bde283203d510dd91ecae"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: "Run selection considers both tag-push and guarded workflow_dispatch Release runs for the exact tag; a newer successful immutable recovery wins over an older failed push run; reruns execute the reviewed current workflow with exact-tag source selection rather than historical workflow code; executable contracts cover successful dispatch plus failed historical push, current-day retry markers, and issue close/reopen behavior; GitHub #898 closes after production proof without creating or moving another same-day tag"
@@ -29,11 +31,25 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-ei6x66,related,"2026-08-05T11:59:56.790Z","harness:codex","cli:create:dep",detected
   pm-lwnifd,discovered_from,"2026-08-05T11:59:56.790Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-08-05T11:59:56.790Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-05T11:59:56.790Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for retry_already_attempted, tag-push Release selection, workflow_dispatch recovery, and blocker closure. Closed pm-lwnifd owns successful exact-tag publication; open pm-e70zh5 owns aggregate release reliability; open pm-ei6x66 owns cross-environment gate governance. None owns the issue-closure query selecting a stale failed push run over a newer successful dispatch recovery. Direct evidence: runs 31001951195, 31002881238, 30994468126 and GitHub #898."
   "2026-08-05T12:05:56.600Z","harness:codex","CI evidence: PR #906 exact-head static gate failed only tracker-measurement validation because this newly filed open item omitted estimated_minutes. Declared a 360-minute ceiling for the workflow, executable contracts, operator docs, and production verification scope; item remains open and unclaimed for a future implementation tranche."
-files[1]{path,scope,note}:
+  "2026-08-15T09:02:29.565Z","harness:codex","Production reproduction 2026-08-15: after successful guarded Auto Release run 31873678893 published immutable v2026.8.15, closing blocker GH-1017 triggered issues-event retry run 31874957449 on release commit fbb7bd44d. The workflow ran hosted-analysis before its existing-release/retry classification, refused the direct-main generated release commit, skipped the pipeline's success/skip recording steps, and reopened the resolved blocker as an unrecorded failure. This is the same canonical stale post-recovery rerun family already owned here; no new PM item was created."
+  "2026-08-15T09:14:02.160Z","harness:codex","TDD evidence: the new selector suite failed first because release-run-selection.mjs did not exist, then passed 41 focused unit/integration contracts after implementation. Live read-only controls selected successful tag-push run 31874087916 for v2026.8.15 and successful workflow_dispatch run 31001951195 over failed historical push run 30994468126 for v2026.8.5. No tag, release, package, issue, or workflow state was mutated by these controls."
+  "2026-08-15T09:32:15.300Z","harness:codex","Verification note: repository-static-quality passed all assurance, package-boundary, graph, SDK-surface, and entrypoint checks but the cold local transport-floor sample measured claim at 423ms against the 415ms ceiling. No ratchet was changed; rerunning the exact benchmark warm to distinguish host noise from a regression before repeating the full static gate."
+  "2026-08-15T09:37:22.239Z","harness:codex","Verification evidence: 42 focused unit/integration tests pass, including executable same-day marker recording and duplicate-refusal behavior. Full repository coverage passed exactly 100/100/100/100 (53,483 statements, 51,650 lines, 10,981 functions, 39,492 branches). Build, typecheck, docs/skills, repository static quality, package boundary, SDK surface/cost, graph composition, record integrity, YAML parsing, formatting, and credential scan all pass. The transport-floor gate had two transient 7-8ms host-load misses, then passed unchanged across all six operations; no assurance ratchet was weakened."
+files[6]{path,scope,note}:
   .github/workflows/auto-release.yml,project,issue-closure authoritative Release run selection
+  .github/workflows/release.yml,project,self-identifying exact-tag workflow dispatch runs
+  scripts/release/release-run-selection.mjs,project,authoritative immutable-tag run selector
+  tests/integration/ci-workflow-contract.spec.ts,project,workflow recovery contract
+  tests/integration/release-automation-contract.spec.ts,project,pre-build recovery ordering contract
+  tests/unit/scripts/release/release-run-selection.spec.ts,project,TDD coverage for push and dispatch selection
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,project,120
+  "pnpm test:coverage",project,900
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msu66dlq-h43z9y,test,failed,"2026-08-15T09:15:39.594Z","2026-08-15T09:24:36.060Z","2026-08-15T09:24:36.060Z",1,1,0
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,operator contract for successful dispatch recovery cleanup
 body: ""
