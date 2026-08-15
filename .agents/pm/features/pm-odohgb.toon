@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[6]: "area:sdk","area:storage",federation,long-horizon,multi-agent,scale
 created_at: "2026-07-25T12:30:34.401Z"
-updated_at: "2026-08-15T13:58:38.483Z"
+updated_at: "2026-08-15T14:18:00.369Z"
 author: "harness:claude-code"
 estimated_minutes: 1200
 acceptance_criteria: "A workspace declares peers by repository coordinate, and cross-workspace references are first-class identifiers distinguishable from local ones in every projection; Peer state is a locally cached, integrity-verified snapshot of the peer's public projection, and every read reports the snapshot's age; Aggregation across peers is a bounded read-side fold that honors the token budget and reports partial results with named missing peers rather than failing; Writes to a peer workspace are impossible through federation, asserted by a test that attempts every mutation path against a federated reference; A cross-workspace dependency cycle is detected and reported as a fact with the participating workspaces named, never as a crash or a silent drop; An unreachable peer degrades to last-known state with explicit staleness, and a workspace with no peers behaves exactly as it does today, proven by snapshot; Federated identifiers survive merge, history replay, and format migration with the same guarantees as local identifiers"
@@ -18,7 +18,7 @@ outcome: "An organization runs one tracker per repository and still gets program
 parent: pm-o2kc
 risk: high
 confidence: 50
-dependencies[17]:
+dependencies[16]:
   - id: pm-3oqjnc
     kind: related
     created_at: "2026-07-25T12:30:34.401Z"
@@ -73,12 +73,7 @@ dependencies[17]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-  - id: pm-o2kc
-    kind: blocked_by
-    created_at: "2026-08-15T13:58:36.980Z"
-    author: "harness:codex"
-    source_kind: "cli:update:dep"
-    author_source: detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-15T13:58:37.867Z","harness:codex","Federation design without a mandatory central server: use globally scoped workspace identities plus local item IDs, signed workspace manifests, explicit remote relationship types, versioned schema/capability negotiation, and trust policies that distinguish authoritative, cached, unavailable, stale, and unverified data. Resolve context through bounded parallel fan-out, per-remote budgets/deadlines, local cache and freshness receipts, top-k score calibration, deterministic partial-result merging, and continuation tokens that preserve each remote cursor. Support offline-first operation and partial replication by exchanging content-addressed event segments, Merkle summaries, causal watermarks/vector summaries, and compensating events; never rewrite a remote history or collapse an unresolved cross-workspace conflict. Security boundaries include allowlisted fields, credential isolation, provenance/attestation verification, hostile payload limits, recursion/cycle budgets, and tenant-safe redaction. Validate on one-item ephemeral projects, multi-decade archives, million-item shards, network partitions, schema skew, repository moves, remote deletion, resurrection, and thousand-agent fan-in. Publish completeness, staleness, trust, omission, latency, token, and unresolved-reference receipts so an agent can distinguish a complete answer from the best available partial answer."
+  "2026-08-15T14:17:59.424Z","harness:codex","CI feedback on 2026-08-15 proved the direct blocked_by pm-o2kc edge was transitively redundant: the same prerequisite is already expressed by pm-o2kc -> pm-dj98 -> pm-odohgb. The direct edge was removed so federation retains a deeper storage-to-concurrency-to-federation chain without exceeding the graph reduction ceiling."
 body: ""

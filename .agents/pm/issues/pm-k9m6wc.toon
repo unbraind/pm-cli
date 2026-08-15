@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[9]: attestation,bunx,github-actions,immutability,negative-control,npm,npx,release,supply-chain
 created_at: "2026-08-15T13:55:57.823Z"
-updated_at: "2026-08-15T14:07:05.702Z"
+updated_at: "2026-08-15T14:18:02.963Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Repository or organization policy enables GitHub release immutability for future releases; publication stages every required asset in a draft before publishing; the release gate verifies the published record is immutable and binds the tag, commit SHA, assets, checksums, and release attestation; a negative control proves the workflow refuses to advertise success when immutability is absent or unverifiable; tag movement, tag deletion, asset mutation, and same-name tag reuse protections are covered by executable evidence where the platform permits; one automatic release per UTC day remains enforced while explicitly manual same-day releases retain their separately governed path; npm latest, npx, bunx, and direct package installation resolve the same version and do not trigger additional publication; recovery behavior is documented for failures before publication because assets cannot be appended afterward; local and hosted gates consume the same SDK contract and emit compact machine-readable receipts; release-health monitoring alerts on policy drift without attempting destructive repair; public documentation explains the immutable-release trust boundary without credentials or host-specific operations."
@@ -27,15 +27,15 @@ actual_result: "v2026.8.15 is unique and published successfully, but GitHub repo
 component: release governance and supply-chain integrity
 regression: false
 customer_impact: Consumers currently depend on repository permissions and workflow discipline to prevent post-publication tag or asset mutation; the GitHub release record does not supply the strongest available tamper-evident guarantee.
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,verifies,"2026-08-15T13:55:57.823Z","harness:codex","cli:create:dep",detected
   pm-a8zm,discovered_from,"2026-08-15T13:55:57.823Z","harness:codex","cli:create:dep",detected
   pm-db8onn,discovered_from,"2026-08-15T13:55:57.823Z","harness:codex","cli:create:dep",detected
-  pm-gydv,related,"2026-08-15T13:55:57.823Z","harness:codex","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-15T13:55:57.823Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-15T13:55:57.823Z","harness:codex","Duplicate check: complete all-status search and targeted release, immutability, isImmutable, tag, asset, and attestation searches found release reliability, signing, provenance, and one-per-day owners but no item that owns GitHub's platform immutable-release setting or requires isImmutable=true. This issue is limited to that missing enforcement and verification contract; it does not duplicate signing, npm provenance, release recovery, or manual same-day policy work."
   "2026-08-15T14:07:05.203Z","harness:codex","Linked verification executed on 2026-08-15: npm registry version check passed; GitHub release query executed successfully and returned the current release state, which remains isImmutable:false by design of this open issue. The test proves the observation path is executable; the future gate must additionally assert true after policy enablement and carry a seeded false-state negative control."
+  "2026-08-15T14:18:02.336Z","harness:codex","CI feedback on 2026-08-15 proved the optional generic related edge to pm-gydv crossed the repository's related-edge ceiling. It was removed rather than weakening the ratchet. The issue retains parent ownership plus two discovered_from edges, an implements outcome, and a verifies release-health edge; signing remains a separately discoverable sibling concern without a fabricated ordering claim."
 notes[1]{created_at,author,text}:
   "2026-08-15T13:55:57.823Z","harness:codex","Primary evidence: gh release list reports the sole v2026.8.15 record with isImmutable:false. GitHub's official immutable-release documentation states that the repository setting applies to future releases, locks associated tags and assets, and creates a release attestation; therefore existing releases must not be rewritten or republished to simulate compliance."
 learnings[1]{created_at,author,text}:
