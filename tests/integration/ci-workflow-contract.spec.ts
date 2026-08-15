@@ -507,6 +507,7 @@ describe("GitHub workflow contract", () => {
       "v*.*.*",
       "workflow_dispatch:",
       "tag:",
+      "run-name: Release ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}",
       "permissions:",
       "contents: write",
       "concurrency:",
@@ -715,6 +716,13 @@ describe("GitHub workflow contract", () => {
       "RELEASE_PUSH_TOKEN: ${{ secrets.RELEASE_PAT || github.token }}",
       '-z "${RELEASE_PUSH_TOKEN//[[:space:]]/}"',
       "RELEASE_PAT is required before Auto Release can push",
+      "name: Detect immutable same-day retry target",
+      "id: retry_target",
+      'existing_tag="$(git tag --list "v${today_version}" | head -n 1)"',
+      'echo "existing_tag=${existing_tag}" >> "${GITHUB_OUTPUT}"',
+      'existing_sha="$(git rev-list -n 1 "${existing_tag}")"',
+      'echo "existing_sha=${existing_sha}" >> "${GITHUB_OUTPUT}"',
+      "if: steps.retry_target.outputs.existing_tag == ''",
       "ISSUE_CREATED_AT: ${{ github.event.issue.created_at || '' }}",
       "ISSUE_NUMBER: ${{ github.event.issue.number || '' }}",
       'current_day="$(date -u +%F)"',
@@ -732,12 +740,22 @@ describe("GitHub workflow contract", () => {
       "Auto Release retry attempt recorded for ${current_day} UTC.",
       "This marker prevents repeated production retries for the same blocker issue",
       "Could not record Auto Release retry marker on blocker issue #${ISSUE_NUMBER}; refusing untracked production retry.",
-      'existing_release_tag="$(git tag --list "v${today_version}" | head -n 1)"',
-      "Same-day tag ${existing_release_tag} already exists; retrying its exact Release workflow instead of creating another version.",
-      "No tag-push Release workflow run exists for ${existing_release_tag}; refusing to create a replacement version.",
-      'gh run rerun "${RELEASE_RUN_ID}" --failed',
-      "Existing Release workflow for ${existing_release_tag} is already successful.",
-      "published_tag=${existing_release_tag}",
+      "EXISTING_RELEASE_TAG: ${{ steps.retry_target.outputs.existing_tag }}",
+      "EXISTING_RELEASE_SHA: ${{ steps.retry_target.outputs.existing_sha }}",
+      "Same-day tag ${EXISTING_RELEASE_TAG} already exists; selecting authoritative exact-tag Release evidence before any preparation work.",
+      "scripts/release/release-run-selection.mjs",
+      '--default-branch "${DEFAULT_BRANCH}"',
+      "--dispatch-run-ids",
+      ".slice(0, 5)",
+      "run.createdAt.startsWith(currentDay)",
+      "break",
+      "gh run list --workflow Release --limit 100 --json databaseId,status,conclusion,headBranch,headSha,event,createdAt,displayTitle",
+      'gh run view "${run_id}" --log',
+      "Existing Release workflow ${RELEASE_RUN_ID} for ${EXISTING_RELEASE_TAG} already proved successful immutable publication.",
+      'gh workflow run release.yml --ref "${DEFAULT_BRANCH}" -f tag="${EXISTING_RELEASE_TAG}"',
+      "Dispatched the reviewed current Release workflow from ${DEFAULT_BRANCH} for immutable source ${EXISTING_RELEASE_TAG}.",
+      'gh run list --workflow Release --event workflow_dispatch --branch "${DEFAULT_BRANCH}"',
+      "published_tag=${EXISTING_RELEASE_TAG}",
       "node scripts/release/run-release-pipeline.mjs",
       "--telemetry-mode",
       "Waiting for tag-push Release workflow for ${NEW_TAG}.",
@@ -805,7 +823,10 @@ describe("GitHub workflow contract", () => {
       "gh issue create --title",
       "gh issue comment",
     ]);
-    expect(autoReleaseWorkflow).not.toContain("gh workflow run release.yml");
+    expect(autoReleaseWorkflow).not.toContain("gh run rerun");
+    expect(autoReleaseWorkflow).not.toContain(
+      'gh run list --workflow Release --event push --branch "${EXISTING_RELEASE_TAG}"',
+    );
     expect(autoReleaseWorkflow).not.toContain("allow_same_day_release");
     expect(autoReleaseWorkflow).not.toContain("--allow-same-day-release");
     expect(autoReleaseWorkflow).not.toContain(

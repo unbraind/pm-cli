@@ -25,7 +25,9 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon),
 classification [pm-dqtzva](../.agents/pm/issues/pm-dqtzva.toon).
 The local/hosted gate selection contract is tracked by
 [pm-ei6x66](../.agents/pm/tasks/pm-ei6x66.toon). Release-candidate analyzer
-provenance is tracked by [pm-u1baah](../.agents/pm/issues/pm-u1baah.toon).
+provenance is tracked by [pm-u1baah](../.agents/pm/issues/pm-u1baah.toon), and
+authoritative blocker-recovery run selection by
+[pm-db8onn](../.agents/pm/issues/pm-db8onn.toon).
 
 ## Version Policy
 
@@ -76,9 +78,10 @@ Policy:
   created, a non-`github-actions[bot]` closure of the exact bot-created
   `Auto Release blocked` issue on the same UTC day triggers one preparation
   retry
-- if today's tag already exists, blocker closure reruns and watches the exact
-  tag-driven Release workflow instead of invoking release preparation or
-  creating an ordinal replacement; an already-successful run is recorded as
+- if today's tag already exists, blocker closure bypasses release-preparation
+  provenance, dependency installation, and build work, then selects immutable
+  Release evidence across both tag-push and guarded workflow-dispatch runs; a
+  completed success is authoritative over stale failures and is recorded as
   recovered without republishing
 - release preparation must pass all quality and compatibility gates before commit+tag push
 - before dependency installation or build, auto-release verifies that the
@@ -92,9 +95,12 @@ Policy:
 - when scheduled failures continue across multiple UTC days, auto-release supersedes a stale open blocker with a fresh current-day blocker so same-day retry detection follows the latest scheduled failure
 - closing the exact bot-created `Auto Release blocked: scheduled run failed`
   issue as a maintainer or agent records a same-day retry marker, then either
-  retries preparation when no tag exists or reruns the exact existing tag's
-  Release workflow; it comments with the recovered tag on success and reopens
-  the same issue on failure. A second close on the same UTC day is refused
+  retries preparation when no tag exists or watches an active exact-tag Release
+  workflow. If only failed or missing evidence exists, it dispatches the
+  reviewed current `release.yml` from `main` with the immutable tag input; it
+  never reruns historical workflow code. It comments with the recovered tag on
+  success and reopens the same issue on failure. A second close on the same UTC
+  day is refused
   before release mutation and reported as `retry_already_attempted`, and
   workflow cleanup closures by `github-actions[bot]` are ignored.
 - after a scheduled run publishes a tag and the downstream release workflow succeeds, auto-release closes any open `Auto Release blocked` issue so the GitHub tracker reflects current release health

@@ -251,8 +251,20 @@ describe("release automation contract", () => {
       ),
     ) as { local_preflight: { steps: Array<{ id: string }> } };
 
-    expect(autoReleaseWorkflow.indexOf("Verify release analyzer provenance before build")).toBeLessThan(
-      autoReleaseWorkflow.indexOf("Setup pnpm"),
+    expect(
+      autoReleaseWorkflow.indexOf(
+        "Verify release analyzer provenance before build",
+      ),
+    ).toBeLessThan(autoReleaseWorkflow.indexOf("Setup pnpm"));
+    expect(
+      autoReleaseWorkflow.indexOf("Detect immutable same-day retry target"),
+    ).toBeLessThan(
+      autoReleaseWorkflow.indexOf(
+        "Verify release analyzer provenance before build",
+      ),
+    );
+    expect(autoReleaseWorkflow).toContain(
+      "if: steps.retry_target.outputs.existing_tag == ''",
     );
     expect(autoReleaseWorkflow).toContain(
       'hosted-analysis-gate.mjs --repo "${GITHUB_REPOSITORY}" --sha "${GITHUB_SHA}" --json',
@@ -293,6 +305,121 @@ describe("release automation contract", () => {
     expect(gateRegistry).toContain('"GH_TOKEN": "{{release_policy_token}}"');
     expect(gates).toContain("release_policy_token: releasePolicyToken");
     expect(gates).toContain(".filter(([, value]) => value.length > 0)");
+  });
+
+  it("executes guarded issue recovery before build and records one retry marker", async () => {
+    const workflow = await readFile(
+      path.join(repoRoot, ".github/workflows/auto-release.yml"),
+      "utf8",
+    );
+    const autoReleaseStep = workflow.match(
+      / {6}- name: Run auto release pipeline\n {8}id: auto_release[\s\S]*? {8}run: \|\n([\s\S]*?)(?=\n {6}- name:)/u,
+    )?.[1];
+    expect(autoReleaseStep).toBeDefined();
+    const autoReleaseScript = autoReleaseStep
+      ?.split("\n")
+      .map((line) => line.slice(10))
+      .join("\n");
+    expect(autoReleaseScript).toBeDefined();
+
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-auto-release-retry-"),
+    );
+    try {
+      const ghLog = path.join(tempRoot, "gh.log");
+      const githubOutput = path.join(tempRoot, "github.output");
+      await writeFile(
+        path.join(tempRoot, "gh"),
+        `#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\\n' "$*" >> "\${GH_FAKE_LOG}"
+case "$1 $2" in
+  "issue view") printf '%s' "\${ISSUE_COMMENTS}" ;;
+  "issue comment") ;;
+  "run list") printf '%s' "\${RELEASE_RUNS_JSON}" ;;
+  *) printf 'Unexpected gh invocation: %s\\n' "$*" >&2; exit 97 ;;
+esac
+`,
+        "utf8",
+      );
+      await chmod(path.join(tempRoot, "gh"), 0o755);
+
+      const currentDay = new Date().toISOString().slice(0, 10);
+      const releaseTag = `v${currentDay
+        .split("-")
+        .map((part) => String(Number(part)))
+        .join(".")}`;
+      const releaseSha = "f".repeat(40);
+      const releaseRuns = JSON.stringify([
+        {
+          databaseId: 31874087916,
+          status: "completed",
+          conclusion: "success",
+          event: "push",
+          headBranch: releaseTag,
+          headSha: releaseSha,
+          displayTitle: "release",
+          createdAt: `${currentDay}T08:16:49Z`,
+        },
+      ]);
+      const runScenario = (issueComments: string) =>
+        spawnSync(
+          "bash",
+          ["-c", prependFakeBinForBash(autoReleaseScript ?? "")],
+          {
+            cwd: repoRoot,
+            encoding: "utf8",
+            env: {
+              ...process.env,
+              FAKE_BIN: tempRoot,
+              GH_FAKE_LOG: ghLog,
+              GITHUB_EVENT_NAME: "issues",
+              ISSUE_CREATED_AT: `${currentDay}T08:00:00Z`,
+              ISSUE_NUMBER: "1017",
+              ISSUE_COMMENTS: issueComments,
+              EXISTING_RELEASE_TAG: releaseTag,
+              EXISTING_RELEASE_SHA: releaseSha,
+              RELEASE_RUNS_JSON: releaseRuns,
+              GITHUB_OUTPUT: githubOutput,
+              RUNNER_TEMP: tempRoot,
+              DEFAULT_BRANCH: "main",
+            },
+          },
+        );
+
+      await writeFile(ghLog, "", "utf8");
+      await writeFile(githubOutput, "", "utf8");
+      const recovered = runScenario("");
+      expect(recovered.status).toBe(0);
+      expect(recovered.stdout).toContain(
+        "already proved successful immutable publication",
+      );
+      expect(await readFile(githubOutput, "utf8")).toContain(
+        `published_tag=${releaseTag}`,
+      );
+      expect(await readFile(githubOutput, "utf8")).toContain(
+        `published_sha=${releaseSha}`,
+      );
+      expect(await readFile(ghLog, "utf8")).toContain(
+        `auto-release-retry-attempted:${currentDay}`,
+      );
+
+      await writeFile(ghLog, "", "utf8");
+      await writeFile(githubOutput, "", "utf8");
+      const duplicate = runScenario(
+        `<!-- auto-release-retry-attempted:${currentDay} -->`,
+      );
+      expect(duplicate.status).toBe(0);
+      expect(duplicate.stdout).toContain(
+        "already recorded a current-day retry attempt",
+      );
+      expect(await readFile(githubOutput, "utf8")).toBe(
+        "retry_skip_reason=retry_already_attempted\n",
+      );
+      expect(await readFile(ghLog, "utf8")).not.toContain("run list");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it("allows the external Sentry gate to be disabled in unauthenticated automation", () => {
