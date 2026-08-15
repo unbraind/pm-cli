@@ -18276,6 +18276,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "tracker_root_unreadable",
+      "class": "generic_failure",
+      "code": "tracker_root_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Tracker root unreadable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/item-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "type_duplicate",
       "class": "generic_failure",
       "code": "type_duplicate",

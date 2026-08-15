@@ -27144,6 +27144,7 @@
     "tracker_not_initialized",
     "tracker_root_missing",
     "tracker_root_not_directory",
+    "tracker_root_unreadable",
     "type_duplicate",
     "type_invalid",
     "unknown_command",
