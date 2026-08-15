@@ -61,11 +61,15 @@ function normalizedCandidate(value) {
 function validateOptions(options) {
   const tag = text(options?.tag);
   const tagSha = text(options?.tagSha).toLowerCase();
+  const defaultBranch = text(options?.defaultBranch);
   if (!/^v\d{4}\.\d{1,2}\.\d{1,2}$/u.test(tag)) {
     throw new Error("Expected an exact release tag with vYYYY.M.D shape.");
   }
   if (!/^[0-9a-f]{40}$/u.test(tagSha)) {
     throw new Error("Expected a 40-character tag commit SHA.");
+  }
+  if (defaultBranch === "") {
+    throw new Error("Expected a non-empty default branch.");
   }
   const createdAfterText = text(options?.createdAfter);
   const createdAfter =
@@ -76,6 +80,7 @@ function validateOptions(options) {
   return {
     tag,
     tagSha,
+    defaultBranch,
     createdAfter,
     dispatchRunIds:
       options?.dispatchRunIds instanceof Set
@@ -98,6 +103,9 @@ function isExactCandidate(candidate, options) {
     );
   }
   if (candidate.event !== "workflow_dispatch") {
+    return false;
+  }
+  if (candidate.head_branch !== options.defaultBranch) {
     return false;
   }
   return (
@@ -160,6 +168,7 @@ export function selectAuthoritativeReleaseRun(runs, options) {
     schema: RELEASE_RUN_SELECTION_SCHEMA,
     tag: validated.tag,
     tag_sha: validated.tagSha,
+    default_branch: validated.defaultBranch,
     matched_count: matched.length,
     reason,
     selected: publicCandidate(selected),
@@ -189,11 +198,15 @@ export function main(
 ) {
   const tag = flagValue(argv, "tag");
   const tagSha = flagValue(argv, "tag-sha");
+  const defaultBranch = flagValue(argv, "default-branch");
   if (tag === "") {
     throw new Error("Missing --tag <vYYYY.M.D>.");
   }
   if (tagSha === "") {
     throw new Error("Missing --tag-sha <commit-sha>.");
+  }
+  if (defaultBranch === "") {
+    throw new Error("Missing --default-branch <branch>.");
   }
   const runs = JSON.parse(input);
   if (!Array.isArray(runs)) {
@@ -202,6 +215,7 @@ export function main(
   const result = selectAuthoritativeReleaseRun(runs, {
     tag,
     tagSha,
+    defaultBranch,
     createdAfter: flagValue(argv, "created-after"),
     dispatchRunIds: dispatchIds(flagValue(argv, "dispatch-run-ids")),
   });

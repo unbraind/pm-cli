@@ -44,13 +44,14 @@ describe("selectAuthoritativeReleaseRun", () => {
           createdAt: "2026-08-05T11:33:42Z",
         }),
       ],
-      { tag, tagSha, dispatchRunIds: new Set([20]) },
+      { tag, tagSha, defaultBranch: "main", dispatchRunIds: new Set([20]) },
     );
 
     expect(selection).toEqual({
       schema: RELEASE_RUN_SELECTION_SCHEMA,
       tag,
       tag_sha: tagSha,
+      default_branch: "main",
       matched_count: 2,
       reason: "successful_run",
       selected: expect.objectContaining({
@@ -74,7 +75,7 @@ describe("selectAuthoritativeReleaseRun", () => {
           createdAt: "2026-08-05T12:00:00Z",
         }),
       ],
-      { tag, tagSha },
+      { tag, tagSha, defaultBranch: "main" },
     );
 
     expect(selection.reason).toBe("successful_run");
@@ -98,7 +99,7 @@ describe("selectAuthoritativeReleaseRun", () => {
           createdAt: "2026-08-05T12:30:00Z",
         }),
       ],
-      { tag, tagSha },
+      { tag, tagSha, defaultBranch: "main" },
     );
 
     expect(selection.reason).toBe("active_run");
@@ -116,7 +117,7 @@ describe("selectAuthoritativeReleaseRun", () => {
           createdAt: "2026-08-05T12:00:00Z",
         }),
       ],
-      { tag, tagSha },
+      { tag, tagSha, defaultBranch: "main" },
     );
 
     expect(selection.reason).toBe("latest_terminal_run");
@@ -131,6 +132,19 @@ describe("selectAuthoritativeReleaseRun", () => {
         run({ databaseId: 60, headBranch: "v2026.8.4" }),
         run({ databaseId: 61, headSha: "f".repeat(40) }),
         run({ databaseId: 62, event: "workflow_dispatch", headBranch: "main" }),
+        run({
+          databaseId: 66,
+          event: "workflow_dispatch",
+          headBranch: "feature/unreviewed",
+          displayTitle: `Release ${tag}`,
+          conclusion: "success",
+        }),
+        run({
+          databaseId: 67,
+          event: "workflow_dispatch",
+          headBranch: "feature/unreviewed",
+          conclusion: "success",
+        }),
         run({ databaseId: 63, event: "schedule" }),
         run({ databaseId: 64, createdAt: "not-a-date" }),
         run({ databaseId: 65, createdAt: "2026-08-05T09:00:00Z" }),
@@ -138,6 +152,8 @@ describe("selectAuthoritativeReleaseRun", () => {
       {
         tag,
         tagSha: tagSha.toUpperCase(),
+        defaultBranch: "main",
+        dispatchRunIds: new Set([67]),
         createdAfter: "2026-08-05T09:30:00Z",
       },
     );
@@ -146,6 +162,7 @@ describe("selectAuthoritativeReleaseRun", () => {
       schema: RELEASE_RUN_SELECTION_SCHEMA,
       tag,
       tag_sha: tagSha,
+      default_branch: "main",
       matched_count: 0,
       reason: "no_matching_run",
       selected: null,
@@ -155,19 +172,31 @@ describe("selectAuthoritativeReleaseRun", () => {
   it("uses database id as the stable tie-breaker and validates inputs", () => {
     const selection = selectAuthoritativeReleaseRun(
       [run({ databaseId: 70 }), run({ databaseId: 71 })],
-      { tag, tagSha },
+      { tag, tagSha, defaultBranch: "main" },
     );
     expect(selection.selected?.database_id).toBe(71);
     expect(() =>
-      selectAuthoritativeReleaseRun([], { tag: "main", tagSha }),
+      selectAuthoritativeReleaseRun([], {
+        tag: "main",
+        tagSha,
+        defaultBranch: "main",
+      }),
     ).toThrow("exact release tag");
     expect(() =>
-      selectAuthoritativeReleaseRun([], { tag, tagSha: "short" }),
+      selectAuthoritativeReleaseRun([], {
+        tag,
+        tagSha: "short",
+        defaultBranch: "main",
+      }),
     ).toThrow("40-character tag commit SHA");
+    expect(() =>
+      selectAuthoritativeReleaseRun([], { tag, tagSha, defaultBranch: "" }),
+    ).toThrow("default branch");
     expect(() =>
       selectAuthoritativeReleaseRun([], {
         tag,
         tagSha,
+        defaultBranch: "main",
         createdAfter: "invalid",
       }),
     ).toThrow("created-after");
@@ -183,6 +212,8 @@ describe("release-run-selection CLI", () => {
         tag,
         "--tag-sha",
         tagSha,
+        "--default-branch",
+        "main",
         "--dispatch-run-ids",
         "80, 81,invalid",
       ],
@@ -190,6 +221,7 @@ describe("release-run-selection CLI", () => {
         run({
           databaseId: 81,
           event: "workflow_dispatch",
+          headBranch: "main",
           conclusion: "success",
         }),
       ]),
@@ -206,7 +238,14 @@ describe("release-run-selection CLI", () => {
       "Missing --tag-sha",
     );
     expect(() =>
-      main(["--tag", tag, "--tag-sha", tagSha], "{}", vi.fn()),
+      main(["--tag", tag, "--tag-sha", tagSha], "[]", vi.fn()),
+    ).toThrow("Missing --default-branch");
+    expect(() =>
+      main(
+        ["--tag", tag, "--tag-sha", tagSha, "--default-branch", "main"],
+        "{}",
+        vi.fn(),
+      ),
     ).toThrow("JSON array");
   });
 });

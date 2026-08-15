@@ -201,7 +201,8 @@ jobs:
               release_runs="$(gh run list --workflow Release --limit 100 --json databaseId,status,conclusion,headBranch,headSha,event,createdAt,displayTitle)"
               selection="$(printf '%s' "${release_runs}" | node scripts/release/release-run-selection.mjs \
                 --tag "${EXISTING_RELEASE_TAG}" \
-                --tag-sha "${EXISTING_RELEASE_SHA}")"
+                --tag-sha "${EXISTING_RELEASE_SHA}" \
+                --default-branch "${DEFAULT_BRANCH}")"
               dispatch_evidence=""
               if [[ "$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).reason);' "${selection}")" != "successful_run" ]]; then
                 while IFS= read -r run_id; do
@@ -210,13 +211,16 @@ jobs:
                   fi
                   run_log="${RUNNER_TEMP}/release-run-${run_id}.log"
                   if gh run view "${run_id}" --log > "${run_log}" 2>/dev/null && grep -Fq "RELEASE_TAG: ${EXISTING_RELEASE_TAG}" "${run_log}"; then
-                    dispatch_evidence="${dispatch_evidence:+${dispatch_evidence},}${run_id}"
+                    dispatch_evidence="${run_id}"
+                    rm -f "${run_log}"
+                    break
                   fi
                   rm -f "${run_log}"
-                done < <(printf '%s' "${release_runs}" | node -e 'const fs=require("fs"); for (const run of JSON.parse(fs.readFileSync(0,"utf8"))) if (run.event === "workflow_dispatch" && run.status === "completed" && run.conclusion === "success") console.log(run.databaseId);')
+                done < <(printf '%s' "${release_runs}" | node -e 'const fs=require("fs"); const currentDay=process.argv[1]; const defaultBranch=process.argv[2]; const runs=JSON.parse(fs.readFileSync(0,"utf8")).filter((run)=>run.event === "workflow_dispatch" && run.status === "completed" && run.conclusion === "success" && run.headBranch === defaultBranch && run.createdAt.startsWith(currentDay)).slice(0, 5); for (const run of runs) console.log(run.databaseId);' "${current_day}" "${DEFAULT_BRANCH}")
                 selection="$(printf '%s' "${release_runs}" | node scripts/release/release-run-selection.mjs \
                   --tag "${EXISTING_RELEASE_TAG}" \
                   --tag-sha "${EXISTING_RELEASE_SHA}" \
+                  --default-branch "${DEFAULT_BRANCH}" \
                   --dispatch-run-ids "${dispatch_evidence}")"
               fi
               RELEASE_RUN_ID="$(node -e 'const selected=JSON.parse(process.argv[1]).selected; process.stdout.write(selected ? String(selected.database_id) : "");' "${selection}")"
@@ -238,6 +242,7 @@ jobs:
                   dispatch_selection="$(printf '%s' "${dispatched_runs}" | node scripts/release/release-run-selection.mjs \
                     --tag "${EXISTING_RELEASE_TAG}" \
                     --tag-sha "${EXISTING_RELEASE_SHA}" \
+                    --default-branch "${DEFAULT_BRANCH}" \
                     --created-after "${dispatch_started_at}")"
                   RELEASE_RUN_ID="$(node -e 'const selected=JSON.parse(process.argv[1]).selected; process.stdout.write(selected ? String(selected.database_id) : "");' "${dispatch_selection}")"
                   if [[ -n "${RELEASE_RUN_ID}" ]]; then
