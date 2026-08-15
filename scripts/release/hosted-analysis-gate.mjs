@@ -14,6 +14,12 @@ const GH = commandFor("gh");
 const GIT = commandFor("git");
 const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const SHA_PATTERN = /^[0-9a-f]{40}$/i;
+const RELEASE_PRECONDITION = {
+  id: "reviewed_pull_request_analyzer_evidence",
+  required_arrival: "reviewed_pull_request_to_main_or_exact_commit_analysis",
+  direct_main_policy: "refuse_without_exact_commit_analyzer_evidence",
+  required_analyzers: ["CodeFactor", "DeepScan"],
+};
 
 /** Run a command without a shell and retain bounded text output for validation. */
 function runCaptured(command, args) {
@@ -191,8 +197,8 @@ function readCommitTree(repository, sha) {
   return typeof treeSha === "string" && SHA_PATTERN.test(treeSha) ? treeSha.toLowerCase() : null;
 }
 
-/** Resolve the unique reviewed PR head that GitHub squash-merged as this commit. */
-function readSquashPullRequestHead(repository, sha) {
+/** Resolve the unique reviewed PR head that GitHub merged as this commit. */
+function readReviewedPullRequestHead(repository, sha) {
   const result = runCaptured(GH, ["api", `repos/${repository}/commits/${sha}/pulls?per_page=100`]);
   if (result.status !== 0) {
     return null;
@@ -234,10 +240,15 @@ function resolveAnalyzerEvidence(repository, sha, initialEvidence) {
   if (!deepScanMissing || !codeFactorMissing) {
     return exact;
   }
+  const reviewedHead = readReviewedPullRequestHead(repository, sha);
   const mergeParent = runCaptured(GIT, ["rev-parse", `${sha}^2`]);
   const exactTree = runCaptured(GIT, ["rev-parse", `${sha}^{tree}`]);
   const parentSha = mergeParent.stdout.trim().toLowerCase();
-  if (mergeParent.status === 0 && SHA_PATTERN.test(parentSha) && exactTree.status === 0) {
+  if (
+    mergeParent.status === 0 &&
+    reviewedHead === parentSha &&
+    exactTree.status === 0
+  ) {
     const parentTree = runCaptured(GIT, ["rev-parse", `${parentSha}^{tree}`]);
     if (parentTree.status === 0 && exactTree.stdout.trim() === parentTree.stdout.trim()) {
       const parentEvidence = readAnalyzerEvidence(repository, parentSha);
@@ -250,23 +261,43 @@ function resolveAnalyzerEvidence(repository, sha, initialEvidence) {
       }
     }
   }
-  const squashHead = readSquashPullRequestHead(repository, sha);
-  if (squashHead === null) {
+  if (reviewedHead === null) {
     return exact;
   }
   const exactGitHubTree = readCommitTree(repository, sha);
-  const squashHeadTree = readCommitTree(repository, squashHead);
-  if (exactGitHubTree === null || squashHeadTree === null || exactGitHubTree !== squashHeadTree) {
+  const reviewedHeadTree = readCommitTree(repository, reviewedHead);
+  if (exactGitHubTree === null || reviewedHeadTree === null || exactGitHubTree !== reviewedHeadTree) {
     return exact;
   }
-  const squashEvidence = readAnalyzerEvidence(repository, squashHead);
-  return squashEvidence.ok
+  const reviewedHeadEvidence = readAnalyzerEvidence(repository, reviewedHead);
+  return reviewedHeadEvidence.ok
     ? {
-        ...squashEvidence,
-        analyzedSha: squashHead,
+        ...reviewedHeadEvidence,
+        analyzedSha: reviewedHead,
         analysisSource: "identical_tree_squash_pr_head",
       }
     : exact;
+}
+
+/** Explain the immutable analyzer provenance contract when both results are absent. */
+function explainMissingAnalyzerProvenance(resolvedEvidence) {
+  const bothMissing =
+    !resolvedEvidence.deepScan.ok &&
+    resolvedEvidence.deepScan.reason.startsWith("DeepScan status is missing") &&
+    !resolvedEvidence.codeFactor.ok &&
+    resolvedEvidence.codeFactor.reason.startsWith("CodeFactor check run is missing");
+  if (!bothMissing) {
+    return null;
+  }
+  return {
+    ok: false,
+    releasable: false,
+    reason:
+      "Release analyzer provenance precondition failed: no exact-commit or identical-tree reviewed-PR evidence was found. Release candidates must reach main through a reviewed pull request whose head passed required DeepScan and CodeFactor checks; direct-main commits without exact analyzer evidence are not releasable.",
+    analyzed_sha: resolvedEvidence.analyzedSha,
+    analysis_source: resolvedEvidence.analysisSource,
+    release_precondition: RELEASE_PRECONDITION,
+  };
 }
 
 /** Verify that both analyzer contexts are strict required checks on main. */
@@ -346,6 +377,15 @@ function main() {
 
   const resolvedEvidence = resolveAnalyzerEvidence(repository.value, sha.value, analyzerEvidence);
   const { deepScan, codeFactor } = resolvedEvidence;
+  const provenanceFailure = explainMissingAnalyzerProvenance(resolvedEvidence);
+  if (provenanceFailure !== null) {
+    report(
+      outputJson,
+      { ...provenanceFailure, repository: repository.value, sha: sha.value },
+      1,
+    );
+    return;
+  }
   if (!deepScan.ok) {
     report(outputJson, { ...deepScan, repository: repository.value, sha: sha.value }, 1);
     return;
@@ -367,6 +407,8 @@ function main() {
       sha: sha.value,
       analyzed_sha: resolvedEvidence.analyzedSha,
       analysis_source: resolvedEvidence.analysisSource,
+      releasable: true,
+      release_precondition: RELEASE_PRECONDITION,
       analyzers: {
         deepscan: deepScan.analyzer,
         codefactor: codeFactor.analyzer,

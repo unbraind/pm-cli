@@ -62,6 +62,12 @@ jobs:
           # the git push process only.
           persist-credentials: false
 
+      - name: Verify release analyzer provenance before build
+        env:
+          RELEASE_POLICY_TOKEN: ${{ secrets.RELEASE_PAT }}
+          GH_TOKEN: ${{ github.token }}
+        run: GH_TOKEN="${RELEASE_POLICY_TOKEN:-${GH_TOKEN}}" node scripts/release/hosted-analysis-gate.mjs --repo "${GITHUB_REPOSITORY}" --sha "${GITHUB_SHA}" --json
+
       - name: Setup pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:

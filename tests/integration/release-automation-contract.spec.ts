@@ -235,6 +235,37 @@ describe("release automation contract", () => {
     expect(buildIndex).toBeLessThan(pipelineIndex);
   });
 
+  it("reports analyzer releasability before auto-release build work and on every main push", async () => {
+    const autoReleaseWorkflow = await readFile(
+      path.join(repoRoot, ".github/workflows/auto-release.yml"),
+      "utf8",
+    );
+    const ciWorkflow = await readFile(
+      path.join(repoRoot, ".github/workflows/ci.yml"),
+      "utf8",
+    );
+    const registry = JSON.parse(
+      await readFile(
+        path.join(repoRoot, "scripts/release/gate-registry.json"),
+        "utf8",
+      ),
+    ) as { local_preflight: { steps: Array<{ id: string }> } };
+
+    expect(autoReleaseWorkflow.indexOf("Verify release analyzer provenance before build")).toBeLessThan(
+      autoReleaseWorkflow.indexOf("Setup pnpm"),
+    );
+    expect(autoReleaseWorkflow).toContain(
+      'hosted-analysis-gate.mjs --repo "${GITHUB_REPOSITORY}" --sha "${GITHUB_SHA}" --json',
+    );
+    expect(autoReleaseWorkflow).toContain(
+      'GH_TOKEN="${RELEASE_POLICY_TOKEN:-${GH_TOKEN}}" node scripts/release/hosted-analysis-gate.mjs',
+    );
+    expect(ciWorkflow).toContain("release-analyzer-readiness:");
+    expect(ciWorkflow).toContain("if: github.event_name == 'push'");
+    expect(ciWorkflow).toContain("name: Release analyzer readiness (main)");
+    expect(registry.local_preflight.steps[0]?.id).toBe("hosted-analysis-gate");
+  });
+
   it("scopes protected-main credentials to release policy analysis", async () => {
     const workflow = await readFile(
       path.join(repoRoot, ".github/workflows/auto-release.yml"),

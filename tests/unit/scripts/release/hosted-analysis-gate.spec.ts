@@ -37,13 +37,37 @@ function successfulAnalyzerResponse(target: string, sha: string, status = 0) {
   return null;
 }
 
+/** Return one unambiguous reviewed pull request merged into main at the candidate. */
+function reviewedPullRequestResponse(headSha = PARENT_SHA) {
+  return {
+    status: 0,
+    stdout: JSON.stringify([
+      {
+        state: "closed",
+        merged_at: "2026-08-15T04:00:00Z",
+        merge_commit_sha: SHA,
+        base: { ref: "main" },
+        head: { sha: headSha },
+      },
+    ]),
+    stderr: "",
+  };
+}
+
 interface GatePayload {
   ok: boolean;
+  releasable?: boolean;
   reason?: string;
   repository?: string;
   sha?: string;
   analyzed_sha?: string;
   analysis_source?: string;
+  release_precondition?: {
+    id: string;
+    required_arrival: string;
+    direct_main_policy: string;
+    required_analyzers: string[];
+  };
   analyzers?: {
     deepscan: { new_issues: number };
     codefactor: { new_issues: number };
@@ -147,6 +171,11 @@ describe("scripts/release/hosted-analysis-gate", () => {
       ok: true,
       repository: "unbraind/pm-cli",
       sha: SHA,
+      releasable: true,
+      release_precondition: {
+        id: "reviewed_pull_request_analyzer_evidence",
+        direct_main_policy: "refuse_without_exact_commit_analyzer_evidence",
+      },
       analyzers: {
         deepscan: { new_issues: 0 },
         codefactor: { new_issues: 0, outstanding_annotations: 0 },
@@ -213,6 +242,9 @@ describe("scripts/release/hosted-analysis-gate", () => {
           stderr: "",
         };
       }
+      if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+        return reviewedPullRequestResponse(parentSha);
+      }
       const parentResponse = successfulAnalyzerResponse(target, parentSha);
       if (parentResponse !== null) {
         return parentResponse;
@@ -237,6 +269,44 @@ describe("scripts/release/hosted-analysis-gate", () => {
     expect(process.exitCode).toBe(0);
   });
 
+  it("rejects an identical-tree merge parent without a reviewed pull-request association", async () => {
+    const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
+    const spawnSync = vi.fn((_command: string, args: string[]) => {
+      const target = String(args[1] ?? "");
+      if (args[0] === "rev-parse") {
+        if (target.endsWith("^2")) return { status: 0, stdout: `${PARENT_SHA}\n`, stderr: "" };
+        if (target.endsWith("^{tree}")) return { status: 0, stdout: `${treeSha}\n`, stderr: "" };
+        return { status: 0, stdout: `${SHA}\n`, stderr: "" };
+      }
+      if (target.endsWith("/protection")) {
+        return { status: 0, stdout: JSON.stringify(STRICT_PROTECTION), stderr: "" };
+      }
+      if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+        return { status: 0, stdout: "[]", stderr: "" };
+      }
+      const parentResponse = successfulAnalyzerResponse(target, PARENT_SHA);
+      if (parentResponse !== null) {
+        return parentResponse;
+      }
+      if (target.endsWith("/status")) {
+        return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
+      }
+      if (target.includes("/check-runs")) {
+        return { status: 0, stdout: JSON.stringify({ check_runs: [] }), stderr: "" };
+      }
+      return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
+    });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+
+    const payload = await runJson([], "hostedAnalysisUnreviewedMergeParent");
+    expect(payload).toMatchObject({
+      ok: false,
+      releasable: false,
+      reason: expect.stringContaining("direct-main commits without exact analyzer evidence are not releasable"),
+    });
+    expect(process.exitCode).toBe(1);
+  });
+
   it("reuses reviewed analyzer evidence from the merged PR head of an identical-tree squash commit", async () => {
     const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
     const spawnSync = vi.fn((_command: string, args: string[]) => {
@@ -253,19 +323,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
         };
       }
       if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
-        return {
-          status: 0,
-          stdout: JSON.stringify([
-            {
-              state: "closed",
-              merged_at: "2026-07-26T00:02:53Z",
-              merge_commit_sha: SHA,
-              base: { ref: "main" },
-              head: { sha: PARENT_SHA },
-            },
-          ]),
-          stderr: "",
-        };
+        return reviewedPullRequestResponse();
       }
       if (target === `repos/unbraind/pm-cli/commits/${SHA}` || target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}`) {
         return {
@@ -399,7 +457,14 @@ describe("scripts/release/hosted-analysis-gate", () => {
       const payload = await runJson([], `hostedAnalysisRejectedSquashFallback-${label}`);
       expect(payload).toMatchObject({
         ok: false,
-        reason: "DeepScan status is missing for the exact commit",
+        releasable: false,
+        reason: expect.stringContaining("Release analyzer provenance precondition failed"),
+        release_precondition: {
+          id: "reviewed_pull_request_analyzer_evidence",
+          required_arrival: "reviewed_pull_request_to_main_or_exact_commit_analysis",
+          direct_main_policy: "refuse_without_exact_commit_analyzer_evidence",
+          required_analyzers: ["CodeFactor", "DeepScan"],
+        },
       });
       expect(process.exitCode).toBe(1);
     },
@@ -443,6 +508,9 @@ describe("scripts/release/hosted-analysis-gate", () => {
             stderr: "",
           };
         }
+        if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+          return reviewedPullRequestResponse();
+        }
         if (target.endsWith("/status")) {
           return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
         }
@@ -456,7 +524,8 @@ describe("scripts/release/hosted-analysis-gate", () => {
       const payload = await runJson([], `hostedAnalysisRejectedMergeFallback-${label}`);
       expect(payload).toMatchObject({
         ok: false,
-        reason: "DeepScan status is missing for the exact commit",
+        releasable: false,
+        reason: expect.stringContaining("direct-main commits without exact analyzer evidence are not releasable"),
       });
       expect(process.exitCode).toBe(1);
     },
@@ -479,6 +548,9 @@ describe("scripts/release/hosted-analysis-gate", () => {
           stderr: "",
         };
       }
+      if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+        return reviewedPullRequestResponse();
+      }
       if (target.endsWith("/status")) {
         statusReads += 1;
         return statusReads === 1
@@ -495,7 +567,8 @@ describe("scripts/release/hosted-analysis-gate", () => {
     const payload = await runJson([], "hostedAnalysisUnreadableMergeParentEvidence");
     expect(payload).toMatchObject({
       ok: false,
-      reason: "DeepScan status is missing for the exact commit",
+      releasable: false,
+      reason: expect.stringContaining("Release analyzer provenance precondition failed"),
     });
     expect(process.exitCode).toBe(1);
   });
