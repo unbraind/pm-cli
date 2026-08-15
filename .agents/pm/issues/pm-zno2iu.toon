@@ -6,10 +6,10 @@ status: open
 priority: 1
 tags[10]: ci-regression,context-integrity,github-1019,github-1020,github-1021,macos,nightly,node24,ubuntu,windows
 created_at: "2026-08-15T10:38:13.941Z"
-updated_at: "2026-08-15T10:41:56.460Z"
+updated_at: "2026-08-15T10:56:12.914Z"
 author: "harness:codex"
 estimated_minutes: 360
-acceptance_criteria: "Add focused tests that reproduce all four observed failure modes without weakening existing ratchets; fix root causes or update invalid fixtures only where the shipped contract changed intentionally; run the focused suites and the full nightly-equivalent matrix; close GitHub issues #1019, #1020, and #1021 with the PM link and exact green run evidence."
+acceptance_criteria: "Add focused regression coverage for all five observed conditions without weakening existing ratchets: macOS privacy-safe external-path projection mismatch; Ubuntu missing-linked-path ceiling 204 greater than 195; Ubuntu health-integrity count 1 greater than 0; Windows stat-matched cache omission of the authoritative linked-test collection; and Windows caller-owned scale-benchmark timeout at 30 seconds. Fix root causes or update invalid fixtures only where the shipped contract changed intentionally; run the focused suites and the full nightly-equivalent matrix; close GitHub issues #1019, #1020, and #1021 with the PM link and exact green run evidence."
 goal: project management = context management
 objective: "Restore deterministic cross-platform Node 24 nightly assurance without weakening privacy, tracker-quality, cache-correctness, or timeout ratchets."
 value: Scheduled compatibility evidence catches platform-specific regressions that exact-main Linux gates cannot prove.
@@ -29,7 +29,8 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-k47yqn,discovered_from,"2026-08-15T10:38:13.941Z","harness:codex","cli:create:dep",detected
   pm-kpftft,discovered_from,"2026-08-15T10:38:13.941Z","harness:codex","cli:create:dep",detected
   pm-rizqb6,discovered_from,"2026-08-15T10:38:13.941Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-15T10:38:13.941Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for the exact GitHub issue numbers,run id,platform symptoms,privacy-safe path,stat-matched cache,and timeout lineage found no active item covering this combined run. Closed pm-643e0k,pm-k47yqn,pm-rizqb6,and pm-kpftft are retained as discovered_from predecessors rather than reopened because their recorded fixes remain completed; this item tracks the new regression evidence."
   "2026-08-15T10:41:56.459Z","harness:codex","GitHub linkage evidence 2026-08-15: #1019 https://github.com/unbraind/pm-cli/issues/1019#issuecomment-5301855570, #1020 https://github.com/unbraind/pm-cli/issues/1020#issuecomment-5301855773, and #1021 https://github.com/unbraind/pm-cli/issues/1021#issuecomment-5301855577 each point to this canonical PM item. The three reports remain separate GitHub alerts but share this one regression lineage."
+  "2026-08-15T10:56:12.914Z","harness:codex","CodeRabbit review evidence 2026-08-15: finding https://github.com/unbraind/pm-cli/pull/1031#discussion_r3789218620 was valid. Acceptance now enumerates all five conditions separately: macOS projection, both Ubuntu quality predicates, Windows cache omission, and Windows timeout."
 body: "## Incident decomposition\n\n- macOS job 94963923783: extension-host realpath test disagrees with the privacy-safe external-path projection introduced by the closed version-skew lineage.\n- Ubuntu job 94963923789: tracker-context-quality blocks on missing-linked-path ceiling growth and one integrity finding; telemetry is warning-only.\n- Windows job 94963923863: authoritative linked-test collection disappears from a stat-matched cache fixture, and the caller-owned scale benchmark exceeds its 30-second budget.\n- Controls: Node 22 and Node 25 Ubuntu jobs pass in the same run.\n\n## Guardrails\n\nDo not relax privacy-safe path redaction, tracker assurance ceilings, authoritative cache semantics, or the uniform timeout budget merely to make the scheduled job green. Establish the current contract and population semantics first, then repair the implementation or fixture."
