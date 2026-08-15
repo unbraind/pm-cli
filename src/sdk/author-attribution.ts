@@ -750,20 +750,19 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
     lockTtlSeconds: settings.locks.ttl_seconds,
     lockWaitMs: settings.locks.wait_ms,
   });
+  const effectResult =
+    resolved.plan.actionable_count > 0 &&
+    resolved.plan.already_acknowledged_count > 0
+      ? {
+          outcome: "partial_effect" as const,
+          exit_code: EXIT_CODE.PARTIAL_EFFECT,
+        }
+      : { outcome: "effect" as const, exit_code: EXIT_CODE.SUCCESS };
   return {
     dry_run: false,
     mutated: true,
     acknowledged: eventsToAcknowledge.length,
-    outcome:
-      resolved.plan.actionable_count > 0 &&
-      resolved.plan.already_acknowledged_count > 0
-        ? "partial_effect"
-        : "effect",
-    exit_code:
-      resolved.plan.actionable_count > 0 &&
-      resolved.plan.already_acknowledged_count > 0
-        ? EXIT_CODE.PARTIAL_EFFECT
-        : EXIT_CODE.SUCCESS,
+    ...effectResult,
     plan: resolved.plan,
     history_path: appended.historyPath,
   };
