@@ -85,6 +85,15 @@ async function readPackageVersion(
   }
 }
 
+/** Resolve symlink and platform alias segments without failing soft scans for absent hosts. */
+async function canonicalPath(candidate: string): Promise<string> {
+  try {
+    return await fs.realpath(candidate);
+  } catch {
+    return path.resolve(candidate);
+  }
+}
+
 /** Scan the host plus the nearest pm-cli package resolvable by every loaded extension. */
 export async function scanExtensionHostVersions(
   loadedExtensions: readonly LoadedExtension[],
@@ -93,13 +102,16 @@ export async function scanExtensionHostVersions(
     "../../..",
   ]),
 ): Promise<ExtensionHostVersionCensus> {
-  const hostPackageJson = path.join(hostPackageRoot, "package.json");
+  const canonicalWorkspaceRoot = await canonicalPath(workspaceRoot);
+  const hostPackageJson = await canonicalPath(
+    path.join(hostPackageRoot, "package.json"),
+  );
   const hostVersion = await readPackageVersion(hostPackageJson);
   const copies = new Map<string, ExtensionHostVersionCopy>();
   if (hostVersion !== undefined) {
-    copies.set(path.resolve(hostPackageJson), {
+    copies.set(hostPackageJson, {
       version: hostVersion,
-      path: displayPackagePath(hostPackageJson, workspaceRoot),
+      path: displayPackagePath(hostPackageJson, canonicalWorkspaceRoot),
       layout: "host",
       consumers: ["pm-cli-host"],
     });
@@ -110,9 +122,10 @@ export async function scanExtensionHostVersions(
       const resolved = createRequire(extension.entry_path).resolve(
         "@unbrained/pm-cli/package.json",
       );
-      const version = await readPackageVersion(resolved);
+      const canonicalPackageJson = await canonicalPath(resolved);
+      const version = await readPackageVersion(canonicalPackageJson);
       if (version === undefined) continue;
-      const key = path.resolve(resolved);
+      const key = canonicalPackageJson;
       const existing = copies.get(key);
       if (existing) {
         if (!existing.consumers.includes(extension.name)) {
@@ -123,8 +136,8 @@ export async function scanExtensionHostVersions(
       }
       copies.set(key, {
         version,
-        path: displayPackagePath(resolved, workspaceRoot),
-        layout: dependencyLayout(resolved),
+        path: displayPackagePath(canonicalPackageJson, canonicalWorkspaceRoot),
+        layout: dependencyLayout(canonicalPackageJson),
         consumers: [extension.name],
       });
     } catch {

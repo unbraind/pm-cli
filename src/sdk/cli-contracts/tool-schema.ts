@@ -736,8 +736,16 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       oneOfRequired: [["id"], ["all"]],
     },
     "history-author-acknowledge": {
-      required: ["attributedAuthor", "reviewer", "reason"],
-      optional: ["historyEvent", "allActionable"],
+      optional: [
+        "historyEvent",
+        "allActionable",
+        "dryRun",
+        "planFingerprint",
+        "limit",
+        "attributedAuthor",
+        "reviewer",
+        "reason",
+      ],
       oneOfRequired: [["historyEvent"], ["allActionable"]],
     },
     "history-compact": {

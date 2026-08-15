@@ -270,6 +270,9 @@ describe("GitHub workflow contract", () => {
       "name: Gates (coverage)",
       "needs: coverage-shards",
       "persist-credentials: false",
+      "name: Download dist artifact",
+      "name: dist-node24-ubuntu",
+      "path: dist",
       "pattern: coverage-blob-*",
       "merge-multiple: true",
       "path: .vitest-reports",
@@ -279,6 +282,9 @@ describe("GitHub workflow contract", () => {
       "files: ./coverage/lcov.info",
       "files: ./coverage/junit.xml",
     ]);
+    expect(coverageJob.indexOf("name: Download dist artifact")).toBeLessThan(
+      coverageJob.indexOf("node scripts/release/coverage-threshold-gate.mjs"),
+    );
     expectContainsAll(runtimeSmokeJob, [
       "name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})",
       "needs: build-foundation",
@@ -472,6 +478,9 @@ describe("GitHub workflow contract", () => {
       "run: pnpm version:check",
       "run: pnpm security:scan",
       "run: pnpm typecheck",
+      "name: Prepare tracker clone invariants",
+      "node dist/cli.js merge install --no-extensions",
+      "git diff --exit-code -- .gitattributes",
       "if: matrix.os == 'ubuntu-latest' && matrix.node == 24",
       "run: pnpm test:coverage",
       "run: pnpm quality:static",
@@ -490,6 +499,14 @@ describe("GitHub workflow contract", () => {
       2,
     );
     expectExactValidationCacheSteps(nightlyWorkflow, 1);
+    expect(
+      nightlyWorkflow.indexOf("node dist/cli.js merge install --no-extensions"),
+    ).toBeLessThan(nightlyWorkflow.indexOf("run: pnpm quality:static"));
+    expect(
+      nightlyWorkflow.match(
+        /node dist\/cli\.js merge install --no-extensions/g,
+      ),
+    ).toHaveLength(1);
     expect(nightlyWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(nightlyWorkflow, PUBLISH_OR_RELEASE_PATTERNS);

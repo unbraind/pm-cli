@@ -234,6 +234,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   parent: { type: "string" },
   reviewer: { type: "string" },
   attributedAuthor: { type: "string" },
+  planFingerprint: { type: "string", pattern: "^[a-f0-9]{64}$" },
   historyEvent: { type: "array", items: { type: "string" } },
   risk: { type: "string" },
   confidence: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -1284,6 +1285,13 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Unknown-author history target in <item-id>:<one-based-line> form.",
     examples: [["pm-example:4", "pm-example:5"]],
+  },
+  planFingerprint: {
+    description:
+      "Exact SHA-256 returned by a history-author-acknowledge dry-run preview; apply refuses stale or changed source coordinates.",
+    examples: [
+      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    ],
   },
   estimate: {
     description: "Estimated effort in minutes.",

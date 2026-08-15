@@ -78,6 +78,14 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Bootstrap clone-local merge-driver configuration before the static
+      # tracker health/validation gate, matching CI and release fresh clones.
+      - name: Prepare tracker clone invariants
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 24
+        run: |
+          node dist/cli.js merge install --no-extensions
+          git diff --exit-code -- .gitattributes
+
       - name: Typecheck
         run: pnpm typecheck
 

@@ -55,11 +55,19 @@ export const PM_RECOVERY_REFERENCE_KINDS = [
   "candidate_command",
   "example",
   "next_step",
+  "migration_hint",
+  "restore_with",
 ] as const;
 
 /** Recovery-reference kind emitted by a refusal. */
 export type PmRecoveryReferenceKind =
   (typeof PM_RECOVERY_REFERENCE_KINDS)[number];
+
+/** Behavioral promise attached to a recovery reference. */
+export type PmRecoveryReferenceSemantics =
+  | "recovery"
+  | "replacement"
+  | "behavior_preserving";
 
 /** One derived promise that another invocation or command path is reachable. */
 export interface PmRecoveryReferenceObligation {
@@ -69,6 +77,8 @@ export interface PmRecoveryReferenceObligation {
   probe_id: string;
   /** Typed recovery vocabulary rather than prose inference. */
   kind: PmRecoveryReferenceKind;
+  /** Whether the reference recovers, replaces, or preserves the original behavior. */
+  semantics: PmRecoveryReferenceSemantics;
   /** Exact emitted command or recovery text. */
   value: string;
 }
@@ -81,6 +91,8 @@ export interface PmRecoveryReferenceObservation {
   reachable: boolean;
   /** How the promise was discharged. */
   proof: "executed" | "declared_command_path" | "linked_execution";
+  /** Semantics actually demonstrated by the proof. */
+  semantics: PmRecoveryReferenceSemantics;
 }
 
 /** Coverage totals for one emitted recovery-reference kind. */
@@ -103,6 +115,7 @@ export interface PmRecoveryReferenceFinding {
     | "duplicate_observation"
     | "missing_observation"
     | "unreachable_reference"
+    | "wrong_semantics"
     | "undeclared_observation";
   /** Obligation or observation identifier. */
   reference_id: string;
@@ -124,6 +137,75 @@ export interface PmRecoveryReferenceReport {
   coverage_by_kind: PmRecoveryReferenceKindCoverage[];
   /** Stable, sorted conformance findings. */
   findings: PmRecoveryReferenceFinding[];
+}
+
+const RECOVERY_REFERENCE_FIELD_CONTRACTS: Readonly<
+  Record<
+    string,
+    {
+      kind: PmRecoveryReferenceKind;
+      semantics: PmRecoveryReferenceSemantics;
+    }
+  >
+> = {
+  suggested_retry: { kind: "suggested_retry", semantics: "recovery" },
+  candidate_command: { kind: "candidate_command", semantics: "recovery" },
+  candidate_commands: { kind: "candidate_command", semantics: "recovery" },
+  example: { kind: "example", semantics: "recovery" },
+  examples: { kind: "example", semantics: "recovery" },
+  next_step: { kind: "next_step", semantics: "recovery" },
+  next_steps: { kind: "next_step", semantics: "recovery" },
+  migration_hint: { kind: "migration_hint", semantics: "replacement" },
+  migration_hints: { kind: "migration_hint", semantics: "replacement" },
+  restore_with: {
+    kind: "restore_with",
+    semantics: "behavior_preserving",
+  },
+};
+
+/** Derive typed obligations from every recognized recovery field in an emitted envelope. */
+export function derivePmRecoveryReferenceObligations(
+  probeId: string,
+  envelope: unknown,
+): PmRecoveryReferenceObligation[] {
+  const obligations: PmRecoveryReferenceObligation[] = [];
+  const visit = (value: unknown, path: readonly string[]): void => {
+    if (Array.isArray(value)) {
+      value.forEach((entry, index) => visit(entry, [...path, String(index)]));
+      return;
+    }
+    if (typeof value !== "object" || value === null) return;
+    for (const [key, entry] of Object.entries(value).sort(([left], [right]) =>
+      left.localeCompare(right),
+    )) {
+      const baseContract = RECOVERY_REFERENCE_FIELD_CONTRACTS[key];
+      const contract =
+        baseContract?.kind === "migration_hint" &&
+        (value as { semantics?: unknown }).semantics === "behavior_preserving"
+          ? { ...baseContract, semantics: "behavior_preserving" as const }
+          : baseContract;
+      const entries = Array.isArray(entry) ? entry : [entry];
+      if (contract !== undefined) {
+        entries.forEach((candidate, index) => {
+          if (typeof candidate !== "string" || candidate.trim().length === 0)
+            return;
+          const coordinate = [...path, key, String(index)]
+            .map((segment) => encodeURIComponent(segment))
+            .join("/");
+          obligations.push({
+            id: `${probeId}:${contract.kind}:${coordinate}`,
+            probe_id: probeId,
+            kind: contract.kind,
+            semantics: contract.semantics,
+            value: candidate,
+          });
+        });
+      }
+      visit(entry, [...path, key]);
+    }
+  };
+  visit(envelope, []);
+  return obligations;
 }
 
 /** Compare declared refusal states with real-entrypoint observations. */
@@ -258,6 +340,12 @@ export function verifyPmRecoveryReferences(
         reference_id: obligation.id,
         detail: `Recovery reference ${obligation.value} did not reach its promised target.`,
       });
+    } else if (observation.semantics !== obligation.semantics) {
+      findings.push({
+        kind: "wrong_semantics",
+        reference_id: obligation.id,
+        detail: `Recovery reference ${obligation.value} promised ${obligation.semantics}; proof demonstrated ${observation.semantics}.`,
+      });
     }
   }
   const coverageByKind = PM_RECOVERY_REFERENCE_KINDS.map((kind) => {
@@ -275,7 +363,14 @@ export function verifyPmRecoveryReferences(
       kind,
       declared: kindObligations.length,
       observed: kindObservations.length,
-      passed: kindObservations.filter(({ reachable }) => reachable).length,
+      passed: kindObligations.filter((obligation) => {
+        const observation = observationsById.get(obligation.id);
+        return (
+          !duplicateIds.has(obligation.id) &&
+          observation?.reachable === true &&
+          observation.semantics === obligation.semantics
+        );
+      }).length,
     };
   });
   findings.sort((left, right) =>

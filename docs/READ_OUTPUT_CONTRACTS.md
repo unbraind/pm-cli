@@ -1,6 +1,6 @@
 # Universal Read Output Contracts
 
-Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-eugaqy](../.agents/pm/issues/pm-eugaqy.toon), [pm-jt8aa2](../.agents/pm/issues/pm-jt8aa2.toon), [pm-kyjdne](../.agents/pm/issues/pm-kyjdne.toon), [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon), [pm-e5gl05](../.agents/pm/issues/pm-e5gl05.toon), and [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon).
+Tracker references: [pm-hb7ug8](../.agents/pm/features/pm-hb7ug8.toon), [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), [pm-hid9g1](../.agents/pm/features/pm-hid9g1.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon), [pm-gjjurs](../.agents/pm/issues/pm-gjjurs.toon), [pm-eugaqy](../.agents/pm/issues/pm-eugaqy.toon), [pm-jt8aa2](../.agents/pm/issues/pm-jt8aa2.toon), [pm-kyjdne](../.agents/pm/issues/pm-kyjdne.toon), [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon), [pm-e5gl05](../.agents/pm/issues/pm-e5gl05.toon), [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon), and [pm-2qvq7a](../.agents/pm/issues/pm-2qvq7a.toon).
 
 ## Agent Quick Context
 
@@ -122,6 +122,12 @@ list-family `--no-truncate` imply an unbounded cost dimension when the caller
 does not supply `--output-budget`; they cannot silently return a budget-trimmed
 subset while claiming to return every matched row. An explicit canonical
 budget still has precedence and may request a bounded result deliberately.
+The same SDK-native rule applies to every declared complete-result spelling,
+including `contracts --full`: explicit completeness defeats only the implicit
+default ceiling. If an explicit caller budget cannot retain any useful domain
+result, the CLI still prints the parseable omission receipt but exits 2; a
+consumer therefore cannot interpret the missing command or action arrays as a
+successful empty contract.
 
 ```bash
 pm list-open --output-include id,title,status --output-limit 10

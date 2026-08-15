@@ -28,6 +28,7 @@ import {
   GUIDE_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
+  HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS,
   HISTORY_FLAG_CONTRACTS,
   INIT_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
@@ -95,6 +96,10 @@ const UPDATE_MANY_FLAGS = toCompletionFlagString(UPDATE_MANY_FLAG_CONTRACTS);
 const CLOSE_MANY_FLAGS = toCompletionFlagString(CLOSE_MANY_FLAG_CONTRACTS);
 const ACTIVITY_FLAGS = toCompletionFlagString(ACTIVITY_FLAG_CONTRACTS);
 const HISTORY_FLAGS = toCompletionFlagString(HISTORY_FLAG_CONTRACTS);
+const HISTORY_AUTHOR_ACKNOWLEDGE_FLAGS = toCompletionFlagString(
+  HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS,
+  false,
+);
 const EVENTS_FLAGS = toCompletionFlagString(EVENTS_FLAG_CONTRACTS);
 const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
 const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
@@ -842,7 +847,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--before --ids --all-over --closed --all-streams --min-entries --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    history-author-acknowledge)",
-    `      COMPREPLY=(${compgen("--event --all-actionable --attributed-author --reviewer --reason --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen(`${HISTORY_AUTHOR_ACKNOWLEDGE_FLAGS} --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help`)})`,
     "      ;;",
     "    get)",
     `      COMPREPLY=(${compgen(GET_FLAGS)})`,
@@ -1411,6 +1416,9 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           _arguments \\
             '*--event[Actionable unknown-author event]:item_and_line' \\
             '--all-actionable[Select every currently actionable event]' \\
+            '--dry-run[Preview a deterministic source-bound plan]' \\
+            '--plan-fingerprint[Apply the exact dry-run plan]:sha256' \\
+            '--limit[Maximum coordinate rows returned in the plan]:number' \\
             '--attributed-author[Principal attributed by maintainer review]:author' \\
             '--reviewer[Reviewer recording the disposition]:reviewer' \\
             '--reason[Evidence-backed review rationale]:reason' \\
@@ -2549,6 +2557,9 @@ complete -c pm -n '__fish_seen_subcommand_from history-compact' -l message -d 'A
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l event -d 'Actionable unknown-author event' -r
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l all-actionable -d 'Select every currently actionable event'
+complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l dry-run -d 'Preview a deterministic source-bound plan'
+complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l plan-fingerprint -d 'Apply the exact dry-run plan' -r
+complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l limit -d 'Maximum coordinate rows returned in the plan' -r
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l attributed-author -d 'Principal attributed by maintainer review' -r
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l reviewer -d 'Reviewer recording the disposition' -r
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l reason -d 'Evidence-backed review rationale' -r

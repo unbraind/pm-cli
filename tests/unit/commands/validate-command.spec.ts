@@ -3385,9 +3385,9 @@ describe("runValidate", () => {
         await readFile(collectionsPath, "utf8"),
       ) as typeof collectionsCache;
       expect(
-        repairedCache.collections[`tasks/${id}.toon`]?.collections.tests?.map(
-          (test) => test.command,
-        ),
+        repairedCache.collections[
+          path.join("tasks", `${id}.toon`)
+        ]?.collections.tests?.map((test) => test.command),
       ).toEqual(authoritativeCommands);
     });
   });

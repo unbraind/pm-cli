@@ -4,8 +4,18 @@
 
 ### Fixed
 
+- GH-1019/GH-1020/GH-1021: Node 24 nightly platform regressions after PR \#1016 ([pm-zno2iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zno2iu.toon))
+- GH-814/GH-821/GH-1034: SDK metadata reads must distinguish missing, invalid, and unreadable tracker roots from empty ([pm-23xkss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-23xkss.toon))
+- GH-1028: history-author-acknowledge bulk mutation lacks dry-run and misreports empty selection ([pm-mcxk8v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mcxk8v.toon))
+- GH-1030: contracts --json --full is wholly omitted by the default output budget ([pm-2qvq7a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qvq7a.toon))
 - Auto Release blocker closure ignores successful recovery dispatch and reruns the stale tag-push workflow ([pm-db8onn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-db8onn.toon))
 - A commit pushed directly to the default branch can never be released: both analyzer-evidence fallbacks presuppose a pull request, and nothing declares that precondition ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
+
+### Other
+
+- PR \#1035 final review convergence: POSIX enumeration wording and plan-level replication ratchet ([pm-k9l7e1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k9l7e1.toon))
+- PR \#1035 exact-head review follow-up: sandbox-safe proof, completion uniqueness, replacement equivalence, and test isolation ([pm-jv3y4q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jv3y4q.toon))
+- Retire the bespoke gate scripts onto the assurance primitives, with a recorded per-script disposition so 6,500 lines of external enforcement either moves into the product or says why it cannot ([pm-4ok4ex](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4ok4ex.toon))
 
 ## 2026.8.15 - 2026-08-15
 
@@ -426,7 +436,6 @@
 - GH-824: core-field recovery must name dedicated flags instead of extension activation ([pm-2jtbl8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2jtbl8.toon))
 - CodeFactor fixed-only success payload blocks exact-head release gate ([pm-xcrlkl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xcrlkl.toon))
 - Both declared context intents are unreachable because the intent applier assigns field-group names into the section value domain, and the two validators give contradictory advice ([pm-ai45y9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ai45y9.toon))
-- GH-814: SDK metadata reads must distinguish missing and invalid tracker roots from an empty tracker ([pm-23xkss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-23xkss.toon))
 - The runtime contract enumeration is not closed over the surface it can resolve: 14 rendered commands, including the list-open that AGENTS.md mandates, are contract-backed by name yet absent from every enumeration ([pm-6j7r1a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6j7r1a.toon))
 - GH-817: machine-readable flag contracts need semantic invocation metadata and stdin capability ([pm-11phn1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-11phn1.toon))
 
@@ -1287,6 +1296,7 @@
 
 ### Other
 
+- PR \#406 review follow-up: clear partial MCP extension registries before fallback execution ([pm-dyzy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-dyzy.toon))
 - 2026-06-25 PM ecosystem taxonomy and context backlog normalization ([pm-57vh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-57vh.toon))
 - Normalize stale audit containers and intentional-open resolved items ([pm-psc0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-psc0.toon))
 - Extend pm package init --declarative to the full capability matrix (hooks/search/importers/schema/renderers/parser/preflight/services) ([pm-lfdv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lfdv.toon))
@@ -1312,7 +1322,6 @@
 - Action-scoped MCP parameter descriptions: split shared name/target description per action (schema vs profile) ([pm-fq80](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fq80.toon))
 - ADR: offline BM25 lexical provider + relevance eval harness for search quality ([pm-f2al](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-f2al.toon))
 - ADR: explicit pm_format_version front-matter field for storage schema evolution ([pm-eeai](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-eeai.toon))
-- PR \#406 review follow-up: clear partial MCP extension registries before fallback execution ([pm-dyzy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-dyzy.toon))
 - Expose project profile application through MCP contracts and drift gates ([pm-bhmk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bhmk.toon))
 - ADR: dependency-aware actionability for pm next — ready = active leaf with no open blocked_by; reuse compareCriticalItems + shared blocked_by resolver ([pm-9x6k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-9x6k.toon))
 - registerProfile core registration surface: ExtensionApi + registry + loader gate + capability-usage + policy surface ([pm-6oox](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6oox.toon))
@@ -1441,6 +1450,7 @@
 
 ### Fixed
 
+- pm-changelog over-escapes markdown in entry titles (parens + intra-word underscores) ([pm-3299](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3299.toon))
 - GH-293..296 CLI parser and search regression bundle ([pm-yy45](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yy45.toon))
 - appendLineAtomic is not truly atomic: concurrent appends to history JSONL can interleave ([pm-xy9n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xy9n.toon))
 - Project-scope extension install writes ~69MB node_modules per workspace (peer pm-cli + transitive Sentry/OTel) ([pm-oxq2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oxq2.toon))
@@ -1450,7 +1460,6 @@
 - Accept --status all for duplicate-safe search and list filters ([pm-i02t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i02t.toon))
 - Fix nightly cross-platform reliability: macOS realpath in extension-command test and Windows .cmd spawn EINVAL ([pm-gf6f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gf6f.toon))
 - pm health 2.3-3.1s in dev repo (~2x the 1.3s baseline): drift-scan cache hit still reads + content-hashes every history stream ([pm-c90s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c90s.toon))
-- pm-changelog over-escapes markdown in entry titles (parens + intra-word underscores) ([pm-3299](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3299.toon))
 
 ### Removed
 
@@ -1723,11 +1732,11 @@
 
 ### Other
 
+- Upgrade pm-changelog to 2026.6.9 and validate changelog fidelity ([pm-kx7v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kx7v.toon))
 - Document pm-linked-test-adapters package in EXTENSIONS.md and TESTING.md ([pm-yj8n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-yj8n.toon))
 - Close stale GH issues, clarify dedupe-audit docs, and bump @sentry/node ([pm-utd6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-utd6.toon))
 - Run verification matrix and temp-dir smoke for active cycle ([pm-rav7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rav7.toon))
 - SDK author-ergonomics batch: extension-manifest JSON Schema, getWorkspaceContracts memoization, FlagDefinition type/value_type unification ([pm-l0jd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-l0jd.toon))
-- Upgrade pm-changelog to 2026.6.9 and validate changelog fidelity ([pm-kx7v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kx7v.toon))
 
 ## 2026.6.9 - 2026-06-09
 
@@ -1750,9 +1759,9 @@
 
 ### Added
 
+- Add schema show-status status inspection ([pm-qpus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qpus.toon))
 - MCP pm_health defaults to the compact summary projection for token-efficient agent health checks ([pm-yjub](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yjub.toon))
 - list/search: trim default filters/projection/sorting/now trailer in compact/agent mode ([pm-vhx6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vhx6.toon))
-- Add schema show-status status inspection ([pm-qpus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qpus.toon))
 
 ### Changed
 
@@ -2012,10 +2021,10 @@
 
 ### Other
 
+- 2026-05-30 package SDK dogfood audit and startup telemetry performance pass ([pm-qmx3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qmx3.toon))
 - Make MCP status enum + shell completion runtime-resolved from schema (not hardcoded) ([pm-jtdc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-jtdc.toon))
 - Calendar view/format did-you-mean + dependency and type-safety cleanup ([pm-5oxq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5oxq.toon))
 - Defer eager per-command startup work: completion flag-strings, MCP tool schema build, telemetry flush spawn ([pm-3mal](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3mal.toon))
-- 2026-05-30 package SDK dogfood audit and startup telemetry performance pass ([pm-qmx3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qmx3.toon))
 
 ## 2026.5.30 - 2026-05-30
 
@@ -2095,6 +2104,8 @@
 
 ### Other
 
+- Generate full historical CHANGELOG.md through pm-changelog ([pm-afl9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-afl9.toon))
+- Verify and repair pm-changelog-generated main CHANGELOG release alignment ([pm-5baq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5baq.toon))
 - Deduplicate beads/todos index.ts package-runtime loader (install-safe mechanism needed) ([pm-wwa7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wwa7.toon))
 - Deduplicate Beads and Todos package adapter runtimes ([pm-ybfj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ybfj.toon))
 - Deduplicate bundled package runtime option parsing helpers ([pm-y5u0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-y5u0.toon))
@@ -2113,11 +2124,9 @@
 - Single-source Codex plugin docs tool surface ([pm-d97r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-d97r.toon))
 - Single-source extension governance policy defaults ([pm-axd1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-axd1.toon))
 - Unify plugin/MCP naming: pm-cli-claude→pm-claude, pm-cli-codex→pm-codex, pm-cli-native MCP→pm-mcp, packages @unbrained/pm-package-X→@unbrained/pm-X ([pm-ash0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ash0.toon))
-- Generate full historical CHANGELOG.md through pm-changelog ([pm-afl9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-afl9.toon))
 - Calendar + SDK + vector-search + docs review (2026-05-27) ([pm-a0w4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-a0w4.toon))
 - Agent-UX combined PR: compact mutation output (pm-ch59) + smarter unknown-flag recovery (pm-8nyc) ([pm-70mi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-70mi.toon))
 - Dogfood 2026-05-20 low-severity CLI polish backlog (config UX, init verbosity, help alias bloat, default-safety, doc/validator drift) ([pm-5k2w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5k2w.toon))
-- Verify and repair pm-changelog-generated main CHANGELOG release alignment ([pm-5baq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5baq.toon))
 - Single-source guide-shell routing snippets across docs ([pm-48vd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-48vd.toon))
 - Single-source Plan workflow examples across plugin docs ([pm-3y56](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3y56.toon))
 - Keep large modules maintainable via barrel re-export splits + explicit uncovered allowlist ([pm-3cbk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-3cbk.toon))
@@ -2155,6 +2164,7 @@
 
 ### Other
 
+- Install and validate pm-changelog package ([pm-7811](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7811.toon))
 - history-repair command + legacy drift cleanup + replay dedup ([pm-c3dx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-c3dx.toon))
 - Deduplicate templates package runtime and legacy command implementation ([pm-ypqp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ypqp.toon))
 - Deduplicate mutation author fallback resolution across commands ([pm-xh0y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xh0y.toon))
@@ -2172,7 +2182,6 @@
 - Deduplicate comments, notes, and learnings command stacks ([pm-9y8q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-9y8q.toon))
 - Deduplicate front-matter key-order contract literals in tests ([pm-8fx3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8fx3.toon))
 - Extract shared temporary-directory lifecycle helpers for tests ([pm-7tug](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7tug.toon))
-- Install and validate pm-changelog package ([pm-7811](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7811.toon))
 - Extract shared direct CLI spawn helper for integration tests ([pm-401l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-401l.toon))
 
 ## 2026.5.23 - 2026-05-23

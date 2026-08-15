@@ -8,6 +8,19 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
+    code: "merge_decisions_unreviewed",
+    meaning: "Merge decisions unreviewed condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_decisions_unreviewed",
+    aliases: [],
+  },
+  {
     code: "merge_git_config_unwritable",
     meaning: "Merge git config unwritable condition.",
     stability: "stable",
@@ -840,6 +853,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["core/store/item-store.ts"],
     emitting_commands: ["*"],
     canonical_code: "tracker_root_not_directory",
+    aliases: [],
+  },
+  {
+    code: "tracker_root_unreadable",
+    meaning: "Tracker root unreadable condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/store/item-store.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "tracker_root_unreadable",
     aliases: [],
   },
   {

@@ -17,6 +17,7 @@ import {
   inspectHistoryAuthorStream,
   PmClient,
   PmCliError,
+  planUnknownAuthorHistoryAcknowledgment,
   runAction,
   runConfig,
   runInit,
@@ -47,6 +48,14 @@ async function createTempRoot(): Promise<string> {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-author-sdk-"));
   tempRoots.push(tempRoot);
   return tempRoot;
+}
+
+async function acknowledgmentPlanFingerprint(
+  pmRoot: string,
+  events: { item_id: string; line: number }[],
+): Promise<string> {
+  return (await planUnknownAuthorHistoryAcknowledgment(pmRoot, { events }))
+    .plan_fingerprint;
 }
 
 describe("SDK author attribution primitives", () => {
@@ -477,6 +486,11 @@ describe("SDK author attribution primitives", () => {
       lockWaitMs: 1000,
     });
 
+    const planFingerprint = await acknowledgmentPlanFingerprint(pmRoot, [
+      { item_id: "pm-other", line: 1 },
+      { item_id: "pm-actionable", line: 2 },
+      { item_id: "pm-actionable", line: 1 },
+    ]);
     await expect(
       acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
         events: [
@@ -485,6 +499,7 @@ describe("SDK author attribution primitives", () => {
           { item_id: "pm-actionable", line: 1 },
           { item_id: "pm-actionable", line: 1 },
         ],
+        plan_fingerprint: planFingerprint,
         attributed_author: "original-agent",
         reviewer: "maintainer",
         reason: "Reviewed immutable event provenance.",
@@ -611,15 +626,17 @@ describe("SDK author attribution primitives", () => {
       expect((error as PmCliError).code).toBe(refusal.code);
     }
 
-    const unexpected = await acknowledgeUnknownAuthorHistoryEvents(
-      pmRoot,
-      { events: [{ item_id: "pm-classified", line: 1 }] } as never,
-    ).then(
+    const unexpected = await acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+      events: [{ item_id: "pm-classified", line: 1 }],
+    } as never).then(
       () => null,
       (thrown: unknown) => thrown,
     );
     expect(unexpected).toBeInstanceOf(Error);
-    expect(unexpected).not.toBeInstanceOf(PmCliError);
+    expect(unexpected).toBeInstanceOf(PmCliError);
+    expect((unexpected as PmCliError).code).toBe(
+      "history_author_acknowledge_required_values_missing",
+    );
   });
 
   it("exposes unknown-author disposition through the typed SDK client", async () => {
@@ -638,9 +655,15 @@ describe("SDK author attribution primitives", () => {
       })}\n`,
     );
 
+    const client = new PmClient({ pmRoot, noExtensions: true });
+    const preview = await client.historyAuthorAcknowledge({
+      events: [{ item_id: "pm-sdk-action", line: 1 }],
+      dry_run: true,
+    });
     await expect(
-      new PmClient({ pmRoot, noExtensions: true }).historyAuthorAcknowledge({
+      client.historyAuthorAcknowledge({
         events: [{ item_id: "pm-sdk-action", line: 1 }],
+        plan_fingerprint: preview.plan.plan_fingerprint,
         attributed_author: "codex-agent",
         reviewer: "maintainer",
         reason: "Reviewed SDK action provenance.",
@@ -683,9 +706,15 @@ describe("SDK author attribution primitives", () => {
       samples_truncated: true,
       actionable_events: [{ item_id: "pm-bulk", line: 1 }],
     });
+    const client = new PmClient({ pmRoot, noExtensions: true });
+    const preview = await client.historyAuthorAcknowledge({
+      all_actionable: true,
+      dry_run: true,
+    });
     await expect(
-      new PmClient({ pmRoot, noExtensions: true }).historyAuthorAcknowledge({
+      client.historyAuthorAcknowledge({
         all_actionable: true,
+        plan_fingerprint: preview.plan.plan_fingerprint,
         attributed_author: "bulk-agent",
         reviewer: "maintainer",
         reason: "Reviewed every actionable event.",
@@ -779,6 +808,9 @@ describe("SDK author attribution primitives", () => {
       .spyOn(process.stdout, "write")
       .mockImplementation(() => true);
     try {
+      const cliFingerprint = await acknowledgmentPlanFingerprint(pmRoot, [
+        { item_id: "pm-surface-action", line: 1 },
+      ]);
       const program = createPmCliProgram("1.0.0");
       registerMutationCommands(program);
       await program.parseAsync(
@@ -789,6 +821,8 @@ describe("SDK author attribution primitives", () => {
           "history-author-acknowledge",
           "--event",
           "pm-surface-action:1",
+          "--plan-fingerprint",
+          cliFingerprint,
           "--attributed-author",
           "cli-agent",
           "--reviewer",
@@ -830,21 +864,35 @@ describe("SDK author attribution primitives", () => {
       stdout.mockRestore();
     }
 
+    const snakePreview = (await runAction({
+      action: "history-author-acknowledge",
+      path: pmRoot,
+      historyEvent: ["pm-surface-action:2"],
+      dryRun: true,
+    })) as { plan: { plan_fingerprint: string } };
     await expect(
       runAction({
         action: "history-author-acknowledge",
         path: pmRoot,
         historyEvent: ["pm-surface-action:2"],
+        plan_fingerprint: snakePreview.plan.plan_fingerprint,
         attributed_author: "mcp-snake-agent",
         reviewer: "maintainer",
         reason: "Reviewed MCP snake-case provenance.",
       }),
     ).resolves.toMatchObject({ acknowledged: 1 });
+    const camelPreview = (await runAction({
+      action: "history-author-acknowledge",
+      path: pmRoot,
+      historyEvent: ["pm-surface-action:3"],
+      dryRun: true,
+    })) as { plan: { plan_fingerprint: string } };
     await expect(
       runAction({
         action: "history-author-acknowledge",
         path: pmRoot,
         historyEvent: ["pm-surface-action:3"],
+        planFingerprint: camelPreview.plan.plan_fingerprint,
         attributedAuthor: "mcp-agent",
         reviewer: "maintainer",
         reason: "Reviewed MCP provenance.",

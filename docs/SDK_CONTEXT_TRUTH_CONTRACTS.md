@@ -5,11 +5,11 @@ Tracker references: [pm-23xkss](../.agents/pm/issues/pm-23xkss.toon) and
 
 ## Agent Quick Context
 
-An empty tracker, a missing tracker, and an invalid tracker path are different
-states. Likewise, an optional local Git optimization and a drifted installed
-configuration are different health findings. The SDK preserves these
-distinctions so automation does not infer project truth from an ambiguous empty
-array or a generic failed verdict.
+An empty tracker, a missing tracker, an invalid tracker path, and an unreadable
+tracker are different states. Likewise, an optional local Git optimization and
+a drifted installed configuration are different health findings. The SDK
+preserves these distinctions so automation does not infer project truth from an
+ambiguous empty array or a generic failed verdict.
 
 ## Metadata Root Diagnostics
 
@@ -24,6 +24,11 @@ A missing root throws `PmCliError` with exit code `NOT_FOUND`, diagnostic code
 `tracker_root_missing`, and context reason `missing`. A regular file or other
 non-directory root throws `PmCliError` with exit code `USAGE`, diagnostic code
 `tracker_root_not_directory`, and context reason `not_a_directory`.
+An existing root that cannot be enumerated throws `PmCliError` with exit code
+`GENERIC_FAILURE`, diagnostic code `tracker_root_unreadable`, and context reason
+`unreadable`. On POSIX hosts, enumeration requires both read and directory-search
+permission: a root whose mode lacks either permission is unreadable, even when a
+privileged process could bypass those mode bits.
 
 Consumers should branch on the stable diagnostic code:
 
@@ -34,6 +39,9 @@ try {
 } catch (error) {
   if (error instanceof PmCliError && error.code === "tracker_root_missing") {
     // Ask the caller to select or initialize a tracker.
+  }
+  if (error instanceof PmCliError && error.code === "tracker_root_unreadable") {
+    // Repair tracker permissions before trusting any project context.
   }
 }
 ```

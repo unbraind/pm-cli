@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { definePmErrorCodeCatalog } from "../../../src/sdk/error-code-catalog.js";
 import {
+  derivePmRecoveryReferenceObligations,
   verifyPmRecoveryReferences,
   verifyPmRefusalReachability,
 } from "../../../src/sdk/agent/refusal-reachability.js";
@@ -102,12 +103,14 @@ describe("recovery-reference reachability", () => {
       id: "unknown:suggested-retry:0",
       probe_id: "unknown",
       kind: "suggested_retry" as const,
+      semantics: "recovery" as const,
       value: "pm schema add-type Example --json",
     },
     {
       id: "unknown:candidate-command:0",
       probe_id: "unknown",
       kind: "candidate_command" as const,
+      semantics: "recovery" as const,
       value: "schema",
     },
   ];
@@ -119,11 +122,13 @@ describe("recovery-reference reachability", () => {
           id: obligations[0].id,
           reachable: true,
           proof: "executed",
+          semantics: "recovery",
         },
         {
           id: obligations[1].id,
           reachable: true,
           proof: "declared_command_path",
+          semantics: "recovery",
         },
       ]),
     ).toMatchObject({
@@ -136,6 +141,8 @@ describe("recovery-reference reachability", () => {
         { kind: "candidate_command", declared: 1, observed: 1, passed: 1 },
         { kind: "example", declared: 0, observed: 0, passed: 0 },
         { kind: "next_step", declared: 0, observed: 0, passed: 0 },
+        { kind: "migration_hint", declared: 0, observed: 0, passed: 0 },
+        { kind: "restore_with", declared: 0, observed: 0, passed: 0 },
       ],
       findings: [],
     });
@@ -147,9 +154,24 @@ describe("recovery-reference reachability", () => {
 
   it("fails closed for missing, duplicate, unreachable, and undeclared proof", () => {
     const report = verifyPmRecoveryReferences(obligations, [
-      { id: obligations[0].id, reachable: false, proof: "executed" },
-      { id: obligations[0].id, reachable: true, proof: "executed" },
-      { id: "orphan", reachable: true, proof: "linked_execution" },
+      {
+        id: obligations[0].id,
+        reachable: false,
+        proof: "executed",
+        semantics: "recovery",
+      },
+      {
+        id: obligations[0].id,
+        reachable: true,
+        proof: "executed",
+        semantics: "recovery",
+      },
+      {
+        id: "orphan",
+        reachable: true,
+        proof: "linked_execution",
+        semantics: "recovery",
+      },
     ]);
     expect(report).toMatchObject({ ok: false, pass_fraction: 0 });
     expect(report.findings.map(({ kind }) => kind)).toEqual([
@@ -166,8 +188,18 @@ describe("recovery-reference reachability", () => {
     const report = verifyPmRecoveryReferences(
       [obligations[0]!, duplicate, unique],
       [
-        { id: obligations[0]!.id, reachable: true, proof: "executed" },
-        { id: unique.id, reachable: true, proof: "declared_command_path" },
+        {
+          id: obligations[0]!.id,
+          reachable: true,
+          proof: "executed",
+          semantics: "recovery",
+        },
+        {
+          id: unique.id,
+          reachable: true,
+          proof: "declared_command_path",
+          semantics: "recovery",
+        },
       ],
     );
     expect(report).toMatchObject({
@@ -180,8 +212,72 @@ describe("recovery-reference reachability", () => {
         { kind: "candidate_command", declared: 2, observed: 1, passed: 1 },
         { kind: "example", declared: 0, observed: 0, passed: 0 },
         { kind: "next_step", declared: 0, observed: 0, passed: 0 },
+        { kind: "migration_hint", declared: 0, observed: 0, passed: 0 },
+        { kind: "restore_with", declared: 0, observed: 0, passed: 0 },
       ],
       findings: [expect.objectContaining({ kind: "duplicate_obligation" })],
     });
+  });
+
+  it("derives every typed producer family with source-path-stable semantics", () => {
+    const derived = derivePmRecoveryReferenceObligations("probe", {
+      recovery: {
+        suggested_retry: "pm list --json",
+        candidate_commands: ["list", "search"],
+      },
+      examples: ["pm list --status open"],
+      next_steps: ["Run the bounded read"],
+      migration_hints: ["Use --output-include"],
+      output_budget_exceeded: { restore_with: "Unbounded" },
+    });
+    expect(derived.map(({ kind, semantics }) => [kind, semantics])).toEqual([
+      ["example", "recovery"],
+      ["migration_hint", "replacement"],
+      ["next_step", "recovery"],
+      ["restore_with", "behavior_preserving"],
+      ["candidate_command", "recovery"],
+      ["candidate_command", "recovery"],
+      ["suggested_retry", "recovery"],
+    ]);
+    expect(new Set(derived.map(({ id }) => id)).size).toBe(derived.length);
+  });
+
+  it("keeps raw slash-bearing keys distinct from nested source paths", () => {
+    const derived = derivePmRecoveryReferenceObligations("probe", {
+      "a/b": { examples: ["pm list --status open"] },
+      a: { b: { examples: ["pm list --status closed"] } },
+    });
+    expect(derived).toHaveLength(2);
+    expect(new Set(derived.map(({ id }) => id)).size).toBe(2);
+  });
+
+  it("ignores empty recovery references and rejects mismatched semantics", () => {
+    expect(
+      derivePmRecoveryReferenceObligations("invalid", {
+        examples: ["", 42, "pm list --status open"],
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        kind: "example",
+        semantics: "recovery",
+        value: "pm list --status open",
+      }),
+    ]);
+
+    const report = verifyPmRecoveryReferences(
+      [obligations[0]!],
+      [
+        {
+          id: obligations[0]!.id,
+          reachable: true,
+          proof: "executed",
+          semantics: "replacement",
+        },
+      ],
+    );
+    expect(report).toMatchObject({ ok: false, pass_fraction: 0 });
+    expect(report.findings).toContainEqual(
+      expect.objectContaining({ kind: "wrong_semantics" }),
+    );
   });
 });

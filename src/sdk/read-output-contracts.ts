@@ -900,7 +900,9 @@ export function resolveReadOutputDimensions(
   );
   const completeResultIntent =
     command.trim().toLowerCase().replaceAll(/\s+/gu, " ").split(" ")[0] ===
-      "list-all" || legacyByDimension.amount?.flag === "--no-truncate";
+      "list-all" ||
+    legacyByDimension.amount?.flag === "--no-truncate" ||
+    legacyByDimension.include?.flag === "--full";
   const budget = resolvePmCommandOutputBudget(command, {
     generateFallback: true,
   });

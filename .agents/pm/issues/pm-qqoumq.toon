@@ -1,0 +1,35 @@
+id: pm-qqoumq
+title: "GH-1032: extension manifests silently accept unenforced version-floor spellings"
+description: "Extension compatibility tooling ignores unknown or naturally misplaced manifest keys, allowing packages to declare apparent pm version floors that no runtime or author-time check reads."
+type: Issue
+status: open
+priority: 1
+tags[7]: agent-ux,compatibility,extensions,github-1032,manifest,sdk,validation
+created_at: "2026-08-15T15:26:48.504Z"
+updated_at: "2026-08-15T15:29:21.230Z"
+author: "harness:codex"
+estimated_minutes: 360
+acceptance_criteria: "Define the authoritative manifest key schema in the SDK; detect unknown top-level and compatibility-like nested keys without rejecting legitimate extension namespaces; add typed findings and exact migration targets; apply the same analyzer to scaffolding, package doctor, CLI, MCP, contracts, and first-party package governance; test the three reported spellings plus negative controls in disposable packages; document compatibility and rollout behavior."
+goal: project management = context management
+objective: Make extension compatibility declarations schema-closed and impossible to mistake for enforced policy.
+value: "Package authors receive deterministic diagnostics for misspelled, misplaced, stale, or unsupported compatibility declarations."
+impact: "Packages can remain green while shipping a version floor that no consumer enforces, causing fleet drift and downstream history incompatibility."
+outcome: "SDK analyzers, manifests, scaffolds, package doctor, CLI, MCP, and contracts share one strict compatibility-key vocabulary with migration guidance."
+why_now: GitHub #1032 documents three live packages with three spellings and silent green checks.
+parent: pm-doxj
+risk: high
+confidence: high
+severity: high
+environment: Current extension manifest SDK and package fleet on 2026-08-15
+repro_steps: "Pass manifests containing compatibility.pm, nested pm.pm_min_version, and stale top-level pm_min_version through checkExtensionManifestCompatibility; observe no unknown-key finding and compatible=true for the first two."
+expected_result: Unknown or misplaced compatibility-like keys are diagnosed with a stable typed finding and an executable correction; valid top-level pm_min_version remains enforced across SDK and package surfaces.
+actual_result: "Compatibility-looking fields can be ignored silently, so internally consistent packages and tests remain green while no version floor is enforced."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1w0d,discovered_from,"2026-08-15T15:26:48.504Z","harness:codex","cli:create:dep",detected
+  pm-u5le,implements,"2026-08-15T15:28:38.793Z","harness:codex","cli:update:dep",detected
+  pm-exrw,verifies,"2026-08-15T15:28:40.373Z","harness:codex","cli:update:dep",detected
+  pm-llrp,discovered_from,"2026-08-15T15:28:48.965Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-15T15:26:48.504Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for GH-1032, manifest unknown key, pm_min_version, compatibility.pm, and nested compatibility found no item for this silent manifest-schema gap. Closed pm-1w0d owns the existing compatibility analyzer and is linked as provenance; this item records the newly reported cross-package validation defect without reopening completed work."
+  "2026-08-15T15:29:21.230Z","harness:codex","GitHub linkage evidence 2026-08-15: https://github.com/unbraind/pm-cli/issues/1032#issuecomment-5302914062 points GitHub #1032 to this canonical PM item after all-status duplicate checks and typed lineage enrichment."
+body: ""

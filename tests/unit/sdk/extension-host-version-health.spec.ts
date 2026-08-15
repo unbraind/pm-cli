@@ -173,10 +173,18 @@ describe("extension host pm-cli version census", () => {
   });
 
   it("classifies realpath-linked copies outside dependency folders", async () => {
-    const workspace = await mkdtemp(
+    const workspaceContainer = await mkdtemp(
       path.join(os.tmpdir(), "pm-extension-version-other-"),
     );
-    tempRoots.push(workspace);
+    tempRoots.push(workspaceContainer);
+    const canonicalWorkspace = path.join(workspaceContainer, "canonical");
+    const workspace = path.join(workspaceContainer, "workspace-link");
+    await mkdir(canonicalWorkspace);
+    await symlink(
+      canonicalWorkspace,
+      workspace,
+      process.platform === "win32" ? "junction" : "dir",
+    );
     const host = path.join(workspace, "host");
     await writePmPackage(host, "2026.8.15");
     const loaded = await extension(workspace, "other-layout");

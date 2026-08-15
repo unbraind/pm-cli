@@ -2,17 +2,22 @@ id: pm-4ok4ex
 title: "Retire the bespoke gate scripts onto the assurance primitives, with a recorded per-script disposition so 6,500 lines of external enforcement either moves into the product or says why it cannot"
 description: "This repository is the first and hardest adopter. 16 files matching *gate*.mjs carry 6,500 LOC and 20 scripts drive the pm CLI as a subprocess. Each one is a candidate for a declaration, and the ones that are not are the interesting cases: a gate that verifies a published npm artifact or drives a real installation is exercising the world rather than measuring the record, and it should stay a script that reports a provider measurement rather than pretend to be one. The output of this work is a ledger with one row per script: migrated (with the declaration ids that replaced it), reduced to a provider, or retained with a reason. Migration is only complete when the retained set is smaller than the migrated set and every retained script's reason names something the record genuinely cannot answer. Doing this in this repository is what proves the primitives are sufficient rather than merely plausible, and it is also the fastest way to find out which parts of the vocabulary are missing, because every script that resists migration is naming a gap. Sequence after the primitives land; each migration lands with the negative control the assertion requires, so the migrated bound is proven to be able to fail before the script it replaces is deleted."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[5]: "area:ci",assurance,dogfood,migration,simplification
 created_at: "2026-08-10T20:57:25.885Z"
-updated_at: "2026-08-14T23:07:10.300Z"
+updated_at: "2026-08-15T18:45:20.650Z"
+closed_at: "2026-08-15T18:45:19.832Z"
+completed_at: "2026-08-15T18:45:19.832Z"
 author: "harness:claude-code"
 estimated_minutes: 900
 acceptance_criteria: "A ledger records every gate script with a disposition of migrated, reduced to provider, or retained with a reason naming what the record cannot answer; Every migrated bound lands with a proven negative control before the script it replaces is removed; The migrated set is larger than the retained set, and total gate LOC outside the product falls measurably; The release pipeline runs the native gates and the retained scripts through one declared inventory rather than two parallel mechanisms"
 parent: pm-1jzupz
 risk: medium
 confidence: 70
+resolution: "Completed through an exhaustive machine-enforced ledger, native/provider majority, provider-backed exact coverage primitive, retained external-world reasons, and one composite execution inventory."
+expected_result: "Every gate script has an enforced migrated, reduced-to-provider, or retained disposition; native/provider rows outnumber retained rows; negative controls prove failures; external gate LOC decreases; one inventory drives execution."
+actual_result: "The ledger covers every gate script with 1 migrated plus 9 provider-backed versus 6 retained; exact coverage logic moved into the public SDK; the adapter fell by 55 lines to 45; all provider rows have negative controls; quality:static runs the unified inventory."
 dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jzupz,implements,"2026-08-10T20:57:25.885Z","harness:claude-code","cli:create:dep",detected
   pm-lyfu7b,blocked_by,"2026-08-10T20:57:25.885Z","harness:claude-code","cli:create:dep",detected
@@ -23,7 +28,7 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-g4k74y,verifies,"2026-08-12T23:27:44.296Z","harness:codex",implementation,detected
   pm-jezo,implements,"2026-08-13T02:51:39.935Z","harness:codex","cli:update:dep",detected
   pm-pmwozm,verifies,"2026-08-13T02:51:39.935Z","harness:codex","cli:update:dep",detected
-comments[23]{created_at,author,text}:
+comments[32]{created_at,author,text}:
   "2026-08-11T13:53:41.933Z","harness:claude-code","Adoption baseline measured 2026-08-11, immediately after the assurance primitives shipped in 2026.8.11.\n\nThe capability is complete. pm-2lex4r (measure), pm-lyfu7b (assert), pm-wn6wot (gate) and pm-91xeam (verdicts) are all closed, pm assurance exposes list, show, put, remove, run and verdicts, and docs/ASSURANCE.md documents nine measurement sources, seven assertion polarities, three scopes, two lifetimes and three enforcement levels.\n\nNothing uses it.\n\n- pm assurance list measurement, list assertion and list gate all return count 0.\n- .agents/pm/assurance.json does not exist.\n- grep for assurance across .github/workflows/ and scripts/ returns one incidental hit in a token baseline JSON file and no invocation.\n\nMeanwhile the enforcement the project actually relies on is still declared elsewhere: scripts/release/tracker-measurements.json holds 30 declarations across five selector sources (health_check 10, dependency_kind 6, graph_finding 5, graph_profile 4, validate_warning 5), and the only reader is scripts/release/tracker-measurement-gate.mjs.\n\nSo the project now has two enforcement vocabularies. The one that ships inside the product has zero members and zero consumers. The one that gates every release lives in a script this item exists to retire. That is the same producer-and-consumer asymmetry recorded as roadmap horizon AG, applied to the mechanism that was built to end it.\n\nThis is the starting state for the per-script disposition this item owns, and it is also why the disposition should be written as declarations rather than as prose: every row of tracker-measurements.json that has an equivalent assurance source can be expressed today, and each one that cannot names a genuine provider gap for pm-uhv1m5.\n"
   "2026-08-12T14:33:40.398Z","harness:codex","Orientation evidence: live repository already dogfoods two native assurance gates at current head, superseding the older no-use snapshot in this item comment history. This tranche will inventory every bespoke release gate, migrate coherent local checks to native assurance/provider primitives, and retain only gates whose orchestration cannot be represented honestly."
   "2026-08-12T14:58:23.386Z","harness:codex","Scope decision from implementation evidence: this tranche supplies the missing extension-provider and preset primitives, but the migration item cannot honestly close without deleting/reducing bespoke scripts, proving each replacement negative control, reducing external gate LOC, and reaching a migrated majority. A prose-only ledger would not satisfy those live acceptance criteria. No migration-source edit was made; returning this item to open/unclaimed so only actively implemented work remains in progress. The provider work in pm-uhv1m5 is the explicit prerequisite for later coverage/eval/registry/service script reductions."
@@ -47,26 +52,41 @@ comments[23]{created_at,author,text}:
   "2026-08-14T22:33:43.144Z","harness:codex","Review evidence: final exact-head fixes enforce provider identifier uniqueness across both gate_scripts and provider_checks through one shared registry set; document examples now invoke the declared repository-static-quality gate; automationInventoryCounts documents its real return contract. Focused gate-registry/repository-assurance/assurance tests passed 28/28, full coverage passed 7,313 tests at 100/100/100/100 (53,192 statements, 39,232 branches, 10,929 functions, 51,369 lines), and the five-iteration CLI transport-floor stability check passed all six operations without changing a budget."
   "2026-08-14T22:56:37.579Z","harness:codex","Final local-review evidence: exact-head CodeRabbit CLI found five valid isolation/documentation issues. All are fixed: gate-registry scenarios now build fresh inventories so timeout and duplicate-provider assertions cannot inherit stale invalid state; repository-provider tests use temporary registry data and unconditional spy cleanup; the SDK action example binds the declared repository-quality provider identifier. Verification passed 20/20 focused tests, ESLint, full TypeScript/type-test/package/example compilation, 495 files and 7,313 tests at exact 100/100/100/100, plus the complete provider-backed quality:static pipeline including graph-composition and record-integrity."
   "2026-08-14T23:07:08.131Z","harness:codex","Merged delivery evidence: PR #1015 merged exact reviewed head 0939a5a51 as main commit 5f3e4c809 after every required hosted check passed, 17/17 review threads resolved, and all emitted CodeRabbit findings were fixed. Hosted CodeRabbit was rate-limited on the final rerun, Sourcery quota-skipped, and Greptile emitted no response; those are recorded limitations, not approvals. Post-merge telemetry drained 1 to 0, the live 14-day Sentry gate reports 0 critical/high, telemetry error rate 1.85% with zero missing error codes, audit and all security alert inventories are clean, zero PRs remain, and every open issue retains a PM link. Residual acceptance: the enforced ledger is now a native/provider majority (1 migrated + 8 provider-backed vs 7 retained), but physical gate LOC outside the product has not yet fallen enough to claim the item complete. Returning it open and unclaimed for the next deletion/reduction tranche."
-learnings[2]{created_at,author,text}:
+  "2026-08-15T14:34:45.182Z","harness:codex","Implementation start 2026-08-15: reduce physical bespoke gate LOC by promoting reusable provider orchestration and inventory semantics into typed SDK-backed primitives, preserving executable negative controls and fail-closed repository enforcement."
+  "2026-08-15T15:05:17.736Z","harness:codex","Implementation evidence: exact integer coverage analysis moved from the release script into exported SDK governance primitive src/sdk/governance/coverage-assurance.ts. The repository script is now a thin artifact adapter, the ledger marks repository-quality/coverage-threshold provider-backed with the existing rounded-100-percent negative control, and the mandatory 100/100/100/100 semantics are unchanged."
+  "2026-08-15T15:42:13.938Z","harness:codex","Disposable packed-consumer acceptance 2026-08-15: the installed public SDK exported the exact-count coverage assurance provider and returned zero deficits for a complete total entry; package npm/npx and Bun/bunx CLI consumers remained healthy. The first manual assertion deliberately passed a malformed summary without total and the provider failed closed, after which the valid contract passed."
+  "2026-08-15T16:20:30.985Z","harness:codex","Final verification 2026-08-15: exact-count coverage evaluation is now an exported SDK governance provider; coverage-threshold-gate.mjs is reduced by 55 physical lines to a 45-line artifact adapter. The enforced inventory is 1 migrated plus 9 provider-backed versus 6 retained, all provider rows retain executable negative controls, and one inventory drives local/hosted execution. All six linked commands passed, including the full 196-second quality:static run. Exact coverage is 7,387 tests at 100/100/100/100; packed public-SDK fail-closed and valid coverage acceptance passed."
+  "2026-08-15T16:32:09.912Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1035 at exact implementation head 7a5653524a38b69099730a5bf8cf7a58e271db6b. Hosted checks and bot review are in progress; merge and release evidence will be appended separately."
+  "2026-08-15T16:46:36.346Z","harness:codex","Hosted negative evidence: PR #1035 run https://github.com/unbraind/pm-cli/actions/runs/31895792713 coverage job 95039236139 merged shard artifacts but did not download the built dist artifact required by the newly SDK-backed coverage provider. The correction downloads the pinned Node 24 dist artifact before invoking the thin adapter and contract-tests ordering."
+  "2026-08-15T17:02:58.819Z","harness:codex","Hosted repair verification 2026-08-15: the CI workflow contract proves the aggregate job downloads dist-node24-ubuntu before the SDK-backed coverage adapter runs. All 6 linked assurance commands passed, including the full tracker-context quality pipeline; the standalone exact coverage provider and the 7,387-test 100/100/100/100 suite both passed."
+  "2026-08-15T18:10:35.794Z","harness:codex","PR #1035 review follow-up: the hosted coverage artifact contract now asserts both artifact name dist-node24-ubuntu and extraction path dist, pinning the runtime dependency needed by the SDK-backed coverage adapter."
+  "2026-08-15T18:45:18.056Z","harness:codex","Final exact-head review evidence 2026-08-15: the coverage aggregate workflow contract now asserts the dist-node24-ubuntu artifact is extracted at path dist before the SDK-backed coverage adapter executes. All six linked commands passed, including the 198-second tracker-context quality pipeline; full coverage passed 7,396 tests at exact 100/100/100/100; repository static, graph-composition, and record-integrity assurance passed."
+learnings[3]{created_at,author,text}:
   "2026-08-12T23:27:47.477Z","harness:codex","A native gate migration needs two inventories: executable dispositions prove no bespoke script vanished silently, while operation consumers prove shipped analytical primitives are either automated or deliberately interactive. The product must also cache provider snapshots per gate context or a wide declaration set multiplies expensive scans."
   "2026-08-14T20:29:41.983Z","harness:codex","A repository assurance command that reads canonical tracker declarations must record pm_context_mode=tracker in its linked-test metadata. Schema mode correctly proves package portability by omitting repository data, so a missing gate there is a context-contract mismatch, not a failing assurance rule."
-files[15]{path,scope,note}:
+  "2026-08-15T18:45:18.876Z","harness:codex",An artifact name proves selection but not runtime availability. Hosted workflow contracts for SDK-backed adapters must assert both the pinned artifact identity and the extraction path consumed by the adapter.
+files[20]{path,scope,note}:
   .agents/pm/assurance.json,project,Native replacement declarations for the tracker census
   .github/workflows/ci.yml,project,Hosted native assurance invocation
   package.json,project,"quality:static now runs the product's own assurance gates in CI, closing the zero-consumer half of this migration"
+  scripts/release/coverage-threshold-gate.mjs,project,Thin repository adapter
   scripts/release/gate-registry.json,project,Disposition ledger for gate scripts and graph operations
   scripts/release/gate-registry.mjs,project,Machine-enforced migration and graph-consumer inventory
   scripts/release/repository-assurance.mjs,project,Single SDK provider host for repository quality adapters
+  sdk/public-surface.json,project,Public coverage assurance exports
   src/sdk/governance/assurance-action.ts,project,Public host-provider action runtime boundary
   src/sdk/governance/assurance-runtime.ts,project,Per-context graph validate and health source reuse for wide native gates
+  src/sdk/governance/coverage-assurance.ts,project,Reusable exact-count coverage provider
+  src/sdk/index.ts,project,Public coverage assurance export
   tests/helpers/releaseContracts.ts,project,Shared executable static-quality contract expectation
   tests/integration/assurance-policy-contract.spec.ts,project,Hosted policy regression proving telemetry health remains advisory under accepted ADR pm-jezo
   tests/integration/ci-workflow-contract.spec.ts,project,Hosted ordering contract
   tests/integration/release-automation-contract.spec.ts,project,Package script contract
   tests/integration/release-readiness-runtime.spec.ts,project,Release readiness package script contract
+  tests/unit/scripts/release/coverage-threshold-gate.spec.ts,project,Exact-count provider and adapter coverage
   tests/unit/scripts/release/gate-registry.spec.ts,project,Fail-closed inventory coverage
   tests/unit/scripts/release/repository-assurance.spec.ts,project,Provider host positive failure and negative-control coverage
-tests[5]:
+tests[6]:
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/assurance-runtime.spec.ts
     scope: project
     timeout_seconds: 240
@@ -83,12 +103,19 @@ tests[5]:
     scope: project
     timeout_seconds: 300
     pm_context_mode: tracker
-test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/coverage-threshold-gate.spec.ts tests/unit/scripts/release/gate-registry.spec.ts
+    scope: project
+    timeout_seconds: 300
+test_runs[7]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msqpta9p-wezy2h,test,passed,"2026-08-12T23:22:42.017Z","2026-08-12T23:23:12.829Z","2026-08-12T23:23:12.829Z",2,0,0
   test-local-mstea72q-2jpave,test,failed,"2026-08-14T20:21:09.463Z","2026-08-14T20:23:44.978Z","2026-08-14T20:23:44.978Z",4,1,0
   test-local-mstef6s6-rr0ej8,test,passed,"2026-08-14T20:24:16.853Z","2026-08-14T20:27:37.878Z","2026-08-14T20:27:37.878Z",1,0,0
   test-local-mstg1ja4-j8ci2b,test,passed,"2026-08-14T21:08:51.763Z","2026-08-14T21:13:00.123Z","2026-08-14T21:13:00.123Z",5,0,0
+  test-local-msul007d-sfth77,test,passed,"2026-08-15T16:15:17.002Z","2026-08-15T16:19:33.001Z","2026-08-15T16:19:33.001Z",6,0,0
+  test-local-msumjk40-fxaqqx,test,passed,"2026-08-15T16:58:22.690Z","2026-08-15T17:02:44.880Z","2026-08-15T17:02:44.880Z",6,0,0
+  test-local-msuq6flp-v0nwl2,test,passed,"2026-08-15T18:40:12.974Z","2026-08-15T18:44:30.972Z","2026-08-15T18:44:30.972Z",6,0,0
 docs[2]{path,scope,note}:
   docs/ASSURANCE.md,project,Shared source snapshot behavior
   docs/TESTING.md,project,Native tracker assurance operator workflow
+close_reason: "Exact coverage provider migration remains complete and its hosted artifact name, extraction path, ordering, negative controls, and full assurance pipeline all pass"
 body: ""
