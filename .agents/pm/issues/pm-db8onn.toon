@@ -2,13 +2,13 @@ id: pm-db8onn
 title: Auto Release blocker closure ignores successful recovery dispatch and reruns the stale tag-push workflow
 description: "After v2026.8.5 was successfully recovered by workflow_dispatch run 31001951195, closing GitHub blocker #898 started Auto Release run 31002881238. Its same-day recovery query filtered Release runs to event=push and selected failed historical tag-push run 30994468126, ignoring the newer successful workflow_dispatch run. It reran the stale tag workflow, failed static quality on historical checkout state, and reopened a resolved blocker."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[6]: "area:release",auto-release,exact-tag-recovery,github-actions,reliability,run-selection
 created_at: "2026-08-05T11:59:56.790Z"
-updated_at: "2026-08-15T10:01:50.584Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#217bde283203d510dd91ecae"
+updated_at: "2026-08-15T10:20:23.079Z"
+closed_at: "2026-08-15T10:20:22.359Z"
+completed_at: "2026-08-15T10:20:22.359Z"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: "Run selection considers both tag-push and guarded workflow_dispatch Release runs for the exact tag; a newer successful immutable recovery wins over an older failed push run; reruns execute the reviewed current workflow with exact-tag source selection rather than historical workflow code; executable contracts cover successful dispatch plus failed historical push, current-day retry markers, and issue close/reopen behavior; GitHub #898 closes after production proof without creating or moving another same-day tag"
@@ -24,14 +24,15 @@ confidence: high
 severity: high
 environment: GitHub Actions issue-closure Auto Release run 31002881238; successful Release recovery run 31001951195; tag-push Release run 30994468126; GitHub issue #898
 repro_steps: "Successfully recover an existing daily tag through release.yml workflow_dispatch, then close the same-day Auto Release blocker. Observe auto-release.yml query only event=push, rerun the failed historical tag-push workflow, and reopen the blocker even though npm and GitHub Release are healthy."
-expected_result: "Blocker closure recognizes the newest successful exact-tag Release run regardless of whether it was triggered by tag push or guarded workflow_dispatch, records the existing immutable tag as recovered, and leaves the resolved blocker closed without rerunning stale workflow code."
-actual_result: "Issue closure ignored successful run 31001951195, reran failed tag-push run 30994468126, failed after 7m45s, and reopened #898 despite npm latest and GitHub Release both being 2026.8.5."
+resolution: "Auto Release now short-circuits same-day immutable tags before expensive preparation, selects SHA-bound successful push or default-branch dispatch evidence over stale failures, and dispatches the current reviewed Release workflow only when recovery evidence is absent."
+expected_result: "Closing a resolved release blocker recognizes successful exact-tag publication, records the existing immutable release, and leaves the blocker closed without rerunning historical workflow code or creating a second daily release."
+actual_result: "Production issues-event run 31878905982 selected existing successful Release run 31874087916 for v2026.8.15 at fbb7bd44d89d7d393b843e19f28dcb7f99367562 before analyzer/build work, emitted success receipts, kept GH #1017 closed, and preserved one tag, one release, and one npm version."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-e70zh5,discovered_from,"2026-08-05T11:59:56.790Z","harness:codex","cli:create:dep",detected
   pm-ei6x66,related,"2026-08-05T11:59:56.790Z","harness:codex","cli:create:dep",detected
   pm-lwnifd,discovered_from,"2026-08-05T11:59:56.790Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-08-05T11:59:56.790Z","harness:codex","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-05T11:59:56.790Z","harness:codex","Duplicate check 2026-08-05: searched all statuses for retry_already_attempted, tag-push Release selection, workflow_dispatch recovery, and blocker closure. Closed pm-lwnifd owns successful exact-tag publication; open pm-e70zh5 owns aggregate release reliability; open pm-ei6x66 owns cross-environment gate governance. None owns the issue-closure query selecting a stale failed push run over a newer successful dispatch recovery. Direct evidence: runs 31001951195, 31002881238, 30994468126 and GitHub #898."
   "2026-08-05T12:05:56.600Z","harness:codex","CI evidence: PR #906 exact-head static gate failed only tracker-measurement validation because this newly filed open item omitted estimated_minutes. Declared a 360-minute ceiling for the workflow, executable contracts, operator docs, and production verification scope; item remains open and unclaimed for a future implementation tranche."
   "2026-08-15T09:02:29.565Z","harness:codex","Production reproduction 2026-08-15: after successful guarded Auto Release run 31873678893 published immutable v2026.8.15, closing blocker GH-1017 triggered issues-event retry run 31874957449 on release commit fbb7bd44d. The workflow ran hosted-analysis before its existing-release/retry classification, refused the direct-main generated release commit, skipped the pipeline's success/skip recording steps, and reopened the resolved blocker as an unrecorded failure. This is the same canonical stale post-recovery rerun family already owned here; no new PM item was created."
@@ -40,9 +41,13 @@ comments[8]{created_at,author,text}:
   "2026-08-15T09:37:22.239Z","harness:codex","Verification evidence: 42 focused unit/integration tests pass, including executable same-day marker recording and duplicate-refusal behavior. Full repository coverage passed exactly 100/100/100/100 (53,483 statements, 51,650 lines, 10,981 functions, 39,492 branches). Build, typecheck, docs/skills, repository static quality, package boundary, SDK surface/cost, graph composition, record integrity, YAML parsing, formatting, and credential scan all pass. The transport-floor gate had two transient 7-8ms host-load misses, then passed unchanged across all six operations; no assurance ratchet was weakened."
   "2026-08-15T09:38:39.570Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1027 at exact head 7adc66976. The PR links this canonical item and includes the implementation, executable contracts, operator docs, and production-control plan."
   "2026-08-15T10:01:50.584Z","harness:codex","Review-loop evidence: accepted CodeRabbit findings on unbounded archived-log fallback and unguarded title-matched dispatch branches. The fix now requires explicit default-branch identity for every dispatch candidate, limits legacy evidence to at most five completed successful same-day/default-branch dispatches, and stops after the first exact RELEASE_TAG match. Focused 42-test suite, live v2026.8.15 and historical v2026.8.5 controls, full 501-file/7,375-test coverage at 100/100/100/100, typecheck, lint/static assurance, docs/skills, formatting, YAML parse, and credential scan all pass."
-files[6]{path,scope,note}:
+  "2026-08-15T10:20:21.602Z","harness:codex","Production and merge evidence 2026-08-15: PR #1027 merged as 4ad0e978f8a36e1ccdc44a09b314a3261fe7c78d after all exact-head checks passed, CodeRabbit confirmed both findings addressed, and zero review threads remained. Exact-main CI 31878905325, CodeQL 31878905360, Security and Script Quality 31878905348, Docs 31878905311, OSSF Scorecard 31878905310, and CodSpeed 31878905361 all completed successfully. Issue-event Auto Release run 31878905982 detected existing v2026.8.15 before preparation work, selected successful immutable publication run 31874087916, wrote the retry marker and success receipt, and left GH #1017 closed. It did not dispatch or rerun Release. Uniqueness proof: one tag at fbb7bd44d89d7d393b843e19f28dcb7f99367562, one GitHub Release, one npm @unbrained/pm-cli@2026.8.15 artifact, and exactly one matching successful Release workflow."
+learnings[1]{created_at,author,text}:
+  "2026-08-15T10:20:20.970Z","harness:codex","Classify an existing immutable daily tag before analyzer, dependency, and build work. Exact-tag publication evidence is authoritative only when the commit SHA matches, and guarded workflow_dispatch evidence must originate from the configured default branch; successful immutable publication outranks stale failures."
+files[7]{path,scope,note}:
   .github/workflows/auto-release.yml,project,issue-closure authoritative Release run selection
   .github/workflows/release.yml,project,self-identifying exact-tag workflow dispatch runs
+  CHANGELOG.md,project,generated release history entry for authoritative immutable-tag recovery
   scripts/release/release-run-selection.mjs,project,authoritative immutable-tag run selector
   tests/integration/ci-workflow-contract.spec.ts,project,workflow recovery contract
   tests/integration/release-automation-contract.spec.ts,project,pre-build recovery ordering contract
@@ -54,4 +59,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msu66dlq-h43z9y,test,failed,"2026-08-15T09:15:39.594Z","2026-08-15T09:24:36.060Z","2026-08-15T09:24:36.060Z",1,1,0
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,operator contract for successful dispatch recovery cleanup
+close_reason: "Authoritative exact-tag recovery is implemented, reviewed, merged, and proven in production without duplicate publication."
 body: ""

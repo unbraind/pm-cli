@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Auto Release blocker closure ignores successful recovery dispatch and reruns the stale tag-push workflow ([pm-db8onn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-db8onn.toon))
 - A commit pushed directly to the default branch can never be released: both analyzer-evidence fallbacks presuppose a pull request, and nothing declares that precondition ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
 
 ## 2026.8.15 - 2026-08-15
