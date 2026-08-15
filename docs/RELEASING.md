@@ -224,7 +224,12 @@ pnpm quality:hosted-analysis
 The gate accepts only DeepScan's explicit zero-new-issue status and
 CodeFactor's explicit no-issues result. Both contexts are required by `main`
 branch protection, and the release pipeline reruns the same immutable-tree
-proof. It reads the release commit first. When GitHub does not copy app results
+proof. The gate reads branch protection through REST first; if that transport
+is unavailable or its core API quota is exhausted, it queries the equivalent
+GraphQL rules across every cursor-paginated page and still requires one exact
+`main` rule with strict updates plus both analyzer contexts. Malformed,
+truncated, missing, or ambiguous policy data fails
+closed. It reads the release commit first. When GitHub does not copy app results
 onto a merge commit, the gate may reuse a reviewed merge-parent or squash-PR
 head only when its immutable Git tree SHA exactly matches the release commit.
 Squash provenance additionally requires one unambiguous GitHub association to a
