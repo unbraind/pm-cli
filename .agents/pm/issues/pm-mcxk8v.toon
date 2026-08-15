@@ -1,0 +1,35 @@
+id: pm-mcxk8v
+title: "GH-1028: history-author-acknowledge bulk mutation lacks dry-run and misreports empty selection"
+description: "The irreversible history-author-acknowledge --all-actionable path can mutate every actionable attribution without a preview mode. When the selector matches zero streams it emits a misleading validation-style diagnostic instead of a truthful zero-selection result, making a recovery command unsafe to plan and hard to automate."
+type: Issue
+status: open
+priority: 1
+tags[8]: agent-ux,author-attribution,bulk-mutation,destructive-safety,dry-run,github-1028,history,zero-selection
+created_at: "2026-08-15T10:38:43.585Z"
+updated_at: "2026-08-15T10:41:57.231Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "Add an SDK-native side-effect-free preview primitive used by CLI/MCP; expose --dry-run for --all-actionable with deterministic counts and coordinate samples under the output budget; define truthful zero-selection output and exit semantics; require explicit apply intent for the irreversible path without breaking documented compatibility; add unit, integration, acceptance, and disposable-directory manual proof; update runtime contracts, completions, and command docs."
+goal: project management = context management
+objective: "Make immutable author-attribution recovery previewable, explicit, and automation-safe for both non-empty and empty selections."
+value: Agents can plan a destructive recovery from CLI output without inspecting implementation code or risking an irreversible bulk mutation.
+impact: "Operators can acknowledge the wrong attribution set at workspace scale, while automation cannot distinguish a healthy empty selection from a validation failure."
+outcome: "CLI, SDK action, contracts, MCP exposure, completions, docs, and tests share one preview/apply/zero-selection contract for history-author-acknowledge."
+why_now: The new GitHub report exposes a safety hole in an immutable-history maintenance command; it must be modeled before any further bulk-recovery UX is consolidated.
+parent: pm-n7rr
+risk: high
+confidence: high
+severity: high
+environment: "pm CLI history-author-acknowledge command, current main at 996313a99bf7df942111cac40b8ada53107dcfe5; GitHub issue #1028 report"
+repro_steps: Run history-author-acknowledge with --all-actionable in a disposable tracker containing actionable unknown-author coordinates; observe that no dry-run/plan exists before immutable acknowledgement. Repeat where the selector yields zero actionable coordinates and inspect the diagnostic and exit behavior.
+expected_result: Bulk acknowledgement exposes a side-effect-free dry-run that reports the exact selected coordinates/count and recovery command; applying the mutation requires explicit intent. A zero-selection invocation returns a truthful machine-readable no-op result and documented exit semantics.
+actual_result: "The command jumps directly from selection to irreversible acknowledgement, and an empty selection is diagnosed as though the tracker or input were invalid rather than reporting that no coordinates matched."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-h90s,discovered_from,"2026-08-15T10:38:43.585Z","harness:codex","cli:create:dep",detected
+  pm-jwmszf,discovered_from,"2026-08-15T10:38:43.585Z","harness:codex","cli:create:dep",detected
+  pm-kexu,discovered_from,"2026-08-15T10:38:43.585Z","harness:codex","cli:create:dep",detected
+  pm-tobi,discovered_from,"2026-08-15T10:38:43.585Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-15T10:38:43.585Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for history-author-acknowledge,--all-actionable,dry-run,preview,zero selection,and the GitHub issue number found no item with this exact command-path defect. pm-h90s owns the completed acknowledgement feature,pm-jwmszf owns completed recovery discoverability,pm-tobi records the destructive-safety decision,and open pm-kexu covers update-many preview rather than this immutable-history command; all are linked as provenance,not duplicated or reopened."
+  "2026-08-15T10:41:57.231Z","harness:codex","GitHub linkage evidence 2026-08-15: https://github.com/unbraind/pm-cli/issues/1028#issuecomment-5301855572 points GitHub #1028 to this canonical PM item and summarizes the SDK-native preview/apply and zero-selection contract."
+body: "## Safety contract\n\nThe preview and apply paths must share the exact same selector implementation. Preview returns the prospective immutable acknowledgement coordinates, counts, omissions, and recovery/apply command but writes no item, workspace, or history state. Apply records normal provenance and remains auditable.\n\n## Empty-selection contract\n\nZero actionable coordinates is a successful, truthful no-op unless the caller selected a strict mode that explicitly makes no-match an error. The output must distinguish no match from malformed input, tracker corruption, and already-acknowledged coordinates.\n\n## Scope\n\nThis is specific to history-author-acknowledge. It complements the broader update-many preview work but does not depend on it and must not be folded into a generic destructive-command rewrite."
