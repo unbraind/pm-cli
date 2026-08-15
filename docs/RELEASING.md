@@ -228,8 +228,21 @@ proof. The gate reads branch protection through REST first; if that transport
 is unavailable or its core API quota is exhausted, it queries the equivalent
 GraphQL rules across every cursor-paginated page and still requires one exact
 `main` rule with strict updates plus both analyzer contexts. Malformed,
-truncated, missing, or ambiguous policy data fails
-closed. It reads the release commit first. When GitHub does not copy app results
+truncated, missing, or ambiguous admin policy data fails closed. GitHub Actions'
+ephemeral token cannot request the repository `Administration: read` permission
+required by both of those policy surfaces. When both admin transports reject
+that token, the gate uses the contents-readable `GET /branches/main` summary
+and requires that the exact candidate is the current protected branch head,
+protection is enabled and enforced, and CodeFactor plus DeepScan are effective
+required contexts. That summary intentionally cannot attest the admin-only
+strict-update setting: its receipt reports `strict: null`,
+`strict_verified: false`, and `verification_scope: effective_required_checks`
+instead of inventing a positive result. Exact or immutable identical-tree
+analyzer provenance remains mandatory and is emitted beside the policy receipt,
+so the restricted-token recovery cannot admit an unanalyzed or different-tree
+candidate. A maintainer token with administration-read access still verifies
+and reports `strict: true` through REST or paginated GraphQL. It reads the
+release commit first. When GitHub does not copy app results
 onto a merge commit, the gate may reuse a reviewed merge-parent or squash-PR
 head only when its immutable Git tree SHA exactly matches the release commit.
 Squash provenance additionally requires one unambiguous GitHub association to a

@@ -326,14 +326,40 @@ function explainMissingAnalyzerProvenance(resolvedEvidence) {
   };
 }
 
-/** Verify that both analyzer contexts are strict required checks on main. */
-function inspectBranchProtection(protectionPayload) {
-  const requiredStatusChecks = protectionPayload.required_status_checks;
+/** Resolve effective required checks from either an admin policy or branch summary. */
+function resolveRequiredStatusChecks(protectionPayload, source, sha) {
+  if (source !== "branch_summary") {
+    return { ok: true, value: protectionPayload.required_status_checks };
+  }
+  if (protectionPayload.protected !== true || protectionPayload.protection?.enabled !== true) {
+    return { ok: false, reason: "main branch summary does not report enabled protection" };
+  }
+  const branchSha = protectionPayload.commit?.sha;
+  if (typeof branchSha !== "string" || branchSha.toLowerCase() !== sha) {
+    return { ok: false, reason: "main branch summary does not match the release candidate SHA" };
+  }
+  return { ok: true, value: protectionPayload.protection.required_status_checks };
+}
+
+/** Verify effective analyzer requirements and the strongest readable strictness proof. */
+function inspectBranchProtection(protectionPayload, source, sha) {
+  const branchSummary = source === "branch_summary";
+  const resolvedChecks = resolveRequiredStatusChecks(protectionPayload, source, sha);
+  if (!resolvedChecks.ok) {
+    return resolvedChecks;
+  }
+  const requiredStatusChecks = resolvedChecks.value;
   if (requiredStatusChecks === null || typeof requiredStatusChecks !== "object") {
     return { ok: false, reason: "main branch protection has no required status checks" };
   }
-  if (requiredStatusChecks.strict !== true) {
+  if (!branchSummary && requiredStatusChecks.strict !== true) {
     return { ok: false, reason: "main branch protection does not require branches to be up to date" };
+  }
+  if (
+    branchSummary &&
+    !["non_admins", "everyone"].includes(requiredStatusChecks.enforcement_level)
+  ) {
+    return { ok: false, reason: "main branch summary does not report enforced required status checks" };
   }
   const contexts = Array.isArray(requiredStatusChecks.contexts) ? requiredStatusChecks.contexts : [];
   const checks = Array.isArray(requiredStatusChecks.checks) ? requiredStatusChecks.checks : [];
@@ -350,7 +376,9 @@ function inspectBranchProtection(protectionPayload) {
   return {
     ok: true,
     branch: "main",
-    strict: true,
+    strict: branchSummary ? null : true,
+    strict_verified: !branchSummary,
+    verification_scope: branchSummary ? "effective_required_checks" : "strict_admin_policy",
     required_analyzers: ["CodeFactor", "DeepScan"],
   };
 }
@@ -398,7 +426,7 @@ function parseBranchProtectionPages(stdout) {
   return { ok: true, value: rules };
 }
 
-/** Read main protection through REST, recovering transport failures with GraphQL. */
+/** Read main protection through admin APIs, then a contents-readable effective summary. */
 function readBranchProtection(repository) {
   const restResult = runCaptured(GH, ["api", `repos/${repository}/branches/main/protection`]);
   if (restResult.status === 0) {
@@ -422,10 +450,18 @@ function readBranchProtection(repository) {
     `name=${name}`,
   ]);
   if (graphqlResult.status !== 0) {
-    return {
-      ok: false,
-      reason: "unable to read main branch protection with either GitHub REST or GraphQL",
-    };
+    const branchResult = runCaptured(GH, ["api", `repos/${repository}/branches/main`]);
+    if (branchResult.status !== 0) {
+      return {
+        ok: false,
+        reason:
+          "unable to read main branch protection with GitHub REST, GraphQL, or the contents-readable branch summary",
+      };
+    }
+    const branchPayload = parseObject(branchResult.stdout, "GitHub main branch summary API");
+    return branchPayload.ok
+      ? { ok: true, value: branchPayload.value, source: "branch_summary" }
+      : branchPayload;
   }
   const rulesPayload = parseBranchProtectionPages(graphqlResult.stdout);
   if (!rulesPayload.ok) {
@@ -504,7 +540,11 @@ function main() {
     report(outputJson, { ...codeFactor, repository: repository.value, sha: sha.value }, 1);
     return;
   }
-  const branchProtection = inspectBranchProtection(protectionPayload.value);
+  const branchProtection = inspectBranchProtection(
+    protectionPayload.value,
+    protectionPayload.source,
+    sha.value,
+  );
   if (!branchProtection.ok) {
     report(outputJson, { ...branchProtection, repository: repository.value, sha: sha.value }, 1);
     return;
@@ -527,7 +567,15 @@ function main() {
         source: protectionPayload.source,
         branch: branchProtection.branch,
         strict: branchProtection.strict,
+        strict_verified: branchProtection.strict_verified,
+        verification_scope: branchProtection.verification_scope,
         required_analyzers: branchProtection.required_analyzers,
+        candidate_tree: {
+          sha: sha.value,
+          analyzed_sha: resolvedEvidence.analyzedSha,
+          analysis_source: resolvedEvidence.analysisSource,
+          exact_or_identical: true,
+        },
       },
     },
     0,
