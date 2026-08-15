@@ -25,6 +25,7 @@ import {
 const tempRoots: string[] = [];
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(
     tempRoots
       .splice(0)

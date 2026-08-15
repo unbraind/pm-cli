@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[10]: ci-regression,context-integrity,github-1019,github-1020,github-1021,macos,nightly,node24,ubuntu,windows
 created_at: "2026-08-15T10:38:13.941Z"
-updated_at: "2026-08-15T20:26:17.491Z"
+updated_at: "2026-08-15T20:47:33.346Z"
 closed_at: "2026-08-15T20:25:40.196Z"
 completed_at: "2026-08-15T20:25:40.196Z"
 author: "harness:codex"
@@ -50,6 +50,6 @@ tests[4]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/extension-host-version-health.spec.ts tests/unit/core/store/item-store-root-contract.spec.ts tests/unit/commands/validate-command.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,180,Focused cross-platform regression suite
   node scripts/run-tests.mjs coverage,project,1200,Exact repository 100 percent coverage gate
   "pnpm quality:static",project,1200,Repository assurance including clone-independent tracker context ratchets
-  gh workflow run nightly.yml --ref codex/sdk-context-safety-primitives,project,1200,Hosted Node 24 macOS Ubuntu and Windows acceptance matrix
+  "gh run view 31906155419 --json conclusion,headSha,jobs | jq -e '(.conclusion == \"success\") and (.headSha == \"31c14ea031860c1d1f9b0bc8d7da1039571f82e7\") and ([.jobs[].conclusion] | all(. == \"success\"))'",project,120,Non-mutating inspection of the exact hosted acceptance run
 close_reason: "Resolved all five Node 24 nightly regressions with canonical SDK path handling, clone-local tracker merge preparation, portable cache and permission contracts, and fresh-clone PM link hygiene. Focused tests, exact 100/100/100/100 coverage, static/security/package gates, packed npx/bunx acceptance, and hosted matrix run 31906155419 at 31c14ea031860c1d1f9b0bc8d7da1039571f82e7 are green across macOS, Ubuntu, and Windows."
 body: "## Incident decomposition\n\n- macOS job 94963923783: extension-host realpath test disagrees with the privacy-safe external-path projection introduced by the closed version-skew lineage.\n- Ubuntu job 94963923789: tracker-context-quality blocks on missing-linked-path ceiling growth and one integrity finding; telemetry is warning-only.\n- Windows job 94963923863: authoritative linked-test collection disappears from a stat-matched cache fixture, and the caller-owned scale benchmark exceeds its 30-second budget.\n- Controls: Node 22 and Node 25 Ubuntu jobs pass in the same run.\n\n## Guardrails\n\nDo not relax privacy-safe path redaction, tracker assurance ceilings, authoritative cache semantics, or the uniform timeout budget merely to make the scheduled job green. Establish the current contract and population semantics first, then repair the implementation or fixture."

@@ -28,4 +28,19 @@ describe("history author acknowledgment completion", () => {
         : (script.match(/history-author-acknowledge\)[\s\S]*?\n\s*;;/u)?.[0] ?? "");
     expect(commandBlock).toContain(fingerprint);
   });
+
+  it("lists every Bash completion flag once", () => {
+    const commandBlock =
+      generateBashScript().match(
+        /history-author-acknowledge\)[\s\S]*?\n\s*;;/u,
+      )?.[0] ?? "";
+    const completionWords =
+      commandBlock
+        .match(/compgen -W "([^"]*)"/u)?.[1]
+        ?.split(/\s+/u)
+        .filter((value) => value.length > 0) ?? [];
+    expect(completionWords).toContain("--plan-fingerprint");
+    expect(completionWords).toContain("--json");
+    expect(completionWords).toHaveLength(new Set(completionWords).size);
+  });
 });

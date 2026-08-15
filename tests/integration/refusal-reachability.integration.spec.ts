@@ -1,5 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { describe, expect, it } from "vitest";
 import { PM_ERROR_CODE_CATALOG } from "../../src/sdk/generated-error-code-catalog.js";
 import { PM_READ_OUTPUT_SURFACE_CONTRACTS } from "../../src/sdk/read-output-contracts.js";
@@ -12,6 +13,25 @@ import {
   type PmRefusalProbeObservation,
 } from "../../src/sdk/agent/refusal-reachability.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+
+/** Remove invocation-only amount receipts before comparing replacement results. */
+function withoutReadInvocationReceipts(stdout: string): Record<string, unknown> {
+  const normalized = structuredClone(JSON.parse(stdout)) as Record<
+    string,
+    unknown
+  >;
+  delete normalized.applied_limit;
+  delete normalized.now;
+  delete normalized.read_output;
+  if (
+    normalized.filters !== null &&
+    typeof normalized.filters === "object" &&
+    !Array.isArray(normalized.filters)
+  ) {
+    delete (normalized.filters as Record<string, unknown>).limit;
+  }
+  return normalized;
+}
 
 describe("real-entrypoint refusal reachability", () => {
   it("reaches every declared state as its typed code and exit class", async () => {
@@ -171,6 +191,19 @@ describe("real-entrypoint refusal reachability", () => {
         "unbounded",
       ]);
       expect(unboundedRecovery.code).toBe(0);
+      const fixture = context.runCli([
+        "create",
+        "--create-mode",
+        "progressive",
+        "--title",
+        "Replacement equivalence fixture",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--json",
+      ]);
+      expect(fixture.code).toBe(0);
       const legacyRead = context.runCli(["list", "--json", "--no-truncate"]);
       const replacementRead = context.runCli([
         "list",
@@ -192,6 +225,11 @@ describe("real-entrypoint refusal reachability", () => {
         "1",
       ]);
       expect(replacementLimitRead.code).toBe(legacyLimitRead.code);
+      const replacementLimitPayloadMatches = isDeepStrictEqual(
+        withoutReadInvocationReceipts(replacementLimitRead.stdout),
+        withoutReadInvocationReceipts(legacyLimitRead.stdout),
+      );
+      expect(replacementLimitPayloadMatches).toBe(true);
       const listAmountAliases = PM_READ_OUTPUT_SURFACE_CONTRACTS.find(
         ({ command }) => command === "list",
       )!.dimensions.amount.legacy_aliases.filter(({ flag }) =>
@@ -265,7 +303,8 @@ describe("real-entrypoint refusal reachability", () => {
               reachable:
                 obligation.semantics === "behavior_preserving"
                   ? replacementRead.code === legacyRead.code
-                  : replacementLimitRead.code === legacyLimitRead.code,
+                  : replacementLimitRead.code === legacyLimitRead.code &&
+                    replacementLimitPayloadMatches,
               proof: "executed",
               semantics: obligation.semantics,
             };
