@@ -26,9 +26,9 @@ non-directory root throws `PmCliError` with exit code `USAGE`, diagnostic code
 `tracker_root_not_directory`, and context reason `not_a_directory`.
 An existing root that cannot be enumerated throws `PmCliError` with exit code
 `GENERIC_FAILURE`, diagnostic code `tracker_root_unreadable`, and context reason
-`unreadable`. On POSIX hosts this includes a directory whose permission mode
-grants no read or search access, even when a privileged process could bypass
-those mode bits.
+`unreadable`. On POSIX hosts, enumeration requires both read and directory-search
+permission: a root whose mode lacks either permission is unreadable, even when a
+privileged process could bypass those mode bits.
 
 Consumers should branch on the stable diagnostic code:
 

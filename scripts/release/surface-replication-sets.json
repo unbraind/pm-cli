@@ -191,6 +191,7 @@
         "src/cli/register-history-author.ts",
         "src/sdk/runtime.ts",
         "tests/integration/sdk-context-integrity.integration.spec.ts",
+        "tests/unit/sdk/history-author-acknowledgment-plan.spec.ts",
         "docs/SDK_CONTEXT_INTEGRITY.md"
       ],
       "members": [
@@ -219,6 +220,16 @@
             "round-trips an actionable _workspace coordinate",
             "history-author-acknowledge",
             "corrected-fixture-agent"
+          ]
+        },
+        {
+          "path": "tests/unit/sdk/history-author-acknowledgment-plan.spec.ts",
+          "contains_all": [
+            "produces a stable complete-set fingerprint",
+            "supersedes an explicit prior disposition",
+            "reports a mixed explicit correction as partial effect",
+            "reports an empty bulk selection as no effect",
+            "rejects stale plan fingerprints without mutation"
           ]
         },
         {
