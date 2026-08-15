@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: agent-ux,contracts,full-projection,github-1030,json,output-budget,sdk-contract,silent-data-loss
 created_at: "2026-08-15T10:41:12.886Z"
-updated_at: "2026-08-15T16:21:07.569Z"
+updated_at: "2026-08-15T16:32:07.639Z"
 closed_at: "2026-08-15T16:20:44.949Z"
 completed_at: "2026-08-15T16:20:44.949Z"
 author: "harness:codex"
@@ -32,13 +32,14 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-jt8aa2,discovered_from,"2026-08-15T10:41:12.886Z","harness:codex","cli:create:dep",detected
   pm-s2h0mq,discovered_from,"2026-08-15T10:41:12.886Z","harness:codex","cli:create:dep",detected
   pm-x0iv17,discovered_from,"2026-08-15T10:41:12.886Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-15T10:41:12.886Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for contracts --json --full,omitted_result,requested_budget_infeasible,JSON.parse,and GitHub #1030 found no item for this current command-path regression. Open parent pm-5t33or owns the universal budget contract; closed pm-8nev0o,pm-jt8aa2,pm-x0iv17,and pm-s2h0mq provide completed resumability,omission-receipt,full-projection,and default-ceiling lineage. This issue records the newly reproduced cross-surface gap without reopening or duplicating those items."
   "2026-08-15T10:41:57.903Z","harness:codex","GitHub linkage and live reproduction evidence 2026-08-15: https://github.com/unbraind/pm-cli/issues/1030#issuecomment-5301862505 points GitHub #1030 to this canonical PM item. On repository main 996313a99, the bounded invocation returned only output_budget_exceeded/read_output with omitted_result=true; the unbounded control returned 26 top-level keys, 131 commands, and 104 actions."
   "2026-08-15T14:34:46.759Z","harness:codex","Implementation start 2026-08-15: implement one SDK-native explicit-completeness precedence rule, parser-visible whole-result omission failure semantics, and CLI/SDK/MCP negative controls."
   "2026-08-15T15:05:14.841Z","harness:codex","TDD evidence: the new complete-intent tests first failed because contracts --full still resolved the implicit default budget and the CLI returned code 0 for a wholly omitted JSON result. Green implementation now resolves explicit complete intent to unbounded only when no canonical caller budget exists; explicit infeasible budgets retain the compact receipt and set process exit 2 across the shared output boundary."
   "2026-08-15T15:42:09.163Z","harness:codex","Disposable packed-consumer acceptance 2026-08-15: packed the current branch, installed it into isolated npm and Bun projects, and exercised npm CLI, npx, Bun, and bunx. contracts --json --full returned more than 100 commands/actions with exit 0; an explicit 256-token ceiling returned the parseable omitted_result receipt with exit 2; the installed SDK runAction full read returned the complete contract."
   "2026-08-15T16:20:28.921Z","harness:codex","Final verification 2026-08-15: the exact working tree passed 504 files and 7,387 tests at 100% statements (53,548/53,548), branches (39,560/39,560), functions (10,995/10,995), and lines (51,713/51,713). The linked complete-read suite passed 30/30. Full quality:static passed package boundaries, SDK parity, surface replication, tracker-context assurance, import/transport floors, graph composition, and append-only record integrity. Packed npm, npx, Bun, bunx, CLI, SDK, and explicit bounded-omission controls passed."
+  "2026-08-15T16:32:07.639Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1035 at exact implementation head 7a5653524a38b69099730a5bf8cf7a58e271db6b. Hosted checks and bot review are in progress; merge and release evidence will be appended separately."
 files[6]{path,scope,note}:
   src/core/output/output.ts,project,Nonzero omission transport
   src/sdk/read-output-contracts.ts,project,Shared complete-result precedence

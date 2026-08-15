@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: agent-ux,author-attribution,bulk-mutation,destructive-safety,dry-run,github-1028,history,zero-selection
 created_at: "2026-08-15T10:38:43.585Z"
-updated_at: "2026-08-15T16:21:08.192Z"
+updated_at: "2026-08-15T16:32:08.269Z"
 closed_at: "2026-08-15T16:20:46.304Z"
 completed_at: "2026-08-15T16:20:46.304Z"
 author: "harness:codex"
@@ -32,7 +32,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-jwmszf,discovered_from,"2026-08-15T10:38:43.585Z","harness:codex","cli:create:dep",detected
   pm-kexu,discovered_from,"2026-08-15T10:38:43.585Z","harness:codex","cli:create:dep",detected
   pm-tobi,discovered_from,"2026-08-15T10:38:43.585Z","harness:codex","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-15T10:38:43.585Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for history-author-acknowledge,--all-actionable,dry-run,preview,zero selection,and the GitHub issue number found no item with this exact command-path defect. pm-h90s owns the completed acknowledgement feature,pm-jwmszf owns completed recovery discoverability,pm-tobi records the destructive-safety decision,and open pm-kexu covers update-many preview rather than this immutable-history command; all are linked as provenance,not duplicated or reopened."
   "2026-08-15T10:41:57.231Z","harness:codex","GitHub linkage evidence 2026-08-15: https://github.com/unbraind/pm-cli/issues/1028#issuecomment-5301855572 points GitHub #1028 to this canonical PM item and summarizes the SDK-native preview/apply and zero-selection contract."
   "2026-08-15T10:56:12.274Z","harness:codex","CodeRabbit review evidence 2026-08-15: findings https://github.com/unbraind/pm-cli/pull/1031#discussion_r3789218618 and https://github.com/unbraind/pm-cli/pull/1031#discussion_r3789218619 were valid. The item now matches the live item-id:line/all_actionable grammar, defines a stable complete-set fingerprint with exact counts and ordering, requires fingerprint-bound apply with selection-drift rejection, and maps no_effect/partial_effect/usage/conflict/runtime outcomes to the existing 6/7/2/4/1 exit vocabulary."
@@ -41,6 +41,7 @@ comments[8]{created_at,author,text}:
   "2026-08-15T15:14:09.637Z","harness:codex","Coverage-suite correction: the acceptance test now performs the real CLI dry-run, carries its source-bound fingerprint into apply, and preserves the health/validate round trip. The additive and intentional breaking SDK signature changes are recorded in sdk/public-surface.json with an explicit compatibility rationale."
   "2026-08-15T15:42:10.513Z","harness:codex","Disposable packed-consumer acceptance 2026-08-15: an isolated npm-installed CLI created a real unknown-author history event, previewed --all-actionable with a one-coordinate bound, applied the exact source-bound fingerprint, and returned outcome=effect with an audited mutation. Local npm/npx and Bun/bunx dispatch all resolved the packed artifact."
   "2026-08-15T16:20:29.480Z","harness:codex","Final verification 2026-08-15: source-bound preview/apply, drift conflict, effect/no_effect/partial_effect, CLI/SDK/MCP parity, generated contracts, and completions are covered by 22/22 linked tests plus the surface-replication gate. The exact tree passed 7,387 tests at 100/100/100/100; quality:static and disposable packed npm/npx/Bun/bunx acceptance passed, including a real unknown-author event preview and fingerprint-bound apply."
+  "2026-08-15T16:32:08.269Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1035 at exact implementation head 7a5653524a38b69099730a5bf8cf7a58e271db6b. Hosted checks and bot review are in progress; merge and release evidence will be appended separately."
 files[17]{path,scope,note}:
   scripts/release/surface-replication-sets.json,project,SDK-owned CLI transport replication contract
   sdk/public-surface.json,project,Acknowledged public SDK contract evolution
