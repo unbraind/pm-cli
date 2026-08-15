@@ -13,6 +13,7 @@
 
 ### Other
 
+- PR \#1035 final review convergence: POSIX enumeration wording and plan-level replication ratchet ([pm-k9l7e1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k9l7e1.toon))
 - PR \#1035 exact-head review follow-up: sandbox-safe proof, completion uniqueness, replacement equivalence, and test isolation ([pm-jv3y4q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jv3y4q.toon))
 - Retire the bespoke gate scripts onto the assurance primitives, with a recorded per-script disposition so 6,500 lines of external enforcement either moves into the product or says why it cannot ([pm-4ok4ex](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4ok4ex.toon))
 

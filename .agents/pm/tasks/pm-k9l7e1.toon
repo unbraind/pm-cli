@@ -2,13 +2,13 @@ id: pm-k9l7e1
 title: "PR #1035 final review convergence: POSIX enumeration wording and plan-level replication ratchet"
 description: CodeRabbit's substantive exact-head review at 727c8da84 found two valid contract/assurance gaps and two invalid self-referential or contract-reversing suggestions. This task records all four dispositions and implements the coherent valid pair without reopening completed pm-jv3y4q.
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-15T21:45:48.823Z"
-updated_at: "2026-08-15T21:58:24.878Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#1f33602f96278df39ff13767"
+updated_at: "2026-08-15T22:12:33.450Z"
+closed_at: "2026-08-15T22:12:32.641Z"
+completed_at: "2026-08-15T22:12:32.641Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Document that POSIX enumeration requires both read and search permission and rejects a root lacking either; add tests/unit/sdk/history-author-acknowledgment-plan.spec.ts to the unknown-author coordinate replication set required changes and marker checks; preserve the intentional mode-bit contract and non-self-referential PM evidence model; pass focused surface-replication/docs checks, full static quality, exact hosted checks, and a no-unresolved-thread review inventory."
@@ -21,16 +21,22 @@ why_now: This is the substantive final review result blocking merge of PR #1035.
 parent: pm-usfg
 risk: medium
 confidence: high
+resolution: fixed
 expected_result: "The final review has explicit evidence-backed dispositions, both valid contract gaps are closed, no completed PM record embeds a self-staling head assertion, and no tested privileged-mode safety contract is weakened."
+actual_result: "Review amendment bca4683cc clarifies the POSIX read-and-search conjunction and ratchets the history-author plan spec into the 6/6 coordinate replication set. Focused tests pass 35/35, full local quality:static passes, every PR check is green, exact-head nightly 31910905501 passes all five jobs, all four substantive threads are resolved, and the fresh provider attempts are transparently limited by CodeRabbit rate limiting, Sourcery weekly quota, and Greptile free quota."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-23xkss,discovered_from,"2026-08-15T21:45:48.823Z","harness:codex","cli:create:dep",detected
   pm-ety1qc,discovered_from,"2026-08-15T21:45:48.823Z","harness:codex","cli:create:dep",detected
   pm-jv3y4q,discovered_from,"2026-08-15T21:45:48.823Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-15T21:45:48.823Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for exact review comment ids 3790325670/72/73/75 returned zero items; broader POSIX wording and plan-level replication searches found predecessor lineages pm-23xkss, pm-ety1qc, pm-mcxk8v, and completed review task pm-jv3y4q but no item covering this final four-thread review round. Reuse those as typed discovered_from dependencies rather than duplicating or reopening them."
   "2026-08-15T21:46:12.992Z","harness:codex","Review dispositions: 3790325672 is valid and will clarify that POSIX roots require both read and search bits; 3790325673 is valid and will bind the plan-level acknowledgment spec into the replication set. 3790325670 is declined because embedding the current PR head in the same PM mutation creates a new head and immediately stales the claim; exact-head validation remains on GitHub while 21b3541bd is stable implementation traceability. 3790325675 is declined because the explicit documented/tested contract intentionally classifies missing read or search mode bits as unreadable even for privileged callers, providing deterministic safety across execution identities; opendir remains the secondary effective-access probe."
   "2026-08-15T21:53:32.046Z","harness:codex","Verification evidence before commit: focused surface-replication, tracker-root, and history-author-plan suite passed 35/35 tests. pnpm quality:static passed every repository gate through transport-floor; its first integrated latency sample failed only the unchanged timing floor while the desktop host was saturated (load 6.23, Chrome renderer 137% CPU). A single bounded isolated rerun after load eased passed all 6/6 CLI operations. No threshold, exemption, or gate was weakened."
   "2026-08-15T21:58:24.878Z","harness:codex","Clean verification evidence: the complete pnpm quality:static chain passed after host contention eased, including repository-static-quality, literal docstring/docs checks, package boundary, SDK contract parity, surface replication 6/6, tracker-context-quality, gate registry, SDK surface/import cost, CLI transport 6/6, graph composition, and append-only record integrity."
+  "2026-08-15T22:12:31.561Z","harness:codex","Final GitHub evidence: PR #1035 head bca4683cca8b223f0bae7b8be1e5da7facf9139d is merge-clean; all PR checks passed; nightly https://github.com/unbraind/pm-cli/actions/runs/31910905501 completed success for Ubuntu Node 22/24/25, macOS Node 24, and Windows Node 24; review inventory has zero unresolved threads. CodeRabbit and Sourcery rate-limit notices were both reacted to and acknowledged; Greptile gate returned free review quota exhausted. Those provider outcomes are limitations, not approvals."
+learnings[2]{created_at,author,text}:
+  "2026-08-15T22:12:30.891Z","harness:codex",Exact-head evidence belongs on GitHub because a PM mutation that embeds the current head creates a new head and immediately stales itself; PM records should retain stable implementation commit traceability plus external run identifiers.
+  "2026-08-15T22:12:30.891Z","harness:codex","For POSIX tracker enumeration, a deterministic cross-identity safety contract can intentionally require both read and search mode classes even when a privileged caller could bypass them; document that design and retain the effective-access probe as secondary evidence."
 files[1]{path,scope,note}:
   scripts/release/surface-replication-sets.json,project,Ratchet plan-level history-author acknowledgment coverage
 tests[2]{command,scope,timeout_seconds,note}:
@@ -38,4 +44,5 @@ tests[2]{command,scope,timeout_seconds,note}:
   "pnpm quality:static",project,1200,Repository static docstring replication graph and integrity gates
 docs[1]{path,scope,note}:
   docs/SDK_CONTEXT_TRUTH_CONTRACTS.md,project,Clarify POSIX metadata enumeration requires both read and search permission
+close_reason: "Fixed in bca4683cc: unambiguous POSIX enumeration contract plus plan-level history-author replication ratchet, with 35 focused tests, complete static quality, terminal-green PR CI/nightly, and all review findings explicitly dispositioned."
 body: ""
