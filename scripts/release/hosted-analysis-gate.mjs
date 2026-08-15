@@ -355,6 +355,61 @@ function inspectBranchProtection(protectionPayload) {
   };
 }
 
+/** Read main protection through REST, recovering transport failures with GraphQL. */
+function readBranchProtection(repository) {
+  const restResult = runCaptured(GH, ["api", `repos/${repository}/branches/main/protection`]);
+  if (restResult.status === 0) {
+    const restPayload = parseObject(restResult.stdout, "GitHub branch protection API");
+    return restPayload.ok
+      ? { ok: true, value: restPayload.value, source: "rest" }
+      : restPayload;
+  }
+
+  const [owner, name] = repository.split("/");
+  const graphqlResult = runCaptured(GH, [
+    "api",
+    "graphql",
+    "-f",
+    "query=query($owner:String!,$name:String!){repository(owner:$owner,name:$name){branchProtectionRules(first:100){nodes{pattern requiresStrictStatusChecks requiredStatusCheckContexts}}}}",
+    "-F",
+    `owner=${owner}`,
+    "-F",
+    `name=${name}`,
+  ]);
+  if (graphqlResult.status !== 0) {
+    return {
+      ok: false,
+      reason: "unable to read main branch protection with either GitHub REST or GraphQL",
+    };
+  }
+  const graphqlPayload = parseObject(graphqlResult.stdout, "GitHub branch protection GraphQL API");
+  if (!graphqlPayload.ok) {
+    return graphqlPayload;
+  }
+  const rules = graphqlPayload.value.data?.repository?.branchProtectionRules?.nodes;
+  if (!Array.isArray(rules)) {
+    return { ok: false, reason: "GitHub branch protection GraphQL API returned a non-array rules payload" };
+  }
+  const mainRules = rules.filter((rule) => rule?.pattern === "main");
+  if (mainRules.length !== 1) {
+    return {
+      ok: false,
+      reason: `GitHub branch protection GraphQL API returned ${mainRules.length} exact main rules; expected 1`,
+    };
+  }
+  return {
+    ok: true,
+    source: "graphql",
+    value: {
+      required_status_checks: {
+        strict: mainRules[0].requiresStrictStatusChecks,
+        contexts: mainRules[0].requiredStatusCheckContexts,
+        checks: [],
+      },
+    },
+  };
+}
+
 /** Execute the exact-head hosted analyzer gate. */
 function main() {
   const { flags } = parseFlags(process.argv.slice(2));
@@ -382,20 +437,7 @@ function main() {
     report(outputJson, { ...analyzerEvidence, repository: repository.value, sha: sha.value }, 1);
     return;
   }
-  const protectionResult = runCaptured(GH, [
-    "api",
-    `repos/${repository.value}/branches/main/protection`,
-  ]);
-  if (protectionResult.status !== 0) {
-    report(
-      outputJson,
-      { ok: false, repository: repository.value, sha: sha.value, reason: "unable to read main branch protection with gh api" },
-      1,
-    );
-    return;
-  }
-
-  const protectionPayload = parseObject(protectionResult.stdout, "GitHub branch protection API");
+  const protectionPayload = readBranchProtection(repository.value);
   if (!protectionPayload.ok) {
     report(outputJson, { ...protectionPayload, repository: repository.value, sha: sha.value }, 1);
     return;
@@ -440,6 +482,7 @@ function main() {
         codefactor: codeFactor.analyzer,
       },
       branch_protection: {
+        source: protectionPayload.source,
         branch: branchProtection.branch,
         strict: branchProtection.strict,
         required_analyzers: branchProtection.required_analyzers,
