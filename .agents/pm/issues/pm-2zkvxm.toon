@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[6]: "area:cli","area:history","area:sdk",error-taxonomy,integrity,sentry
 created_at: "2026-08-15T22:45:17.608Z"
-updated_at: "2026-08-15T23:30:37.206Z"
+updated_at: "2026-08-15T23:34:09.294Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#1f33602f96278df39ff13767"
 author: "harness:codex"
@@ -25,11 +25,12 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-h06944,verifies,"2026-08-15T22:45:17.608Z","harness:codex","cli:create:dep",detected
   pm-jv3y4q,discovered_from,"2026-08-15T22:45:17.608Z","harness:codex","cli:create:dep",detected
   pm-klo8,implements,"2026-08-15T22:45:17.608Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-15T22:45:17.608Z","harness:codex","Duplicate check: searched all statuses for the exact PM-CLI-35 title, before_hash_mismatch, workspace-history verification failures, state conflict, and history integrity error taxonomy. The closest lineage is closed workspace audit feature pm-klo8, closed state-agreement fix pm-h06944, and open item-history baseline crash pm-qw1uw6; none owns typed workspace chain-verification refusals. Live Sentry evidence is one handled high event at 2026-08-15T17:16:29Z from this host during deliberate isolated acceptance, release 2026.8.15, with no recurrence."
   "2026-08-15T22:53:07.859Z","harness:codex","TDD red evidence: after changing every existing corrupt-chain assertion to require PmCliError conflict semantics, the focused workspace suite failed 5 tests on raw TypeError. The exact before-hash negative control reproduced verify_failed:before_hash_mismatch and exit 1 behavior before implementation. Green implementation now routes all five verifier call sites through one SDK-owned error and the focused SDK/CLI suite passes 58 tests."
   "2026-08-15T23:12:43.121Z","harness:codex","Coverage gate evidence: the clean isolated full suite reached 7,397 passing tests and exactly one deliberate SDK snapshot failure because adding optional verification_errors changes the versioned PmCliErrorContext signature. Regenerated sdk/public-surface.json with an explicit compatibility acknowledgment; no product assertion failed. The earlier coverage-directory collision was an overlapping local harness process and was cleared before this clean run."
   "2026-08-15T23:30:36.643Z","harness:codex","Green verification evidence: focused SDK, CLI, and snapshot suite passed 70/70; clean full suite passed 504 files and 7,398 tests with exact statements 53,581/53,581, branches 39,593/39,593, functions 11,000/11,000, and lines 51,745/51,745. Full repository static assurance passed including build, strict quality/docstring gates, package boundary, SDK parity, replication, tracker context quality, SDK surface/import cost, CLI transport, graph composition, and record integrity. Manual isolated dist acceptance tampered _workspace before_hash and received structured exit 4 with code workspace_history_chain_invalid, the exact verifier row, and executable recovery; telemetry was disabled for the deliberate corruption fixture."
+  "2026-08-15T23:34:09.294Z","harness:codex","Delivery is under hosted review in PR #1037 (https://github.com/unbraind/pm-cli/pull/1037) at exact head 6d6b74193. Keep this item active until exact-head checks and reviewer inventory converge."
 learnings[1]{created_at,author,text}:
   "2026-08-15T23:30:37.206Z","harness:codex",Deterministic integrity refusals should remain fail-closed while crossing CLI/SDK boundaries as typed conflicts; exact verifier evidence plus an executable recovery command distinguishes recoverable tracker corruption from unexpected runtime faults without suppressing genuine exceptions.
 files[7]{path,scope,note}:
