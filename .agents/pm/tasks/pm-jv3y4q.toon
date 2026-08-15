@@ -2,13 +2,13 @@ id: pm-jv3y4q
 title: "PR #1035 exact-head review follow-up: sandbox-safe proof, completion uniqueness, replacement equivalence, and test isolation"
 description: CodeRabbit's fresh full review at exact head 5352a8863 found four actionable correctness/assurance gaps plus one valid immutable-history process note. This task binds the coherent review amendment without reopening completed feature lineages.
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-08-15T20:44:09.307Z"
-updated_at: "2026-08-15T20:57:25.332Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#1f33602f96278df39ff13767"
+updated_at: "2026-08-15T21:15:16.165Z"
+closed_at: "2026-08-15T21:14:53.020Z"
+completed_at: "2026-08-15T21:14:53.020Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: "Replace the mutating pm-zno2iu linked workflow dispatch using pm with a sandbox-safe non-mutating exact-run inspection; guarantee Bash history-author completion includes each global flag once; require normalized payload equality for replacement migration hints while retaining behavior-preserving execution semantics; restore the shared readFile spy between plan tests; preserve pm-th6y append-only cleanup history and document its granularity; verify focused tests, exact 100/100/100/100 coverage, repository gates, exact-head CI, and a no-new-findings bot pass."
@@ -21,15 +21,19 @@ why_now: PR #1035 is otherwise green and merge-ready; these exact-head findings 
 parent: pm-usfg
 risk: high
 confidence: high
+resolution: fixed
+expected_result: "Every exact-head review finding has a code or process disposition, executable regression evidence, terminal-green local and hosted gates, zero unresolved review threads, and provider limitations are reported honestly."
+actual_result: "Four actionable findings were fixed in 21b3541bd and the immutable-history note became a durable learning; 16 focused and 7,397 full tests pass at exact 100/100/100/100, repository docstrings are literal 100%, PR CI and nightly 31908257549 are green, all 15 threads are resolved, and the requested fresh CodeRabbit review was rate-limited while Sourcery/Cubic skipped."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-h8tpeh,discovered_from,"2026-08-15T20:44:09.307Z","harness:codex","cli:create:dep",detected
   pm-mcxk8v,discovered_from,"2026-08-15T20:44:09.307Z","harness:codex","cli:create:dep",detected
   pm-th6y,discovered_from,"2026-08-15T20:44:09.307Z","harness:codex","cli:create:dep",detected
   pm-zno2iu,discovered_from,"2026-08-15T20:44:09.307Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-15T20:44:09.307Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for PR 1035 review follow-up,sandbox-safe linked workflow tests,completion global-flag uniqueness,replacement migration payload equivalence,and readFile spy isolation found no item covering this exact five-thread review set. Completed pm-mcxk8v and pm-zno2iu,open pm-h8tpeh,and historical pm-th6y remain canonical predecessor lineages and are linked with discovered_from edges rather than duplicated or reopened."
   "2026-08-15T20:47:38.895Z","harness:codex","Fresh CodeRabbit inventory: 3790223028 is a valid no-code process note; 3790223031, 3790223032, 3790223034, and 3790223036 are valid actionable findings. All five were up-voted. Implementation replaces the mutating hosted dispatch with exact-run inspection through pm, deduplicates only the Bash command-local contract source, requires deep equality after removing invocation-only amount receipts, and restores Vitest spies after every acknowledgment-plan scenario."
   "2026-08-15T20:57:25.332Z","harness:codex","Verification evidence: focused review suite passed 3 files and 16 tests. Full literal-source coverage passed 504 files and 7,397 tests with exact 100.00% statements (53,572/53,572), branches (39,579/39,579), functions (10,999/10,999), and lines (51,736/51,736). pnpm quality:static completed successfully: repository static quality, absence tolerance, token budget, context-intent calibration, docs/skills, package boundary, SDK parity, surface replication, tracker-context-quality, gate registry, SDK snapshot, import/transport floors, graph composition, and append-only record integrity all passed with negative controls."
+  "2026-08-15T21:14:46.009Z","harness:codex","Hosted exact-head evidence: PR head 21b3541bd2c38afa7582f7d624e7d93195b39a2d has terminal-green CI across coverage, literal 100% static/docstring gates, typecheck, smokes, Windows regression, CodeQL, Semgrep, Trivy, TruffleHog, DeepScan, Codecov, and benchmarks. Nightly run 31908257549 completed successfully on Windows Node 24, macOS Node 24, and Ubuntu Node 22/24/25. Fresh review inventory has zero unresolved threads; CodeRabbit confirmed each of the five fixes, and every new bot reply was up-voted and answered. The requested new full review was rate-limited and Sourcery/Cubic skipped, recorded as provider limitations rather than approvals."
 learnings[1]{created_at,author,text}:
   "2026-08-15T20:47:38.282Z","harness:codex","Repeated single-entry linked-file removals are valid append-only PM mutations, but each array shift rewrites later path/note positions in the patch. Future large cleanup should prefer one atomic replace-files transaction when the desired retained set is known; never consolidate the hash-chained history by hand."
 files[4]{path,scope,note}:
@@ -41,4 +45,5 @@ tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/history-author-completion.spec.ts tests/unit/sdk/history-author-acknowledgment-plan.spec.ts tests/integration/refusal-reachability.integration.spec.ts,project,300
   node scripts/run-tests.mjs coverage,project,1200
   "pnpm quality:static",project,1200
+close_reason: "Implemented and verified the complete PR #1035 exact-head review amendment: sandbox-safe hosted proof, unique Bash completions, normalized replacement payload equivalence, isolated test spies, and immutable-history process guidance. Focused 16-test, full 7,397-test exact 100/100/100/100 coverage, mandatory 100% module/export/member docstrings, repository static gates, terminal-green PR CI, five-platform nightly 31908257549, and a zero-unresolved-thread review inventory all pass; provider rate limits/skips are explicitly non-approval limitations."
 body: "## Fresh review inventory\\n\\n- 3790223028: preserve append-only pm-th6y cleanup history; record that repeated array-shifting removals are current pm mutation granularity.\\n- 3790223031: replace the mutating hosted-workflow linked test with a non-mutating inspection command while retaining run 31906155419 in comments.\\n- 3790223032: deduplicate Bash history-author global completion candidates.\\n- 3790223034: compare normalized replacement payloads, not only successful exit codes.\\n- 3790223036: restore the shared readFile spy after each acknowledgment-plan test.\\n\\n## Guardrails\\n\\nUse pm for every tracker mutation, never rewrite append-only history, do not weaken replacement semantics or platform ratchets, and rerun bot review after every pushed amendment."
