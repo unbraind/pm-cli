@@ -6,10 +6,10 @@ status: open
 priority: 2
 tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
 created_at: "2026-07-25T12:28:50.389Z"
-updated_at: "2026-08-01T09:56:20.454Z"
+updated_at: "2026-08-16T10:44:19.101Z"
 author: "harness:claude-code"
 estimated_minutes: 360
-acceptance_criteria: "Every command declares exactly one tier in contract data, and help, MCP tool profiles, shell completions, and generated docs derive visibility from that field alone; A test asserts no surface maintains its own independent visibility list; The core tier's rendered help size is asserted against the one-screen budget, making the claim mechanically checked; The first landing changes no visible surface, proven by before-and-after snapshots of help, tool lists, and completions; Changing a command's tier is a single-field change whose effect on all four surfaces appears in one regenerated snapshot diff; Package-contributed commands declare a tier through the same field, so extensions cannot bypass tiering"
+acceptance_criteria: "Every command declares exactly one tier in contract data, and help, MCP tool profiles, shell completions, and generated docs derive visibility from that field alone; Every command declares exactly one noun (capability family) in the same contract record as its tier, and every declared noun has at least one command, checked in both directions against the command registration rather than against a list kept beside it; A test asserts no surface maintains its own independent visibility list; Agent-facing routing surfaces - skills, guide topics, and generated docs - derive their capability map from the declared noun field rather than hand-authoring one; The core tier's rendered help size is asserted against the one-screen budget, making the claim mechanically checked; The first landing changes no visible surface, proven by before-and-after snapshots of help, tool lists, and completions; Changing a command's tier is a single-field change whose effect on all four surfaces appears in one regenerated snapshot diff; Package-contributed commands declare a tier and a noun through the same fields, so extensions cannot bypass tiering or routing"
 goal: project management = context management
 objective: "Surface visibility is one declared property, not four independently maintained lists"
 value: Four mechanisms answering one question is a drift generator; drift here means an agent sees different surfaces through CLI and MCP and cannot trust either
@@ -67,7 +67,7 @@ dependencies[14]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-27T13:20:31.866Z","harness:codex","Scope decision: command tiering remains related to this SDK context-contract bundle, but the current implementation will not claim full help/MCP/completion/docs derivation; returning it to open until that acceptance surface is actively edited."
   "2026-07-27T16:42:27.992Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:12.348Z","harness:codex","Foundation evidence: every built-in and extension command has a validated tier contract; MCP profiles, generated docs, and completion command sets consume it. Remaining acceptance before closure: route CLI help visibility through the tier field, add the explicit one-screen core-help budget assertion, and prove a single tier edit changes all four rendered surfaces in one snapshot. Returning to open/released rather than overstating completion."
@@ -76,6 +76,7 @@ comments[8]{created_at,author,text}:
   "2026-07-30T07:26:28.388Z","harness:codex","Token-efficiency evidence: command visibility and canonical identity remain available in command-scoped contracts, while unscoped/full projections omit repeated semantic rows. This preserves the visibility primitive without increasing the all-in-one context surface beyond its enforced budget."
   "2026-07-30T07:40:05.149Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/822 carries the cohesive SDK/CLI self-describing context-contract bundle. Initial implementation commit e1fabaa97; final exact-head checks and review evidence will be recorded in the PR because post-review tracker mutations would create a new unreviewed Git tree."
   "2026-07-30T08:15:44.636Z","harness:codex","Review-fix evidence for PR #822: the built-in list/triage intent now preserves governance and execution fields (priority, ownership, risk/confidence, scheduling, blocker and dependency context) while explicit caller projections still win. Packed CLI acceptance exercised the triage projection against a newly created item."
+  "2026-08-16T10:44:19.101Z","harness:claude-code","Grammar ruling AC (recorded on pm-pbyu 2026-08-16) places the capability-family declaration here, beside the tier, because both are the same kind of contract data and both are consumed by the same four surfaces. Measured basis: PM_COMMAND_VISIBILITY_CONTRACTS declares a tier per command and nothing declares a family, so rewriting the four agent skill bundles for progressive disclosure required hand-authoring a thirteen-family map across .agents/skills. That map is prose, nothing compares it to the 75 commands it claims to partition, and a new command joins no family without any check noticing. pm-yy8rmx already measures the inverse direction - 14 of 76 canonical commands have no declared home in the target grammar - which is the same conformance clause failing from the other side."
 files[7]{path,scope,note}:
   package.json,project,mandatory generated surface check
   scripts/generate-agent-capability-surfaces.mjs,project,generated surface drift gate

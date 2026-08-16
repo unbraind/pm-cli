@@ -452,6 +452,34 @@ export async function validatePublicDocBudgets(failures) {
   }
 }
 
+/**
+ * Prove every reference file is reachable from its own SKILL.md.
+ *
+ * A skill's whole value is progressive disclosure, which fails in both
+ * directions: a link to a missing file breaks the expansion, and a file no
+ * link reaches is depth an agent can never find. `validateSkillLinks` covers
+ * the first direction; this covers the second.
+ */
+export async function validateSkillReferenceReachability(skillName, skillContent, failures) {
+  const referenceRoot = `${SKILLS_ROOT}/${skillName}/references`;
+  if (!(await pathExists(referenceRoot))) {
+    return;
+  }
+  const referenceFiles = await collectMarkdownFiles(referenceRoot);
+  const linkedTargets = new Set(
+    extractRelativeMarkdownLinks(skillContent)
+      .map((link) => resolveMarkdownLink(`${SKILLS_ROOT}/${skillName}/SKILL.md`, link))
+      .filter((target) => target !== null),
+  );
+  for (const referenceFile of referenceFiles) {
+    if (!linkedTargets.has(referenceFile)) {
+      failures.push(
+        `Skill ${skillName}: ${referenceFile} is not linked from SKILL.md, so no agent can route to it`,
+      );
+    }
+  }
+}
+
 export async function runSkillChecks(failures) {
   if (!(await fileExists(REQUIRED_HARNESS_DOC))) {
     failures.push(`Missing required harness compatibility guide: ${REQUIRED_HARNESS_DOC}`);
@@ -465,6 +493,7 @@ export async function runSkillChecks(failures) {
     const skillContent = await readUtf8(skillPath);
     validateSkillFrontmatter(skillName, skillContent, failures);
     await validateSkillLinks(skillName, failures);
+    await validateSkillReferenceReachability(skillName, skillContent, failures);
   }
 }
 

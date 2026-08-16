@@ -1,0 +1,46 @@
+id: pm-f6zjpq
+title: "Agent skills routed to a workflow loop but named no capability family and no read-cost, so four of twelve command families and the entire output-budget surface were unreachable through progressive disclosure"
+description: "The four canonical skill bundles taught the claim-implement-close loop and routed to two references each. They named no capability map, so graph, assurance, merge, and the read-output budget family had no entry point at any tier; and they annotated no retrieval cost, so an agent could not tell that a routed document was 275 tokens or 45,000."
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:agent-ux","area:docs",context-management,progressive-disclosure,skills
+created_at: "2026-08-16T10:27:59.110Z"
+updated_at: "2026-08-16T10:52:27.843Z"
+closed_at: "2026-08-16T10:52:27.244Z"
+completed_at: "2026-08-16T10:52:27.244Z"
+author: "harness:claude-code"
+acceptance_criteria: "Every SKILL.md declares an explicit load order with measured per-tier costs; Every command family reachable from the CLI has an entry command and a guide topic named in at least one skill; pm guide covers the previously unrouted families so runtime routing does not depend on prose; Each skill's references are individually loadable, cost-annotated, and route into large documents by section rather than whole; A reference file that no SKILL.md links to fails the docs/skills gate; The author-detection and never-pass-author rule appears in every bundle"
+parent: pm-mpbb
+risk: medium
+confidence: high
+resolution: "Progressive disclosure is now explicit and measured: every tier declares its cost, every capability family has an entry point and a runtime guide topic, and an unreachable reference fails CI."
+expected_result: "An agent can reach any pm capability through a bounded, cost-known expansion path."
+actual_result: "Four capability families had no route, and no route declared its cost."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-suhxny,discovered_from,"2026-08-16T10:27:59.110Z","harness:claude-code","cli:create:dep",detected
+  pm-1kxs,implements,"2026-08-16T10:37:54.910Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-16T10:29:20.025Z","harness:claude-code","Evidence: pm guide now returns 12 topics (was 8). docs/skills gate passes; negative control confirmed - adding an unlinked references/ORPHAN.md fails the gate with the exact path, removing it restores the pass. Claude plugin smoke passed. Measured routing costs recorded in each skill: SKILL.md ~650 tok, pm next ~2.5k, pm contracts --summary ~2.6k, pm guide <topic> --depth brief ~640 tok, docs/COMMANDS.md ~29k, docs/SDK.md ~45k."
+  "2026-08-16T10:52:26.636Z","harness:claude-code","Coverage before and after, measured against docs/generated/AGENT_COMMAND_SURFACE.md (75 commands: 13 core, 22 standard, 36 full plus 4 internal).\n\nBefore, no skill named an entry point for four capability families: relationships (graph, deps), declared invariants (assurance, validate as a gate rather than a check), branch and fleet (merge, claim/release as concurrency primitives), and the entire read-output budget surface (--output-budget, --output-limit, --output-include, --output-cursor, --output-session, --output-format, --token-accounting). The last is the surface whose sole purpose is keeping an agent's context small, and it appeared in zero of twelve skill bundles.\n\nAlso absent from every bundle: the never-pass---author rule, despite it being an AGENTS.md non-negotiable and a user mandate.\n\nAfter: pm guide returns 12 topics (was 8). The four new topics - tokens, graph, assurance, merge - each carry commands, two workflow templates, and doc references verified to exist. Each of the four canonical SKILL.md files declares a load order with measured per-tier costs and a capability map naming an entry command and a guide topic per family. Eight harness plugin skills carry the same token-discipline and guide-routing block.\n\nMeasured routing costs now stated in the skills rather than implied: SKILL.md ~650 tok, pm guide <topic> --depth brief ~640 tok, pm list-open --limit 20 ~909 tok, pm context --limit 10 ~2,063 tok, pm next ~2,525 tok, pm contracts --summary ~2,637 tok, pm help ~3,136 tok, pm contracts --command list --flags-only ~3,372 tok, pm guide commands --depth standard ~7,981 tok, docs/COMMANDS.md ~28,980 tok, docs/SDK.md ~45,117 tok. Both large documents are now routed into by heading rather than linked whole; SURFACE_MAP.md and AUTHORING.md carry the heading indexes.\n\nGate: validateSkillReferenceReachability fails when a references/*.md is not linked from its own SKILL.md. Negative control proven - an unlinked ORPHAN.md fails naming the exact path, removing it restores the pass. The gate already runs in CI via docs.yml and release.yml.\n\nVerification: docs/skills gate passed, Claude plugin smoke passed, full test suite passed, pnpm quality:static passed."
+files[2]{path,scope,note}:
+  scripts/release/docs-skills-gate.mjs,project,Fails when a reference file is unreachable from its SKILL.md
+  src/sdk/guide-topics.ts,project,"Adds the tokens,graph,assurance,and merge guide topics"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/release/docs-skills-gate.mjs,project,300
+docs[13]{path,scope,note}:
+  .agents/skills/pm-developer/references/GRAPH_AND_RELATIONSHIPS.md,project,"Edge vocabulary,traversal verbs,graph governance signals"
+  .agents/skills/pm-developer/references/MULTI_AGENT_MERGE.md,project,"Branch,merge,and concurrent-agent procedure"
+  .agents/skills/pm-developer/references/SCRIPTING_COMPOSITION.md,project,Exit-code contract and shell composition patterns
+  .agents/skills/pm-developer/references/TOKEN_BUDGETS.md,project,"Bounded reads,cursors,projections,omission receipts"
+  .agents/skills/pm-developer/SKILL.md,project,"Developer router: load order,capability map,token discipline"
+  .agents/skills/pm-extensions/references/AUTHORING.md,project,Extension authoring procedure and capability declaration
+  .agents/skills/pm-extensions/SKILL.md,project,"Extension router: lifecycle order,capability declaration,verification"
+  .agents/skills/pm-sdk/references/DOMAIN_MODELING.md,project,Building non-PM domains on pm primitives
+  .agents/skills/pm-sdk/references/SURFACE_MAP.md,project,Section routing into docs/SDK.md and shipped surface queries
+  .agents/skills/pm-sdk/SKILL.md,project,"SDK router: entrypoint table,surface compatibility,non-negotiables"
+  .agents/skills/pm-user/references/BACKLOG_SHAPING.md,project,"Ladder structure,duplicate avoidance,closing well"
+  .agents/skills/pm-user/SKILL.md,project,"Operator router: intake loop,item-quality field table,capability map"
+  .agents/skills/README.md,project,Skills index rewritten as a load-order router with measured tier costs
+close_reason: Skills rewritten as cost-annotated routers with a capability map covering every command family; four guide topics added for the previously unrouted families; reference reachability is now gated with a proven negative control.
+body: ""

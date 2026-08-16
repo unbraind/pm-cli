@@ -1,0 +1,38 @@
+id: pm-suhxny
+title: "The public-surface gate enumerates its own hand-written entrypoint list, so two published code exports ship ungoverned and ./cli publishes 86 internal functions as typed API"
+description: "scripts/sdk-surface-snapshot.mjs iterates a frozen ENTRYPOINT_CLASSIFICATIONS map of ten keys and looks each one up in package.json exports. It never iterates the export map, so coverage is proven in one direction only: every classified entrypoint must exist in the package, and no package entrypoint must be classified."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:release","area:sdk",gate-denominator,governance,surface
+created_at: "2026-08-16T10:05:42.492Z"
+updated_at: "2026-08-16T10:51:44.247Z"
+closed_at: "2026-08-16T10:51:43.567Z"
+completed_at: "2026-08-16T10:51:43.567Z"
+author: "harness:claude-code"
+acceptance_criteria: "The surface generator derives its denominator from package.json exports and refuses to build while any export declaring a types path is unclassified; A negative control proves the refusal fires when a new code export is added and passes once it is classified; Every published code export appears in sdk/public-surface.json, with alias entries recording their target instead of duplicating symbols; The ./cli entrypoint's exported symbols are recorded so a change to what it exposes is a classified surface change; The disposition of publishing _testOnly through ./cli is recorded rather than implicitly blessed"
+parent: pm-usfg
+risk: high
+confidence: high
+resolution: "Replaced the hand-written entrypoint enumeration with an export-map-derived denominator, added alias target verification, and brought both previously ungoverned code exports under the surface contract."
+expected_result: Every entry in the published package export map is governed by the public-surface compatibility gate.
+actual_result: "Ten of twelve code exports are governed. The root export and ./cli are invisible to the gate, and ./cli ships 86 internal functions with type declarations."
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e6tm5c,discovered_from,"2026-08-16T10:05:42.492Z","harness:claude-code","cli:create:dep",detected
+  pm-xpumg4,discovered_from,"2026-08-16T10:05:42.492Z","harness:claude-code","cli:create:dep",detected
+  pm-1jrdri,discovered_from,"2026-08-16T10:40:22.805Z","harness:claude-code","cli:update:dep",detected
+  pm-6j7r1a,discovered_from,"2026-08-16T10:40:22.805Z","harness:claude-code","cli:update:dep",detected
+  pm-b84irw,discovered_from,"2026-08-16T10:40:22.805Z","harness:claude-code","cli:update:dep",detected
+  pm-te6elw,discovered_from,"2026-08-16T10:40:22.805Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-16T10:51:42.915Z","harness:claude-code","Evidence. Measurement: package.json declares 12 code exports (entries with a types path); sdk/public-surface.json governed 10. Ungoverned: the root '.' and './cli'. dist/cli/main.d.ts declares runPmCli and _testOnly, an object of 86 internal helpers; a bun install of the published 2026.8.16 artifact and an import of @unbrained/pm-cli/cli returns both at runtime, so the leak is in the shipped package and not only in the working tree.\n\nNegative control before: adding a new ./negative-control export to package.json left sdk-surface-snapshot --check, audit-package-boundary and package-sdk-contract-parity all passing, with the snapshot reporting '0 classified changes'.\n\nFix: listPublishedCodeExports derives the denominator from package.json exports and findUnclassifiedPackageCodeExports reports any that carry no classification; buildSdkSurfaceSnapshot refuses while the list is non-empty. '.' is classified aggregate_alias with ENTRYPOINT_ALIASES asserting its types path still equals ./sdk's, and its symbols are not duplicated (snapshot grew 6.7 KB, not 600 KB). './cli' is classified executable_entry and its two symbols are recorded, so the 86-helper signature is now signed contract data and any change to it is a classified surface change.\n\nNegative control after: the same injected export fails with 'Package export map publishes unclassified code entrypoints: ./negative-control', exit 1. Removing it restores the pass.\n\nVerification: tests/unit/scripts/sdk-surface-snapshot.spec.ts 17/17 pass, including a test that asserts the real repository export map is fully classified and that the snapshot's entrypoint set equals listPublishedCodeExports(package.json). Full suite passed. pnpm quality:static passed.\n\nThe separate question of whether ./cli should publish _testOnly at all is deliberately not answered here; pm-rf120g owns it."
+files[3]{path,scope,note}:
+  scripts/sdk-surface-snapshot.mjs,project,Derives the surface denominator from package.json exports and fails closed on unclassified code exports
+  sdk/public-surface.json,project,Now records the root alias and the ./cli executable entry
+  tests/unit/scripts/sdk-surface-snapshot.spec.ts,project,"Coverage for the export-map denominator,alias drift refusal,and the real repository export map"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-surface-snapshot.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Documents the export-map denominator and the alias/executable entry classifications
+close_reason: "The public-surface gate now derives its denominator from the package export map and refuses to build while any published code export is unclassified; the root alias and the ./cli executable entry are recorded, with negative controls proven in both directions."
+body: ""

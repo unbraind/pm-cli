@@ -1,0 +1,19 @@
+id: pm-rf120g
+title: "Disposition the test-only escape hatch published through the ./cli entrypoint: 86 internal functions are consumer-visible API with no support intent"
+description: "src/cli/main.ts exports _testOnly, an object of 86 internal helpers, and package.json publishes ./cli with dist/cli/main.d.ts. Consumers can import and type-check against every one of them. The SDK side already treats this as a governed decision: _testOnlyCliContracts carries a named exclusion reason. The ./cli side has never been dispositioned."
+type: Task
+status: open
+priority: 2
+tags[4]: "area:cli","area:sdk",hygiene,surface
+created_at: "2026-08-16T10:06:33.911Z"
+updated_at: "2026-08-16T10:06:33.911Z"
+author: "harness:claude-code"
+acceptance_criteria: The published ./cli declaration either stops exposing _testOnly or the exposure carries a recorded reason in the surface snapshot's exclusion vocabulary; pm's own tests continue to reach the helpers through source imports rather than the package export; The chosen disposition is written into docs/SDK.md next to the executable_entry classification; A change to the set of exposed helpers is a classified surface change either way
+parent: pm-usfg
+risk: medium
+confidence: medium
+expected_result: The published CLI entrypoint exposes only what the project intends to support.
+actual_result: "It exposes runPmCli plus 86 unsupported internal helpers, typed and resolvable by any consumer."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-suhxny,discovered_from,"2026-08-16T10:06:33.911Z","harness:claude-code","cli:create:dep",detected
+body: ""

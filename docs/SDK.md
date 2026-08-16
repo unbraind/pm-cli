@@ -91,7 +91,12 @@ barrel remains source-compatible:
 | `@unbrained/pm-cli/sdk`                     | Compatibility aggregate containing every supported SDK export              |
 
 `@unbrained/pm-cli/cli` remains the runtime CLI module entrypoint for package
-resolution, not a typed library API. The committed
+resolution, not a typed library API. It is nonetheless a published code export,
+so the surface snapshot records it under the `executable_entry` classification
+and any change to what it exposes is a classified surface change. The bare
+`@unbrained/pm-cli` root export is recorded as an `aggregate_alias` of
+`@unbrained/pm-cli/sdk`: its symbols are not duplicated, but a retarget of its
+declaration path is a snapshot change. The committed
 [entrypoint import-cost table](performance/sdk-entrypoint-import-costs.md)
 records fresh-process latency, RSS, and reduction versus the aggregate barrel.
 Every narrow entrypoint is bundled and type-tested independently.
@@ -136,6 +141,12 @@ from every non-testing SDK subpath must be available from
 `@unbrained/pm-cli/sdk`; deliberate test-only exclusions require a named reason.
 Consumers and release tooling can read the exact shipped artifact from
 `@unbrained/pm-cli/sdk/public-surface.json` without locating repository files.
+
+The denominator is the package export map itself, not a list inside the
+generator. Every `exports` entry that declares a `types` path must carry a
+classification, and `pnpm sdk:surface:check` refuses to run while any published
+code export is unclassified — so adding a public entrypoint cannot ship it
+ungoverned.
 
 ## Public Exports
 

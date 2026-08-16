@@ -54,6 +54,11 @@ interface SurfaceModule {
     entrypoints: SurfaceSnapshot["entrypoints"],
     exclusions?: Record<string, string>,
   ): NonNullable<SurfaceSnapshot["aggregate_completeness"]>;
+  listPublishedCodeExports(packageJson: unknown): string[];
+  findUnclassifiedPackageCodeExports(
+    packageJson: unknown,
+    classifications?: Record<string, string>,
+  ): string[];
   buildSdkSurfaceSnapshot(options?: {
     repoRoot?: string;
   }): Promise<SurfaceSnapshot>;
@@ -101,6 +106,121 @@ afterEach(async () => {
       .splice(0)
       .map((root) => rm(root, { recursive: true, force: true })),
   );
+});
+
+describe("published export-map coverage", () => {
+  it("treats only code exports as the surface denominator", async () => {
+    const mod = await loadModule();
+    expect(
+      mod.listPublishedCodeExports({
+        exports: {
+          ".": { types: "./dist/sdk/index.d.ts" },
+          "./cli": { types: "./dist/cli/main.d.ts" },
+          "./sdk/public-surface.json": "./sdk/public-surface.json",
+          "./package.json": "./package.json",
+        },
+      }),
+    ).toEqual([".", "./cli"]);
+    expect(mod.listPublishedCodeExports({})).toEqual([]);
+    expect(mod.listPublishedCodeExports(undefined)).toEqual([]);
+  });
+
+  it("reports every published code export the generator does not classify", async () => {
+    const mod = await loadModule();
+    const packageJson = {
+      exports: {
+        "./sdk": { types: "./dist/sdk/index.d.ts" },
+        "./telemetry": { types: "./dist/telemetry.d.ts" },
+        "./package.json": "./package.json",
+      },
+    };
+    expect(mod.findUnclassifiedPackageCodeExports(packageJson)).toEqual([
+      "./telemetry",
+    ]);
+    expect(
+      mod.findUnclassifiedPackageCodeExports(packageJson, {
+        "./sdk": "advanced_export",
+        "./telemetry": "supported",
+      }),
+    ).toEqual([]);
+  });
+
+  it("refuses to build a snapshot while an unclassified code export ships", async () => {
+    const mod = await loadModule();
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-sdk-ungoverned-"));
+    temporaryRoots.push(root);
+    await mkdir(path.join(root, "src", "sdk"), { recursive: true });
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        name: "fixture",
+        exports: { "./surprise": { types: "./dist/surprise.d.ts" } },
+      }),
+    );
+    await expect(
+      mod.buildSdkSurfaceSnapshot({ repoRoot: root }),
+    ).rejects.toThrow("publishes unclassified code entrypoints");
+  });
+
+  it("refuses an alias entrypoint that resolves away from its target", async () => {
+    const mod = await loadModule();
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-sdk-alias-"));
+    temporaryRoots.push(root);
+    await mkdir(path.join(root, "src", "sdk"), { recursive: true });
+    const exportNames = [
+      ".",
+      "./cli",
+      "./sdk",
+      "./sdk/authoring",
+      "./sdk/contracts",
+      "./sdk/core",
+      "./sdk/governance",
+      "./sdk/graph",
+      "./sdk/merge",
+      "./sdk/query",
+      "./sdk/runtime",
+      "./sdk/testing",
+    ];
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        name: "fixture",
+        exports: Object.fromEntries(
+          exportNames.map((name) => [
+            name,
+            { types: name === "." ? "./drifted.d.ts" : "./shared.d.ts" },
+          ]),
+        ),
+      }),
+    );
+    await expect(
+      mod.buildSdkSurfaceSnapshot({ repoRoot: root }),
+    ).rejects.toThrow("declared an alias of ./sdk");
+  });
+
+  it("records the real repository export map without duplicating the alias", async () => {
+    const mod = await loadModule();
+    const packageJson = JSON.parse(
+      await readFile(path.join(process.cwd(), "package.json"), "utf8"),
+    );
+    expect(mod.findUnclassifiedPackageCodeExports(packageJson)).toEqual([]);
+    const surface = JSON.parse(
+      await readFile(
+        path.join(process.cwd(), "sdk", "public-surface.json"),
+        "utf8",
+      ),
+    ) as SurfaceSnapshot & {
+      entrypoints: Record<string, { alias_of?: string }>;
+    };
+    expect(Object.keys(surface.entrypoints).sort()).toEqual(
+      mod.listPublishedCodeExports(packageJson),
+    );
+    expect(surface.entrypoints["."]?.alias_of).toBe("./sdk");
+    expect(surface.entrypoints["."]?.symbols).toEqual([]);
+    expect(
+      surface.entrypoints["./cli"]?.symbols.map((symbol) => symbol.name),
+    ).toEqual(["_testOnly", "runPmCli"]);
+  });
 });
 
 describe("SDK surface snapshot semantics", () => {
@@ -517,6 +637,8 @@ describe("SDK surface snapshot semantics", () => {
       mod.buildSdkSurfaceSnapshot({ repoRoot: root }),
     ).rejects.toThrow("must declare a types path");
     const exportNames = [
+      ".",
+      "./cli",
       "./sdk",
       "./sdk/authoring",
       "./sdk/contracts",
@@ -557,7 +679,10 @@ describe("SDK surface snapshot semantics", () => {
       exportNames.map((name) => [
         name,
         {
-          types: name === "./sdk" ? "./aggregate.d.ts" : "./narrow.d.ts",
+          types:
+            name === "./sdk" || name === "."
+              ? "./aggregate.d.ts"
+              : "./narrow.d.ts",
         },
       ]),
     );

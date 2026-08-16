@@ -24,6 +24,8 @@ const snapshotPath = path.join(
   "public-surface.json",
 );
 const ENTRYPOINT_CLASSIFICATIONS = Object.freeze({
+  ".": "aggregate_alias",
+  "./cli": "executable_entry",
   "./sdk": "advanced_export",
   "./sdk/authoring": "supported",
   "./sdk/contracts": "contract_data",
@@ -35,11 +37,24 @@ const ENTRYPOINT_CLASSIFICATIONS = Object.freeze({
   "./sdk/runtime": "advanced_export",
   "./sdk/testing": "supported",
 });
+/**
+ * Export paths that republish another entrypoint's declaration file verbatim.
+ * Their symbols are not re-listed; the alias target and declaration path are
+ * recorded so a silent retarget is still a snapshot change.
+ */
+const ENTRYPOINT_ALIASES = Object.freeze(
+  Object.assign(Object.create(null), { ".": "./sdk" }),
+);
 const TYPE_FORMAT_FLAGS =
   ts.TypeFormatFlags.NoTruncation |
   ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope |
   ts.TypeFormatFlags.WriteArrowStyleSignature;
-const AGGREGATE_EXCLUDED_ENTRYPOINTS = new Set(["./sdk", "./sdk/testing"]);
+const AGGREGATE_EXCLUDED_ENTRYPOINTS = new Set([
+  ".",
+  "./cli",
+  "./sdk",
+  "./sdk/testing",
+]);
 const AGGREGATE_EXPORT_EXCLUSIONS = Object.freeze(
   Object.assign(Object.create(null), {
     _testOnlyCliContracts:
@@ -172,6 +187,42 @@ export function collectEntrypointSymbols(
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
+/**
+ * List every package export path that publishes compiled code to consumers.
+ *
+ * The export map is the artifact npm resolves, so it — not a hand-maintained
+ * list inside this generator — is the denominator this surface must cover. An
+ * entry counts as code when it declares a `types` path; data exports such as
+ * `./package.json` and the surface snapshot itself resolve to a bare string.
+ */
+export function listPublishedCodeExports(packageJson) {
+  return Object.entries(packageJson?.exports ?? {})
+    .filter(
+      ([, target]) =>
+        typeof target === "object" &&
+        target !== null &&
+        typeof target.types === "string",
+    )
+    .map(([exportPath]) => exportPath)
+    .sort((left, right) => left.localeCompare(right));
+}
+
+/**
+ * Report published code exports this generator does not classify.
+ *
+ * Without this the coverage direction is one-way: the generator proves every
+ * classified entrypoint exists in the export map, and never proves every
+ * export-map entry is classified, so a new public entrypoint ships ungoverned.
+ */
+export function findUnclassifiedPackageCodeExports(
+  packageJson,
+  classifications = ENTRYPOINT_CLASSIFICATIONS,
+) {
+  return listPublishedCodeExports(packageJson).filter(
+    (exportPath) => !Object.hasOwn(classifications, exportPath),
+  );
+}
+
 /** Prove the compatibility aggregate contains every non-testing subpath export. */
 export function analyzeAggregateSdkCompleteness(
   entrypoints,
@@ -252,6 +303,17 @@ export async function buildSdkSurfaceSnapshot(options = {}) {
   const packageJson = JSON.parse(
     await readFile(path.join(root, "package.json"), "utf8"),
   );
+  const unclassified = findUnclassifiedPackageCodeExports(packageJson);
+  if (unclassified.length > 0) {
+    throw new Error(
+      `Package export map publishes unclassified code entrypoints:\n${unclassified
+        .map(
+          (exportPath) =>
+            `${exportPath} (add it to ENTRYPOINT_CLASSIFICATIONS in scripts/sdk-surface-snapshot.mjs)`,
+        )
+        .join("\n")}`,
+    );
+  }
   const entrypoints = Object.entries(ENTRYPOINT_CLASSIFICATIONS).map(
     ([exportPath, classification]) => {
       const packageExport = packageJson.exports?.[exportPath];
@@ -260,9 +322,19 @@ export async function buildSdkSurfaceSnapshot(options = {}) {
           `Package export ${exportPath} must declare a types path`,
         );
       }
+      const aliasOf = ENTRYPOINT_ALIASES[exportPath];
+      if (aliasOf !== undefined) {
+        const target = packageJson.exports?.[aliasOf];
+        if (target?.types !== packageExport.types) {
+          throw new Error(
+            `Package export ${exportPath} is declared an alias of ${aliasOf} but resolves to a different types path`,
+          );
+        }
+      }
       return {
         exportPath,
         classification,
+        aliasOf,
         declarationPath: path.resolve(root, packageExport.types),
       };
     },
@@ -302,11 +374,15 @@ export async function buildSdkSurfaceSnapshot(options = {}) {
         types: path
           .relative(root, entry.declarationPath)
           .replaceAll(path.sep, "/"),
-        symbols: collectEntrypointSymbols(
-          program,
-          entry.declarationPath,
-          entry.classification,
-        ),
+        ...(entry.aliasOf === undefined ? {} : { alias_of: entry.aliasOf }),
+        symbols:
+          entry.aliasOf === undefined
+            ? collectEntrypointSymbols(
+                program,
+                entry.declarationPath,
+                entry.classification,
+              )
+            : [],
       },
     ]),
   );

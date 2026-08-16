@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- Agent skills routed to a workflow loop but named no capability family and no read-cost, so four of twelve command families and the entire output-budget surface were unreachable through progressive disclosure ([pm-f6zjpq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-f6zjpq.toon))
+
 ### Fixed
 
+- The public-surface gate enumerates its own hand-written entrypoint list, so two published code exports ship ungoverned and ./cli publishes 86 internal functions as typed API ([pm-suhxny](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-suhxny.toon))
 - GH-1033: read fields selectors can erase identity and requested empty collections ([pm-4fwgaz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4fwgaz.toon))
 - GH-1036/GH-1040: history integrity verdicts and repairs are incompatible across supported CLI versions ([pm-0wfdim](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0wfdim.toon))
 - GH-1032: extension manifests silently accept unenforced version-floor spellings ([pm-qqoumq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qqoumq.toon))

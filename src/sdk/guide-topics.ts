@@ -409,6 +409,211 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     ],
     related: ["commands", "skills", "workflows"],
   },
+  {
+    id: "tokens",
+    aliases: ["output", "budget", "context-cost", "projections"],
+    title: "Read Output and Token Budgets",
+    summary:
+      "Bound what a read costs before it is emitted, and resume the part a budget withheld.",
+    intent:
+      "Use this when an agent must keep context small: every read declares a token ceiling, degrades deterministically, and reports what it omitted.",
+    commands: [
+      "pm contracts --summary --json",
+      "pm list --status open --output-limit 20",
+      "pm get <ID> --output-include id,title,status,dependencies",
+      "pm context --limit 10 --token-accounting",
+      "pm notes <ID> --output-cursor <cursor>",
+      "pm list-closed --output-budget unbounded",
+    ],
+    workflows: [
+      {
+        name: "Bound A Read Before Emitting It",
+        goal: "Never pay for rows the task does not need.",
+        prompt:
+          "Choose the narrowest projection first, then a row limit, then a token budget. Read the omission receipt before concluding the result is complete.",
+        commands: [
+          "pm contracts --command list --flags-only --json",
+          "pm list --status open --output-limit 20 --output-format toon",
+          "pm list --status open --token-accounting",
+        ],
+      },
+      {
+        name: "Recover A Truncated Read",
+        goal: "Continue a bounded read instead of re-running it unbounded.",
+        prompt:
+          "When output_budget_truncation appears, prefer the declared continuation cursor. Only widen the budget when the response declares no cursor.",
+        commands: [
+          "pm notes <ID> --output-cursor <cursor>",
+          "pm get <ID> --output-budget 20000",
+        ],
+      },
+    ],
+    docs: [
+      {
+        path: "docs/READ_OUTPUT_CONTRACTS.md",
+        purpose: "Budget, truncation, continuation, and omission receipts.",
+      },
+      {
+        path: "docs/OUTPUT_PROJECTION_CONTRACTS.md",
+        purpose: "Field and section projection grammar for every read.",
+      },
+      {
+        path: "docs/OUTPUT_TOKEN_ACCOUNTING.md",
+        purpose: "Per-section token cost receipts.",
+      },
+      {
+        path: "docs/ITEM_READ_PROJECTIONS.md",
+        purpose: "Item-level projection defaults and restore hints.",
+      },
+    ],
+    related: ["commands", "workflows", "quickstart"],
+  },
+  {
+    id: "graph",
+    aliases: ["relationships", "deps", "dependencies", "analytics"],
+    title: "Relationship Graph and Planning Analytics",
+    summary:
+      "Type the relationships between items, then read the project as a graph rather than as a list.",
+    intent:
+      "Use this when the question is about lineage, ordering, blast radius, bottlenecks, or which work reaches a declared outcome.",
+    commands: [
+      "pm deps <ID>",
+      'pm update <ID> --dep "id=<other>,kind=implements"',
+      "pm graph analyze",
+      "pm graph impact <ID> --direction downstream",
+      "pm graph paths <ID> <ID>",
+      "pm graph audit",
+    ],
+    workflows: [
+      {
+        name: "Place New Work In The Ladder",
+        goal: "Every item resolves to an outcome through a typed, explainable path.",
+        prompt:
+          "Set parent lineage first, then add typed edges that cite durable evidence. Never add an edge to satisfy a count.",
+        commands: [
+          "pm search \"<topic>\" --limit 10",
+          'pm update <ID> --dep "id=<parent-goal>,kind=implements"',
+          "pm graph ancestors <ID>",
+        ],
+      },
+      {
+        name: "Assess Blast Radius Before Changing Something",
+        goal: "Know what derives from an item before touching it.",
+        prompt:
+          "Walk the directed graph downstream from the item, then check whether any bottleneck node sits on the path.",
+        commands: [
+          "pm graph impact <ID> --direction downstream",
+          "pm graph dominators <ID>",
+          "pm graph articulation",
+        ],
+      },
+    ],
+    docs: [
+      {
+        path: "docs/RELATIONSHIP_GRAPH.md",
+        purpose: "Graph model, traversal verbs, and analytics surface.",
+      },
+      {
+        path: "docs/DEPENDENCY_KIND_CONTRACT.md",
+        purpose: "Every typed edge kind, its direction, and its semantics.",
+      },
+    ],
+    related: ["commands", "workflows", "assurance"],
+  },
+  {
+    id: "assurance",
+    aliases: ["gates", "invariants", "measurements", "quality"],
+    title: "Declared Invariants and Gates",
+    summary:
+      "Express a project's own quality rules as tracked data the SDK evaluates, instead of as scripts.",
+    intent:
+      "Use this when a rule must hold over the record itself — a floor, a ceiling, or a monotone property — and must fail closed in CI.",
+    commands: [
+      "pm assurance list",
+      "pm assurance run <gate-id> --trigger ci --dry-run",
+      "pm validate --check-resolution --check-history-drift",
+      "pm health --summary",
+    ],
+    workflows: [
+      {
+        name: "Add An Invariant Rather Than A Script",
+        goal: "A new enforcement gap becomes declared data, not a new bespoke gate script.",
+        prompt:
+          "Define the measurement, bind an assertion with an explicit bound and polarity, prove a negative control, then attach it to a trigger.",
+        commands: [
+          "pm assurance list --json",
+          "pm assurance run <gate-id> --trigger ci --dry-run --json",
+        ],
+      },
+      {
+        name: "Read A Verdict Before Believing It",
+        goal: "Know which population a passing assertion speaks for.",
+        prompt:
+          "Read population_size and scope on every assertion. A gate that cannot fail for the reason it exists is not evidence.",
+        commands: [
+          "pm assurance run <gate-id> --trigger ci --dry-run --json --output-budget unbounded",
+        ],
+      },
+    ],
+    docs: [
+      {
+        path: "docs/ASSURANCE.md",
+        purpose: "Measurement, assertion, gate, and trigger vocabulary.",
+      },
+      {
+        path: "docs/MUTATION_INTEGRITY.md",
+        purpose: "What every mutation must record to remain provable.",
+      },
+    ],
+    related: ["release", "graph", "workflows"],
+  },
+  {
+    id: "merge",
+    aliases: ["branches", "concurrency", "multi-agent", "fleet"],
+    title: "Branching, Merging, and Concurrent Agents",
+    summary:
+      "Keep tracker data and history conflict-free while many agents work on separate branches.",
+    intent:
+      "Use this when more than one agent or worktree mutates the same tracker and the results must merge without hand resolution.",
+    commands: [
+      "pm merge install",
+      "pm claim <ID>",
+      "pm release <ID>",
+      "pm validate --check-history-drift",
+      "pm health --check-only",
+    ],
+    workflows: [
+      {
+        name: "Prepare A Clone For Field-Aware Merges",
+        goal: "The committed merge fence needs clone-local driver configuration once.",
+        prompt:
+          "Run the merge installer in every fresh clone or worktree before the first branch merge of tracker data.",
+        commands: ["pm merge install", "pm health --check-only"],
+      },
+      {
+        name: "Hand Work Between Agents Safely",
+        goal: "Ownership and evidence survive the handoff.",
+        prompt:
+          "Claim before substantial edits, record evidence as comments, and release the claim when pausing, handing off, closing, or canceling.",
+        commands: [
+          "pm claim <ID>",
+          'pm comments <ID> "Handoff: <state and next step>"',
+          "pm release <ID>",
+        ],
+      },
+    ],
+    docs: [
+      {
+        path: "docs/MERGE_SAFETY.md",
+        purpose: "Merge driver, field-aware resolution, and clone setup.",
+      },
+      {
+        path: "docs/SDK_CONTEXT_COORDINATION.md",
+        purpose: "Coordination primitives for concurrent agents.",
+      },
+    ],
+    related: ["workflows", "assurance", "commands"],
+  },
 ];
 
 const TOPIC_BY_TOKEN = new Map<string, GuideTopicDefinition>();
