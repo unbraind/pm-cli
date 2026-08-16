@@ -2,11 +2,13 @@ id: pm-qqoumq
 title: "GH-1032: extension manifests silently accept unenforced version-floor spellings"
 description: "Extension compatibility tooling ignores unknown or naturally misplaced manifest keys, allowing packages to declare apparent pm version floors that no runtime or author-time check reads."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[7]: agent-ux,compatibility,extensions,github-1032,manifest,sdk,validation
 created_at: "2026-08-15T15:26:48.504Z"
-updated_at: "2026-08-15T15:29:21.230Z"
+updated_at: "2026-08-16T06:41:13.588Z"
+closed_at: "2026-08-16T06:16:10.725Z"
+completed_at: "2026-08-16T06:16:10.725Z"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: "Define the authoritative manifest key schema in the SDK; detect unknown top-level and compatibility-like nested keys without rejecting legitimate extension namespaces; add typed findings and exact migration targets; apply the same analyzer to scaffolding, package doctor, CLI, MCP, contracts, and first-party package governance; test the three reported spellings plus negative controls in disposable packages; document compatibility and rollout behavior."
@@ -22,6 +24,7 @@ confidence: high
 severity: high
 environment: Current extension manifest SDK and package fleet on 2026-08-15
 repro_steps: "Pass manifests containing compatibility.pm, nested pm.pm_min_version, and stale top-level pm_min_version through checkExtensionManifestCompatibility; observe no unknown-key finding and compatible=true for the first two."
+resolution: SDK compatibility and runtime discovery now share a closed extension-manifest schema that reports ignored keys and missing canonical version bounds.
 expected_result: Unknown or misplaced compatibility-like keys are diagnosed with a stable typed finding and an executable correction; valid top-level pm_min_version remains enforced across SDK and package surfaces.
 actual_result: "Compatibility-looking fields can be ignored silently, so internally consistent packages and tests remain green while no version floor is enforced."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -29,7 +32,22 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-u5le,implements,"2026-08-15T15:28:38.793Z","harness:codex","cli:update:dep",detected
   pm-exrw,verifies,"2026-08-15T15:28:40.373Z","harness:codex","cli:update:dep",detected
   pm-llrp,discovered_from,"2026-08-15T15:28:48.965Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-15T15:26:48.504Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for GH-1032, manifest unknown key, pm_min_version, compatibility.pm, and nested compatibility found no item for this silent manifest-schema gap. Closed pm-1w0d owns the existing compatibility analyzer and is linked as provenance; this item records the newly reported cross-package validation defect without reopening completed work."
   "2026-08-15T15:29:21.230Z","harness:codex","GitHub linkage evidence 2026-08-15: https://github.com/unbraind/pm-cli/issues/1032#issuecomment-5302914062 points GitHub #1032 to this canonical PM item after all-status duplicate checks and typed lineage enrichment."
+  "2026-08-16T05:20:51.282Z","harness:codex","TDD red evidence: SDK manifest compatibility reported no findings for an ignored compatibility.pm spelling and no canonical pm_min_version/pm_max_version bounds. Command: node scripts/run-tests.mjs test -- tests/unit/sdk/extension-manifest-schema-contract.spec.ts."
+  "2026-08-16T06:16:07.117Z","harness:codex","Green evidence: shared closed-schema inspection drives SDK findings and loader/doctor warnings; latest pm-changelog is 2026.8.12 and the installed project package is that version. package doctor now reports ok with zero warnings. SDK surface snapshot updated with an explicit compatibility-finding acknowledgement. Exact repository coverage is 100/100/100/100."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,Acknowledged additive manifest diagnostic API surface
+  src/core/extensions/loader.ts,project,Runtime discovery warnings consumed by extension doctor
+  src/core/extensions/manifest-schema.ts,project,Shared closed manifest schema inspection
+  src/sdk/compose.ts,project,SDK author-time compatibility findings
+  tests/unit/sdk/extension-manifest-schema-contract.spec.ts,project,SDK and loader schema regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/extension-manifest-schema-contract.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msveu56g-hhla9a,test,passed,"2026-08-16T06:14:38.837Z","2026-08-16T06:14:47.992Z","2026-08-16T06:14:47.992Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/CONTEXT_INTEGRITY_CONTRACTS.md,project,Canonical manifest compatibility documentation
+close_reason: Implemented shared closed extension-manifest schema diagnostics across SDK compatibility checks and runtime doctor; latest changelog package verified and full exact coverage passed.
 body: ""

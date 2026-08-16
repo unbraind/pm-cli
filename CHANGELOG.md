@@ -4,6 +4,16 @@
 
 ### Fixed
 
+- GH-1036/GH-1040: history integrity verdicts and repairs are incompatible across supported CLI versions ([pm-0wfdim](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0wfdim.toon))
+- GH-1039: graph impact discards dependency direction and makes the direction selector inert ([pm-jn1x30](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jn1x30.toon))
+- GH-1038: docs linked-resource pair syntax corrupts URLs and splits labeled entries ([pm-fpdk37](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fpdk37.toon))
+- GH-1032: extension manifests silently accept unenforced version-floor spellings ([pm-qqoumq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qqoumq.toon))
+- GH-1033: read fields selectors can erase identity and requested empty collections ([pm-4fwgaz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4fwgaz.toon))
+
+## 2026.8.16 - 2026-08-16
+
+### Fixed
+
 - Workspace history integrity refusals escape typed CLI recovery and become high Sentry faults ([pm-2zkvxm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2zkvxm.toon))
 - GH-1019/GH-1020/GH-1021: Node 24 nightly platform regressions after PR \#1016 ([pm-zno2iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zno2iu.toon))
 - GH-814/GH-821/GH-1034: SDK metadata reads must distinguish missing, invalid, and unreadable tracker roots from empty ([pm-23xkss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-23xkss.toon))

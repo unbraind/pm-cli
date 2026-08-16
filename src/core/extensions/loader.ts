@@ -91,6 +91,7 @@ import {
   cloneContextSnapshot,
 } from "./extension-runtime-helpers.js";
 import { normalizeExtensionContributionInventory } from "./contribution-inventory.js";
+import { formatExtensionManifestSchemaWarnings } from "./manifest-schema.js";
 import {
   attachRuntimeDefinition,
   assertHookHandler,
@@ -851,12 +852,17 @@ function buildUnavailableExtensionScan(
 function collectScannedExtensionWarnings(
   layer: ExtensionLayer,
   manifest: ExtensionManifest,
+  rawManifest: Readonly<Record<string, unknown>>,
   entryWithinDirectory: boolean,
   entryExists: boolean,
   pmVersionCompatibility: { allowed: boolean; warning?: string },
   pmMaxVersionCompatibility: { allowed: boolean; warning?: string },
 ): string[] {
-  const extensionWarnings: string[] = [];
+  const extensionWarnings = formatExtensionManifestSchemaWarnings(
+    layer,
+    manifest,
+    rawManifest,
+  );
   if (
     Array.isArray(manifest.legacy_capability_aliases) &&
     manifest.legacy_capability_aliases.length > 0
@@ -913,16 +919,19 @@ async function scanExtensionDirectory(
   }
 
   let manifest: ExtensionManifest | null;
+  let rawManifest: Record<string, unknown> | null;
   try {
     const parsed = JSON.parse(
       await fs.readFile(manifestPath, "utf8"),
     ) as unknown;
+    rawManifest = asRecordLoose(parsed);
     manifest = parseExtensionManifestDocument(parsed);
   } catch {
+    rawManifest = null;
     manifest = null;
   }
 
-  if (!manifest) {
+  if (!manifest || !rawManifest) {
     return buildUnavailableExtensionScan(
       layer,
       directory,
@@ -956,6 +965,7 @@ async function scanExtensionDirectory(
   const extensionWarnings = collectScannedExtensionWarnings(
     layer,
     manifest,
+    rawManifest,
     entryWithinDirectory,
     entryExists,
     pmVersionCompatibility,

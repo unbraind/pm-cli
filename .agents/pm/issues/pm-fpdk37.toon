@@ -1,0 +1,49 @@
+id: pm-fpdk37
+title: "GH-1038: docs linked-resource pair syntax corrupts URLs and splits labeled entries"
+description: The shared linked-document parser accepts advertised Markdown and CSV pair forms with exit zero while storing a corrupted URI or two unrelated document rows.
+type: Issue
+status: closed
+priority: 1
+tags[8]: agent-ux,"area:sdk",context-integrity,docs,github-1038,linked-resources,parser,regression
+created_at: "2026-08-16T05:10:46.721Z"
+updated_at: "2026-08-16T06:41:14.145Z"
+closed_at: "2026-08-16T06:16:11.990Z"
+completed_at: "2026-08-16T06:16:11.990Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: "Parse every documented docs --add form through one SDK-owned linked-resource primitive; preserve URI schemes byte-for-byte; turn Markdown and CSV label/path pairs into exactly one typed entry; reject malformed or ambiguous pairs before mutation; keep files/docs CLI and PmClient behavior aligned; cover unit, integration, packed-consumer, negative-control, and help-contract paths; document the supported grammar and token-efficient recovery."
+goal: project management = context management
+objective: Make document evidence links lossless and unambiguous across SDK and CLI mutation paths.
+value: "Agents can attach PRs, issues, and runbooks without silently destroying the context they are recording."
+impact: Corrupted evidence links make item history look complete while the primary source is unreachable.
+outcome: One SDK parser owns linked-resource pair syntax and all CLI/package adapters preserve exact URL identity.
+why_now: GitHub #1038 reproduces both advertised pair syntaxes returning success with wrong persisted data.
+parent: pm-usfg
+risk: high
+confidence: high
+severity: high
+environment: pm docs linked-resource mutation on 2026.8.15
+repro_steps: "Add a bare URL, Markdown link pair, CSV label/path pair, and path=/note= pair; compare the stored row count, path bytes, and note."
+resolution: Linked documentation parsing preserves Markdown and CSV URL references as one remote doc with its label retained as context.
+expected_result: Each documented labeled form yields one entry whose path is the original URL and whose note is the label; ambiguous input is refused without mutation.
+actual_result: "Markdown input is stored literally with https:// collapsed to https:/, while CSV input is split into two rows."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0v9k,discovered_from,"2026-08-16T05:10:46.721Z","harness:codex","cli:create:dep",detected
+  pm-9rgaal,implements,"2026-08-16T05:10:46.721Z","harness:codex","cli:create:dep",detected
+  pm-jzf4,discovered_from,"2026-08-16T05:10:46.721Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-16T05:10:46.721Z","harness:codex","Duplicate-check evidence 2026-08-16: searched all 2,501 items across every status for GH-1038,docs Markdown pairs,CSV pairs,URL corruption,linked-resource parsing,and https scheme collapse. No item owns this exact successful-corruption failure. Closed pm-0v9k owns strict structured-pair validation and pm-jzf4 owns shared files/docs kernels; this issue extends those canonical lineages instead of duplicating them."
+  "2026-08-16T05:12:48.803Z","harness:codex","GitHub linkage evidence: https://github.com/unbraind/pm-cli/issues/1038#issuecomment-5305855474 points #1038 to this canonical PM item."
+  "2026-08-16T05:20:49.480Z","harness:codex","TDD red evidence: docs regression failed because Markdown URLs were path-normalized from https:// to https:/ and CSV label/URL input became two docs instead of one labeled remote reference. Command: node scripts/run-tests.mjs test -- tests/unit/sdk/docs-reference-contract.spec.ts."
+  "2026-08-16T06:16:07.733Z","harness:codex","Green evidence: Markdown and CSV label/URL inputs preserve exact remote URLs and labels; focused linked test and isolated packed-package command proof passed. Exact repository coverage is 100/100/100/100."
+files[2]{path,scope,note}:
+  src/sdk/linked-artifacts.ts,project,Lossless Markdown and CSV remote-doc parser
+  tests/unit/sdk/docs-reference-contract.spec.ts,project,Public docs mutation regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/docs-reference-contract.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msveudwb-v9rnft,test,passed,"2026-08-16T06:14:48.569Z","2026-08-16T06:14:59.290Z","2026-08-16T06:14:59.290Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/CONTEXT_INTEGRITY_CONTRACTS.md,project,Remote documentation reference contract
+close_reason: Implemented lossless Markdown and CSV remote documentation references with public regression and packaged manual proof.
+body: ""

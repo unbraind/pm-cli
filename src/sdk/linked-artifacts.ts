@@ -218,23 +218,52 @@ export function parseAddEntries(
   bareNoun: "file" | "doc",
 ): LinkedArtifact[] {
   if (!raw) return [];
-  return expandBareCommaSeparatedAddEntries(raw).map((entry) => {
+  return raw.flatMap((entry) => {
     const trimmed = entry.trim();
-    const kv = looksLikeStructuredPathEntry(trimmed)
-      ? parseCsvKv(entry, "--add")
-      : { path: trimmed };
-    assertNoUnknownCsvKeys(kv, "--add", LINKED_ARTIFACT_ADD_KEYS);
-    if (!kv.path) {
-      throw new PmCliError(
-        `--add requires path=<value> or a bare ${bareNoun} path`,
-        EXIT_CODE.USAGE,
-      );
+    if (bareNoun === "doc") {
+      const markdown = /^\[([^\]]+)\]\(([^)]+)\)$/u.exec(trimmed);
+      if (markdown !== null) {
+        return [
+          {
+            path: markdown[2]!.trim(),
+            scope: "project" as const,
+            note: markdown[1]!.trim() || undefined,
+          },
+        ];
+      }
+      const pair = splitCommaList(trimmed);
+      if (
+        pair.length === 2 &&
+        pair[0]!.trim().length > 0 &&
+        /^[A-Za-z][A-Za-z0-9+.-]*:\/\//u.test(pair[1]!.trim())
+      ) {
+        return [
+          {
+            path: pair[1]!.trim(),
+            scope: "project" as const,
+            note: pair[0]!.trim(),
+          },
+        ];
+      }
     }
-    return {
-      path: kv.path,
-      scope: ensureScope(kv.scope),
-      note: kv.note?.trim() || undefined,
-    };
+    return expandBareCommaSeparatedAddEntries([entry]).map((expanded) => {
+      const expandedTrimmed = expanded.trim();
+      const kv = looksLikeStructuredPathEntry(expandedTrimmed)
+        ? parseCsvKv(expanded, "--add")
+        : { path: expandedTrimmed };
+      assertNoUnknownCsvKeys(kv, "--add", LINKED_ARTIFACT_ADD_KEYS);
+      if (!kv.path) {
+        throw new PmCliError(
+          `--add requires path=<value> or a bare ${bareNoun} path`,
+          EXIT_CODE.USAGE,
+        );
+      }
+      return {
+        path: kv.path,
+        scope: ensureScope(kv.scope),
+        note: kv.note?.trim() || undefined,
+      };
+    });
   });
 }
 

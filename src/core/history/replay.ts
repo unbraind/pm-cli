@@ -229,9 +229,12 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
         errors: [`verify_failed:patch_apply_failed:entry_${index + 1}`],
       };
     }
+    // Prefer legacy epoch 1 when an unversioned entry is valid under both
+    // algorithms, but retain compatibility with transitional epoch-2 writers
+    // that shipped before item_hash_version became explicit.
     const candidates: HistoryItemHashVersion[] =
       explicitVersion === undefined
-        ? [CURRENT_HISTORY_ITEM_HASH_VERSION, 1]
+        ? [1, CURRENT_HISTORY_ITEM_HASH_VERSION]
         : [explicitVersion as HistoryItemHashVersion];
     const beforeMatches = candidates.filter(
       (version) => replayHash(replay, version) === entry.before_hash,
@@ -395,9 +398,9 @@ export function resolveHistoryRepairItemHashVersion(
         .filter(
           (version): version is HistoryItemHashVersion =>
             version !== undefined &&
-            (SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
-              version,
-            ),
+            (
+              SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]
+            ).includes(version),
         ),
     ),
   ];

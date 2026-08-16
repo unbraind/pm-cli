@@ -15,7 +15,10 @@ import {
   toReplayDocument,
   verifyHistoryChainWithVersion,
 } from "../../../../src/core/history/replay.js";
-import type { HistoryEntry, ItemDocument } from "../../../../src/types/index.js";
+import type {
+  HistoryEntry,
+  ItemDocument,
+} from "../../../../src/types/index.js";
 
 function document(tests: ItemDocument["metadata"]["tests"]): ItemDocument {
   return {
@@ -87,11 +90,15 @@ describe("history item hash versions", () => {
     expect(() =>
       hashDocumentForVersion(insertionOrder, 3 as HistoryItemHashVersion),
     ).toThrow("unsupported_item_hash_version:3");
-    expect(verifyHistoryChainWithVersion([unversionedEntry(insertionOrder, 1)])).toMatchObject({
+    expect(
+      verifyHistoryChainWithVersion([unversionedEntry(insertionOrder, 1)]),
+    ).toMatchObject({
       ok: true,
       item_hash_version: 1,
     });
-    expect(verifyHistoryChainWithVersion([unversionedEntry(insertionOrder, 2)])).toMatchObject({
+    expect(
+      verifyHistoryChainWithVersion([unversionedEntry(insertionOrder, 2)]),
+    ).toMatchObject({
       ok: true,
       item_hash_version: 2,
     });
@@ -108,5 +115,26 @@ describe("history item hash versions", () => {
         { ...unversionedEntry(insertionOrder, 2), item_hash_version: 99 },
       ]),
     ).toThrow("unsupported_item_hash_version:99:entry_1");
+  });
+
+  it("treats an unversioned stream whose hashes match every epoch as legacy", () => {
+    const orderInsensitive = document([]);
+    const entry = unversionedEntry(orderInsensitive, 1);
+    expect(entry.before_hash).toBe(
+      unversionedEntry(orderInsensitive, 2).before_hash,
+    );
+    expect(entry.after_hash).toBe(
+      unversionedEntry(orderInsensitive, 2).after_hash,
+    );
+
+    expect(verifyHistoryChainWithVersion([entry])).toMatchObject({
+      ok: true,
+      item_hash_version: 1,
+    });
+    expect(reanchorHistoryEntries([entry])).toMatchObject({
+      itemHashVersion: 1,
+      explicitItemHashVersion: false,
+      entries: [entry],
+    });
   });
 });
