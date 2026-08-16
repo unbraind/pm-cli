@@ -499,7 +499,7 @@ describe("workspace history", () => {
       await expect(
         restoreWorkspaceJsonFromHistory({
           ...common,
-          targetVersion: 1,
+          targetVersion: 999,
         }),
       ).rejects.toMatchObject({
         name: "PmCliError",

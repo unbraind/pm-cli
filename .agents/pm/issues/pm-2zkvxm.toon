@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:cli","area:history","area:sdk",error-taxonomy,integrity,sentry
 created_at: "2026-08-15T22:45:17.608Z"
-updated_at: "2026-08-15T23:53:03.836Z"
-closed_at: "2026-08-15T23:50:47.703Z"
-completed_at: "2026-08-15T23:50:47.703Z"
+updated_at: "2026-08-16T00:12:45.786Z"
+closed_at: "2026-08-16T00:12:45.055Z"
+completed_at: "2026-08-16T00:12:45.055Z"
 author: "harness:codex"
 acceptance_criteria: "All workspace-history chain verification refusals share one typed PmCliError contract with a stable code, exact verifier evidence, and executable recovery guidance.; CLI, SDK, and mutation callers receive conflict semantics without capturing deterministic integrity refusal as an unexpected Sentry fault; unrelated unexpected errors remain fail-closed.; Tests cover every workspace-history verifier call site plus a real CLI mutation negative control, and full exact coverage remains 100/100/100/100."
 parent: pm-o2kc
@@ -27,13 +27,15 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-h06944,verifies,"2026-08-15T22:45:17.608Z","harness:codex","cli:create:dep",detected
   pm-jv3y4q,discovered_from,"2026-08-15T22:45:17.608Z","harness:codex","cli:create:dep",detected
   pm-klo8,implements,"2026-08-15T22:45:17.608Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-15T22:45:17.608Z","harness:codex","Duplicate check: searched all statuses for the exact PM-CLI-35 title, before_hash_mismatch, workspace-history verification failures, state conflict, and history integrity error taxonomy. The closest lineage is closed workspace audit feature pm-klo8, closed state-agreement fix pm-h06944, and open item-history baseline crash pm-qw1uw6; none owns typed workspace chain-verification refusals. Live Sentry evidence is one handled high event at 2026-08-15T17:16:29Z from this host during deliberate isolated acceptance, release 2026.8.15, with no recurrence."
   "2026-08-15T22:53:07.859Z","harness:codex","TDD red evidence: after changing every existing corrupt-chain assertion to require PmCliError conflict semantics, the focused workspace suite failed 5 tests on raw TypeError. The exact before-hash negative control reproduced verify_failed:before_hash_mismatch and exit 1 behavior before implementation. Green implementation now routes all five verifier call sites through one SDK-owned error and the focused SDK/CLI suite passes 58 tests."
   "2026-08-15T23:12:43.121Z","harness:codex","Coverage gate evidence: the clean isolated full suite reached 7,397 passing tests and exactly one deliberate SDK snapshot failure because adding optional verification_errors changes the versioned PmCliErrorContext signature. Regenerated sdk/public-surface.json with an explicit compatibility acknowledgment; no product assertion failed. The earlier coverage-directory collision was an overlapping local harness process and was cleared before this clean run."
   "2026-08-15T23:30:36.643Z","harness:codex","Green verification evidence: focused SDK, CLI, and snapshot suite passed 70/70; clean full suite passed 504 files and 7,398 tests with exact statements 53,581/53,581, branches 39,593/39,593, functions 11,000/11,000, and lines 51,745/51,745. Full repository static assurance passed including build, strict quality/docstring gates, package boundary, SDK parity, replication, tracker context quality, SDK surface/import cost, CLI transport, graph composition, and record integrity. Manual isolated dist acceptance tampered _workspace before_hash and received structured exit 4 with code workspace_history_chain_invalid, the exact verifier row, and executable recovery; telemetry was disabled for the deliberate corruption fixture."
   "2026-08-15T23:34:09.294Z","harness:codex","Delivery is under hosted review in PR #1037 (https://github.com/unbraind/pm-cli/pull/1037) at exact head 6d6b74193. Keep this item active until exact-head checks and reviewer inventory converge."
   "2026-08-15T23:50:15.141Z","harness:codex","CI diagnosis: the static matrix failed only because the generated error-code catalog did not yet contain workspace_history_chain_invalid. Local exact reproduction reached contracts:check and reported that single stale artifact. Regenerated the catalog through pnpm contracts:errors:update; pm-changelog 2026.8.12 remained unchanged at 2,103 closed items, and timestamp-only extension installation churn was reverted."
+  "2026-08-16T00:08:42.577Z","harness:codex","Review TDD evidence: accepted CodeRabbit's restore ordering finding. The existing corruption negative control was strengthened with an out-of-range targetVersion and failed red on raw TypeError 'Invalid workspace history target version: 999'. restoreWorkspaceJsonFromHistory now verifies the append-only chain before validating caller input, so corrupted evidence always wins with workspace_history_chain_invalid. Focused verification follows before exact-head CI."
+  "2026-08-16T00:12:44.373Z","harness:codex","Accepted review fix verified: focused workspace-history and CLI envelope suites pass 58/58; pnpm quality:static passes repository quality, package boundary, SDK parity, surface replication, tracker context, graph composition, record integrity, public SDK snapshot, and transport/entrypoint cost gates."
 learnings[1]{created_at,author,text}:
   "2026-08-15T23:30:37.206Z","harness:codex",Deterministic integrity refusals should remain fail-closed while crossing CLI/SDK boundaries as typed conflicts; exact verifier evidence plus an executable recovery command distinguishes recoverable tracker corruption from unexpected runtime faults without suppressing genuine exceptions.
 files[10]{path,scope,note}:
@@ -52,5 +54,5 @@ tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs coverage,project,600
 docs[1]{path,scope,note}:
   docs/SDK_CONTEXT_INTEGRITY.md,project,Documents typed workspace chain refusal and executable recovery
-close_reason: "Implemented one typed fail-closed workspace chain conflict across all SDK and CLI paths; exact evidence and executable recovery are documented, focused and full tests pass at 100/100/100/100, static assurance is green locally, and isolated dist acceptance proves exit 4 instead of a Sentry-classified raw fault."
+close_reason: "Typed workspace integrity refusal is complete, including the accepted review hardening that verifies corrupt evidence before restore target validation. Focused TDD is green, repository static assurance is green, and the prior full suite remains exact 100/100/100/100; exact-head hosted coverage follows."
 body: ""

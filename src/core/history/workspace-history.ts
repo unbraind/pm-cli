@@ -648,6 +648,10 @@ export async function restoreWorkspaceJsonFromHistory(
       getWorkspaceHistoryPath(options.pmRoot),
       WORKSPACE_HISTORY_ID,
     );
+    const verification = verifyHistoryChain(entries);
+    if (!verification.ok) {
+      throwWorkspaceHistoryVerificationFailure(verification.errors);
+    }
     if (
       !Number.isInteger(options.targetVersion) ||
       options.targetVersion < 1 ||
@@ -656,10 +660,6 @@ export async function restoreWorkspaceJsonFromHistory(
       throw new TypeError(
         `Invalid workspace history target version: ${String(options.targetVersion)}`,
       );
-    }
-    const verification = verifyHistoryChain(entries);
-    if (!verification.ok) {
-      throwWorkspaceHistoryVerificationFailure(verification.errors);
     }
     const target = workspaceDocuments(
       replayWorkspaceEntries(entries, options.targetVersion),
