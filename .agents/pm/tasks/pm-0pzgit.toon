@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:testing",ci,defect-escape,instrument-integrity,quality-gate
 created_at: "2026-08-03T06:31:40.504Z"
-updated_at: "2026-08-16T19:27:45.242Z"
+updated_at: "2026-08-16T20:01:01.963Z"
 closed_at: "2026-08-16T19:27:44.667Z"
 completed_at: "2026-08-16T19:27:44.667Z"
 author: "harness:claude-code"
@@ -34,11 +34,12 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,implements,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
   pm-zclzll,related,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
   pm-qtbc,recurs_from,"2026-08-16T18:35:01.407Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-03T11:09:24.678Z","harness:codex","Estimate basis 2026-08-03: 480 minutes covers boundary inventory, redacted real fixtures, negative gate controls, CI integration, and cross-platform verification; uncertainty is bounded because the first failing boundary and acceptance contract are already identified."
   "2026-08-03T20:38:18.150Z","harness:claude-code","A live instance of the exact structural blind spot this gate is scoped to, observed 2026-08-03 in the failing Windows nightly leg.\n\nThe failing assertion is in the agent runtime provenance suite, on the test that extracts bounded model and version fields from a harness session file. The value under test is a directory name that must be byte-identical to one produced by an external harness this repository does not control. The test does not assert against a captured sample. It rebuilds the expected name in the test body, branching on platform, using the same rule the production code uses.\n\nThat construction can only fail when the two restatements of one rule disagree, which is what happened on Windows and what did not happen on POSIX. On POSIX it is a tautology: the test passes because both sides encode the same assumption, including the case where the shared assumption is wrong. The external contract is never exercised on any platform.\n\nThis is the inventory entry this gate exists to reject, and it is worth keeping as the reference instance because it shows the failure mode is not hypothetical: the same test was simultaneously unable to fail on one platform and unable to pass on another, and neither outcome tested the boundary. A captured sample from a real harness project directory would have decided both.\n\nRecorded as evidence and as a candidate first fixture, not as a second item.\n"
   "2026-08-16T19:05:23.953Z","harness:codex","Evidence linkage: associated the repository evidence gate test that exercises captured fixtures, authoritative tracker reads, focused modes, malformed scope rejection, missing lineage, ineffective controls, and fail-closed negative controls."
   "2026-08-16T19:27:26.368Z","harness:codex","Completion evidence 2026-08-16: registry gate PASS with 8 inventoried boundaries, 4 captured external samples, 4 explicit expiring waivers, zero findings; seeded self-generated fixture negative control exits 1 and names claude-project-directory-slug. Linked test run passed 25/25. Package tarball inventory contained 1,408 paths and no credential/private-key/.env filename matches."
+  "2026-08-16T20:01:01.963Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1043. The PR ships the captured boundary fixture registry, safe samples, provenance validation, expiring waiver contract, and repository gate tracked by this task."
 learnings[1]{created_at,author,text}:
   "2026-08-16T19:27:26.980Z","harness:codex",External-boundary fixtures must preserve captured provenance and redaction metadata; a production-generated expected value is circular evidence and is rejected even when its bytes match.
 files[9]{path,scope,note}:
