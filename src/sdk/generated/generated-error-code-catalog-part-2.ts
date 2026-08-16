@@ -242,6 +242,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "no_version_bounds_declared",
+    meaning: "No version bounds declared condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/compose.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "no_version_bounds_declared",
+    aliases: [],
+  },
+  {
     code: "npm_package_not_found",
     meaning: "Npm package not found condition.",
     stability: "stable",
