@@ -346,6 +346,32 @@ describe("runGet and runAppend", () => {
       );
       expect(withTestsCount.item).toEqual({ id, tests_count: 1 });
 
+      const sparseIdOnly = createTask(context, {
+        title: "get-fields-projection-sparse",
+        body: "sparse fields body",
+      });
+      const sparseProjection = await runGet(
+        sparseIdOnly,
+        { path: context.pmPath },
+        {
+          fields:
+            "comments,notes,learnings,tests,test_runs,docs,plan_steps,plan_decisions,plan_discoveries,plan_validation",
+        },
+      );
+      expect(sparseProjection.item).toEqual({
+        id: sparseIdOnly,
+        comments: [],
+        notes: [],
+        learnings: [],
+        tests: [],
+        test_runs: [],
+        docs: [],
+        plan_steps: [],
+        plan_decisions: [],
+        plan_discoveries: [],
+        plan_validation: [],
+      });
+
       const withClaimState = await runGet(
         id,
         { path: context.pmPath },

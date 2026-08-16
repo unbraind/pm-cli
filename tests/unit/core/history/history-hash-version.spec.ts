@@ -15,7 +15,10 @@ import {
   toReplayDocument,
   verifyHistoryChainWithVersion,
 } from "../../../../src/core/history/replay.js";
-import type { HistoryEntry, ItemDocument } from "../../../../src/types/index.js";
+import type {
+  HistoryEntry,
+  ItemDocument,
+} from "../../../../src/types/index.js";
 
 function document(tests: ItemDocument["metadata"]["tests"]): ItemDocument {
   return {
@@ -87,11 +90,15 @@ describe("history item hash versions", () => {
     expect(() =>
       hashDocumentForVersion(insertionOrder, 3 as HistoryItemHashVersion),
     ).toThrow("unsupported_item_hash_version:3");
-    expect(verifyHistoryChainWithVersion([unversionedEntry(insertionOrder, 1)])).toMatchObject({
+    expect(
+      verifyHistoryChainWithVersion([unversionedEntry(insertionOrder, 1)]),
+    ).toMatchObject({
       ok: true,
       item_hash_version: 1,
     });
-    expect(verifyHistoryChainWithVersion([unversionedEntry(insertionOrder, 2)])).toMatchObject({
+    expect(
+      verifyHistoryChainWithVersion([unversionedEntry(insertionOrder, 2)]),
+    ).toMatchObject({
       ok: true,
       item_hash_version: 2,
     });
@@ -108,5 +115,87 @@ describe("history item hash versions", () => {
         { ...unversionedEntry(insertionOrder, 2), item_hash_version: 99 },
       ]),
     ).toThrow("unsupported_item_hash_version:99:entry_1");
+  });
+
+  it("treats an unversioned stream whose hashes match every epoch as legacy", () => {
+    const orderInsensitive = document([]);
+    const entry = unversionedEntry(orderInsensitive, 1);
+    expect(entry.before_hash).toBe(
+      unversionedEntry(orderInsensitive, 2).before_hash,
+    );
+    expect(entry.after_hash).toBe(
+      unversionedEntry(orderInsensitive, 2).after_hash,
+    );
+
+    expect(verifyHistoryChainWithVersion([entry])).toMatchObject({
+      ok: true,
+      item_hash_version: 1,
+    });
+    expect(reanchorHistoryEntries([entry])).toMatchObject({
+      itemHashVersion: 1,
+      explicitItemHashVersion: false,
+      entries: [entry],
+    });
+  });
+
+  it("keeps an explicit epoch authoritative over a trailing ambiguous entry", () => {
+    const firstDocument = document([]);
+    const secondDocument = structuredClone(firstDocument);
+    secondDocument.body = "second event";
+    const firstEntry = {
+      ...unversionedEntry(firstDocument, 2),
+      item_hash_version: 2 as const,
+    };
+    const secondEntry: HistoryEntry = {
+      ts: "2026-08-11T00:01:00.000Z",
+      author: "fixture",
+      op: "update",
+      patch: jsonPatch.compare(
+        toReplayDocument(firstDocument),
+        toReplayDocument(secondDocument),
+      ),
+      before_hash: hashDocumentForVersion(firstDocument, 2),
+      after_hash: hashDocumentForVersion(secondDocument, 2),
+    };
+    expect(secondEntry.before_hash).toBe(
+      hashDocumentForVersion(firstDocument, 1),
+    );
+    expect(secondEntry.after_hash).toBe(
+      hashDocumentForVersion(secondDocument, 1),
+    );
+
+    expect(
+      verifyHistoryChainWithVersion([firstEntry, secondEntry]),
+    ).toMatchObject({ ok: true, item_hash_version: 2 });
+    expect(reanchorHistoryEntries([firstEntry, secondEntry])).toMatchObject({
+      itemHashVersion: 2,
+      entriesRehashed: 0,
+    });
+  });
+
+  it("applies an explicit epoch only from its marker forward", () => {
+    const legacyDocument = document([first, second]);
+    const currentDocument = structuredClone(legacyDocument);
+    currentDocument.body = "explicit epoch transition";
+    const legacyEntry = unversionedEntry(legacyDocument, 1);
+    const currentEntry: HistoryEntry = {
+      ts: "2026-08-11T00:01:00.000Z",
+      author: "fixture",
+      op: "update",
+      patch: jsonPatch.compare(
+        toReplayDocument(legacyDocument),
+        toReplayDocument(currentDocument),
+      ),
+      before_hash: hashDocumentForVersion(legacyDocument, 2),
+      after_hash: hashDocumentForVersion(currentDocument, 2),
+      item_hash_version: 2,
+    };
+    expect(legacyEntry.after_hash).not.toBe(
+      hashDocumentForVersion(legacyDocument, 2),
+    );
+
+    expect(
+      verifyHistoryChainWithVersion([legacyEntry, currentEntry]),
+    ).toMatchObject({ ok: true, item_hash_version: 2 });
   });
 });

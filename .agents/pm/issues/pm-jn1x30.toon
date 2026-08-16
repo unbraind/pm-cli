@@ -1,0 +1,50 @@
+id: pm-jn1x30
+title: "GH-1039: graph impact discards dependency direction and makes the direction selector inert"
+description: "The public graph impact primitive walks dependency edges as an undirected component and echoes incoming/outgoing/both without changing traversal, so blast radius includes unrelated provenance branches."
+type: Issue
+status: closed
+priority: 1
+tags[8]: agent-ux,"area:graph","area:sdk",context-integrity,directionality,github-1039,impact,regression
+created_at: "2026-08-16T05:11:38.234Z"
+updated_at: "2026-08-16T07:05:16.534Z"
+closed_at: "2026-08-16T06:16:13.224Z"
+completed_at: "2026-08-16T06:16:13.224Z"
+author: "harness:codex"
+estimated_minutes: 420
+acceptance_criteria: "Define incoming, outgoing, and both semantics once in the SDK graph traversal contract; preserve semantic orientation for dependency and inverse relationship kinds; make blast radius return only transitive dependents by default or document a compatible explicit default; keep CLI, MCP, PmClient, contracts, cache keys, and cost receipts aligned; add unit, integration, adversarial spanning-node, packed-consumer, and negative-control tests; document migration and token-cost effects."
+goal: project management = context management
+objective: Make graph impact answer directional invalidation and provenance questions without crossing unrelated branches.
+value: Agents and schedulers can re-run only work that actually derives from a changed item.
+impact: "One spanning node can collapse a workspace into a false blast radius, wasting compute and poisoning context ranking."
+outcome: "Directed, explainable impact traversal is shared by SDK, CLI, and MCP with trustworthy direction and cost receipts."
+why_now: GitHub #1039 proves all three direction values are byte-identical and over-report two unrelated nodes in a five-node graph.
+parent: pm-7ob5
+risk: high
+confidence: high
+severity: high
+environment: pm graph impact on 2026.8.15
+repro_steps: "Create two independent dependency branches joined by one transfer item, then run graph impact from the first root with incoming, outgoing, and both."
+resolution: Impact traversal follows stored source-to-target direction and computes both mode as the union of direction-locked closures with bounded pagination.
+expected_result: "Incoming returns transitive dependents, outgoing returns transitive prerequisites, and both returns their explicit union without reversing edges mid-path."
+actual_result: All directions return the same undirected connected component and identical inspected-edge counts.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9rgaal,implements,"2026-08-16T05:11:38.234Z","harness:codex","cli:create:dep",detected
+  pm-efuo34,discovered_from,"2026-08-16T05:11:38.234Z","harness:codex","cli:create:dep",detected
+  pm-ju83,discovered_from,"2026-08-16T05:11:38.234Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-08-16T05:11:38.234Z","harness:codex","Duplicate-check evidence 2026-08-16: searched all 2,501 items across every status for GH-1039,graph impact direction,undirected dependency traversal,inert --direction,blast radius,and reverse reachability. Existing pm-ju83 and pm-7ob5 define the canonical graph-query and analytics contracts; open pm-mfy1ux concerns row bounds,not direction semantics. No item owns this exact directional-correctness regression."
+  "2026-08-16T05:12:49.422Z","harness:codex","GitHub linkage evidence: https://github.com/unbraind/pm-cli/issues/1039#issuecomment-5305855529 points #1039 to this canonical PM item."
+  "2026-08-16T05:20:50.171Z","harness:codex","TDD red evidence: graph impact regression failed because associative undirected indexing allowed an incoming traversal to reverse direction through a shared item and leak into a second epic/request branch. Command: node scripts/run-tests.mjs test -- tests/unit/sdk/relationship-impact-zero-limit.spec.ts."
+  "2026-08-16T06:16:08.342Z","harness:codex","Green evidence: impact traversal follows stored dependency direction, both-mode unions direction-locked closures, and pagination/cursor/cost behavior has regression coverage. Focused linked test and isolated packed-package graph proof passed. Exact repository coverage is 100/100/100/100."
+  "2026-08-16T07:05:16.534Z","harness:codex","Delivery: PR #1041 https://github.com/unbraind/pm-cli/pull/1041 carries this context-integrity tranche; initial implementation commit b9ef9470eed45b74353864743df5b4d4718a0bc4 passed local exact coverage and repository gates. Hosted exact-head checks and bot review are pending."
+files[2]{path,scope,note}:
+  src/sdk/relationship-analytics.ts,project,Storage-direction and direction-locked impact traversal
+  tests/unit/sdk/relationship-impact-zero-limit.spec.ts,project,Associative shared-branch impact regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/relationship-impact-zero-limit.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msveulk5-hqwcx4,test,passed,"2026-08-16T06:15:00.098Z","2026-08-16T06:15:09.221Z","2026-08-16T06:15:09.221Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/CONTEXT_INTEGRITY_CONTRACTS.md,project,Directed graph impact semantics
+close_reason: "Implemented storage-direction, direction-locked graph impact traversal with bounded pagination and shared-branch regressions."
+body: ""

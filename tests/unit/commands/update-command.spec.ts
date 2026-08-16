@@ -1934,7 +1934,7 @@ describe("runUpdate", () => {
       });
 
       const listed = context.runCli(["get", id, "--json", "--fields", "tests"], { expectJson: true });
-      expect((listed.json as { item?: { tests?: unknown[] } }).item?.tests).toBeUndefined();
+      expect((listed.json as { item?: { tests?: unknown[] } }).item?.tests).toEqual([]);
     });
   });
 

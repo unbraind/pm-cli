@@ -9,6 +9,7 @@ import {
   PmClient,
   applyReadOutputDimensions,
   isReadOutputBudgetExceeded,
+  type GetResult,
   type ListResult,
   type PmReadOutputOptions,
   type PmReadOutputResult,
@@ -44,6 +45,10 @@ const options = {
 const result = applyReadOutputDimensions("list", options, {
   items: [{ id: "pm-one" }],
 });
+
+declare const getResult: GetResult;
+const projectedItemId: string = getResult.item.id;
+void projectedItemId;
 
 // @ts-expect-error useful result fields are unsafe until the omission branch is narrowed
 const unsafeItems = result.items;

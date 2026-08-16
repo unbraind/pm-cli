@@ -76,6 +76,7 @@ import {
   type PmVersionBoundEvaluation,
   type PmVersionBoundKind,
 } from "../core/extensions/version-compat.js";
+import { inspectExtensionManifestSchema } from "../core/extensions/manifest-schema.js";
 
 /**
  * Documents the extension module payload exchanged by command, SDK, and package integrations.
@@ -1610,7 +1611,9 @@ export type ExtensionManifestCompatibilityCode =
   | "pm_max_version_invalid"
   | "pm_max_version_unchecked"
   | "pm_max_version_exceeded"
-  | "pm_max_version_exceeded_warn";
+  | "pm_max_version_exceeded_warn"
+  | "manifest_unknown_key"
+  | "no_version_bounds_declared";
 
 /**
  * A single version-bound issue {@link checkExtensionManifestCompatibility} found
@@ -1622,13 +1625,17 @@ export interface ExtensionManifestCompatibilityFinding {
   /** `error` when the bound blocks the load against the target version, `warning` when it is advisory. */
   severity: "error" | "warning";
   /** Which manifest bound produced the finding. */
-  constraint: PmVersionBoundKind;
+  constraint: PmVersionBoundKind | "manifest";
   /** The declared bound value, verbatim. */
   required: string;
   /** The target pm version the bound was evaluated against. */
   current: string;
   /** Human-readable explanation of the outcome and its effect on loading. */
   message: string;
+  /** JSON-style manifest location responsible for a schema-level finding. */
+  path?: string;
+  /** Canonical manifest key that replaces a recognized legacy or mistaken spelling. */
+  suggested_key?: "pm_min_version" | "pm_max_version";
 }
 
 /**
@@ -1653,7 +1660,7 @@ function toCompatibilityFinding(
   }
   const code =
     `${evaluation.kind}_${evaluation.status}` as ExtensionManifestCompatibilityCode;
-  let message: string;
+  let message = "";
   switch (code) {
     case "pm_min_version_invalid":
       message = `pm_min_version "${evaluation.required}" is not a valid version; the extension is treated as incompatible and the loader skips it.`;
@@ -1723,6 +1730,39 @@ export function checkExtensionManifestCompatibility(
     target.pmMaxVersionExceededMode ?? "block",
   );
   const findings: ExtensionManifestCompatibilityFinding[] = [];
+  const schema = inspectExtensionManifestSchema(
+    manifest as Readonly<Record<string, unknown>>,
+  );
+  for (const key of schema.unknownKeys) {
+    findings.push({
+      code: "manifest_unknown_key",
+      severity: "warning",
+      constraint: "manifest",
+      required: key,
+      current: target.pmVersion,
+      path: key,
+      ...(key === "compatibility"
+        ? { suggested_key: "pm_min_version" as const }
+        : {}),
+      message:
+        key === "compatibility"
+          ? 'Manifest key "compatibility" is ignored; declare the canonical pm_min_version and optional pm_max_version fields instead.'
+          : `Manifest key "${key}" is not part of the extension manifest contract and will be ignored.`,
+    });
+  }
+  if (schema.missingVersionBounds) {
+    findings.push({
+      code: "no_version_bounds_declared",
+      severity: "warning",
+      constraint: "manifest",
+      required: "pm_min_version",
+      current: target.pmVersion,
+      path: "$",
+      suggested_key: "pm_min_version",
+      message:
+        "No canonical pm version bounds are declared; add pm_min_version so compatibility intent is explicit.",
+    });
+  }
   const minFinding = toCompatibilityFinding(minEvaluation, target.pmVersion);
   if (minFinding !== null) {
     findings.push(minFinding);

@@ -33,6 +33,18 @@ describe("linked artifact assignment contract", () => {
         note: undefined,
       },
     ]);
+    expect(parseAddEntries(["[]()"], "doc")).toEqual([
+      { path: "[]()", scope: "project", note: undefined },
+    ]);
+    expect(
+      parseAddEntries(["[broken](https://example.com/a)b()"], "doc"),
+    ).toEqual([
+      {
+        path: "[broken](https://example.com/a)b()",
+        scope: "project",
+        note: undefined,
+      },
+    ]);
   });
 
   it("routes every assignment-like value through the shared key allowlist", () => {

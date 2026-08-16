@@ -404,13 +404,116 @@ export function analyzeRelationshipExecution(
   };
 }
 
-/** Compute bounded impact rows and exact shortest explanation paths. */
-export function analyzeGraphImpact(
+/** Build impact-only adjacency from stored source-to-target orientation. */
+function buildImpactAdjacency(
+  graph: RelationshipGraph,
+  direction: Exclude<
+    NonNullable<RelationshipQueryOptions["direction"]>,
+    "both"
+  >,
+  kinds: readonly string[] | undefined,
+): { adjacency: Map<string, Set<string>>; inspectedEdges: number } {
+  const adjacency = createAdjacency(graph.nodes());
+  const selectedKinds =
+    kinds === undefined
+      ? undefined
+      : new Set(kinds.map((kind) => graph.registry().require(kind).kind));
+  const edges = graph.edges();
+  for (const edge of edges) {
+    const definition = graph.registry().require(edge.kind);
+    if (
+      selectedKinds !== undefined &&
+      !selectedKinds.has(edge.kind) &&
+      (definition.inverse === undefined ||
+        !selectedKinds.has(definition.inverse))
+    ) {
+      continue;
+    }
+    appendNeighbor(
+      adjacency,
+      direction === "incoming" ? edge.target : edge.source,
+      direction === "incoming" ? edge.source : edge.target,
+    );
+  }
+  return { adjacency, inspectedEdges: edges.length };
+}
+
+/** Combine complete direction-locked incoming and outgoing impact traversals. */
+function analyzeBidirectionalGraphImpact(
   graph: RelationshipGraph,
   root: string,
-  options: RelationshipImpactOptions = {},
+  options: RelationshipImpactOptions,
+  after: string | undefined,
+  limit: number,
+  cursorFingerprint: string,
 ): RelationshipImpactAnalysis {
-  const direction = options.direction ?? "outgoing";
+  const incoming = analyzeGraphImpact(graph, root, {
+    ...options,
+    after: undefined,
+    direction: "incoming",
+    limit: undefined,
+  });
+  const outgoing = analyzeGraphImpact(graph, root, {
+    ...options,
+    after: undefined,
+    direction: "outgoing",
+    limit: undefined,
+  });
+  const rows = new Map<string, RelationshipImpactRow>();
+  const candidates = [...incoming.affected, ...outgoing.affected].sort(
+    (left, right) =>
+      left.distance - right.distance ||
+      left.id.localeCompare(right.id) ||
+      left.path.join("\u0000").localeCompare(right.path.join("\u0000")),
+  );
+  for (const row of candidates) {
+    if (!rows.has(row.id)) {
+      rows.set(row.id, row);
+    }
+  }
+  const ordered = [...rows.values()].sort(
+    (left, right) =>
+      left.distance - right.distance || left.id.localeCompare(right.id),
+  );
+  const afterIndex =
+    after === undefined || after === root
+      ? -1
+      : ordered.findIndex((row) => row.id === after);
+  if (after !== undefined && after !== root && afterIndex < 0) {
+    throw new TypeError(`Unknown impact cursor item: ${after}`);
+  }
+  const affected = ordered.slice(afterIndex + 1, afterIndex + 1 + limit);
+  const rowLimitTruncated = afterIndex + 1 + affected.length < ordered.length;
+  return {
+    root,
+    affected,
+    exact: true,
+    truncated: incoming.truncated || outgoing.truncated || rowLimitTruncated,
+    ...(rowLimitTruncated
+      ? {
+          nextCursor: encodeQueryCursor(
+            cursorFingerprint,
+            affected.at(-1)?.id ?? root,
+          ),
+        }
+      : {}),
+    cost: {
+      visitedNodes: incoming.cost.visitedNodes + outgoing.cost.visitedNodes,
+      inspectedEdges:
+        incoming.cost.inspectedEdges + outgoing.cost.inspectedEdges,
+    },
+  };
+}
+
+/** Compute one stored-direction impact traversal and exact shortest explanation paths. */
+function analyzeUnidirectionalGraphImpact(
+  graph: RelationshipGraph,
+  root: string,
+  options: RelationshipImpactOptions & {
+    direction: "incoming" | "outgoing";
+  },
+): RelationshipImpactAnalysis {
+  const direction = options.direction;
   const maxDepth = options.maxDepth ?? Number.POSITIVE_INFINITY;
   const limit = options.limit ?? Number.POSITIVE_INFINITY;
   const { fingerprint: cursorFingerprint, after } = resolveImpactCursor(
@@ -418,6 +521,11 @@ export function analyzeGraphImpact(
     options,
     direction,
     maxDepth,
+  );
+  const { adjacency, inspectedEdges } = buildImpactAdjacency(
+    graph,
+    direction,
+    options.kinds,
   );
   const state: RelationshipImpactTraversalState = {
     queue: [{ id: root, depth: 0 }],
@@ -427,24 +535,18 @@ export function analyzeGraphImpact(
     cursorFound: after === undefined || after === root,
   };
   let visitedNodes = 0;
-  let inspectedEdges = 0;
   let truncated = false;
   let rowLimitTruncated = false;
   traversal: for (let index = 0; index < state.queue.length; index += 1) {
     options.signal?.throwIfAborted();
     const current = state.queue[index]!;
     visitedNodes += 1;
-    const adjacent = graph.adjacency(current.id, {
-      direction,
-      kinds: options.kinds,
-      signal: options.signal,
-    });
-    inspectedEdges += adjacent.meta.inspectedEdges;
+    const adjacent = [...adjacency.get(current.id)!].sort();
     if (current.depth >= maxDepth) {
-      if (adjacent.value.some((id) => !state.seen.has(id))) truncated = true;
+      if (adjacent.some((id) => !state.seen.has(id))) truncated = true;
       continue;
     }
-    for (const id of adjacent.value) {
+    for (const id of adjacent) {
       const outcome = visitImpactNeighbor(
         state,
         id,
@@ -478,6 +580,37 @@ export function analyzeGraphImpact(
       : {}),
     cost: { visitedNodes, inspectedEdges },
   };
+}
+
+/** Compute bounded impact rows and exact shortest explanation paths. */
+export function analyzeGraphImpact(
+  graph: RelationshipGraph,
+  root: string,
+  options: RelationshipImpactOptions = {},
+): RelationshipImpactAnalysis {
+  const direction = options.direction ?? "outgoing";
+  if (direction !== "both") {
+    return analyzeUnidirectionalGraphImpact(graph, root, {
+      ...options,
+      direction,
+    });
+  }
+  const maxDepth = options.maxDepth ?? Number.POSITIVE_INFINITY;
+  const limit = options.limit ?? Number.POSITIVE_INFINITY;
+  const { fingerprint, after } = resolveImpactCursor(
+    root,
+    options,
+    direction,
+    maxDepth,
+  );
+  return analyzeBidirectionalGraphImpact(
+    graph,
+    root,
+    options,
+    after,
+    limit,
+    fingerprint,
+  );
 }
 
 /** Analyze weak/strong components, isolates, and exact unique-neighbor hubs. */

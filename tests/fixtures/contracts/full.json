@@ -17142,6 +17142,23 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "manifest_unknown_key",
+      "class": "usage",
+      "code": "manifest_unknown_key",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Manifest unknown key condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/compose.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "history_merge_conflict_markers_detected"
       ],
@@ -17460,6 +17477,23 @@
         "core/telemetry/observability.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "no_version_bounds_declared",
+      "class": "generic_failure",
+      "code": "no_version_bounds_declared",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "No version bounds declared condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/compose.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],

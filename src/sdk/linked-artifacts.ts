@@ -212,29 +212,81 @@ function expandBareCommaSeparatedAddEntries(raw: string[]): string[] {
   });
 }
 
+/** Whether a Markdown destination contains only balanced parentheses. */
+function hasBalancedParentheses(value: string): boolean {
+  let depth = 0;
+  for (const character of value) {
+    if (character === "(") depth += 1;
+    if (character === ")") depth -= 1;
+    if (depth < 0) return false;
+  }
+  return depth === 0;
+}
+
+/** Parse one lossless bare, Markdown, or CSV-label remote documentation reference. */
+function parseDocumentationReference(
+  trimmed: string,
+): LinkedArtifact | undefined {
+  if (
+    /^[A-Za-z][A-Za-z0-9+.-]*:\/\//u.test(trimmed) &&
+    !looksLikeStructuredPathEntry(trimmed)
+  ) {
+    return { path: trimmed, scope: "project", note: undefined };
+  }
+  const labelEnd = trimmed.indexOf("](");
+  if (trimmed.startsWith("[") && labelEnd > 0 && trimmed.endsWith(")")) {
+    const destination = trimmed.slice(labelEnd + 2, -1).trim();
+    if (destination.length > 0 && hasBalancedParentheses(destination)) {
+      return {
+        path: destination,
+        scope: "project",
+        note: trimmed.slice(1, labelEnd).trim() || undefined,
+      };
+    }
+  }
+  const delimiterIndex = trimmed.indexOf(",");
+  if (delimiterIndex < 0) return undefined;
+  const label = trimmed.slice(0, delimiterIndex).trim();
+  const destination = trimmed.slice(delimiterIndex + 1).trim();
+  if (
+    label.length === 0 ||
+    !/^[A-Za-z][A-Za-z0-9+.-]*:\/\//u.test(destination)
+  ) {
+    return undefined;
+  }
+  return { path: destination, scope: "project", note: label };
+}
+
 /** Implements parse add entries for the public runtime surface of this module. */
 export function parseAddEntries(
   raw: string[] | undefined,
   bareNoun: "file" | "doc",
 ): LinkedArtifact[] {
   if (!raw) return [];
-  return expandBareCommaSeparatedAddEntries(raw).map((entry) => {
+  return raw.flatMap((entry) => {
     const trimmed = entry.trim();
-    const kv = looksLikeStructuredPathEntry(trimmed)
-      ? parseCsvKv(entry, "--add")
-      : { path: trimmed };
-    assertNoUnknownCsvKeys(kv, "--add", LINKED_ARTIFACT_ADD_KEYS);
-    if (!kv.path) {
-      throw new PmCliError(
-        `--add requires path=<value> or a bare ${bareNoun} path`,
-        EXIT_CODE.USAGE,
-      );
+    if (bareNoun === "doc") {
+      const reference = parseDocumentationReference(trimmed);
+      if (reference !== undefined) return [reference];
     }
-    return {
-      path: kv.path,
-      scope: ensureScope(kv.scope),
-      note: kv.note?.trim() || undefined,
-    };
+    return expandBareCommaSeparatedAddEntries([entry]).map((expanded) => {
+      const expandedTrimmed = expanded.trim();
+      const kv = looksLikeStructuredPathEntry(expandedTrimmed)
+        ? parseCsvKv(expanded, "--add")
+        : { path: expandedTrimmed };
+      assertNoUnknownCsvKeys(kv, "--add", LINKED_ARTIFACT_ADD_KEYS);
+      if (!kv.path) {
+        throw new PmCliError(
+          `--add requires path=<value> or a bare ${bareNoun} path`,
+          EXIT_CODE.USAGE,
+        );
+      }
+      return {
+        path: kv.path,
+        scope: ensureScope(kv.scope),
+        note: kv.note?.trim() || undefined,
+      };
+    });
   });
 }
 

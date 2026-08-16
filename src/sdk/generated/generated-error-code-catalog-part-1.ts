@@ -1769,6 +1769,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "manifest_unknown_key",
+    meaning: "Manifest unknown key condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/compose.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "manifest_unknown_key",
+    aliases: [],
+  },
+  {
     code: "merge_conflict_markers_detected",
     meaning: "Merge conflict markers detected condition.",
     stability: "stable",

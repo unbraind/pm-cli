@@ -67,6 +67,8 @@ interface ClaimStateContext {
 }
 
 type GetItemProjection = Partial<ItemMetadata> & {
+  /** Canonical item identity retained by every depth and field projection. */
+  id: string;
   body?: string;
   /** Number of notes omitted by a token-bounded projection. */
   notes_count?: number;
@@ -134,9 +136,9 @@ const BUILTIN_ITEM_TYPES = new Set(
 
 type GetDepth = (typeof GET_DEPTH_VALUES)[number];
 
-function itemCollectionCounts(item: ItemMetadata): NonNullable<
-  GetItemProjection["collection_counts"]
-> {
+function itemCollectionCounts(
+  item: ItemMetadata,
+): NonNullable<GetItemProjection["collection_counts"]> {
   const lengths = Object.fromEntries(
     [
       "comments",
@@ -156,17 +158,17 @@ function itemCollectionCounts(item: ItemMetadata): NonNullable<
   return lengths as NonNullable<GetItemProjection["collection_counts"]>;
 }
 
-function itemMaterialFieldGroups(
-  item: ItemMetadata,
-  body: string,
-): string[] {
+function itemMaterialFieldGroups(item: ItemMetadata, body: string): string[] {
   const collectionCounts = itemCollectionCounts(item);
   return [
     ...(body.length > 0 ? ["body"] : []),
     ...Object.entries(collectionCounts).flatMap(([name, count]) =>
       count > 0 ? [name] : [],
     ),
-    ...(collectionCounts.files + collectionCounts.tests + collectionCounts.docs > 0
+    ...(collectionCounts.files +
+      collectionCounts.tests +
+      collectionCounts.docs >
+    0
       ? ["linked"]
       : []),
     "children",
@@ -375,6 +377,34 @@ function validateGetFields(
   }
 }
 
+const EMPTY_PROJECTED_COLLECTION_FIELDS = new Set([
+  "comments",
+  "notes",
+  "learnings",
+  "files",
+  "tests",
+  "test_runs",
+  "docs",
+  "reminders",
+  "events",
+  "dependencies",
+  "plan_steps",
+  "plan_decisions",
+  "plan_discoveries",
+  "plan_validation",
+]);
+
+/** Resolve one projected metadata value while distinguishing an empty requested collection from an omitted field. */
+function projectedMetadataValue(
+  source: Readonly<Record<string, unknown>>,
+  counts: Readonly<Record<string, unknown>>,
+  field: string,
+): unknown {
+  if (Object.hasOwn(counts, field)) return counts[field];
+  if (source[field] !== undefined) return source[field];
+  return EMPTY_PROJECTED_COLLECTION_FIELDS.has(field) ? [] : undefined;
+}
+
 function projectItemForFields(
   item: ItemMetadata,
   fields: string[],
@@ -385,7 +415,7 @@ function projectItemForFields(
     tests_count: item.tests?.length ?? 0,
     collection_counts: itemCollectionCounts(item),
   };
-  const projected: Record<string, unknown> = {};
+  const projected: Record<string, unknown> = { id: item.id };
   for (const field of fields) {
     const normalized = normalizeGetField(field);
     if (
@@ -401,9 +431,11 @@ function projectItemForFields(
     ) {
       continue;
     }
-    projected[normalized] = Object.hasOwn(omittedCounts, normalized)
-      ? omittedCounts[normalized as keyof typeof omittedCounts]
-      : source[normalized];
+    projected[normalized] = projectedMetadataValue(
+      source,
+      omittedCounts,
+      normalized,
+    );
   }
   return projected as GetItemProjection;
 }

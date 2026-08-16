@@ -636,6 +636,16 @@
       ],
       "package_version": "2026.8.15",
       "reason": "Expand PmCliErrorContext with optional verification_errors for typed integrity diagnostics; existing consumers remain source compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ExtensionManifestCompatibilityCode",
+        "signature ./sdk:ExtensionManifestCompatibilityFinding",
+        "signature ./sdk/authoring:ExtensionManifestCompatibilityCode",
+        "signature ./sdk/authoring:ExtensionManifestCompatibilityFinding"
+      ],
+      "package_version": "2026.8.15",
+      "reason": "Extension manifest compatibility findings now include closed-schema advisory codes and migration metadata."
     }
   ],
   "entrypoints": {
@@ -5008,13 +5018,13 @@
           "classification": "supported",
           "kind": "type",
           "name": "ExtensionManifestCompatibilityCode",
-          "signature": "export type ExtensionManifestCompatibilityCode = \"pm_min_version_invalid\" | \"pm_min_version_unchecked\" | \"pm_min_version_unmet\" | \"pm_max_version_invalid\" | \"pm_max_version_unchecked\" | \"pm_max_version_exceeded\" | \"pm_max_version_exceeded_warn\";"
+          "signature": "export type ExtensionManifestCompatibilityCode = \"pm_min_version_invalid\" | \"pm_min_version_unchecked\" | \"pm_min_version_unmet\" | \"pm_max_version_invalid\" | \"pm_max_version_unchecked\" | \"pm_max_version_exceeded\" | \"pm_max_version_exceeded_warn\" | \"manifest_unknown_key\" | \"no_version_bounds_declared\";"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionManifestCompatibilityFinding",
-          "signature": "export interface ExtensionManifestCompatibilityFinding { code: ExtensionManifestCompatibilityCode; severity: \"error\" | \"warning\"; constraint: PmVersionBoundKind; required: string; current: string; message: string; }"
+          "signature": "export interface ExtensionManifestCompatibilityFinding { code: ExtensionManifestCompatibilityCode; severity: \"error\" | \"warning\"; constraint: PmVersionBoundKind | \"manifest\"; required: string; current: string; message: string; path?: string; suggested_key?: \"pm_min_version\" | \"pm_max_version\"; }"
         },
         {
           "classification": "supported",
@@ -15772,13 +15782,13 @@
           "classification": "supported",
           "kind": "type",
           "name": "ExtensionManifestCompatibilityCode",
-          "signature": "export type ExtensionManifestCompatibilityCode = \"pm_min_version_invalid\" | \"pm_min_version_unchecked\" | \"pm_min_version_unmet\" | \"pm_max_version_invalid\" | \"pm_max_version_unchecked\" | \"pm_max_version_exceeded\" | \"pm_max_version_exceeded_warn\";"
+          "signature": "export type ExtensionManifestCompatibilityCode = \"pm_min_version_invalid\" | \"pm_min_version_unchecked\" | \"pm_min_version_unmet\" | \"pm_max_version_invalid\" | \"pm_max_version_unchecked\" | \"pm_max_version_exceeded\" | \"pm_max_version_exceeded_warn\" | \"manifest_unknown_key\" | \"no_version_bounds_declared\";"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionManifestCompatibilityFinding",
-          "signature": "export interface ExtensionManifestCompatibilityFinding { code: ExtensionManifestCompatibilityCode; severity: \"error\" | \"warning\"; constraint: PmVersionBoundKind; required: string; current: string; message: string; }"
+          "signature": "export interface ExtensionManifestCompatibilityFinding { code: ExtensionManifestCompatibilityCode; severity: \"error\" | \"warning\"; constraint: PmVersionBoundKind | \"manifest\"; required: string; current: string; message: string; path?: string; suggested_key?: \"pm_min_version\" | \"pm_max_version\"; }"
         },
         {
           "classification": "supported",
@@ -27086,6 +27096,7 @@
     "locks_unreadable",
     "malformed_plan_step_evidence",
     "manifest_capabilities_absent",
+    "manifest_unknown_key",
     "merge_conflict_markers_detected",
     "merge_decisions_unreviewed",
     "merge_git_config_unwritable",
@@ -27104,6 +27115,7 @@
     "no_test_files_found",
     "no_tests_found",
     "no_update_fields",
+    "no_version_bounds_declared",
     "npm_package_not_found",
     "ownership_conflict",
     "ownership_dependency_bypass_restricted_options",
