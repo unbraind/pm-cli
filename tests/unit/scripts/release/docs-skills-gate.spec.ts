@@ -20,6 +20,11 @@ type DocsModule = {
   extractRelativeMarkdownLinks: (content: string) => string[];
   collectMarkdownFiles: (relativeDirectory: string) => Promise<string[]>;
   validateSkillLinks: (skillName: string, failures: string[]) => Promise<void>;
+  validateSkillReferenceReachability: (
+    skillName: string,
+    skillContent: string,
+    failures: string[],
+  ) => Promise<void>;
   resolveMarkdownLink: (markdownFile: string, linkTarget: string) => string | null;
   validateDocsLinks: (failures: string[]) => Promise<void>;
   resolveExampleCommandPath: (example: string, available: Set<string>) => string | null;
@@ -326,6 +331,56 @@ describe("docs-skills-gate", () => {
       const skillFailures: string[] = [];
       await mod.validateSkillLinks("pm-user", skillFailures);
       expect(skillFailures.some((f) => f.includes("broken relative link") && f.includes("gone.md"))).toBe(true);
+    });
+
+    it("validateSkillReferenceReachability: no references dir, unreachable file, unresolvable link, and fully linked", async () => {
+      mockUtils();
+      mockFsPromises({
+        readdir: vi.fn(async (dir: string) => {
+          const s = String(dir).replaceAll("\\", "/");
+          if (s.endsWith(".agents/skills/pm-user/references")) {
+            return [
+              { name: "LINKED.md", isDirectory: () => false, isFile: () => true },
+              { name: "ORPHAN.md", isDirectory: () => false, isFile: () => true },
+            ] as never;
+          }
+          return [] as never;
+        }) as never,
+        stat: vi.fn(async (p: string) => {
+          const s = String(p).replaceAll("\\", "/");
+          if (s.endsWith(".agents/skills/pm-sdk/references")) {
+            throw Object.assign(new Error("nope"), { code: "ENOENT" });
+          }
+          return { isFile: () => true } as unknown as import("node:fs").Stats;
+        }) as never,
+      });
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+
+      // A skill with no references directory returns without inspecting anything.
+      const absent: string[] = [];
+      await mod.validateSkillReferenceReachability("pm-sdk", "[x](references/LINKED.md)", absent);
+      expect(absent).toEqual([]);
+
+      // ORPHAN.md is present on disk but no link in SKILL.md reaches it.
+      // The `<>` link exercises the resolveMarkdownLink null branch.
+      const orphaned: string[] = [];
+      await mod.validateSkillReferenceReachability(
+        "pm-user",
+        "[linked](references/LINKED.md)\n[nulltarget](<>)",
+        orphaned,
+      );
+      expect(orphaned).toEqual([
+        "Skill pm-user: .agents/skills/pm-user/references/ORPHAN.md is not linked from SKILL.md, so no agent can route to it",
+      ]);
+
+      // Both references linked: nothing is reported.
+      const reachable: string[] = [];
+      await mod.validateSkillReferenceReachability(
+        "pm-user",
+        "[a](references/LINKED.md)\n[b](references/ORPHAN.md)",
+        reachable,
+      );
+      expect(reachable).toEqual([]);
     });
 
     it("validateRequiredGuideMentions flags missing markers", async () => {

@@ -118,6 +118,8 @@ describe("published export-map coverage", () => {
           "./cli": { types: "./dist/cli/main.d.ts" },
           "./sdk/public-surface.json": "./sdk/public-surface.json",
           "./package.json": "./package.json",
+          "./nulled": null,
+          "./untyped": { import: "./dist/untyped.js" },
         },
       }),
     ).toEqual([".", "./cli"]);
