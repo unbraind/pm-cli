@@ -14763,7 +14763,7 @@
       ],
       "intent": "orient",
       "source": "core",
-      "token_budget": 2400
+      "token_budget": 3000
     },
     {
       "command": "get",
@@ -15477,6 +15477,23 @@
       ],
       "exit_code": 3,
       "meaning": "Dependency target not found condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/dependency-flag-validation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "dependency_temporal_order_invalid",
+      "class": "usage",
+      "code": "dependency_temporal_order_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Dependency temporal order invalid condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -26178,6 +26195,7 @@
               "depends_on",
               "discovered_from",
               "implements",
+              "recurs_from",
               "verifies",
               "supersedes"
             ],
@@ -30693,6 +30711,12 @@
       "canonical": "parent",
       "hierarchy": true,
       "inverse": "child",
+      "ordering": false
+    },
+    {
+      "aliases": [],
+      "canonical": "recurs_from",
+      "hierarchy": false,
       "ordering": false
     },
     {
@@ -49794,6 +49818,7 @@
               "depends_on",
               "discovered_from",
               "implements",
+              "recurs_from",
               "verifies",
               "supersedes"
             ],

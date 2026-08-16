@@ -2713,8 +2713,8 @@ describe("release readiness runtime coverage", () => {
     expect(rootExport.import).toBe("./dist/cli-bundle/sdk.js");
     expect(sdkExport.types).toBe("./dist/sdk/index.d.ts");
     expect(sdkExport.import).toBe("./dist/cli-bundle/sdk.js");
-    expect(cliExport.types).toBe("./dist/cli/main.d.ts");
-    expect(cliExport.import).toBe("./dist/cli/main.js");
+    expect(cliExport.types).toBe("./dist/cli/public.d.ts");
+    expect(cliExport.import).toBe("./dist/cli/public.js");
     expect(packageExports["./package.json"]).toBe("./package.json");
     expect(packageJson.name).toBe("@unbrained/pm-cli");
     expect(packageJson.publishConfig?.access).toBe("public");

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { runCreate } from "../../../src/cli/commands/create.js";
 import { runGet } from "../../../src/cli/commands/get.js";
 import { runUpdate } from "../../../src/cli/commands/update.js";
@@ -106,6 +106,106 @@ describe("lossless mutation contracts", () => {
       );
       expect(holder.item.dependencies?.[0]?.id).toBe(target.item.id);
     });
+  });
+
+  it("enforces source-after-target chronology for recurrence mutations", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      await withTempPmPath(async ({ pmPath }) => {
+        vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+        const original = await runCreate(createTask("original occurrence"), {
+          path: pmPath,
+        });
+
+        vi.setSystemTime(new Date("2026-01-02T00:00:00.000Z"));
+        const recurrence = await runCreate(
+          createTask("valid later recurrence", {
+            dep: [
+              `id=${original.item.id},kind=recurs_from`,
+              "id=future-related,kind=related",
+            ],
+            allowUnresolvedDeps: true,
+          }),
+          { path: pmPath },
+        );
+        const olderHolder = await runCreate(createTask("older holder"), {
+          path: pmPath,
+        });
+        expect(recurrence.item.dependencies).toContainEqual(
+          expect.objectContaining({
+            id: original.item.id,
+            kind: "recurs_from",
+          }),
+        );
+        expect(recurrence.warnings).toContain(
+          "dependency_target_unresolved:pm-future-related",
+        );
+        await expect(
+          runUpdate(
+            "missing-recurrence-holder",
+            { dep: [`id=${original.item.id},kind=recurs_from`] },
+            { path: pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.NOT_FOUND,
+        });
+
+        vi.setSystemTime(new Date("2026-01-03T00:00:00.000Z"));
+        const newerTarget = await runCreate(createTask("newer target"), {
+          path: pmPath,
+        });
+        await expect(
+          runUpdate(
+            olderHolder.item.id,
+            { dep: [`id=${newerTarget.item.id},kind=recurs_from`] },
+            { path: pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.USAGE,
+          context: {
+            code: "dependency_temporal_order_invalid",
+            reason: "source_not_after_target",
+            source_id: olderHolder.item.id,
+            target_id: newerTarget.item.id,
+            temporal_order: "source_after_target",
+          },
+        });
+        await expect(
+          runUpdateMany(
+            {
+              list: { ids: olderHolder.item.id },
+              update: {
+                dep: [`id=${newerTarget.item.id},kind=recurs_from`],
+              },
+              dryRun: true,
+            },
+            { path: pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          context: { code: "dependency_temporal_order_invalid" },
+        });
+        expect(
+          (await runGet(olderHolder.item.id, { path: pmPath })).item
+            .dependencies,
+        ).toBeUndefined();
+
+        const equalTarget = await runCreate(createTask("equal-time target"), {
+          path: pmPath,
+        });
+        await expect(
+          runCreate(
+            createTask("equal-time source", {
+              dep: [`id=${equalTarget.item.id},kind=recurs_from`],
+            }),
+            { path: pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          context: { code: "dependency_temporal_order_invalid" },
+        });
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("keeps bulk dry-run dependency validation aligned with apply", async () => {

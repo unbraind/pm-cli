@@ -77,9 +77,9 @@
     },
     "./sdk/public-surface.json": "./sdk/public-surface.json",
     "./cli": {
-      "types": "./dist/cli/main.d.ts",
-      "import": "./dist/cli/main.js",
-      "default": "./dist/cli/main.js"
+      "types": "./dist/cli/public.d.ts",
+      "import": "./dist/cli/public.js",
+      "default": "./dist/cli/public.js"
     },
     "./package.json": "./package.json"
   },

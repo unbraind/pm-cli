@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-experience,cli,core
 created_at: "2026-07-28T02:52:59.859Z"
-updated_at: "2026-08-13T08:50:41.778Z"
+updated_at: "2026-08-16T12:15:26.137Z"
 closed_at: "2026-07-30T07:18:50.895Z"
 completed_at: "2026-07-30T07:18:50.895Z"
 author: "harness:claude-code"
@@ -20,12 +20,13 @@ expected_result: "Every top-level command spelling rendered by help is discovera
 actual_result: "The compiled integration gate proves root help spellings, contract enumeration roots, and resolvable command_flags roots are identical; linked tests and repository-wide coverage pass."
 fixed_version: next-auto-release-after-2026.7.30
 component: cli/contracts
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-e2bq,related,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-gmdzaa,discovered_from,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-n7rr,related,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-1jrdri,related,"2026-07-28T22:39:23.775Z","harness:claude-code","cli:update:dep",detected
+  pm-te6elw,recurs_from,"2026-08-16T12:15:25.983Z","harness:codex","cli:update:dep",detected
 comments[7]{created_at,author,text}:
   "2026-07-28T22:39:22.901Z","harness:claude-code","Measurement sharpened 2026-07-28, and it partly falsifies this item's own scope. Live census at HEAD: 85 rendered top-level spellings, 70 command summaries in pm contracts --summary, 15 rendered and unenumerated. The item's title asserts those commands are \"contract-backed by name yet absent from every enumeration\". Thirteen of the fifteen are - extension, install, the seven list-* status variants, history-redact, history-repair, history-compact, history-author-acknowledge all resolve when asked for by name. Two do not:\n\n  pm contracts --command pm        -> unknown_command, exit 2\n  pm contracts --command workspace -> unknown_command, exit 2\n\nSo the enumerated set is a strict subset of the resolvable set, which is this item, AND the resolvable set is a strict subset of the rendered set, which is not. The second gap is filed separately as pm-1jrdri, because the invariant is different: this item needs enumerated to equal resolvable, and pm-1jrdri needs rendered to be contained in contracted. Fixing this one does not fix that one - a gate that diffs the enumeration against the resolver would still pass with pm workspace rendered and uncontracted. The fourth acceptance criterion here, that help and the enumeration are generated from one source, is the shared prerequisite.\n"
   "2026-07-29T16:55:46.456Z","harness:claude-code","Re-measurement at build 2026.7.29 - the gap narrowed and did not close.\n\nRendered top-level spellings in root help: 87. Commands enumerated by contracts --summary: 71. Help-only: 16 (ctx, extension, history-author-acknowledge, history-compact, history-redact, history-repair, install, list-all, list-blocked, list-canceled, list-closed, list-draft, list-in-progress, list-open, packages, pm).\n\nResolution probe over all 16: 15 resolve fully by name through contracts --command <name> --flags-only --json. Exactly one does not: the pm noun, which exits 2. On the prior measurement two failed to resolve, workspace and pm; workspace now both enumerates in the summary and resolves, so the residual is a single pathological spelling.\n\nNew commands since the last census all enumerate and resolve correctly: workspace, eval, item, duplicates, start-task, pause-task, close-task. So the enumeration gap is no longer growing with the surface - it is now a fixed legacy set of 16 aliases plus one unresolvable noun, which makes the closure criterion cheap to satisfy and cheap to gate.\n"

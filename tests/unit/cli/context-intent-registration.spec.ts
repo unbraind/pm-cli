@@ -16,7 +16,7 @@ describe("read command context intent registration", () => {
       section: ["hierarchy", "blockers", "activity"],
       limit: "3",
       activityLimit: "3",
-      tokenBudget: "2400",
+      tokenBudget: "3000",
     });
     expect(
       applyContextIntentProjection("get", {
@@ -94,6 +94,18 @@ describe("read command context intent registration", () => {
         }),
       ).toMatchObject(override);
     }
+    for (const [command, intent] of [
+      ["context", "orient"],
+      ["list", "triage"],
+      ["search", "discover"],
+    ] as const) {
+      expect(
+        applyContextIntentProjection(command, {
+          for: intent,
+          limit: "invalid",
+        }),
+      ).toHaveProperty("limit", "invalid");
+    }
   });
 
   it("fails unknown intents with nearest-name guidance", () => {
@@ -120,6 +132,20 @@ describe("read command context intent registration", () => {
       },
     });
     expect(result.context_intent.estimated_tokens).toBeGreaterThan(0);
+    expect(
+      attachContextIntentReceipt(
+        "list",
+        { for: "triage", limit: "1" },
+        { items: [{ id: "pm-a" }], count: 1 },
+      ),
+    ).toMatchObject({
+      context_intent: {
+        budget_derived_limit: 100,
+        binding_constraint: "explicit_limit",
+        limit_reason:
+          "The caller supplied a smaller row limit than the budget-derived ceiling.",
+      },
+    });
     expect(attachContextIntentReceipt("list", {}, { items: [] })).toEqual({
       items: [],
     });
@@ -142,10 +168,15 @@ describe("read command context intent registration", () => {
       result_omitted: true,
       within_budget: false,
     });
-    expect(result.context_intent!.estimated_tokens).toBeLessThanOrEqual(1_200);
+    expect(result.context_intent!.estimated_tokens).toBeGreaterThan(1_200);
     expect(result).not.toHaveProperty("recommended");
     expect(result).toMatchObject({
-      budget_exceeded: { omitted_result: true },
+      budget_exceeded: {
+        omitted_result: true,
+        restore_with: expect.stringMatching(
+          /^pm next --for execute --token-budget \d+ --limit 1$/u,
+        ),
+      },
     });
   });
 

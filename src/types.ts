@@ -100,6 +100,7 @@ export const DEPENDENCY_KIND_VALUES = [
   "incident_from",
   "epic",
   "implements",
+  "recurs_from",
   "supersedes",
   "task",
   "verifies",
@@ -463,6 +464,7 @@ export const PLAN_STEP_LINK_KIND_VALUES = [
   "depends_on",
   "discovered_from",
   "implements",
+  "recurs_from",
   "verifies",
   "supersedes",
 ] as const;

@@ -221,7 +221,7 @@ describe("published export-map coverage", () => {
     expect(surface.entrypoints["."]?.symbols).toEqual([]);
     expect(
       surface.entrypoints["./cli"]?.symbols.map((symbol) => symbol.name),
-    ).toEqual(["_testOnly", "runPmCli"]);
+    ).toEqual(["runPmCli"]);
   });
 });
 

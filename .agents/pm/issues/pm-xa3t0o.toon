@@ -1,0 +1,20 @@
+id: pm-xa3t0o
+title: Context calibration recovery names a nonexistent package script
+description: "The mandatory context-intent calibration gate tells contributors to run pnpm context:intent:calibrate --update when the report drifts, but package.json declares no context:intent:calibrate script. The direct node command works, so the failure receipt points to an inexecutable recovery path precisely when a contributor needs it."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,context,quality-gate,recovery
+created_at: "2026-08-16T12:30:22.924Z"
+updated_at: "2026-08-16T12:35:13.633Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: The package manifest exposes the exact recovery command named by the calibration gate and it forwards update arguments correctly; A negative control removes or renames the script and proves gate recovery conformance fails; Testing documentation and the gate error use one executable spelling
+parent: pm-mpbb
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3crymx,discovered_from,"2026-08-16T12:30:22.924Z","harness:codex","cli:create:dep",detected
+  pm-k6t4yb,implements,"2026-08-16T12:30:22.924Z","harness:codex","cli:create:dep",detected
+  pm-hid9g1,verifies,"2026-08-16T12:35:13.508Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-16T12:30:22.924Z","harness:codex","text=Duplicate-check evidence: searched the complete 2509-item all-status corpus through pm search for context intent calibration update package script and recovery command, then checked exact tracker text for context:intent:calibrate. Existing pm-3crymx owns truthful context results, pm-hid9g1 owns calibration, and pm-k6t4yb owns gate inventory; none owns the missing executable recovery spelling. Created as open follow-up and deliberately left unclaimed because this tranche does not edit that surface."
+body: ""

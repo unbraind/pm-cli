@@ -1294,6 +1294,27 @@ export const runUpdateMany = async (
     updateSummary,
     dependencyWarnings,
   });
+  await assertDependencyTargetsResolvable({
+    pmRoot: runtime.pmRoot,
+    dependencies: parseDependencyAdditions(
+      options.update.dep,
+      runtime.settings.id_prefix,
+      nowIso(),
+      resolveAuthor(options.update.author, runtime.settings.author_default),
+    ).additions,
+    idPrefix: runtime.settings.id_prefix,
+    itemFormat: runtime.settings.item_format,
+    typeToFolder: resolveItemTypeRegistry(
+      runtime.settings,
+      getActiveExtensionRegistrations(),
+    ).type_to_folder,
+    allowUnresolved: options.update.allowUnresolvedDeps,
+    holders: plan.listed.items.map((item) => ({
+      id: item.id,
+      createdAt: item.created_at,
+    })),
+    schema: runtime.settings.schema,
+  });
   return options.dryRun === true
     ? buildUpdateManyDryRunResult(plan)
     : applyUpdateManyPlan({ runtime, options, global, plan });

@@ -2,18 +2,73 @@ id: pm-rf120g
 title: "Disposition the test-only escape hatch published through the ./cli entrypoint: 86 internal functions are consumer-visible API with no support intent"
 description: "src/cli/main.ts exports _testOnly, an object of 86 internal helpers, and package.json publishes ./cli with dist/cli/main.d.ts. Consumers can import and type-check against every one of them. The SDK side already treats this as a governed decision: _testOnlyCliContracts carries a named exclusion reason. The ./cli side has never been dispositioned."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[4]: "area:cli","area:sdk",hygiene,surface
 created_at: "2026-08-16T10:06:33.911Z"
-updated_at: "2026-08-16T10:06:33.911Z"
+updated_at: "2026-08-16T15:08:12.622Z"
+closed_at: "2026-08-16T15:08:11.896Z"
+completed_at: "2026-08-16T15:08:11.896Z"
 author: "harness:claude-code"
 acceptance_criteria: The published ./cli declaration either stops exposing _testOnly or the exposure carries a recorded reason in the surface snapshot's exclusion vocabulary; pm's own tests continue to reach the helpers through source imports rather than the package export; The chosen disposition is written into docs/SDK.md next to the executable_entry classification; A change to the set of exposed helpers is a classified surface change either way
 parent: pm-usfg
 risk: medium
 confidence: medium
+resolution: The ./cli export now targets src/cli/public.ts and no longer publishes _testOnly internals.
 expected_result: The published CLI entrypoint exposes only what the project intends to support.
-actual_result: "It exposes runPmCli plus 86 unsupported internal helpers, typed and resolvable by any consumer."
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "The supported ./cli facade exports runPmCli and restores the embedding process exitCode after both successful and failing invocations, while the executable entrypoint retains normal shell exit semantics."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-suhxny,discovered_from,"2026-08-16T10:06:33.911Z","harness:claude-code","cli:create:dep",detected
+  pm-suhxny,recurs_from,"2026-08-16T12:15:30.873Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-16T13:26:08.563Z","harness:codex","Verification evidence: repository-wide coverage passed 506 files / 7,411 tests at exact 100/100/100/100; lint, static assurance, generated-contract, SDK-surface, zero-duplicate, secret-scan, and token-budget gates passed. The packed-package smoke installed the tarball into an isolated consumer, imported @unbrained/pm-cli/cli with exactly runPmCli, executed it, typechecked the package, and passed npx dispatch."
+  "2026-08-16T13:42:29.661Z","harness:codex","Reviewed-product lineage: implementation is published in https://github.com/unbraind/pm-cli/pull/1042 at initial head f4ff1a393 and the PR body links this item on the GitHub-renderable main path."
+  "2026-08-16T14:10:38.531Z","harness:codex","Hosted CI correction evidence: Docs and Skills run 31951240793 exposed a stale item-type path in docs/SDK.md. Corrected the link to the canonical tasks/pm-rf120g.toon location; pnpm quality:docs-skills and pnpm quality:docs-links both pass locally."
+  "2026-08-16T15:03:21.406Z","harness:codex","Review-fix evidence: CodeRabbit identified that the public facade leaked process.exitCode into embedding hosts. The facade now snapshots and restores the host exit state in a finally block. tests/unit/cli/public.spec.ts proves a successful --version call and an invalid-command call both preserve a pre-existing host exitCode. Repo-wide pnpm lint passed; full coverage passed 507 files / 7,414 tests at 100/100/100/100; packed npx smoke passed for 13 packages."
+files[8]{path,scope,note}:
+  package.json,project,Route the published CLI export to its intentional public facade
+  scripts/smoke-npx-from-pack.mjs,project,Import the installed packed CLI entrypoint and reject every unexpected export
+  sdk/public-surface.json,project,Record the reviewed breaking removal of the unsupported test seam
+  src/cli/public.ts,project,Expose only the supported runPmCli programmatic entrypoint
+  tests/integration/release-readiness-runtime.spec.ts,project,Ratchet the package export map to the public CLI facade
+  tests/unit/cli/public.spec.ts,project,Prove repeated embedded invocations preserve host process exit state
+  tests/unit/scripts/sdk-surface-snapshot.spec.ts,project,Ratchet the classified CLI surface to runPmCli only
+  tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,Exercise the packed CLI consumer probe
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-surface-snapshot.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,240
+  "pnpm smoke:npx",project,300
+  node scripts/run-tests.mjs test -- tests/unit/cli/public.spec.ts,project,240
+test_runs[3]:
+  - run_id: test-all-local-msvu9oiu-8i6e0l
+    kind: test-all
+    status: failed
+    started_at: "2026-08-16T13:26:47.101Z"
+    finished_at: "2026-08-16T13:32:43.698Z"
+    recorded_at: "2026-08-16T13:32:43.698Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    items: 1
+    linked_tests: 2
+  - run_id: test-local-msvunokt-s8rprk
+    kind: test
+    status: passed
+    started_at: "2026-08-16T13:35:40.578Z"
+    finished_at: "2026-08-16T13:37:40.397Z"
+    recorded_at: "2026-08-16T13:37:40.397Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-local-msvxrxh5-ouz5iv
+    kind: test
+    status: passed
+    started_at: "2026-08-16T15:03:30.725Z"
+    finished_at: "2026-08-16T15:04:57.401Z"
+    recorded_at: "2026-08-16T15:04:57.401Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Document the supported CLI entrypoint and private test seam boundary
+close_reason: "Delivered the supported ./cli runPmCli facade, documented its embedding contract, preserved host process.exitCode on success and failure, and verified SDK surface, packed package execution, lint, and exact 100/100/100/100 coverage."
 body: ""

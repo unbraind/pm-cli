@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: detection,gates,meta,replication,self-improvement
 created_at: "2026-08-09T06:03:57.529Z"
-updated_at: "2026-08-10T01:55:10.067Z"
+updated_at: "2026-08-16T12:15:29.224Z"
 closed_at: "2026-08-10T01:55:09.489Z"
 completed_at: "2026-08-10T01:55:09.489Z"
 author: "harness:claude-code"
@@ -18,7 +18,7 @@ confidence: high
 resolution: fixed
 expected_result: The replication gate measures an independent detector denominator and fails when its floors regress
 actual_result: Comment-normalized TypeScript AST clustering reports five current repeated-rule clusters; two intentional DatabaseSync clusters are covered by one declared set; a 0.4 floor and split-set negative control fail closed on coverage drift
-dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-7rrqsk,related,"2026-08-09T06:03:57.529Z","harness:claude-code","cli:create:dep",detected
   pm-o0sqz5,implements,"2026-08-09T06:03:57.529Z","harness:claude-code","cli:create:dep",detected
   pm-ulxdqp,discovered_from,"2026-08-09T06:03:57.529Z","harness:claude-code","cli:create:dep",detected
@@ -28,6 +28,7 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-z0cfor,discovered_from,"2026-08-09T06:06:50.362Z","harness:claude-code","cli:update:dep",detected
   pm-z71aoy,related,"2026-08-09T06:06:50.362Z","harness:claude-code","cli:update:dep",detected
   pm-ulxdqp,verifies,"2026-08-09T07:29:50.034Z","harness:codex","cli:update:dep",detected
+  pm-7wx1f9,recurs_from,"2026-08-16T12:15:29.048Z","harness:codex","cli:update:dep",detected
 comments[8]{created_at,author,text}:
   "2026-08-09T07:29:50.712Z","harness:codex","Implementation correction: the declaration now includes detector policy with a five-cluster denominator floor; the focused negative control covers invalid policies, coverage regression, cluster-floor regression, and public entrypoint behavior without duplicate full-tree scans."
   "2026-08-09T08:05:21.234Z","harness:codex","Final evidence: focused detector suite passes with 100/100/100/100 coverage for the gate module; repository detector reports exactly five clusters at the committed floor; static quality and the full repository coverage gate pass."

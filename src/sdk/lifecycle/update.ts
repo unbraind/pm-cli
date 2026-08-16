@@ -2983,6 +2983,7 @@ export async function runUpdate(
     nowIso,
     author,
   );
+  assertDependencyEdgesAllowed(id, dependencyUpdates.additions);
   const dependencyTargetWarnings = await assertDependencyTargetsResolvable({
     pmRoot,
     dependencies: dependencyUpdates.additions,
@@ -2990,6 +2991,8 @@ export async function runUpdate(
     itemFormat: settings.item_format,
     typeToFolder: typeRegistry.type_to_folder,
     allowUnresolved: options.allowUnresolvedDeps,
+    holders: [{ id }],
+    schema: settings.schema,
   });
   const dependencyRemovals = parseDependencyRemovals(
     options.depRemove,

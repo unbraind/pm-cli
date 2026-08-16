@@ -11,6 +11,7 @@ import {
   decodeContextIntentCursor,
   resolveContextIntentContract,
 } from "../../../src/sdk/context-intent-contracts.js";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("context intent contracts", () => {
   it("decodes resumable cursor fields and both supported row shapes", () => {
@@ -219,6 +220,12 @@ describe("context intent contracts", () => {
       activityLimit: "2",
     });
     expect(
+      applyContextIntentProjection("context", {
+        for: "orient",
+        limit: "10",
+      }),
+    ).toMatchObject({ limit: "3", activityLimit: "3" });
+    expect(
       applyContextIntentProjection("list", {
         for: "triage",
         fields: "id,title",
@@ -300,6 +307,8 @@ describe("context intent contracts", () => {
       budget_derived_limit: 467,
       context_intent: {
         token_budget: 8000,
+        declared_token_budget: 3200,
+        token_budget_override: 4800,
         budget_derived_limit: 467,
         binding_constraint: "token_budget",
       },
@@ -372,8 +381,52 @@ describe("context intent contracts", () => {
         within_budget: false,
       },
     });
-    expect(projected.context_intent!.estimated_tokens).toBeLessThanOrEqual(
+    expect(projected.context_intent!.estimated_tokens).toBeGreaterThan(
       projected.context_intent!.token_budget,
+    );
+  });
+
+  it("reports declaration feasibility independently from caller overrides", () => {
+    const lowerOverride = attachContextIntentReceipt(
+      "next",
+      { for: "execute", tokenBudget: 256 },
+      Object.fromEntries(
+        Array.from({ length: 120 }, (_, index) => [`field_${index}`, index]),
+      ),
+    );
+    expect(lowerOverride).toMatchObject({
+      budget_exceeded: { reason: "effective_budget_infeasible" },
+      context_intent: {
+        token_budget: 256,
+        declared_token_budget: 1200,
+        declaration_feasible: true,
+        result_omitted: true,
+        within_budget: false,
+      },
+    });
+    expect(lowerOverride.context_intent!.estimated_tokens).toBeLessThanOrEqual(
+      lowerOverride.context_intent!.declared_token_budget,
+    );
+
+    const higherOverride = attachContextIntentReceipt(
+      "next",
+      { for: "execute", tokenBudget: 4000 },
+      Object.fromEntries(
+        Array.from({ length: 500 }, (_, index) => [`field_${index}`, index]),
+      ),
+    );
+    expect(higherOverride.context_intent).toMatchObject({
+      token_budget: 4000,
+      declared_token_budget: 1200,
+      declaration_feasible: false,
+      result_omitted: false,
+      within_budget: true,
+    });
+    expect(higherOverride.context_intent!.estimated_tokens).toBeGreaterThan(
+      higherOverride.context_intent!.declared_token_budget,
+    );
+    expect(higherOverride.context_intent!.estimated_tokens).toBeLessThanOrEqual(
+      higherOverride.context_intent!.token_budget,
     );
   });
 
@@ -418,23 +471,71 @@ describe("context intent contracts", () => {
     );
   });
 
-  it("returns bounded recovery guidance instead of recommending an unprojected retry", () => {
+  it("returns executable bounded recovery guidance instead of recommending an unprojected retry", async () => {
     const oversized = Object.fromEntries(
       Array.from({ length: 2500 }, (_, index) => [`field_${index}`, index]),
     );
-    for (const [command, intent] of [
-      ["get", "inspect"],
-      ["search", "discover"],
-    ] as const) {
-      expect(
-        attachContextIntentReceipt(command, { for: intent }, oversized),
-      ).toMatchObject({
-        budget_exceeded: {
-          restore_with:
-            "Increase --token-budget or narrow the request; the unprojected command may be larger.",
-        },
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--create-mode",
+          "progressive",
+          "--type",
+          "Task",
+          "--title",
+          "Recovery target",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const id = (created.json as { item: { id: string } }).item.id;
+      const getProjection = attachContextIntentReceipt(
+        "get",
+        { for: "inspect" },
+        { ...oversized, item: { id } },
+      );
+      const getRecovery = (
+        getProjection.budget_exceeded as { restore_with: string }
+      ).restore_with;
+      const getRecoveryMatch =
+        /^pm get '([^']+)' --for inspect --token-budget (\d+)$/u.exec(
+          getRecovery,
+        );
+      expect(getRecoveryMatch).not.toBeNull();
+      expect(getRecovery).not.toContain("--limit");
+      const recovered = context.runCli(
+        [
+          "get",
+          getRecoveryMatch![1]!,
+          "--for",
+          "inspect",
+          "--token-budget",
+          getRecoveryMatch![2]!,
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(recovered.code, recovered.stderr).toBe(0);
+      expect((recovered.json as { item: { id: string } }).item.id).toBe(id);
+
+      const searchProjection = attachContextIntentReceipt(
+        "search",
+        { for: "discover" },
+        { ...oversized, query: "alpha's regression" },
+      );
+      expect(searchProjection.budget_exceeded).toMatchObject({
+        restore_with: expect.stringMatching(
+          /^pm search 'alpha'"'"'s regression' --for discover --token-budget \d+ --limit \d+$/u,
+        ),
       });
-    }
+      for (const projected of [getProjection, searchProjection]) {
+        expect(projected.context_intent!.estimated_tokens).toBeGreaterThan(
+          projected.context_intent!.token_budget,
+        );
+      }
+    });
   });
 
   it("retains useful rows through an intermediate budget-compaction tier", () => {
@@ -617,8 +718,8 @@ describe("context intent contracts", () => {
       budget_derived_limit: 100,
       context_intent: {
         budget_derived_limit: 100,
-        binding_constraint: "explicit_limit",
-        limit_reason: expect.stringContaining("explicit row limit"),
+        binding_constraint: "token_budget",
+        limit_reason: expect.stringContaining("token budget"),
       },
     });
     const next = JSON.parse(

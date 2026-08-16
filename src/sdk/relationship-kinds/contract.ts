@@ -10,6 +10,8 @@ export type RelationshipDirection = "directed" | "undirected";
 export type RelationshipCardinality = "one" | "many";
 /** Lifecycle policy for a relationship kind. */
 export type RelationshipLifecycle = "persistent" | "supersedable" | "ephemeral";
+/** Temporal meaning carried by a directed relationship independently of execution precedence. */
+export type RelationshipTemporalOrder = "source_after_target";
 /** Direction in which an ordering edge contributes to execution precedence. */
 export type RelationshipPrecedence =
   | "source_before_target"
@@ -27,6 +29,8 @@ export interface RelationshipKindDefinition {
   inverse?: string;
   /** Whether the kind participates in execution-order cycle checks. */
   ordering: boolean;
+  /** Optional chronological constraint; recurrence uses source-after-target without becoming scheduling precedence. */
+  temporalOrder?: RelationshipTemporalOrder;
   /** Execution direction for ordering kinds; defaults to source before target. */
   precedence?: RelationshipPrecedence;
   /** Whether the kind contributes to structural ancestry. */
@@ -59,6 +63,7 @@ export const BUILTIN_RELATIONSHIP_KINDS: readonly RelationshipKindDefinition[] =
   { kind: "discovered_from", direction: "directed", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
   { kind: "incident_from", direction: "directed", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
   { kind: "implements", direction: "directed", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
+  { kind: "recurs_from", direction: "directed", ordering: false, temporalOrder: "source_after_target", hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
   { kind: "verifies", direction: "directed", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "persistent", compatibilityVersion: 1, allowSelf: false },
   { kind: "supersedes", direction: "directed", ordering: false, hierarchy: false, outgoing: "many", incoming: "many", lifecycle: "supersedable", compatibilityVersion: 1, allowSelf: false },
 ] as const;
