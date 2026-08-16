@@ -808,7 +808,11 @@ function compareNegativeControls(negativeControl, intentNegativeControl) {
   if (
     intentNegativeControl?.declaration_feasible !== true ||
     intentNegativeControl?.result_omitted !== true ||
-    intentNegativeControl?.within_budget !== false
+    intentNegativeControl?.within_budget !== false ||
+    intentNegativeControl?.token_budget !== 256 ||
+    !Number.isFinite(intentNegativeControl?.estimated_tokens) ||
+    intentNegativeControl.estimated_tokens <=
+      intentNegativeControl.token_budget
   ) {
     violations.push(
       "intent-negative-control: infeasible 256-token list override did not return an explicit omitted-result receipt",

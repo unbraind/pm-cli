@@ -1063,6 +1063,29 @@ describe("scripts/release/token-budget-gate", () => {
                 declaration_feasible: true,
                 result_omitted: false,
                 within_budget: true,
+                estimated_tokens: 280,
+                token_budget: 256,
+              },
+            })
+          : commandStdout(args),
+    });
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "intent-negative-control: infeasible 256-token list override",
+    );
+  });
+
+  it("fails when the intent negative control does not exceed its effective ceiling", async () => {
+    mockRuntime({
+      manifestText: manifestForBudget(10_000),
+      stdout: (args) =>
+        args.join(" ").includes("--for triage --token-budget 256")
+          ? JSON.stringify({
+              context_intent: {
+                declaration_feasible: true,
+                result_omitted: true,
+                within_budget: false,
+                estimated_tokens: 256,
+                token_budget: 256,
               },
             })
           : commandStdout(args),

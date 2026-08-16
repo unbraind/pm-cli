@@ -678,7 +678,9 @@ the declaration (`declared_token_budget`) from the effective ceiling
 reads clamp an explicit limit to the budget-derived ceiling and identify the
 binding constraint. `declaration_feasible` evaluates the useful projection
 against the declared ceiling independently of whether a lower or higher caller
-override is effective. If even compacted useful output cannot fit,
+override is effective. `within_budget` evaluates that same projection against
+the effective `token_budget`, so it can legitimately differ from declaration
+feasibility. If even compacted useful output cannot fit,
 `result_omitted` is true, `estimated_tokens` retains the measured pre-omission
 size (and is therefore greater than `token_budget`), and
 `budget_exceeded.restore_with` is an executable bounded retry rather than a

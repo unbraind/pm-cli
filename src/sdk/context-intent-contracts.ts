@@ -60,7 +60,7 @@ export interface PmContextIntentReceipt {
   token_budget_override: number;
   /** Deterministic JSON-size estimate for the useful result before any receipt-only omission. */
   estimated_tokens: number;
-  /** Whether the measured result fits the declared ceiling. */
+  /** Whether the measured result fits the effective ceiling after caller overrides. */
   within_budget: boolean;
   /** Projection strategy applied before the result was measured. */
   degradation:
@@ -913,7 +913,13 @@ export function attachContextIntentReceipt<
           receipt.token_budget_override === 0
             ? "declared_budget_infeasible"
             : "effective_budget_infeasible",
-        restore_with: `pm ${command} --for ${contract.intent} --token-budget ${Math.ceil(receipt.estimated_tokens / 100) * 100} --limit ${receipt.budget_derived_limit ?? 1}`,
+        restore_with: buildContextIntentRecoveryCommand(
+          command,
+          builtInCommand,
+          contract.intent,
+          receipt,
+          resultWithDiagnostics,
+        ),
       },
       context_intent: receipt,
     };
@@ -959,6 +965,29 @@ function collapseContinuationMetadata(
 /** Return whether one projected value is a mutable output record. */
 function isOutputRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/** Build a shell-safe bounded retry while retaining required read positionals. */
+function buildContextIntentRecoveryCommand(
+  command: string,
+  builtInCommand: BuiltInContextIntentCommand,
+  intent: string,
+  receipt: PmContextIntentReceipt,
+  result: Record<string, unknown>,
+): string {
+  const recoveryTarget =
+    builtInCommand === "get" &&
+    isOutputRecord(result.item) &&
+    typeof result.item.id === "string"
+      ? result.item.id
+      : builtInCommand === "search" && typeof result.query === "string"
+        ? result.query
+        : undefined;
+  const recoveryPositional =
+    recoveryTarget === undefined
+      ? ""
+      : ` '${recoveryTarget.replaceAll("'", `'"'"'`)}'`;
+  return `pm ${command}${recoveryPositional} --for ${intent} --token-budget ${Math.ceil(receipt.estimated_tokens / 100) * 100} --limit ${receipt.budget_derived_limit ?? 1}`;
 }
 
 /** Read one numeric fixed-point estimate from an optional receipt. */

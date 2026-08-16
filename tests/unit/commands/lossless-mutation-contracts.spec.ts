@@ -185,7 +185,7 @@ describe("lossless mutation contracts", () => {
           context: { code: "dependency_temporal_order_invalid" },
         });
         expect(
-          (await runGet(olderHolder.item.id, {}, { path: pmPath })).item
+          (await runGet(olderHolder.item.id, { path: pmPath })).item
             .dependencies,
         ).toBeUndefined();
 

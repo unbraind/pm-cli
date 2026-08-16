@@ -474,18 +474,23 @@ describe("context intent contracts", () => {
     const oversized = Object.fromEntries(
       Array.from({ length: 2500 }, (_, index) => [`field_${index}`, index]),
     );
-    for (const [command, intent] of [
-      ["get", "inspect"],
-      ["search", "discover"],
+    for (const [command, intent, positional, result] of [
+      ["get", "inspect", "pm-example", { item: { id: "pm-example" } }],
+      [
+        "search",
+        "discover",
+        `alpha'"'"'s regression`,
+        { query: "alpha's regression" },
+      ],
     ] as const) {
       const projected = attachContextIntentReceipt(
         command,
         { for: intent },
-        oversized,
+        { ...oversized, ...result },
       );
       expect(projected.budget_exceeded).toMatchObject({
         restore_with: expect.stringMatching(
-          new RegExp(`^pm ${command} --for ${intent} --token-budget \\d+ --limit \\d+$`, "u"),
+          new RegExp(`^pm ${command} '${positional}' --for ${intent} --token-budget \\d+ --limit \\d+$`, "u"),
         ),
       });
       expect(projected.context_intent!.estimated_tokens).toBeGreaterThan(

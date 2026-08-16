@@ -41,10 +41,12 @@ describe("relationship kind registry", () => {
     expect(isOrderingRelationshipKind("related", registry)).toBe(false);
     expect(registry.require("recurs_from")).toMatchObject({
       direction: "directed",
+      hierarchy: false,
       temporalOrder: "source_after_target",
       ordering: false,
       lifecycle: "persistent",
     });
+    expect(registry.require("recurs_from").hierarchyDirection).toBeUndefined();
     expect(isOrderingRelationshipKind("unknown", registry)).toBe(false);
   });
 
