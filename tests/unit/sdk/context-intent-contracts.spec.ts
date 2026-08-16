@@ -11,6 +11,7 @@ import {
   decodeContextIntentCursor,
   resolveContextIntentContract,
 } from "../../../src/sdk/context-intent-contracts.js";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("context intent contracts", () => {
   it("decodes resumable cursor fields and both supported row shapes", () => {
@@ -470,33 +471,71 @@ describe("context intent contracts", () => {
     );
   });
 
-  it("returns bounded recovery guidance instead of recommending an unprojected retry", () => {
+  it("returns executable bounded recovery guidance instead of recommending an unprojected retry", async () => {
     const oversized = Object.fromEntries(
       Array.from({ length: 2500 }, (_, index) => [`field_${index}`, index]),
     );
-    for (const [command, intent, positional, result] of [
-      ["get", "inspect", "pm-example", { item: { id: "pm-example" } }],
-      [
-        "search",
-        "discover",
-        `alpha'"'"'s regression`,
-        { query: "alpha's regression" },
-      ],
-    ] as const) {
-      const projected = attachContextIntentReceipt(
-        command,
-        { for: intent },
-        { ...oversized, ...result },
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--create-mode",
+          "progressive",
+          "--type",
+          "Task",
+          "--title",
+          "Recovery target",
+          "--json",
+        ],
+        { expectJson: true },
       );
-      expect(projected.budget_exceeded).toMatchObject({
+      expect(created.code).toBe(0);
+      const id = (created.json as { item: { id: string } }).item.id;
+      const getProjection = attachContextIntentReceipt(
+        "get",
+        { for: "inspect" },
+        { ...oversized, item: { id } },
+      );
+      const getRecovery = (
+        getProjection.budget_exceeded as { restore_with: string }
+      ).restore_with;
+      const getRecoveryMatch =
+        /^pm get '([^']+)' --for inspect --token-budget (\d+)$/u.exec(
+          getRecovery,
+        );
+      expect(getRecoveryMatch).not.toBeNull();
+      expect(getRecovery).not.toContain("--limit");
+      const recovered = context.runCli(
+        [
+          "get",
+          getRecoveryMatch![1]!,
+          "--for",
+          "inspect",
+          "--token-budget",
+          getRecoveryMatch![2]!,
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(recovered.code, recovered.stderr).toBe(0);
+      expect((recovered.json as { item: { id: string } }).item.id).toBe(id);
+
+      const searchProjection = attachContextIntentReceipt(
+        "search",
+        { for: "discover" },
+        { ...oversized, query: "alpha's regression" },
+      );
+      expect(searchProjection.budget_exceeded).toMatchObject({
         restore_with: expect.stringMatching(
-          new RegExp(`^pm ${command} '${positional}' --for ${intent} --token-budget \\d+ --limit \\d+$`, "u"),
+          /^pm search 'alpha'"'"'s regression' --for discover --token-budget \d+ --limit \d+$/u,
         ),
       });
-      expect(projected.context_intent!.estimated_tokens).toBeGreaterThan(
-        projected.context_intent!.token_budget,
-      );
-    }
+      for (const projected of [getProjection, searchProjection]) {
+        expect(projected.context_intent!.estimated_tokens).toBeGreaterThan(
+          projected.context_intent!.token_budget,
+        );
+      }
+    });
   });
 
   it("retains useful rows through an intermediate budget-compaction tier", () => {

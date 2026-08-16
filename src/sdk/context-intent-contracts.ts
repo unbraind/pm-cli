@@ -987,7 +987,11 @@ function buildContextIntentRecoveryCommand(
     recoveryTarget === undefined
       ? ""
       : ` '${recoveryTarget.replaceAll("'", `'"'"'`)}'`;
-  return `pm ${command}${recoveryPositional} --for ${intent} --token-budget ${Math.ceil(receipt.estimated_tokens / 100) * 100} --limit ${receipt.budget_derived_limit ?? 1}`;
+  const boundedRowLimit =
+    builtInCommand === "get"
+      ? ""
+      : ` --limit ${receipt.budget_derived_limit ?? 1}`;
+  return `pm ${command}${recoveryPositional} --for ${intent} --token-budget ${Math.ceil(receipt.estimated_tokens / 100) * 100}${boundedRowLimit}`;
 }
 
 /** Read one numeric fixed-point estimate from an optional receipt. */
