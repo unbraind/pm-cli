@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,ci,coverage,gate-parity
 created_at: "2026-08-05T18:43:54.168Z"
-updated_at: "2026-08-06T07:26:23.190Z"
+updated_at: "2026-08-16T11:30:44.656Z"
 closed_at: "2026-08-06T07:26:07.808Z"
 completed_at: "2026-08-06T07:26:07.808Z"
 author: "harness:claude-code"
@@ -27,11 +27,12 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
   pm-zclzll,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
   pm-zlv8jl,related,"2026-08-05T18:43:58.384Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-06T06:54:00.472Z","harness:codex","Implementation evidence: local and hosted coverage now share an exact integer covered-versus-total gate after Vitest report generation; malformed/missing reports fail closed and rounded 100% negative controls enumerate deficient file metrics. CI wiring/gate registry are enforced. Final run: 438 files, 6,887 tests, statements 49,165/49,165, branches 35,658/35,658, functions 10,051/10,051, lines 47,645/47,645; exact gate passed."
   "2026-08-06T06:55:37.571Z","harness:codex","Delivery: PR https://github.com/unbraind/pm-cli/pull/916 at exact head 0a06ef07f37d6b0b5f07d0e108d9e73b8da24910."
   "2026-08-06T07:09:56.088Z","harness:codex","Hosted negative-control evidence: PR #916 head fa0a63fc proved the first gate wiring was too early. All four intentionally partial coverage shards failed before their blobs could be merged, while the static gate rejected findCoverageDeficits at complexity 19. The correction adds an explicit coverage-shard runner mode that preserves sandbox isolation and blob generation without judging incomplete counts; the existing merged coverage job remains the sole hosted exact-count authority and still runs the non-bypassable exact gate. Validation helpers reduce complexity without weakening malformed-summary rejection."
   "2026-08-06T07:25:41.637Z","harness:codex","Exact-head delivery evidence: PR #916 head fea4ba930cd0d1e42766510a3c4088942c2716f3 passed every hosted runner/check, including merged exact coverage, static/docstrings, Windows, compatibility, smokes, CodeQL, Trivy, TruffleHog, Semgrep, Codecov, benchmarks, and platform runtimes. Sourcery's architecture guide and Codecov/CodSpeed reports had no actionable findings and were acknowledged with contextual replies. CodeRabbit and the formal Sourcery review were rate/quota limited; each artifact was down-voted and replied to, and is recorded as a limitation rather than approval. Greptile produced no review artifact after repeated exact-head triggers."
+  "2026-08-16T11:30:44.656Z","harness:claude-code","Observed 2026-08-16 while restoring 100 percent coverage after an escape: a single run of node scripts/run-tests.mjs coverage emitted 'Test execution failed; exact coverage still passed.' and 'Tests passed; exact coverage failed.' and 'EXIT:0' in the same stream, from different sub-steps, before printing the correct final verdict 'Exact coverage gate passed: 100/100/100/100 with zero uncovered counts.' Any consumer that greps for a verdict rather than reading the last line can extract the opposite of the truth. Worth folding into this item's scope: the wrapper needs one verdict line, not several candidate ones. Related escape recorded on pm-rtn5h6."
 files[8]{path,scope,note}:
   .github/workflows/ci.yml,project,Hosted exact-count gate integration
   scripts/release/coverage-threshold-gate.mjs,project,Exact integer-count coverage decision
