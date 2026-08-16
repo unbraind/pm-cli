@@ -69,6 +69,68 @@ export type PmRecoveryReferenceSemantics =
   | "replacement"
   | "behavior_preserving";
 
+/** Literal envelope fields recognized as recovery-reference producers. */
+export const PM_RECOVERY_REFERENCE_FIELDS = [
+  "suggested_retry",
+  "retry_command",
+  "candidate_command",
+  "candidate_commands",
+  "example",
+  "examples",
+  "next_step",
+  "next_steps",
+  "suggested_next_steps",
+  "migration_hint",
+  "migration_hints",
+  "restore_with",
+] as const;
+
+/** One source file supplied to the producer-census analyzer. */
+export interface PmRecoveryProducerSource {
+  /** Repository-relative source path. */
+  path: string;
+  /** Complete source text. */
+  content: string;
+}
+
+/** One literal recovery field emitted from a source location. */
+export interface PmRecoveryProducerLocation {
+  /** Repository-relative producer source path. */
+  path: string;
+  /** One-based source line. */
+  line: number;
+  /** Literal structured-envelope field. */
+  field: (typeof PM_RECOVERY_REFERENCE_FIELDS)[number];
+  /** Normalized recovery kind. */
+  kind: PmRecoveryReferenceKind;
+}
+
+/** Producer-census failure that requires a new field contract or producer. */
+export interface PmRecoveryProducerCensusFinding {
+  /** Stable finding kind. */
+  kind: "missing_kind_producer" | "unknown_recovery_field";
+  /** Source path or normalized kind. */
+  subject: string;
+  /** Actionable explanation. */
+  detail: string;
+}
+
+/** Complete literal producer-table census for recovery references. */
+export interface PmRecoveryProducerCensusReport {
+  /** Whether every recovery kind has a producer and no unknown fields exist. */
+  ok: boolean;
+  /** Source files inspected. */
+  scanned_file_count: number;
+  /** Literal producer locations. */
+  producer_count: number;
+  /** Stable counts by normalized recovery kind. */
+  producer_count_by_kind: Record<PmRecoveryReferenceKind, number>;
+  /** Stable producer locations. */
+  producers: PmRecoveryProducerLocation[];
+  /** Missing-kind or unknown-field findings. */
+  findings: PmRecoveryProducerCensusFinding[];
+}
+
 /** One derived promise that another invocation or command path is reachable. */
 export interface PmRecoveryReferenceObligation {
   /** Stable reference identifier derived from its emitting envelope. */
@@ -149,12 +211,14 @@ const RECOVERY_REFERENCE_FIELD_CONTRACTS: Readonly<
   >
 > = {
   suggested_retry: { kind: "suggested_retry", semantics: "recovery" },
+  retry_command: { kind: "suggested_retry", semantics: "recovery" },
   candidate_command: { kind: "candidate_command", semantics: "recovery" },
   candidate_commands: { kind: "candidate_command", semantics: "recovery" },
   example: { kind: "example", semantics: "recovery" },
   examples: { kind: "example", semantics: "recovery" },
   next_step: { kind: "next_step", semantics: "recovery" },
   next_steps: { kind: "next_step", semantics: "recovery" },
+  suggested_next_steps: { kind: "next_step", semantics: "recovery" },
   migration_hint: { kind: "migration_hint", semantics: "replacement" },
   migration_hints: { kind: "migration_hint", semantics: "replacement" },
   restore_with: {
@@ -162,6 +226,77 @@ const RECOVERY_REFERENCE_FIELD_CONTRACTS: Readonly<
     semantics: "behavior_preserving",
   },
 };
+
+/** Census literal structured-envelope producers without executing source code. */
+export function censusPmRecoveryReferenceProducers(
+  sources: readonly PmRecoveryProducerSource[],
+): PmRecoveryProducerCensusReport {
+  const producers: PmRecoveryProducerLocation[] = [];
+  const findings: PmRecoveryProducerCensusFinding[] = [];
+  const recognizedFields = new Set<string>(PM_RECOVERY_REFERENCE_FIELDS);
+  const propertyPattern = /(?:^|[,<{]\s*)["']?([A-Za-z][A-Za-z0-9_]*)["']?\s*:/gu;
+  for (const source of [...sources].sort((left, right) => left.path.localeCompare(right.path))) {
+    for (const match of source.content.matchAll(propertyPattern)) {
+      const field = match[1]!;
+      const fieldIndex = match.index + match[0].lastIndexOf(field);
+      const line = source.content.slice(0, fieldIndex).split("\n").length;
+      const contract = RECOVERY_REFERENCE_FIELD_CONTRACTS[field];
+      if (contract) {
+        producers.push({
+          path: source.path,
+          line,
+          field: field as PmRecoveryProducerLocation["field"],
+          kind: contract.kind,
+        });
+      } else if (
+        /(?:retry_command|candidate_command|example|next_step|migration_hint|restore_with)/u.test(field) &&
+        !/(?:_total|_truncated)$/u.test(field) &&
+        !recognizedFields.has(field)
+      ) {
+        findings.push({
+          kind: "unknown_recovery_field",
+          subject: `${source.path}:${line}:${field}`,
+          detail: `${field} resembles a recovery reference but has no typed field contract.`,
+        });
+      }
+    }
+  }
+  const producerCountByKind = Object.fromEntries(
+    PM_RECOVERY_REFERENCE_KINDS.map((kind) => [
+      kind,
+      producers.filter((producer) => producer.kind === kind).length,
+    ]),
+  ) as Record<PmRecoveryReferenceKind, number>;
+  for (const kind of PM_RECOVERY_REFERENCE_KINDS) {
+    if (producerCountByKind[kind] === 0) {
+      findings.push({
+        kind: "missing_kind_producer",
+        subject: kind,
+        detail: `No source producer emits the ${kind} recovery-reference kind.`,
+      });
+    }
+  }
+  producers.sort((left, right) =>
+    left.path !== right.path
+      ? left.path.localeCompare(right.path)
+      : left.line !== right.line
+        ? left.line - right.line
+        : left.field.localeCompare(right.field),
+  );
+  findings.sort((left, right) =>
+    left.subject !== right.subject
+      ? left.subject.localeCompare(right.subject)
+      : left.kind.localeCompare(right.kind),
+  );
+  return {
+    ok: findings.length === 0,
+    scanned_file_count: sources.length,
+    producer_count: producers.length,
+    producer_count_by_kind: producerCountByKind,
+    producers,
+    findings,
+  };
+}
 
 /** Derive typed obligations from every recognized recovery field in an emitted envelope. */
 export function derivePmRecoveryReferenceObligations(

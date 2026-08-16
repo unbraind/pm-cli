@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: external-audit,gitignore,security,telemetry
 created_at: "2026-04-26T13:11:41.990Z"
-updated_at: "2026-07-26T17:24:00.755Z"
+updated_at: "2026-08-16T18:25:20.116Z"
 author: cursor-agent
 estimated_minutes: 20
 acceptance_criteria: .gitignore excludes .env; git check-ignore confirms .env and telemetry runtime paths are ignored; secret scan remains clean.
@@ -15,8 +15,8 @@ release: v2026.5.1
 resolution: Added .env to .gitignore.
 expected_result: .env and telemetry runtime/search paths are ignored and tracked secret scan remains clean.
 actual_result: git check-ignore and node scripts/check-secrets.mjs passed via linked pm test.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-lnq3,implements,"2026-07-26T17:24:00.487Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-lnq3,implements,"2026-07-26T17:24:00.487Z"
 comments[2]{created_at,author,text}:
   "2026-04-26T13:11:41.990Z",cursor-agent,"Duplicate-check evidence: pm search '.env gitignore telemetry security' --limit 10 plus open/in-progress context showed no direct active finding; net-new because telemetry security checklist explicitly requires .env exclusion."
   "2026-04-26T13:13:55.634Z",cursor-agent,"Implemented .env ignore rule. Evidence: git check-ignore confirms .env, .agents/pm/search/TELEMETRY.md, and .agents/pm/runtime/telemetry/events.jsonl are ignored; node scripts/check-secrets.mjs passed."
@@ -28,4 +28,12 @@ tests[2]{command,scope,timeout_seconds,note}:
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mofshghk-fq00qg,test,passed,"2026-04-26T13:13:42.138Z","2026-04-26T13:13:42.584Z","2026-04-26T13:13:42.584Z",2,0,0
 close_reason: Added .env ignore rule and verified ignore/security checks
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: secret-scan-env-exclusion
+  negative_control: node scripts/check-secrets.mjs
+  local_checks[1]: "pnpm security:scan"
+  hosted_checks[1]: Security / TruffleHog
+  owner: pm-qgvj
 body: ""

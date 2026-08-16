@@ -52701,7 +52701,7 @@
             "type": "boolean"
           },
           "subcommand": {
-            "description": "Assurance operation: list, show, put, remove, run, verdicts, presets, apply, derive, or promote.",
+            "description": "Assurance operation: list, show, put, remove, run, verdicts, presets, apply, derive, promote, or risk.",
             "enum": [
               "list",
               "show",
@@ -52718,7 +52718,8 @@
               "list",
               "run",
               "derive",
-              "promote"
+              "promote",
+              "risk"
             ],
             "type": "string"
           },

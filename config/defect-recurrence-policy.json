@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "evidence_epoch": "2026-08-17T00:00:00.000Z",
+  "families": [
+    {
+      "id": "boundary-format-drift",
+      "version": 1,
+      "title": "Externally produced path, slug, payload, and invocation format drift",
+      "owner_item_id": "pm-0pzgit",
+      "escape_class": "production_defect",
+      "triggers": {
+        "file_patterns": ["config/boundary-fixtures.json", "src/core/shared/author.ts", "src/core/extensions/**", "tests/fixtures/boundaries/**"],
+        "item_ids": ["pm-qtbc", "pm-0pzgit"],
+        "tags": ["boundary-contract", "cross-platform"]
+      },
+      "checks": {
+        "local": ["node scripts/release/defect-evidence-gate.mjs --boundary-only"],
+        "hosted": ["CI / boundary-fixture-gate", "Nightly / cross-platform"]
+      },
+      "negative_control": { "files": ["tests/fixtures/boundaries/missing.json"] },
+      "historical_item_ids": ["pm-qtbc"],
+      "budget": { "max_escape_rate": 0, "max_false_positive_rate": 0.05 }
+    },
+    {
+      "id": "cross-platform-nightly-regression",
+      "version": 1,
+      "title": "Platform-specific runtime and filesystem regressions",
+      "owner_item_id": "pm-2zjs0g",
+      "escape_class": "nightly_regression",
+      "triggers": {
+        "file_patterns": ["src/**/host-*.ts", "scripts/**", ".github/workflows/nightly.yml", "tests/**/*windows*", "tests/**/*platform*"],
+        "item_ids": ["pm-xaib", "pm-zno2iu", "pm-wr8utz"],
+        "tags": ["cross-platform", "nightly", "windows"]
+      },
+      "checks": {
+        "local": ["node scripts/run-tests.mjs test -- tests/unit/scripts"],
+        "hosted": ["Nightly / windows-latest", "Nightly / macos-latest"]
+      },
+      "negative_control": { "item_ids": ["pm-xaib"] },
+      "historical_item_ids": ["pm-xaib", "pm-zno2iu", "pm-wr8utz"],
+      "budget": { "max_escape_rate": 0.02, "max_false_positive_rate": 0.1 }
+    },
+    {
+      "id": "security-scanner-finding",
+      "version": 1,
+      "title": "Secret, dependency, and static-analysis findings",
+      "owner_item_id": "pm-6ixn",
+      "escape_class": "scanner_finding",
+      "triggers": {
+        "file_patterns": ["src/**", "package.json", "pnpm-lock.yaml", "scripts/check-secrets.mjs", ".github/workflows/security.yml"],
+        "item_ids": ["pm-qgvj", "pm-4ris"],
+        "tags": ["security", "codeql", "semgrep"]
+      },
+      "checks": {
+        "local": ["pnpm security:scan", "pnpm audit --prod"],
+        "hosted": ["Security / CodeQL", "Security / TruffleHog", "Security / Trivy"]
+      },
+      "negative_control": { "item_ids": ["pm-qgvj"] },
+      "historical_item_ids": ["pm-qgvj", "pm-4ris"],
+      "budget": { "max_escape_rate": 0, "max_false_positive_rate": 0.02 }
+    },
+    {
+      "id": "review-caught-contract-drift",
+      "version": 1,
+      "title": "CLI, SDK, MCP, and initialization contract drift caught in review",
+      "owner_item_id": "pm-rtn5h6",
+      "escape_class": "review_caught_late",
+      "triggers": {
+        "file_patterns": ["src/cli/**", "src/sdk/**", "src/mcp/**", "src/core/init/**", "tests/integration/**"],
+        "item_ids": ["pm-at1j", "pm-0bwe"],
+        "tags": ["review-feedback", "surface-parity"]
+      },
+      "checks": {
+        "local": ["pnpm contracts:check", "pnpm quality:static"],
+        "hosted": ["CI / test-shard", "Greptile", "CodeRabbit"]
+      },
+      "negative_control": { "item_ids": ["pm-at1j"] },
+      "historical_item_ids": ["pm-at1j", "pm-0bwe"],
+      "budget": { "max_escape_rate": 0.01, "max_false_positive_rate": 0.05 }
+    },
+    {
+      "id": "output-budget-and-continuation",
+      "version": 1,
+      "title": "Token-budget, omission, and continuation contract regressions",
+      "owner_item_id": "pm-1qkivy",
+      "escape_class": "production_defect",
+      "triggers": {
+        "file_patterns": ["src/sdk/read-output**", "src/sdk/output**", "src/sdk/context-packing.ts", "tests/**/*output*"],
+        "tags": ["output-budget", "token-efficiency"]
+      },
+      "checks": {
+        "local": ["pnpm quality:token-surface"],
+        "hosted": ["CI / token-budget-gate"]
+      },
+      "negative_control": { "files": ["src/sdk/read-output-budget.ts"] },
+      "historical_item_ids": ["pm-ips23h"],
+      "budget": { "max_escape_rate": 0, "max_false_positive_rate": 0.03 }
+    },
+    {
+      "id": "history-and-projection-integrity",
+      "version": 1,
+      "title": "Immutable history and read-projection integrity regressions",
+      "owner_item_id": "pm-h8tpeh",
+      "escape_class": "production_defect",
+      "triggers": {
+        "file_patterns": ["src/core/history/**", "src/sdk/history**", "src/sdk/read-output**", "tests/**/*history*"],
+        "tags": ["history-integrity", "projection-contract"],
+        "error_codes": ["workspace_history_chain_invalid"]
+      },
+      "checks": {
+        "local": ["pnpm quality:record-integrity", "pnpm contracts:check"],
+        "hosted": ["CI / record-integrity", "CI / contract-drift"]
+      },
+      "negative_control": { "error_codes": ["workspace_history_chain_invalid"] },
+      "historical_item_ids": ["pm-c3uru0"],
+      "budget": { "max_escape_rate": 0, "max_false_positive_rate": 0.03 }
+    }
+  ]
+}

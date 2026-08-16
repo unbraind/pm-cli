@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli",contracts,help,plan
 created_at: "2026-07-15T20:00:17.934Z"
-updated_at: "2026-08-07T11:20:22.655Z"
+updated_at: "2026-08-16T19:24:32.738Z"
 author: codex-audit-20260715
 estimated_minutes: 120
 acceptance_criteria: "pm plan create --help and --help --json resolve to action-specific help or an equally precise positional-action help view; pm help plan create and command-scoped contracts expose the same effective flags; shell completion advertises plan actions; pm plan --help no longer reports an empty subcommands array while describing subcommands only in a positional argument; documented pm plan create examples remain valid; regression tests cover help JSON, contracts, completion, and unknown-command recovery"
@@ -61,10 +61,11 @@ dependencies[9]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-15T20:00:17.934Z",codex-audit-20260715,"Duplicate check evidence: all-status searches for plan create help unknown command positional action contracts found only broad roadmap and historical audit entries with no focused active or terminal owner."
   "2026-08-04T09:18:06.510Z","harness:codex","Fresh agent-recovery evidence 2026-08-04: following the apparent plan-link contract as pm plan link <plan> --link <item> produced a recovery error requiring an undocumented positional step reference. The generic plan help reports usage [subcommand] [id] [stepRef] but its sole example is pm init, so it does not demonstrate link syntax. After discovering the hidden positional requirement, pm plan link pm-gzyt2j plan-step-002 --link ... succeeded. This remains a live avoidable agent stall."
   "2026-08-04T09:34:37.917Z","harness:codex","Fresh contract/runtime parity evidence 2026-08-04: pm contracts --command update --flags-only --json advertises extension-provided --allow-audit-update and --allow-audit-dep-update as supported update flags, but invoking pm update pm-gzyt2j ... --allow-audit-update is rejected by Commander as Unknown option. Retrying the same update without the advertised flag succeeds. Action-specific help/contracts must describe the actually registered command path, including extension-injected flags, or agents cannot trust the prescribed runtime contract discovery workflow."
+  "2026-08-16T19:24:32.738Z","harness:codex","Fresh recurrence evidence 2026-08-16: the newly added, fully executable `pm assurance risk --definition <json> --json` action succeeds through the direct CLI, SDK transport, and packed npx/bunx installation, but `pm assurance risk --help --json` exits 2 with unknown_command. Generic `pm assurance --help --json` exposes an empty subcommands array, labels --definition only as Put declaration JSON, and redirects action discovery to contracts. This is the same positional-action help defect already owned here; no duplicate item was created."
 files[5]{path,scope,note}:
   src/cli/commands/plan.ts,project,Positional plan action parser and runtime behavior
   src/cli/help-content.ts,project,Help bundle and path narrative resolution

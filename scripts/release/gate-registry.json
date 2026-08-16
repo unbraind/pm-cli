@@ -54,6 +54,15 @@
         }
       },
       {
+        "path": "scripts/release/defect-evidence-gate.mjs",
+        "disposition": "reduced_to_provider",
+        "provider": "repository-quality/defect-evidence",
+        "negative_control": {
+          "test": "tests/unit/scripts/release/defect-evidence-gate.spec.ts",
+          "assertion": "proves captured boundary and new defect evidence fail closed"
+        }
+      },
+      {
         "path": "scripts/release/docs-skills-gate.mjs",
         "disposition": "reduced_to_provider",
         "provider": "repository-quality/docs-skills",

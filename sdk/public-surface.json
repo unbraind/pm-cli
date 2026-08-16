@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1618,
+    "covered_symbols": 1653,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1619
+    "required_symbols": 1654
   },
   "breaking_acknowledgements": [
     {
@@ -667,6 +667,18 @@
       ],
       "package_version": "2026.8.16",
       "reason": "Expose structured temporal relationship endpoint evidence on PmCliErrorContext and publish dependency_temporal_order_invalid for source-after-target enforcement"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ASSURANCE_ACTIONS",
+        "signature ./sdk:AssuranceActionResult",
+        "signature ./sdk/core:AssuranceActionResult",
+        "signature ./sdk/governance:ASSURANCE_ACTIONS",
+        "signature ./sdk/governance:AssuranceActionResult",
+        "signature ./sdk/runtime:AssuranceActionResult"
+      ],
+      "package_version": "2026.8.16",
+      "reason": "Add the typed assurance risk action and DefectChangeRiskReport result; exhaustive AssuranceAction consumers must handle risk."
     }
   ],
   "entrypoints": {
@@ -1056,6 +1068,18 @@
           "kind": "function",
           "name": "analyzeAgentProvenanceDescriptorCoverage",
           "signature": "(descriptors?: readonly HarnessSignalDescriptor[], dimensions?: readonly string[]) => AgentProvenanceDescriptorCoverage[] | calls: (descriptors?: readonly HarnessSignalDescriptor[], dimensions?: readonly string[]) => AgentProvenanceDescriptorCoverage[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "analyzeDefectChangeRisk",
+          "signature": "(index: DefectRecurrenceIndex, input: DefectChangeRiskInput, options?: AnalyzeDefectChangeRiskOptions) => DefectChangeRiskReport | calls: (index: DefectRecurrenceIndex, input: DefectChangeRiskInput, options?: AnalyzeDefectChangeRiskOptions) => DefectChangeRiskReport"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AnalyzeDefectChangeRiskOptions",
+          "signature": "export interface AnalyzeDefectChangeRiskOptions { cursor?: string; limit?: number; }"
         },
         {
           "classification": "supported",
@@ -1553,7 +1577,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_ACTIONS",
-          "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\"]"
+          "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\", \"risk\"]"
         },
         {
           "classification": "supported",
@@ -1607,7 +1631,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
-          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
           "classification": "supported",
@@ -2066,6 +2090,48 @@
           "signature": "(value: unknown, strict: boolean) => AgentEpisodeIdentity | undefined | calls: (value: unknown, strict: boolean) => AgentEpisodeIdentity | undefined"
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "BOUNDARY_FIXTURE_CAPTURE_SOURCES",
+          "signature": "readonly [\"captured_redacted\", \"captured_verbatim\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "BoundaryFixtureCaptureSource",
+          "signature": "export type BoundaryFixtureCaptureSource = (typeof BOUNDARY_FIXTURE_CAPTURE_SOURCES)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "BoundaryFixtureFinding",
+          "signature": "export interface BoundaryFixtureFinding { boundary_id: string; kind: \"invalid_registry\" | \"duplicate_boundary\" | \"invalid_boundary\" | \"missing_fixture\" | \"invalid_fixture\" | \"fixture_boundary_mismatch\" | \"unsafe_fixture\" | \"invalid_waiver\" | \"expired_waiver\"; detail: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "BoundaryFixtureRegistry",
+          "signature": "export interface BoundaryFixtureRegistry { version: 1; inventory_scope: string; boundaries: BoundaryInventoryRecord[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "BoundaryFixtureReport",
+          "signature": "export interface BoundaryFixtureReport { ok: boolean; boundary_count: number; captured_count: number; waived_count: number; findings: BoundaryFixtureFinding[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "BoundaryFixtureSample",
+          "signature": "export interface BoundaryFixtureSample { version: 1; boundary_id: string; capture_source: BoundaryFixtureCaptureSource; capture_provenance: string; redactions: string[]; input: unknown; observed: unknown; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "BoundaryInventoryRecord",
+          "signature": "export type BoundaryInventoryRecord = CapturedBoundaryRecord | WaivedBoundaryRecord;"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "boundReadOutputRows",
@@ -2112,6 +2178,18 @@
           "kind": "function",
           "name": "buildCorpusShapeItemPlan",
           "signature": "(shape: Readonly<CorpusShape>, index: number, itemCount: number, seed?: number) => CorpusShapeItemPlan | calls: (shape: Readonly<CorpusShape>, index: number, itemCount: number, seed?: number) => CorpusShapeItemPlan"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "buildDefectRecurrenceIndex",
+          "signature": "(policy: DefectRecurrencePolicy, items: readonly AssuranceItemRecord[], options?: BuildDefectRecurrenceIndexOptions) => DefectRecurrenceIndex | calls: (policy: DefectRecurrencePolicy, items: readonly AssuranceItemRecord[], options?: BuildDefectRecurrenceIndexOptions) => DefectRecurrenceIndex"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "BuildDefectRecurrenceIndexOptions",
+          "signature": "export interface BuildDefectRecurrenceIndexOptions { previous_index?: DefectRecurrenceIndex; changed_item_ids?: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -2364,6 +2442,18 @@
           "kind": "function",
           "name": "canonicalizeRelationshipKind",
           "signature": "(kind: string) => string | calls: (kind: string) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "CapturedBoundaryRecord",
+          "signature": "export interface CapturedBoundaryRecord { id: string; producer: string; consumer: string; format: string; fixture_path: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "censusPmRecoveryReferenceProducers",
+          "signature": "(sources: readonly PmRecoveryProducerSource[]) => PmRecoveryProducerCensusReport | calls: (sources: readonly PmRecoveryProducerSource[]) => PmRecoveryProducerCensusReport"
         },
         {
           "classification": "supported",
@@ -3795,6 +3885,114 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "DEFECT_ESCAPE_CLASSES",
+          "signature": "readonly [\"production_defect\", \"nightly_regression\", \"scanner_finding\", \"review_caught_late\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "DEFECT_GATE_EVIDENCE_DISPOSITIONS",
+          "signature": "readonly [\"gate_added\", \"gate_strengthened\", \"explicit_waiver\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectChangeRiskInput",
+          "signature": "export interface DefectChangeRiskInput { files?: string[]; package_names?: string[]; item_ids?: string[]; tags?: string[]; error_codes?: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectChangeRiskMatch",
+          "signature": "export interface DefectChangeRiskMatch { family_id: string; family_version: number; owner_item_id: string; escape_class: DefectEscapeClass; reasons: DefectChangeRiskReason[]; local_checks: string[]; hosted_checks: string[]; budget: DefectRecurrenceBudget; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectChangeRiskReason",
+          "signature": "export interface DefectChangeRiskReason { signal: \"file\" | \"package\" | \"item\" | \"tag\" | \"error_code\"; value: string; matched: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectChangeRiskReport",
+          "signature": "export interface DefectChangeRiskReport { risk_detected: boolean; index_fingerprint: string; items: DefectChangeRiskMatch[]; total: number; next_cursor?: string; required_local_checks: string[]; required_hosted_checks: string[]; cost: { families_evaluated: number; signals_evaluated: number; families_selected: number; estimated_output_tokens: number; }; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectChangeRiskRequest",
+          "signature": "export interface DefectChangeRiskRequest { policy: DefectRecurrencePolicy; change: DefectChangeRiskInput; cursor?: string; limit?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "DefectEscapeClass",
+          "signature": "export type DefectEscapeClass = (typeof DEFECT_ESCAPE_CLASSES)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectGateEvidence",
+          "signature": "export interface DefectGateEvidence { disposition: DefectGateEvidenceDisposition; gate_id?: string; negative_control?: string; local_checks?: string[]; hosted_checks?: string[]; owner: string; waiver_reason?: string; waiver_expires_at?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "DefectGateEvidenceDisposition",
+          "signature": "export type DefectGateEvidenceDisposition = (typeof DEFECT_GATE_EVIDENCE_DISPOSITIONS)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectGateEvidenceFinding",
+          "signature": "export interface DefectGateEvidenceFinding { item_id: string; kind: \"missing_escape_class\" | \"invalid_escape_class\" | \"missing_gate_evidence\" | \"invalid_gate_evidence\" | \"expired_waiver\"; detail: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectGateEvidenceReport",
+          "signature": "export interface DefectGateEvidenceReport { ok: boolean; governed_item_count: number; classified_item_count: number; class_counts: Record<DefectEscapeClass, number>; evidence_disposition_counts: Record<DefectGateEvidenceDisposition, number>; findings: DefectGateEvidenceFinding[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceBudget",
+          "signature": "export interface DefectRecurrenceBudget { max_escape_rate: number; max_false_positive_rate: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceChecks",
+          "signature": "export interface DefectRecurrenceChecks { local: string[]; hosted: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceFamily",
+          "signature": "export interface DefectRecurrenceFamily { id: string; version: number; title: string; owner_item_id: string; escape_class: DefectEscapeClass; triggers: DefectRecurrenceTriggers; checks: DefectRecurrenceChecks; negative_control: DefectChangeRiskInput; historical_item_ids: string[]; budget: DefectRecurrenceBudget; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceIndex",
+          "signature": "export interface DefectRecurrenceIndex { version: 1; policy_fingerprint: string; index_fingerprint: string; families: DefectRecurrenceFamily[]; item_families: Record<string, string[]>; build: { items_scanned: number; items_reused: number; items_indexed: number; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrencePolicy",
+          "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; families: DefectRecurrenceFamily[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceTriggers",
+          "signature": "export interface DefectRecurrenceTriggers { file_patterns?: string[]; package_names?: string[]; item_ids?: string[]; tags?: string[]; error_codes?: string[]; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "defineAfterCommandHook",
           "signature": "(hook: AfterCommandHook) => AfterCommandHook | calls: (hook: AfterCommandHook) => AfterCommandHook"
@@ -4510,8 +4708,20 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "evaluateBoundaryFixtures",
+          "signature": "(registry: BoundaryFixtureRegistry, fixtures: Readonly<Record<string, unknown>>, now?: Date) => BoundaryFixtureReport | calls: (registry: BoundaryFixtureRegistry, fixtures: Readonly<Record<string, unknown>>, now?: Date) => BoundaryFixtureReport"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "evaluateContextRanking",
           "signature": "(input: ContextRankingEvaluationInput) => ContextRankingEvaluation | calls: (input: ContextRankingEvaluationInput) => ContextRankingEvaluation"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateDefectGateEvidence",
+          "signature": "(items: readonly AssuranceItemRecord[], policy: DefectRecurrencePolicy, terminalStatuses: readonly string[], now?: Date) => DefectGateEvidenceReport | calls: (items: readonly AssuranceItemRecord[], policy: DefectRecurrencePolicy, terminalStatuses: readonly string[], now?: Date) => DefectGateEvidenceReport"
         },
         {
           "classification": "supported",
@@ -8276,6 +8486,18 @@
           "signature": "(raw: string, optionName: string) => Record<string, string> | calls: (raw: string, optionName: string) => Record<string, string>"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseDefectChangeRiskRequest",
+          "signature": "(value: unknown) => DefectChangeRiskRequest | calls: (value: unknown) => DefectChangeRiskRequest"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseDefectRecurrencePolicy",
+          "signature": "(value: unknown) => DefectRecurrencePolicy | calls: (value: unknown) => DefectRecurrencePolicy"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "parseEvalQuerySet",
@@ -8986,6 +9208,12 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "PM_RECOVERY_REFERENCE_FIELDS",
+          "signature": "readonly [\"suggested_retry\", \"retry_command\", \"candidate_command\", \"candidate_commands\", \"example\", \"examples\", \"next_step\", \"next_steps\", \"suggested_next_steps\", \"migration_hint\", \"migration_hints\", \"restore_with\"]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "PM_RECOVERY_REFERENCE_KINDS",
           "signature": "readonly [\"suggested_retry\", \"candidate_command\", \"example\", \"next_step\", \"migration_hint\", \"restore_with\"]"
         },
@@ -9570,6 +9798,30 @@
           "kind": "interface",
           "name": "PmReadOutputTruncationDisclosure",
           "signature": "export interface PmReadOutputTruncationDisclosure { reason: \"output_budget_reached\"; budget_source: PmReadOutputDimensionSource | \"session\"; budget_tokens: number; overridden_dimensions: PmReadOutputDimension[]; compacted_row_paths: string[]; continuation_cursor_rebased: boolean; continuation_available: boolean; recovery_budget_multiplier: 1; continuations: PmReadOutputContinuation[]; restore_with: string; recovery: { cursor: string; cli: \"--output-cursor\"; sdk: \"outputCursor\"; mcp: \"outputCursor\"; } | { cli: string; sdk: { outputBudget: number; }; mcp: { outputBudget: number; }; }; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRecoveryProducerCensusFinding",
+          "signature": "export interface PmRecoveryProducerCensusFinding { kind: \"missing_kind_producer\" | \"unknown_recovery_field\"; subject: string; detail: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRecoveryProducerCensusReport",
+          "signature": "export interface PmRecoveryProducerCensusReport { ok: boolean; scanned_file_count: number; producer_count: number; producer_count_by_kind: Record<PmRecoveryReferenceKind, number>; producers: PmRecoveryProducerLocation[]; findings: PmRecoveryProducerCensusFinding[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRecoveryProducerLocation",
+          "signature": "export interface PmRecoveryProducerLocation { path: string; line: number; field: (typeof PM_RECOVERY_REFERENCE_FIELDS)[number]; kind: PmRecoveryReferenceKind; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRecoveryProducerSource",
+          "signature": "export interface PmRecoveryProducerSource { path: string; content: string; }"
         },
         {
           "classification": "advanced_export",
@@ -14954,6 +15206,12 @@
           "signature": "(catalog: readonly PmErrorCodeContract[], observations: readonly PmRefusalProbeObservation[]) => PmRefusalReachabilityReport | calls: (catalog: readonly PmErrorCodeContract[], observations: readonly PmRefusalProbeObservation[]) => PmRefusalReachabilityReport"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WaivedBoundaryRecord",
+          "signature": "export interface WaivedBoundaryRecord { id: string; producer: string; consumer: string; format: string; waiver_reason: string; waiver_owner: string; waiver_expires_at: string; }"
+        },
+        {
           "classification": "contract_data",
           "kind": "function",
           "name": "withFlagAliasMetadata",
@@ -18557,7 +18815,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
-          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
           "classification": "supported",
@@ -19606,6 +19864,18 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "analyzeDefectChangeRisk",
+          "signature": "(index: DefectRecurrenceIndex, input: DefectChangeRiskInput, options?: AnalyzeDefectChangeRiskOptions) => DefectChangeRiskReport | calls: (index: DefectRecurrenceIndex, input: DefectChangeRiskInput, options?: AnalyzeDefectChangeRiskOptions) => DefectChangeRiskReport"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AnalyzeDefectChangeRiskOptions",
+          "signature": "export interface AnalyzeDefectChangeRiskOptions { cursor?: string; limit?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "applyAssurancePreset",
           "signature": "(pmRoot: string, id: AssurancePresetId, ownerItemId: string, options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, id: AssurancePresetId, ownerItemId: string, options?: { author?: string; message?: string; }) => Promise<AssuranceBundleMutationReceipt>"
         },
@@ -19613,7 +19883,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_ACTIONS",
-          "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\"]"
+          "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\", \"risk\"]"
         },
         {
           "classification": "supported",
@@ -19661,7 +19931,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
-          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
           "classification": "supported",
@@ -19984,6 +20254,66 @@
         {
           "classification": "supported",
           "kind": "value",
+          "name": "BOUNDARY_FIXTURE_CAPTURE_SOURCES",
+          "signature": "readonly [\"captured_redacted\", \"captured_verbatim\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "BoundaryFixtureCaptureSource",
+          "signature": "export type BoundaryFixtureCaptureSource = (typeof BOUNDARY_FIXTURE_CAPTURE_SOURCES)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "BoundaryFixtureFinding",
+          "signature": "export interface BoundaryFixtureFinding { boundary_id: string; kind: \"invalid_registry\" | \"duplicate_boundary\" | \"invalid_boundary\" | \"missing_fixture\" | \"invalid_fixture\" | \"fixture_boundary_mismatch\" | \"unsafe_fixture\" | \"invalid_waiver\" | \"expired_waiver\"; detail: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "BoundaryFixtureRegistry",
+          "signature": "export interface BoundaryFixtureRegistry { version: 1; inventory_scope: string; boundaries: BoundaryInventoryRecord[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "BoundaryFixtureReport",
+          "signature": "export interface BoundaryFixtureReport { ok: boolean; boundary_count: number; captured_count: number; waived_count: number; findings: BoundaryFixtureFinding[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "BoundaryFixtureSample",
+          "signature": "export interface BoundaryFixtureSample { version: 1; boundary_id: string; capture_source: BoundaryFixtureCaptureSource; capture_provenance: string; redactions: string[]; input: unknown; observed: unknown; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "BoundaryInventoryRecord",
+          "signature": "export type BoundaryInventoryRecord = CapturedBoundaryRecord | WaivedBoundaryRecord;"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "buildDefectRecurrenceIndex",
+          "signature": "(policy: DefectRecurrencePolicy, items: readonly AssuranceItemRecord[], options?: BuildDefectRecurrenceIndexOptions) => DefectRecurrenceIndex | calls: (policy: DefectRecurrencePolicy, items: readonly AssuranceItemRecord[], options?: BuildDefectRecurrenceIndexOptions) => DefectRecurrenceIndex"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "BuildDefectRecurrenceIndexOptions",
+          "signature": "export interface BuildDefectRecurrenceIndexOptions { previous_index?: DefectRecurrenceIndex; changed_item_ids?: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "CapturedBoundaryRecord",
+          "signature": "export interface CapturedBoundaryRecord { id: string; producer: string; consumer: string; format: string; fixture_path: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
           "name": "classifyHistoryAuthorEvent",
           "signature": "(parsed: unknown) => \"actionable_unknown\" | \"attributed\" | \"legacy_unknown\" | calls: (parsed: unknown) => \"attributed\" | \"legacy_unknown\" | \"actionable_unknown\""
         },
@@ -20010,6 +20340,114 @@
           "kind": "function",
           "name": "createEmptyAssuranceDocument",
           "signature": "() => AssuranceDocument | calls: () => AssuranceDocument"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "DEFECT_ESCAPE_CLASSES",
+          "signature": "readonly [\"production_defect\", \"nightly_regression\", \"scanner_finding\", \"review_caught_late\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "DEFECT_GATE_EVIDENCE_DISPOSITIONS",
+          "signature": "readonly [\"gate_added\", \"gate_strengthened\", \"explicit_waiver\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectChangeRiskInput",
+          "signature": "export interface DefectChangeRiskInput { files?: string[]; package_names?: string[]; item_ids?: string[]; tags?: string[]; error_codes?: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectChangeRiskMatch",
+          "signature": "export interface DefectChangeRiskMatch { family_id: string; family_version: number; owner_item_id: string; escape_class: DefectEscapeClass; reasons: DefectChangeRiskReason[]; local_checks: string[]; hosted_checks: string[]; budget: DefectRecurrenceBudget; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectChangeRiskReason",
+          "signature": "export interface DefectChangeRiskReason { signal: \"file\" | \"package\" | \"item\" | \"tag\" | \"error_code\"; value: string; matched: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectChangeRiskReport",
+          "signature": "export interface DefectChangeRiskReport { risk_detected: boolean; index_fingerprint: string; items: DefectChangeRiskMatch[]; total: number; next_cursor?: string; required_local_checks: string[]; required_hosted_checks: string[]; cost: { families_evaluated: number; signals_evaluated: number; families_selected: number; estimated_output_tokens: number; }; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectChangeRiskRequest",
+          "signature": "export interface DefectChangeRiskRequest { policy: DefectRecurrencePolicy; change: DefectChangeRiskInput; cursor?: string; limit?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "DefectEscapeClass",
+          "signature": "export type DefectEscapeClass = (typeof DEFECT_ESCAPE_CLASSES)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectGateEvidence",
+          "signature": "export interface DefectGateEvidence { disposition: DefectGateEvidenceDisposition; gate_id?: string; negative_control?: string; local_checks?: string[]; hosted_checks?: string[]; owner: string; waiver_reason?: string; waiver_expires_at?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "DefectGateEvidenceDisposition",
+          "signature": "export type DefectGateEvidenceDisposition = (typeof DEFECT_GATE_EVIDENCE_DISPOSITIONS)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectGateEvidenceFinding",
+          "signature": "export interface DefectGateEvidenceFinding { item_id: string; kind: \"missing_escape_class\" | \"invalid_escape_class\" | \"missing_gate_evidence\" | \"invalid_gate_evidence\" | \"expired_waiver\"; detail: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectGateEvidenceReport",
+          "signature": "export interface DefectGateEvidenceReport { ok: boolean; governed_item_count: number; classified_item_count: number; class_counts: Record<DefectEscapeClass, number>; evidence_disposition_counts: Record<DefectGateEvidenceDisposition, number>; findings: DefectGateEvidenceFinding[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceBudget",
+          "signature": "export interface DefectRecurrenceBudget { max_escape_rate: number; max_false_positive_rate: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceChecks",
+          "signature": "export interface DefectRecurrenceChecks { local: string[]; hosted: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceFamily",
+          "signature": "export interface DefectRecurrenceFamily { id: string; version: number; title: string; owner_item_id: string; escape_class: DefectEscapeClass; triggers: DefectRecurrenceTriggers; checks: DefectRecurrenceChecks; negative_control: DefectChangeRiskInput; historical_item_ids: string[]; budget: DefectRecurrenceBudget; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceIndex",
+          "signature": "export interface DefectRecurrenceIndex { version: 1; policy_fingerprint: string; index_fingerprint: string; families: DefectRecurrenceFamily[]; item_families: Record<string, string[]>; build: { items_scanned: number; items_reused: number; items_indexed: number; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrencePolicy",
+          "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; families: DefectRecurrenceFamily[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceTriggers",
+          "signature": "export interface DefectRecurrenceTriggers { file_patterns?: string[]; package_names?: string[]; item_ids?: string[]; tags?: string[]; error_codes?: string[]; }"
         },
         {
           "classification": "supported",
@@ -20052,6 +20490,18 @@
           "kind": "function",
           "name": "evaluateAssuranceGate",
           "signature": "(gateId: string, document: AssuranceDocument, context: AssuranceEvaluationContext, options: { trigger: AssuranceGateTrigger; dry_run?: boolean; }) => Promise<AssuranceGateVerdict> | calls: (gateId: string, document: AssuranceDocument, context: AssuranceEvaluationContext, options: { trigger: AssuranceGateTrigger; dry_run?: boolean; }) => Promise<AssuranceGateVerdict>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateBoundaryFixtures",
+          "signature": "(registry: BoundaryFixtureRegistry, fixtures: Readonly<Record<string, unknown>>, now?: Date) => BoundaryFixtureReport | calls: (registry: BoundaryFixtureRegistry, fixtures: Readonly<Record<string, unknown>>, now?: Date) => BoundaryFixtureReport"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateDefectGateEvidence",
+          "signature": "(items: readonly AssuranceItemRecord[], policy: DefectRecurrencePolicy, terminalStatuses: readonly string[], now?: Date) => DefectGateEvidenceReport | calls: (items: readonly AssuranceItemRecord[], policy: DefectRecurrencePolicy, terminalStatuses: readonly string[], now?: Date) => DefectGateEvidenceReport"
         },
         {
           "classification": "supported",
@@ -20298,6 +20748,18 @@
           "kind": "function",
           "name": "normalizeSimilarityText",
           "signature": "(value: string) => string | calls: (value: string) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseDefectChangeRiskRequest",
+          "signature": "(value: unknown) => DefectChangeRiskRequest | calls: (value: unknown) => DefectChangeRiskRequest"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseDefectRecurrencePolicy",
+          "signature": "(value: unknown) => DefectRecurrencePolicy | calls: (value: unknown) => DefectRecurrencePolicy"
         },
         {
           "classification": "supported",
@@ -20724,6 +21186,12 @@
           "kind": "interface",
           "name": "ValidateResult",
           "signature": "export interface ValidateResult { ok: boolean; has_warnings: boolean; checks: ValidateCheck[]; warnings: string[]; fixes?: ValidateFixesSummary; generated_at: string; projection: OutputProjectionDeclaration; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WaivedBoundaryRecord",
+          "signature": "export interface WaivedBoundaryRecord { id: string; producer: string; consumer: string; format: string; waiver_reason: string; waiver_owner: string; waiver_expires_at: string; }"
         }
       ],
       "types": "dist/sdk/governance.d.ts"
@@ -23939,7 +24407,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
-          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
           "classification": "supported",

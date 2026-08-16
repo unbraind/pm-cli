@@ -1,3 +1,28 @@
 {
-  "fields": []
+  "fields": [
+    {
+      "key": "escape_class",
+      "type": "string",
+      "commands": [
+        "create",
+        "update",
+        "list",
+        "search",
+        "context"
+      ],
+      "description": "Defect escape taxonomy: production_defect, nightly_regression, scanner_finding, or review_caught_late."
+    },
+    {
+      "key": "gate_evidence",
+      "type": "object",
+      "commands": [
+        "create",
+        "update",
+        "list",
+        "search",
+        "context"
+      ],
+      "description": "Structured gate-added, gate-strengthened, or explicit-waiver evidence for terminal defect work."
+    }
+  ]
 }

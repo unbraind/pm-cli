@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { definePmErrorCodeCatalog } from "../../../src/sdk/error-code-catalog.js";
 import {
+  censusPmRecoveryReferenceProducers,
   derivePmRecoveryReferenceObligations,
   verifyPmRecoveryReferences,
   verifyPmRefusalReachability,
@@ -242,6 +243,62 @@ describe("recovery-reference reachability", () => {
     expect(new Set(derived.map(({ id }) => id)).size).toBe(derived.length);
   });
 
+  it("censuses every literal producer kind and rejects uncontracted recovery fields", () => {
+    const report = censusPmRecoveryReferenceProducers([
+      {
+        path: "src/producer.ts",
+        content: `({
+          suggested_retry: "pm list",
+          candidate_commands: ["list"],
+          examples: ["pm list"],
+          next_steps: ["Run it"],
+          migration_hint: "Use the replacement",
+          restore_with: "Unbounded",
+        })`,
+      },
+    ]);
+    expect(report).toMatchObject({
+      ok: true,
+      scanned_file_count: 1,
+      producer_count: 6,
+      producer_count_by_kind: {
+        suggested_retry: 1,
+        candidate_command: 1,
+        example: 1,
+        next_step: 1,
+        migration_hint: 1,
+        restore_with: 1,
+      },
+      findings: [],
+    });
+    expect(report.producers[0]).toMatchObject({ path: "src/producer.ts", line: 2 });
+
+    const broken = censusPmRecoveryReferenceProducers([
+      {
+        path: "src/broken.ts",
+        content: `({ candidate_command_hint: "pm list", candidate_command_hint: "pm show" })`,
+      },
+    ]);
+    expect(broken.ok).toBe(false);
+    expect(broken.findings).toContainEqual(
+      expect.objectContaining({ kind: "unknown_recovery_field" }),
+    );
+    expect(broken.findings.filter(({ kind }) => kind === "missing_kind_producer")).toHaveLength(6);
+
+    const sorted = censusPmRecoveryReferenceProducers([
+      { path: "src/z.ts", content: `({ examples: ["pm z"] })` },
+      {
+        path: "src/a.ts",
+        content: `({ next_steps: ["Run"], examples: ["pm a"], candidate_command_total: 1 })`,
+      },
+    ]);
+    expect(sorted.producers.map(({ path, field }) => `${path}:${field}`)).toEqual([
+      "src/a.ts:examples",
+      "src/a.ts:next_steps",
+      "src/z.ts:examples",
+    ]);
+  });
+
   it("keeps raw slash-bearing keys distinct from nested source paths", () => {
     const derived = derivePmRecoveryReferenceObligations("probe", {
       "a/b": { examples: ["pm list --status open"] },
@@ -279,5 +336,17 @@ describe("recovery-reference reachability", () => {
     expect(report.findings).toContainEqual(
       expect.objectContaining({ kind: "wrong_semantics" }),
     );
+
+    expect(
+      derivePmRecoveryReferenceObligations("migration", {
+        semantics: "behavior_preserving",
+        migration_hint: "Use the stable replacement",
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        kind: "migration_hint",
+        semantics: "behavior_preserving",
+      }),
+    ]);
   });
 });

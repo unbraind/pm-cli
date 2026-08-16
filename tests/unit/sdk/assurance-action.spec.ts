@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
+import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   runAssuranceAction,
   runAssuranceDispatch,
@@ -672,6 +673,111 @@ describe("assurance action transport", () => {
           global,
         ),
       ).resolves.toEqual(measurement);
+    });
+  });
+
+  it("runs change-risk analysis through the shared action and generic transports", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const request = {
+        policy: {
+          version: 1,
+          evidence_epoch: "2026-08-16T00:00:00.000Z",
+          families: [
+            {
+              id: "assurance-transport",
+              version: 1,
+              title: "Assurance transport drift",
+              owner_item_id: "pm-owner",
+              escape_class: "review_caught_late",
+              triggers: { file_patterns: ["src/sdk/governance/**"] },
+              checks: {
+                local: ["pnpm test -- assurance"],
+                hosted: ["CI / test-shard"],
+              },
+              negative_control: {
+                files: ["src/sdk/governance/assurance-action.ts"],
+              },
+              historical_item_ids: ["pm-owner"],
+              budget: {
+                max_escape_rate: 0,
+                max_false_positive_rate: 0.05,
+              },
+            },
+          ],
+        },
+        change: { files: ["src/sdk/governance/assurance-action.ts"] },
+      };
+
+      await expect(
+        runAssuranceAction(
+          { action: "risk", definition: JSON.stringify(request) },
+          { path: pmPath },
+        ),
+      ).resolves.toMatchObject({
+        risk_detected: true,
+        total: 1,
+        items: [{ family_id: "assurance-transport" }],
+      });
+      await expect(
+        runAssuranceDispatch(
+          { assuranceAction: "risk" },
+          { definition: request },
+          { path: pmPath },
+        ),
+      ).resolves.toMatchObject({ risk_detected: true, total: 1 });
+      await expect(
+        runAssuranceAction(
+          { action: "risk", definition: "{" },
+          { path: pmPath },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
+        throw "non-error-json-failure";
+      });
+      await expect(
+        runAssuranceAction(
+          { action: "risk", definition: JSON.stringify(request) },
+          { path: pmPath },
+        ),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        context: { reason: "invalid_json" },
+      });
+      await expect(
+        runAssuranceAction(
+          { action: "risk", definition: {} },
+          { path: pmPath },
+        ),
+      ).rejects.toThrow("request.change must be an object");
+      const throwingDefinition = new Proxy(
+        {},
+        {
+          get() {
+            throw "non-error-request-failure";
+          },
+        },
+      );
+      await expect(
+        runAssuranceAction(
+          { action: "risk", definition: throwingDefinition },
+          { path: pmPath },
+        ),
+      ).rejects.toThrow("assurance risk request is invalid");
+      const typedFailure = new PmCliError("typed request refusal", EXIT_CODE.USAGE);
+      const typedThrowingDefinition = new Proxy(
+        {},
+        {
+          get() {
+            throw typedFailure;
+          },
+        },
+      );
+      await expect(
+        runAssuranceAction(
+          { action: "risk", definition: typedThrowingDefinition },
+          { path: pmPath },
+        ),
+      ).rejects.toBe(typedFailure);
     });
   });
 

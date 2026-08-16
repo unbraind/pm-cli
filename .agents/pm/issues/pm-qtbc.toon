@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: bug,dogfood-2026-06-12,mcp
 created_at: "2026-06-12T16:18:28.696Z"
-updated_at: "2026-08-10T12:02:43.374Z"
+updated_at: "2026-08-16T18:25:19.035Z"
 author: maintainer-agent
 release: v2026.6.13
 resolution: Fixed pm-mcp main-module detection by realpath-resolving symlinked npm bin argv paths.
@@ -42,4 +42,12 @@ files[2]{path,scope,note}:
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,project,300
 close_reason: "Fixed pm-mcp npm-bin symlink main-module detection; helper, e2e bin smoke, coverage, and manual temp-dir validation passed."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: mcp-npm-bin-handshake
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts
+  local_checks[1]: tests/integration/mcp-handshake.spec.ts
+  hosted_checks[1]: CI / test-shard
+  owner: pm-qtbc
 body: ""

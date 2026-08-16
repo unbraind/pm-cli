@@ -48,6 +48,12 @@ import {
 } from "./assurance-runtime.js";
 import { resolvePmRoot } from "../runtime-primitives.js";
 import { parseRuntimeInteger, readRuntimeString } from "../runtime-input.js";
+import {
+  analyzeDefectChangeRisk,
+  buildDefectRecurrenceIndex,
+  parseDefectChangeRiskRequest,
+  type DefectChangeRiskReport,
+} from "./defect-recurrence.js";
 
 /** Assurance registry and evaluation verbs shared by every transport. */
 export const ASSURANCE_ACTIONS = [
@@ -61,6 +67,7 @@ export const ASSURANCE_ACTIONS = [
   "apply",
   "derive",
   "promote",
+  "risk",
 ] as const;
 
 /** Assurance declaration kinds shared by every transport. */
@@ -127,6 +134,7 @@ export type AssuranceActionResult =
   | AssuranceGateVerdict
   | AssuranceBundleMutationReceipt
   | AssurancePreset
+  | DefectChangeRiskReport
   | {
       items: AssuranceDerivedProposal[];
       count: number;
@@ -432,6 +440,43 @@ async function runGateAction(
   return verdict;
 }
 
+/** Evaluate one serialized change-risk request against authoritative PM metadata. */
+async function runRiskAction(
+  input: AssuranceActionInput,
+  pmRoot: string,
+): Promise<DefectChangeRiskReport> {
+  let definition = input.definition;
+  if (typeof definition === "string") {
+    try {
+      definition = JSON.parse(definition);
+    } catch (error: unknown) {
+      throw new PmCliError(
+        "assurance risk definition must be valid JSON",
+        EXIT_CODE.USAGE,
+        { reason: error instanceof Error ? error.message : "invalid_json" },
+      );
+    }
+  }
+  try {
+    const request = parseDefectChangeRiskRequest(definition);
+    const context = await createAssuranceWorkspaceContext(pmRoot, {
+      include_history: false,
+      resolve_tree: false,
+    });
+    return analyzeDefectChangeRisk(
+      buildDefectRecurrenceIndex(request.policy, context.items),
+      request.change,
+      { cursor: request.cursor, limit: request.limit },
+    );
+  } catch (error: unknown) {
+    if (error instanceof PmCliError) throw error;
+    throw new PmCliError(
+      error instanceof Error ? error.message : "assurance risk request is invalid",
+      EXIT_CODE.USAGE,
+    );
+  }
+}
+
 /** Execute one assurance request through the public assurance SDK primitives. */
 export async function runAssuranceAction(
   input: AssuranceActionInput,
@@ -453,6 +498,9 @@ export async function runAssuranceAction(
   }
   if (action === "run") {
     return runGateAction(input, pmRoot, runtime);
+  }
+  if (action === "risk") {
+    return runRiskAction(input, pmRoot);
   }
   const kind = parseKind(input.kind);
   if (action === "list") return listAssuranceDeclarations(pmRoot, kind);

@@ -185,12 +185,29 @@ describe("agent runtime SDK primitives", () => {
   it("extracts only bounded model and version fields from a harness session file", async () => {
     const home = await mkdtemp(path.join(os.tmpdir(), "pm-provenance-probe-"));
     tempRoots.push(home);
-    const cwd = "/tmp/provenance workspace_with_symbols";
+    const boundaryFixture = JSON.parse(
+      await readFile(
+        path.join(
+          process.cwd(),
+          "tests/fixtures/boundaries/claude-project-directory-slug.json",
+        ),
+        "utf8",
+      ),
+    ) as {
+      capture_source: string;
+      input: { workspace: string };
+      observed: { project_directory: string };
+    };
+    expect(boundaryFixture.capture_source).toBe("captured_redacted");
+    const cwd =
+      process.platform === "win32"
+        ? "C:\\tmp\\provenance workspace_with_symbols"
+        : boundaryFixture.input.workspace;
     const resolvedWorkspace = path.resolve(cwd);
     const claudeProjectDirectory =
       process.platform === "win32"
         ? `${path.parse(resolvedWorkspace).root[0]}--tmp-provenance-workspace-with-symbols`
-        : "-tmp-provenance-workspace-with-symbols";
+        : boundaryFixture.observed.project_directory;
     const sessionDirectory = path.join(
       home,
       ".claude",

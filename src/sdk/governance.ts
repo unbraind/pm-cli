@@ -11,6 +11,8 @@ export * from "./governance/assurance-action.js";
 export * from "./governance/assurance-mutation-error.js";
 export * from "./governance/assurance-presets.js";
 export * from "./governance/assurance-runtime.js";
+export * from "./governance/boundary-fixtures.js";
+export * from "./governance/defect-recurrence.js";
 export {
   runReindex,
   type ReindexOptions,

@@ -4,6 +4,7 @@
 
 ### Added
 
+- History-derived defect recurrence gate: turn resolved incident patterns into targeted local and hosted CI protections ([pm-1qkivy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1qkivy.toon))
 - Agent skills routed to a workflow loop but named no capability family and no read-cost, so four of twelve command families and the entire output-budget surface were unreachable through progressive disclosure ([pm-f6zjpq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-f6zjpq.toon))
 
 ### Fixed
@@ -20,6 +21,8 @@
 
 ### Other
 
+- Defect-escape ratchet: every escaped defect must land a gate that would have caught it, tracked as evidence on the fixing item ([pm-rtn5h6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rtn5h6.toon))
+- Boundary-fixture gate: every value that must match a system outside this repository is tested against a captured real sample, never against a fixture the production code generated ([pm-0pzgit](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0pzgit.toon))
 - Disposition the test-only escape hatch published through the ./cli entrypoint: 86 internal functions are consumer-visible API with no support intent ([pm-rf120g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rf120g.toon))
 
 ## 2026.8.16 - 2026-08-16
@@ -1291,12 +1294,12 @@
 
 ### Fixed
 
+- GH-363: Windows nightly (Node 24) red — runtime-loader colon-path + telemetry detached-spawn unhandled error + npm-install regression ([pm-xaib](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xaib.toon))
 - pm validate --check-files mis-handles remote (URL) doc/file references: flagged as deleted and silently destroyed by --prune-missing ([pm-k2n4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k2n4.toon))
 - pm next hides completed-container closeout rows while leaf work exists ([pm-9g87](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9g87.toon))
 - MCP action-schema contracts drifted from CLI flag tables (guide.list, health.brief, validate.parentCycleSeverity, contracts.full) ([pm-zx13](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zx13.toon))
 - describeExtensionBlueprint omits importer/exporter-with-options command definitions (parity gap vs describeExtensionActivation) ([pm-zqes](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqes.toon))
 - Contracts command lookup should handle package namespace roots ([pm-y1o4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y1o4.toon))
-- GH-363: Windows nightly (Node 24) red — runtime-loader colon-path + telemetry detached-spawn unhandled error + npm-install regression ([pm-xaib](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xaib.toon))
 - CI: make Codecov badge uploads branch-explicit ([pm-x878](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x878.toon))
 - deriveExtensionCapabilities omits 'schema' for importer/exporter options.flags (declarative blueprint under-grant) ([pm-v3ty](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v3ty.toon))
 - pm install does not scaffold extension-contributed item-type folders (transient missing_directory health warning) ([pm-rjab](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rjab.toon))
@@ -1524,6 +1527,7 @@
 
 ### Fixed
 
+- PR \#266 review feedback: tighten init and dynamic option validation ([pm-at1j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-at1j.toon))
 - pm templates: unknown subcommand + flags silently fall back to 'list' (exit 0) instead of erroring ([pm-r2kd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r2kd.toon))
 - linked-test-adapters package install loses ESM module type ([pm-v8fy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v8fy.toon))
 - GH-215: enforce timestamps in history entries ([pm-u42x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u42x.toon))
@@ -1533,7 +1537,6 @@
 - GH-262: prevent path-like pm init from corrupting caller tracker settings ([pm-jek2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jek2.toon))
 - GH-284: align pm init required schema directories with health ([pm-hl9y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hl9y.toon))
 - CI contracts snapshot temp cleanup can fail with ENOTEMPTY ([pm-c61g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c61g.toon))
-- PR \#266 review feedback: tighten init and dynamic option validation ([pm-at1j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-at1j.toon))
 - GH-265: schema unknown subcommands must not create custom types ([pm-ablm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ablm.toon))
 - GH-280: pm validate does not detect circular parent references (hierarchy cycles A-\>B-\>A of any length) ([pm-8vul](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8vul.toon))
 - Auto Release retries branch push after main advances ([pm-5oti](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5oti.toon))
@@ -2731,6 +2734,7 @@
 
 ### Security
 
+- Ignore local .env files for telemetry/security operations ([pm-qgvj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qgvj.toon))
 - Track GitHub Dependabot alert \#8 for undici (GHSA-wqq4-5wpv-mx2g) ([pm-v6vi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v6vi.toon))
 - Track GitHub Dependabot alert \#11 for undici (GHSA-9qxr-qj54-h672) ([pm-tl4d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tl4d.toon))
 - Track GitHub Dependabot alert \#12 for undici (GHSA-cxrh-j4jr-qwg3) ([pm-pagj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pagj.toon))
@@ -2751,7 +2755,6 @@
 - Track GitHub Dependabot alert \#27 for undici (GHSA-4992-7rv2-5pvq) ([pm-02c4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-02c4.toon))
 - Issue: Private IP address in committed pm task files ([pm-xk8b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xk8b.toon))
 - Track GitHub Dependabot alert \#19 for undici (GHSA-f269-vfmq-vjvj) ([pm-rb9v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rb9v.toon))
-- Ignore local .env files for telemetry/security operations ([pm-qgvj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qgvj.toon))
 - Track GitHub Dependabot alert \#22 for undici (GHSA-vrm6-8vpv-qv8q) ([pm-i1rm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i1rm.toon))
 - Track GitHub Dependabot alert \#21 for undici (GHSA-4992-7rv2-5pvq) ([pm-cg7l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cg7l.toon))
 - Track GitHub Dependabot alert \#29 for picomatch (GHSA-3v7f-55p6-f55p) ([pm-5e88](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5e88.toon))
