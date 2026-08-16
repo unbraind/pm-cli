@@ -196,6 +196,11 @@ describe("smoke-npx-from-pack", () => {
         expect(args).not.toContain("--offline");
       }
     }
+    expect(
+      execFileSync.mock.calls.some(
+        ([command, args]) => command === process.execPath && args[0]?.endsWith("cli-consumer.mjs"),
+      ),
+    ).toBe(true);
   });
 
   it("throws when npm pack produces no tarball name", async () => {

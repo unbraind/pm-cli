@@ -14763,7 +14763,7 @@
       ],
       "intent": "orient",
       "source": "core",
-      "token_budget": 2400
+      "token_budget": 3000
     },
     {
       "command": "get",
@@ -26178,6 +26178,7 @@
               "depends_on",
               "discovered_from",
               "implements",
+              "recurs_from",
               "verifies",
               "supersedes"
             ],
@@ -30693,6 +30694,12 @@
       "canonical": "parent",
       "hierarchy": true,
       "inverse": "child",
+      "ordering": false
+    },
+    {
+      "aliases": [],
+      "canonical": "recurs_from",
+      "hierarchy": false,
       "ordering": false
     },
     {
@@ -49794,6 +49801,7 @@
               "depends_on",
               "discovered_from",
               "implements",
+              "recurs_from",
               "verifies",
               "supersedes"
             ],

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: architecture,ci-gates,sdk-first
 created_at: "2026-08-01T13:05:16.303Z"
-updated_at: "2026-08-01T19:38:07.849Z"
+updated_at: "2026-08-16T12:15:27.717Z"
 closed_at: "2026-08-01T19:38:06.947Z"
 completed_at: "2026-08-01T19:38:06.947Z"
 author: "harness:claude-code"
@@ -18,7 +18,7 @@ confidence: 88
 resolution: Published SDK closure is now joined to CLI/MCP consumption by a shrinking fail-closed static ratchet.
 expected_result: "CLI and MCP cannot add private SDK dependencies silently, and required SDK factories are publicly exported."
 actual_result: "The gate computes transitive public exports, rejects new or stale private imports, reports seven remaining ratchet entries, and negative controls plus full coverage pass."
-dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-021kdp,related,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
   pm-9x6e,related,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
   pm-ds3b,related,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
@@ -26,6 +26,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-rtn5h6,related,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
   pm-usfg,implements,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
   pm-w89s,related,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
+  pm-1jrdri,recurs_from,"2026-08-16T12:15:27.511Z","harness:codex","cli:update:dep",detected
 comments[4]{created_at,author,text}:
   "2026-08-01T18:08:08.421Z","harness:codex","Implementation evidence: static quality now computes the published SDK export-declaration closure, rejects new CLI/MCP imports outside it, reports a seven-module shrinking allowlist, and fails stale entries. createExtensionCommandSdk, isRuntimeRecord, and resolveStartTaskInProgressStatus are public SDK exports. Negative-control tests passed."
   "2026-08-01T18:54:32.598Z","harness:codex","Verification evidence: repo-wide lint and static quality passed with zero duplicate chunks, 100% source/export/member docstrings, no new or stale private-SDK boundary entries, and exact 100/100/100/100 coverage. Full suite: 414 files, 6,673 tests."

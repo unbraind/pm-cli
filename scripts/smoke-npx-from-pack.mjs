@@ -188,6 +188,18 @@ function assertPackedTypescriptConsumer(npm, tarballPath, tempRoot) {
     ].join("\n"),
   );
   writeFileSync(
+    path.join(consumerRoot, "cli-consumer.mjs"),
+    [
+      'const cli = await import("@unbrained/pm-cli/cli");',
+      "const exportedNames = Object.keys(cli).sort();",
+      'const expectedNames = ["runPmCli"];',
+      "if (JSON.stringify(exportedNames) !== JSON.stringify(expectedNames)) {",
+      '  throw new Error(`Unexpected ./cli exports: ${exportedNames.join(", ")}`);',
+      "}",
+      "",
+    ].join("\n"),
+  );
+  writeFileSync(
     path.join(consumerRoot, "tsconfig.json"),
     `${JSON.stringify(
       {
@@ -213,6 +225,9 @@ function assertPackedTypescriptConsumer(npm, tarballPath, tempRoot) {
     [path.join(REPO_ROOT, "node_modules", "typescript", "bin", "tsc"), "-p", consumerRoot],
     { cwd: consumerRoot },
   );
+  runSmokeCommand(process.execPath, [path.join(consumerRoot, "cli-consumer.mjs")], {
+    cwd: consumerRoot,
+  });
 }
 
 function run() {

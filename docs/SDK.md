@@ -42,6 +42,11 @@ semantic command discovery, and append-stable linked tests are tracked by
 [pm-st7wgu](../.agents/pm/issues/pm-st7wgu.toon),
 [pm-g543](../.agents/pm/issues/pm-g543.toon), and
 [pm-x2vx](../.agents/pm/issues/pm-x2vx.toon).
+The supported CLI entrypoint boundary, truthful context-intent receipts, and
+first-class recurrence relationships are tracked by
+[pm-rf120g](../.agents/pm/issues/pm-rf120g.toon),
+[pm-3crymx](../.agents/pm/issues/pm-3crymx.toon), and
+[pm-ouyq3n](../.agents/pm/issues/pm-ouyq3n.toon).
 
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
@@ -90,10 +95,11 @@ barrel remains source-compatible:
 | `@unbrained/pm-cli/sdk/public-surface.json` | Published machine-readable SDK compatibility snapshot                      |
 | `@unbrained/pm-cli/sdk`                     | Compatibility aggregate containing every supported SDK export              |
 
-`@unbrained/pm-cli/cli` remains the runtime CLI module entrypoint for package
-resolution, not a typed library API. It is nonetheless a published code export,
-so the surface snapshot records it under the `executable_entry` classification
-and any change to what it exposes is a classified surface change. The bare
+`@unbrained/pm-cli/cli` is the supported embeddable CLI entrypoint and exports
+only `runPmCli`. Repository tests import their internal seams from source; those
+helpers are not package API. The surface snapshot records the subpath under the
+`executable_entry` classification, so any future exposure is a classified
+surface change. The bare
 `@unbrained/pm-cli` root export is recorded as an `aggregate_alias` of
 `@unbrained/pm-cli/sdk`: its symbols are not duplicated, but a retarget of its
 declaration path is a snapshot change. The committed
@@ -312,6 +318,7 @@ Command/action contract exports:
 - Actionability primitives: `collectBlockedByIds`, `resolveItemBlockers`, `collectDependencyBlockedIds`, and `computeActionabilityReport` expose the same edge-aware blocked/ready definition used by `pm next`, `pm context`, and `pm list-blocked`. Embedded schedulers can therefore classify custom lifecycle schemas without importing CLI or core modules.
 - Dependency-governance primitives: `collectDanglingDependencyReferences`, `collectMissingDependencyTargetIds`, and `assembleWorkspaceRelationshipGraph` normalize hierarchy, scalar blockers, and structured dependencies into one graph while partitioning missing targets into actionable active holders, informational terminal-history holders, and the legacy `no-active-blocker` sentinel without mutating stored history.
 - Relationship graph primitives: `RelationshipKindRegistry`, `createRelationshipKindRegistry`, `assertRelationshipEdgeAllowed`, `RelationshipGraph`, `RelationshipEventLog`, `RelationshipEventStore`, `planRelationshipEventBackfill`, `buildRelationshipContext`, `buildDepsRelationshipContext`, `hierarchyAncestors`, `hierarchyDescendants`, `orderingPredecessors`, `orderingSuccessors`, `enumerateRelationshipPaths`, `auditWorkspaceRelationshipGraph`, `isOrderingRelationshipKind`, and `dependencyToRelationship` provide application-defined edge semantics, durable replay, deterministic legacy migration, bounded semantic traversal, policy-aware governance, and explainable context queries. Mutation adapters should call `assertRelationshipEdgeAllowed` with the active registry before persistence; it resolves aliases and honors custom `allowSelf` definitions while built-in self edges fail before item or history writes. `RelationshipEventLog.stream/project` and their durable-store equivalents page immutable prefixes and fold them into deterministic application state with exact version, processed-count, and as-of metadata. `RelationshipEventStore.appendBatch` validates a complete import under one cross-process lock and atomically publishes it; `skip_identical` resume mode rejects same-id semantic collisions. `RelationshipGraphAdapter`, `createRelationshipGraphSnapshot`, `syncRelationshipGraphAdapter`, `loadRelationshipGraphAdapter`, and `federateRelationshipGraphSnapshots` form the backend-neutral content-addressed projection boundary for database or remote graph packages. `MemoryRelationshipGraphAdapter`, `assertRelationshipGraphAdapterConformance`, and `createRelationshipGraphScaleFixture` give package authors a reference implementation, reusable compatibility contract, and lazy deterministic fixtures through one million nodes. See [Relationship graph semantics](RELATIONSHIP_GRAPH.md).
+- Built-in `recurs_from` records that the source is a later occurrence of the target. Its registry contract is directed, `source_after_target`, non-ordering, many-to-many, and persistent across terminal lifecycle states. It therefore connects an incident family for traversal and analytics without reclassifying `supersedes` replacements or `duplicate_of` identity collapse.
 - Atomic application transactions: `commitWorkspaceTransaction` coordinates ordered, idempotent item and relationship mutations under one workspace writer lock and a durable replay journal. Interrupted work resumes from step inspection; ordinary failures append reverse-order compensations without rewriting immutable histories.
 - Multi-branch merge primitives: `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, and `runMergeReconcile` provide the same field-aware item, hash-chain-preserving history, sequence-renumbering relationship-event, key-level configuration, and audited post-merge repair-and-verify semantics as `pm merge`; `installMergeFence` and `findGitWorkspaceRoot` let custom init hosts install the same contract with explicit roots, while `buildMergeAttributePatterns`, `refreshMergeAttributeFenceIfInstalled`, and `auditMergeAttributeFence` expose fence coverage, refresh, and validation. See [Multi-Branch Merge Safety](MERGE_SAFETY.md).
 - Dependency provenance primitives: `EXTERNAL_DEPENDENCY_SOURCE_KIND`, `EXTERNAL_DEPENDENCY_SOURCE_KIND_ALIAS`, `isExternalDependencySourceKind`, and `normalizeDependencySeedId` let custom importers preserve cross-workspace dependency ids explicitly while retaining local prefix normalization for ordinary seeds. `source_kind: "external"` is the human-facing alias and persists canonically as `global`; a `blocked_by` row with that provenance is a real external predecessor, so graph governance does not require a fabricated local item or misreport `stale_lifecycle_block`. Newly created dependency rows also carry the effective `author`, `author_source` (`asserted` or `detected`), and a mutation `source_kind`; legacy rows remain readable without invented provenance. Tracked by [pm-6sc8jq](../.agents/pm/issues/pm-6sc8jq.toon).
@@ -663,6 +670,16 @@ representative medium-workspace answers use the live
 `pm contracts --command ... --summary`. A full, unbounded activity read is the
 negative control: the gate fails unless that deliberately unsafe request
 exceeds the default contract.
+
+Named read intents additionally return `context_intent`. The receipt separates
+the declaration (`declared_token_budget`) from the effective ceiling
+(`token_budget`) and reports their signed `token_budget_override`. Row-oriented
+reads clamp an explicit limit to the budget-derived ceiling and identify the
+binding constraint. If even compacted useful output cannot fit,
+`result_omitted` is true, `estimated_tokens` retains the measured pre-omission
+size (and is therefore greater than `token_budget`), and
+`budget_exceeded.restore_with` is an executable bounded retry rather than a
+generic suggestion.
 
 Unfiltered `pm contracts` now selects the summary projection by default. It
 returns canonical commands, terse intents, the most useful flags for the core

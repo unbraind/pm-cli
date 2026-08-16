@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ergonomics,cli,contracts,discovery,gate
 created_at: "2026-07-28T22:30:34.396Z"
-updated_at: "2026-07-29T06:29:06.797Z"
+updated_at: "2026-08-16T12:15:26.811Z"
 closed_at: "2026-07-29T06:29:03.883Z"
 completed_at: "2026-07-29T06:29:03.883Z"
 author: "harness:claude-code"
@@ -18,7 +18,7 @@ confidence: high
 resolution: "Workspace and every rendered user-facing command have contract coverage, with raw-output diagnostics and a snapshot parity gate."
 expected_result: All rendered user-facing commands resolve through machine-readable contracts and drift failures include actionable subprocess evidence.
 actual_result: Workspace and every rendered command resolve through contracts; the gate fails on omissions and exposes raw invalid-JSON output.
-dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-6j7r1a,discovered_from,"2026-07-28T22:30:34.396Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-07-28T22:30:34.396Z","harness:claude-code","cli:create:dep",detected
   pm-kxci8x,related,"2026-07-28T22:30:34.396Z","harness:claude-code","cli:create:dep",detected
@@ -26,6 +26,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-fqdmbf,related,"2026-07-29T05:06:52.005Z","harness:codex","cli:update:dep",detected
   pm-jdh1jg,related,"2026-07-29T05:06:52.005Z","harness:codex","cli:update:dep",detected
   pm-wd61s2,related,"2026-07-29T05:06:52.005Z","harness:codex","cli:update:dep",detected
+  pm-6j7r1a,recurs_from,"2026-08-16T12:15:26.681Z","harness:codex","cli:update:dep",detected
 comments[2]{created_at,author,text}:
   "2026-07-29T05:55:18.238Z","harness:codex","Delivery evidence: workspace and every snapshot action now resolve through contracts; the snapshot gate proves every user-visible rendered command belongs to the full contracted catalog, with only the documented hidden worker excluded. Focused linked test passed with coverage=100 and gate=1; full suite 6506/6506 and literal coverage 100/100/100/100."
   "2026-07-29T06:26:32.320Z","harness:codex","PR #809 review evidence: invalid-JSON contract snapshot failures now include the captured stdout/stderr needed to diagnose stream contamination. Focused tests, strict contracts, and full 100% coverage pass."

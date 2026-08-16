@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-03T08:27:22.410Z"
-updated_at: "2026-08-03T09:06:51.546Z"
+updated_at: "2026-08-16T12:15:28.452Z"
 closed_at: "2026-08-03T08:39:20.609Z"
 completed_at: "2026-08-03T08:39:20.609Z"
 author: "harness:codex"
@@ -23,10 +23,11 @@ expected_result: Every command path enumerated by contracts either resolves thro
 actual_result: Five workspace snapshot actions plus help are enumerated and runnable but structured help rejects them as unknown_command.
 component: cli/help and runtime contracts
 regression: true
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jrdri,related_to,"2026-08-03T08:27:22.410Z","harness:codex","cli:create:dep",detected
   pm-2evy,implements,"2026-08-03T08:27:22.410Z","harness:codex","cli:create:dep",detected
   pm-6j7r1a,discovered_from,"2026-08-03T08:27:22.410Z","harness:codex","cli:create:dep",detected
+  pm-xpumg4,recurs_from,"2026-08-16T12:15:28.302Z","harness:codex","cli:update:dep",detected
 comments[4]{created_at,author,text}:
   "2026-08-03T08:27:22.410Z","harness:codex","text=Duplicate check evidence: searched all 2,292 items across every status for GH-878, workspace snapshot help, unknown_command, help availability, and contracts closure. Closed pm-6j7r1a owns enumerated-versus-resolvable root spellings and closed pm-1jrdri owns rendered-versus-contracted roots; GH-878 is the distinct nested action-path and help self-resolution regression. Source: https://github.com/unbraind/pm-cli/issues/878"
   "2026-08-03T08:38:45.431Z","harness:codex","Implementation evidence: structured JSON help now resolves contract-backed positional paths through their nearest registered Commander parent while retaining the requested canonical path; implicit help self-resolution is admitted from the core command contract. The integration gate invokes structured help for every command emitted by contracts and verifies the exact requested tokens. Focused suite passed 2/2 tests, including all 116 current command paths; both 'help --json workspace snapshot create' and 'help --json help' return exit 0 with exact resolved_path values."

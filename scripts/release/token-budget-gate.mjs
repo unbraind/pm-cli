@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fail, parseFlags, repoRoot, runCommand } from "./utils.mjs";
 import { cleanupTempRoot } from "../smoke-cleanup.mjs";
+import { BUILTIN_HARNESS_SIGNAL_DESCRIPTORS } from "../../dist/cli-bundle/sdk-core.js";
 
 const MANIFEST_VERSION = 3;
 const SCALE_FIXTURE_ITEMS = 24;
@@ -18,13 +19,35 @@ const DEFAULT_MANIFEST_PATH = path.join(
   "token-budgets.json",
 );
 
+/** Every host-owned identity input the deterministic gate must neutralize. */
+export const HARNESS_SIGNAL_ENVIRONMENT_KEYS = Object.freeze(
+  [
+    ...new Set([
+      "AI_AGENT",
+      "PM_AUTHOR",
+      "PM_AGENT_MODEL",
+      "PM_AGENT_EFFORT",
+      "PM_AGENT_ROLE",
+      ...BUILTIN_HARNESS_SIGNAL_DESCRIPTORS.flatMap((descriptor) =>
+        [
+          descriptor.environment_keys,
+          descriptor.model_environment_keys,
+          descriptor.session_environment_keys,
+          ...Object.values(descriptor.provenance_environment_keys ?? {}),
+        ].flatMap((keys) => keys ?? []),
+      ),
+    ]),
+  ].sort((left, right) => left.localeCompare(right)),
+);
+
 function distCliPath() {
   return path.join(repoRoot, "dist", "cli.js");
 }
 
 function runCli(cliPath, args, options, allowFailure = false) {
-  const env = {
-    ...process.env,
+  const env = { ...process.env };
+  for (const key of HARNESS_SIGNAL_ENVIRONMENT_KEYS) delete env[key];
+  Object.assign(env, {
     PM_AUTHOR: "token-budget-gate",
     PM_PATH: options.pmPath,
     PM_GLOBAL_PATH: options.globalPath,
@@ -32,7 +55,7 @@ function runCli(cliPath, args, options, allowFailure = false) {
     PM_TELEMETRY_DISABLED: "1",
     PM_TELEMETRY_OTEL_DISABLED: "1",
     PM_TELEMETRY_PROMPT: "0",
-  };
+  });
   return runCommand(process.execPath, [cliPath, ...args], {
     cwd: options.workspaceRoot,
     env,

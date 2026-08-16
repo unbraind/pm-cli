@@ -1,6 +1,6 @@
 # Relationship graph semantics
 
-Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), [pm-8xr8](../.agents/pm/stories/pm-8xr8.toon), [pm-m2il](../.agents/pm/chores/pm-m2il.toon), [pm-jiusod](../.agents/pm/issues/pm-jiusod.toon), [pm-mfvsng](../.agents/pm/issues/pm-mfvsng.toon), [pm-9gzr4r](../.agents/pm/issues/pm-9gzr4r.toon), and [pm-xvt7ps](../.agents/pm/issues/pm-xvt7ps.toon).
+Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), [pm-8xr8](../.agents/pm/stories/pm-8xr8.toon), [pm-m2il](../.agents/pm/chores/pm-m2il.toon), [pm-jiusod](../.agents/pm/issues/pm-jiusod.toon), [pm-mfvsng](../.agents/pm/issues/pm-mfvsng.toon), [pm-9gzr4r](../.agents/pm/issues/pm-9gzr4r.toon), [pm-xvt7ps](../.agents/pm/issues/pm-xvt7ps.toon), and [pm-ouyq3n](../.agents/pm/issues/pm-ouyq3n.toon).
 
 ## Decision
 
@@ -10,7 +10,18 @@ The alternatives were rejected as follows: a closed enum cannot model applicatio
 
 ## Contract
 
-Each relationship kind declares direction, inverse, ordering and hierarchy participation, incoming and outgoing cardinality, lifecycle, aliases, payload schema, self-edge policy, and compatibility version. Built-ins normalize legacy `related_to`, `depends_on`, `child_of`, `parent_child`, `epic`, and `task` spellings. Unknown custom kinds remain importable only after their definitions are registered, preventing algorithms from guessing their meaning.
+Each relationship kind declares direction, inverse, ordering and hierarchy participation, optional temporal order, incoming and outgoing cardinality, lifecycle, aliases, payload schema, self-edge policy, and compatibility version. Built-ins normalize legacy `related_to`, `depends_on`, `child_of`, `parent_child`, `epic`, and `task` spellings. Unknown custom kinds remain importable only after their definitions are registered, preventing algorithms from guessing their meaning.
+
+`recurs_from` is the canonical recurrence relation: `new --recurs_from--> old`
+means the source is a later event with the same observable failure identity as
+the target. Its `temporalOrder: "source_after_target"` states chronology without
+making recurrence an execution-order dependency. The edge is directed,
+many-to-many, and `persistent`, so it remains valid after either endpoint closes.
+It does not replace the older event (`supersedes`) and does not assert that two
+records describe one event (`duplicate_of`). Traverse recurrence families with
+`direction: "both"`; impact, paths, dominators, centrality, cut structure, and
+community detection then operate on the connected family without special-case
+labels or retyping historical replacement edges.
 
 Ordering-cycle validation considers only kinds whose registry definition sets `ordering: true`. Associative and provenance edges never block execution. Hierarchy cycles remain a separate structural check. Canonical edge identity includes kind and ordered endpoints for directed edges, or sorted endpoints for undirected edges.
 

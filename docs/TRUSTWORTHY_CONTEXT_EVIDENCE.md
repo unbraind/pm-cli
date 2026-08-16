@@ -61,7 +61,7 @@ Each measurement result carries `definition_fingerprint`; assertion verdicts cop
 }
 ```
 
-The semantic numerator is the sum of `discovered_from`, `incident_from`, `supersedes`, and `verifies`. Audit baselines preserve the new fields, accept older snapshots with explicit zero defaults, and report signed count/share deltas.
+The semantic numerator is the sum of `discovered_from`, `incident_from`, `recurs_from`, `supersedes`, and `verifies`. Audit baselines preserve the new fields, accept older snapshots with explicit zero defaults, and report signed count/share deltas.
 
 ## Health Row Predicate
 

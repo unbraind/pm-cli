@@ -2,11 +2,29 @@ import * as fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
+import { BUILTIN_HARNESS_SIGNAL_DESCRIPTORS } from "../../../../src/core/shared/author.js";
 
 const harness = createScriptHarness([
   "../../../../scripts/release/utils.mjs",
   "../../../../scripts/smoke-cleanup.mjs",
 ]);
+const harnessSignalEnvironmentKeys = [
+  ...new Set([
+    "AI_AGENT",
+    "PM_AUTHOR",
+    "PM_AGENT_MODEL",
+    "PM_AGENT_EFFORT",
+    "PM_AGENT_ROLE",
+    ...BUILTIN_HARNESS_SIGNAL_DESCRIPTORS.flatMap((descriptor) =>
+      [
+        descriptor.environment_keys,
+        descriptor.model_environment_keys,
+        descriptor.session_environment_keys,
+        ...Object.values(descriptor.provenance_environment_keys ?? {}),
+      ].flatMap((keys) => keys ?? []),
+    ),
+  ]),
+].sort((left, right) => left.localeCompare(right));
 
 type TokenBudgetMeasurement = {
   id: string;
@@ -52,6 +70,7 @@ type TokenBudgetManifest = {
 };
 
 type TokenBudgetGateModule = {
+  HARNESS_SIGNAL_ENVIRONMENT_KEYS: readonly string[];
   measureOutput: (stdout: string) => {
     bytes: number;
     estimated_tokens: number;
@@ -294,16 +313,24 @@ function mockRuntime(
 describe("scripts/release/token-budget-gate", () => {
   let originalArgv: string[];
   let originalExitCode: number | undefined;
+  let originalHarnessEnvironment: Record<string, string | undefined>;
 
   beforeEach(() => {
     originalArgv = [...process.argv];
     originalExitCode = process.exitCode;
+    originalHarnessEnvironment = Object.fromEntries(
+      harnessSignalEnvironmentKeys.map((key) => [key, process.env[key]]),
+    );
   });
 
   afterEach(() => {
     process.argv = originalArgv;
     process.exitCode = originalExitCode;
     delete process.env.PM_TOKEN_BUDGET_SENTINEL;
+    for (const [key, value] of Object.entries(originalHarnessEnvironment)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   });
 
   it("measures UTF-8 bytes and conservative token estimates", async () => {
@@ -760,8 +787,11 @@ describe("scripts/release/token-budget-gate", () => {
     ];
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
     process.env.PM_TOKEN_BUDGET_SENTINEL = "kept";
+    for (const key of harnessSignalEnvironmentKeys) {
+      process.env[key] = `host-value:${key}`;
+    }
 
-    await harness.importModule<TokenBudgetGateModule>(
+    const mod = await harness.importModule<TokenBudgetGateModule>(
       "scripts/release/token-budget-gate.mjs",
     );
 
@@ -779,6 +809,13 @@ describe("scripts/release/token-budget-gate", () => {
       PM_TELEMETRY_PROMPT: "0",
       PM_TOKEN_BUDGET_SENTINEL: "kept",
     });
+    expect(mod.HARNESS_SIGNAL_ENVIRONMENT_KEYS).toEqual(
+      harnessSignalEnvironmentKeys,
+    );
+    for (const key of harnessSignalEnvironmentKeys) {
+      if (key === "PM_AUTHOR") continue;
+      expect(runOptions?.env).not.toHaveProperty(key);
+    }
     expect(runtime.writeFileSync).toHaveBeenCalledTimes(1);
     const written = JSON.parse(
       String(runtime.writeFileSync.mock.calls[0]?.[1]),

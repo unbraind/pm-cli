@@ -18,7 +18,10 @@ import {
   UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
   type CommanderOptionRegistrationContract,
 } from "../sdk/cli-contracts.js";
-import { BUILTIN_ITEM_TYPE_VALUES } from "../types/index.js";
+import {
+  BUILTIN_ITEM_TYPE_VALUES,
+  PLAN_STEP_LINK_KIND_VALUES,
+} from "../types/index.js";
 import {
   MERGE_DRIVER_ARTIFACT_VALUES,
   runMergeDriver,
@@ -2675,7 +2678,7 @@ export function registerMutationCommands(
     )
     .option(
       "--link-kind <value>",
-      "Link kind: related|blocks|blocked_by|depends_on|discovered_from|implements|verifies|supersedes",
+      `Link kind: ${PLAN_STEP_LINK_KIND_VALUES.join("|")}`,
     )
     .option("--link-note <value>", "Optional note for the link")
     .option(

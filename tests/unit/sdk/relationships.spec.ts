@@ -39,6 +39,12 @@ describe("relationship kind registry", () => {
     );
     expect(isOrderingRelationshipKind("blocks", registry)).toBe(true);
     expect(isOrderingRelationshipKind("related", registry)).toBe(false);
+    expect(registry.require("recurs_from")).toMatchObject({
+      direction: "directed",
+      temporalOrder: "source_after_target",
+      ordering: false,
+      lifecycle: "persistent",
+    });
     expect(isOrderingRelationshipKind("unknown", registry)).toBe(false);
   });
 
@@ -166,6 +172,21 @@ describe("relationship kind registry", () => {
         hierarchyDirection: "source_parent",
       }),
     ).toThrow("Non-hierarchy relationship kind");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "invalid_temporal_order",
+        temporalOrder: "target_after_source" as never,
+      }),
+    ).toThrow("Invalid relationship temporal order");
+    expect(() =>
+      new RelationshipKindRegistry([]).register({
+        ...registry.require("owns"),
+        kind: "undirected_temporal_order",
+        direction: "undirected",
+        temporalOrder: "source_after_target",
+      }),
+    ).toThrow("cannot declare temporal order");
   });
 
   it("enforces self-edge policy after alias resolution while preserving custom opt-ins", () => {
@@ -433,6 +454,30 @@ describe("relationship graph", () => {
     expect(oneWay.closure("target", { maxDepth: 0 }).meta.truncated).toBe(
       false,
     );
+  });
+
+  it("connects an entire recurrence family without changing replacement or scheduling semantics", () => {
+    const recurrence = new RelationshipGraph(
+      ["first", "second", "third", "fourth"],
+      [
+        { source: "second", target: "first", kind: "recurs_from" },
+        { source: "third", target: "second", kind: "recurs_from" },
+        { source: "fourth", target: "third", kind: "recurs_from" },
+      ],
+    );
+    expect(
+      recurrence.closure("first", {
+        kinds: ["recurs_from"],
+        direction: "both",
+      }).value,
+    ).toEqual(["second", "third", "fourth"]);
+    expect(
+      recurrence.shortestPath("fourth", "first", {
+        kinds: ["recurs_from"],
+      }).value,
+    ).toEqual(["fourth", "third", "second", "first"]);
+    expect(isOrderingRelationshipKind("recurs_from")).toBe(false);
+    expect(canonicalizeRelationshipKind("supersedes")).toBe("supersedes");
   });
 
   it("builds from item metadata and preserves dependency attribution", () => {

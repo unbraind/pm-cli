@@ -17,6 +17,7 @@ export {
   type RelationshipKindDefinition,
   type RelationshipLifecycle,
   type RelationshipPrecedence,
+  type RelationshipTemporalOrder,
 } from "./relationship-kinds/contract.js";
 
 /** One normalized relationship edge indexed by the graph kernel. */
@@ -128,6 +129,24 @@ function assertRelationshipPrecedence(
     );
 }
 
+function assertRelationshipTemporalOrder(
+  definition: RelationshipKindDefinition,
+  kind: string,
+): void {
+  if (
+    definition.temporalOrder !== undefined &&
+    definition.temporalOrder !== "source_after_target"
+  )
+    throw new TypeError(`Invalid relationship temporal order for ${kind}`);
+  if (
+    definition.direction !== "directed" &&
+    definition.temporalOrder !== undefined
+  )
+    throw new TypeError(
+      `Undirected relationship kind cannot declare temporal order: ${kind}`,
+    );
+}
+
 function assertRelationshipHierarchyDirection(
   definition: RelationshipKindDefinition,
   kind: string,
@@ -228,6 +247,7 @@ export class RelationshipKindRegistry {
     assertRelationshipKindSemantics(definition, kind);
     assertRelationshipKindPayload(definition, kind);
     assertRelationshipPrecedence(definition, kind);
+    assertRelationshipTemporalOrder(definition, kind);
     assertRelationshipHierarchyDirection(definition, kind);
     if (this.#definitions.has(kind) || this.#aliases.has(kind))
       throw new TypeError(`Relationship kind already registered: ${kind}`);

@@ -219,6 +219,12 @@ describe("context intent contracts", () => {
       activityLimit: "2",
     });
     expect(
+      applyContextIntentProjection("context", {
+        for: "orient",
+        limit: "10",
+      }),
+    ).toMatchObject({ limit: "3", activityLimit: "3" });
+    expect(
       applyContextIntentProjection("list", {
         for: "triage",
         fields: "id,title",
@@ -300,6 +306,8 @@ describe("context intent contracts", () => {
       budget_derived_limit: 467,
       context_intent: {
         token_budget: 8000,
+        declared_token_budget: 3200,
+        token_budget_override: 4800,
         budget_derived_limit: 467,
         binding_constraint: "token_budget",
       },
@@ -372,7 +380,7 @@ describe("context intent contracts", () => {
         within_budget: false,
       },
     });
-    expect(projected.context_intent!.estimated_tokens).toBeLessThanOrEqual(
+    expect(projected.context_intent!.estimated_tokens).toBeGreaterThan(
       projected.context_intent!.token_budget,
     );
   });
@@ -426,14 +434,19 @@ describe("context intent contracts", () => {
       ["get", "inspect"],
       ["search", "discover"],
     ] as const) {
-      expect(
-        attachContextIntentReceipt(command, { for: intent }, oversized),
-      ).toMatchObject({
-        budget_exceeded: {
-          restore_with:
-            "Increase --token-budget or narrow the request; the unprojected command may be larger.",
-        },
+      const projected = attachContextIntentReceipt(
+        command,
+        { for: intent },
+        oversized,
+      );
+      expect(projected.budget_exceeded).toMatchObject({
+        restore_with: expect.stringMatching(
+          new RegExp(`^pm ${command} --for ${intent} --token-budget \\d+ --limit \\d+$`, "u"),
+        ),
       });
+      expect(projected.context_intent!.estimated_tokens).toBeGreaterThan(
+        projected.context_intent!.token_budget,
+      );
     }
   });
 
@@ -617,8 +630,8 @@ describe("context intent contracts", () => {
       budget_derived_limit: 100,
       context_intent: {
         budget_derived_limit: 100,
-        binding_constraint: "explicit_limit",
-        limit_reason: expect.stringContaining("explicit row limit"),
+        binding_constraint: "token_budget",
+        limit_reason: expect.stringContaining("token budget"),
       },
     });
     const next = JSON.parse(

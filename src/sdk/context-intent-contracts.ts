@@ -54,7 +54,11 @@ export interface PmContextIntentReceipt {
   included_field_groups: string[];
   /** Effective token ceiling after an explicit caller override is applied. */
   token_budget: number;
-  /** Deterministic JSON-size estimate for the result including this receipt. */
+  /** Ceiling declared by the selected intent before caller overrides. */
+  declared_token_budget: number;
+  /** Signed difference between the effective and declared ceilings. */
+  token_budget_override: number;
+  /** Deterministic JSON-size estimate for the useful result before any receipt-only omission. */
   estimated_tokens: number;
   /** Whether the measured result fits the declared ceiling. */
   within_budget: boolean;
@@ -95,7 +99,7 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
         "blockers",
         "activity",
       ],
-      token_budget: 2400,
+      token_budget: 3000,
       source: "core",
     },
     {
@@ -384,11 +388,21 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
       projected.tokenBudget,
       contract.token_budget,
     );
-    const calculatedLimit = Math.max(1, Math.floor((tokenBudget - 800) / 500));
+    const budgetDerivedLimit = resolveIntentRowBudget(
+      "context",
+      contract.intent,
+      tokenBudget,
+      explicitTokenBudget,
+    )!;
+    const requestedLimit = parsePositiveIntentTokenBudget(projected.limit);
     const derivedLimit = String(
-      explicitTokenBudget ? calculatedLimit : Math.min(20, calculatedLimit),
+      requestedLimit === undefined
+        ? budgetDerivedLimit
+        : Math.min(requestedLimit, budgetDerivedLimit),
     );
-    if (projected.limit === undefined) projected.limit = derivedLimit;
+    if (projected.limit === undefined || requestedLimit !== undefined) {
+      projected.limit = derivedLimit;
+    }
     if (projected.activityLimit === undefined) {
       projected.activityLimit = derivedLimit;
     }
@@ -408,14 +422,22 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
       projected.fields =
         "id,title,status,type,priority,parent,assignee,risk,blocked_by";
     }
-    if (projected.limit === undefined) {
-      const tokenBudget = resolveIntentTokenBudget(
-        projected.tokenBudget,
-        contract.token_budget,
-      );
-      const calculatedLimit = Math.max(2, Math.floor((tokenBudget - 520) / 16));
+    const tokenBudget = resolveIntentTokenBudget(
+      projected.tokenBudget,
+      contract.token_budget,
+    );
+    const budgetDerivedLimit = resolveIntentRowBudget(
+      "list",
+      contract.intent,
+      tokenBudget,
+      explicitTokenBudget,
+    )!;
+    const requestedLimit = parsePositiveIntentTokenBudget(projected.limit);
+    if (projected.limit === undefined || requestedLimit !== undefined) {
       projected.limit = String(
-        explicitTokenBudget ? calculatedLimit : Math.min(100, calculatedLimit),
+        requestedLimit === undefined
+          ? budgetDerivedLimit
+          : Math.min(requestedLimit, budgetDerivedLimit),
       );
     }
   },
@@ -430,14 +452,22 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
     ) {
       projected.compact = true;
     }
-    if (projected.limit === undefined) {
-      const tokenBudget = resolveIntentTokenBudget(
-        projected.tokenBudget,
-        contract.token_budget,
-      );
-      const calculatedLimit = Math.max(2, Math.floor((tokenBudget - 480) / 16));
+    const tokenBudget = resolveIntentTokenBudget(
+      projected.tokenBudget,
+      contract.token_budget,
+    );
+    const budgetDerivedLimit = resolveIntentRowBudget(
+      "search",
+      contract.intent,
+      tokenBudget,
+      explicitTokenBudget,
+    )!;
+    const requestedLimit = parsePositiveIntentTokenBudget(projected.limit);
+    if (projected.limit === undefined || requestedLimit !== undefined) {
       projected.limit = String(
-        explicitTokenBudget ? calculatedLimit : Math.min(100, calculatedLimit),
+        requestedLimit === undefined
+          ? budgetDerivedLimit
+          : Math.min(requestedLimit, budgetDerivedLimit),
       );
     }
   },
@@ -561,6 +591,32 @@ function resolveIntentTokenBudget(
     );
   }
   return parsed;
+}
+
+function resolveIntentRowBudget(
+  command: BuiltInContextIntentCommand,
+  intent: string,
+  tokenBudget: number,
+  explicitTokenBudget: boolean,
+): number | undefined {
+  if (command === "get" || command === "next") return undefined;
+  const contextOrient = command === "context" && intent === "orient";
+  const overhead =
+    command === "context"
+      ? contextOrient
+        ? 1200
+        : 800
+      : command === "list"
+        ? 520
+        : 480;
+  const rowCost = command === "context" ? (contextOrient ? 600 : 500) : 16;
+  const calculatedLimit = Math.max(
+    command === "context" ? 1 : 2,
+    Math.floor((tokenBudget - overhead) / rowCost),
+  );
+  return explicitTokenBudget
+    ? calculatedLimit
+    : Math.min(command === "context" ? 20 : 100, calculatedLimit);
 }
 
 /** Update a receipt until its estimate matches the serialized projection that contains it. */
@@ -781,15 +837,18 @@ export function attachContextIntentReceipt<
   if (!(normalizedCommand in CONTEXT_INTENT_DEFAULT_APPLIERS)) return result;
   const builtInCommand = normalizedCommand as BuiltInContextIntentCommand;
   const contract = resolveContextIntentContract(builtInCommand, options.for)!;
+  const effectiveTokenBudget = resolveIntentTokenBudget(
+    options.tokenBudget ?? options.token_budget,
+    contract.token_budget,
+  );
   const receipt: PmContextIntentReceipt = {
     command: builtInCommand,
     intent: contract.intent,
     source: contract.source!,
     included_field_groups: [...contract.included_field_groups],
-    token_budget: resolveIntentTokenBudget(
-      options.tokenBudget ?? options.token_budget,
-      contract.token_budget,
-    ),
+    token_budget: effectiveTokenBudget,
+    declared_token_budget: contract.token_budget,
+    token_budget_override: effectiveTokenBudget - contract.token_budget,
     estimated_tokens: 0,
     within_budget: true,
     degradation: CONTEXT_INTENT_DEGRADATIONS[builtInCommand],
@@ -797,27 +856,25 @@ export function attachContextIntentReceipt<
     result_omitted: false,
   };
   const resultWithDiagnostics: Record<string, unknown> = { ...result };
-  if (builtInCommand === "list" || builtInCommand === "search") {
-    const overhead = builtInCommand === "list" ? 520 : 480;
-    const calculatedLimit = Math.max(
-      2,
-      Math.floor((receipt.token_budget - overhead) / 16),
-    );
-    const explicitTokenBudget =
-      parsePositiveIntentTokenBudget(
-        options.tokenBudget ?? options.token_budget,
-      ) !== undefined;
-    const budgetDerivedLimit = explicitTokenBudget
-      ? calculatedLimit
-      : Math.min(100, calculatedLimit);
-    const hasExplicitLimit = options.limit !== undefined;
+  const budgetDerivedLimit = resolveIntentRowBudget(
+    builtInCommand,
+    contract.intent,
+    receipt.token_budget,
+    parsePositiveIntentTokenBudget(
+      options.tokenBudget ?? options.token_budget,
+    ) !== undefined,
+  );
+  if (budgetDerivedLimit !== undefined) {
+    const effectiveLimit = parsePositiveIntentTokenBudget(options.limit);
+    const explicitLimitBinds =
+      effectiveLimit !== undefined && effectiveLimit < budgetDerivedLimit;
     receipt.budget_derived_limit = budgetDerivedLimit;
-    receipt.binding_constraint = hasExplicitLimit
+    receipt.binding_constraint = explicitLimitBinds
       ? "explicit_limit"
       : "token_budget";
-    receipt.limit_reason = hasExplicitLimit
-      ? "The caller supplied an explicit row limit; the budget-derived limit remains diagnostic."
-      : "The selected intent token budget determines the row ceiling.";
+    receipt.limit_reason = explicitLimitBinds
+      ? "The caller supplied a smaller row limit than the budget-derived ceiling."
+      : "The selected intent token budget constrains the effective row ceiling.";
     resultWithDiagnostics.budget_derived_limit = budgetDerivedLimit;
   }
   let projected: Record<string, unknown> = {
@@ -852,12 +909,10 @@ export function attachContextIntentReceipt<
       budget_exceeded: {
         omitted_result: true,
         reason: "declared_budget_infeasible",
-        restore_with:
-          "Increase --token-budget or narrow the request; the unprojected command may be larger.",
+        restore_with: `pm ${command} --for ${contract.intent} --token-budget ${Math.ceil(receipt.estimated_tokens / 100) * 100} --limit ${receipt.budget_derived_limit ?? 1}`,
       },
       context_intent: receipt,
     };
-    updateContextIntentEstimate(projected, receipt);
   }
   return projected as Result & { context_intent: PmContextIntentReceipt };
 }

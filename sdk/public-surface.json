@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1617,
+    "covered_symbols": 1618,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1618
+    "required_symbols": 1619
   },
   "breaking_acknowledgements": [
     {
@@ -646,6 +646,20 @@
       ],
       "package_version": "2026.8.15",
       "reason": "Extension manifest compatibility findings now include closed-schema advisory codes and migration metadata."
+    },
+    {
+      "changes": [
+        "signature ./sdk:DEPENDENCY_KIND_VALUES",
+        "signature ./sdk:PmContextIntentReceipt",
+        "signature ./sdk:RelationshipKindDefinition",
+        "signature ./sdk/contracts:PmContextIntentReceipt",
+        "signature ./sdk/core:DEPENDENCY_KIND_VALUES",
+        "signature ./sdk/graph:RelationshipKindDefinition",
+        "signature ./sdk/runtime:DEPENDENCY_KIND_VALUES",
+        "symbol ./cli:_testOnly removed"
+      ],
+      "package_version": "2026.8.16",
+      "reason": "Publish only runPmCli from ./cli and add truthful context-budget and recurrence contracts"
     }
   ],
   "entrypoints": {
@@ -660,18 +674,12 @@
       "symbols": [
         {
           "classification": "executable_entry",
-          "kind": "value",
-          "name": "_testOnly",
-          "signature": "{ activationCommandMatchesProbe: typeof activationCommandMatchesProbe; bootstrapProfileEnabled: typeof bootstrapProfileEnabled; buildBootstrapActivationProbe: typeof buildBootstrapActivationProbe; buildPostActionTelemetryOutcome: typeof buildPostActionTelemetryOutcome; buildPmCliRecoveryContext: typeof buildPmCliRecoveryContext; buildRuntimeExtensionDiscoverySnapshotCacheKey: typeof buildRuntimeExtensionDiscoverySnapshotCacheKey; buildRuntimeExtensionActivationScope: typeof buildRuntimeExtensionActivationScope; buildRuntimeExtensionSnapshotCacheKey: typeof buildRuntimeExtensionSnapshotCacheKey; buildRuntimeExtensionFilterForProbe: typeof buildRuntimeExtensionFilterForProbe; addRuntimeFieldOption: typeof addRuntimeFieldOption; collectActivationCommandCandidates: typeof collectActivationCommandCandidates; collectExtensionFlagDefinitionsForCommand: typeof collectExtensionFlagDefinitionsForCommand; collectExtensionFlagDefinitionsForInvocation: typeof collectExtensionFlagDefinitionsForInvocation; collectLeadingCommandArgs: typeof collectLeadingCommandArgs; collectParsedActivationCommandArgs: typeof collectParsedActivationCommandArgs; collectRuntimeFieldLooseFlagDefinitionsForCommand: typeof collectRuntimeFieldLooseFlagDefinitionsForCommand; commandHasLongOption: typeof commandHasLongOption; commandHasShortOption: typeof commandHasShortOption; commandPathNeedsSearchExtensions: typeof commandPathNeedsSearchExtensions; commandPathNeedsTemplateExtensions: typeof commandPathNeedsTemplateExtensions; describeUnknownError: typeof describeUnknownError; defaultPreflightDecision: typeof defaultPreflightDecision; discoveryNeedsActivationForProbe: typeof discoveryNeedsActivationForProbe; emitExtensionProfile: typeof emitExtensionProfile; emitExtensionSkippedProfile: typeof emitExtensionSkippedProfile; emitSettingsReadWarnings: typeof emitSettingsReadWarnings; ensureIdempotentTopLevelCommandRegistration: typeof ensureIdempotentTopLevelCommandRegistration; enforceExplicitRetryForFlagTypos: typeof enforceExplicitRetryForFlagTypos; envFlagEnabled: typeof envFlagEnabled; executeRegisteredRuntimeMigrations: typeof executeRegisteredRuntimeMigrations; extractCommandScopedOptions: typeof extractCommandScopedOptions; extensionActivationCommands: typeof extensionActivationCommands; extensionCapabilities: typeof extensionCapabilities; extensionNeedsActivationForProbe: typeof extensionNeedsActivationForProbe; extensionProvidesTemplatesRuntime: typeof extensionProvidesTemplatesRuntime; hasAnyCapability: typeof hasAnyCapability; hasGlobalExtensionContributions: typeof hasGlobalExtensionContributions; handleGenericRunPmCliError: typeof handleGenericRunPmCliError; handleRunPmCliCommanderError: typeof handleRunPmCliCommanderError; handleRunPmCliError: typeof handleRunPmCliError; handleRunPmCliHelpDisplayError: typeof handleRunPmCliHelpDisplayError; handleRunPmCliKnownError: typeof handleRunPmCliKnownError; handleRunPmCliCommanderUsageError: typeof handleRunPmCliCommanderUsageError; handleUnknownHelpCommandError: typeof handleUnknownHelpCommandError; inferMissingFieldsFromErrorMessage: typeof inferMissingFieldsFromErrorMessage; inferPostActionErrorCode: typeof inferPostActionErrorCode; inferPostActionFailureMessage: typeof inferPostActionFailureMessage; invocationRequestsVersion: typeof invocationRequestsVersion; isCommanderError: typeof isCommanderError; loadRuntimeExtensionCommandDescriptorsForRecovery: typeof loadRuntimeExtensionCommandDescriptorsForRecovery; loadRuntimeExtensionDiscoverySnapshot: typeof loadRuntimeExtensionDiscoverySnapshot; loadRuntimeExtensionSnapshot: typeof loadRuntimeExtensionSnapshot; maybeLoadRuntimeExtensions: typeof maybeLoadRuntimeExtensions; maybeAttachCreateUpdatePolicyHelpText: typeof maybeAttachCreateUpdatePolicyHelpText; maybeLogHandledCliErrorToSentry: typeof maybeLogHandledCliErrorToSentry; matchesStaticExtensionCommand: typeof matchesStaticExtensionCommand; normalizeTelemetryCommandResolution: typeof normalizeTelemetryCommandResolution; normalizeTelemetryErrorCategory: typeof normalizeTelemetryErrorCategory; normalizeTelemetryResolutionStage: typeof normalizeTelemetryResolutionStage; normalizeThrownExitCode: typeof normalizeThrownExitCode; probeUsesAnyFlag: typeof probeUsesAnyFlag; prepareExtensionServicesForRunPmCliError: typeof prepareExtensionServicesForRunPmCliError; readRecordBoolean: typeof readRecordBoolean; readRecordNumber: typeof readRecordNumber; readRecordString: typeof readRecordString; registerDynamicExtensionCommandPaths: typeof registerDynamicExtensionCommandPaths; registerRuntimeSchemaFieldFlags: typeof registerRuntimeSchemaFieldFlags; resolveCoreCommandRegistrationSelection: typeof resolveCoreCommandRegistrationSelection; resolveStaticExtensionActivationDecision: typeof resolveStaticExtensionActivationDecision; resolveUnknownHelpToken: typeof resolveUnknownCommanderToken; readThrownExitCode: typeof readThrownExitCode; runAndClearAfterCommandHooks: typeof runAndClearAfterCommandHooks; runRequiredExtensionCommand: typeof runRequiredExtensionCommand; shouldAttachRichHelpTextForInvocation: typeof shouldAttachRichHelpTextForInvocation; shouldLogHandledErrorToSentry: typeof shouldLogHandledErrorToSentry; shouldRegisterDynamicExtensionPaths: typeof shouldRegisterDynamicExtensionPaths; shouldRegisterRuntimeSchemaFlags: typeof shouldRegisterRuntimeSchemaFlags; shouldHandleRunPmCliCommanderError: typeof shouldHandleRunPmCliCommanderError; setActiveExtensionHookContextForTest: typeof setActiveExtensionHookContextForTest; setActiveRuntimeExtensionCommandDescriptorsForTest: typeof setActiveRuntimeExtensionCommandDescriptorsForTest; setRecoveredExtensionServices: typeof setRecoveredExtensionServices; toLooseFieldDefinitionType: typeof toLooseFieldDefinitionType; isImporterOrExporterCommandPath: typeof isImporterOrExporterCommandPath; validateDynamicExtensionCommandInvocation: typeof validateDynamicExtensionCommandInvocation; wrapProgramActionsForExtensionHandlers: typeof wrapProgramActionsForExtensionHandlers; wrapThrownErrorForSentry: typeof wrapThrownErrorForSentry; }"
-        },
-        {
-          "classification": "executable_entry",
           "kind": "function",
           "name": "runPmCli",
           "signature": "(rawArgv?: string[]) => Promise<void> | calls: (rawArgv?: string[]) => Promise<void>"
         }
       ],
-      "types": "dist/cli/main.d.ts"
+      "types": "dist/cli/public.d.ts"
     },
     "./sdk": {
       "classification": "advanced_export",
@@ -3992,7 +4000,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "DEPENDENCY_KIND_VALUES",
-          "signature": "readonly [\"blocks\", \"parent\", \"child\", \"parent_child\", \"child_of\", \"related\", \"related_to\", \"discovered_from\", \"blocked_by\", \"incident_from\", \"epic\", \"implements\", \"supersedes\", \"task\", \"verifies\"]"
+          "signature": "readonly [\"blocks\", \"parent\", \"child\", \"parent_child\", \"child_of\", \"related\", \"related_to\", \"discovered_from\", \"blocked_by\", \"incident_from\", \"epic\", \"implements\", \"recurs_from\", \"supersedes\", \"task\", \"verifies\"]"
         },
         {
           "classification": "supported",
@@ -9248,7 +9256,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmContextIntentReceipt",
-          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; budget_derived_limit?: number; binding_constraint?: \"explicit_limit\" | \"token_budget\"; limit_reason?: string; }"
+          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; declared_token_budget: number; token_budget_override: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; budget_derived_limit?: number; binding_constraint?: \"explicit_limit\" | \"token_budget\"; limit_reason?: string; }"
         },
         {
           "classification": "contract_data",
@@ -11102,7 +11110,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipKindDefinition",
-          "signature": "export interface RelationshipKindDefinition { kind: string; direction: RelationshipDirection; inverse?: string; ordering: boolean; precedence?: RelationshipPrecedence; hierarchy: boolean; hierarchyDirection?: RelationshipHierarchyDirection; outgoing: RelationshipCardinality; incoming: RelationshipCardinality; lifecycle: RelationshipLifecycle; payloadSchema?: Readonly<Record<string, unknown>>; aliases?: readonly string[]; compatibilityVersion: number; allowSelf: boolean; }"
+          "signature": "export interface RelationshipKindDefinition { kind: string; direction: RelationshipDirection; inverse?: string; ordering: boolean; temporalOrder?: RelationshipTemporalOrder; precedence?: RelationshipPrecedence; hierarchy: boolean; hierarchyDirection?: RelationshipHierarchyDirection; outgoing: RelationshipCardinality; incoming: RelationshipCardinality; lifecycle: RelationshipLifecycle; payloadSchema?: Readonly<Record<string, unknown>>; aliases?: readonly string[]; compatibilityVersion: number; allowSelf: boolean; }"
         },
         {
           "classification": "supported",
@@ -11229,6 +11237,12 @@
           "kind": "interface",
           "name": "RelationshipSubgraph",
           "signature": "export interface RelationshipSubgraph { nodes: string[]; edges: RelationshipEdge[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "RelationshipTemporalOrder",
+          "signature": "export type RelationshipTemporalOrder = \"source_after_target\";"
         },
         {
           "classification": "supported",
@@ -17696,7 +17710,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmContextIntentReceipt",
-          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; budget_derived_limit?: number; binding_constraint?: \"explicit_limit\" | \"token_budget\"; limit_reason?: string; }"
+          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; declared_token_budget: number; token_budget_override: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; budget_derived_limit?: number; binding_constraint?: \"explicit_limit\" | \"token_budget\"; limit_reason?: string; }"
         },
         {
           "classification": "contract_data",
@@ -18728,7 +18742,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "DEPENDENCY_KIND_VALUES",
-          "signature": "readonly [\"blocks\", \"parent\", \"child\", \"parent_child\", \"child_of\", \"related\", \"related_to\", \"discovered_from\", \"blocked_by\", \"incident_from\", \"epic\", \"implements\", \"supersedes\", \"task\", \"verifies\"]"
+          "signature": "readonly [\"blocks\", \"parent\", \"child\", \"parent_child\", \"child_of\", \"related\", \"related_to\", \"discovered_from\", \"blocked_by\", \"incident_from\", \"epic\", \"implements\", \"recurs_from\", \"supersedes\", \"task\", \"verifies\"]"
         },
         {
           "classification": "supported",
@@ -21764,7 +21778,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipKindDefinition",
-          "signature": "export interface RelationshipKindDefinition { kind: string; direction: RelationshipDirection; inverse?: string; ordering: boolean; precedence?: RelationshipPrecedence; hierarchy: boolean; hierarchyDirection?: RelationshipHierarchyDirection; outgoing: RelationshipCardinality; incoming: RelationshipCardinality; lifecycle: RelationshipLifecycle; payloadSchema?: Readonly<Record<string, unknown>>; aliases?: readonly string[]; compatibilityVersion: number; allowSelf: boolean; }"
+          "signature": "export interface RelationshipKindDefinition { kind: string; direction: RelationshipDirection; inverse?: string; ordering: boolean; temporalOrder?: RelationshipTemporalOrder; precedence?: RelationshipPrecedence; hierarchy: boolean; hierarchyDirection?: RelationshipHierarchyDirection; outgoing: RelationshipCardinality; incoming: RelationshipCardinality; lifecycle: RelationshipLifecycle; payloadSchema?: Readonly<Record<string, unknown>>; aliases?: readonly string[]; compatibilityVersion: number; allowSelf: boolean; }"
         },
         {
           "classification": "supported",
@@ -21885,6 +21899,12 @@
           "kind": "interface",
           "name": "RelationshipSubgraph",
           "signature": "export interface RelationshipSubgraph { nodes: string[]; edges: RelationshipEdge[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "RelationshipTemporalOrder",
+          "signature": "export type RelationshipTemporalOrder = \"source_after_target\";"
         },
         {
           "classification": "supported",
@@ -24248,7 +24268,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "DEPENDENCY_KIND_VALUES",
-          "signature": "readonly [\"blocks\", \"parent\", \"child\", \"parent_child\", \"child_of\", \"related\", \"related_to\", \"discovered_from\", \"blocked_by\", \"incident_from\", \"epic\", \"implements\", \"supersedes\", \"task\", \"verifies\"]"
+          "signature": "readonly [\"blocks\", \"parent\", \"child\", \"parent_child\", \"child_of\", \"related\", \"related_to\", \"discovered_from\", \"blocked_by\", \"incident_from\", \"epic\", \"implements\", \"recurs_from\", \"supersedes\", \"task\", \"verifies\"]"
         },
         {
           "classification": "supported",

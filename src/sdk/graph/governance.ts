@@ -165,6 +165,7 @@ const OUTCOME_MILESTONE_TITLE_PREFIX = "outcome milestone:";
 const SEMANTIC_CONTEXT_KINDS = new Set([
   "discovered_from",
   "incident_from",
+  "recurs_from",
   "supersedes",
   "verifies",
 ]);
