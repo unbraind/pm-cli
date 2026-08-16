@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:context",context-management,receipts,token-budget
 created_at: "2026-08-16T10:50:36.737Z"
-updated_at: "2026-08-16T16:26:05.947Z"
-closed_at: "2026-08-16T16:26:05.357Z"
-completed_at: "2026-08-16T16:26:05.357Z"
+updated_at: "2026-08-16T16:37:53.694Z"
+closed_at: "2026-08-16T16:37:53.049Z"
+completed_at: "2026-08-16T16:37:53.049Z"
 author: "harness:claude-code"
 acceptance_criteria: "A refusal receipt reports the estimate that produced the refusal, never an estimate recomputed over the refusal itself, and a test asserts the reported estimated_tokens exceeds token_budget whenever result_omitted is true; Applying an explicit row bound to a declared intent never produces a smaller result set and a larger reported cost than the same intent without it; Recovery guidance for an infeasible declaration names a recovery that is verified to work on the corpus that produced the refusal, rather than a generic instruction; An explicit --token-budget above a declared intent ceiling either is refused, is clamped to the declaration, or emits an explicit receipt field stating that the declaration was overridden and by how much; A negative control proves each assertion fails when the defect is reintroduced"
 parent: pm-mpbb
@@ -24,7 +24,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-prsvjh,discovered_from,"2026-08-16T10:50:36.737Z","harness:claude-code","cli:create:dep",detected
   pm-yekkvt,discovered_from,"2026-08-16T10:50:36.737Z","harness:claude-code","cli:create:dep",detected
   pm-h8tpeh,discovered_from,"2026-08-16T10:51:21.890Z","harness:claude-code","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-08-16T10:51:21.338Z","harness:claude-code","Reproduction, exact commands and observed bytes on this tracker at tree 9da5886cc:\n\n  pm context --limit 10                              7,988 B  ~1,997 tok  result returned\n  pm context --for orient                            7,832 B  ~1,958 tok  result returned, budget 2400\n  pm context --for orient --limit 10                   520 B              RESULT OMITTED\n  pm context --for orient --limit 50                   520 B              RESULT OMITTED\n  pm context --for orient --token-budget 20000         521 B              RESULT OMITTED\n  pm context --for orient --token-budget 200000    448,564 B  ~112k tok   result returned, receipt says estimated_tokens 132522\n  pm context --for handoff                           4,588 B              result returned\n  pm context --for handoff --limit 10                  524 B              RESULT OMITTED\n\nThe receipt for the omitted case, verbatim: token_budget 2400, estimated_tokens 122, within_budget false, declaration_feasible false, result_omitted true, degradation budget_receipt_only.\n\nThree separable defects in one path: (1) the reported estimate is recomputed over the refusal so it contradicts the verdict it accompanies; (2) --limit turns a feasible intent infeasible on both declared context intents; (3) an explicit --token-budget replaces the declared ceiling instead of being bounded by it, so the same intent that declares 2400 emits 132522 with no field saying the declaration was overridden.\n\nThis is the fifth defect landed against the declared-intent layer after pm-ai45y9, pm-7hbfch, pm-prsvjh and pm-yekkvt. pm-yekkvt's AC4 already forbids recovery guidance that points at the unprojected command when that form is larger; here the unprojected form is SMALLER and succeeds, so the guidance is wrong in the direction that AC did not anticipate."
   "2026-08-16T12:30:33.607Z","harness:codex","Implementation evidence: the default orient contract now clamps an explicit --limit 10 to its measured three-row budget ceiling, returns useful hierarchy/blocker/activity context at 2,587 estimated tokens under the 3,000 declaration, retains the pre-omission infeasibility estimate, emits an executable bounded retry, and discloses a 197,000-token override when the caller requests 200,000. The reviewed calibration report remains far below the new ceiling at both 2 and 2,243 items."
   "2026-08-16T13:26:21.804Z","harness:codex","Verification evidence: exact 100/100/100/100 coverage and the full 7,411-test suite passed. Static calibration, token-budget, and packed npx/bunx acceptance passed. In a new isolated tracker, context --for orient returned useful rows with declared_token_budget=3000, override=0, budget_derived_limit=3, binding_constraint=token_budget, estimated_tokens=649, within_budget=true, and an executable bounded recovery contract for infeasible results is covered."
@@ -33,7 +33,10 @@ comments[8]{created_at,author,text}:
   "2026-08-16T15:58:55.505Z","harness:codex","Exact-head review resolution: recovery receipts now retain and shell-quote the original get item id or search query, including apostrophes; within_budget is documented as effective-ceiling evidence; and the token negative control now requires token_budget=256 with a finite estimate strictly above it. The real gate passed 32 surfaces, manual temp-tracker execution ran the emitted apostrophe-bearing retry verbatim and returned one useful result within budget, all linked tests passed, and full coverage passed 507 files / 7,415 tests at exact 100/100/100/100."
   "2026-08-16T16:16:27.582Z","harness:codex","Exact-head review finding: buildContextIntentRecoveryCommand appends --limit to pm get even though get has no --limit option. Reopened only this context-contract item to make recovery grammar command-capability-aware and execute the emitted get retry in regression coverage."
   "2026-08-16T16:24:57.457Z","harness:codex","Exact-head recovery correction: pm get receipts now omit --limit while retaining the canonical item id, selected intent, and measured recovery budget. The focused test creates a fresh tracker item, parses the emitted recovery, executes it through the CLI, and confirms the same item returns. Focused 21-test suite and ESLint pass; full coverage passes 507 files / 7,415 tests at exact 100/100/100/100 with 53,761 statements, 39,788 branches, 11,044 functions, and 51,915 lines."
-files[7]{path,scope,note}:
+  "2026-08-16T16:37:33.846Z","harness:codex","Hosted CI run 31958803572 failed only Gates (static): pm-changelog 2026.8.16 reported CHANGELOG.md out of date after the final terminal PM mutation. All other completed CI, coverage, security, runtime, and analysis gates passed. Reopened only this item to regenerate through the extension-owned command."
+  "2026-08-16T16:37:48.622Z","harness:codex","Changelog recovery evidence: project package exploration and deep doctor report pm-changelog 2026.8.16 active with zero blocking failures; extension-owned generation and check both passed against the current tracker before terminal close."
+files[8]{path,scope,note}:
+  CHANGELOG.md,project,Regenerate deterministic terminal PM state through pm-changelog 2026.8.16
   scripts/release/context-intent-calibration.json,project,Recalibrate the approved two-tier report for truthful receipt bytes and the feasible orient ceiling
   scripts/release/token-budget-gate.mjs,project,Require override infeasibility without misclassifying the declared ceiling
   src/sdk/context-intent-contracts.ts,project,Final updateContextIntentEstimate at the budget_receipt_only branch overwrites the estimate that justified the refusal
@@ -85,5 +88,5 @@ test_runs[4]:
     skipped: 0
 docs[1]{path,scope,note}:
   docs/SDK.md,project,Document truthful context budgets explicit overrides and bounded recovery
-close_reason: "Made recovery commands command-capability-aware: pm get retries are executable without unsupported --limit, with real temporary-tracker execution, linked gates, and exact full coverage green."
+close_reason: Regenerated the deterministic changelog with healthy pm-changelog 2026.8.16 after the final context-recovery evidence; extension check passed.
 body: ""
