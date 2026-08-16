@@ -233,6 +233,10 @@ export {
   type SchemaEvolutionItemPlan,
   type SchemaEvolutionMigrationPlan,
 } from "./schema-migration.js";
+export type {
+  RuntimeFieldDefinition,
+  RuntimeFieldValueSchema,
+} from "./schema.js";
 export {
   runWithActiveExtensions,
   type ActiveExtensionScopeOptions,

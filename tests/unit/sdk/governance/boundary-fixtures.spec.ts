@@ -10,7 +10,8 @@ const sample: BoundaryFixtureSample = {
   version: 1,
   boundary_id: "claude-project-slug",
   capture_source: "captured_redacted",
-  capture_provenance: "Observed from a Claude Code project directory and redacted before commit.",
+  capture_provenance:
+    "Observed from a Claude Code project directory and redacted before commit.",
   redactions: ["workspace prefix replaced with /workspace"],
   input: { workspace: "/workspace/project with+symbols" },
   observed: { project_directory: "-workspace-project-with-symbols" },
@@ -18,7 +19,8 @@ const sample: BoundaryFixtureSample = {
 
 const registry: BoundaryFixtureRegistry = {
   version: 1,
-  inventory_scope: "External values consumed by author, package-manager, and release adapters.",
+  inventory_scope:
+    "External values consumed by author, package-manager, and release adapters.",
   boundaries: [
     {
       id: "claude-project-slug",
@@ -58,13 +60,8 @@ describe("boundary fixture SDK", () => {
 
   it("fails closed for invalid registries, duplicate entries, and absent fixtures", () => {
     expect(
-      evaluateBoundaryFixtures(
-        { ...registry, version: 2 as 1 },
-        {},
-      ).findings,
-    ).toEqual([
-      expect.objectContaining({ kind: "invalid_registry" }),
-    ]);
+      evaluateBoundaryFixtures({ ...registry, version: 2 as 1 }, {}).findings,
+    ).toEqual([expect.objectContaining({ kind: "invalid_registry" })]);
     const report = evaluateBoundaryFixtures(
       {
         ...registry,
@@ -82,6 +79,21 @@ describe("boundary fixture SDK", () => {
       "missing_fixture",
       "invalid_boundary",
     ]);
+    expect(
+      evaluateBoundaryFixtures(
+        { ...registry, boundaries: [null, "boundary"] as never },
+        {},
+      ),
+    ).toMatchObject({
+      ok: false,
+      boundary_count: 2,
+      captured_count: 0,
+      waived_count: 0,
+      findings: [
+        expect.objectContaining({ kind: "invalid_boundary" }),
+        expect.objectContaining({ kind: "invalid_boundary" }),
+      ],
+    });
   });
 
   it("rejects mismatched, self-generated, malformed, or unsafe samples", () => {
@@ -102,7 +114,9 @@ describe("boundary fixture SDK", () => {
           capture_source: "self_generated",
           capture_provenance: "",
           redactions: [],
-          input: { token: ["gh", "p_", "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456"].join("") },
+          input: {
+            token: ["gh", "p_", "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456"].join(""),
+          },
           observed: { home: "/home/steve/private" },
         },
       },
@@ -143,5 +157,6 @@ describe("boundary fixture SDK", () => {
       "expired_waiver",
       "invalid_waiver",
     ]);
+    expect(report.waived_count).toBe(0);
   });
 });

@@ -651,6 +651,32 @@ export interface RuntimeStatusDefinition {
   order?: number;
 }
 
+/** Declarative JSON-value constraints enforced before custom-field persistence. */
+export interface RuntimeFieldValueSchema {
+  /** Required JSON value type. */
+  type?: "string" | "number" | "boolean" | "array" | "object";
+  /** Exact JSON value required by this schema branch. */
+  const?: StructuredJsonValue;
+  /** Complete allowed JSON value set. */
+  enum?: StructuredJsonValue[];
+  /** Minimum accepted string length. */
+  min_length?: number;
+  /** Minimum accepted array length. */
+  min_items?: number;
+  /** Optional semantic string format. */
+  format?: "date-time";
+  /** Object-property schemas keyed by the persisted property name. */
+  properties?: Record<string, RuntimeFieldValueSchema>;
+  /** Object properties that must be present. */
+  required?: string[];
+  /** Whether properties absent from `properties` are accepted. */
+  additional_properties?: boolean;
+  /** Schema applied to every array element. */
+  items?: RuntimeFieldValueSchema;
+  /** Alternative schemas of which exactly one must match. */
+  one_of?: RuntimeFieldValueSchema[];
+}
+
 /** Documents the runtime field definition payload exchanged by command, SDK, and package integrations. */
 export interface RuntimeFieldDefinition {
   /** Value that configures or reports key for this contract. */
@@ -681,6 +707,8 @@ export interface RuntimeFieldDefinition {
   required_types?: string[];
   /** Value that configures or reports allow unset for this contract. */
   allow_unset?: boolean;
+  /** Optional semantic JSON-value constraints enforced on create and update. */
+  value_schema?: RuntimeFieldValueSchema;
 }
 
 /** Documents the runtime workflow definition payload exchanged by command, SDK, and package integrations. */

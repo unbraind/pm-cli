@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "boundary_id": "git-rev-parse-commit",
+  "capture_source": "captured_redacted",
+  "capture_provenance": "Captured from git rev-parse HEAD^{commit} in this repository; the commit object id was replaced while preserving length, alphabet, and newline behavior.",
+  "redactions": ["commit object id replaced with forty zeroes"],
+  "input": {
+    "argv": ["rev-parse", "HEAD^{commit}"]
+  },
+  "observed": {
+    "exit_code": 0,
+    "stdout": "0000000000000000000000000000000000000000\n",
+    "stderr": ""
+  }
+}

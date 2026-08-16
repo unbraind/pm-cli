@@ -3,6 +3,8 @@
  *
  * Normalizes the assurance action vocabulary once for CLI, SDK, and MCP hosts.
  */
+import { createHash } from "node:crypto";
+
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -462,13 +464,17 @@ async function runGateAction(
 function throwRiskUsageError(error: unknown): never {
   if (error instanceof PmCliError) throw error;
   throw new PmCliError(
-    error instanceof Error ? error.message : "assurance risk request is invalid",
+    error instanceof Error
+      ? error.message
+      : "assurance risk request is invalid",
     EXIT_CODE.USAGE,
   );
 }
 
 /** Parse JSON or object risk definitions without wrapping workspace failures. */
-function parseRiskActionRequest(input: AssuranceActionInput): DefectChangeRiskRequest {
+function parseRiskActionRequest(
+  input: AssuranceActionInput,
+): DefectChangeRiskRequest {
   if (input.limit !== undefined) {
     throw new PmCliError(
       "assurance risk does not accept --limit; set limit inside the risk definition",
@@ -501,7 +507,8 @@ function changedRiskItemIds(
 ): Set<string> {
   const changed = new Set<string>();
   for (const [itemId, itemFingerprint] of current) {
-    if (cached.item_fingerprints.get(itemId) !== itemFingerprint) changed.add(itemId);
+    if (cached.item_fingerprints.get(itemId) !== itemFingerprint)
+      changed.add(itemId);
   }
   for (const itemId of cached.item_fingerprints.keys()) {
     if (!current.has(itemId)) changed.add(itemId);
@@ -516,12 +523,19 @@ function buildCachedRiskIndex(
   items: readonly AssuranceItemRecord[],
 ): DefectRecurrenceIndex {
   const policySerialized = stableStringify(request.policy);
-  const cached = riskIndexCache?.pm_root === pmRoot ? riskIndexCache : undefined;
+  const cached =
+    riskIndexCache?.pm_root === pmRoot ? riskIndexCache : undefined;
   const itemFingerprints = new Map(
-    items.map((item) => [item.id, stableStringify(item)]),
+    items.map((item) => [
+      item.id,
+      createHash("sha256").update(stableStringify(item)).digest("hex"),
+    ]),
   );
-  const reusable = cached?.policy_serialized === policySerialized ? cached : undefined;
-  const changed = reusable ? changedRiskItemIds(reusable, itemFingerprints) : new Set<string>();
+  const reusable =
+    cached?.policy_serialized === policySerialized ? cached : undefined;
+  const changed = reusable
+    ? changedRiskItemIds(reusable, itemFingerprints)
+    : new Set<string>();
   const index = buildDefectRecurrenceIndex(
     request.policy,
     reusable ? items.filter((item) => changed.has(item.id)) : items,

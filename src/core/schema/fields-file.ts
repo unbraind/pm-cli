@@ -20,6 +20,7 @@ export { normalizeStatusToken as normalizeFieldKey } from "./status-token.js";
 export type {
   RuntimeFieldCommand,
   RuntimeFieldDefinition,
+  RuntimeFieldValueSchema,
   RuntimeFieldType,
 } from "../../types/index.js";
 

@@ -175,55 +175,59 @@ describe("assurance action transport", () => {
         ),
       ).rejects.toThrow("assertion.owner_item_id is required");
       const refusals = [
-        () => runAssuranceAction(
-          {
-            action: "put",
-            kind: "assertion",
-            id: "malformed-floor",
-            definition: {
-              ...assertion,
+        () =>
+          runAssuranceAction(
+            {
+              action: "put",
+              kind: "assertion",
               id: "malformed-floor",
-              owner_item_id: undefined,
-            },
-          },
-          global,
-        ),
-        () => runAssuranceAction(
-          {
-            action: "put",
-            kind: "assertion",
-            id: "numeric-retire-reason",
-            definition: {
-              ...assertion,
-              id: "numeric-retire-reason",
-              lifetime: "retire",
-              retire_reason: 42,
-            },
-          },
-          global,
-        ),
-        () => runAssuranceAction(
-          { action: "remove", kind: "assertion", id: assertion.id },
-          global,
-        ),
-        () => runAssuranceAction(
-          {
-            action: "put",
-            kind: "assertion",
-            id: assertion.id,
-            definition: {
-              ...assertion,
-              floor: -1,
-              negative_control: {
-                cases: [
-                  { observed: -1, expected: "pass" },
-                  { observed: -2, expected: "fail" },
-                ],
+              definition: {
+                ...assertion,
+                id: "malformed-floor",
+                owner_item_id: undefined,
               },
             },
-          },
-          global,
-        ),
+            global,
+          ),
+        () =>
+          runAssuranceAction(
+            {
+              action: "put",
+              kind: "assertion",
+              id: "numeric-retire-reason",
+              definition: {
+                ...assertion,
+                id: "numeric-retire-reason",
+                lifetime: "retire",
+                retire_reason: 42,
+              },
+            },
+            global,
+          ),
+        () =>
+          runAssuranceAction(
+            { action: "remove", kind: "assertion", id: assertion.id },
+            global,
+          ),
+        () =>
+          runAssuranceAction(
+            {
+              action: "put",
+              kind: "assertion",
+              id: assertion.id,
+              definition: {
+                ...assertion,
+                floor: -1,
+                negative_control: {
+                  cases: [
+                    { observed: -1, expected: "pass" },
+                    { observed: -2, expected: "fail" },
+                  ],
+                },
+              },
+            },
+            global,
+          ),
       ];
 
       for (const refusal of refusals) {
@@ -679,9 +683,18 @@ describe("assurance action transport", () => {
   it("runs change-risk analysis through the shared action and generic transports", async () => {
     await withTempPmPath(async (context) => {
       const { pmPath } = context;
-      const created = context.runCli(["create", "Risk cache seed", "--type", "Task", "--json"], {
-        expectJson: true,
-      });
+      const created = context.runCli(
+        [
+          "create",
+          "Risk cache seed",
+          "--type",
+          "Task",
+          "--tags",
+          "risk-cache",
+          "--json",
+        ],
+        { expectJson: true },
+      );
       expect(created.code).toBe(0);
       const createdId = (created.json as { item: { id: string } }).item.id;
       const request = {
@@ -731,20 +744,62 @@ describe("assurance action transport", () => {
           { path: pmPath },
         ),
       ).resolves.toMatchObject({ risk_detected: true, total: 1 });
+
+      const cacheRequest = {
+        ...request,
+        policy: {
+          ...request.policy,
+          families: [
+            {
+              ...request.policy.families[0]!,
+              triggers: { tags: ["risk-cache"] },
+              negative_control: { tags: ["risk-cache"] },
+            },
+          ],
+        },
+        change: { item_ids: [createdId] },
+      };
+      await expect(
+        runAssuranceAction(
+          { action: "risk", definition: cacheRequest },
+          { path: pmPath },
+        ),
+      ).resolves.toMatchObject({ risk_detected: true, total: 1 });
       expect(
-        context.runCli(["update", createdId, "--title", "Risk cache changed", "--json"], {
+        context.runCli(["update", createdId, "--tags", "other", "--json"], {
           expectJson: true,
         }).code,
       ).toBe(0);
       await expect(
-        runAssuranceAction({ action: "risk", definition: request }, { path: pmPath }),
-      ).resolves.toMatchObject({ risk_detected: true, total: 1 });
+        runAssuranceAction(
+          { action: "risk", definition: cacheRequest },
+          { path: pmPath },
+        ),
+      ).resolves.toMatchObject({ risk_detected: false, total: 0 });
       expect(
-        context.runCli(["delete", createdId, "--json"], { expectJson: true }).code,
+        context.runCli(
+          ["update", createdId, "--tags", "risk-cache", "--json"],
+          {
+            expectJson: true,
+          },
+        ).code,
       ).toBe(0);
       await expect(
-        runAssuranceAction({ action: "risk", definition: request }, { path: pmPath }),
+        runAssuranceAction(
+          { action: "risk", definition: cacheRequest },
+          { path: pmPath },
+        ),
       ).resolves.toMatchObject({ risk_detected: true, total: 1 });
+      expect(
+        context.runCli(["delete", createdId, "--json"], { expectJson: true })
+          .code,
+      ).toBe(0);
+      await expect(
+        runAssuranceAction(
+          { action: "risk", definition: cacheRequest },
+          { path: pmPath },
+        ),
+      ).resolves.toMatchObject({ risk_detected: false, total: 0 });
       await expect(
         runAssuranceAction(
           { action: "risk", definition: request, limit: 1 },
@@ -795,7 +850,10 @@ describe("assurance action transport", () => {
           { path: pmPath },
         ),
       ).rejects.toThrow("assurance risk request is invalid");
-      const typedFailure = new PmCliError("typed request refusal", EXIT_CODE.USAGE);
+      const typedFailure = new PmCliError(
+        "typed request refusal",
+        EXIT_CODE.USAGE,
+      );
       const typedThrowingDefinition = new Proxy(
         {},
         {

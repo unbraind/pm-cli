@@ -24,6 +24,7 @@ import type {
   ItemTypeDefinition,
   RuntimeFieldCommand,
   RuntimeFieldDefinition,
+  RuntimeFieldValueSchema,
   RuntimeFieldType,
   RuntimeSchemaSettings,
   RuntimeStatusDefinition,
@@ -99,6 +100,8 @@ export interface RuntimeFieldDefinitionResolved {
   required_types: string[];
   /** Value that configures or reports allow unset for this contract. */
   allow_unset: boolean;
+  /** Optional semantic JSON-value constraints enforced on create and update. */
+  value_schema?: RuntimeFieldValueSchema;
 }
 
 /** Documents the runtime status registry payload exchanged by command, SDK, and package integrations. */
@@ -403,6 +406,7 @@ function normalizeRuntimeFieldDefinition(
     required_on_create: definition.required_on_create === true,
     required_types: requiredTypes,
     allow_unset: definition.allow_unset !== false,
+    value_schema: definition.value_schema,
   };
 }
 
@@ -497,6 +501,7 @@ function serializeRuntimeFieldDefinition(
         ? [...definition.required_types]
         : undefined,
     allow_unset: definition.allow_unset === false ? false : undefined,
+    value_schema: definition.value_schema,
   };
 }
 

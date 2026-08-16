@@ -10,7 +10,9 @@ import {
   type DefectRecurrencePolicy,
 } from "../../../../src/sdk/governance/defect-recurrence.js";
 
-const family = (overrides: Partial<DefectRecurrenceFamily> = {}): DefectRecurrenceFamily => ({
+const family = (
+  overrides: Partial<DefectRecurrenceFamily> = {},
+): DefectRecurrenceFamily => ({
   id: "path-slug-boundary",
   version: 1,
   title: "Path and slug boundary drift",
@@ -127,6 +129,7 @@ describe("defect recurrence SDK", () => {
         id: "pm-sparse",
         status: "open",
         type: "Task",
+        tags: [42, "boundary-contract"],
         files: [null, [], {}, { path: 42 }, { path: "src/ignored.ts" }],
         package_names: [42, "kept"],
         error_codes: [false, "kept"],
@@ -161,6 +164,34 @@ describe("defect recurrence SDK", () => {
       items_reused: 2,
       items_indexed: 2,
     });
+
+    const unicodeFamilies = [
+      family({ id: "ä-family", title: "Umlaut" }),
+      family({ id: "z-family", title: "Latin" }),
+    ];
+    const unicodeItems = [
+      {
+        id: "ä-item",
+        status: "open",
+        type: "Task",
+        tags: ["boundary-contract"],
+      },
+      {
+        id: "z-item",
+        status: "open",
+        type: "Task",
+        tags: ["boundary-contract"],
+      },
+    ];
+    expect(
+      buildDefectRecurrenceIndex(policy(unicodeFamilies), unicodeItems)
+        .index_fingerprint,
+    ).toBe(
+      buildDefectRecurrenceIndex(
+        policy([...unicodeFamilies].reverse()),
+        [...unicodeItems].reverse(),
+      ).index_fingerprint,
+    );
   });
 
   it("paginates against an immutable index identity and rejects stale cursors", () => {
@@ -200,7 +231,12 @@ describe("defect recurrence SDK", () => {
         "limit must be an integer",
       );
     }
-    for (const payload of [null, [], {}, { index_fingerprint: index.index_fingerprint }]) {
+    for (const payload of [
+      null,
+      [],
+      {},
+      { index_fingerprint: index.index_fingerprint },
+    ]) {
       const cursor = Buffer.from(JSON.stringify(payload)).toString("base64url");
       expect(() => analyzeDefectChangeRisk(index, {}, { cursor })).toThrow(
         "does not match this index",
@@ -219,8 +255,8 @@ describe("defect recurrence SDK", () => {
       [],
     );
     expect(
-      analyzeDefectChangeRisk(overlapping, { files: ["src/sdk/index.ts"] }).items[0]
-        ?.reasons,
+      analyzeDefectChangeRisk(overlapping, { files: ["src/sdk/index.ts"] })
+        .items[0]?.reasons,
     ).toHaveLength(2);
 
     const boundedPatternCache = buildDefectRecurrenceIndex(
@@ -229,7 +265,10 @@ describe("defect recurrence SDK", () => {
           triggers: {
             file_patterns: [
               "src/sdk/**",
-              ...Array.from({ length: 1_024 }, (_, index) => `generated/${index}.ts`),
+              ...Array.from(
+                { length: 1_024 },
+                (_, index) => `generated/${index}.ts`,
+              ),
             ],
           },
         }),
@@ -340,12 +379,34 @@ describe("defect recurrence SDK", () => {
           },
         },
         {
+          id: "pm-invalid-completed-at",
+          status: "closed",
+          type: "Issue",
+          created_at: "2026-08-16T12:02:00.000Z",
+          completed_at: "not-a-date",
+          escape_class: "production_defect",
+          gate_evidence: {
+            disposition: "gate_added",
+            gate_id: "completion-timestamp",
+            negative_control: "invalid completed_at is governed",
+            local_checks: ["pnpm test -- defect-recurrence"],
+            hosted_checks: ["CI / test-shard"],
+            owner: "pm-owner",
+          },
+        },
+        {
           id: "pm-unknown-disposition",
           status: "closed",
           type: "Issue",
           completed_at: "2026-08-16T11:58:00.000Z",
           escape_class: "production_defect",
           gate_evidence: { disposition: "unknown" },
+        },
+        {
+          id: "pm-legacy-missing-completion",
+          status: "closed",
+          type: "Issue",
+          created_at: "2026-08-16T11:30:00.000Z",
         },
       ],
       policy(),
@@ -354,23 +415,24 @@ describe("defect recurrence SDK", () => {
     );
 
     expect(report.ok).toBe(false);
-    expect(report.governed_item_count).toBe(7);
-    expect(report.classified_item_count).toBe(6);
+    expect(report.governed_item_count).toBe(8);
+    expect(report.classified_item_count).toBe(7);
     expect(report.class_counts).toEqual({
       nightly_regression: 1,
-      production_defect: 3,
+      production_defect: 4,
       review_caught_late: 1,
       scanner_finding: 1,
     });
     expect(report.evidence_disposition_counts).toEqual({
       explicit_waiver: 3,
-      gate_added: 1,
+      gate_added: 2,
       gate_strengthened: 0,
     });
     expect(report.findings.map((finding) => finding.kind)).toEqual([
       "expired_waiver",
       "invalid_escape_class",
       "invalid_gate_evidence",
+      "invalid_completion_timestamp",
       "invalid_gate_evidence",
       "missing_escape_class",
       "missing_gate_evidence",
@@ -378,12 +440,58 @@ describe("defect recurrence SDK", () => {
     ]);
   });
 
+  it("uses closed_at for legacy completion records and excludes undated pre-epoch history", () => {
+    const completeEvidence = {
+      escape_class: "production_defect" as const,
+      gate_evidence: {
+        disposition: "gate_added",
+        gate_id: "completion-compatibility",
+        negative_control: "missing completed_at remains governed",
+        local_checks: ["pnpm test -- defect-recurrence"],
+        hosted_checks: ["CI / test-shard"],
+        owner: "pm-owner",
+      },
+    };
+    const report = evaluateDefectGateEvidence(
+      [
+        {
+          id: "pm-closed-after-epoch",
+          status: "closed",
+          type: "Issue",
+          closed_at: "2026-08-16T12:01:00.000Z",
+          ...completeEvidence,
+        },
+        {
+          id: "pm-closed-before-epoch",
+          status: "closed",
+          type: "Issue",
+          closed_at: "2026-08-16T11:59:00.000Z",
+          ...completeEvidence,
+        },
+        { id: "pm-undated-legacy", status: "closed", type: "Issue" },
+      ],
+      policy(),
+      ["closed"],
+      new Date("2026-08-16T13:00:00.000Z"),
+    );
+    expect(report).toMatchObject({
+      ok: true,
+      governed_item_count: 1,
+      classified_item_count: 2,
+      findings: [],
+    });
+  });
+
   it("rejects malformed, duplicate, and unbounded policies", () => {
-    expect(() => parseDefectChangeRiskRequest(null)).toThrow("request must be an object");
+    expect(() => parseDefectChangeRiskRequest(null)).toThrow(
+      "request must be an object",
+    );
     expect(() => parseDefectChangeRiskRequest({ policy: policy() })).toThrow(
       "request.change must be an object",
     );
-    expect(() => parseDefectRecurrencePolicy(null)).toThrow("must be an object");
+    expect(() => parseDefectRecurrencePolicy(null)).toThrow(
+      "must be an object",
+    );
     expect(() => parseDefectRecurrencePolicy({ version: 1 })).toThrow(
       "families must be an array",
     );
@@ -393,15 +501,27 @@ describe("defect recurrence SDK", () => {
       [policy([family({ id: "" })]), "non-empty"],
       [policy([family(), family()]), "Duplicate"],
       [policy([family({ version: 0 })]), "positive integer"],
-      [policy([family({ escape_class: "other" as "production_defect" })]), "escape class"],
+      [
+        policy([family({ escape_class: "other" as "production_defect" })]),
+        "escape class",
+      ],
       [policy([family({ title: "" })]), "title"],
       [policy([family({ owner_item_id: "" })]), "owner_item_id"],
       [policy([family({ historical_item_ids: [] })]), "historical_item_ids"],
       [{ ...policy(), families: [null] }, "family must be an object"],
       [{ ...policy(), evidence_epoch: undefined }, "ISO timestamp"],
-      [policy([family({ historical_item_ids: undefined as never })]), "historical_item_ids"],
-      [policy([family({ historical_item_ids: [42] as never })]), "historical_item_ids"],
-      [policy([family({ triggers: null as never })]), "triggers must be an object"],
+      [
+        policy([family({ historical_item_ids: undefined as never })]),
+        "historical_item_ids",
+      ],
+      [
+        policy([family({ historical_item_ids: [42] as never })]),
+        "historical_item_ids",
+      ],
+      [
+        policy([family({ triggers: null as never })]),
+        "triggers must be an object",
+      ],
       [
         policy([family({ triggers: { package_names: [42] } as never })]),
         "triggers.package_names must be an array of strings",
@@ -432,10 +552,20 @@ describe("defect recurrence SDK", () => {
         ]),
         "requires numeric budgets",
       ],
-      [policy([family({ negative_control: null as never })]), "negative_control must be an object"],
-      [policy([family({ negative_control: {} })]), "negative_control must select"],
       [
-        policy([family({ budget: { max_escape_rate: -1, max_false_positive_rate: 2 } })]),
+        policy([family({ negative_control: null as never })]),
+        "negative_control must be an object",
+      ],
+      [
+        policy([family({ negative_control: {} })]),
+        "negative_control must select",
+      ],
+      [
+        policy([
+          family({
+            budget: { max_escape_rate: -1, max_false_positive_rate: 2 },
+          }),
+        ]),
         "between 0 and 1",
       ],
     ];
@@ -450,15 +580,23 @@ describe("defect recurrence SDK", () => {
         limit: 5,
       }),
     ).toMatchObject({ cursor: "cursor", limit: 5 });
-    expect(parseDefectChangeRiskRequest({ policy: policy(), change: {} })).toEqual({
+    expect(
+      parseDefectChangeRiskRequest({ policy: policy(), change: {} }),
+    ).toEqual({
       policy: policy(),
       change: {},
     });
     for (const [request, message] of [
       [{ policy: policy(), change: { files: [42] } }, "change.files"],
       [{ policy: policy(), change: {}, cursor: 42 }, "cursor must be a string"],
-      [{ policy: policy(), change: {}, limit: "5" }, "limit must be an integer"],
-      [{ policy: policy(), change: {}, limit: 1.5 }, "limit must be an integer"],
+      [
+        { policy: policy(), change: {}, limit: "5" },
+        "limit must be an integer",
+      ],
+      [
+        { policy: policy(), change: {}, limit: 1.5 },
+        "limit must be an integer",
+      ],
     ] as const) {
       expect(() => parseDefectChangeRiskRequest(request)).toThrow(message);
     }

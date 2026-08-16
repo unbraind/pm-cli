@@ -249,6 +249,7 @@ export interface DefectGateEvidenceFinding {
   kind:
     | "missing_escape_class"
     | "invalid_escape_class"
+    | "invalid_completion_timestamp"
     | "missing_gate_evidence"
     | "invalid_gate_evidence"
     | "expired_waiver";
@@ -285,7 +286,7 @@ const CHANGE_INPUT_FIELDS = [
 
 function uniqueSorted(values: readonly string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort(
-    (left, right) => left.localeCompare(right),
+    (left, right) => (left < right ? -1 : 1),
   );
 }
 
@@ -293,7 +294,10 @@ function fingerprint(value: unknown): string {
   return createHash("sha256").update(stableStringify(value)).digest("hex");
 }
 
-function assertNonEmpty(value: unknown, field: string): asserts value is string {
+function assertNonEmpty(
+  value: unknown,
+  field: string,
+): asserts value is string {
   if (typeof value !== "string" || !value.trim()) {
     throw new TypeError(`${field} must be a non-empty string`);
   }
@@ -304,10 +308,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+  return (
+    Array.isArray(value) && value.every((entry) => typeof entry === "string")
+  );
 }
 
-function assertChangeInput(value: unknown, field: string): DefectChangeRiskInput {
+function assertChangeInput(
+  value: unknown,
+  field: string,
+): DefectChangeRiskInput {
   if (!isRecord(value)) throw new TypeError(`${field} must be an object`);
   for (const key of CHANGE_INPUT_FIELDS) {
     if (value[key] !== undefined && !isStringArray(value[key])) {
@@ -317,11 +326,21 @@ function assertChangeInput(value: unknown, field: string): DefectChangeRiskInput
   return value as DefectChangeRiskInput;
 }
 
-function assertTriggers(value: unknown, familyId: string): asserts value is DefectRecurrenceTriggers {
+function assertTriggers(
+  value: unknown,
+  familyId: string,
+): asserts value is DefectRecurrenceTriggers {
   if (!isRecord(value)) {
-    throw new TypeError(`defect recurrence family ${familyId} triggers must be an object`);
+    throw new TypeError(
+      `defect recurrence family ${familyId} triggers must be an object`,
+    );
   }
-  for (const key of ["package_names", "item_ids", "tags", "error_codes"] as const) {
+  for (const key of [
+    "package_names",
+    "item_ids",
+    "tags",
+    "error_codes",
+  ] as const) {
     if (value[key] !== undefined && !isStringArray(value[key])) {
       throw new TypeError(
         `defect recurrence family ${familyId} triggers.${key} must be an array of strings`,
@@ -354,13 +373,20 @@ function assertFamilyIdentity(
   }
   ids.add(family.id);
   if (!Number.isInteger(family.version) || family.version < 1) {
-    throw new TypeError(`defect recurrence family ${family.id} version must be a positive integer`);
+    throw new TypeError(
+      `defect recurrence family ${family.id} version must be a positive integer`,
+    );
   }
   if (!DEFECT_ESCAPE_CLASSES.includes(family.escape_class)) {
-    throw new TypeError(`defect recurrence family ${family.id} has an invalid escape class`);
+    throw new TypeError(
+      `defect recurrence family ${family.id} has an invalid escape class`,
+    );
   }
   assertNonEmpty(family.title, `defect recurrence family ${family.id} title`);
-  assertNonEmpty(family.owner_item_id, `defect recurrence family ${family.id} owner_item_id`);
+  assertNonEmpty(
+    family.owner_item_id,
+    `defect recurrence family ${family.id} owner_item_id`,
+  );
 }
 
 /** Validate historical lineage and executable local and hosted check references. */
@@ -370,7 +396,9 @@ function assertFamilyEvidenceContracts(family: DefectRecurrenceFamily): void {
     family.historical_item_ids.length === 0 ||
     family.historical_item_ids.some((itemId) => !itemId.trim())
   ) {
-    throw new TypeError(`defect recurrence family ${family.id} requires historical_item_ids`);
+    throw new TypeError(
+      `defect recurrence family ${family.id} requires historical_item_ids`,
+    );
   }
   assertTriggers(family.triggers, family.id);
   if (
@@ -395,7 +423,9 @@ function assertFamilyBudget(family: DefectRecurrenceFamily): void {
     typeof family.budget.max_false_positive_rate !== "number" ||
     !Number.isFinite(family.budget.max_false_positive_rate)
   ) {
-    throw new TypeError(`defect recurrence family ${family.id} requires numeric budgets`);
+    throw new TypeError(
+      `defect recurrence family ${family.id} requires numeric budgets`,
+    );
   }
   if (
     family.budget.max_escape_rate < 0 ||
@@ -403,7 +433,9 @@ function assertFamilyBudget(family: DefectRecurrenceFamily): void {
     family.budget.max_false_positive_rate < 0 ||
     family.budget.max_false_positive_rate > 1
   ) {
-    throw new TypeError(`defect recurrence family ${family.id} budgets must be between 0 and 1`);
+    throw new TypeError(
+      `defect recurrence family ${family.id} budgets must be between 0 and 1`,
+    );
   }
 }
 
@@ -423,17 +455,22 @@ function assertFamilyNegativeControl(family: DefectRecurrenceFamily): void {
 /** Validate the complete recurrence policy before indexing or analysis. */
 function validatePolicy(policy: DefectRecurrencePolicy): void {
   if (policy.version !== 1) {
-    throw new TypeError(`Unsupported defect recurrence policy version ${policy.version}`);
+    throw new TypeError(
+      `Unsupported defect recurrence policy version ${policy.version}`,
+    );
   }
   if (
     typeof policy.evidence_epoch !== "string" ||
     !Number.isFinite(Date.parse(policy.evidence_epoch))
   ) {
-    throw new TypeError("defect recurrence evidence_epoch must be an ISO timestamp");
+    throw new TypeError(
+      "defect recurrence evidence_epoch must be an ISO timestamp",
+    );
   }
   const ids = new Set<string>();
   for (const family of policy.families) {
-    if (!isRecord(family)) throw new TypeError("defect recurrence family must be an object");
+    if (!isRecord(family))
+      throw new TypeError("defect recurrence family must be an object");
     assertFamilyIdentity(family, ids);
     assertFamilyEvidenceContracts(family);
     assertFamilyBudget(family);
@@ -461,21 +498,28 @@ function pathMatches(pattern: string, value: string): boolean {
 
 function itemSignals(item: AssuranceItemRecord): DefectChangeRiskInput {
   const files = (item.files ?? []).flatMap((entry) => {
-    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) return [];
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry))
+      return [];
     const value = (entry as { path?: unknown }).path;
     return typeof value === "string" ? [value] : [];
   });
   const packageNames = Array.isArray(item.package_names)
-    ? item.package_names.filter((value): value is string => typeof value === "string")
+    ? item.package_names.filter(
+        (value): value is string => typeof value === "string",
+      )
     : [];
   const errorCodes = Array.isArray(item.error_codes)
-    ? item.error_codes.filter((value): value is string => typeof value === "string")
+    ? item.error_codes.filter(
+        (value): value is string => typeof value === "string",
+      )
     : [];
   return {
     files,
     package_names: packageNames,
     item_ids: [item.id],
-    tags: item.tags ?? [],
+    tags: Array.isArray(item.tags)
+      ? item.tags.filter((value): value is string => typeof value === "string")
+      : [],
     error_codes: errorCodes,
   };
 }
@@ -488,7 +532,8 @@ function fileReasons(
   const patterns = uniqueSorted(family.triggers.file_patterns ?? []);
   for (const file of uniqueSorted(input.files ?? [])) {
     for (const pattern of patterns) {
-      if (pathMatches(pattern, file)) reasons.push({ signal: "file", value: file, matched: pattern });
+      if (pathMatches(pattern, file))
+        reasons.push({ signal: "file", value: file, matched: pattern });
     }
   }
   return reasons;
@@ -523,7 +568,8 @@ function exactReasons(
   for (const exact of exactSignals) {
     const triggerSet = new Set(exact.triggers);
     for (const value of exact.values) {
-      if (triggerSet.has(value)) reasons.push({ signal: exact.signal, value, matched: value });
+      if (triggerSet.has(value))
+        reasons.push({ signal: exact.signal, value, matched: value });
     }
   }
   return reasons;
@@ -561,7 +607,10 @@ function familyReasons(
   );
 }
 
-function readRiskCursorOffset(cursor: string | undefined, indexFingerprint: string): number {
+function readRiskCursorOffset(
+  cursor: string | undefined,
+  indexFingerprint: string,
+): number {
   if (!cursor) return 0;
   let parsed: unknown;
   try {
@@ -573,7 +622,8 @@ function readRiskCursorOffset(cursor: string | undefined, indexFingerprint: stri
     typeof parsed !== "object" ||
     parsed === null ||
     Array.isArray(parsed) ||
-    (parsed as { index_fingerprint?: unknown }).index_fingerprint !== indexFingerprint ||
+    (parsed as { index_fingerprint?: unknown }).index_fingerprint !==
+      indexFingerprint ||
     !Number.isInteger((parsed as { offset?: unknown }).offset) ||
     (parsed as { offset: number }).offset < 0
   ) {
@@ -599,10 +649,13 @@ export function buildDefectRecurrenceIndex(
   options: BuildDefectRecurrenceIndexOptions = {},
 ): DefectRecurrenceIndex {
   validatePolicy(policy);
-  const families = [...policy.families].sort((left, right) => left.id.localeCompare(right.id));
+  const families = [...policy.families].sort((left, right) =>
+    left.id < right.id ? -1 : 1,
+  );
   const policyFingerprint = fingerprint({ ...policy, families });
   const changed = new Set(options.changed_item_ids ?? []);
-  const canReuse = options.previous_index?.policy_fingerprint === policyFingerprint;
+  const canReuse =
+    options.previous_index?.policy_fingerprint === policyFingerprint;
   const itemFamilies: Record<string, string[]> = canReuse
     ? Object.fromEntries(
         Object.entries(options.previous_index?.item_families ?? {}).filter(
@@ -625,13 +678,16 @@ export function buildDefectRecurrenceIndex(
   }
   const sortedItemFamilies = Object.fromEntries(
     Object.entries(itemFamilies)
-      .sort(([left], [right]) => left.localeCompare(right))
+      .sort(([left], [right]) => (left < right ? -1 : 1))
       .map(([itemId, familyIds]) => [itemId, uniqueSorted(familyIds)]),
   );
   return {
     version: 1,
     policy_fingerprint: policyFingerprint,
-    index_fingerprint: fingerprint({ policy_fingerprint: policyFingerprint, item_families: sortedItemFamilies }),
+    index_fingerprint: fingerprint({
+      policy_fingerprint: policyFingerprint,
+      item_families: sortedItemFamilies,
+    }),
     families,
     item_families: sortedItemFamilies,
     build: {
@@ -650,7 +706,9 @@ export function analyzeDefectChangeRisk(
 ): DefectChangeRiskReport {
   const limit = options.limit ?? 25;
   if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
-    throw new TypeError("defect change-risk limit must be an integer from 1 through 100");
+    throw new TypeError(
+      "defect change-risk limit must be an integer from 1 through 100",
+    );
   }
   const offset = readRiskCursorOffset(options.cursor, index.index_fingerprint);
   const matches = index.families.flatMap((family) => {
@@ -675,7 +733,10 @@ export function analyzeDefectChangeRisk(
   const nextCursor =
     nextOffset < matches.length
       ? Buffer.from(
-          JSON.stringify({ index_fingerprint: index.index_fingerprint, offset: nextOffset }),
+          JSON.stringify({
+            index_fingerprint: index.index_fingerprint,
+            offset: nextOffset,
+          }),
         ).toString("base64url")
       : undefined;
   const reportWithoutCost = {
@@ -684,9 +745,16 @@ export function analyzeDefectChangeRisk(
     items: page,
     total: matches.length,
     ...(nextCursor ? { next_cursor: nextCursor } : {}),
-    required_local_checks: uniqueSorted(matches.flatMap((match) => match.local_checks)),
-    required_hosted_checks: uniqueSorted(matches.flatMap((match) => match.hosted_checks)),
-    row_contract: { row_keys: ["items"] as ["items"], jq_selector: ".items[]" as const },
+    required_local_checks: uniqueSorted(
+      matches.flatMap((match) => match.local_checks),
+    ),
+    required_hosted_checks: uniqueSorted(
+      matches.flatMap((match) => match.hosted_checks),
+    ),
+    row_contract: {
+      row_keys: ["items"] as ["items"],
+      jq_selector: ".items[]" as const,
+    },
   };
   return {
     ...reportWithoutCost,
@@ -694,7 +762,9 @@ export function analyzeDefectChangeRisk(
       families_evaluated: index.families.length,
       signals_evaluated: changeSignalCount(input),
       families_selected: matches.length,
-      estimated_output_tokens: Math.ceil(JSON.stringify(reportWithoutCost).length / 4),
+      estimated_output_tokens: Math.ceil(
+        JSON.stringify(reportWithoutCost).length / 4,
+      ),
     },
   };
 }
@@ -702,7 +772,11 @@ export function analyzeDefectChangeRisk(
 function isDefectItem(item: AssuranceItemRecord): boolean {
   return (
     item.type.toLowerCase() === "issue" ||
-    (item.tags ?? []).some((tag) => ["bug", "defect", "security"].includes(tag.toLowerCase()))
+    (Array.isArray(item.tags) ? item.tags : []).some(
+      (tag) =>
+        typeof tag === "string" &&
+        ["bug", "defect", "security"].includes(tag.toLowerCase()),
+    )
   );
 }
 
@@ -711,10 +785,15 @@ function nonEmptyString(value: unknown): value is string {
 }
 
 function nonEmptyStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.length > 0 && value.every(nonEmptyString);
+  return (
+    Array.isArray(value) && value.length > 0 && value.every(nonEmptyString)
+  );
 }
 
-function validEvidence(value: unknown, nowMs: number): { valid: boolean; expired: boolean } {
+function validEvidence(
+  value: unknown,
+  nowMs: number,
+): { valid: boolean; expired: boolean } {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return { valid: false, expired: false };
   }
@@ -753,13 +832,31 @@ function evidenceFindings(
   nowMs: number,
 ): DefectGateEvidenceFinding[] {
   const findings: DefectGateEvidenceFinding[] = [];
+  if (
+    !Number.isFinite(
+      Date.parse(
+        typeof item.completed_at === "string" ? item.completed_at : "",
+      ),
+    ) &&
+    !Number.isFinite(
+      Date.parse(typeof item.closed_at === "string" ? item.closed_at : ""),
+    )
+  ) {
+    findings.push({
+      item_id: item.id,
+      kind: "invalid_completion_timestamp",
+      detail: `${item.id} requires a valid completed_at or closed_at timestamp after the defect-evidence epoch.`,
+    });
+  }
   if (typeof item.escape_class !== "string") {
     findings.push({
       item_id: item.id,
       kind: "missing_escape_class",
       detail: `${item.id} requires escape_class after the defect-evidence epoch.`,
     });
-  } else if (!DEFECT_ESCAPE_CLASSES.includes(item.escape_class as DefectEscapeClass)) {
+  } else if (
+    !DEFECT_ESCAPE_CLASSES.includes(item.escape_class as DefectEscapeClass)
+  ) {
     findings.push({
       item_id: item.id,
       kind: "invalid_escape_class",
@@ -798,10 +895,19 @@ export function evaluateDefectGateEvidence(
   const epochMs = Date.parse(policy.evidence_epoch);
   const terminal = new Set(terminalStatuses);
   const governed = items.filter((item) => {
+    if (!terminal.has(item.status) || !isDefectItem(item)) return false;
     const completedAt = Date.parse(
       typeof item.completed_at === "string" ? item.completed_at : "",
     );
-    return terminal.has(item.status) && isDefectItem(item) && completedAt >= epochMs;
+    if (Number.isFinite(completedAt)) return completedAt >= epochMs;
+    const closedAt = Date.parse(
+      typeof item.closed_at === "string" ? item.closed_at : "",
+    );
+    if (Number.isFinite(closedAt)) return closedAt >= epochMs;
+    const createdAt = Date.parse(
+      typeof item.created_at === "string" ? item.created_at : "",
+    );
+    return Number.isFinite(createdAt) && createdAt >= epochMs;
   });
   const classCounts = Object.fromEntries(
     DEFECT_ESCAPE_CLASSES.map((escapeClass) => [escapeClass, 0]),
@@ -823,18 +929,23 @@ export function evaluateDefectGateEvidence(
       item.gate_evidence !== null &&
       !Array.isArray(item.gate_evidence)
     ) {
-      const disposition = (item.gate_evidence as { disposition?: unknown }).disposition;
+      const disposition = (item.gate_evidence as { disposition?: unknown })
+        .disposition;
       if (
         typeof disposition === "string" &&
         DEFECT_GATE_EVIDENCE_DISPOSITIONS.includes(
           disposition as DefectGateEvidenceDisposition,
         )
       ) {
-        evidenceDispositionCounts[disposition as DefectGateEvidenceDisposition] += 1;
+        evidenceDispositionCounts[
+          disposition as DefectGateEvidenceDisposition
+        ] += 1;
       }
     }
   }
-  const findings = governed.flatMap((item) => evidenceFindings(item, now.getTime()));
+  const findings = governed.flatMap((item) =>
+    evidenceFindings(item, now.getTime()),
+  );
   findings.sort((left, right) =>
     left.item_id !== right.item_id
       ? left.item_id.localeCompare(right.item_id)
@@ -851,7 +962,9 @@ export function evaluateDefectGateEvidence(
 }
 
 /** Parse an untrusted serialized policy without weakening runtime validation. */
-export function parseDefectRecurrencePolicy(value: unknown): DefectRecurrencePolicy {
+export function parseDefectRecurrencePolicy(
+  value: unknown,
+): DefectRecurrencePolicy {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new TypeError("defect recurrence policy must be an object");
   }
@@ -864,12 +977,17 @@ export function parseDefectRecurrencePolicy(value: unknown): DefectRecurrencePol
 }
 
 /** Parse an untrusted cross-transport change-risk request. */
-export function parseDefectChangeRiskRequest(value: unknown): DefectChangeRiskRequest {
+export function parseDefectChangeRiskRequest(
+  value: unknown,
+): DefectChangeRiskRequest {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new TypeError("defect change-risk request must be an object");
   }
   const request = value as Partial<DefectChangeRiskRequest>;
-  const change = assertChangeInput(request.change, "defect change-risk request.change");
+  const change = assertChangeInput(
+    request.change,
+    "defect change-risk request.change",
+  );
   if (request.cursor !== undefined && typeof request.cursor !== "string") {
     throw new TypeError("defect change-risk request.cursor must be a string");
   }

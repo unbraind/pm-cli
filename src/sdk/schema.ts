@@ -2437,6 +2437,10 @@ export function formatSchemaInferTypesHuman(
 
 /** Re-export so register-mutation can surface the hint in usage examples without importing the core module directly. */
 export { buildInvalidTypeHint };
+export type {
+  RuntimeFieldDefinition,
+  RuntimeFieldValueSchema,
+} from "../core/schema/fields-file.js";
 
 /** Public contract for test only schema command, shared by SDK and presentation-layer consumers. */
 export const _testOnlySchemaCommand = {

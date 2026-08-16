@@ -24,6 +24,13 @@
       "fixture_path": "tests/fixtures/boundaries/npm-local-package-spec.json"
     },
     {
+      "id": "git-rev-parse-commit",
+      "producer": "Git CLI",
+      "consumer": "src/sdk/governance/assurance-runtime.ts",
+      "format": "rev-parse commit output with one lowercase hexadecimal object id and trailing newline",
+      "fixture_path": "tests/fixtures/boundaries/git-rev-parse-commit.json"
+    },
+    {
       "id": "sentry-event-response",
       "producer": "Sentry Events API",
       "consumer": "scripts/release/sentry-release-gate.mjs",

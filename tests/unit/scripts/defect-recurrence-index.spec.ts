@@ -14,7 +14,9 @@ const recurrencePolicy = parseDefectRecurrencePolicy(
 
 describe("defect recurrence index benchmark", () => {
   it("runs the real index with default adapters and bounded test scale", async () => {
-    const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const stdout = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
 
     await expect(main([], { defaultItemCount: 2 })).resolves.toBe(0);
     expect(stdout).toHaveBeenCalledWith(expect.stringContaining("2 items"));
@@ -64,7 +66,9 @@ describe("defect recurrence index benchmark", () => {
   });
 
   it("rejects invalid scale and fails a nondeterministic index implementation", async () => {
-    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const stderr = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
     await expect(main(["--items", "0"])).resolves.toBe(2);
     expect(stderr).toHaveBeenCalledWith("--items must be a positive integer\n");
     stderr.mockRestore();
@@ -92,7 +96,9 @@ describe("defect recurrence index benchmark", () => {
     calls = 0;
     await expect(
       main(["--items", "1"], {
-        buildIndex: (...args: Parameters<typeof buildDefectRecurrenceIndex>) => ({
+        buildIndex: (
+          ...args: Parameters<typeof buildDefectRecurrenceIndex>
+        ) => ({
           ...buildDefectRecurrenceIndex(...args),
           index_fingerprint: `human-call-${calls++}`,
         }),
@@ -101,6 +107,28 @@ describe("defect recurrence index benchmark", () => {
       }),
     ).resolves.toBe(1);
     expect(humanOutput.join("")).toContain("FAIL");
+  });
+
+  it("rejects deterministic sparse output that differs from the rebuilt updated corpus", async () => {
+    const stdout: string[] = [];
+    await expect(
+      main(["--items", "2", "--json"], {
+        buildIndex: (
+          policy: Parameters<typeof buildDefectRecurrenceIndex>[0],
+          items: Parameters<typeof buildDefectRecurrenceIndex>[1],
+          options?: Parameters<typeof buildDefectRecurrenceIndex>[2],
+        ) =>
+          options?.previous_index
+            ? options.previous_index
+            : buildDefectRecurrenceIndex(policy, items),
+        memoryUsage: () => 0,
+        writeStdout: (value: string) => stdout.push(value),
+      }),
+    ).resolves.toBe(1);
+    expect(JSON.parse(stdout.join(""))).toMatchObject({
+      ok: false,
+      deterministic: false,
+    });
   });
 
   it("clamps a negative measured heap delta to zero", async () => {

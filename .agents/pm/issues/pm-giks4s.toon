@@ -1,0 +1,22 @@
+id: pm-giks4s
+title: Linked-test regular-file capture still aborts high-volume Vitest output with UNKNOWN synchronous write failure
+description: "Running the repository-wide coverage command directly passes 7,443 tests at exact 100/100/100/100, but recording and executing the identical command through pm test --run --only-index 4 aborts around 200 seconds after retained child output reaches the linked-test reporting boundary. Node raises Error: UNKNOWN: unknown error, write from SyncWriteStream._write while Vitest reports progress; coverage-summary.json is then absent and pm classifies the product-independent transport failure as assertion_failure. The earlier EAGAIN regressions were fixed with regular-file capture, so this is a distinct released-version recurrence at the reporter-to-parent output boundary."
+type: Issue
+status: open
+priority: 1
+tags[6]: coverage,infrastructure-classification,linked-test,output-capture,recurrence,test-harness
+created_at: "2026-08-16T22:25:26.735Z"
+updated_at: "2026-08-16T22:25:26.735Z"
+author: "harness:codex"
+acceptance_criteria: "A linked test whose child emits repository-coverage-scale output completes without EAGAIN, UNKNOWN write, broken pipe, or missing coverage artifact; Retained output remains bounded and exposes a truncation receipt without aborting the child or parent reporter; Infrastructure output-capture failures are classified separately from assertion failures"
+parent: pm-lm0j
+expected_result: pm test can execute the same verbose coverage command that passes directly and persist a bounded successful test-run receipt.
+actual_result: "Direct execution passed 7,443 tests at exact 100/100/100/100; linked execution failed after about 201 seconds with Node UNKNOWN write and no coverage-summary.json."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1qkivy,discovered_from,"2026-08-16T22:25:26.735Z","harness:codex","cli:create:dep",detected
+  pm-5sm91o,recurs_from,"2026-08-16T22:25:26.735Z","harness:codex","cli:create:dep",detected
+  pm-e97jyf,related,"2026-08-16T22:25:26.735Z","harness:codex","cli:create:dep",detected
+  pm-j36ypd,recurs_from,"2026-08-16T22:25:26.735Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-16T22:25:26.735Z","harness:codex","Duplicate check 2026-08-17: searched all statuses for linked test output buffer, max_buffer, stdout write, UNKNOWN write, EAGAIN, verbose child, and coverage capture. Closed pm-j36ypd and pm-5sm91o own two previously shipped EAGAIN fixes; their own lineage treats a released-version recurrence with contradictory evidence as a distinct child issue. Open pm-e97jyf covers schema-context divergence, not output transport. This item records the new UNKNOWN SyncWriteStream recurrence without reopening completed historical fixes."
+body: ""

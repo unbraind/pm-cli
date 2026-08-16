@@ -225,6 +225,8 @@ describe("recovery-reference reachability", () => {
       recovery: {
         suggested_retry: "pm list --json",
         candidate_commands: ["list", "search"],
+        fallback_candidates: [{ command: "pm context" }, { command: "" }, {}],
+        next_best_command: "pm search recurrence",
       },
       examples: ["pm list --status open"],
       next_steps: ["Run the bounded read"],
@@ -236,6 +238,8 @@ describe("recovery-reference reachability", () => {
       ["migration_hint", "replacement"],
       ["next_step", "recovery"],
       ["restore_with", "behavior_preserving"],
+      ["candidate_command", "recovery"],
+      ["candidate_command", "recovery"],
       ["candidate_command", "recovery"],
       ["candidate_command", "recovery"],
       ["suggested_retry", "recovery"],
@@ -250,6 +254,8 @@ describe("recovery-reference reachability", () => {
         content: `({
           suggested_retry: "pm list",
           candidate_commands: ["list"],
+          fallback_candidates: [{ command: "pm context" }],
+          next_best_command: "pm search",
           examples: ["pm list"],
           next_steps: ["Run it"],
           migration_hint: "Use the replacement",
@@ -260,10 +266,10 @@ describe("recovery-reference reachability", () => {
     expect(report).toMatchObject({
       ok: true,
       scanned_file_count: 1,
-      producer_count: 6,
+      producer_count: 8,
       producer_count_by_kind: {
         suggested_retry: 1,
-        candidate_command: 1,
+        candidate_command: 3,
         example: 1,
         next_step: 1,
         migration_hint: 1,
@@ -271,7 +277,10 @@ describe("recovery-reference reachability", () => {
       },
       findings: [],
     });
-    expect(report.producers[0]).toMatchObject({ path: "src/producer.ts", line: 2 });
+    expect(report.producers[0]).toMatchObject({
+      path: "src/producer.ts",
+      line: 2,
+    });
 
     const broken = censusPmRecoveryReferenceProducers([
       {
@@ -283,7 +292,9 @@ describe("recovery-reference reachability", () => {
     expect(broken.findings).toContainEqual(
       expect.objectContaining({ kind: "unknown_recovery_field" }),
     );
-    expect(broken.findings.filter(({ kind }) => kind === "missing_kind_producer")).toHaveLength(6);
+    expect(
+      broken.findings.filter(({ kind }) => kind === "missing_kind_producer"),
+    ).toHaveLength(6);
 
     const sorted = censusPmRecoveryReferenceProducers([
       { path: "src/z.ts", content: `({ examples: ["pm z"] })` },
@@ -292,7 +303,9 @@ describe("recovery-reference reachability", () => {
         content: `({ next_steps: ["Run"], examples: ["pm a"], candidate_command_total: 1 })`,
       },
     ]);
-    expect(sorted.producers.map(({ path, field }) => `${path}:${field}`)).toEqual([
+    expect(
+      sorted.producers.map(({ path, field }) => `${path}:${field}`),
+    ).toEqual([
       "src/a.ts:examples",
       "src/a.ts:next_steps",
       "src/z.ts:examples",
@@ -305,15 +318,28 @@ describe("recovery-reference reachability", () => {
           type RecoveryShape = { suggested_retry: string };
           // ({ candidate_command: "not executable" })
           const text = '({ examples: ["not executable"] })';
+          const destructured = { suggested_retry: ignored } = source;
+          const arrow = ({ examples: ignored }) => ignored;
+          function read({ migration_hint: ignored }: { migration_hint: string }) { return ignored; }
+          if (ready) { next_best_command: run(); }
+          const regex = /fallback_candidates:\\s*/u;
+          const template = \`restore_with: \${ignored}\`;
           const real = { "next_steps": ["Run it"] };
         `,
       },
       { path: "src/line-comment.ts", content: "// suggested_retry: never" },
-      { path: "src/block-comment.ts", content: "/* candidate_command: never */" },
+      {
+        path: "src/block-comment.ts",
+        content: "/* candidate_command: never */",
+      },
       { path: "src/identifier.ts", content: "identifier" },
     ]);
     expect(syntaxAware.producers).toEqual([
-      expect.objectContaining({ field: "next_steps", kind: "next_step", line: 5 }),
+      expect.objectContaining({
+        field: "next_steps",
+        kind: "next_step",
+        line: 11,
+      }),
     ]);
     expect(syntaxAware.producer_count_by_kind).toMatchObject({
       suggested_retry: 0,

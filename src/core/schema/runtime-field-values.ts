@@ -5,11 +5,15 @@
  */
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
+import { stableStringify } from "../shared/serialization.js";
 import {
   runtimeFieldOptionTarget,
   type RuntimeFieldDefinitionResolved,
   type RuntimeFieldRegistry,
 } from "./runtime-schema.js";
+import type { RuntimeFieldValueSchema } from "../../types/index.js";
+
+const MAX_VALUE_SCHEMA_DEPTH = 16;
 
 function toCamelToken(value: string): string {
   const segments = value
@@ -143,6 +147,140 @@ function parseJsonContainerValue(
   );
 }
 
+function valueMatchesSchemaType(
+  value: unknown,
+  type: RuntimeFieldValueSchema["type"],
+): boolean {
+  if (type === undefined) return true;
+  if (type === "array") return Array.isArray(value);
+  if (type === "object") {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  return typeof value === type;
+}
+
+function runtimeFieldPrimitiveSchemaError(
+  value: unknown,
+  schema: RuntimeFieldValueSchema,
+  path: string,
+): string | undefined {
+  if (
+    schema.const !== undefined &&
+    stableStringify(value) !== stableStringify(schema.const)
+  ) {
+    return `${path} must equal ${stableStringify(schema.const)}`;
+  }
+  if (
+    schema.enum !== undefined &&
+    !schema.enum.some(
+      (candidate) => stableStringify(candidate) === stableStringify(value),
+    )
+  ) {
+    return `${path} must be one of ${schema.enum.map((entry) => stableStringify(entry)).join("|")}`;
+  }
+  if (!valueMatchesSchemaType(value, schema.type)) {
+    return `${path} must match configured type ${String(schema.type)}`;
+  }
+  if (typeof value === "string") {
+    if (schema.min_length !== undefined && value.length < schema.min_length) {
+      return `${path} must contain at least ${schema.min_length} characters`;
+    }
+    if (schema.format === "date-time" && !Number.isFinite(Date.parse(value))) {
+      return `${path} must be an ISO date-time`;
+    }
+  }
+  return undefined;
+}
+
+function runtimeFieldArraySchemaError(
+  value: unknown,
+  schema: RuntimeFieldValueSchema,
+  path: string,
+  depth: number,
+): string | undefined {
+  if (!Array.isArray(value)) return undefined;
+  if (schema.min_items !== undefined && value.length < schema.min_items) {
+    return `${path} must contain at least ${schema.min_items} items`;
+  }
+  if (!schema.items) return undefined;
+  for (const [index, entry] of value.entries()) {
+    const error = runtimeFieldSchemaError(
+      entry,
+      schema.items,
+      `${path}[${index}]`,
+      depth + 1,
+    );
+    if (error) return error;
+  }
+  return undefined;
+}
+
+function runtimeFieldObjectSchemaError(
+  value: unknown,
+  schema: RuntimeFieldValueSchema,
+  path: string,
+  depth: number,
+): string | undefined {
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    return undefined;
+  const record = value as Record<string, unknown>;
+  for (const key of schema.required ?? []) {
+    if (!Object.hasOwn(record, key)) return `${path}.${key} is required`;
+  }
+  for (const [key, entry] of Object.entries(record)) {
+    const propertySchema = schema.properties?.[key];
+    if (!propertySchema) {
+      if (schema.additional_properties === false)
+        return `${path}.${key} is not allowed`;
+      continue;
+    }
+    const error = runtimeFieldSchemaError(
+      entry,
+      propertySchema,
+      `${path}.${key}`,
+      depth + 1,
+    );
+    if (error) return error;
+  }
+  return undefined;
+}
+
+/** Return the first semantic schema mismatch without mutating the input value. */
+function runtimeFieldSchemaError(
+  value: unknown,
+  schema: RuntimeFieldValueSchema,
+  path: string,
+  depth = 0,
+): string | undefined {
+  if (depth > MAX_VALUE_SCHEMA_DEPTH)
+    return `${path} value schema exceeds maximum depth`;
+  const directError = runtimeFieldPrimitiveSchemaError(value, schema, path);
+  if (directError) return directError;
+  const arrayError = runtimeFieldArraySchemaError(value, schema, path, depth);
+  if (arrayError) return arrayError;
+  const objectError = runtimeFieldObjectSchemaError(value, schema, path, depth);
+  if (objectError) return objectError;
+  if (!schema.one_of) return undefined;
+  const matches = schema.one_of.filter(
+    (candidate) =>
+      runtimeFieldSchemaError(value, candidate, path, depth + 1) === undefined,
+  ).length;
+  return matches === 1
+    ? undefined
+    : `${path} must match exactly one configured schema variant`;
+}
+
+function validateRuntimeFieldValue(
+  definition: RuntimeFieldDefinitionResolved,
+  value: unknown,
+  label: string,
+): unknown {
+  if (!definition.value_schema || value === undefined) return value;
+  const error = runtimeFieldSchemaError(value, definition.value_schema, label);
+  if (error) throw new PmCliError(error, EXIT_CODE.USAGE);
+  return value;
+}
+
 /** Implements coerce runtime field value for the public runtime surface of this module. */
 export function coerceRuntimeFieldValue(
   definition: RuntimeFieldDefinitionResolved,
@@ -157,17 +295,29 @@ export function coerceRuntimeFieldValue(
     if (containerRaw === undefined) {
       return undefined;
     }
-    return parseJsonContainerValue(containerRaw, label, definition.type);
+    return validateRuntimeFieldValue(
+      definition,
+      parseJsonContainerValue(containerRaw, label, definition.type),
+      label,
+    );
   }
   if (definition.repeatable || definition.type === "string_array") {
     const values = normalizeStringArrayValue(rawValue);
     if (definition.type === "number") {
-      return values.map((value) => parseNumberValue(value, label));
+      return validateRuntimeFieldValue(
+        definition,
+        values.map((value) => parseNumberValue(value, label)),
+        label,
+      );
     }
     if (definition.type === "boolean") {
-      return values.map((value) => parseBooleanValue(value, label));
+      return validateRuntimeFieldValue(
+        definition,
+        values.map((value) => parseBooleanValue(value, label)),
+        label,
+      );
     }
-    return values;
+    return validateRuntimeFieldValue(definition, values, label);
   }
 
   const scalarRaw = Array.isArray(rawValue)
@@ -177,12 +327,24 @@ export function coerceRuntimeFieldValue(
     return undefined;
   }
   if (definition.type === "number") {
-    return parseNumberValue(scalarRaw, label);
+    return validateRuntimeFieldValue(
+      definition,
+      parseNumberValue(scalarRaw, label),
+      label,
+    );
   }
   if (definition.type === "boolean") {
-    return parseBooleanValue(scalarRaw, label);
+    return validateRuntimeFieldValue(
+      definition,
+      parseBooleanValue(scalarRaw, label),
+      label,
+    );
   }
-  return typeof scalarRaw === "string" ? scalarRaw : String(scalarRaw);
+  return validateRuntimeFieldValue(
+    definition,
+    typeof scalarRaw === "string" ? scalarRaw : String(scalarRaw),
+    label,
+  );
 }
 
 function shouldRequireFieldOnCreate(

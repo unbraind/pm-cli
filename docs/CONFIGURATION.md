@@ -156,7 +156,7 @@ Telemetry is opt-in via `pm config set telemetry-tracking on` (see [Common Setti
 | `PM_TELEMETRY_OTEL_DISABLED`         | boolean                                       | Disable only OTLP trace-span export; the event queue still flushes.                                                                             |
 | `PM_TELEMETRY_INLINE_FLUSH`          | boolean                                       | Flush the queue and OTLP spans inline instead of dispatching the detached worker. Mainly for tests; normal use relies on the background worker. |
 | `PM_TELEMETRY_SOURCE_CONTEXT`        | `user` \| `automation` \| `test` \| `dogfood` | Override the inferred source context recorded on each event. Any other value is ignored and the context is inferred.                            |
-| `PM_TELEMETRY_HTTP_TIMEOUT_MS`        | integer milliseconds                          | Bound each background event or OTLP request (default `20000`, clamped to `1000`–`25000` to stay below the worker lock TTL).                     |
+| `PM_TELEMETRY_HTTP_TIMEOUT_MS`       | integer milliseconds                          | Bound each background event or OTLP request (default `20000`, clamped to `1000`–`25000` to stay below the worker lock TTL).                     |
 | `PM_TELEMETRY_INGEST_KEY`            | string                                        | Sent as the `x-pm-telemetry-key` header on queue flushes; never logged.                                                                         |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | URL                                           | OTLP/HTTP traces endpoint for command spans. Takes precedence over the base endpoint.                                                           |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`        | URL                                           | Base OTLP endpoint; the traces endpoint is derived by appending `/v1/traces`.                                                                   |
@@ -523,6 +523,11 @@ Fields live in `.agents/pm/schema/fields.json` with the shape `{ "fields": [Runt
       "required_on_create": false, // required only on create
       "allow_unset": true, // allow clearing via --component "" / --no-component
       "required_types": ["Task"], // only required for these item types (subset of required*)
+      "value_schema": {
+        // optional recursive semantic constraints
+        "type": "string",
+        "enum": ["frontend", "backend", "operations"],
+      },
     },
   ],
 }
@@ -541,6 +546,7 @@ Fields live in `.agents/pm/schema/fields.json` with the shape `{ "fields": [Runt
 - `allow_unset` — when `true` (default), the field can be cleared; when `false`, an explicit unset is rejected.
 - `required_types` — narrows `required`/`required_on_create` to only the listed item types.
 - `description` — surfaced in `--help`.
+- `value_schema` — optional recursive JSON-value validation applied after CLI coercion and before create/update persistence. It supports `type`, `const`, `enum`, `min_length`, `min_items`, `format: "date-time"`, object `properties`/`required`/`additional_properties`, array `items`, and exact-one `one_of` variants. This lets project-defined fields enforce domain semantics without custom command code.
 
 End-to-end example — add a required-on-create `component` string field on `Task` items:
 
@@ -558,6 +564,37 @@ End-to-end example — add a required-on-create `component` string field on `Tas
       "required_types": ["Task"],
     },
   ],
+}
+```
+
+Object schemas can model discriminated evidence contracts. The following accepts either complete gate proof or an expiring waiver and rejects unknown keys:
+
+```jsonc
+{
+  "key": "gate_evidence",
+  "type": "object",
+  "value_schema": {
+    "type": "object",
+    "required": ["disposition", "owner"],
+    "additional_properties": false,
+    "properties": {
+      "disposition": { "enum": ["gate_added", "explicit_waiver"] },
+      "owner": { "type": "string", "min_length": 1 },
+      "gate_id": { "type": "string", "min_length": 1 },
+      "waiver_reason": { "type": "string", "min_length": 1 },
+      "waiver_expires_at": { "type": "string", "format": "date-time" },
+    },
+    "one_of": [
+      {
+        "properties": { "disposition": { "const": "gate_added" } },
+        "required": ["gate_id"],
+      },
+      {
+        "properties": { "disposition": { "const": "explicit_waiver" } },
+        "required": ["waiver_reason", "waiver_expires_at"],
+      },
+    ],
+  },
 }
 ```
 

@@ -10,9 +10,14 @@ import type {
   RuntimeFieldDefinitionResolved,
   RuntimeFieldRegistry,
 } from "../../../../src/core/schema/runtime-schema.js";
-import type { RuntimeFieldType } from "../../../../src/types/index.js";
+import type {
+  RuntimeFieldType,
+  RuntimeFieldValueSchema,
+} from "../../../../src/types/index.js";
 
-function makeField(overrides: Partial<RuntimeFieldDefinitionResolved> = {}): RuntimeFieldDefinitionResolved {
+function makeField(
+  overrides: Partial<RuntimeFieldDefinitionResolved> = {},
+): RuntimeFieldDefinitionResolved {
   const key = overrides.key ?? "story_points";
   return {
     key,
@@ -21,17 +26,24 @@ function makeField(overrides: Partial<RuntimeFieldDefinitionResolved> = {}): Run
     cli_aliases: overrides.cli_aliases ?? [],
     description: overrides.description,
     type: (overrides.type ?? "string") as RuntimeFieldType,
-    commands: overrides.commands ?? (["create", "update"] as RuntimeFieldCommand[]),
+    commands:
+      overrides.commands ?? (["create", "update"] as RuntimeFieldCommand[]),
     repeatable: overrides.repeatable ?? false,
     required: overrides.required ?? false,
     required_on_create: overrides.required_on_create ?? false,
     required_types: overrides.required_types ?? [],
     allow_unset: overrides.allow_unset ?? true,
+    value_schema: overrides.value_schema,
   };
 }
 
-function makeRegistry(definitions: RuntimeFieldDefinitionResolved[]): RuntimeFieldRegistry {
-  const commandToFields = new Map<RuntimeFieldCommand, RuntimeFieldDefinitionResolved[]>();
+function makeRegistry(
+  definitions: RuntimeFieldDefinitionResolved[],
+): RuntimeFieldRegistry {
+  const commandToFields = new Map<
+    RuntimeFieldCommand,
+    RuntimeFieldDefinitionResolved[]
+  >();
   for (const definition of definitions) {
     for (const command of definition.commands) {
       const existing = commandToFields.get(command) ?? [];
@@ -41,8 +53,12 @@ function makeRegistry(definitions: RuntimeFieldDefinitionResolved[]): RuntimeFie
   }
   return {
     definitions,
-    by_key: new Map(definitions.map((definition) => [definition.key, definition])),
-    by_cli_token: new Map(definitions.map((definition) => [definition.cli_flag, definition])),
+    by_key: new Map(
+      definitions.map((definition) => [definition.key, definition]),
+    ),
+    by_cli_token: new Map(
+      definitions.map((definition) => [definition.cli_flag, definition]),
+    ),
     command_to_fields: commandToFields,
   };
 }
@@ -55,12 +71,16 @@ describe("readRuntimeFieldOptionValue", () => {
 
   it("returns undefined when no candidate key present", () => {
     const field = makeField({ key: "story_points" });
-    expect(readRuntimeFieldOptionValue({ unrelated: 1 }, field)).toBeUndefined();
+    expect(
+      readRuntimeFieldOptionValue({ unrelated: 1 }, field),
+    ).toBeUndefined();
   });
 
   it("skips a present-but-undefined candidate and falls through", () => {
     const field = makeField({ key: "story_points" });
-    expect(readRuntimeFieldOptionValue({ storyPoints: undefined }, field)).toBeUndefined();
+    expect(
+      readRuntimeFieldOptionValue({ storyPoints: undefined }, field),
+    ).toBeUndefined();
   });
 
   it("falls back through alias camel tokens", () => {
@@ -107,7 +127,9 @@ describe("coerceRuntimeFieldValue scalar paths", () => {
 
   it("uses the label override in number parse errors", () => {
     const field = makeField({ type: "number" });
-    expect(() => coerceRuntimeFieldValue(field, "nope", "story points")).toThrow(/story points must be a number/);
+    expect(() =>
+      coerceRuntimeFieldValue(field, "nope", "story points"),
+    ).toThrow(/story points must be a number/);
   });
 });
 
@@ -125,21 +147,36 @@ describe("coerceRuntimeFieldValue repeatable / array paths", () => {
 
   it("maps multiple values to booleans for a repeatable boolean field", () => {
     const field = makeField({ type: "boolean", repeatable: true });
-    expect(coerceRuntimeFieldValue(field, ["true", "0", "yes"])).toEqual([true, false, true]);
+    expect(coerceRuntimeFieldValue(field, ["true", "0", "yes"])).toEqual([
+      true,
+      false,
+      true,
+    ]);
   });
 
   it("returns string list for a plain string_array field", () => {
-    const field = makeField({ type: "string_array" as RuntimeFieldType, repeatable: true });
+    const field = makeField({
+      type: "string_array" as RuntimeFieldType,
+      repeatable: true,
+    });
     expect(coerceRuntimeFieldValue(field, "a, b ,c")).toEqual(["a", "b", "c"]);
   });
 
   it("drops null/undefined entries when normalizing an array", () => {
-    const field = makeField({ type: "string_array" as RuntimeFieldType, repeatable: true });
-    expect(coerceRuntimeFieldValue(field, ["a", null, undefined, "b"])).toEqual(["a", "b"]);
+    const field = makeField({
+      type: "string_array" as RuntimeFieldType,
+      repeatable: true,
+    });
+    expect(coerceRuntimeFieldValue(field, ["a", null, undefined, "b"])).toEqual(
+      ["a", "b"],
+    );
   });
 
   it("coerces a non-string scalar entry to its string form in a string_array", () => {
-    const field = makeField({ type: "string_array" as RuntimeFieldType, repeatable: true });
+    const field = makeField({
+      type: "string_array" as RuntimeFieldType,
+      repeatable: true,
+    });
     expect(coerceRuntimeFieldValue(field, [7])).toEqual(["7"]);
   });
 
@@ -158,9 +195,9 @@ describe("coerceRuntimeFieldValue repeatable / array paths", () => {
   it("accepts already-parsed containers and the last repeated CLI value", () => {
     const arrayField = makeField({ type: "array" });
     const objectField = makeField({ type: "object" });
-    expect(coerceRuntimeFieldValue(arrayField, [["first"], '["last"]'])).toEqual([
-      "last",
-    ]);
+    expect(
+      coerceRuntimeFieldValue(arrayField, [["first"], '["last"]']),
+    ).toEqual(["last"]);
     expect(coerceRuntimeFieldValue(objectField, { nested: true })).toEqual({
       nested: true,
     });
@@ -176,7 +213,129 @@ describe("coerceRuntimeFieldValue repeatable / array paths", () => {
     expect(() =>
       coerceRuntimeFieldValue(makeField({ type: "object" }), "null"),
     ).toThrow("must be valid JSON object");
-    expect(coerceRuntimeFieldValue(makeField({ type: "array" }), undefined)).toBeUndefined();
+    expect(
+      coerceRuntimeFieldValue(makeField({ type: "array" }), undefined),
+    ).toBeUndefined();
+  });
+});
+
+describe("coerceRuntimeFieldValue semantic schema paths", () => {
+  it("enforces scalar enums and semantic string formats", () => {
+    const escapeClass = makeField({
+      value_schema: {
+        type: "string",
+        enum: ["production_defect", "scanner_finding"],
+      },
+    });
+    expect(coerceRuntimeFieldValue(escapeClass, "scanner_finding")).toBe(
+      "scanner_finding",
+    );
+    expect(() => coerceRuntimeFieldValue(escapeClass, "unknown")).toThrow(
+      "must be one of",
+    );
+    expect(() =>
+      coerceRuntimeFieldValue(
+        makeField({ value_schema: { type: "string", format: "date-time" } }),
+        "not-a-date",
+      ),
+    ).toThrow("must be an ISO date-time");
+  });
+
+  it("enforces object properties, required fields, arrays, and exact variants", () => {
+    const evidence = makeField({
+      type: "object",
+      value_schema: {
+        type: "object",
+        required: ["disposition", "owner"],
+        additional_properties: false,
+        properties: {
+          disposition: { type: "string" },
+          owner: { type: "string", min_length: 1 },
+          checks: {
+            type: "array",
+            min_items: 1,
+            items: { type: "string", min_length: 1 },
+          },
+        },
+        one_of: [
+          {
+            properties: { disposition: { const: "gate_added" } },
+            required: ["checks"],
+          },
+          { properties: { disposition: { const: "explicit_waiver" } } },
+        ],
+      },
+    });
+    expect(
+      coerceRuntimeFieldValue(evidence, {
+        disposition: "gate_added",
+        owner: "pm-owner",
+        checks: ["pnpm test"],
+      }),
+    ).toMatchObject({ disposition: "gate_added" });
+    expect(() =>
+      coerceRuntimeFieldValue(evidence, {
+        disposition: "gate_added",
+        owner: "pm-owner",
+      }),
+    ).toThrow("exactly one configured schema variant");
+    expect(() =>
+      coerceRuntimeFieldValue(evidence, {
+        disposition: "gate_added",
+        owner: "pm-owner",
+        checks: [],
+      }),
+    ).toThrow("at least 1 items");
+    expect(() =>
+      coerceRuntimeFieldValue(evidence, {
+        disposition: "explicit_waiver",
+        owner: "",
+      }),
+    ).toThrow("at least 1 characters");
+    expect(() =>
+      coerceRuntimeFieldValue(evidence, {
+        disposition: "explicit_waiver",
+        owner: "pm-owner",
+        unexpected: true,
+      }),
+    ).toThrow("is not allowed");
+  });
+
+  it("rejects a mismatched type and excessively recursive schemas", () => {
+    expect(() =>
+      coerceRuntimeFieldValue(
+        makeField({ value_schema: { type: "number" } }),
+        "string",
+      ),
+    ).toThrow("must match configured type number");
+    const recursive: RuntimeFieldValueSchema = {};
+    recursive.properties = { nested: recursive };
+    let nested: Record<string, unknown> = {};
+    for (let depth = 0; depth < 18; depth += 1) nested = { nested };
+    expect(() =>
+      coerceRuntimeFieldValue(
+        makeField({ type: "object", value_schema: recursive }),
+        nested,
+      ),
+    ).toThrow("exceeds maximum depth");
+    expect(
+      coerceRuntimeFieldValue(
+        makeField({ type: "array", value_schema: { type: "array" } }),
+        "[]",
+      ),
+    ).toEqual([]);
+    expect(() =>
+      coerceRuntimeFieldValue(
+        makeField({
+          type: "array",
+          value_schema: {
+            type: "array",
+            items: { type: "string", min_length: 1 },
+          },
+        }),
+        '[""]',
+      ),
+    ).toThrow("must contain at least 1 characters");
   });
 });
 
@@ -197,12 +356,17 @@ describe("parseBooleanValue branches via repeatable boolean coerce", () => {
 
   it("maps the false-family string tokens", () => {
     const field = makeField({ type: "boolean", repeatable: true });
-    expect(coerceRuntimeFieldValue(field, ["false", "no"])).toEqual([false, false]);
+    expect(coerceRuntimeFieldValue(field, ["false", "no"])).toEqual([
+      false,
+      false,
+    ]);
   });
 
   it("throws on an unrecognized boolean token", () => {
     const field = makeField({ type: "boolean", repeatable: true });
-    expect(() => coerceRuntimeFieldValue(field, ["maybe"])).toThrow(/must be one of true\|false\|1\|0\|yes\|no/);
+    expect(() => coerceRuntimeFieldValue(field, ["maybe"])).toThrow(
+      /must be one of true\|false\|1\|0\|yes\|no/,
+    );
   });
 
   it("throws on an out-of-range numeric scalar boolean", () => {
@@ -215,7 +379,9 @@ describe("parseNumberValue String(raw) branch via coerce", () => {
   it("stringifies a non-string non-finite raw before Number()", () => {
     const field = makeField({ type: "number", repeatable: true });
     // boolean true -> String(true) = "true" -> Number = NaN -> throws.
-    expect(() => coerceRuntimeFieldValue(field, [true])).toThrow(/must be a number/);
+    expect(() => coerceRuntimeFieldValue(field, [true])).toThrow(
+      /must be a number/,
+    );
   });
 
   it("stringifies a numeric-coercible non-string (boolean inside object array) and parses", () => {
@@ -225,14 +391,20 @@ describe("parseNumberValue String(raw) branch via coerce", () => {
     // so reach String(raw) with a non-string scalar in the scalar path instead.
     const scalar = makeField({ type: "number" });
     // Pass a boolean scalar: typeof !== string, not finite number -> String(true) -> NaN -> throws
-    expect(() => coerceRuntimeFieldValue(scalar, true)).toThrow(/must be a number/);
+    expect(() => coerceRuntimeFieldValue(scalar, true)).toThrow(
+      /must be a number/,
+    );
   });
 });
 
 describe("toCamelToken empty-segment branch", () => {
   it("returns the original value when the key has no alphanumerics", () => {
     // A field whose key normalizes to no alnum segments forces the early return.
-    const field = makeField({ key: "story_points", cli_flag: "---", cli_aliases: [] });
+    const field = makeField({
+      key: "story_points",
+      cli_flag: "---",
+      cli_aliases: [],
+    });
     // The candidate keys include toCamelToken(cli_flag="---") which has no alnum
     // segments and must return "---" verbatim; reading that key proves the branch.
     expect(readRuntimeFieldOptionValue({ "---": "v" }, field)).toBe("v");
@@ -242,30 +414,57 @@ describe("toCamelToken empty-segment branch", () => {
 describe("collectRuntimeCreateFieldValues", () => {
   it("collects provided values and reports missing required flags sorted+deduped", () => {
     const provided = makeField({ key: "story_points", type: "number" });
-    const requiredZeta = makeField({ key: "zeta", cli_flag: "zeta", required: true });
-    const requiredAlpha = makeField({ key: "alpha", cli_flag: "alpha", required_on_create: true });
+    const requiredZeta = makeField({
+      key: "zeta",
+      cli_flag: "zeta",
+      required: true,
+    });
+    const requiredAlpha = makeField({
+      key: "alpha",
+      cli_flag: "alpha",
+      required_on_create: true,
+    });
     const registry = makeRegistry([provided, requiredZeta, requiredAlpha]);
-    const result = collectRuntimeCreateFieldValues({ storyPoints: "3" }, registry, undefined);
+    const result = collectRuntimeCreateFieldValues(
+      { storyPoints: "3" },
+      registry,
+      undefined,
+    );
     expect(result.values).toEqual({ story_points: 3 });
     expect(result.missing_required_flags).toEqual(["--alpha", "--zeta"]);
   });
 
   it("does not require a typed-scoped field when itemType does not match", () => {
-    const scoped = makeField({ key: "sprint", cli_flag: "sprint", required: true, required_types: ["bug"] });
+    const scoped = makeField({
+      key: "sprint",
+      cli_flag: "sprint",
+      required: true,
+      required_types: ["bug"],
+    });
     const registry = makeRegistry([scoped]);
     const result = collectRuntimeCreateFieldValues({}, registry, "task");
     expect(result.missing_required_flags).toEqual([]);
   });
 
   it("requires a typed-scoped field when itemType matches", () => {
-    const scoped = makeField({ key: "sprint", cli_flag: "sprint", required: true, required_types: ["Bug"] });
+    const scoped = makeField({
+      key: "sprint",
+      cli_flag: "sprint",
+      required: true,
+      required_types: ["Bug"],
+    });
     const registry = makeRegistry([scoped]);
     const result = collectRuntimeCreateFieldValues({}, registry, "bug");
     expect(result.missing_required_flags).toEqual(["--sprint"]);
   });
 
   it("does not require a scoped field when no itemType supplied", () => {
-    const scoped = makeField({ key: "sprint", cli_flag: "sprint", required: true, required_types: ["bug"] });
+    const scoped = makeField({
+      key: "sprint",
+      cli_flag: "sprint",
+      required: true,
+      required_types: ["bug"],
+    });
     const registry = makeRegistry([scoped]);
     const result = collectRuntimeCreateFieldValues({}, registry, undefined);
     expect(result.missing_required_flags).toEqual([]);
@@ -288,35 +487,73 @@ describe("collectRuntimeCreateFieldValues", () => {
 
 describe("collectRuntimeUpdateFieldValues", () => {
   it("collects update values and de-dupes by metadata key across commands", () => {
-    const updateField = makeField({ key: "story_points", type: "number", commands: ["update"] });
-    const manyField = makeField({ key: "story_points", type: "number", commands: ["update_many"] });
+    const updateField = makeField({
+      key: "story_points",
+      type: "number",
+      commands: ["update"],
+    });
+    const manyField = makeField({
+      key: "story_points",
+      type: "number",
+      commands: ["update_many"],
+    });
     const registry = makeRegistry([updateField, manyField]);
-    const values = collectRuntimeUpdateFieldValues({ storyPoints: "9" }, registry, ["update", "update_many"]);
+    const values = collectRuntimeUpdateFieldValues(
+      { storyPoints: "9" },
+      registry,
+      ["update", "update_many"],
+    );
     expect(values).toEqual({ story_points: 9 });
   });
 
   it("skips fields without a provided value", () => {
-    const field = makeField({ key: "notes", cli_flag: "notes", commands: ["update"] });
+    const field = makeField({
+      key: "notes",
+      cli_flag: "notes",
+      commands: ["update"],
+    });
     const registry = makeRegistry([field]);
-    expect(collectRuntimeUpdateFieldValues({}, registry, ["update"])).toEqual({});
+    expect(collectRuntimeUpdateFieldValues({}, registry, ["update"])).toEqual(
+      {},
+    );
   });
 
   it("defaults to the update command when commands is null", () => {
-    const field = makeField({ key: "notes", cli_flag: "notes", commands: ["update"] });
+    const field = makeField({
+      key: "notes",
+      cli_flag: "notes",
+      commands: ["update"],
+    });
     const registry = makeRegistry([field]);
-    expect(collectRuntimeUpdateFieldValues({ notes: "hi" }, registry, null)).toEqual({ notes: "hi" });
+    expect(
+      collectRuntimeUpdateFieldValues({ notes: "hi" }, registry, null),
+    ).toEqual({ notes: "hi" });
   });
 
   it("defaults to the update command when commands omitted", () => {
-    const field = makeField({ key: "notes", cli_flag: "notes", commands: ["update"] });
+    const field = makeField({
+      key: "notes",
+      cli_flag: "notes",
+      commands: ["update"],
+    });
     const registry = makeRegistry([field]);
-    expect(collectRuntimeUpdateFieldValues({ notes: "hi" }, registry)).toEqual({ notes: "hi" });
+    expect(collectRuntimeUpdateFieldValues({ notes: "hi" }, registry)).toEqual({
+      notes: "hi",
+    });
   });
 
   it("yields no values for a command absent from the registry map", () => {
-    const field = makeField({ key: "notes", cli_flag: "notes", commands: ["update"] });
+    const field = makeField({
+      key: "notes",
+      cli_flag: "notes",
+      commands: ["update"],
+    });
     const registry = makeRegistry([field]);
     // update_many has no entry in command_to_fields -> exercises the `?? []` fallback.
-    expect(collectRuntimeUpdateFieldValues({ notes: "hi" }, registry, ["update_many"])).toEqual({});
+    expect(
+      collectRuntimeUpdateFieldValues({ notes: "hi" }, registry, [
+        "update_many",
+      ]),
+    ).toEqual({});
   });
 });

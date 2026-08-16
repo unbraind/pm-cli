@@ -17,7 +17,9 @@ import {
 
 function readItemCount(argv, defaultItemCount) {
   const itemFlagIndex = argv.indexOf("--items");
-  return itemFlagIndex === -1 ? defaultItemCount : Number(argv[itemFlagIndex + 1]);
+  return itemFlagIndex === -1
+    ? defaultItemCount
+    : Number(argv[itemFlagIndex + 1]);
 }
 
 async function readPolicy(repositoryRoot, providedPolicy) {
@@ -43,17 +45,21 @@ function measureIndex(policy, itemCount, options) {
   const fullStarted = options.now();
   const full = options.buildIndex(policy, items);
   const fullDurationMs = options.now() - fullStarted;
-  const changedItems = items.slice(0, Math.min(1_000, itemCount)).map((item) => ({
-    ...item,
-    tags: ["review-feedback"],
-  }));
+  const changedItems = items
+    .slice(0, Math.min(1_000, itemCount))
+    .map((item) => ({
+      ...item,
+      tags: ["review-feedback"],
+    }));
   const changedItemIds = changedItems.map((item) => item.id);
+  const updatedItems = [...changedItems, ...items.slice(changedItems.length)];
   const incrementalStarted = options.now();
   const incremental = options.buildIndex(policy, changedItems, {
     previous_index: full,
     changed_item_ids: changedItemIds,
   });
   const incrementalDurationMs = options.now() - incrementalStarted;
+  const rebuiltUpdated = options.buildIndex(policy, updatedItems);
   const repeatedFull = options.buildIndex(policy, items);
   const repeatedIncremental = options.buildIndex(policy, changedItems, {
     previous_index: repeatedFull,
@@ -67,7 +73,8 @@ function measureIndex(policy, itemCount, options) {
     heapDeltaBytes: Math.max(0, options.memoryUsage() - beforeMemory),
     deterministic:
       full.index_fingerprint === repeatedFull.index_fingerprint &&
-      incremental.index_fingerprint === repeatedIncremental.index_fingerprint,
+      incremental.index_fingerprint === repeatedIncremental.index_fingerprint &&
+      incremental.index_fingerprint === rebuiltUpdated.index_fingerprint,
   };
 }
 
@@ -83,11 +90,14 @@ function resolveOptions(options) {
       options.repositoryRoot ??
       path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.."),
     defaultItemCount: options.defaultItemCount ?? 1_000_000,
-    writeStdout: options.writeStdout ?? ((value) => process.stdout.write(value)),
-    writeStderr: options.writeStderr ?? ((value) => process.stderr.write(value)),
+    writeStdout:
+      options.writeStdout ?? ((value) => process.stdout.write(value)),
+    writeStderr:
+      options.writeStderr ?? ((value) => process.stderr.write(value)),
     policy: options.policy,
     measure: {
-      memoryUsage: options.memoryUsage ?? (() => process.memoryUsage().heapUsed),
+      memoryUsage:
+        options.memoryUsage ?? (() => process.memoryUsage().heapUsed),
       now: options.now ?? (() => performance.now()),
       buildIndex: options.buildIndex ?? buildDefectRecurrenceIndex,
     },
@@ -119,7 +129,9 @@ export async function main(argv = process.argv.slice(2), options = {}) {
   const measurement = measureIndex(policy, itemCount, resolved.measure);
   const withinThresholds = isWithinThresholds(measurement, resolved.thresholds);
   const result = {
-    ok: measurement.deterministic && (!argv.includes("--check") || withinThresholds),
+    ok:
+      measurement.deterministic &&
+      (!argv.includes("--check") || withinThresholds),
     item_count: itemCount,
     family_count: policy.families.length,
     indexed_item_count: measurement.full.build.items_indexed,
@@ -136,6 +148,9 @@ export async function main(argv = process.argv.slice(2), options = {}) {
 }
 
 /* c8 ignore next 3 -- direct-entry wiring is exercised by the manual million-item gate. */
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
   process.exitCode = await main();
 }

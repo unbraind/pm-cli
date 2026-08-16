@@ -117,7 +117,10 @@ const SECRET_OR_PRIVATE_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
   { label: "home directory", pattern: /(?:\/home\/|\/Users\/)[^/\s"']+/u },
   { label: "GitHub token", pattern: /\b(?:gh[oprsu]_[A-Za-z0-9_]{20,})\b/u },
   { label: "npm token", pattern: /\bnpm_[A-Za-z0-9]{20,}\b/u },
-  { label: "private key", pattern: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/u },
+  {
+    label: "private key",
+    pattern: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/u,
+  },
 ];
 
 function nonEmpty(value: unknown): value is string {
@@ -194,7 +197,8 @@ function evaluateBoundaryRecord(
         {
           boundary_id: boundary.id || "unknown",
           kind: "invalid_boundary",
-          detail: "Each boundary requires non-empty id, producer, consumer, and format.",
+          detail:
+            "Each boundary requires non-empty id, producer, consumer, and format.",
         },
       ],
     };
@@ -224,7 +228,7 @@ function evaluateBoundaryRecord(
     Number.isFinite(expiresAt);
   return {
     captured: 0,
-    waived: 1,
+    waived: validWaiver && expiresAt >= nowMs ? 1 : 0,
     findings: !validWaiver
       ? [
           {
@@ -266,7 +270,8 @@ export function evaluateBoundaryFixtures(
         {
           boundary_id: "registry",
           kind: "invalid_registry",
-          detail: "Boundary registry requires version 1, inventory_scope, and boundaries.",
+          detail:
+            "Boundary registry requires version 1, inventory_scope, and boundaries.",
         },
       ],
     };
@@ -274,7 +279,20 @@ export function evaluateBoundaryFixtures(
   const ids = new Set<string>();
   let capturedCount = 0;
   let waivedCount = 0;
-  for (const boundary of registry.boundaries) {
+  for (const candidate of registry.boundaries as unknown[]) {
+    if (
+      typeof candidate !== "object" ||
+      candidate === null ||
+      Array.isArray(candidate)
+    ) {
+      findings.push({
+        boundary_id: "unknown",
+        kind: "invalid_boundary",
+        detail: "Each boundary must be a JSON object.",
+      });
+      continue;
+    }
+    const boundary = candidate as BoundaryInventoryRecord;
     if (ids.has(boundary.id)) {
       findings.push({
         boundary_id: boundary.id,

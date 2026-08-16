@@ -679,6 +679,22 @@
       ],
       "package_version": "2026.8.16",
       "reason": "Add the typed assurance risk action and DefectChangeRiskReport result; exhaustive AssuranceAction consumers must handle risk."
+    },
+    {
+      "changes": [
+        "signature ./sdk:DefectGateEvidenceFinding",
+        "signature ./sdk:PM_RECOVERY_REFERENCE_FIELDS",
+        "signature ./sdk/governance:DefectGateEvidenceFinding"
+      ],
+      "package_version": "2026.8.16",
+      "reason": "Expand defect evidence finding and recovery producer contracts for fail-closed timestamps and complete structured recovery coverage"
+    },
+    {
+      "changes": [
+        "signature ./sdk:RuntimeFieldValueSchema"
+      ],
+      "package_version": "2026.8.16",
+      "reason": "Expand defect evidence and recovery contracts while exposing semantic runtime field schemas without unreachable null coercion"
     }
   ],
   "entrypoints": {
@@ -3947,7 +3963,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DefectGateEvidenceFinding",
-          "signature": "export interface DefectGateEvidenceFinding { item_id: string; kind: \"missing_escape_class\" | \"invalid_escape_class\" | \"missing_gate_evidence\" | \"invalid_gate_evidence\" | \"expired_waiver\"; detail: string; }"
+          "signature": "export interface DefectGateEvidenceFinding { item_id: string; kind: \"missing_escape_class\" | \"invalid_escape_class\" | \"invalid_completion_timestamp\" | \"missing_gate_evidence\" | \"invalid_gate_evidence\" | \"expired_waiver\"; detail: string; }"
         },
         {
           "classification": "supported",
@@ -9209,7 +9225,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_RECOVERY_REFERENCE_FIELDS",
-          "signature": "readonly [\"suggested_retry\", \"retry_command\", \"candidate_command\", \"candidate_commands\", \"example\", \"examples\", \"next_step\", \"next_steps\", \"suggested_next_steps\", \"migration_hint\", \"migration_hints\", \"restore_with\"]"
+          "signature": "readonly [\"suggested_retry\", \"retry_command\", \"candidate_command\", \"candidate_commands\", \"fallback_candidates\", \"next_best_command\", \"example\", \"examples\", \"next_step\", \"next_steps\", \"suggested_next_steps\", \"migration_hint\", \"migration_hints\", \"restore_with\"]"
         },
         {
           "classification": "advanced_export",
@@ -13066,8 +13082,20 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "RuntimeFieldDefinition",
+          "signature": "export interface RuntimeFieldDefinition { key: string; metadata_key?: string; front_matter_key?: string; cli_flag?: string; cli_aliases?: string[]; description?: string; type?: RuntimeFieldType; commands?: RuntimeFieldCommand[]; repeatable?: boolean; required?: boolean; required_on_create?: boolean; required_types?: string[]; allow_unset?: boolean; value_schema?: RuntimeFieldValueSchema; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "RuntimeFieldRegistry",
           "signature": "export interface RuntimeFieldRegistry { definitions: RuntimeFieldDefinitionResolved[]; by_key: Map<string, RuntimeFieldDefinitionResolved>; by_cli_token: Map<string, RuntimeFieldDefinitionResolved>; command_to_fields: Map<RuntimeFieldCommand, RuntimeFieldDefinitionResolved[]>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "RuntimeFieldValueSchema",
+          "signature": "export interface RuntimeFieldValueSchema { type?: \"string\" | \"number\" | \"boolean\" | \"array\" | \"object\"; const?: StructuredJsonValue; enum?: StructuredJsonValue[]; min_length?: number; min_items?: number; format?: \"date-time\"; properties?: Record<string, RuntimeFieldValueSchema>; required?: string[]; additional_properties?: boolean; items?: RuntimeFieldValueSchema; one_of?: RuntimeFieldValueSchema[]; }"
         },
         {
           "classification": "advanced_export",
@@ -20405,7 +20433,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DefectGateEvidenceFinding",
-          "signature": "export interface DefectGateEvidenceFinding { item_id: string; kind: \"missing_escape_class\" | \"invalid_escape_class\" | \"missing_gate_evidence\" | \"invalid_gate_evidence\" | \"expired_waiver\"; detail: string; }"
+          "signature": "export interface DefectGateEvidenceFinding { item_id: string; kind: \"missing_escape_class\" | \"invalid_escape_class\" | \"invalid_completion_timestamp\" | \"missing_gate_evidence\" | \"invalid_gate_evidence\" | \"expired_waiver\"; detail: string; }"
         },
         {
           "classification": "supported",

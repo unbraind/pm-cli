@@ -29,7 +29,8 @@ import {
   type DefectRecurrencePolicy,
 } from "@unbrained/pm-cli/sdk/governance";
 
-const policy: DefectRecurrencePolicy = parseDefectRecurrencePolicy(serializedPolicy);
+const policy: DefectRecurrencePolicy =
+  parseDefectRecurrencePolicy(serializedPolicy);
 const index = buildDefectRecurrenceIndex(policy, pmItems, {
   previous_index: previousIndex,
   changed_item_ids: changedItemIds,
@@ -98,7 +99,7 @@ pm schema add-field gate_evidence \
 - `gate_added` and `gate_strengthened` require `gate_id`, a runnable `negative_control`, non-empty `local_checks` and `hosted_checks`, and an accountable `owner`;
 - `explicit_waiver` requires an accountable `owner`, a concrete `waiver_reason`, and a future `waiver_expires_at` timestamp.
 
-The evidence epoch lets an adopting project ratchet new closures immediately while backfilling historical items deliberately. Reports keep historical escape-class and disposition counts visible even before those older items become closure blockers.
+The evidence epoch lets an adopting project ratchet new closures immediately while backfilling historical items deliberately. A valid `completed_at` is authoritative, `closed_at` is the compatibility fallback, and timestamp-less items created after the epoch fail closed; timestamp-less items created before the epoch remain explicitly grandfathered. Reports keep historical escape-class and disposition counts visible even before those older items become closure blockers.
 
 ## Captured Boundary Fixtures
 
@@ -109,7 +110,7 @@ The repository inventory is [config/boundary-fixtures.json](../config/boundary-f
 
 The evaluator rejects a `self_generated` source because a fixture created by the same implementation cannot reveal disagreement with an external format. It also scans committed JSON for common home-directory, package-token, GitHub-token, and private-key patterns.
 
-The Claude Code directory-slug fixture is consumed directly by the author-provenance test. The npm, GitHub Actions, and Sentry samples preserve real field shapes while replacing identifiers, paths, URLs, and user data.
+The Claude Code directory-slug fixture is consumed directly by the author-provenance test. The npm, GitHub Actions, Git commit, and Sentry samples preserve real field shapes while replacing identifiers, paths, URLs, and user data.
 
 ## Repository Gate
 
@@ -126,7 +127,7 @@ The first command must pass. The negative control must exit `1` after replacing 
 
 ## Recovery Producer Census
 
-`censusPmRecoveryReferenceProducers` scans complete source files for literal structured recovery fields. Aliases such as `candidate_commands`, `retry_command`, and `suggested_next_steps` normalize to the same six public recovery kinds used by executable reachability verification.
+`censusPmRecoveryReferenceProducers` scans complete source files for static object-literal recovery fields. It ignores type literals, destructuring patterns, labels, comments, strings, templates, and regular expressions. Aliases such as `candidate_commands`, nested `fallback_candidates[].command`, `next_best_command`, `retry_command`, and `suggested_next_steps` normalize to the same six public recovery kinds used by executable reachability verification.
 
 The census fails when a kind has no producer or when a recovery-like envelope field lacks a typed contract. The integration gate scans every `src/**/*.ts` producer; the existing real-entrypoint corpus then executes or resolves every normalized kind and proves recovery, replacement, or behavior-preserving semantics.
 

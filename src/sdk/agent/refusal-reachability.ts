@@ -77,6 +77,8 @@ export const PM_RECOVERY_REFERENCE_FIELDS = [
   "retry_command",
   "candidate_command",
   "candidate_commands",
+  "fallback_candidates",
+  "next_best_command",
   "example",
   "examples",
   "next_step",
@@ -209,6 +211,7 @@ const RECOVERY_REFERENCE_FIELD_CONTRACTS: Readonly<
     {
       kind: PmRecoveryReferenceKind;
       semantics: PmRecoveryReferenceSemantics;
+      nested_value_field?: string;
     }
   >
 > = {
@@ -216,6 +219,12 @@ const RECOVERY_REFERENCE_FIELD_CONTRACTS: Readonly<
   retry_command: { kind: "suggested_retry", semantics: "recovery" },
   candidate_command: { kind: "candidate_command", semantics: "recovery" },
   candidate_commands: { kind: "candidate_command", semantics: "recovery" },
+  fallback_candidates: {
+    kind: "candidate_command",
+    semantics: "recovery",
+    nested_value_field: "command",
+  },
+  next_best_command: { kind: "candidate_command", semantics: "recovery" },
   example: { kind: "example", semantics: "recovery" },
   examples: { kind: "example", semantics: "recovery" },
   next_step: { kind: "next_step", semantics: "recovery" },
@@ -229,7 +238,7 @@ const RECOVERY_REFERENCE_FIELD_CONTRACTS: Readonly<
   },
 };
 
-/** One property assignment retained after TypeScript syntax stripping. */
+/** One object-literal property retained after TypeScript syntax stripping. */
 interface SourcePropertyToken {
   /** Literal identifier or quoted property name. */
   field: string;
@@ -237,37 +246,35 @@ interface SourcePropertyToken {
   offset: number;
 }
 
-interface SourceTokenRead {
-  /** Scanner offset immediately after the token. */
-  next: number;
-  /** Property assignment when the token is followed by a colon. */
-  property?: SourcePropertyToken;
+interface SourceSyntaxToken {
+  /** Token category needed by the lightweight structural parser. */
+  kind: "identifier" | "string" | "punctuator";
+  /** Decoded identifier/string or literal punctuator. */
+  value: string;
+  /** Zero-based offset preserved from the original source. */
+  offset: number;
 }
 
-/** Skip a line or block comment while preserving source offsets. */
-function skipSourceComment(source: string, index: number): number | undefined {
-  if (source[index] !== "/") return undefined;
-  if (source[index + 1] === "/") {
-    const newline = source.indexOf("\n", index + 2);
-    return newline === -1 ? source.length : newline + 1;
-  }
-  if (source[index + 1] !== "*") return undefined;
-  const closing = source.indexOf("*/", index + 2);
-  return closing + 2;
+interface SourceDelimiterFrame {
+  /** Delimiter role used to distinguish object members from blocks and patterns. */
+  kind: "object" | "block" | "pattern" | "paren" | "array";
+  /** Whether the next token may begin a static object member. */
+  member_start?: boolean;
+  /** Candidates committed only if this frame remains an object expression. */
+  candidates?: SourcePropertyToken[];
+  /** Whether a parenthesized region is a declared function parameter list. */
+  parameter_list?: boolean;
 }
 
-/** Advance across insignificant whitespace and return the next syntax offset. */
-function skipSourceWhitespace(source: string, index: number): number {
-  let next = index;
-  while (/\s/u.test(source[next] ?? "")) next += 1;
-  return next;
+function compareCodeUnits(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
-/** Read one quoted token and classify quoted property names. */
-function readQuotedSourceToken(source: string, index: number): SourceTokenRead | undefined {
+function skipQuotedSourceToken(
+  source: string,
+  index: number,
+): { next: number; value: string } {
   const quote = source[index];
-  if (quote !== "'" && quote !== '"' && quote !== "`") return undefined;
-  const start = index;
   let next = index + 1;
   let value = "";
   while (next < source.length && source[next] !== quote) {
@@ -278,50 +285,251 @@ function readQuotedSourceToken(source: string, index: number): SourceTokenRead |
     }
   }
   if (source[next] === quote) next += 1;
-  const followedByColon = source[skipSourceWhitespace(source, next)] === ":";
-  return {
-    next,
-    ...(quote !== "`" && followedByColon && /^[A-Za-z][A-Za-z0-9_]*$/u.test(value)
-      ? { property: { field: value, offset: start + 1 } }
-      : {}),
-  };
+  return { next, value };
 }
 
-/** Read one identifier token and classify identifier property assignments. */
-function readIdentifierSourceToken(
+function canStartRegularExpression(
+  previous: SourceSyntaxToken | undefined,
+): boolean {
+  return (
+    previous === undefined ||
+    (previous.kind === "punctuator" &&
+      "=([{,:;!?&|+-*%^~<>".includes(previous.value)) ||
+    (previous.kind === "identifier" &&
+      ["return", "case", "throw", "else", "yield"].includes(previous.value))
+  );
+}
+
+function sourceTriviaEnd(source: string, index: number): number | undefined {
+  if (/\s/u.test(source[index]!)) return index + 1;
+  if (source.startsWith("//", index)) {
+    const newline = source.indexOf("\n", index + 2);
+    return newline === -1 ? source.length : newline + 1;
+  }
+  if (!source.startsWith("/*", index)) return undefined;
+  const closing = source.indexOf("*/", index + 2);
+  return closing + 2;
+}
+
+function regularExpressionEnd(
   source: string,
   index: number,
-): SourceTokenRead | undefined {
-  if (!/[A-Za-z_$]/u.test(source[index]!)) return undefined;
+  previous: SourceSyntaxToken | undefined,
+): number | undefined {
+  if (source[index] !== "/" || !canStartRegularExpression(previous))
+    return undefined;
   let next = index + 1;
-  while (/[A-Za-z0-9_$]/u.test(source[next] ?? "")) next += 1;
-  const field = source.slice(index, next);
+  let inClass = false;
+  while (next < source.length) {
+    if (source[next] === "\\") next += 2;
+    else if (source[next] === "[") {
+      inClass = true;
+      next += 1;
+    } else if (source[next] === "]") {
+      inClass = false;
+      next += 1;
+    } else if (source[next] === "/" && !inClass) {
+      next += 1;
+      while (/[A-Za-z]/u.test(source.charAt(next))) next += 1;
+      return next;
+    } else next += 1;
+  }
+  return next;
+}
+
+function readSourceSyntaxToken(
+  source: string,
+  index: number,
+): { next: number; token?: SourceSyntaxToken } {
+  const character = source[index]!;
+  if (character === "'" || character === '"' || character === "`") {
+    const quoted = skipQuotedSourceToken(source, index);
+    return character === "`"
+      ? { next: quoted.next }
+      : {
+          next: quoted.next,
+          token: { kind: "string", value: quoted.value, offset: index + 1 },
+        };
+  }
+  if (/[A-Za-z_$]/u.test(character)) {
+    let next = index + 1;
+    while (/[A-Za-z0-9_$]/u.test(source[next] ?? "")) next += 1;
+    return {
+      next,
+      token: {
+        kind: "identifier",
+        value: source.slice(index, next),
+        offset: index,
+      },
+    };
+  }
+  const punctuator = source.startsWith("=>", index) ? "=>" : character;
   return {
-    next,
-    ...(source[skipSourceWhitespace(source, next)] === ":"
-      ? { property: { field, offset: index } }
-      : {}),
+    next: index + punctuator.length,
+    token: { kind: "punctuator", value: punctuator, offset: index },
   };
 }
 
-/** Parse TypeScript syntax and return executable property assignments only. */
-function scanSourcePropertyTokens(source: string): SourcePropertyToken[] {
-  const parsed = stripTypeScriptTypes(source, { mode: "strip" });
-  const properties: SourcePropertyToken[] = [];
+/** Tokenize executable JavaScript while ignoring comments, templates, and regex bodies. */
+function tokenizeExecutableSource(source: string): SourceSyntaxToken[] {
+  const tokens: SourceSyntaxToken[] = [];
   let index = 0;
-  while (index < parsed.length) {
-    const commentEnd = skipSourceComment(parsed, index);
-    if (commentEnd !== undefined) {
-      index = commentEnd;
+  while (index < source.length) {
+    const ignoredEnd = sourceTriviaEnd(source, index);
+    if (ignoredEnd !== undefined) {
+      index = ignoredEnd;
       continue;
     }
-    const token =
-      readQuotedSourceToken(parsed, index) ??
-      readIdentifierSourceToken(parsed, index);
-    if (token?.property) properties.push(token.property);
-    index = token?.next ?? index + 1;
+    const regexEnd = regularExpressionEnd(source, index, tokens.at(-1));
+    if (regexEnd !== undefined) {
+      index = regexEnd;
+      continue;
+    }
+    const read = readSourceSyntaxToken(source, index);
+    if (read.token) tokens.push(read.token);
+    index = read.next;
+  }
+  return tokens;
+}
+
+const SOURCE_BRACE_FRAME_KINDS = new Set<SourceDelimiterFrame["kind"]>([
+  "object",
+  "block",
+  "pattern",
+]);
+const SOURCE_PATTERN_DECLARATIONS = new Set(["const", "let", "var"]);
+const SOURCE_CLOSING_TOKENS = new Set(["}", ")", "]"]);
+const SOURCE_OBJECT_PRECEDERS = new Set([
+  "=",
+  "(",
+  "[",
+  ",",
+  ":",
+  "?",
+  "return",
+]);
+
+function objectFrameKind(
+  tokens: readonly SourceSyntaxToken[],
+  index: number,
+  stack: readonly SourceDelimiterFrame[],
+): SourceDelimiterFrame["kind"] {
+  const enclosingBrace = [...stack]
+    .reverse()
+    .find((frame) => SOURCE_BRACE_FRAME_KINDS.has(frame.kind));
+  if (enclosingBrace?.kind === "pattern") return "pattern";
+  if (stack.at(-1)?.kind === "paren" && stack.at(-1)?.parameter_list)
+    return "pattern";
+  const previous = tokens[index - 1];
+  if (
+    previous?.kind === "identifier" &&
+    SOURCE_PATTERN_DECLARATIONS.has(previous.value)
+  ) {
+    return "pattern";
+  }
+  if (previous?.value === "=>" || previous?.value === ")") return "block";
+  return previous && SOURCE_OBJECT_PRECEDERS.has(previous.value)
+    ? "object"
+    : "block";
+}
+
+function openingSourceFrame(
+  tokens: readonly SourceSyntaxToken[],
+  index: number,
+  stack: readonly SourceDelimiterFrame[],
+): SourceDelimiterFrame | undefined {
+  const token = tokens[index]!;
+  if (token.value === "{") {
+    const kind = objectFrameKind(tokens, index, stack);
+    return {
+      kind,
+      ...(kind === "object" ? { member_start: true, candidates: [] } : {}),
+    };
+  }
+  if (token.value === "[") return { kind: "array" };
+  if (token.value !== "(") return undefined;
+  const previous = tokens[index - 1];
+  const beforePrevious = tokens[index - 2];
+  const parameterList =
+    previous?.value === "function" || beforePrevious?.value === "function";
+  return { kind: "paren", ...(parameterList ? { parameter_list: true } : {}) };
+}
+
+function staticObjectMember(
+  frame: SourceDelimiterFrame | undefined,
+  token: SourceSyntaxToken,
+  next: SourceSyntaxToken | undefined,
+): SourcePropertyToken | undefined {
+  if (
+    frame?.kind !== "object" ||
+    !frame.member_start ||
+    (token.kind !== "identifier" && token.kind !== "string") ||
+    next?.value !== ":" ||
+    !/^[A-Za-z][A-Za-z0-9_]*$/u.test(token.value)
+  ) {
+    return undefined;
+  }
+  return { field: token.value, offset: token.offset };
+}
+
+function isPatternLikeObjectClosure(
+  tokens: readonly SourceSyntaxToken[],
+  index: number,
+): boolean {
+  return (
+    (tokens[index + 1]?.value === ")" && tokens[index + 2]?.value === "=>") ||
+    tokens[index + 1]?.value === "="
+  );
+}
+
+/** Parse static object-literal members without treating patterns or labels as producers. */
+function scanSourcePropertyTokens(source: string): SourcePropertyToken[] {
+  const tokens = tokenizeExecutableSource(
+    stripTypeScriptTypes(source, { mode: "strip" }),
+  );
+  const properties: SourcePropertyToken[] = [];
+  const stack: SourceDelimiterFrame[] = [];
+  for (const [index, token] of tokens.entries()) {
+    const frame = stack.at(-1);
+    const property = staticObjectMember(frame, token, tokens[index + 1]);
+    if (property) frame!.candidates!.push(property);
+    const opening = openingSourceFrame(tokens, index, stack);
+    if (opening) {
+      stack.push(opening);
+    } else if (SOURCE_CLOSING_TOKENS.has(token.value)) {
+      const closed = stack.pop();
+      if (
+        closed?.kind === "object" &&
+        !isPatternLikeObjectClosure(tokens, index)
+      ) {
+        properties.push(...closed.candidates!);
+      }
+    } else if (token.value === "," && frame?.kind === "object") {
+      frame.member_start = true;
+    } else if (frame?.kind === "object" && token.value !== ":") {
+      frame.member_start = false;
+    }
   }
   return properties;
+}
+
+function sourceLineStarts(source: string): number[] {
+  const starts = [0];
+  for (let index = 0; index < source.length; index += 1) {
+    if (source[index] === "\n") starts.push(index + 1);
+  }
+  return starts;
+}
+
+function sourceLineAtOffset(starts: readonly number[], offset: number): number {
+  let low = 0;
+  let high = starts.length;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (starts[middle]! <= offset) low = middle + 1;
+    else high = middle;
+  }
+  return low;
 }
 
 /** Census syntax-parsed structured-envelope producers without executing source code. */
@@ -331,10 +539,13 @@ export function censusPmRecoveryReferenceProducers(
   const producers: PmRecoveryProducerLocation[] = [];
   const findings: PmRecoveryProducerCensusFinding[] = [];
   const recognizedFields = new Set<string>(PM_RECOVERY_REFERENCE_FIELDS);
-  for (const source of [...sources].sort((left, right) => left.path.localeCompare(right.path))) {
+  for (const source of [...sources].sort((left, right) =>
+    compareCodeUnits(left.path, right.path),
+  )) {
+    const lineStarts = sourceLineStarts(source.content);
     for (const property of scanSourcePropertyTokens(source.content)) {
       const field = property.field;
-      const line = source.content.slice(0, property.offset).split("\n").length;
+      const line = sourceLineAtOffset(lineStarts, property.offset);
       const contract = RECOVERY_REFERENCE_FIELD_CONTRACTS[field];
       if (contract) {
         producers.push({
@@ -344,7 +555,9 @@ export function censusPmRecoveryReferenceProducers(
           kind: contract.kind,
         });
       } else if (
-        /(?:retry_command|candidate_command|example|next_step|migration_hint|restore_with)/u.test(field) &&
+        /(?:retry_command|candidate_command|fallback_candidate|next_best_command|example|next_step|migration_hint|restore_with)/u.test(
+          field,
+        ) &&
         !/(?:_total|_truncated)$/u.test(field) &&
         !recognizedFields.has(field)
       ) {
@@ -373,15 +586,15 @@ export function censusPmRecoveryReferenceProducers(
   }
   producers.sort((left, right) =>
     left.path !== right.path
-      ? left.path.localeCompare(right.path)
+      ? compareCodeUnits(left.path, right.path)
       : left.line !== right.line
         ? left.line - right.line
-        : left.field.localeCompare(right.field),
+        : compareCodeUnits(left.field, right.field),
   );
   findings.sort((left, right) =>
     left.subject !== right.subject
-      ? left.subject.localeCompare(right.subject)
-      : left.kind.localeCompare(right.kind),
+      ? compareCodeUnits(left.subject, right.subject)
+      : compareCodeUnits(left.kind, right.kind),
   );
   return {
     ok: findings.length === 0,
@@ -406,7 +619,7 @@ export function derivePmRecoveryReferenceObligations(
     }
     if (typeof value !== "object" || value === null) return;
     for (const [key, entry] of Object.entries(value).sort(([left], [right]) =>
-      left.localeCompare(right),
+      compareCodeUnits(left, right),
     )) {
       const baseContract = RECOVERY_REFERENCE_FIELD_CONTRACTS[key];
       const contract =
@@ -417,7 +630,19 @@ export function derivePmRecoveryReferenceObligations(
       const entries = Array.isArray(entry) ? entry : [entry];
       if (contract !== undefined) {
         entries.forEach((candidate, index) => {
-          if (typeof candidate !== "string" || candidate.trim().length === 0)
+          const resolvedCandidate =
+            contract.nested_value_field &&
+            typeof candidate === "object" &&
+            candidate !== null &&
+            !Array.isArray(candidate)
+              ? (candidate as Record<string, unknown>)[
+                  contract.nested_value_field
+                ]
+              : candidate;
+          if (
+            typeof resolvedCandidate !== "string" ||
+            resolvedCandidate.trim().length === 0
+          )
             return;
           const coordinate = [...path, key, String(index)]
             .map((segment) => encodeURIComponent(segment))
@@ -427,7 +652,7 @@ export function derivePmRecoveryReferenceObligations(
             probe_id: probeId,
             kind: contract.kind,
             semantics: contract.semantics,
-            value: candidate,
+            value: resolvedCandidate,
           });
         });
       }

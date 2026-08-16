@@ -40,7 +40,7 @@ describe("defect evidence repository gate", () => {
     ).resolves.toBe(0);
     expect(JSON.parse(stdout.join(""))).toMatchObject({
       ok: true,
-      boundary: { ok: true, boundary_count: 8, captured_count: 4 },
+      boundary: { ok: true, boundary_count: 9, captured_count: 5 },
       defect_evidence: { ok: true },
       recurrence_policy: { ok: true, family_count: 6 },
     });
@@ -135,7 +135,9 @@ describe("defect evidence repository gate", () => {
     ).resolves.toBe(1);
     expect(
       JSON.parse(missingOutput.join("")).recurrence_policy.findings,
-    ).toContainEqual(expect.objectContaining({ kind: "missing_historical_item" }));
+    ).toContainEqual(
+      expect.objectContaining({ kind: "missing_historical_item" }),
+    );
 
     const ineffectivePolicy = {
       ...policy,
@@ -153,7 +155,11 @@ describe("defect evidence repository gate", () => {
   });
 
   it("renders human output, supports each focused scope, and rejects conflicts", async () => {
-    for (const flag of ["--boundary-only", "--evidence-only", "--policy-only"]) {
+    for (const flag of [
+      "--boundary-only",
+      "--evidence-only",
+      "--policy-only",
+    ]) {
       const stdout: string[] = [];
       await expect(
         main([flag], {
@@ -178,12 +184,18 @@ describe("defect evidence repository gate", () => {
     ).resolves.toBe(2);
     expect(stderr.join("")).toContain("Select at most one");
 
-    const processOutput = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const processOutput = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     await expect(main(["--boundary-only"])).resolves.toBe(0);
     expect(processOutput).toHaveBeenCalledWith(expect.stringContaining("PASS"));
-    const processError = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const processError = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
     await expect(main(["--boundary-only", "--evidence-only"])).resolves.toBe(2);
-    expect(processError).toHaveBeenCalledWith(expect.stringContaining("Select at most one"));
+    expect(processError).toHaveBeenCalledWith(
+      expect.stringContaining("Select at most one"),
+    );
     const fallbackOutput: string[] = [];
     await expect(
       main(["--evidence-only", "--negative-control", "--json"], {
@@ -192,7 +204,9 @@ describe("defect evidence repository gate", () => {
         writeStdout: (value: string) => fallbackOutput.push(value),
       }),
     ).resolves.toBe(1);
-    expect(JSON.parse(fallbackOutput.join("")).defect_evidence.governed_item_count).toBe(1);
+    expect(
+      JSON.parse(fallbackOutput.join("")).defect_evidence.governed_item_count,
+    ).toBe(1);
 
     const humanFailure: string[] = [];
     await expect(
