@@ -186,6 +186,8 @@ describe("relationship kind registry", () => {
         ...registry.require("owns"),
         kind: "undirected_temporal_order",
         direction: "undirected",
+        hierarchy: false,
+        hierarchyDirection: undefined,
         temporalOrder: "source_after_target",
       }),
     ).toThrow("cannot declare temporal order");
