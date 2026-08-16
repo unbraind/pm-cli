@@ -353,7 +353,10 @@ describe("runGet and runAppend", () => {
       const sparseProjection = await runGet(
         sparseIdOnly,
         { path: context.pmPath },
-        { fields: "comments,notes,learnings,tests,docs" },
+        {
+          fields:
+            "comments,notes,learnings,tests,test_runs,docs,plan_steps,plan_decisions,plan_discoveries,plan_validation",
+        },
       );
       expect(sparseProjection.item).toEqual({
         id: sparseIdOnly,
@@ -361,7 +364,12 @@ describe("runGet and runAppend", () => {
         notes: [],
         learnings: [],
         tests: [],
+        test_runs: [],
         docs: [],
+        plan_steps: [],
+        plan_decisions: [],
+        plan_discoveries: [],
+        plan_validation: [],
       });
 
       const withClaimState = await runGet(

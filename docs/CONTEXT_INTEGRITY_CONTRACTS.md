@@ -11,10 +11,10 @@ Project management is context management. A successful read or analysis must not
 `pm get <id> --fields ...` always returns `item.id`, even when `id` was not explicitly requested. Explicitly requested collection metadata is materialized as an empty array when absent. This distinguishes “the requested collection is empty” from “the field was not read” without forcing callers to request a larger projection.
 
 ```bash
-pm get pm-example --fields comments,notes,learnings,tests,docs --json
+pm get pm-example --fields comments,notes,learnings,tests,test_runs,docs,plan_steps,plan_decisions,plan_discoveries,plan_validation --json
 ```
 
-The result retains the canonical ID and the five requested empty groups. Unrequested groups remain omitted, preserving the token-saving projection contract.
+The result retains the canonical ID and every requested empty group, including planning and test-run collections. Unrequested groups remain omitted, preserving the token-saving projection contract.
 
 ## Extension Manifest Compatibility
 
@@ -31,9 +31,11 @@ Warnings are advisory; malformed or unmet canonical bounds retain their existing
 ```bash
 pm docs pm-example --add '[Pull request](https://github.com/org/repo/pull/42)'
 pm docs pm-example --add 'Issue report,https://github.com/org/repo/issues/17'
+pm docs pm-example --add 'Query evidence,https://example.com/report?fields=id,status'
+pm docs pm-example --add '[Nested path](https://example.com/report_(final))'
 ```
 
-Both examples create one project-scoped documentation reference. The URL is preserved byte-for-byte as the path and the label becomes the note. File-link parsing is unchanged, and ordinary comma-separated bare document paths continue to expand as before.
+Each example creates one project-scoped documentation reference. The first comma separates a CSV label from the complete URL remainder, and balanced parentheses inside Markdown destinations remain part of the destination. The URL is preserved byte-for-byte as the path and the label becomes the note. File-link parsing is unchanged, and ordinary comma-separated bare document paths continue to expand as before.
 
 ## Direction-Locked Graph Impact
 
@@ -47,7 +49,7 @@ This prevents a shared `related` item from bridging an incoming impact query int
 
 ## Cross-Version History Epochs
 
-History writers using item-hash epoch 2 always emit `item_hash_version: 2`. An entry without an explicit epoch is therefore legacy epoch 1, including documents whose hashes happen to be identical under both algorithms. Verification and repair no longer guess the newest epoch for an ambiguous implicit stream.
+History writers using item-hash epoch 2 always emit `item_hash_version: 2`. An entry without an explicit epoch is therefore legacy epoch 1 when the entire stream is implicit, including documents whose hashes happen to be identical under both algorithms. When one supported explicit epoch appears in a stream, it is authoritative for adjacent unversioned entries, so a trailing ambiguous hash cannot downgrade verification or repair selection. Verification and repair no longer guess a different epoch from the last ambiguous entry.
 
 Repair keeps implicit legacy streams implicit and byte-stable when no drift exists. Unsupported explicit epochs still fail with a typed `unsupported_item_hash_version` diagnostic instead of being rewritten.
 

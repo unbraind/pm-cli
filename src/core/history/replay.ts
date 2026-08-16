@@ -197,6 +197,38 @@ export function tryApplyReplayPatch(
   }
 }
 
+/** Return the distinct supported hash epochs explicitly declared by a stream. */
+function supportedExplicitHistoryItemHashVersions(
+  entries: HistoryEntry[],
+): HistoryItemHashVersion[] {
+  return [
+    ...new Set(
+      entries
+        .map((entry) => entry.item_hash_version)
+        .filter(
+          (version): version is HistoryItemHashVersion =>
+            version !== undefined &&
+            (
+              SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]
+            ).includes(version),
+        ),
+    ),
+  ];
+}
+
+/** Select the hash epochs allowed for one entry under an authoritative stream marker. */
+function historyEntryHashCandidates(
+  explicitVersion: HistoryEntry["item_hash_version"],
+  authoritativeVersion: HistoryItemHashVersion | undefined,
+): HistoryItemHashVersion[] {
+  if (explicitVersion !== undefined) {
+    return [explicitVersion as HistoryItemHashVersion];
+  }
+  return authoritativeVersion === undefined
+    ? [1, CURRENT_HISTORY_ITEM_HASH_VERSION]
+    : [authoritativeVersion];
+}
+
 /** Deterministically verify a history chain: each entry's before_hash must equal the prior replayed after_hash, the patch must strictly apply, and the recorded after_hash must equal the replayed result. */
 /** Verify a chain and report the explicit or auto-detected item hash epoch. */
 export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
@@ -206,6 +238,9 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
 } {
   let replay = cloneEmptyReplayDocument();
   let detectedVersion: HistoryItemHashVersion | undefined;
+  const explicitVersions = supportedExplicitHistoryItemHashVersions(entries);
+  const authoritativeExplicitVersion =
+    explicitVersions.length === 1 ? explicitVersions[0] : undefined;
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
     const explicitVersion = entry.item_hash_version;
@@ -232,10 +267,10 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
     // Prefer legacy epoch 1 when an unversioned entry is valid under both
     // algorithms, but retain compatibility with transitional epoch-2 writers
     // that shipped before item_hash_version became explicit.
-    const candidates: HistoryItemHashVersion[] =
-      explicitVersion === undefined
-        ? [1, CURRENT_HISTORY_ITEM_HASH_VERSION]
-        : [explicitVersion as HistoryItemHashVersion];
+    const candidates = historyEntryHashCandidates(
+      explicitVersion,
+      authoritativeExplicitVersion,
+    );
     const beforeMatches = candidates.filter(
       (version) => replayHash(replay, version) === entry.before_hash,
     );
@@ -387,25 +422,13 @@ export interface ReanchorResult {
 export function resolveHistoryRepairItemHashVersion(
   entries: HistoryEntry[],
 ): HistoryItemHashVersion {
+  const explicitVersions = supportedExplicitHistoryItemHashVersions(entries);
+  if (explicitVersions.length === 1) {
+    return explicitVersions[0];
+  }
   const verified = verifyHistoryChainWithVersion(entries);
   if (verified.ok && verified.item_hash_version !== undefined) {
     return verified.item_hash_version;
-  }
-  const explicitVersions = [
-    ...new Set(
-      entries
-        .map((entry) => entry.item_hash_version)
-        .filter(
-          (version): version is HistoryItemHashVersion =>
-            version !== undefined &&
-            (
-              SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]
-            ).includes(version),
-        ),
-    ),
-  ];
-  if (explicitVersions.length === 1) {
-    return explicitVersions[0];
   }
   if (explicitVersions.length === 0) {
     return 1;

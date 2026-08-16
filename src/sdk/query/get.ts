@@ -381,10 +381,15 @@ const EMPTY_PROJECTED_COLLECTION_FIELDS = new Set([
   "learnings",
   "files",
   "tests",
+  "test_runs",
   "docs",
   "reminders",
   "events",
   "dependencies",
+  "plan_steps",
+  "plan_decisions",
+  "plan_discoveries",
+  "plan_validation",
 ]);
 
 /** Resolve one projected metadata value while distinguishing an empty requested collection from an omitted field. */

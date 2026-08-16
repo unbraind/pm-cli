@@ -30,13 +30,15 @@ describe("docs reference input contract", () => {
           add: [
             "[Pull request](https://github.com/unbraind/pm-cli/pull/1031)",
             "Issue report,https://github.com/unbraind/pm-cli/issues/1038",
+            "Comma reference,https://example.com/context/a,b?select=x,y",
+            "[Balanced reference](https://example.com/context/a_(b))",
           ],
           message: "Link remote project context",
         },
         { path: context.pmPath },
       );
 
-      expect(result.docs).toHaveLength(2);
+      expect(result.docs).toHaveLength(4);
       expect(result.docs).toEqual(
         expect.arrayContaining([
           {
@@ -48,6 +50,16 @@ describe("docs reference input contract", () => {
             path: "https://github.com/unbraind/pm-cli/issues/1038",
             scope: "project",
             note: "Issue report",
+          },
+          {
+            path: "https://example.com/context/a,b?select=x,y",
+            scope: "project",
+            note: "Comma reference",
+          },
+          {
+            path: "https://example.com/context/a_(b)",
+            scope: "project",
+            note: "Balanced reference",
           },
         ]),
       );

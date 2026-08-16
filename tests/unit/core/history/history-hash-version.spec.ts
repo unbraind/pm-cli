@@ -137,4 +137,39 @@ describe("history item hash versions", () => {
       entries: [entry],
     });
   });
+
+  it("keeps an explicit epoch authoritative over a trailing ambiguous entry", () => {
+    const firstDocument = document([]);
+    const secondDocument = structuredClone(firstDocument);
+    secondDocument.body = "second event";
+    const firstEntry = {
+      ...unversionedEntry(firstDocument, 2),
+      item_hash_version: 2 as const,
+    };
+    const secondEntry: HistoryEntry = {
+      ts: "2026-08-11T00:01:00.000Z",
+      author: "fixture",
+      op: "update",
+      patch: jsonPatch.compare(
+        toReplayDocument(firstDocument),
+        toReplayDocument(secondDocument),
+      ),
+      before_hash: hashDocumentForVersion(firstDocument, 2),
+      after_hash: hashDocumentForVersion(secondDocument, 2),
+    };
+    expect(secondEntry.before_hash).toBe(
+      hashDocumentForVersion(firstDocument, 1),
+    );
+    expect(secondEntry.after_hash).toBe(
+      hashDocumentForVersion(secondDocument, 1),
+    );
+
+    expect(
+      verifyHistoryChainWithVersion([firstEntry, secondEntry]),
+    ).toMatchObject({ ok: true, item_hash_version: 2 });
+    expect(reanchorHistoryEntries([firstEntry, secondEntry])).toMatchObject({
+      itemHashVersion: 2,
+      entriesRehashed: 0,
+    });
+  });
 });

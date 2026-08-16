@@ -78,12 +78,16 @@ describe("extension manifest schema compatibility", () => {
         {
           z_policy: true,
           a_policy: true,
+          ä_policy: true,
+          å_policy: true,
           pm_min_version: "2026.8.1",
         },
       ),
     ).toEqual([
       "extension_manifest_unknown_key:global:bounded-extension:key=a_policy",
       "extension_manifest_unknown_key:global:bounded-extension:key=z_policy",
+      "extension_manifest_unknown_key:global:bounded-extension:key=ä_policy",
+      "extension_manifest_unknown_key:global:bounded-extension:key=å_policy",
     ]);
   });
 });

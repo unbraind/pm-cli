@@ -47,7 +47,7 @@ export function inspectExtensionManifestSchema(
   return {
     unknownKeys: Object.keys(manifest)
       .filter((key) => !KNOWN_EXTENSION_MANIFEST_KEYS.has(key))
-      .sort((left, right) => left.localeCompare(right)),
+      .sort((left, right) => (left > right ? 1 : -1)),
     missingVersionBounds:
       manifest.pm_min_version === undefined &&
       manifest.pm_max_version === undefined,
