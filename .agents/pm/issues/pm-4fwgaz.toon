@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: agent-ux,empty-collections,fields,github-1033,identity,projection,read-output,token-efficiency
 created_at: "2026-08-15T15:27:12.262Z"
-updated_at: "2026-08-16T06:41:13.044Z"
+updated_at: "2026-08-16T07:05:14.869Z"
 closed_at: "2026-08-16T06:16:09.528Z"
 completed_at: "2026-08-16T06:16:09.528Z"
 author: "harness:codex"
@@ -32,11 +32,12 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-p258tx,verifies,"2026-08-15T15:28:50.572Z","harness:codex","cli:update:dep",detected
   pm-b1w8vr,discovered_from,"2026-08-15T15:28:52.471Z","harness:codex","cli:update:dep",detected
   pm-x710qm,verifies,"2026-08-15T15:28:54.012Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-15T15:27:12.262Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for GH-1033, fields empty group, requested empty collection, identity projection, and omission receipt found no item for this exact zero-exit projection failure. Closed pm-cxr0jb and pm-p258tx provide intent-projection and omission-receipt lineage; open pm-5t33or is the canonical universal output parent. This issue records the newly reported regression without duplicating those items."
   "2026-08-15T15:29:22.279Z","harness:codex","GitHub linkage evidence 2026-08-15: https://github.com/unbraind/pm-cli/issues/1033#issuecomment-5302914118 points GitHub #1033 to this canonical PM item after all-status duplicate checks and typed lineage enrichment."
   "2026-08-16T05:20:48.988Z","harness:codex","TDD red evidence: focused get projection regression failed because an ID-less sparse field request returned comments/notes/learnings/tests/docs as undefined and omitted the canonical item id. Command: node scripts/run-tests.mjs test -- tests/unit/commands/get-append-command.spec.ts."
   "2026-08-16T06:16:06.618Z","harness:codex","Green evidence: requested-empty sparse reads now retain canonical item.id; focused linked test passed. Repository coverage passed with 7,402 tests and exact 100/100/100/100. Packed-package npm/npx manual proof in an isolated tracker passed."
+  "2026-08-16T07:05:14.869Z","harness:codex","Delivery: PR #1041 https://github.com/unbraind/pm-cli/pull/1041 carries this context-integrity tranche; initial implementation commit b9ef9470eed45b74353864743df5b4d4718a0bc4 passed local exact coverage and repository gates. Hosted exact-head checks and bot review are pending."
 files[3]{path,scope,note}:
   src/sdk/query/get.ts,project,Sparse projection identity and requested-empty collection contract
   tests/unit/commands/get-append-command.spec.ts,project,Public get projection regression

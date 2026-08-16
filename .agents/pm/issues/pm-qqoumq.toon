@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,compatibility,extensions,github-1032,manifest,sdk,validation
 created_at: "2026-08-15T15:26:48.504Z"
-updated_at: "2026-08-16T06:41:13.588Z"
+updated_at: "2026-08-16T07:05:15.416Z"
 closed_at: "2026-08-16T06:16:10.725Z"
 completed_at: "2026-08-16T06:16:10.725Z"
 author: "harness:codex"
@@ -32,11 +32,12 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-u5le,implements,"2026-08-15T15:28:38.793Z","harness:codex","cli:update:dep",detected
   pm-exrw,verifies,"2026-08-15T15:28:40.373Z","harness:codex","cli:update:dep",detected
   pm-llrp,discovered_from,"2026-08-15T15:28:48.965Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-15T15:26:48.504Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for GH-1032, manifest unknown key, pm_min_version, compatibility.pm, and nested compatibility found no item for this silent manifest-schema gap. Closed pm-1w0d owns the existing compatibility analyzer and is linked as provenance; this item records the newly reported cross-package validation defect without reopening completed work."
   "2026-08-15T15:29:21.230Z","harness:codex","GitHub linkage evidence 2026-08-15: https://github.com/unbraind/pm-cli/issues/1032#issuecomment-5302914062 points GitHub #1032 to this canonical PM item after all-status duplicate checks and typed lineage enrichment."
   "2026-08-16T05:20:51.282Z","harness:codex","TDD red evidence: SDK manifest compatibility reported no findings for an ignored compatibility.pm spelling and no canonical pm_min_version/pm_max_version bounds. Command: node scripts/run-tests.mjs test -- tests/unit/sdk/extension-manifest-schema-contract.spec.ts."
   "2026-08-16T06:16:07.117Z","harness:codex","Green evidence: shared closed-schema inspection drives SDK findings and loader/doctor warnings; latest pm-changelog is 2026.8.12 and the installed project package is that version. package doctor now reports ok with zero warnings. SDK surface snapshot updated with an explicit compatibility-finding acknowledgement. Exact repository coverage is 100/100/100/100."
+  "2026-08-16T07:05:15.416Z","harness:codex","Delivery: PR #1041 https://github.com/unbraind/pm-cli/pull/1041 carries this context-integrity tranche; initial implementation commit b9ef9470eed45b74353864743df5b4d4718a0bc4 passed local exact coverage and repository gates. Hosted exact-head checks and bot review are pending."
 files[5]{path,scope,note}:
   sdk/public-surface.json,project,Acknowledged additive manifest diagnostic API surface
   src/core/extensions/loader.ts,project,Runtime discovery warnings consumed by extension doctor

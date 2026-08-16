@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:history","area:sdk",compatibility,context-integrity,durability,github-1036,github-1040,integrity,regression
 created_at: "2026-08-16T05:11:38.233Z"
-updated_at: "2026-08-16T06:57:47.829Z"
+updated_at: "2026-08-16T07:05:17.187Z"
 closed_at: "2026-08-16T06:57:47.272Z"
 completed_at: "2026-08-16T06:57:47.272Z"
 author: "harness:codex"
@@ -31,13 +31,14 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2htk4p,discovered_from,"2026-08-16T05:11:38.233Z","harness:codex","cli:create:dep",detected
   pm-9j2r3b,discovered_from,"2026-08-16T05:11:38.233Z","harness:codex","cli:create:dep",detected
   pm-pae3wo,verifies,"2026-08-16T05:11:38.233Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-16T05:11:38.233Z","harness:codex","Duplicate-check evidence 2026-08-16: searched all 2,501 items across every status for GH-1036,GH-1040,cross-version history drift,item_hash_version disagreement,mutually exclusive repair,and merge-reconcile compatibility. Closed pm-2htk4p fixes a narrower repeated-tests hash-version defect and pm-9j2r3b covers merge history anchoring; neither owns symmetric released-version verdicts or repair refusal. One canonical item covers #1036 and its corrected root-cause report #1040."
   "2026-08-16T05:12:49.971Z","harness:codex","GitHub linkage evidence: #1036 https://github.com/unbraind/pm-cli/issues/1036#issuecomment-5305855426 and #1040 https://github.com/unbraind/pm-cli/issues/1040#issuecomment-5305855572 point both corrected reports to this canonical PM item."
   "2026-08-16T05:20:50.785Z","harness:codex","TDD red evidence: ambiguous implicit history hashes were detected as epoch 2, proving repair can rewrite a legacy stream into a form older released CLIs reject. Command: node scripts/run-tests.mjs test -- tests/unit/core/history/history-hash-version.spec.ts."
   "2026-08-16T06:16:08.850Z","harness:codex","Green evidence: implicit history streams are deterministically legacy epoch 1 while explicit epoch 2 remains stable; focused verification/repair tests passed. Packed-package history repair dry-run passed. Exact repository coverage is 100/100/100/100."
   "2026-08-16T06:41:17.242Z","harness:codex","Gate finding: repository tracker-context-quality proved the initial implicit-v1-only implementation regressed 14 live transitional streams. history-repair --all --dry-run identified 12 rehash candidates and 2 false-positive clean streams. Work continues; no repair was applied and no ratchet was weakened."
   "2026-08-16T06:57:46.081Z","harness:codex","Final compatibility evidence: the verifier prefers implicit epoch 1 only when both algorithms match, accepts transitional unversioned epoch 2 when its order-sensitive hash is required, and continues to refuse unsupported explicit epochs. Live pm health is green; history-repair --all --dry-run scanned 2,504 streams with zero drift and zero writes. Final repository coverage passed 506 files and 7,402 tests at exact 53,647/53,647 statements, 39,667/39,667 branches, 11,014/11,014 functions, and 51,809/51,809 lines."
+  "2026-08-16T07:05:17.187Z","harness:codex","Delivery: PR #1041 https://github.com/unbraind/pm-cli/pull/1041 carries this context-integrity tranche; initial implementation commit b9ef9470eed45b74353864743df5b4d4718a0bc4 passed local exact coverage and repository gates. Hosted exact-head checks and bot review are pending."
 files[3]{path,scope,note}:
   src/core/history/replay.ts,project,Implicit legacy epoch verification and repair
   tests/unit/core/history/history-hash-version.spec.ts,project,Ambiguous implicit epoch regression
