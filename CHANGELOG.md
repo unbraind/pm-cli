@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Workspace history integrity refusals escape typed CLI recovery and become high Sentry faults ([pm-2zkvxm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2zkvxm.toon))
 - GH-1019/GH-1020/GH-1021: Node 24 nightly platform regressions after PR \#1016 ([pm-zno2iu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zno2iu.toon))
 - GH-814/GH-821/GH-1034: SDK metadata reads must distinguish missing, invalid, and unreadable tracker roots from empty ([pm-23xkss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-23xkss.toon))
 - GH-1028: history-author-acknowledge bulk mutation lacks dry-run and misreports empty selection ([pm-mcxk8v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mcxk8v.toon))

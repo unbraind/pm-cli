@@ -88,6 +88,8 @@ export interface PmCliErrorContext {
   nextSteps?: string[];
   /** Exact selectors that could not be matched by a lossless removal. */
   unmatched?: string[];
+  /** Exact verifier findings that caused an integrity-sensitive operation to refuse. */
+  verification_errors?: string[];
   /** Local dependency targets that could not be resolved before mutation. */
   unresolved_targets?: string[];
   /** Available history bounds for a failed point-in-time read or restore target. */

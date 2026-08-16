@@ -20,6 +20,7 @@ interface GuidanceMessage {
   why?: string;
   examples?: string[];
   nextSteps?: string[];
+  verificationErrors?: string[];
   recovery?: PmCliErrorRecoveryPayload;
 }
 
@@ -43,6 +44,8 @@ export interface JsonErrorEnvelope {
   examples?: string[];
   /** Value that configures or reports next steps for this contract. */
   next_steps?: string[];
+  /** Exact integrity verifier findings that caused the operation to refuse. */
+  verification_errors?: string[];
   /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
 }
@@ -78,6 +81,8 @@ export interface ErrorClassification {
   examples?: string[];
   /** Value that configures or reports next steps for this contract. */
   next_steps?: string[];
+  /** Exact integrity verifier findings that caused the operation to refuse. */
+  verification_errors?: string[];
   /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
 }
@@ -528,6 +533,10 @@ export function renderGuidanceMessage(message: GuidanceMessage): string {
     lines.push("");
     lines.push(...renderList("Next steps:", message.nextSteps));
   }
+  if (message.verificationErrors && message.verificationErrors.length > 0) {
+    lines.push("");
+    lines.push(...renderList("Verification errors:", message.verificationErrors));
+  }
   const recoveryLines = renderRecoveryBundle(message.recovery);
   if (recoveryLines.length > 0) {
     lines.push("");
@@ -557,6 +566,9 @@ function guidanceToJsonEnvelope(
   if (message.nextSteps && message.nextSteps.length > 0) {
     payload.next_steps = message.nextSteps;
   }
+  if (message.verificationErrors && message.verificationErrors.length > 0) {
+    payload.verification_errors = message.verificationErrors;
+  }
   if (message.recovery) {
     payload.recovery = message.recovery;
   }
@@ -581,6 +593,9 @@ function guidanceToClassification(
   }
   if (message.nextSteps && message.nextSteps.length > 0) {
     payload.next_steps = message.nextSteps;
+  }
+  if (message.verificationErrors && message.verificationErrors.length > 0) {
+    payload.verification_errors = message.verificationErrors;
   }
   if (message.recovery) {
     payload.recovery = message.recovery;
@@ -703,6 +718,9 @@ function applyPmCliErrorContext(
   const examples = normalizeContextList(context.examples) ?? guidance.examples;
   const nextSteps =
     normalizeContextList(context.nextSteps) ?? guidance.nextSteps;
+  const verificationErrors =
+    normalizeContextList(context.verification_errors) ??
+    guidance.verificationErrors;
   const fallbackTitle =
     guidance.code === "command_failed" && context.code
       ? buildFallbackTitleFromMessage(normalizedRawMessage)
@@ -722,6 +740,7 @@ function applyPmCliErrorContext(
     why: normalizeContextValue(context.why, guidance.why),
     examples,
     nextSteps,
+    verificationErrors,
     recovery,
   };
 }

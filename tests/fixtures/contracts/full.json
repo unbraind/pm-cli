@@ -19363,6 +19363,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "workspace_history_chain_invalid",
+      "class": "conflict",
+      "code": "workspace_history_chain_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Workspace history chain invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/workspace-history.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "workspace_history_state_conflict",
       "class": "conflict",
       "code": "workspace_history_state_conflict",

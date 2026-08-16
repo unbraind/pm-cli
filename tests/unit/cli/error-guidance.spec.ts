@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   _testOnly,
   buildLinkedTestQuotedRetryCommand,
+  classifyPmCliError,
   classifyUnknownError,
   formatCommanderErrorForDisplay,
   formatCommanderErrorForJson,
@@ -24,6 +25,10 @@ describe("pm cli error guidance context plumbing", () => {
           'pm update pm-a1b2 --status open --message "retry"',
         ],
         nextSteps: ["Resolve markers and rerun command."],
+        verification_errors: [
+          " verify_failed:before_hash_mismatch:entry_1 ",
+          "",
+        ],
       },
     );
 
@@ -39,6 +44,28 @@ describe("pm cli error guidance context plumbing", () => {
       'pm update pm-a1b2 --status open --message "retry"',
     ]);
     expect(envelope.next_steps).toEqual(["Resolve markers and rerun command."]);
+    expect(envelope.verification_errors).toEqual([
+      "verify_failed:before_hash_mismatch:entry_1",
+    ]);
+
+    const verificationContext = {
+      code: "workspace_history_chain_invalid",
+      verification_errors: ["verify_failed:before_hash_mismatch:entry_1"],
+    };
+    expect(
+      formatPmCliErrorForDisplay(
+        "Workspace history verification failed",
+        verificationContext,
+      ),
+    ).toContain(
+      "Verification errors:\n  - verify_failed:before_hash_mismatch:entry_1",
+    );
+    expect(
+      classifyPmCliError(
+        "Workspace history verification failed",
+        verificationContext,
+      ).verification_errors,
+    ).toEqual(["verify_failed:before_hash_mismatch:entry_1"]);
   });
 
   it("normalizes compact recovery arrays defensively", () => {
