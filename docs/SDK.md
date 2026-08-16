@@ -44,7 +44,7 @@ semantic command discovery, and append-stable linked tests are tracked by
 [pm-x2vx](../.agents/pm/issues/pm-x2vx.toon).
 The supported CLI entrypoint boundary, truthful context-intent receipts, and
 first-class recurrence relationships are tracked by
-[pm-rf120g](../.agents/pm/issues/pm-rf120g.toon),
+[pm-rf120g](../.agents/pm/tasks/pm-rf120g.toon),
 [pm-3crymx](../.agents/pm/issues/pm-3crymx.toon), and
 [pm-ouyq3n](../.agents/pm/issues/pm-ouyq3n.toon).
 

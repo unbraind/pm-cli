@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[4]: "area:cli","area:sdk",hygiene,surface
 created_at: "2026-08-16T10:06:33.911Z"
-updated_at: "2026-08-16T13:44:13.351Z"
-closed_at: "2026-08-16T13:42:45.408Z"
-completed_at: "2026-08-16T13:42:45.408Z"
+updated_at: "2026-08-16T14:10:53.220Z"
+closed_at: "2026-08-16T14:10:45.814Z"
+completed_at: "2026-08-16T14:10:45.814Z"
 author: "harness:claude-code"
 acceptance_criteria: The published ./cli declaration either stops exposing _testOnly or the exposure carries a recorded reason in the surface snapshot's exclusion vocabulary; pm's own tests continue to reach the helpers through source imports rather than the package export; The chosen disposition is written into docs/SDK.md next to the executable_entry classification; A change to the set of exposed helpers is a classified surface change either way
 parent: pm-usfg
@@ -20,9 +20,10 @@ actual_result: The published ./cli entrypoint exposes only runPmCli; the 86 test
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-suhxny,discovered_from,"2026-08-16T10:06:33.911Z","harness:claude-code","cli:create:dep",detected
   pm-suhxny,recurs_from,"2026-08-16T12:15:30.873Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-16T13:26:08.563Z","harness:codex","Verification evidence: repository-wide coverage passed 506 files / 7,411 tests at exact 100/100/100/100; lint, static assurance, generated-contract, SDK-surface, zero-duplicate, secret-scan, and token-budget gates passed. The packed-package smoke installed the tarball into an isolated consumer, imported @unbrained/pm-cli/cli with exactly runPmCli, executed it, typechecked the package, and passed npx dispatch."
   "2026-08-16T13:42:29.661Z","harness:codex","Reviewed-product lineage: implementation is published in https://github.com/unbraind/pm-cli/pull/1042 at initial head f4ff1a393 and the PR body links this item on the GitHub-renderable main path."
+  "2026-08-16T14:10:38.531Z","harness:codex","Hosted CI correction evidence: Docs and Skills run 31951240793 exposed a stale item-type path in docs/SDK.md. Corrected the link to the canonical tasks/pm-rf120g.toon location; pnpm quality:docs-skills and pnpm quality:docs-links both pass locally."
 files[7]{path,scope,note}:
   package.json,project,Route the published CLI export to its intentional public facade
   scripts/smoke-npx-from-pack.mjs,project,Import the installed packed CLI entrypoint and reject every unexpected export
@@ -57,5 +58,5 @@ test_runs[2]:
     skipped: 0
 docs[1]{path,scope,note}:
   docs/SDK.md,project,Document the supported CLI entrypoint and private test seam boundary
-close_reason: "Published a supported ./cli entrypoint containing only runPmCli, with exact surface snapshot and packed consumer execution/typecheck proof in PR #1042."
+close_reason: Published supported ./cli surface and corrected its canonical PM documentation link; exact docs and relative-link gates pass.
 body: ""
