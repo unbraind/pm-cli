@@ -8,12 +8,19 @@
 
 ### Fixed
 
+- The relationship lexicon cannot express recurrence, so a defect family fixed thirty times is thirty unrelated nodes to every graph algorithm ([pm-ouyq3n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ouyq3n.toon))
+- The gate contributors run before merging fails on every Claude Code workstation and passes on the runner for the same tree, because a harness probe writes advisory warnings into the surface the token budget measures ([pm-95h7pg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-95h7pg.toon))
+- A declared context intent returns no context when combined with the narrowing flag, and its refusal receipt reports 122 tokens against a 2400 budget as the reason it does not fit ([pm-3crymx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3crymx.toon))
 - The public-surface gate enumerates its own hand-written entrypoint list, so two published code exports ship ungoverned and ./cli publishes 86 internal functions as typed API ([pm-suhxny](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-suhxny.toon))
 - GH-1033: read fields selectors can erase identity and requested empty collections ([pm-4fwgaz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4fwgaz.toon))
 - GH-1036/GH-1040: history integrity verdicts and repairs are incompatible across supported CLI versions ([pm-0wfdim](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0wfdim.toon))
 - GH-1032: extension manifests silently accept unenforced version-floor spellings ([pm-qqoumq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qqoumq.toon))
 - GH-1038: docs linked-resource pair syntax corrupts URLs and splits labeled entries ([pm-fpdk37](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fpdk37.toon))
 - GH-1039: graph impact discards dependency direction and makes the direction selector inert ([pm-jn1x30](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jn1x30.toon))
+
+### Other
+
+- Disposition the test-only escape hatch published through the ./cli entrypoint: 86 internal functions are consumer-visible API with no support intent ([pm-rf120g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rf120g.toon))
 
 ## 2026.8.16 - 2026-08-16
 

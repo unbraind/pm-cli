@@ -2,20 +2,21 @@ id: pm-3crymx
 title: "A declared context intent returns no context when combined with the narrowing flag, and its refusal receipt reports 122 tokens against a 2400 budget as the reason it does not fit"
 description: "Measured 2026-08-16 on this tracker. pm context --for orient returns context (7832 bytes, ~1958 tok, under its declared 2400 ceiling). pm context --for orient --limit 10 returns no context at all: budget_exceeded.omitted_result true, reason declared_budget_infeasible. Adding the narrowing flag destroys the answer. The emitted receipt then reports estimated_tokens 122 against token_budget 2400 with within_budget false and declaration_feasible false, because the final updateContextIntentEstimate call in applyContextIntentProjection re-estimates over the refusal object it just built, overwriting the estimate that justified the refusal. The number shown is not the number compared. Both named recoveries are also wrong: narrowing the request is what caused the omission, and --token-budget 20000 still omits. --token-budget 200000 succeeds and emits estimated_tokens 132522 under an intent whose declaration is 2400, because an explicit budget replaces the declared ceiling rather than being bounded by it."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: "area:cli","area:context",context-management,receipts,token-budget
 created_at: "2026-08-16T10:50:36.737Z"
-updated_at: "2026-08-16T13:27:52.335Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#f4249d328d12493656ff20d0"
+updated_at: "2026-08-16T13:43:16.236Z"
+closed_at: "2026-08-16T13:43:05.719Z"
+completed_at: "2026-08-16T13:43:05.719Z"
 author: "harness:claude-code"
 acceptance_criteria: "A refusal receipt reports the estimate that produced the refusal, never an estimate recomputed over the refusal itself, and a test asserts the reported estimated_tokens exceeds token_budget whenever result_omitted is true; Applying an explicit row bound to a declared intent never produces a smaller result set and a larger reported cost than the same intent without it; Recovery guidance for an infeasible declaration names a recovery that is verified to work on the corpus that produced the refusal, rather than a generic instruction; An explicit --token-budget above a declared intent ceiling either is refused, is clamped to the declaration, or emits an explicit receipt field stating that the declaration was overridden and by how much; A negative control proves each assertion fails when the defect is reintroduced"
 parent: pm-mpbb
 risk: high
 confidence: high
+resolution: "Corrected receipt estimation and budget-derived projection semantics; calibrated orient to 3,000 tokens and added exact negative and acceptance coverage."
 expected_result: "A declared intent bounds a read and reports honestly why, and narrowing the request never removes the answer."
-actual_result: context --for orient --limit 10 omits the result entirely and justifies it with a number 20x under the bound it claims to have exceeded.
+actual_result: "Intent projections retain useful context within their declared ceilings, disclose caller overrides and binding constraints, and preserve the pre-omission estimate when no useful row fits."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,implements,"2026-08-16T10:50:36.737Z","harness:claude-code","cli:create:dep",detected
   pm-7hbfch,discovered_from,"2026-08-16T10:50:36.737Z","harness:claude-code","cli:create:dep",detected
@@ -23,10 +24,11 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-prsvjh,discovered_from,"2026-08-16T10:50:36.737Z","harness:claude-code","cli:create:dep",detected
   pm-yekkvt,discovered_from,"2026-08-16T10:50:36.737Z","harness:claude-code","cli:create:dep",detected
   pm-h8tpeh,discovered_from,"2026-08-16T10:51:21.890Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-16T10:51:21.338Z","harness:claude-code","Reproduction, exact commands and observed bytes on this tracker at tree 9da5886cc:\n\n  pm context --limit 10                              7,988 B  ~1,997 tok  result returned\n  pm context --for orient                            7,832 B  ~1,958 tok  result returned, budget 2400\n  pm context --for orient --limit 10                   520 B              RESULT OMITTED\n  pm context --for orient --limit 50                   520 B              RESULT OMITTED\n  pm context --for orient --token-budget 20000         521 B              RESULT OMITTED\n  pm context --for orient --token-budget 200000    448,564 B  ~112k tok   result returned, receipt says estimated_tokens 132522\n  pm context --for handoff                           4,588 B              result returned\n  pm context --for handoff --limit 10                  524 B              RESULT OMITTED\n\nThe receipt for the omitted case, verbatim: token_budget 2400, estimated_tokens 122, within_budget false, declaration_feasible false, result_omitted true, degradation budget_receipt_only.\n\nThree separable defects in one path: (1) the reported estimate is recomputed over the refusal so it contradicts the verdict it accompanies; (2) --limit turns a feasible intent infeasible on both declared context intents; (3) an explicit --token-budget replaces the declared ceiling instead of being bounded by it, so the same intent that declares 2400 emits 132522 with no field saying the declaration was overridden.\n\nThis is the fifth defect landed against the declared-intent layer after pm-ai45y9, pm-7hbfch, pm-prsvjh and pm-yekkvt. pm-yekkvt's AC4 already forbids recovery guidance that points at the unprojected command when that form is larger; here the unprojected form is SMALLER and succeeds, so the guidance is wrong in the direction that AC did not anticipate."
   "2026-08-16T12:30:33.607Z","harness:codex","Implementation evidence: the default orient contract now clamps an explicit --limit 10 to its measured three-row budget ceiling, returns useful hierarchy/blocker/activity context at 2,587 estimated tokens under the 3,000 declaration, retains the pre-omission infeasibility estimate, emits an executable bounded retry, and discloses a 197,000-token override when the caller requests 200,000. The reviewed calibration report remains far below the new ceiling at both 2 and 2,243 items."
   "2026-08-16T13:26:21.804Z","harness:codex","Verification evidence: exact 100/100/100/100 coverage and the full 7,411-test suite passed. Static calibration, token-budget, and packed npx/bunx acceptance passed. In a new isolated tracker, context --for orient returned useful rows with declared_token_budget=3000, override=0, budget_derived_limit=3, binding_constraint=token_budget, estimated_tokens=649, within_budget=true, and an executable bounded recovery contract for infeasible results is covered."
+  "2026-08-16T13:42:30.195Z","harness:codex","Reviewed-product lineage: implementation is published in https://github.com/unbraind/pm-cli/pull/1042 at initial head f4ff1a393 and the PR body links this item on the GitHub-renderable main path."
 files[5]{path,scope,note}:
   scripts/release/context-intent-calibration.json,project,Recalibrate the approved two-tier report for truthful receipt bytes and the feasible orient ceiling
   src/sdk/context-intent-contracts.ts,project,Final updateContextIntentEstimate at the budget_receipt_only branch overwrites the estimate that justified the refusal
@@ -40,4 +42,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-all-local-msvu9oiu-8i6e0l,test-all,passed,"2026-08-16T13:26:47.101Z","2026-08-16T13:27:52.329Z","2026-08-16T13:27:52.329Z",2,0,0,1,2
 docs[1]{path,scope,note}:
   docs/SDK.md,project,Document truthful context budgets explicit overrides and bounded recovery
+close_reason: "Context intents now return truthful useful-context estimates, declared/effective budget provenance, applied row ceilings, and executable recovery guidance with calibrated defaults in PR #1042."
 body: ""
