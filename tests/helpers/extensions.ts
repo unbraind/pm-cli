@@ -52,6 +52,7 @@ function buildFixture(options: WriteTestExtensionOptions): WriteTestExtensionRes
           version: "1.0.0",
           entry: entryFilename,
           capabilities: ["commands"],
+          pm_min_version: "0.0.0",
           ...options.manifest,
           ...options.manifestOverrides,
         };

@@ -1750,7 +1750,7 @@ export function checkExtensionManifestCompatibility(
           : `Manifest key "${key}" is not part of the extension manifest contract and will be ignored.`,
     });
   }
-  if (schema.missingVersionBounds && schema.unknownKeys.length > 0) {
+  if (schema.missingVersionBounds) {
     findings.push({
       code: "no_version_bounds_declared",
       severity: "warning",

@@ -172,4 +172,30 @@ describe("history item hash versions", () => {
       entriesRehashed: 0,
     });
   });
+
+  it("applies an explicit epoch only from its marker forward", () => {
+    const legacyDocument = document([first, second]);
+    const currentDocument = structuredClone(legacyDocument);
+    currentDocument.body = "explicit epoch transition";
+    const legacyEntry = unversionedEntry(legacyDocument, 1);
+    const currentEntry: HistoryEntry = {
+      ts: "2026-08-11T00:01:00.000Z",
+      author: "fixture",
+      op: "update",
+      patch: jsonPatch.compare(
+        toReplayDocument(legacyDocument),
+        toReplayDocument(currentDocument),
+      ),
+      before_hash: hashDocumentForVersion(legacyDocument, 2),
+      after_hash: hashDocumentForVersion(currentDocument, 2),
+      item_hash_version: 2,
+    };
+    expect(legacyEntry.after_hash).not.toBe(
+      hashDocumentForVersion(legacyDocument, 2),
+    );
+
+    expect(
+      verifyHistoryChainWithVersion([legacyEntry, currentEntry]),
+    ).toMatchObject({ ok: true, item_hash_version: 2 });
+  });
 });

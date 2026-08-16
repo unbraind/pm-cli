@@ -238,9 +238,7 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
 } {
   let replay = cloneEmptyReplayDocument();
   let detectedVersion: HistoryItemHashVersion | undefined;
-  const explicitVersions = supportedExplicitHistoryItemHashVersions(entries);
-  const authoritativeExplicitVersion =
-    explicitVersions.length === 1 ? explicitVersions[0] : undefined;
+  let authoritativeExplicitVersion: HistoryItemHashVersion | undefined;
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
     const explicitVersion = entry.item_hash_version;
@@ -292,6 +290,9 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
     }
     replay = applied.document;
     detectedVersion = version;
+    if (explicitVersion !== undefined) {
+      authoritativeExplicitVersion = version;
+    }
   }
   return {
     ok: true,

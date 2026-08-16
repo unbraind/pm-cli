@@ -14,13 +14,13 @@ Project management is context management. A successful read or analysis must not
 pm get pm-example --fields comments,notes,learnings,tests,test_runs,docs,plan_steps,plan_decisions,plan_discoveries,plan_validation --json
 ```
 
-The result retains the canonical ID and every requested empty group, including planning and test-run collections. Unrequested groups remain omitted, preserving the token-saving projection contract.
+The result retains the canonical ID and every requested empty group, including planning and test-run collections. The public `GetResult` type requires `item.id`, so SDK consumers do not need an impossible missing-identity branch. Unrequested groups remain omitted, preserving the token-saving projection contract.
 
 ## Extension Manifest Compatibility
 
 Extension manifests use the canonical top-level `pm_min_version` and optional `pm_max_version` fields. `compatibility.pm`, `engines.pm`, or other alternate spellings do not establish the loader's pm version floor.
 
-`checkExtensionManifestCompatibility` now performs a closed top-level schema inspection before evaluating bounds. It reports deterministic advisory findings for unknown keys and, when an ignored spelling leaves both canonical bounds absent, a second migration finding. A recognized `compatibility` spelling includes `suggested_key: "pm_min_version"`. Runtime discovery emits matching `extension_manifest_*` warnings, which means `pm extension doctor` cannot silently report a clean manifest after discarding an unknown compatibility block.
+`checkExtensionManifestCompatibility` now performs a closed top-level schema inspection before evaluating bounds. It reports deterministic advisory findings for unknown keys and independently reports when both canonical bounds are absent, including for an otherwise recognized manifest. A recognized `compatibility` spelling includes `suggested_key: "pm_min_version"`. Runtime discovery emits matching `extension_manifest_*` warnings, which means `pm extension doctor` cannot silently report a clean manifest after discarding an unknown compatibility block or after receiving no compatibility intent at all.
 
 Warnings are advisory; malformed or unmet canonical bounds retain their existing blocking behavior.
 
@@ -49,7 +49,7 @@ This prevents a shared `related` item from bridging an incoming impact query int
 
 ## Cross-Version History Epochs
 
-History writers using item-hash epoch 2 always emit `item_hash_version: 2`. An entry without an explicit epoch is therefore legacy epoch 1 when the entire stream is implicit, including documents whose hashes happen to be identical under both algorithms. When one supported explicit epoch appears in a stream, it is authoritative for adjacent unversioned entries, so a trailing ambiguous hash cannot downgrade verification or repair selection. Verification and repair no longer guess a different epoch from the last ambiguous entry.
+History writers using item-hash epoch 2 always emit `item_hash_version: 2`. An entry without an explicit epoch is therefore legacy epoch 1 when the entire stream is implicit, including documents whose hashes happen to be identical under both algorithms. A supported explicit epoch becomes authoritative from its marker forward, so earlier unversioned entries retain both legacy and transitional candidates while a trailing ambiguous hash cannot downgrade the marked epoch. Verification and repair no longer guess a different epoch from the last ambiguous entry.
 
 Repair keeps implicit legacy streams implicit and byte-stable when no drift exists. Unsupported explicit epochs still fail with a typed `unsupported_item_hash_version` diagnostic instead of being rewritten.
 

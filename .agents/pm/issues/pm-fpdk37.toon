@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[8]: agent-ux,"area:sdk",context-integrity,docs,github-1038,linked-resources,parser,regression
 created_at: "2026-08-16T05:10:46.721Z"
-updated_at: "2026-08-16T07:52:19.917Z"
-closed_at: "2026-08-16T07:50:56.836Z"
-completed_at: "2026-08-16T07:50:56.836Z"
+updated_at: "2026-08-16T08:57:43.767Z"
+closed_at: "2026-08-16T08:57:43.115Z"
+completed_at: "2026-08-16T08:57:43.115Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: "Parse every documented docs --add form through one SDK-owned linked-resource primitive; preserve URI schemes byte-for-byte; turn Markdown and CSV label/path pairs into exactly one typed entry; reject malformed or ambiguous pairs before mutation; keep files/docs CLI and PmClient behavior aligned; cover unit, integration, packed-consumer, negative-control, and help-contract paths; document the supported grammar and token-efficient recovery."
@@ -31,7 +31,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-0v9k,discovered_from,"2026-08-16T05:10:46.721Z","harness:codex","cli:create:dep",detected
   pm-9rgaal,implements,"2026-08-16T05:10:46.721Z","harness:codex","cli:create:dep",detected
   pm-jzf4,discovered_from,"2026-08-16T05:10:46.721Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-16T05:10:46.721Z","harness:codex","Duplicate-check evidence 2026-08-16: searched all 2,501 items across every status for GH-1038,docs Markdown pairs,CSV pairs,URL corruption,linked-resource parsing,and https scheme collapse. No item owns this exact successful-corruption failure. Closed pm-0v9k owns strict structured-pair validation and pm-jzf4 owns shared files/docs kernels; this issue extends those canonical lineages instead of duplicating them."
   "2026-08-16T05:12:48.803Z","harness:codex","GitHub linkage evidence: https://github.com/unbraind/pm-cli/issues/1038#issuecomment-5305855474 points #1038 to this canonical PM item."
   "2026-08-16T05:20:49.480Z","harness:codex","TDD red evidence: docs regression failed because Markdown URLs were path-normalized from https:// to https:/ and CSV label/URL input became two docs instead of one labeled remote reference. Command: node scripts/run-tests.mjs test -- tests/unit/sdk/docs-reference-contract.spec.ts."
@@ -39,15 +39,19 @@ comments[7]{created_at,author,text}:
   "2026-08-16T07:05:15.953Z","harness:codex","Delivery: PR #1041 https://github.com/unbraind/pm-cli/pull/1041 carries this context-integrity tranche; initial implementation commit b9ef9470eed45b74353864743df5b4d4718a0bc4 passed local exact coverage and repository gates. Hosted exact-head checks and bot review are pending."
   "2026-08-16T07:22:54.522Z","harness:codex","Review TDD red evidence: a labeled URL containing commas was split as structured CSV and balanced parentheses in a Markdown destination were not parsed losslessly."
   "2026-08-16T07:50:56.024Z","harness:codex","Final green evidence: comma URL, balanced Markdown, malformed assignment, and linked docs tests passed; packed npm/npx docs proof persisted exact URLs and labels; exact coverage passed."
+  "2026-08-16T08:29:48.959Z","harness:codex","Review correction: linked the already tracked direct parser regression as executable PM verification; no code change is required for this finding."
+  "2026-08-16T08:57:29.421Z","harness:codex","Final review-hardening evidence: both registered parser tests passed, including the direct linked-artifact assignment contract. The definitive repository run passed 506 files and 7,404 tests at exact 53,674/53,674 statements, 39,689/39,689 branches, 11,018/11,018 functions, and 51,831/51,831 lines; lint, static assurance, secret scan, docs links, contracts, and package artifact gates are green."
 files[3]{path,scope,note}:
   src/sdk/linked-artifacts.ts,project,Lossless Markdown and CSV remote-doc parser
   tests/unit/sdk/docs-reference-contract.spec.ts,project,Public docs mutation regression
   tests/unit/sdk/linked-artifact-assignment-contract.spec.ts,project,Malformed assignment and Markdown negative controls
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/docs-reference-contract.spec.ts,project,240
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/linked-artifact-assignment-contract.spec.ts,project,240
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msveudwb-v9rnft,test,passed,"2026-08-16T06:14:48.569Z","2026-08-16T06:14:59.290Z","2026-08-16T06:14:59.290Z",1,0,0
   test-local-msvi92f3-zju8bu,test,passed,"2026-08-16T07:50:11.720Z","2026-08-16T07:50:23.103Z","2026-08-16T07:50:23.103Z",1,0,0
+  test-local-msvjvqc3-6a1ne5,test,passed,"2026-08-16T08:35:41.893Z","2026-08-16T08:36:00.147Z","2026-08-16T08:36:00.147Z",2,0,0
 docs[1]{path,scope,note}:
   docs/CONTEXT_INTEGRITY_CONTRACTS.md,project,Remote documentation reference contract
 close_reason: "Linked documentation parsing preserves bare, Markdown, and CSV-label URLs byte-for-byte, including commas and balanced parentheses, as one remote reference."

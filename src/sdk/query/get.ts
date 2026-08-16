@@ -67,6 +67,8 @@ interface ClaimStateContext {
 }
 
 type GetItemProjection = Partial<ItemMetadata> & {
+  /** Canonical item identity retained by every depth and field projection. */
+  id: string;
   body?: string;
   /** Number of notes omitted by a token-bounded projection. */
   notes_count?: number;

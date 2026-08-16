@@ -89,5 +89,32 @@ describe("extension manifest schema compatibility", () => {
       "extension_manifest_unknown_key:global:bounded-extension:key=ä_policy",
       "extension_manifest_unknown_key:global:bounded-extension:key=å_policy",
     ]);
+
+    const recognizedUnboundedManifest = {
+      name: "unbounded-extension",
+      version: "1.0.0",
+      entry: "index.js",
+      priority: 100,
+      capabilities: [],
+    };
+    expect(
+      checkExtensionManifestCompatibility(recognizedUnboundedManifest, {
+        pmVersion: "2026.8.16",
+      }).findings,
+    ).toEqual([
+      expect.objectContaining({
+        code: "no_version_bounds_declared",
+        path: "$",
+      }),
+    ]);
+    expect(
+      formatExtensionManifestSchemaWarnings(
+        "project",
+        recognizedUnboundedManifest,
+        recognizedUnboundedManifest,
+      ),
+    ).toEqual([
+      "extension_manifest_no_version_bounds:project:unbounded-extension:suggested=pm_min_version",
+    ]);
   });
 });

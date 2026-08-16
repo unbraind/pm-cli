@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[8]: agent-ux,empty-collections,fields,github-1033,identity,projection,read-output,token-efficiency
 created_at: "2026-08-15T15:27:12.262Z"
-updated_at: "2026-08-16T07:50:49.316Z"
-closed_at: "2026-08-16T07:50:48.640Z"
-completed_at: "2026-08-16T07:50:48.640Z"
+updated_at: "2026-08-16T08:57:48.565Z"
+closed_at: "2026-08-16T08:57:47.746Z"
+completed_at: "2026-08-16T08:57:47.746Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: "Reproduce every item read alias in CLI, SDK, and MCP; define minimum identity and requested-empty preservation once in the shared projection primitive; distinguish absent, empty, omitted, and inapplicable groups in typed receipts; ensure explicit budgets still bind; add unit, integration, packed-consumer, and executable recovery negative controls; document the compatibility contract and token-cost impact."
@@ -24,15 +24,15 @@ confidence: high
 severity: high
 environment: Current pm read/get fields projection on 2026-08-15
 repro_steps: "Read an item whose selected linked collection is empty using pm read <id> --fields <group>; inspect the result for the item id, the requested empty collection, and omission semantics."
-resolution: "Sparse read projections always retain canonical item identity and materialize every explicitly requested collection, including test runs and planning collections, as an empty array when absent."
-expected_result: "Every explicit sparse collection selector returns stable item identity plus the selected collection as populated data or an empty array, without expanding unrequested context."
-actual_result: "Sparse read projections always retain canonical item identity and materialize every explicitly requested collection, including test runs and planning collections, as an empty array when absent."
+resolution: "Sparse read projections retain canonical item identity at runtime and in the public GetResult type, and materialize every explicitly requested collection, including test runs and planning collections, as an empty array when absent."
+expected_result: "Every explicit sparse collection selector returns a statically required item identity plus the selected collection as populated data or an empty array, without expanding unrequested context."
+actual_result: "Sparse read projections retain canonical item identity at runtime and in the public GetResult type, and materialize every explicitly requested collection, including test runs and planning collections, as an empty array when absent."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-cxr0jb,discovered_from,"2026-08-15T15:27:12.262Z","harness:codex","cli:create:dep",detected
   pm-p258tx,verifies,"2026-08-15T15:28:50.572Z","harness:codex","cli:update:dep",detected
   pm-b1w8vr,discovered_from,"2026-08-15T15:28:52.471Z","harness:codex","cli:update:dep",detected
   pm-x710qm,verifies,"2026-08-15T15:28:54.012Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-08-15T15:27:12.262Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for GH-1033, fields empty group, requested empty collection, identity projection, and omission receipt found no item for this exact zero-exit projection failure. Closed pm-cxr0jb and pm-p258tx provide intent-projection and omission-receipt lineage; open pm-5t33or is the canonical universal output parent. This issue records the newly reported regression without duplicating those items."
   "2026-08-15T15:29:22.279Z","harness:codex","GitHub linkage evidence 2026-08-15: https://github.com/unbraind/pm-cli/issues/1033#issuecomment-5302914118 points GitHub #1033 to this canonical PM item after all-status duplicate checks and typed lineage enrichment."
   "2026-08-16T05:20:48.988Z","harness:codex","TDD red evidence: focused get projection regression failed because an ID-less sparse field request returned comments/notes/learnings/tests/docs as undefined and omitted the canonical item id. Command: node scripts/run-tests.mjs test -- tests/unit/commands/get-append-command.spec.ts."
@@ -40,16 +40,21 @@ comments[7]{created_at,author,text}:
   "2026-08-16T07:05:14.869Z","harness:codex","Delivery: PR #1041 https://github.com/unbraind/pm-cli/pull/1041 carries this context-integrity tranche; initial implementation commit b9ef9470eed45b74353864743df5b4d4718a0bc4 passed local exact coverage and repository gates. Hosted exact-head checks and bot review are pending."
   "2026-08-16T07:22:52.413Z","harness:codex","Review TDD red evidence: selectable test_runs and plan_* collections projected as undefined instead of explicit empty arrays; focused regression failed before the shared fallback set was completed."
   "2026-08-16T07:50:47.836Z","harness:codex","Final green evidence: focused linked test passed; disposable packed npm/npx projection proof passed; repository coverage passed 7,403 tests at exact 53,674/53,674 statements, 39,693/39,693 branches, 11,018/11,018 functions, and 51,831/51,831 lines."
-files[3]{path,scope,note}:
+  "2026-08-16T08:29:50.805Z","harness:codex","Review type-contract plan: assert Awaited<ReturnType<typeof runGet>>.item.id is string, then make GetItemProjection require identity while retaining partial metadata."
+  "2026-08-16T08:32:28.106Z","harness:codex","Review type TDD red evidence: pnpm typecheck failed TS2322 because GetResult.item.id was string | undefined instead of required string."
+  "2026-08-16T08:57:31.434Z","harness:codex","Final review-hardening green evidence: GetResult.item.id is now statically required while Partial<ItemMetadata> retains known projected property types; pnpm typecheck and the linked runtime projection test passed. The definitive repository run passed 7,404 tests at exact 100/100/100/100 plus all strict quality, security, contract, docs, and artifact gates."
+files[4]{path,scope,note}:
   src/sdk/query/get.ts,project,Sparse projection identity and requested-empty collection contract
+  tests/types/read-output-contracts.test-d.ts,project,Compile-time required sparse item identity contract
   tests/unit/commands/get-append-command.spec.ts,project,Public get projection regression
   tests/unit/commands/update-command.spec.ts,project,Cross-command requested-empty projection expectation
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/get-append-command.spec.ts,project,240
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msvetxql-ux6kde,test,passed,"2026-08-16T06:14:25.120Z","2026-08-16T06:14:38.349Z","2026-08-16T06:14:38.349Z",1,0,0
   test-local-msvi8dej-5g9lak,test,passed,"2026-08-16T07:49:36.859Z","2026-08-16T07:49:50.683Z","2026-08-16T07:49:50.683Z",1,0,0
+  test-local-msvjy62e-5zgidl,test,passed,"2026-08-16T08:37:33.683Z","2026-08-16T08:37:53.846Z","2026-08-16T08:37:53.846Z",1,0,0
 docs[1]{path,scope,note}:
   docs/CONTEXT_INTEGRITY_CONTRACTS.md,project,Cross-surface context integrity contract
-close_reason: "Sparse read projections always retain canonical item identity and materialize every explicitly requested collection, including test runs and planning collections, as an empty array when absent."
+close_reason: "Sparse read projections retain canonical item identity at runtime and in the public GetResult type, and materialize every explicitly requested collection, including test runs and planning collections, as an empty array when absent."
 body: ""

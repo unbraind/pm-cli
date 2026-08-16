@@ -66,7 +66,7 @@ export function formatExtensionManifestSchemaWarnings(
       ? `extension_manifest_unknown_key:${layer}:${manifest.name}:key=compatibility:suggested=pm_min_version`
       : `extension_manifest_unknown_key:${layer}:${manifest.name}:key=${key}`,
   );
-  if (warnings.length > 0 && inspection.missingVersionBounds) {
+  if (inspection.missingVersionBounds) {
     warnings.push(
       `extension_manifest_no_version_bounds:${layer}:${manifest.name}:suggested=pm_min_version`,
     );

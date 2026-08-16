@@ -4491,7 +4491,13 @@ describe("sdk assertExtensionManifestCompatible", () => {
 });
 
 describe("sdk assertExtensionPreflight", () => {
-  const identity = { name: "preflight", version: "1.0.0", entry: "./index.js", priority: 0 } as const;
+  const identity = {
+    name: "preflight",
+    version: "1.0.0",
+    entry: "./index.js",
+    priority: 0,
+    pm_min_version: "0.0.0",
+  } as const;
   const commandBlueprint = {
     commands: [{ name: "demo", action: "demo", run: () => ({ ok: true }) }],
   };

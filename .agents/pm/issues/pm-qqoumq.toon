@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[7]: agent-ux,compatibility,extensions,github-1032,manifest,sdk,validation
 created_at: "2026-08-15T15:26:48.504Z"
-updated_at: "2026-08-16T08:19:01.074Z"
-closed_at: "2026-08-16T08:19:00.429Z"
-completed_at: "2026-08-16T08:19:00.429Z"
+updated_at: "2026-08-16T08:57:45.410Z"
+closed_at: "2026-08-16T08:57:44.529Z"
+completed_at: "2026-08-16T08:57:44.529Z"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: "Define the authoritative manifest key schema in the SDK; detect unknown top-level and compatibility-like nested keys without rejecting legitimate extension namespaces; add typed findings and exact migration targets; apply the same analyzer to scaffolding, package doctor, CLI, MCP, contracts, and first-party package governance; test the three reported spellings plus negative controls in disposable packages; document compatibility and rollout behavior."
@@ -24,15 +24,15 @@ confidence: high
 severity: high
 environment: Current extension manifest SDK and package fleet on 2026-08-15
 repro_steps: "Pass manifests containing compatibility.pm, nested pm.pm_min_version, and stale top-level pm_min_version through checkExtensionManifestCompatibility; observe no unknown-key finding and compatible=true for the first two."
-resolution: "Extension manifest diagnostics use a closed shared schema and locale-independent code-unit ordering, with ignored compatibility spellings and missing bounds reported consistently at authoring and runtime."
-expected_result: Unknown manifest keys have stable cross-host ordering and compatibility-like misspellings receive deterministic migration guidance through SDK and runtime diagnostics.
-actual_result: "Extension manifest diagnostics use a closed shared schema and locale-independent code-unit ordering, with ignored compatibility spellings and missing bounds reported consistently at authoring and runtime."
+resolution: "Extension manifest diagnostics use a closed shared schema and locale-independent code-unit ordering; ignored spellings and independently missing canonical bounds are reported consistently in SDK authoring, runtime discovery, health, and generated contracts."
+expected_result: "Unknown manifest keys have stable cross-host ordering, compatibility-like misspellings receive deterministic migration guidance, and every manifest without canonical bounds receives an independent advisory."
+actual_result: "Extension manifest diagnostics use a closed shared schema and locale-independent code-unit ordering; ignored spellings and independently missing canonical bounds are reported consistently in SDK authoring, runtime discovery, health, and generated contracts."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-1w0d,discovered_from,"2026-08-15T15:26:48.504Z","harness:codex","cli:create:dep",detected
   pm-u5le,implements,"2026-08-15T15:28:38.793Z","harness:codex","cli:update:dep",detected
   pm-exrw,verifies,"2026-08-15T15:28:40.373Z","harness:codex","cli:update:dep",detected
   pm-llrp,discovered_from,"2026-08-15T15:28:48.965Z","harness:codex","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-08-15T15:26:48.504Z","harness:codex","Duplicate-check evidence 2026-08-15: all-status searches for GH-1032, manifest unknown key, pm_min_version, compatibility.pm, and nested compatibility found no item for this silent manifest-schema gap. Closed pm-1w0d owns the existing compatibility analyzer and is linked as provenance; this item records the newly reported cross-package validation defect without reopening completed work."
   "2026-08-15T15:29:21.230Z","harness:codex","GitHub linkage evidence 2026-08-15: https://github.com/unbraind/pm-cli/issues/1032#issuecomment-5302914062 points GitHub #1032 to this canonical PM item after all-status duplicate checks and typed lineage enrichment."
   "2026-08-16T05:20:51.282Z","harness:codex","TDD red evidence: SDK manifest compatibility reported no findings for an ignored compatibility.pm spelling and no canonical pm_min_version/pm_max_version bounds. Command: node scripts/run-tests.mjs test -- tests/unit/sdk/extension-manifest-schema-contract.spec.ts."
@@ -44,7 +44,10 @@ comments[11]{created_at,author,text}:
   "2026-08-16T08:07:09.885Z","harness:codex","Shipping reconciliation evidence: PR #1041 synthetic-merge CI reproduced a changelog mismatch because origin/main advanced to release commit cbc5ac21a (v2026.8.16) after the branch cut. Merged that exact release commit, regenerated with pm-changelog 2026.8.16, and the deterministic check plus linked manifest regression now pass on the reconciled tree."
   "2026-08-16T08:14:23.634Z","harness:codex","Hosted/static contract TDD evidence: after changelog parity passed, pnpm contracts:check rejected the generator-owned catalog because manifest_unknown_key and no_version_bounds_declared were absent; regenerating those entries correctly made the full runtime contract snapshot stale at line 17145, proving both public artifacts are gated."
   "2026-08-16T08:18:59.655Z","harness:codex","Generated-contract green evidence: regenerated manifest_unknown_key and no_version_bounds_declared into both catalog partitions, refreshed the full runtime contract snapshot, and linked all generator-owned artifacts. pnpm contracts:check, full pnpm lint (including static assurance/docstring/graph/record gates), pnpm security:scan, and the linked manifest regression all pass."
-files[10]{path,scope,note}:
+  "2026-08-16T08:29:49.530Z","harness:codex","Review TDD plan: prove a recognized-only unbounded manifest receives the missing-bounds diagnostic independently of unknown-key detection, then preserve bounded negative controls."
+  "2026-08-16T08:32:26.735Z","harness:codex","Review TDD red evidence: recognized-only unbounded manifest produced zero findings; expected no_version_bounds_declared. Focused suite failed before implementation."
+  "2026-08-16T08:57:30.003Z","harness:codex","Final review-hardening green evidence: recognized-only unbounded manifests now emit no_version_bounds_declared independently in SDK and runtime paths; valid unrelated fixtures declare an explicit floor and dedicated no-bounds tests preserve advisory coverage. The linked test and 513 affected regressions passed, followed by 7,404 repository tests at exact 100/100/100/100 plus lint, static assurance, secret, docs, contracts, and package gates."
+files[14]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog managed package provenance
   CHANGELOG.md,project,Generated delivery history from canonical closed PM items
   sdk/public-surface.json,project,Acknowledged additive manifest diagnostic API surface
@@ -54,15 +57,20 @@ files[10]{path,scope,note}:
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated public manifest_unknown_key error contract
   src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated public no_version_bounds_declared error contract
   tests/fixtures/contracts/full.json,project,Full runtime contract snapshot including generated manifest diagnostics
+  tests/helpers/extensions.ts,project,Review-hardening regression coverage for independent manifest bounds diagnostics
+  tests/unit/commands/health-command.spec.ts,project,Review-hardening regression coverage for independent manifest bounds diagnostics
   tests/unit/sdk/extension-manifest-schema-contract.spec.ts,project,SDK and loader schema regression
+  tests/unit/sdk/sdk-compose.spec.ts,project,Review-hardening regression coverage for independent manifest bounds diagnostics
+  tests/unit/sdk/sdk-index.spec.ts,project,Review-hardening regression coverage for independent manifest bounds diagnostics
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/extension-manifest-schema-contract.spec.ts,project,240
-test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msveu56g-hhla9a,test,passed,"2026-08-16T06:14:38.837Z","2026-08-16T06:14:47.992Z","2026-08-16T06:14:47.992Z",1,0,0
   test-local-msvi8ku5-x3yh4i,test,passed,"2026-08-16T07:49:51.253Z","2026-08-16T07:50:00.317Z","2026-08-16T07:50:00.317Z",1,0,0
   test-local-msviumw6-sob8hg,test,passed,"2026-08-16T08:07:01.212Z","2026-08-16T08:07:09.414Z","2026-08-16T08:07:09.414Z",1,0,0
   test-local-msvj9ncf-kuv1pv,test,passed,"2026-08-16T08:18:41.735Z","2026-08-16T08:18:49.838Z","2026-08-16T08:18:49.838Z",1,0,0
+  test-local-msvjy298-mhj54n,test,passed,"2026-08-16T08:37:33.696Z","2026-08-16T08:37:48.908Z","2026-08-16T08:37:48.908Z",1,0,0
 docs[1]{path,scope,note}:
   docs/CONTEXT_INTEGRITY_CONTRACTS.md,project,Canonical manifest compatibility documentation
-close_reason: "Generated error-code catalog and runtime contracts now include both manifest diagnostics; full static, security, and linked regression gates pass."
+close_reason: "Extension manifest diagnostics use a closed shared schema and locale-independent code-unit ordering; ignored spellings and independently missing canonical bounds are reported consistently in SDK authoring, runtime discovery, health, and generated contracts."
 body: ""

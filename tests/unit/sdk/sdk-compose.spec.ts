@@ -1155,12 +1155,18 @@ describe("sdk checkExtensionManifestCompatibility", () => {
     );
   });
 
-  it("reports a manifest with no version bounds as compatible with no findings", () => {
+  it("reports a manifest with no version bounds as compatible with an advisory", () => {
     expect(
       checkExtensionManifestCompatibility({}, { pmVersion: "2026.6.23" }),
     ).toEqual({
       compatible: true,
-      findings: [],
+      findings: [
+        expect.objectContaining({
+          code: "no_version_bounds_declared",
+          severity: "warning",
+          suggested_key: "pm_min_version",
+        }),
+      ],
       pmVersion: "2026.6.23",
     });
   });
@@ -1432,14 +1438,20 @@ describe("sdk preflightExtension", () => {
     expect(report.ok).toBe(false);
   });
 
-  it("treats a target with no manifest bounds anywhere as compatible", () => {
+  it("treats a target with no manifest bounds anywhere as compatible with an advisory", () => {
     const report = preflightExtension(commandBlueprint, {
       target: { pmVersion: "2026.6.23" },
     });
     expect(report.manifest).toBeNull();
     expect(report.compatibility).toEqual({
       compatible: true,
-      findings: [],
+      findings: [
+        expect.objectContaining({
+          code: "no_version_bounds_declared",
+          severity: "warning",
+          suggested_key: "pm_min_version",
+        }),
+      ],
       pmVersion: "2026.6.23",
     });
     expect(report.ok).toBe(true);
