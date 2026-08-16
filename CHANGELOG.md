@@ -9,8 +9,8 @@
 ### Fixed
 
 - The relationship lexicon cannot express recurrence, so a defect family fixed thirty times is thirty unrelated nodes to every graph algorithm ([pm-ouyq3n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ouyq3n.toon))
-- The gate contributors run before merging fails on every Claude Code workstation and passes on the runner for the same tree, because a harness probe writes advisory warnings into the surface the token budget measures ([pm-95h7pg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-95h7pg.toon))
 - A declared context intent returns no context when combined with the narrowing flag, and its refusal receipt reports 122 tokens against a 2400 budget as the reason it does not fit ([pm-3crymx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3crymx.toon))
+- The gate contributors run before merging fails on every Claude Code workstation and passes on the runner for the same tree, because a harness probe writes advisory warnings into the surface the token budget measures ([pm-95h7pg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-95h7pg.toon))
 - The public-surface gate enumerates its own hand-written entrypoint list, so two published code exports ship ungoverned and ./cli publishes 86 internal functions as typed API ([pm-suhxny](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-suhxny.toon))
 - GH-1033: read fields selectors can erase identity and requested empty collections ([pm-4fwgaz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4fwgaz.toon))
 - GH-1036/GH-1040: history integrity verdicts and repairs are incompatible across supported CLI versions ([pm-0wfdim](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0wfdim.toon))

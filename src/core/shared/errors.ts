@@ -64,6 +64,16 @@ export interface PmCliErrorContext {
   measurement_id?: string;
   /** Assurance measurement source kind involved in a refusal, when known. */
   source_kind?: string;
+  /** Source item whose endpoint metadata violated a relationship contract. */
+  source_id?: string;
+  /** Source item creation time used to evaluate a temporal relationship contract. */
+  source_created_at?: string;
+  /** Target item whose endpoint metadata violated a relationship contract. */
+  target_id?: string;
+  /** Target item creation time used to evaluate a temporal relationship contract. */
+  target_created_at?: string;
+  /** Temporal relationship rule evaluated for the source and target. */
+  temporal_order?: string;
   /** Validate or health check selected by an assurance source, when known. */
   check?: string;
   /** Serialization format involved in a parse failure. */

@@ -72,9 +72,9 @@ export interface PmContextIntentReceipt {
     | "budget_receipt_only"
     | "standard_item"
     | "none";
-  /** Whether the declared ceiling can carry at least one useful result row. */
+  /** Whether the declared ceiling can carry the measured useful projection, independent of an override. */
   declaration_feasible: boolean;
-  /** True only when no useful result survived the declared ceiling. */
+  /** True only when no useful result survived the effective ceiling. */
   result_omitted: boolean;
   /** Row ceiling calculated from the selected intent's effective token budget. */
   budget_derived_limit?: number;
@@ -900,15 +900,19 @@ export function attachContextIntentReceipt<
     receipt.degradation = "budget_row_compaction";
     updateContextIntentEstimate(projected, receipt);
   }
+  receipt.declaration_feasible =
+    receipt.estimated_tokens <= receipt.declared_token_budget;
   if (receipt.estimated_tokens > receipt.token_budget) {
     receipt.degradation = "budget_receipt_only";
-    receipt.declaration_feasible = false;
     receipt.result_omitted = true;
     receipt.within_budget = false;
     projected = {
       budget_exceeded: {
         omitted_result: true,
-        reason: "declared_budget_infeasible",
+        reason:
+          receipt.token_budget_override === 0
+            ? "declared_budget_infeasible"
+            : "effective_budget_infeasible",
         restore_with: `pm ${command} --for ${contract.intent} --token-budget ${Math.ceil(receipt.estimated_tokens / 100) * 100} --limit ${receipt.budget_derived_limit ?? 1}`,
       },
       context_intent: receipt,

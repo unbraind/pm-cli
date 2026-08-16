@@ -234,7 +234,7 @@ function commandStdout(args: string[]): string {
   if (joined.includes("--for") && joined.includes("--token-budget 256")) {
     return JSON.stringify({
       context_intent: {
-        declaration_feasible: false,
+        declaration_feasible: true,
         result_omitted: true,
         within_budget: false,
         estimated_tokens: 280,
@@ -838,7 +838,7 @@ describe("scripts/release/token-budget-gate", () => {
     mod.main();
 
     expect(log).toHaveBeenCalledWith(
-      "Token budget gate passed (32 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
+      "Token budget gate passed (32 surfaces checked; unbounded negative control 5000 tokens; infeasible effective intent receipt verified).",
     );
   });
 
@@ -854,7 +854,7 @@ describe("scripts/release/token-budget-gate", () => {
       path.join("/repo", "scripts", "release", "token-budgets.json"),
     );
     expect(log).toHaveBeenCalledWith(
-      "Token budget gate passed (32 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
+      "Token budget gate passed (32 surfaces checked; unbounded negative control 5000 tokens; infeasible effective intent receipt verified).",
     );
   });
 
@@ -1068,7 +1068,7 @@ describe("scripts/release/token-budget-gate", () => {
           : commandStdout(args),
     });
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
-      "intent-negative-control: infeasible 256-token list declaration",
+      "intent-negative-control: infeasible 256-token list override",
     );
   });
 

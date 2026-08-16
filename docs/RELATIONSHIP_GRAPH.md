@@ -17,6 +17,9 @@ means the source is a later event with the same observable failure identity as
 the target. Its `temporalOrder: "source_after_target"` states chronology without
 making recurrence an execution-order dependency. The edge is directed,
 many-to-many, and `persistent`, so it remains valid after either endpoint closes.
+Local mutation adapters enforce that contract against both endpoint
+`created_at` values before writing the item or immutable history; equal and
+reverse timestamps are rejected, including update-many dry runs.
 It does not replace the older event (`supersedes`) and does not assert that two
 records describe one event (`duplicate_of`). Traverse recurrence families with
 `direction: "both"`; impact, paths, dominators, centrality, cut structure, and

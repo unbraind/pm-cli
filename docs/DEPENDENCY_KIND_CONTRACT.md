@@ -19,7 +19,11 @@ The SDK relationship registry is authoritative. `canonicalizeRelationshipKind()`
 It is persistent after both items become terminal and carries temporal identity,
 not execution precedence. `supersedes` keeps replacement semantics, while
 `duplicate_of` remains item-level record identity rather than an edge between
-distinct events.
+distinct events. Local create, update, and update-many mutations compare the
+endpoint `created_at` values before persistence and reject equal or reverse
+chronology with `dependency_temporal_order_invalid`; explicit cross-workspace
+references remain external because their target metadata is not locally
+available.
 
 ## Direction and actionability
 

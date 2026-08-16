@@ -794,7 +794,7 @@ export function compareBudgets(measurements, manifest) {
   return violations;
 }
 
-/** Verify controls that prove bounded defaults differ from explicit escape hatches and infeasible declarations remain truthful. */
+/** Verify controls that prove bounded defaults differ from escape hatches and infeasible effective overrides remain truthful. */
 function compareNegativeControls(negativeControl, intentNegativeControl) {
   const violations = [];
   if (
@@ -806,12 +806,12 @@ function compareNegativeControls(negativeControl, intentNegativeControl) {
     );
   }
   if (
-    intentNegativeControl?.declaration_feasible !== false ||
+    intentNegativeControl?.declaration_feasible !== true ||
     intentNegativeControl?.result_omitted !== true ||
     intentNegativeControl?.within_budget !== false
   ) {
     violations.push(
-      "intent-negative-control: infeasible 256-token list declaration did not return an explicit omitted-result receipt",
+      "intent-negative-control: infeasible 256-token list override did not return an explicit omitted-result receipt",
     );
   }
   return violations;
@@ -860,7 +860,7 @@ export function main() {
     );
   }
   console.log(
-    `Token budget gate passed (${measurements.length} surfaces checked; unbounded negative control ${negativeControl.estimated_tokens} tokens; infeasible intent receipt verified).`,
+    `Token budget gate passed (${measurements.length} surfaces checked; unbounded negative control ${negativeControl.estimated_tokens} tokens; infeasible effective intent receipt verified).`,
   );
 }
 

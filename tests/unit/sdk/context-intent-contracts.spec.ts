@@ -385,6 +385,50 @@ describe("context intent contracts", () => {
     );
   });
 
+  it("reports declaration feasibility independently from caller overrides", () => {
+    const lowerOverride = attachContextIntentReceipt(
+      "next",
+      { for: "execute", tokenBudget: 256 },
+      Object.fromEntries(
+        Array.from({ length: 120 }, (_, index) => [`field_${index}`, index]),
+      ),
+    );
+    expect(lowerOverride).toMatchObject({
+      budget_exceeded: { reason: "effective_budget_infeasible" },
+      context_intent: {
+        token_budget: 256,
+        declared_token_budget: 1200,
+        declaration_feasible: true,
+        result_omitted: true,
+        within_budget: false,
+      },
+    });
+    expect(lowerOverride.context_intent!.estimated_tokens).toBeLessThanOrEqual(
+      lowerOverride.context_intent!.declared_token_budget,
+    );
+
+    const higherOverride = attachContextIntentReceipt(
+      "next",
+      { for: "execute", tokenBudget: 4000 },
+      Object.fromEntries(
+        Array.from({ length: 500 }, (_, index) => [`field_${index}`, index]),
+      ),
+    );
+    expect(higherOverride.context_intent).toMatchObject({
+      token_budget: 4000,
+      declared_token_budget: 1200,
+      declaration_feasible: false,
+      result_omitted: false,
+      within_budget: true,
+    });
+    expect(higherOverride.context_intent!.estimated_tokens).toBeGreaterThan(
+      higherOverride.context_intent!.declared_token_budget,
+    );
+    expect(higherOverride.context_intent!.estimated_tokens).toBeLessThanOrEqual(
+      higherOverride.context_intent!.token_budget,
+    );
+  });
+
   it("reports the exact serialized token estimate and a stable source", () => {
     const projected = attachContextIntentReceipt(
       "next",

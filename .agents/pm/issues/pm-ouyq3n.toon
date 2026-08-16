@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[3]: graph,ontology,recurrence
 created_at: "2026-08-03T20:34:50.941Z"
-updated_at: "2026-08-16T13:44:02.195Z"
-closed_at: "2026-08-16T13:43:46.738Z"
-completed_at: "2026-08-16T13:43:46.738Z"
+updated_at: "2026-08-16T15:08:15.339Z"
+closed_at: "2026-08-16T15:08:14.680Z"
+completed_at: "2026-08-16T15:08:14.680Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "A recurrence relation exists in the declared dependency-kind domain with stated direction, time ordering, and terminal-endpoint validity, and is distinguishable from supersedes and from duplicate; The relation is added to the canonical vocabulary rather than as a sixteenth ungoverned spelling, so the lexicon consolidation lands first and the new kind is defined against the consolidated set; Graph traversal, impact, dominators and community detection reach every occurrence of a family from any other occurrence, proved on the historical platform-regression family; The existing supersedes rows keep replacement semantics unchanged and no row is retyped by the introduction of the new relation; The recurrence analyzer feature can satisfy its typed-recurrence acceptance criterion without reinterpreting any existing kind"
@@ -17,33 +17,50 @@ risk: high
 confidence: 88
 resolution: "Registered recurs_from as directed, persistent, many-to-many, non-self, source-after-target, and non-ordering; enriched an eight-generation live recurrence chain."
 expected_result: The canonical relationship vocabulary can distinguish a later recurrence from its earlier defect and expose that temporal family to every graph consumer without treating it as execution precedence.
-actual_result: "Repeated defects can now be linked as chronological recurrence families and queried by paths, impact, communities, dominators, dependencies, and plans without corrupting execution ordering."
+actual_result: "recurs_from is a first-class directed non-ordering relationship with source_after_target chronology enforced before persistence for create, update, and update-many, including dry-run and equal-timestamp refusal with structured endpoint evidence."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-4020c5,blocked_by,"2026-08-03T20:35:49.290Z","harness:claude-code","cli:update:dep",detected
   pm-96h7,implements,"2026-08-03T20:35:49.290Z","harness:claude-code","cli:update:dep",detected
   pm-vk7zek,related,"2026-08-03T20:35:49.290Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,implements,"2026-08-03T20:35:49.290Z","harness:claude-code","cli:update:dep",detected
   pm-wmf72c,related,"2026-08-03T20:35:49.290Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-03T20:37:42.405Z","harness:claude-code","Independent confirmation found the same day this item was filed, from the project's own governance output rather than from reasoning about the lexicon.\n\nThe metadata validator now reports two duplicate issue codes, not one. The long-standing pair is GH-209 on pm-1byt and pm-25se, two genuinely distinct defects a release apart. The second pair is GH-779 on pm-ajaskl, closed 2026-07-28, and pm-wnbk2l, closed 2026-08-02. The second item is titled with the literal word recurrence.\n\nThat pair is the argument in miniature. Someone needed to state that a fixed defect had returned. No kind exists for it, so the recurrence was encoded twice over in places that were never meant to carry it: once in the title, by reusing the upstream issue code as a prefix, and once in the graph as discovered_from, which asserts derivation of knowledge and not repetition of a failure. The item does carry discovered_from to its predecessor, so the author reached for the nearest available kind and it was the wrong one.\n\nThen the governance layer read the workaround and called it a defect. A duplicate issue code is exactly what the title-namespace workaround produces, so the only surface in the project that noticed the recurrence reported it as a data-quality error and proposed renaming or merging the two items. Renaming would erase the only recorded trace of the recurrence. Merging would destroy one of two correctly closed items.\n\nTwo facts follow. The need is real and has now arisen at least twice through independent authors. And the absence is actively harmful rather than merely missing, because the substitute encodings are indistinguishable from mistakes and the tooling treats them as such.\n\nRecorded as evidence on this item. The duplicate-code check itself keeps its existing owner and its existing check-side disposition, and neither pair should be renamed or merged.\n"
   "2026-08-16T12:30:34.145Z","harness:codex","Implementation evidence: recurs_from is a directed persistent source-after-target relationship that remains outside execution ordering. Seven live edges connect the eight historical checker-denominator occurrences from pm-rf120g back to pm-te6elw; paths returns the exact seven-edge chain, bidirectional impact reaches the other seven from a middle occurrence, communities returns exactly the eight-item family, and dominators reports six bottlenecks. Existing supersedes rows remained 166."
   "2026-08-16T13:26:39.546Z","harness:codex","Verification evidence: recurs_from is now a registered directed, persistent, many-to-many, non-ordering relation with source_after_target temporal semantics across SDK contracts, dependency/plan vocabularies, CLI help, graph governance, docs, fixtures, and tests. The live tracker now has an eight-generation recurrence chain with seven exact recurs_from edges; paths, impact, communities, and dominators consumed it while supersedes remained unchanged. Packed bunx acceptance created and traversed a fresh recurrence edge. Full 7,411-test coverage is exact 100/100/100/100 and graph/static gates pass."
   "2026-08-16T13:42:31.529Z","harness:codex","Reviewed-product lineage: implementation is published in https://github.com/unbraind/pm-cli/pull/1042 at initial head f4ff1a393 and the PR body links this item on the GitHub-renderable main path."
+  "2026-08-16T15:03:23.813Z","harness:codex","Review-fix evidence: chronology is enforced at mutation time from persisted endpoint created_at values for create, update, and bulk update/dry-run. Structured dependency_temporal_order_invalid context names both endpoint ids/timestamps and the temporal contract. Tests cover valid persistence, reverse/equal refusal, missing-target precedence, unresolved external targets, bulk dry-run refusal, and no partial persistence. A fresh temporary tracker manually persisted a forward recurrence, refused the reverse edge, and proved it remained absent. Repo-wide pnpm lint passed; full coverage passed 507 files / 7,414 tests at 100/100/100/100; packed npx smoke passed for 13 packages."
+  "2026-08-16T15:06:46.122Z","harness:codex","Linked-test recovery: the first exact run correctly failed because quality:tracker-measurements was inherited as schema context, where the tracker-installed assurance registry is absent. Replaced only that link with pm_context_mode=tracker so the acceptance gate executes against an isolated copied tracker rather than the real repository or an empty schema sandbox."
+  "2026-08-16T15:08:11.205Z","harness:codex","Linked-test recovery verified: the corrected isolated tracker-context execution passed tracker-context-quality with all 40 assertions green, 2,510-item population, 0 duplicate dependency rows, 0 legacy ordering cycles, and 99.56% outcome reachability."
 notes[1]{created_at,author,text}:
   "2026-08-16T10:40:22.179Z","harness:claude-code","Measured recurrence family, 2026-08-16 — \"the check enumerates a set it maintains instead of the set the artifact defines\". Scanned all 1,547 Issue and Task items, open and terminal.\n\nSeven instances, six already fixed and one found today:\n\n  pm-b84irw   closed   Measure source replication against an independently discovered denominator\n  pm-te6elw   closed   SDK completeness asserted by a 10-case curated array against 85 declared actions\n  pm-1jrdri   closed   The rendered command surface is not a subset of the contracted surface\n  pm-6j7r1a   closed   The runtime contract enumeration is not closed over the surface it can resolve\n  pm-xpumg4   closed   The boundary gate proves the CLI stopped importing private core and never proves it only imports the published SDK\n  pm-7wx1f9   closed   Nested workspace snapshot and help paths are enumerated but not resolvable\n  pm-suhxny   open     The public-surface gate enumerates its own hand-written entrypoint list; two published code exports ship ungoverned\n\nEvery one of them has the same three-part shape. A machine-readable artifact defines a set to the outside world — the export map, the workflow files, the command registration, the action table. A checker keeps its own enumeration of that set. The checker proves its list against the artifact and never proves the artifact against its list, so the check is complete over its own belief and silent about everything the artifact gained since the belief was written.\n\nTwo properties make this family worth detecting specifically rather than treating each instance as a one-off.\n\nIt fails open and it fails silently. Every one of the seven passed green while the gap existed. The failure is not a wrong answer, it is a correct answer to a smaller question, which is invisible in a pass/fail verdict and only appears when someone computes the denominator independently.\n\nIt recurs at the moment of growth. Nothing breaks when the hand list is written; the divergence begins the first time the artifact gains an entry. So the defect is introduced by a change that is unrelated to the checker, by an author who has no reason to look at it, which is precisely the situation review does not catch.\n\n## The detectable signature\n\nFor pm-1qkivy this family is a concrete first target, because the signature is narrow enough to detect without drowning in false positives:\n\n- a module under scripts/ or src/ that declares a frozen literal collection (Object.freeze over an object or array, or a `new Set([...])` of string literals), and\n- reads a structured artifact in the same function or module — package.json, a workflows directory, a generated contract table, a registry JSON — and\n- indexes into the artifact using members of the literal, rather than iterating the artifact.\n\nThat third clause is the discriminator. `for (const key of MY_LIST) lookup(artifact[key])` is the defect; `for (const key of Object.keys(artifact)) require(MY_MAP[key])` is the correct shape.\n\n## The positive control already in the repository\n\nscripts/release/gate-registry.mjs implements the correct shape. `discoverWorkflowGates` parses every file under .github/workflows and returns the real job identifiers, then `validateGateRegistry` checks both directions explicitly: `pipeline:<id>:unregistered` when the artifact has an entry the registry lacks, and `pipeline:<id>:not_enforced` when the registry has an entry the artifact lacks. The hand-maintained registry is annotation on a derived set, never the enumeration.\n\nThat gives any detector a same-repository positive control and a same-repository negative control, which is what pm-rtn5h6's escape ratchet asks every new gate to carry. It also means the fix for each instance is a known refactor rather than a design question.\n\n## Cost of the escapes\n\nSix shipped fixes for one shape. The seventh escaped into a published artifact: 2026.8.16 on npm resolves `@unbrained/pm-cli/cli` to a declaration file exporting 86 internal helpers, and the surface gate that exists to prevent exactly that reported \"0 classified changes\" for it. Installing the published tarball with bun and importing the entrypoint returns both symbols, typed.\n\nRecorded on pm-1qkivy as a detector target and on pm-ouyq3n as a worked example of a recurrence the current relationship lexicon cannot express: these seven items are seven unrelated nodes to any graph walk, and the only thing tying them together today is this note."
-files[8]{path,scope,note}:
+files[14]{path,scope,note}:
   sdk/public-surface.json,project,Ratchet the public temporal relationship and dependency vocabulary
   src/cli/register-mutation.ts,project,Generate relationship help from the canonical SDK vocabulary
+  src/core/shared/errors.ts,project,Publish structured temporal endpoint failure evidence
+  src/sdk/dependency-flag-validation.ts,project,Resolve endpoint metadata and reject invalid temporal chronology before mutation
   src/sdk/graph/governance.ts,project,Count recurrence as semantic context in graph governance
+  src/sdk/lifecycle/create.ts,project,Supply new-item creation time for recurrence validation
+  src/sdk/lifecycle/update-many.ts,project,Validate bulk preview and apply recurrence chronology
+  src/sdk/lifecycle/update.ts,project,Validate direct update recurrence chronology
   src/sdk/relationship-kinds/contract.ts,project,Define the directed persistent source-after-target recurrence contract
   src/sdk/relationships.ts,project,Publish and validate temporal relationship semantics
   src/types.ts,project,Admit recurrence across dependency and plan-step SDK types
   tests/fixtures/contracts/full.json,project,Publish recurrence in generated CLI contracts
+  tests/unit/commands/lossless-mutation-contracts.spec.ts,project,Exercise valid equal reverse and bulk recurrence mutations
   tests/unit/sdk/relationships.spec.ts,project,Prove validation traversal impact community and non-ordering recurrence semantics
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts,project,240
-  "pnpm quality:tracker-measurements",project,300
-test_runs[2]:
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lossless-mutation-contracts.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm quality:tracker-measurements"
+    scope: project
+    timeout_seconds: 300
+    pm_context_mode: tracker
+test_runs[4]:
   - run_id: test-all-local-msvu9oiu-8i6e0l
     kind: test-all
     status: failed
@@ -64,10 +81,28 @@ test_runs[2]:
     passed: 2
     failed: 0
     skipped: 0
+  - run_id: test-local-msvxtrln-6099ja
+    kind: test
+    status: failed
+    started_at: "2026-08-16T15:05:57.577Z"
+    finished_at: "2026-08-16T15:06:23.099Z"
+    recorded_at: "2026-08-16T15:06:23.099Z"
+    passed: 2
+    failed: 1
+    skipped: 0
+  - run_id: test-local-msvxvvwg-rzgnwd
+    kind: test
+    status: passed
+    started_at: "2026-08-16T15:06:46.869Z"
+    finished_at: "2026-08-16T15:08:01.984Z"
+    recorded_at: "2026-08-16T15:08:01.984Z"
+    passed: 1
+    failed: 0
+    skipped: 0
 docs[4]{path,scope,note}:
   docs/DEPENDENCY_KIND_CONTRACT.md,project,Document recurrence storage direction and lifecycle
   docs/RELATIONSHIP_GRAPH.md,project,Document recurrence traversal analytics and distinction from replacement
   docs/SDK.md,project,Document the SDK recurrence primitive
   docs/TRUSTWORTHY_CONTEXT_EVIDENCE.md,project,Include recurrence in semantic graph evidence
-close_reason: "A first-class recurs_from relationship now models chronological defect families without scheduling precedence and is consumed by SDK, CLI, graph governance, docs, fixtures, tests, and live tracker analytics in PR #1042."
+close_reason: "Delivered first-class recurs_from relationship semantics with source-after-target chronology enforced across create, update, and update-many before persistence; verified structured refusal, manual temporary tracker acceptance, tracker assurance, lint, packed smoke, and exact 100/100/100/100 coverage."
 body: ""

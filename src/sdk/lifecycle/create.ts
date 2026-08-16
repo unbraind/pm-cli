@@ -2943,6 +2943,8 @@ export async function runCreate(
       itemFormat: settings.item_format,
       typeToFolder: typeRegistry.type_to_folder,
       allowUnresolved: resolvedOptions.allowUnresolvedDeps,
+      holders: [{ id, createdAt: nowValue }],
+      schema: settings.schema,
     })),
   );
   status = blockedByResolution.status;
