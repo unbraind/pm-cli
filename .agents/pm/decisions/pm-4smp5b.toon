@@ -1,0 +1,31 @@
+id: pm-4smp5b
+title: "Decision: adopt reviewed defect-evidence field constraints into audited workspace history"
+description: Authorize append-only reconciliation of schema/fields.json after code review validated the semantic escape_class and gate_evidence constraints. The on-disk document is the intended public contract; restoration to the prior snapshot would remove the review-required fail-closed validation.
+type: Decision
+status: closed
+priority: 1
+tags: []
+created_at: "2026-08-16T22:49:00.290Z"
+updated_at: "2026-08-16T23:02:36.448Z"
+closed_at: "2026-08-16T22:49:07.548Z"
+completed_at: "2026-08-16T22:49:07.548Z"
+author: "harness:codex"
+acceptance_criteria: Decision is terminal before reconciliation; reconciliation appends forward and names this decision; pm history _workspace --verify reports replay-to-disk agreement
+goal: project management = context management
+objective: Keep customizable semantic field policy and workspace audit history in exact agreement
+value: Preserves the reviewed schema contract without rewriting immutable history
+impact: Restores record-integrity gates and makes the schema change reconstructable
+outcome: The reviewed disk value is appended as the next _workspace state
+why_now: Exact-head record-integrity detected schema/fields.json replay drift before merge
+parent: pm-1qkivy
+resolution: Authorize forward-only reconciliation of the reviewed schema/fields.json value into _workspace history.
+expected_result: Semantic field constraints remain on disk and become the verified latest audited workspace state.
+actual_result: Static/schema tests validated the intended constraints; reconciliation is approved before execution.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1qkivy,discovered_from,"2026-08-16T22:49:00.290Z","harness:codex","cli:create:dep",detected
+  pm-klo8,implements,"2026-08-16T22:49:00.290Z","harness:codex","cli:create:dep",detected
+  pm-vhbf,verifies,"2026-08-16T23:02:36.289Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-16T22:49:00.290Z","harness:codex","Duplicate check 2026-08-17: all-status searches for workspace schema history reconciliation found the general closed workspace-history and schema-management capabilities,but no decision authorizing this reviewed semantic field snapshot. This record authorizes only schema/fields.json from PR #1043."
+close_reason: Reviewed schema snapshot is explicitly authorized for append-only reconciliation; no history row may be rewritten.
+body: ""

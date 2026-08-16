@@ -894,8 +894,10 @@ export function evaluateDefectGateEvidence(
   validatePolicy(policy);
   const epochMs = Date.parse(policy.evidence_epoch);
   const terminal = new Set(terminalStatuses);
-  const governed = items.filter((item) => {
-    if (!terminal.has(item.status) || !isDefectItem(item)) return false;
+  const terminalDefects = items.filter(
+    (item) => terminal.has(item.status) && isDefectItem(item),
+  );
+  const governed = terminalDefects.filter((item) => {
     const completedAt = Date.parse(
       typeof item.completed_at === "string" ? item.completed_at : "",
     );
@@ -915,10 +917,8 @@ export function evaluateDefectGateEvidence(
   const evidenceDispositionCounts = Object.fromEntries(
     DEFECT_GATE_EVIDENCE_DISPOSITIONS.map((disposition) => [disposition, 0]),
   ) as Record<DefectGateEvidenceDisposition, number>;
-  const classified = items.filter(
+  const classified = terminalDefects.filter(
     (item) =>
-      terminal.has(item.status) &&
-      isDefectItem(item) &&
       typeof item.escape_class === "string" &&
       DEFECT_ESCAPE_CLASSES.includes(item.escape_class as DefectEscapeClass),
   );

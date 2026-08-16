@@ -21,6 +21,7 @@
 
 ### Other
 
+- Decision: adopt reviewed defect-evidence field constraints into audited workspace history ([pm-4smp5b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-4smp5b.toon))
 - Defect-escape ratchet: every escaped defect must land a gate that would have caught it, tracked as evidence on the fixing item ([pm-rtn5h6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rtn5h6.toon))
 - Boundary-fixture gate: every value that must match a system outside this repository is tested against a captured real sample, never against a fixture the production code generated ([pm-0pzgit](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0pzgit.toon))
 - Disposition the test-only escape hatch published through the ./cli entrypoint: 86 internal functions are consumer-visible API with no support intent ([pm-rf120g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rf120g.toon))
