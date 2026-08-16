@@ -15486,6 +15486,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "dependency_temporal_order_invalid",
+      "class": "usage",
+      "code": "dependency_temporal_order_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Dependency temporal order invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/dependency-flag-validation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "duplicate_command",
       "class": "generic_failure",
       "code": "duplicate_command",

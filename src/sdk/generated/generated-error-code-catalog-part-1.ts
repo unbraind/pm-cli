@@ -515,6 +515,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "dependency_temporal_order_invalid",
+    meaning: "Dependency temporal order invalid condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/dependency-flag-validation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "dependency_temporal_order_invalid",
+    aliases: [],
+  },
+  {
     code: "duplicate_command",
     meaning: "Duplicate command condition.",
     stability: "stable",
