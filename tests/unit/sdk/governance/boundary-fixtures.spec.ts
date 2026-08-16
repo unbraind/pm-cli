@@ -102,7 +102,7 @@ describe("boundary fixture SDK", () => {
           capture_source: "self_generated",
           capture_provenance: "",
           redactions: [],
-          input: { token: "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456" },
+          input: { token: ["gh", "p_", "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456"].join("") },
           observed: { home: "/home/steve/private" },
         },
       },

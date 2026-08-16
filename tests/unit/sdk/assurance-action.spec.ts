@@ -677,7 +677,13 @@ describe("assurance action transport", () => {
   });
 
   it("runs change-risk analysis through the shared action and generic transports", async () => {
-    await withTempPmPath(async ({ pmPath }) => {
+    await withTempPmPath(async (context) => {
+      const { pmPath } = context;
+      const created = context.runCli(["create", "Risk cache seed", "--type", "Task", "--json"], {
+        expectJson: true,
+      });
+      expect(created.code).toBe(0);
+      const createdId = (created.json as { item: { id: string } }).item.id;
       const request = {
         policy: {
           version: 1,
@@ -725,6 +731,32 @@ describe("assurance action transport", () => {
           { path: pmPath },
         ),
       ).resolves.toMatchObject({ risk_detected: true, total: 1 });
+      expect(
+        context.runCli(["update", createdId, "--title", "Risk cache changed", "--json"], {
+          expectJson: true,
+        }).code,
+      ).toBe(0);
+      await expect(
+        runAssuranceAction({ action: "risk", definition: request }, { path: pmPath }),
+      ).resolves.toMatchObject({ risk_detected: true, total: 1 });
+      expect(
+        context.runCli(["delete", createdId, "--json"], { expectJson: true }).code,
+      ).toBe(0);
+      await expect(
+        runAssuranceAction({ action: "risk", definition: request }, { path: pmPath }),
+      ).resolves.toMatchObject({ risk_detected: true, total: 1 });
+      await expect(
+        runAssuranceAction(
+          { action: "risk", definition: request, limit: 1 },
+          { path: pmPath },
+        ),
+      ).rejects.toThrow("does not accept --limit");
+      await expect(
+        runAssuranceAction(
+          { action: "risk", definition: { ...request, cursor: "invalid" } },
+          { path: pmPath },
+        ),
+      ).rejects.toThrow("cursor is invalid");
       await expect(
         runAssuranceAction(
           { action: "risk", definition: "{" },

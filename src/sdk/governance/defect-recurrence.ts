@@ -272,6 +272,17 @@ export interface DefectGateEvidenceReport {
   findings: DefectGateEvidenceFinding[];
 }
 
+const MAX_FILE_PATTERN_LENGTH = 256;
+const MAX_COMPILED_PATH_PATTERNS = 1_024;
+const compiledPathPatterns = new Map<string, RegExp>();
+const CHANGE_INPUT_FIELDS = [
+  "files",
+  "package_names",
+  "item_ids",
+  "tags",
+  "error_codes",
+] as const;
+
 function uniqueSorted(values: readonly string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort(
     (left, right) => left.localeCompare(right),
@@ -282,56 +293,170 @@ function fingerprint(value: unknown): string {
   return createHash("sha256").update(stableStringify(value)).digest("hex");
 }
 
-function assertNonEmpty(value: string, field: string): void {
-  if (!value.trim()) throw new TypeError(`${field} must be a non-empty string`);
+function assertNonEmpty(value: unknown, field: string): asserts value is string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new TypeError(`${field} must be a non-empty string`);
+  }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+}
+
+function assertChangeInput(value: unknown, field: string): DefectChangeRiskInput {
+  if (!isRecord(value)) throw new TypeError(`${field} must be an object`);
+  for (const key of CHANGE_INPUT_FIELDS) {
+    if (value[key] !== undefined && !isStringArray(value[key])) {
+      throw new TypeError(`${field}.${key} must be an array of strings`);
+    }
+  }
+  return value as DefectChangeRiskInput;
+}
+
+function assertTriggers(value: unknown, familyId: string): asserts value is DefectRecurrenceTriggers {
+  if (!isRecord(value)) {
+    throw new TypeError(`defect recurrence family ${familyId} triggers must be an object`);
+  }
+  for (const key of ["package_names", "item_ids", "tags", "error_codes"] as const) {
+    if (value[key] !== undefined && !isStringArray(value[key])) {
+      throw new TypeError(
+        `defect recurrence family ${familyId} triggers.${key} must be an array of strings`,
+      );
+    }
+  }
+  const filePatterns = value.file_patterns;
+  if (filePatterns !== undefined && !isStringArray(filePatterns)) {
+    throw new TypeError(
+      `defect recurrence family ${familyId} triggers.file_patterns must be an array of strings`,
+    );
+  }
+  for (const pattern of filePatterns ?? []) {
+    if (pattern.length > MAX_FILE_PATTERN_LENGTH) {
+      throw new TypeError(
+        `defect recurrence family ${familyId} file pattern exceeds ${MAX_FILE_PATTERN_LENGTH} characters`,
+      );
+    }
+  }
+}
+
+/** Validate stable identity fields and reject duplicate family ids. */
+function assertFamilyIdentity(
+  family: DefectRecurrenceFamily,
+  ids: Set<string>,
+): void {
+  assertNonEmpty(family.id, "defect recurrence family id");
+  if (ids.has(family.id)) {
+    throw new TypeError(`Duplicate defect recurrence family ${family.id}`);
+  }
+  ids.add(family.id);
+  if (!Number.isInteger(family.version) || family.version < 1) {
+    throw new TypeError(`defect recurrence family ${family.id} version must be a positive integer`);
+  }
+  if (!DEFECT_ESCAPE_CLASSES.includes(family.escape_class)) {
+    throw new TypeError(`defect recurrence family ${family.id} has an invalid escape class`);
+  }
+  assertNonEmpty(family.title, `defect recurrence family ${family.id} title`);
+  assertNonEmpty(family.owner_item_id, `defect recurrence family ${family.id} owner_item_id`);
+}
+
+/** Validate historical lineage and executable local and hosted check references. */
+function assertFamilyEvidenceContracts(family: DefectRecurrenceFamily): void {
+  if (
+    !isStringArray(family.historical_item_ids) ||
+    family.historical_item_ids.length === 0 ||
+    family.historical_item_ids.some((itemId) => !itemId.trim())
+  ) {
+    throw new TypeError(`defect recurrence family ${family.id} requires historical_item_ids`);
+  }
+  assertTriggers(family.triggers, family.id);
+  if (
+    !isRecord(family.checks) ||
+    !isStringArray(family.checks.local) ||
+    !isStringArray(family.checks.hosted) ||
+    family.checks.local.some((check) => !check.trim()) ||
+    family.checks.hosted.some((check) => !check.trim())
+  ) {
+    throw new TypeError(
+      `defect recurrence family ${family.id} checks must contain local and hosted string arrays`,
+    );
+  }
+}
+
+/** Validate finite normalized escape and false-positive budgets. */
+function assertFamilyBudget(family: DefectRecurrenceFamily): void {
+  if (
+    !isRecord(family.budget) ||
+    typeof family.budget.max_escape_rate !== "number" ||
+    !Number.isFinite(family.budget.max_escape_rate) ||
+    typeof family.budget.max_false_positive_rate !== "number" ||
+    !Number.isFinite(family.budget.max_false_positive_rate)
+  ) {
+    throw new TypeError(`defect recurrence family ${family.id} requires numeric budgets`);
+  }
+  if (
+    family.budget.max_escape_rate < 0 ||
+    family.budget.max_escape_rate > 1 ||
+    family.budget.max_false_positive_rate < 0 ||
+    family.budget.max_false_positive_rate > 1
+  ) {
+    throw new TypeError(`defect recurrence family ${family.id} budgets must be between 0 and 1`);
+  }
+}
+
+/** Validate that a structurally safe negative control selects its own family. */
+function assertFamilyNegativeControl(family: DefectRecurrenceFamily): void {
+  const negativeControl = assertChangeInput(
+    family.negative_control,
+    `defect recurrence family ${family.id} negative_control`,
+  );
+  if (familyReasons(family, negativeControl, {}).length === 0) {
+    throw new TypeError(
+      `defect recurrence family ${family.id} negative_control must select its own family`,
+    );
+  }
+}
+
+/** Validate the complete recurrence policy before indexing or analysis. */
 function validatePolicy(policy: DefectRecurrencePolicy): void {
   if (policy.version !== 1) {
     throw new TypeError(`Unsupported defect recurrence policy version ${policy.version}`);
   }
-  if (!Number.isFinite(Date.parse(policy.evidence_epoch))) {
+  if (
+    typeof policy.evidence_epoch !== "string" ||
+    !Number.isFinite(Date.parse(policy.evidence_epoch))
+  ) {
     throw new TypeError("defect recurrence evidence_epoch must be an ISO timestamp");
   }
   const ids = new Set<string>();
   for (const family of policy.families) {
-    assertNonEmpty(family.id, "defect recurrence family id");
-    if (ids.has(family.id)) {
-      throw new TypeError(`Duplicate defect recurrence family ${family.id}`);
-    }
-    ids.add(family.id);
-    if (!Number.isInteger(family.version) || family.version < 1) {
-      throw new TypeError(`defect recurrence family ${family.id} version must be a positive integer`);
-    }
-    if (!DEFECT_ESCAPE_CLASSES.includes(family.escape_class)) {
-      throw new TypeError(`defect recurrence family ${family.id} has an invalid escape class`);
-    }
-    assertNonEmpty(family.title, `defect recurrence family ${family.id} title`);
-    assertNonEmpty(
-      family.owner_item_id,
-      `defect recurrence family ${family.id} owner_item_id`,
-    );
-    if (family.historical_item_ids.length === 0) {
-      throw new TypeError(`defect recurrence family ${family.id} requires historical_item_ids`);
-    }
-    if (
-      family.budget.max_escape_rate < 0 ||
-      family.budget.max_escape_rate > 1 ||
-      family.budget.max_false_positive_rate < 0 ||
-      family.budget.max_false_positive_rate > 1
-    ) {
-      throw new TypeError(`defect recurrence family ${family.id} budgets must be between 0 and 1`);
-    }
+    if (!isRecord(family)) throw new TypeError("defect recurrence family must be an object");
+    assertFamilyIdentity(family, ids);
+    assertFamilyEvidenceContracts(family);
+    assertFamilyBudget(family);
+    assertFamilyNegativeControl(family);
   }
 }
 
 function pathMatches(pattern: string, value: string): boolean {
-  const escaped = pattern
-    .replaceAll("**", "\u0000")
-    .replaceAll(/[|\\{}()[\]^$+?./]/gu, "\\$&")
-    .replaceAll("*", "[^/]*")
-    .replaceAll("\u0000", ".*");
-  return new RegExp(`^${escaped}$`, "u").test(value);
+  let compiled = compiledPathPatterns.get(pattern);
+  if (compiled === undefined) {
+    if (compiledPathPatterns.size >= MAX_COMPILED_PATH_PATTERNS) {
+      const oldest = compiledPathPatterns.keys().next().value;
+      compiledPathPatterns.delete(oldest!);
+    }
+    const escaped = pattern
+      .replaceAll("**", "\u0000")
+      .replaceAll(/[|\\{}()[\]^$+?./]/gu, "\\$&")
+      .replaceAll("*", "[^/]*")
+      .replaceAll("\u0000", ".*");
+    compiled = new RegExp(`^${escaped}$`, "u");
+    compiledPathPatterns.set(pattern, compiled);
+  }
+  return compiled.test(value);
 }
 
 function itemSignals(item: AssuranceItemRecord): DefectChangeRiskInput {
@@ -360,8 +485,9 @@ function fileReasons(
   input: DefectChangeRiskInput,
 ): DefectChangeRiskReason[] {
   const reasons: DefectChangeRiskReason[] = [];
+  const patterns = uniqueSorted(family.triggers.file_patterns ?? []);
   for (const file of uniqueSorted(input.files ?? [])) {
-    for (const pattern of uniqueSorted(family.triggers.file_patterns ?? [])) {
+    for (const pattern of patterns) {
       if (pathMatches(pattern, file)) reasons.push({ signal: "file", value: file, matched: pattern });
     }
   }
@@ -476,8 +602,7 @@ export function buildDefectRecurrenceIndex(
   const families = [...policy.families].sort((left, right) => left.id.localeCompare(right.id));
   const policyFingerprint = fingerprint({ ...policy, families });
   const changed = new Set(options.changed_item_ids ?? []);
-  const canReuse =
-    options.previous_index?.policy_fingerprint === policyFingerprint && changed.size > 0;
+  const canReuse = options.previous_index?.policy_fingerprint === policyFingerprint;
   const itemFamilies: Record<string, string[]> = canReuse
     ? Object.fromEntries(
         Object.entries(options.previous_index?.item_families ?? {}).filter(
@@ -485,7 +610,7 @@ export function buildDefectRecurrenceIndex(
         ),
       )
     : {};
-  let itemsReused = canReuse ? Object.keys(itemFamilies).length : 0;
+  const itemsReused = canReuse ? Object.keys(itemFamilies).length : 0;
   for (const item of items) {
     const signals = itemSignals(item);
     const matched = families
@@ -498,7 +623,6 @@ export function buildDefectRecurrenceIndex(
     if (matched.length > 0) itemFamilies[item.id] = matched;
     else delete itemFamilies[item.id];
   }
-  if (!canReuse) itemsReused = 0;
   const sortedItemFamilies = Object.fromEntries(
     Object.entries(itemFamilies)
       .sort(([left], [right]) => left.localeCompare(right))
@@ -745,16 +869,16 @@ export function parseDefectChangeRiskRequest(value: unknown): DefectChangeRiskRe
     throw new TypeError("defect change-risk request must be an object");
   }
   const request = value as Partial<DefectChangeRiskRequest>;
-  if (
-    typeof request.change !== "object" ||
-    request.change === null ||
-    Array.isArray(request.change)
-  ) {
-    throw new TypeError("defect change-risk request.change must be an object");
+  const change = assertChangeInput(request.change, "defect change-risk request.change");
+  if (request.cursor !== undefined && typeof request.cursor !== "string") {
+    throw new TypeError("defect change-risk request.cursor must be a string");
+  }
+  if (request.limit !== undefined && !Number.isInteger(request.limit)) {
+    throw new TypeError("defect change-risk request.limit must be an integer");
   }
   return {
     policy: parseDefectRecurrencePolicy(request.policy),
-    change: request.change,
+    change,
     ...(request.cursor === undefined ? {} : { cursor: request.cursor }),
     ...(request.limit === undefined ? {} : { limit: request.limit }),
   };

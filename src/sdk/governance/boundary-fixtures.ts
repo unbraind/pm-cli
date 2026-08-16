@@ -201,19 +201,20 @@ function evaluateBoundaryRecord(
   }
   if ("fixture_path" in boundary) {
     const sample = fixtures[boundary.fixture_path];
+    const findings =
+      nonEmpty(boundary.fixture_path) && boundary.fixture_path in fixtures
+        ? validateSample(boundary, sample)
+        : [
+            {
+              boundary_id: boundary.id,
+              kind: "missing_fixture" as const,
+              detail: `Boundary ${boundary.id} fixture ${String(boundary.fixture_path)} is missing.`,
+            },
+          ];
     return {
-      captured: 1,
+      captured: findings.length === 0 ? 1 : 0,
       waived: 0,
-      findings:
-        nonEmpty(boundary.fixture_path) && boundary.fixture_path in fixtures
-          ? validateSample(boundary, sample)
-          : [
-              {
-                boundary_id: boundary.id,
-                kind: "missing_fixture",
-                detail: `Boundary ${boundary.id} fixture ${String(boundary.fixture_path)} is missing.`,
-              },
-            ],
+      findings,
     };
   }
   const expiresAt = Date.parse(boundary.waiver_expires_at);

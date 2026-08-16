@@ -108,7 +108,7 @@
         "error_codes": ["workspace_history_chain_invalid"]
       },
       "checks": {
-        "local": ["pnpm quality:record-integrity", "pnpm contracts:check"],
+        "local": ["node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded", "pnpm contracts:check"],
         "hosted": ["CI / record-integrity", "CI / contract-drift"]
       },
       "negative_control": { "error_codes": ["workspace_history_chain_invalid"] },

@@ -6,6 +6,7 @@
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { stableStringify } from "../../core/shared/serialization.js";
 import {
   ASSURANCE_GATE_TRIGGERS,
   evaluateAssuranceGate,
@@ -25,6 +26,7 @@ import {
   type AssuranceGateTrigger,
   type AssuranceMeasurementDefinition,
   type AssuranceMutationReceipt,
+  type AssuranceItemRecord,
 } from "./assurance.js";
 import {
   ASSURANCE_PRESET_IDS,
@@ -52,8 +54,24 @@ import {
   analyzeDefectChangeRisk,
   buildDefectRecurrenceIndex,
   parseDefectChangeRiskRequest,
+  type DefectChangeRiskRequest,
+  type DefectRecurrenceIndex,
   type DefectChangeRiskReport,
 } from "./defect-recurrence.js";
+
+/** One bounded process-local recurrence index and its invalidation evidence. */
+interface RiskIndexCacheEntry {
+  /** Absolute tracker root owning this cache entry. */
+  pm_root: string;
+  /** Stable policy serialization used for exact invalidation. */
+  policy_serialized: string;
+  /** Stable per-item fingerprints used to derive sparse changes and deletions. */
+  item_fingerprints: ReadonlyMap<string, string>;
+  /** Previous immutable index eligible for sparse reuse. */
+  index: DefectRecurrenceIndex;
+}
+
+let riskIndexCache: RiskIndexCacheEntry | undefined;
 
 /** Assurance registry and evaluation verbs shared by every transport. */
 export const ASSURANCE_ACTIONS = [
@@ -440,11 +458,23 @@ async function runGateAction(
   return verdict;
 }
 
-/** Evaluate one serialized change-risk request against authoritative PM metadata. */
-async function runRiskAction(
-  input: AssuranceActionInput,
-  pmRoot: string,
-): Promise<DefectChangeRiskReport> {
+/** Normalize a request-validation failure into the shared usage-error contract. */
+function throwRiskUsageError(error: unknown): never {
+  if (error instanceof PmCliError) throw error;
+  throw new PmCliError(
+    error instanceof Error ? error.message : "assurance risk request is invalid",
+    EXIT_CODE.USAGE,
+  );
+}
+
+/** Parse JSON or object risk definitions without wrapping workspace failures. */
+function parseRiskActionRequest(input: AssuranceActionInput): DefectChangeRiskRequest {
+  if (input.limit !== undefined) {
+    throw new PmCliError(
+      "assurance risk does not accept --limit; set limit inside the risk definition",
+      EXIT_CODE.USAGE,
+    );
+  }
   let definition = input.definition;
   if (typeof definition === "string") {
     try {
@@ -458,22 +488,74 @@ async function runRiskAction(
     }
   }
   try {
-    const request = parseDefectChangeRiskRequest(definition);
-    const context = await createAssuranceWorkspaceContext(pmRoot, {
-      include_history: false,
-      resolve_tree: false,
-    });
+    return parseDefectChangeRiskRequest(definition);
+  } catch (error: unknown) {
+    return throwRiskUsageError(error);
+  }
+}
+
+/** Derive the exact sparse replacement and deletion set for a cached index. */
+function changedRiskItemIds(
+  cached: RiskIndexCacheEntry,
+  current: ReadonlyMap<string, string>,
+): Set<string> {
+  const changed = new Set<string>();
+  for (const [itemId, itemFingerprint] of current) {
+    if (cached.item_fingerprints.get(itemId) !== itemFingerprint) changed.add(itemId);
+  }
+  for (const itemId of cached.item_fingerprints.keys()) {
+    if (!current.has(itemId)) changed.add(itemId);
+  }
+  return changed;
+}
+
+/** Build and retain a safely invalidated bounded process-local recurrence index. */
+function buildCachedRiskIndex(
+  pmRoot: string,
+  request: DefectChangeRiskRequest,
+  items: readonly AssuranceItemRecord[],
+): DefectRecurrenceIndex {
+  const policySerialized = stableStringify(request.policy);
+  const cached = riskIndexCache?.pm_root === pmRoot ? riskIndexCache : undefined;
+  const itemFingerprints = new Map(
+    items.map((item) => [item.id, stableStringify(item)]),
+  );
+  const reusable = cached?.policy_serialized === policySerialized ? cached : undefined;
+  const changed = reusable ? changedRiskItemIds(reusable, itemFingerprints) : new Set<string>();
+  const index = buildDefectRecurrenceIndex(
+    request.policy,
+    reusable ? items.filter((item) => changed.has(item.id)) : items,
+    reusable
+      ? { previous_index: reusable.index, changed_item_ids: [...changed] }
+      : {},
+  );
+  riskIndexCache = {
+    pm_root: pmRoot,
+    policy_serialized: policySerialized,
+    item_fingerprints: itemFingerprints,
+    index,
+  };
+  return index;
+}
+
+/** Evaluate one serialized change-risk request against authoritative PM metadata. */
+async function runRiskAction(
+  input: AssuranceActionInput,
+  pmRoot: string,
+): Promise<DefectChangeRiskReport> {
+  const request = parseRiskActionRequest(input);
+  const context = await createAssuranceWorkspaceContext(pmRoot, {
+    include_history: false,
+    resolve_tree: false,
+  });
+  try {
     return analyzeDefectChangeRisk(
-      buildDefectRecurrenceIndex(request.policy, context.items),
+      buildCachedRiskIndex(pmRoot, request, context.items),
       request.change,
       { cursor: request.cursor, limit: request.limit },
     );
   } catch (error: unknown) {
-    if (error instanceof PmCliError) throw error;
-    throw new PmCliError(
-      error instanceof Error ? error.message : "assurance risk request is invalid",
-      EXIT_CODE.USAGE,
-    );
+    return throwRiskUsageError(error);
   }
 }
 

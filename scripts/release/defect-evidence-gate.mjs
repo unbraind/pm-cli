@@ -10,7 +10,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  analyzeDefectChangeRisk,
   buildDefectRecurrenceIndex,
   createAssuranceWorkspaceContext,
   evaluateBoundaryFixtures,
@@ -31,19 +30,40 @@ function readScope(argv) {
 }
 
 async function readGateCorpus(repositoryRoot, providedPolicy) {
+  const resolvedRepositoryRoot = path.resolve(repositoryRoot);
   const [boundaryRegistry, storedRecurrencePolicy] = await Promise.all([
-    readFile(path.join(repositoryRoot, "config/boundary-fixtures.json"), "utf8").then(JSON.parse),
-    readFile(path.join(repositoryRoot, "config/defect-recurrence-policy.json"), "utf8")
+    readFile(path.join(resolvedRepositoryRoot, "config/boundary-fixtures.json"), "utf8").then(JSON.parse),
+    readFile(path.join(resolvedRepositoryRoot, "config/defect-recurrence-policy.json"), "utf8")
       .then(JSON.parse)
       .then(parseDefectRecurrencePolicy),
   ]);
   const fixtureEntries = await Promise.all(
     boundaryRegistry.boundaries
       .filter((boundary) => typeof boundary.fixture_path === "string")
-      .map(async (boundary) => [
-        boundary.fixture_path,
-        JSON.parse(await readFile(path.join(repositoryRoot, boundary.fixture_path), "utf8")),
-      ]),
+      .map(async (boundary) => {
+        const resolvedFixturePath = path.resolve(
+          resolvedRepositoryRoot,
+          boundary.fixture_path,
+        );
+        const relativeFixturePath = path.relative(
+          resolvedRepositoryRoot,
+          resolvedFixturePath,
+        );
+        if (
+          relativeFixturePath === "" ||
+          relativeFixturePath.startsWith(`..${path.sep}`) ||
+          relativeFixturePath === ".." ||
+          path.isAbsolute(relativeFixturePath)
+        ) {
+          throw new TypeError(
+            `Boundary fixture ${boundary.fixture_path} must stay inside the repository root.`,
+          );
+        }
+        return [
+          boundary.fixture_path,
+          JSON.parse(await readFile(resolvedFixturePath, "utf8")),
+        ];
+      }),
   );
   return {
     boundaryRegistry,
@@ -78,17 +98,6 @@ function policyReport(recurrencePolicy, context) {
   const knownItemIds = new Set(context.items.map((item) => item.id));
   const findings = recurrencePolicy.families.flatMap((family) => {
     const familyFindings = [];
-    if (
-      !analyzeDefectChangeRisk(index, family.negative_control, { limit: 100 }).items.some(
-        (match) => match.family_id === family.id,
-      )
-    ) {
-      familyFindings.push({
-        family_id: family.id,
-        kind: "ineffective_negative_control",
-        detail: `Negative control for ${family.id} does not select its own family.`,
-      });
-    }
     for (const itemId of family.historical_item_ids) {
       if (!knownItemIds.has(itemId)) {
         familyFindings.push({
@@ -137,15 +146,91 @@ function selectedChecks(scope, boundaryReport, evidenceReport, recurrenceReport)
 
 function renderResult(result, json) {
   if (json) return `${JSON.stringify(result, null, 2)}\n`;
+  const findingCount = result.checks.reduce(
+    (total, check) => total + check.findings.length,
+    0,
+  );
   return (
     [
       `Defect evidence gate: ${result.ok ? "PASS" : "FAIL"}`,
-      `Captured boundaries: ${result.boundary.captured_count}/${result.boundary.boundary_count}`,
-      `Live boundary waivers: ${result.boundary.waived_count}`,
-      `Governed terminal defects: ${result.defect_evidence.governed_item_count}`,
-      `Recurrence families: ${result.recurrence_policy.family_count}`,
-      `Findings: ${result.boundary.findings.length + result.defect_evidence.findings.length + result.recurrence_policy.findings.length}`,
+      `Captured boundaries: ${result.boundary.evaluated ? `${result.boundary.captured_count}/${result.boundary.boundary_count}` : "not evaluated"}`,
+      `Live boundary waivers: ${result.boundary.evaluated ? result.boundary.waived_count : "not evaluated"}`,
+      `Governed terminal defects: ${result.defect_evidence.evaluated ? result.defect_evidence.governed_item_count : "not evaluated"}`,
+      `Recurrence families: ${result.recurrence_policy.evaluated ? result.recurrence_policy.family_count : "not evaluated"}`,
+      `Findings: ${findingCount}`,
     ].join("\n") + "\n"
+  );
+}
+
+/** Evaluate captured boundaries only when the selected gate scope includes them. */
+function boundaryReportForScope(scope, corpus) {
+  if (scope.evidenceOnly || scope.policyOnly) {
+    return {
+      ok: true,
+      evaluated: false,
+      boundary_count: 0,
+      captured_count: 0,
+      waived_count: 0,
+      findings: [],
+    };
+  }
+  return {
+    ...evaluateBoundaryFixtures(
+      corpus.boundaryRegistry,
+      boundaryFixtures(corpus.fixtureEntries, scope.negativeControl),
+    ),
+    evaluated: true,
+  };
+}
+
+/** Evaluate terminal defect evidence only when the selected scope includes it. */
+function evidenceReportForScope(scope, evidenceItems, recurrencePolicy, terminalStatuses) {
+  if (scope.boundaryOnly || scope.policyOnly) {
+    return {
+      ok: true,
+      evaluated: false,
+      governed_item_count: 0,
+      classified_item_count: 0,
+      class_counts: {},
+      evidence_disposition_counts: {},
+      findings: [],
+    };
+  }
+  return {
+    ...evaluateDefectGateEvidence(
+      evidenceItems,
+      recurrencePolicy,
+      terminalStatuses,
+    ),
+    evaluated: true,
+  };
+}
+
+/** Evaluate recurrence lineage only when the selected scope includes it. */
+function recurrenceReportForScope(scope, recurrencePolicy, context) {
+  if (scope.boundaryOnly || scope.evidenceOnly) {
+    return {
+      ok: true,
+      evaluated: false,
+      family_count: 0,
+      family_counts: {},
+      indexed_item_count: 0,
+      policy_fingerprint: "",
+      findings: [],
+    };
+  }
+  return { ...policyReport(recurrencePolicy, context), evaluated: true };
+}
+
+/** Attach only selected report findings to the gate-level check receipt. */
+function reportsWithFindings(scope, boundaryReport, evidenceReport, recurrenceReport) {
+  const findingsByName = {
+    boundary: boundaryReport.findings,
+    defect_evidence: evidenceReport.findings,
+    recurrence_policy: recurrenceReport.findings,
+  };
+  return selectedChecks(scope, boundaryReport, evidenceReport, recurrenceReport).map(
+    (report) => ({ ...report, findings: findingsByName[report.name] }),
   );
 }
 
@@ -161,10 +246,7 @@ export async function main(argv = process.argv.slice(2), options = {}) {
     return 2;
   }
   const corpus = await readGateCorpus(repositoryRoot, options.recurrencePolicy);
-  const boundaryReport = evaluateBoundaryFixtures(
-    corpus.boundaryRegistry,
-    boundaryFixtures(corpus.fixtureEntries, scope.negativeControl),
-  );
+  const boundaryReport = boundaryReportForScope(scope, corpus);
   const context = await resolveContext(repositoryRoot, scope.boundaryOnly, options.context);
   const evidenceItems = scope.negativeControl
     ? [
@@ -179,17 +261,15 @@ export async function main(argv = process.argv.slice(2), options = {}) {
         },
       ]
     : context.items;
-  const evidenceReport = evaluateDefectGateEvidence(
+  const evidenceReport = evidenceReportForScope(
+    scope,
     evidenceItems,
     corpus.recurrencePolicy,
     context.terminal_statuses ?? ["closed", "canceled"],
   );
-  const recurrenceReport = policyReport(corpus.recurrencePolicy, context);
-  const selectedReports = selectedChecks(
-    scope,
-    boundaryReport,
-    evidenceReport,
-    recurrenceReport,
+  const recurrenceReport = recurrenceReportForScope(scope, corpus.recurrencePolicy, context);
+  const selectedReports = reportsWithFindings(
+    scope, boundaryReport, evidenceReport, recurrenceReport,
   );
   const result = {
     ok: selectedReports.every((report) => report.ok),

@@ -118,7 +118,8 @@ describe("defect recurrence SDK", () => {
 
     const sparseFamily = family({
       id: "sparse",
-      triggers: {},
+      triggers: { item_ids: ["pm-sparse"] },
+      negative_control: { item_ids: ["pm-sparse"] },
       historical_item_ids: ["pm-sparse"],
     });
     const sparse = buildDefectRecurrenceIndex(policy([sparseFamily]), [
@@ -148,6 +149,18 @@ describe("defect recurrence SDK", () => {
       changed_item_ids: ["pm-history"],
     });
     expect(absentMappings.build.items_reused).toBe(0);
+
+    const unchanged = buildDefectRecurrenceIndex(inputPolicy, [], {
+      previous_index: initial,
+      changed_item_ids: [],
+    });
+    expect(unchanged.item_families).toEqual(initial.item_families);
+    expect(unchanged.index_fingerprint).toBe(initial.index_fingerprint);
+    expect(unchanged.build).toEqual({
+      items_scanned: 0,
+      items_reused: 2,
+      items_indexed: 2,
+    });
   });
 
   it("paginates against an immutable index identity and rejects stale cursors", () => {
@@ -209,6 +222,25 @@ describe("defect recurrence SDK", () => {
       analyzeDefectChangeRisk(overlapping, { files: ["src/sdk/index.ts"] }).items[0]
         ?.reasons,
     ).toHaveLength(2);
+
+    const boundedPatternCache = buildDefectRecurrenceIndex(
+      policy([
+        family({
+          triggers: {
+            file_patterns: [
+              "src/sdk/**",
+              ...Array.from({ length: 1_024 }, (_, index) => `generated/${index}.ts`),
+            ],
+          },
+        }),
+      ]),
+      [],
+    );
+    expect(
+      analyzeDefectChangeRisk(boundedPatternCache, {
+        files: ["src/sdk/governance/assurance-action.ts"],
+      }).risk_detected,
+    ).toBe(true);
   });
 
   it("fails closed for missing evidence and accepts complete gate proof or a live waiver", () => {
@@ -365,6 +397,43 @@ describe("defect recurrence SDK", () => {
       [policy([family({ title: "" })]), "title"],
       [policy([family({ owner_item_id: "" })]), "owner_item_id"],
       [policy([family({ historical_item_ids: [] })]), "historical_item_ids"],
+      [{ ...policy(), families: [null] }, "family must be an object"],
+      [{ ...policy(), evidence_epoch: undefined }, "ISO timestamp"],
+      [policy([family({ historical_item_ids: undefined as never })]), "historical_item_ids"],
+      [policy([family({ historical_item_ids: [42] as never })]), "historical_item_ids"],
+      [policy([family({ triggers: null as never })]), "triggers must be an object"],
+      [
+        policy([family({ triggers: { package_names: [42] } as never })]),
+        "triggers.package_names must be an array of strings",
+      ],
+      [
+        policy([family({ triggers: { file_patterns: ["a".repeat(257)] } })]),
+        "file pattern exceeds 256 characters",
+      ],
+      [
+        policy([family({ triggers: { file_patterns: [42] as never } })]),
+        "triggers.file_patterns must be an array of strings",
+      ],
+      [policy([family({ checks: null as never })]), "checks must contain"],
+      [
+        policy([family({ checks: { local: [42], hosted: [] } as never })]),
+        "checks must contain",
+      ],
+      [
+        policy([family({ checks: { local: [""], hosted: [] } })]),
+        "checks must contain",
+      ],
+      [policy([family({ budget: null as never })]), "requires numeric budgets"],
+      [
+        policy([
+          family({
+            budget: { max_escape_rate: Number.NaN, max_false_positive_rate: 0 },
+          }),
+        ]),
+        "requires numeric budgets",
+      ],
+      [policy([family({ negative_control: null as never })]), "negative_control must be an object"],
+      [policy([family({ negative_control: {} })]), "negative_control must select"],
       [
         policy([family({ budget: { max_escape_rate: -1, max_false_positive_rate: 2 } })]),
         "between 0 and 1",
@@ -385,5 +454,13 @@ describe("defect recurrence SDK", () => {
       policy: policy(),
       change: {},
     });
+    for (const [request, message] of [
+      [{ policy: policy(), change: { files: [42] } }, "change.files"],
+      [{ policy: policy(), change: {}, cursor: 42 }, "cursor must be a string"],
+      [{ policy: policy(), change: {}, limit: "5" }, "limit must be an integer"],
+      [{ policy: policy(), change: {}, limit: 1.5 }, "limit must be an integer"],
+    ] as const) {
+      expect(() => parseDefectChangeRiskRequest(request)).toThrow(message);
+    }
   });
 });

@@ -4,6 +4,8 @@
  * Verifies real-entrypoint observations against refusal states declared by the
  * generated public error-code catalog.
  */
+import { stripTypeScriptTypes } from "node:module";
+
 import type {
   PmErrorCodeContract,
   PmErrorCodeClass,
@@ -227,19 +229,112 @@ const RECOVERY_REFERENCE_FIELD_CONTRACTS: Readonly<
   },
 };
 
-/** Census literal structured-envelope producers without executing source code. */
+/** One property assignment retained after TypeScript syntax stripping. */
+interface SourcePropertyToken {
+  /** Literal identifier or quoted property name. */
+  field: string;
+  /** Zero-based offset preserved from the original source. */
+  offset: number;
+}
+
+interface SourceTokenRead {
+  /** Scanner offset immediately after the token. */
+  next: number;
+  /** Property assignment when the token is followed by a colon. */
+  property?: SourcePropertyToken;
+}
+
+/** Skip a line or block comment while preserving source offsets. */
+function skipSourceComment(source: string, index: number): number | undefined {
+  if (source[index] !== "/") return undefined;
+  if (source[index + 1] === "/") {
+    const newline = source.indexOf("\n", index + 2);
+    return newline === -1 ? source.length : newline + 1;
+  }
+  if (source[index + 1] !== "*") return undefined;
+  const closing = source.indexOf("*/", index + 2);
+  return closing + 2;
+}
+
+/** Advance across insignificant whitespace and return the next syntax offset. */
+function skipSourceWhitespace(source: string, index: number): number {
+  let next = index;
+  while (/\s/u.test(source[next] ?? "")) next += 1;
+  return next;
+}
+
+/** Read one quoted token and classify quoted property names. */
+function readQuotedSourceToken(source: string, index: number): SourceTokenRead | undefined {
+  const quote = source[index];
+  if (quote !== "'" && quote !== '"' && quote !== "`") return undefined;
+  const start = index;
+  let next = index + 1;
+  let value = "";
+  while (next < source.length && source[next] !== quote) {
+    if (source[next] === "\\") next += 2;
+    else {
+      value += source[next];
+      next += 1;
+    }
+  }
+  if (source[next] === quote) next += 1;
+  const followedByColon = source[skipSourceWhitespace(source, next)] === ":";
+  return {
+    next,
+    ...(quote !== "`" && followedByColon && /^[A-Za-z][A-Za-z0-9_]*$/u.test(value)
+      ? { property: { field: value, offset: start + 1 } }
+      : {}),
+  };
+}
+
+/** Read one identifier token and classify identifier property assignments. */
+function readIdentifierSourceToken(
+  source: string,
+  index: number,
+): SourceTokenRead | undefined {
+  if (!/[A-Za-z_$]/u.test(source[index]!)) return undefined;
+  let next = index + 1;
+  while (/[A-Za-z0-9_$]/u.test(source[next] ?? "")) next += 1;
+  const field = source.slice(index, next);
+  return {
+    next,
+    ...(source[skipSourceWhitespace(source, next)] === ":"
+      ? { property: { field, offset: index } }
+      : {}),
+  };
+}
+
+/** Parse TypeScript syntax and return executable property assignments only. */
+function scanSourcePropertyTokens(source: string): SourcePropertyToken[] {
+  const parsed = stripTypeScriptTypes(source, { mode: "strip" });
+  const properties: SourcePropertyToken[] = [];
+  let index = 0;
+  while (index < parsed.length) {
+    const commentEnd = skipSourceComment(parsed, index);
+    if (commentEnd !== undefined) {
+      index = commentEnd;
+      continue;
+    }
+    const token =
+      readQuotedSourceToken(parsed, index) ??
+      readIdentifierSourceToken(parsed, index);
+    if (token?.property) properties.push(token.property);
+    index = token?.next ?? index + 1;
+  }
+  return properties;
+}
+
+/** Census syntax-parsed structured-envelope producers without executing source code. */
 export function censusPmRecoveryReferenceProducers(
   sources: readonly PmRecoveryProducerSource[],
 ): PmRecoveryProducerCensusReport {
   const producers: PmRecoveryProducerLocation[] = [];
   const findings: PmRecoveryProducerCensusFinding[] = [];
   const recognizedFields = new Set<string>(PM_RECOVERY_REFERENCE_FIELDS);
-  const propertyPattern = /(?:^|[,<{]\s*)["']?([A-Za-z][A-Za-z0-9_]*)["']?\s*:/gu;
   for (const source of [...sources].sort((left, right) => left.path.localeCompare(right.path))) {
-    for (const match of source.content.matchAll(propertyPattern)) {
-      const field = match[1]!;
-      const fieldIndex = match.index + match[0].lastIndexOf(field);
-      const line = source.content.slice(0, fieldIndex).split("\n").length;
+    for (const property of scanSourcePropertyTokens(source.content)) {
+      const field = property.field;
+      const line = source.content.slice(0, property.offset).split("\n").length;
       const contract = RECOVERY_REFERENCE_FIELD_CONTRACTS[field];
       if (contract) {
         producers.push({

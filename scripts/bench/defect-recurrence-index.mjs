@@ -47,19 +47,27 @@ function measureIndex(policy, itemCount, options) {
     ...item,
     tags: ["review-feedback"],
   }));
+  const changedItemIds = changedItems.map((item) => item.id);
   const incrementalStarted = options.now();
   const incremental = options.buildIndex(policy, changedItems, {
     previous_index: full,
-    changed_item_ids: changedItems.map((item) => item.id),
+    changed_item_ids: changedItemIds,
+  });
+  const incrementalDurationMs = options.now() - incrementalStarted;
+  const repeatedFull = options.buildIndex(policy, items);
+  const repeatedIncremental = options.buildIndex(policy, changedItems, {
+    previous_index: repeatedFull,
+    changed_item_ids: changedItemIds,
   });
   return {
     full,
     incremental,
     fullDurationMs,
-    incrementalDurationMs: options.now() - incrementalStarted,
+    incrementalDurationMs,
     heapDeltaBytes: Math.max(0, options.memoryUsage() - beforeMemory),
     deterministic:
-      full.index_fingerprint === options.buildIndex(policy, items).index_fingerprint,
+      full.index_fingerprint === repeatedFull.index_fingerprint &&
+      incremental.index_fingerprint === repeatedIncremental.index_fingerprint,
   };
 }
 

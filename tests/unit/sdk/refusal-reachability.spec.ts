@@ -297,6 +297,30 @@ describe("recovery-reference reachability", () => {
       "src/a.ts:next_steps",
       "src/z.ts:examples",
     ]);
+
+    const syntaxAware = censusPmRecoveryReferenceProducers([
+      {
+        path: "src/syntax.ts",
+        content: `
+          type RecoveryShape = { suggested_retry: string };
+          // ({ candidate_command: "not executable" })
+          const text = '({ examples: ["not executable"] })';
+          const real = { "next_steps": ["Run it"] };
+        `,
+      },
+      { path: "src/line-comment.ts", content: "// suggested_retry: never" },
+      { path: "src/block-comment.ts", content: "/* candidate_command: never */" },
+      { path: "src/identifier.ts", content: "identifier" },
+    ]);
+    expect(syntaxAware.producers).toEqual([
+      expect.objectContaining({ field: "next_steps", kind: "next_step", line: 5 }),
+    ]);
+    expect(syntaxAware.producer_count_by_kind).toMatchObject({
+      suggested_retry: 0,
+      candidate_command: 0,
+      example: 0,
+      next_step: 1,
+    });
   });
 
   it("keeps raw slash-bearing keys distinct from nested source paths", () => {

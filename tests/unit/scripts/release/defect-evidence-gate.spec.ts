@@ -1,10 +1,11 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { parseDefectRecurrencePolicy } from "../../../../src/sdk/governance/defect-recurrence.js";
 import { main } from "../../../../scripts/release/defect-evidence-gate.mjs";
+import { withTempDir } from "../../../helpers/temp.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 const repositoryRoot = process.cwd();
@@ -24,6 +25,10 @@ const completeContext = {
 };
 
 describe("defect evidence repository gate", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("accepts the complete captured-boundary, evidence, and recurrence corpus", async () => {
     const stdout: string[] = [];
     await expect(
@@ -88,7 +93,38 @@ describe("defect evidence repository gate", () => {
     });
   });
 
-  it("fails policy-only execution for missing lineage and ineffective controls", async () => {
+  it("rejects fixture paths that escape the repository root", async () => {
+    await withTempDir("pm-boundary-traversal-", async (tempRoot) => {
+      await mkdir(path.join(tempRoot, "config"));
+      await Promise.all([
+        writeFile(
+          path.join(tempRoot, "config/boundary-fixtures.json"),
+          JSON.stringify({
+            version: 1,
+            inventory_scope: "Traversal negative control",
+            boundaries: [
+              {
+                id: "escape",
+                producer: "external",
+                consumer: "gate",
+                format: "JSON",
+                fixture_path: "../outside.json",
+              },
+            ],
+          }),
+        ),
+        writeFile(
+          path.join(tempRoot, "config/defect-recurrence-policy.json"),
+          JSON.stringify(policy),
+        ),
+      ]);
+      await expect(
+        main(["--boundary-only"], { repositoryRoot: tempRoot }),
+      ).rejects.toThrow("must stay inside the repository root");
+    });
+  });
+
+  it("fails policy-only execution for missing lineage and malformed controls", async () => {
     const missingOutput: string[] = [];
     await expect(
       main(["--policy-only", "--json"], {
@@ -107,18 +143,13 @@ describe("defect evidence repository gate", () => {
         index === 0 ? { ...family, negative_control: {} } : family,
       ),
     };
-    const ineffectiveOutput: string[] = [];
     await expect(
       main(["--policy-only", "--json"], {
         repositoryRoot,
         context: completeContext,
         recurrencePolicy: ineffectivePolicy,
-        writeStdout: (value: string) => ineffectiveOutput.push(value),
       }),
-    ).resolves.toBe(1);
-    expect(
-      JSON.parse(ineffectiveOutput.join("")).recurrence_policy.findings,
-    ).toContainEqual(expect.objectContaining({ kind: "ineffective_negative_control" }));
+    ).rejects.toThrow("negative_control must select its own family");
   });
 
   it("renders human output, supports each focused scope, and rejects conflicts", async () => {
@@ -132,6 +163,10 @@ describe("defect evidence repository gate", () => {
         }),
       ).resolves.toBe(0);
       expect(stdout.join("")).toContain("Defect evidence gate: PASS");
+      if (flag === "--boundary-only") {
+        expect(stdout.join("")).toContain("Recurrence families: not evaluated");
+        expect(stdout.join("")).toContain("Findings: 0");
+      }
     }
 
     const stderr: string[] = [];
@@ -146,13 +181,9 @@ describe("defect evidence repository gate", () => {
     const processOutput = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     await expect(main(["--boundary-only"])).resolves.toBe(0);
     expect(processOutput).toHaveBeenCalledWith(expect.stringContaining("PASS"));
-    processOutput.mockRestore();
-
     const processError = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     await expect(main(["--boundary-only", "--evidence-only"])).resolves.toBe(2);
     expect(processError).toHaveBeenCalledWith(expect.stringContaining("Select at most one"));
-    processError.mockRestore();
-
     const fallbackOutput: string[] = [];
     await expect(
       main(["--evidence-only", "--negative-control", "--json"], {
