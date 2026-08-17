@@ -22,6 +22,7 @@ import {
 import {
   _testOnly as timeTestOnly,
   compareTimestampStrings,
+  isRfc3339DateTime,
   isTimestampLiteral,
   nowIso,
   resolveIsoOrRelative,
@@ -377,6 +378,26 @@ describe("core/shared/time", () => {
     expect(
       compareTimestampStrings("2026-02-03T04:05:07Z", "2026-02-03T04:05:06Z"),
     ).toBeGreaterThan(0);
+  });
+
+  it("recognizes only calendar-valid RFC 3339 date-times", () => {
+    expect(isRfc3339DateTime("2026-02-03T04:05:06Z")).toBe(true);
+    expect(isRfc3339DateTime("2026-02-03T04:05:06.123+05:30")).toBe(true);
+    expect(isRfc3339DateTime("2026-02-03t04:05:06z")).toBe(true);
+    for (const invalid of [
+      "2026-02-03",
+      "2026-02-30T04:05:06Z",
+      "2026-00-03T04:05:06Z",
+      "2026-13-03T04:05:06Z",
+      "2026-02-00T04:05:06Z",
+      "2026-02-03T24:05:06Z",
+      "2026-02-03T04:60:06Z",
+      "2026-02-03T04:05:60Z",
+      "2026-02-03T04:05:06+24:00",
+      "2026-02-03T04:05:06+05:60",
+    ]) {
+      expect(isRfc3339DateTime(invalid), invalid).toBe(false);
+    }
   });
 
   it("keeps comparing correctly after the timestamp parse memo hits its size cap", () => {

@@ -4,6 +4,7 @@
  * Validates captured external-boundary samples and explicit time-bounded
  * waivers without allowing production code to manufacture its own fixtures.
  */
+import { isRfc3339DateTime } from "../../core/shared/time.js";
 
 /** Evidence source accepted for a captured boundary sample. */
 export const BOUNDARY_FIXTURE_CAPTURE_SOURCES = [
@@ -179,6 +180,41 @@ function validateSample(
   return findings;
 }
 
+/** Evaluate the independent validity and expiry rules for one waiver record. */
+function evaluateBoundaryWaiver(
+  boundary: WaivedBoundaryRecord,
+  nowMs: number,
+): { captured: number; waived: number; findings: BoundaryFixtureFinding[] } {
+  const expiresAt = Date.parse(boundary.waiver_expires_at);
+  const validWaiver =
+    nonEmpty(boundary.waiver_reason) &&
+    nonEmpty(boundary.waiver_owner) &&
+    boundary.waiver_expires_at.endsWith("Z") &&
+    isRfc3339DateTime(boundary.waiver_expires_at) &&
+    Number.isFinite(expiresAt);
+  return {
+    captured: 0,
+    waived: validWaiver && expiresAt >= nowMs ? 1 : 0,
+    findings: !validWaiver
+      ? [
+          {
+            boundary_id: boundary.id,
+            kind: "invalid_waiver",
+            detail: `Boundary ${boundary.id} waiver requires reason, owner, and an RFC 3339 UTC expiry.`,
+          },
+        ]
+      : expiresAt < nowMs
+        ? [
+            {
+              boundary_id: boundary.id,
+              kind: "expired_waiver",
+              detail: `Boundary ${boundary.id} waiver expired at ${boundary.waiver_expires_at}.`,
+            },
+          ]
+        : [],
+  };
+}
+
 function evaluateBoundaryRecord(
   boundary: BoundaryInventoryRecord,
   fixtures: Readonly<Record<string, unknown>>,
@@ -222,32 +258,7 @@ function evaluateBoundaryRecord(
       findings,
     };
   }
-  const expiresAt = Date.parse(boundary.waiver_expires_at);
-  const validWaiver =
-    nonEmpty(boundary.waiver_reason) &&
-    nonEmpty(boundary.waiver_owner) &&
-    Number.isFinite(expiresAt);
-  return {
-    captured: 0,
-    waived: validWaiver && expiresAt >= nowMs ? 1 : 0,
-    findings: !validWaiver
-      ? [
-          {
-            boundary_id: boundary.id,
-            kind: "invalid_waiver",
-            detail: `Boundary ${boundary.id} waiver requires reason, owner, and ISO expiry.`,
-          },
-        ]
-      : expiresAt < nowMs
-        ? [
-            {
-              boundary_id: boundary.id,
-              kind: "expired_waiver",
-              detail: `Boundary ${boundary.id} waiver expired at ${boundary.waiver_expires_at}.`,
-            },
-          ]
-        : [],
-  };
+  return evaluateBoundaryWaiver(boundary, nowMs);
 }
 
 /** Validate an untrusted boundary registry and its already-loaded JSON samples. */

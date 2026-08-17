@@ -9,6 +9,7 @@ import {
   type DefectRecurrenceFamily,
   type DefectRecurrencePolicy,
 } from "../../../../src/sdk/governance/defect-recurrence.js";
+import { defectRecurrenceItemSignals } from "../../../../src/sdk/governance/defect-recurrence-signals.js";
 
 const family = (
   overrides: Partial<DefectRecurrenceFamily> = {},
@@ -116,6 +117,25 @@ describe("defect recurrence SDK", () => {
       items_scanned: 1,
       items_reused: 1,
       items_indexed: 2,
+    });
+
+    expect(
+      defectRecurrenceItemSignals({
+        id: "pm-projection",
+        status: "closed",
+        type: "Issue",
+        title: "Ignored outside the recurrence signal contract",
+        tags: ["boundary-contract"],
+        files: [{ path: "src/sdk/index.ts" }],
+        package_names: ["@unbrained/pm-cli"],
+        error_codes: ["invalid_workspace_path"],
+      }),
+    ).toEqual({
+      files: ["src/sdk/index.ts"],
+      package_names: ["@unbrained/pm-cli"],
+      item_ids: ["pm-projection"],
+      tags: ["boundary-contract"],
+      error_codes: ["invalid_workspace_path"],
     });
 
     const sparseFamily = family({
@@ -550,6 +570,14 @@ describe("defect recurrence SDK", () => {
       ],
       [policy([family({ checks: null as never })]), "checks must contain"],
       [
+        policy([family({ checks: { local: [], hosted: [] } })]),
+        "checks must contain",
+      ],
+      [
+        policy([family({ checks: { local: ["x"], hosted: [] } })]),
+        "checks must contain",
+      ],
+      [
         policy([family({ checks: { local: [42], hosted: [] } as never })]),
         "checks must contain",
       ],
@@ -614,5 +642,33 @@ describe("defect recurrence SDK", () => {
     ] as const) {
       expect(() => parseDefectChangeRiskRequest(request)).toThrow(message);
     }
+  });
+
+  it("reports malformed item types without aborting defect evidence evaluation", () => {
+    expect(
+      evaluateDefectGateEvidence(
+        [
+          {
+            id: "pm-malformed-type",
+            status: "closed",
+            type: 7 as never,
+            tags: ["bug"],
+            completed_at: "2026-08-16T12:01:00.000Z",
+            escape_class: "production_defect",
+            gate_evidence: {
+              disposition: "gate_added",
+              gate_id: "malformed-type",
+              negative_control: "non-string item type",
+              local_checks: ["pnpm test -- defect-recurrence"],
+              hosted_checks: ["CI / test-shard"],
+              owner: "pm-owner",
+            },
+          },
+        ],
+        policy(),
+        ["closed"],
+        new Date("2026-08-16T13:00:00.000Z"),
+      ),
+    ).toMatchObject({ ok: true, governed_item_count: 1 });
   });
 });

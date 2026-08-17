@@ -653,7 +653,7 @@ export interface RuntimeStatusDefinition {
 
 /** Declarative JSON-value constraints enforced before custom-field persistence. */
 export interface RuntimeFieldValueSchema {
-  /** Required JSON value type. */
+  /** Optional JSON value type constraint. */
   type?: "string" | "number" | "boolean" | "array" | "object";
   /** Exact JSON value required by this schema branch. */
   const?: StructuredJsonValue;

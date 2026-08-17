@@ -113,7 +113,8 @@ export const PM_RECOVERY_REFERENCE_FIELDS = Object.freeze(
 
 /** Resolve an own recovery-field contract without trusting object prototypes. */
 function recoveryReferenceContract(field: string) {
-  if (!Object.hasOwn(RECOVERY_REFERENCE_FIELD_CONTRACTS, field)) return undefined;
+  if (!Object.hasOwn(RECOVERY_REFERENCE_FIELD_CONTRACTS, field))
+    return undefined;
   return RECOVERY_REFERENCE_FIELD_CONTRACTS[
     field as keyof typeof RECOVERY_REFERENCE_FIELD_CONTRACTS
   ];
@@ -142,10 +143,7 @@ export interface PmRecoveryProducerLocation {
 /** Producer-census failure that requires a new field contract or producer. */
 export interface PmRecoveryProducerCensusFinding {
   /** Stable finding kind. */
-  kind:
-    | "invalid_source"
-    | "missing_kind_producer"
-    | "unknown_recovery_field";
+  kind: "invalid_source" | "missing_kind_producer" | "unknown_recovery_field";
   /** Source path or normalized kind. */
   subject: string;
   /** Actionable explanation. */
@@ -255,6 +253,11 @@ interface SourceSyntaxToken {
   offset: number;
 }
 
+const SOURCE_REGEXP_PREFIX_PUNCTUATORS = new Set([
+  ..."=([{,:;!?&|+-*%^~<>",
+  "=>",
+]);
+
 interface SourceDelimiterFrame {
   /** Delimiter role used to distinguish object members from blocks and patterns. */
   kind: "object" | "block" | "pattern" | "paren" | "array";
@@ -294,7 +297,7 @@ function canStartRegularExpression(
   return (
     previous === undefined ||
     (previous.kind === "punctuator" &&
-      "=([{,:;!?&|+-*%^~<>".includes(previous.value)) ||
+      SOURCE_REGEXP_PREFIX_PUNCTUATORS.has(previous.value)) ||
     (previous.kind === "identifier" &&
       ["return", "case", "throw", "else", "yield"].includes(previous.value))
   );
@@ -538,7 +541,6 @@ export function censusPmRecoveryReferenceProducers(
 ): PmRecoveryProducerCensusReport {
   const producers: PmRecoveryProducerLocation[] = [];
   const findings: PmRecoveryProducerCensusFinding[] = [];
-  const recognizedFields = new Set<string>(PM_RECOVERY_REFERENCE_FIELDS);
   for (const source of [...sources].sort((left, right) =>
     compareCodeUnits(left.path, right.path),
   )) {
@@ -569,8 +571,7 @@ export function censusPmRecoveryReferenceProducers(
         /(?:retry_command|candidate_command|fallback_candidate|next_best_command|example|next_step|migration_hint|restore_with)/u.test(
           field,
         ) &&
-        !/(?:_total|_truncated)$/u.test(field) &&
-        !recognizedFields.has(field)
+        !/(?:_total|_truncated)$/u.test(field)
       ) {
         findings.push({
           kind: "unknown_recovery_field",

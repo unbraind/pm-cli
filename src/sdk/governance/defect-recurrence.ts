@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 
 import { stableStringify } from "../../core/shared/serialization.js";
 import type { AssuranceItemRecord } from "./assurance.js";
+import { defectRecurrenceItemSignals } from "./defect-recurrence-signals.js";
 
 /** Stable defect escape taxonomy used by project policy and PM metadata. */
 export const DEFECT_ESCAPE_CLASSES = [
@@ -405,11 +406,13 @@ function assertFamilyEvidenceContracts(family: DefectRecurrenceFamily): void {
     !isRecord(family.checks) ||
     !isStringArray(family.checks.local) ||
     !isStringArray(family.checks.hosted) ||
+    family.checks.local.length === 0 ||
+    family.checks.hosted.length === 0 ||
     family.checks.local.some((check) => !check.trim()) ||
     family.checks.hosted.some((check) => !check.trim())
   ) {
     throw new TypeError(
-      `defect recurrence family ${family.id} checks must contain local and hosted string arrays`,
+      `defect recurrence family ${family.id} checks must contain nonempty local and hosted string arrays`,
     );
   }
 }
@@ -494,34 +497,6 @@ function pathMatches(pattern: string, value: string): boolean {
     compiledPathPatterns.set(pattern, compiled);
   }
   return compiled.test(value);
-}
-
-function itemSignals(item: AssuranceItemRecord): DefectChangeRiskInput {
-  const files = (Array.isArray(item.files) ? item.files : []).flatMap((entry) => {
-    if (typeof entry !== "object" || entry === null || Array.isArray(entry))
-      return [];
-    const value = (entry as { path?: unknown }).path;
-    return typeof value === "string" ? [value] : [];
-  });
-  const packageNames = Array.isArray(item.package_names)
-    ? item.package_names.filter(
-        (value): value is string => typeof value === "string",
-      )
-    : [];
-  const errorCodes = Array.isArray(item.error_codes)
-    ? item.error_codes.filter(
-        (value): value is string => typeof value === "string",
-      )
-    : [];
-  return {
-    files,
-    package_names: packageNames,
-    item_ids: [item.id],
-    tags: Array.isArray(item.tags)
-      ? item.tags.filter((value): value is string => typeof value === "string")
-      : [],
-    error_codes: errorCodes,
-  };
 }
 
 function fileReasons(
@@ -665,7 +640,7 @@ export function buildDefectRecurrenceIndex(
     : {};
   const itemsReused = canReuse ? Object.keys(itemFamilies).length : 0;
   for (const item of items) {
-    const signals = itemSignals(item);
+    const signals = defectRecurrenceItemSignals(item);
     const matched = families
       .filter(
         (family) =>
@@ -771,7 +746,7 @@ export function analyzeDefectChangeRisk(
 
 function isDefectItem(item: AssuranceItemRecord): boolean {
   return (
-    item.type.toLowerCase() === "issue" ||
+    (typeof item.type === "string" && item.type.toLowerCase() === "issue") ||
     (Array.isArray(item.tags) ? item.tags : []).some(
       (tag) =>
         typeof tag === "string" &&

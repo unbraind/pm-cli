@@ -233,12 +233,14 @@ describe("coerceRuntimeFieldValue semantic schema paths", () => {
     expect(() => coerceRuntimeFieldValue(escapeClass, "unknown")).toThrow(
       "must be one of",
     );
-    expect(() =>
-      coerceRuntimeFieldValue(
-        makeField({ value_schema: { type: "string", format: "date-time" } }),
-        "not-a-date",
-      ),
-    ).toThrow("must be an ISO date-time");
+    const dateTimeField = makeField({
+      value_schema: { type: "string", format: "date-time" },
+    });
+    for (const invalid of ["not-a-date", "2026-08-18", "08/18/2026"]) {
+      expect(() => coerceRuntimeFieldValue(dateTimeField, invalid)).toThrow(
+        "must be an RFC 3339 date-time",
+      );
+    }
     expect(
       coerceRuntimeFieldValue(
         makeField({ value_schema: { type: "string", format: "date-time" } }),
@@ -311,6 +313,20 @@ describe("coerceRuntimeFieldValue semantic schema paths", () => {
         owner: "pm-owner",
       }),
     ).toEqual({ disposition: "explicit_waiver", owner: "pm-owner" });
+    const throwingVariant = new Proxy<RuntimeFieldValueSchema>(
+      { type: "string" },
+      {
+        get() {
+          throw new Error("third variant must not be evaluated");
+        },
+      },
+    );
+    expect(() =>
+      coerceRuntimeFieldValue(
+        makeField({ value_schema: { one_of: [{}, {}, throwingVariant] } }),
+        "value",
+      ),
+    ).toThrow("exactly one configured schema variant");
   });
 
   it("rejects a mismatched type and excessively recursive schemas", () => {

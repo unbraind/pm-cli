@@ -6,6 +6,7 @@
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { stableStringify } from "../shared/serialization.js";
+import { isRfc3339DateTime } from "../shared/time.js";
 import {
   runtimeFieldOptionTarget,
   type RuntimeFieldDefinitionResolved,
@@ -185,8 +186,8 @@ function runtimeFieldPrimitiveSchemaError(
     if (schema.min_length !== undefined && value.length < schema.min_length) {
       return `${path} must contain at least ${schema.min_length} characters`;
     }
-    if (schema.format === "date-time" && !Number.isFinite(Date.parse(value))) {
-      return `${path} must be an ISO date-time`;
+    if (schema.format === "date-time" && !isRfc3339DateTime(value)) {
+      return `${path} must be an RFC 3339 date-time`;
     }
   }
   return undefined;
@@ -261,10 +262,15 @@ function runtimeFieldSchemaError(
   const objectError = runtimeFieldObjectSchemaError(value, schema, path, depth);
   if (objectError) return objectError;
   if (!schema.one_of) return undefined;
-  const matches = schema.one_of.filter(
-    (candidate) =>
-      runtimeFieldSchemaError(value, candidate, path, depth + 1) === undefined,
-  ).length;
+  let matches = 0;
+  for (const candidate of schema.one_of) {
+    if (
+      runtimeFieldSchemaError(value, candidate, path, depth + 1) === undefined
+    ) {
+      matches += 1;
+      if (matches > 1) break;
+    }
+  }
   return matches === 1
     ? undefined
     : `${path} must match exactly one configured schema variant`;

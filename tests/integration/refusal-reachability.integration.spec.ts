@@ -17,7 +17,9 @@ import {
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 /** Remove invocation-only amount receipts before comparing replacement results. */
-function withoutReadInvocationReceipts(stdout: string): Record<string, unknown> {
+function withoutReadInvocationReceipts(
+  stdout: string,
+): Record<string, unknown> {
   const normalized = structuredClone(JSON.parse(stdout)) as Record<
     string,
     unknown
@@ -48,7 +50,11 @@ describe("real-entrypoint refusal reachability", () => {
 
     expect(report.ok, JSON.stringify(report.findings, null, 2)).toBe(true);
     expect(report.scanned_file_count).toBeGreaterThan(400);
-    expect(Object.values(report.producer_count_by_kind).every((count) => count > 0)).toBe(true);
+    expect(
+      Object.entries(report.producer_count_by_kind).filter(
+        ([, count]) => count === 0,
+      ),
+    ).toEqual([]);
   });
 
   it("reaches every declared state as its typed code and exit class", async () => {

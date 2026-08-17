@@ -41,6 +41,35 @@ const gate = {
   assertion_ids: [assertion.id],
   triggers: ["ci"],
 };
+const changeRiskRequest = {
+  policy: {
+    version: 1,
+    evidence_epoch: "2026-08-16T00:00:00.000Z",
+    families: [
+      {
+        id: "assurance-transport",
+        version: 1,
+        title: "Assurance transport drift",
+        owner_item_id: "pm-owner",
+        escape_class: "review_caught_late",
+        triggers: { file_patterns: ["src/sdk/governance/**"] },
+        checks: {
+          local: ["pnpm test -- assurance"],
+          hosted: ["CI / test-shard"],
+        },
+        negative_control: {
+          files: ["src/sdk/governance/assurance-action.ts"],
+        },
+        historical_item_ids: ["pm-owner"],
+        budget: {
+          max_escape_rate: 0,
+          max_false_positive_rate: 0.05,
+        },
+      },
+    ],
+  },
+  change: { files: ["src/sdk/governance/assurance-action.ts"] },
+};
 
 async function seedRegistry(pmPath: string): Promise<void> {
   const global = { path: pmPath };
@@ -697,35 +726,7 @@ describe("assurance action transport", () => {
       );
       expect(created.code).toBe(0);
       const createdId = (created.json as { item: { id: string } }).item.id;
-      const request = {
-        policy: {
-          version: 1,
-          evidence_epoch: "2026-08-16T00:00:00.000Z",
-          families: [
-            {
-              id: "assurance-transport",
-              version: 1,
-              title: "Assurance transport drift",
-              owner_item_id: "pm-owner",
-              escape_class: "review_caught_late",
-              triggers: { file_patterns: ["src/sdk/governance/**"] },
-              checks: {
-                local: ["pnpm test -- assurance"],
-                hosted: ["CI / test-shard"],
-              },
-              negative_control: {
-                files: ["src/sdk/governance/assurance-action.ts"],
-              },
-              historical_item_ids: ["pm-owner"],
-              budget: {
-                max_escape_rate: 0,
-                max_false_positive_rate: 0.05,
-              },
-            },
-          ],
-        },
-        change: { files: ["src/sdk/governance/assurance-action.ts"] },
-      };
+      const request = changeRiskRequest;
 
       await expect(
         runAssuranceAction(
@@ -800,6 +801,12 @@ describe("assurance action transport", () => {
           { path: pmPath },
         ),
       ).resolves.toMatchObject({ risk_detected: false, total: 0 });
+    });
+  });
+
+  it("types invalid change-risk transport input as usage refusals", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const request = changeRiskRequest;
       await expect(
         runAssuranceAction(
           { action: "risk", definition: request, limit: 1 },

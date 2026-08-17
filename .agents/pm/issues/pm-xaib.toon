@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:ci","area:telemetry","area:tests",cross-platform,flake,node24,windows
 created_at: "2026-06-25T09:18:05.862Z"
-updated_at: "2026-08-16T18:25:19.551Z"
+updated_at: "2026-08-17T00:47:56.964Z"
 author: claude-code-agent
 parent: pm-u9d0
 release: v2026.6.30
@@ -27,8 +27,8 @@ escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened
   gate_id: windows-node24-regression
-  negative_control: node scripts/run-tests.mjs test -- tests/integration/install-package.spec.ts
-  local_checks[1]: tests/integration/install-package.spec.ts
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"installs runtime dependencies for packed npm package extensions\""
+  local_checks[1]: "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"installs runtime dependencies for packed npm package extensions\""
   hosted_checks[1]: Windows regression / Node 24
   owner: pm-xaib
 body: ""

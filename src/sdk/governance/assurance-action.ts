@@ -60,6 +60,7 @@ import {
   type DefectRecurrenceIndex,
   type DefectChangeRiskReport,
 } from "./defect-recurrence.js";
+import { defectRecurrenceItemSignals } from "./defect-recurrence-signals.js";
 
 /**
  * One bounded process-local recurrence index and its invalidation evidence.
@@ -73,7 +74,7 @@ interface RiskIndexCacheEntry {
   pm_root: string;
   /** Stable policy serialization used for exact invalidation. */
   policy_serialized: string;
-  /** Stable per-item fingerprints used to derive sparse changes and deletions. */
+  /** Recurrence-signal fingerprints used to derive sparse changes and deletions. */
   item_fingerprints: ReadonlyMap<string, string>;
   /** Previous immutable index eligible for sparse reuse. */
   index: DefectRecurrenceIndex;
@@ -534,7 +535,9 @@ function buildCachedRiskIndex(
   const itemFingerprints = new Map(
     items.map((item) => [
       item.id,
-      createHash("sha256").update(stableStringify(item)).digest("hex"),
+      createHash("sha256")
+        .update(stableStringify(defectRecurrenceItemSignals(item)))
+        .digest("hex"),
     ]),
   );
   const reusable =

@@ -25,8 +25,14 @@ import {
   collectRuntimeFilterValues,
   matchesRuntimeFilters,
 } from "../../../../src/core/schema/runtime-field-filters.js";
-import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
-import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
+import {
+  readSettings,
+  writeSettings,
+} from "../../../../src/core/store/settings.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../../helpers/withTempPmPath.js";
 
 function createTaskWithSegment(
   context: TempPmContext,
@@ -184,14 +190,14 @@ describe("runtime schema command flag registration", () => {
             one_of: [{ const: true }, { const: false }],
           },
         },
-        ...invalidSchemas.map((value_schema) => ({
-          key: "malformed",
+        ...invalidSchemas.map((value_schema, index) => ({
+          key: `malformed_${index}`,
           value_schema,
         })),
       ] as never,
     });
 
-    expect(normalized.fields).toHaveLength(1);
+    expect(normalized.fields.map((field) => field.key)).toEqual(["evidence"]);
     expect(normalized.fields[0]).toMatchObject({
       key: "evidence",
       value_schema: {
@@ -214,8 +220,17 @@ describe("runtime schema command flag registration", () => {
     const normalized = normalizeRuntimeSchemaSettings({
       version: 2.8,
       statuses: [
-        { id: "triage", aliases: ["To Do", "to-do"], roles: ["default_open", "active"], order: 20 },
-        { id: "done", roles: ["terminal", "terminal_done", "default_close"], order: Number.NaN },
+        {
+          id: "triage",
+          aliases: ["To Do", "to-do"],
+          roles: ["default_open", "active"],
+          order: 20,
+        },
+        {
+          id: "done",
+          roles: ["terminal", "terminal_done", "default_close"],
+          order: Number.NaN,
+        },
         { id: "blocked", roles: ["blocked"], description: " blocked work " },
         { id: "drafting", roles: ["draft"] },
       ],
@@ -247,21 +262,38 @@ describe("runtime schema command flag registration", () => {
       },
       type_workflows: [
         { type: " Task ", allowed_transitions: [] },
-        { type: 123 as never, allowed_transitions: [["triage", "done"]] as never },
+        {
+          type: 123 as never,
+          allowed_transitions: [["triage", "done"]] as never,
+        },
         {
           type: "Issue",
-          allowed_transitions: [["triage", "done"], ["triage", "done"], ["triage", ""], ["bad"] as [string, string]],
+          allowed_transitions: [
+            ["triage", "done"],
+            ["triage", "done"],
+            ["triage", ""],
+            ["bad"] as [string, string],
+          ],
         },
         { type: "", allowed_transitions: [] },
-        { type: "NoTransitions" } as unknown as { type: string; allowed_transitions: [string, string][] },
-        { type: "Bug", allowed_transitions: [["x", "y", "z"] as unknown as [string, string]] },
+        { type: "NoTransitions" } as unknown as {
+          type: string;
+          allowed_transitions: [string, string][];
+        },
+        {
+          type: "Bug",
+          allowed_transitions: [["x", "y", "z"] as unknown as [string, string]],
+        },
       ],
       unknown_field_policy: "REJECT",
     });
 
     expect(normalized.version).toBe(2);
     expect(normalized.unknown_field_policy).toBe("reject");
-    expect(normalizeRuntimeSchemaSettings({ unknown_field_policy: "STRICT" }).unknown_field_policy).toBe("allow");
+    expect(
+      normalizeRuntimeSchemaSettings({ unknown_field_policy: "STRICT" })
+        .unknown_field_policy,
+    ).toBe("allow");
     expect(normalized.type_workflows).toEqual([
       { type: "Issue", allowed_transitions: [["triage", "done"]] },
       { type: "Task", allowed_transitions: [] },
@@ -292,7 +324,9 @@ describe("runtime schema command flag registration", () => {
     expect(statusRegistry.active_statuses.has("triage")).toBe(true);
     expect(statusRegistry.blocked_statuses.has("blocked")).toBe(true);
     expect(statusRegistry.draft_statuses.has("drafting")).toBe(true);
-    expect(normalizeStatusInputWithRegistry("to do", statusRegistry)).toBe("triage");
+    expect(normalizeStatusInputWithRegistry("to do", statusRegistry)).toBe(
+      "triage",
+    );
     expect(statusIsTerminal("done", statusRegistry)).toBe(true);
     expect(statusIsTerminal("missing", statusRegistry)).toBe(false);
 
@@ -301,7 +335,9 @@ describe("runtime schema command flag registration", () => {
     expect(segment).toBeDefined();
     expect(runtimeFieldOptionTarget(segment!)).toBe("customerSegment");
     expect(fieldRegistry.by_cli_token.get("cust-seg")).toBe(segment);
-    expect(fieldRegistry.command_to_fields.get("list")?.map((field) => field.key)).toEqual(["labels"]);
+    expect(
+      fieldRegistry.command_to_fields.get("list")?.map((field) => field.key),
+    ).toEqual(["labels"]);
   });
 
   it("falls back cleanly when runtime schema definitions are empty or malformed", () => {
@@ -319,10 +355,7 @@ describe("runtime schema command flag registration", () => {
       files: {
         types: "",
       },
-      statuses: [
-        { id: "" },
-        { id: "   " },
-      ],
+      statuses: [{ id: "" }, { id: "   " }],
       fields: [
         { key: "" },
         {
@@ -353,7 +386,9 @@ describe("runtime schema command flag registration", () => {
     });
 
     expect(normalized.version).toBe(1);
-    expect(normalized.statuses.map((status) => status.id)).toEqual(normalizedDefaults.statuses.map((status) => status.id));
+    expect(normalized.statuses.map((status) => status.id)).toEqual(
+      normalizedDefaults.statuses.map((status) => status.id),
+    );
     expect(normalized.fields).toEqual([
       expect.objectContaining({
         key: "release_train",
@@ -373,8 +408,12 @@ describe("runtime schema command flag registration", () => {
     expect(statusRegistry.canceled_status).toBe("canceled");
 
     const fieldRegistry = resolveRuntimeFieldRegistry(normalized);
-    expect(fieldRegistry.by_cli_token.get("release-train")).toBe(fieldRegistry.by_key.get("release_train"));
-    expect(fieldRegistry.command_to_fields.get("create")?.map((field) => field.key)).toEqual(["release_train"]);
+    expect(fieldRegistry.by_cli_token.get("release-train")).toBe(
+      fieldRegistry.by_key.get("release_train"),
+    );
+    expect(
+      fieldRegistry.command_to_fields.get("create")?.map((field) => field.key),
+    ).toEqual(["release_train"]);
     expect(runtimeFieldOptionTarget({ key: "!!!" } as never)).toBe("!!!");
 
     expect(
@@ -419,12 +458,18 @@ describe("runtime schema command flag registration", () => {
     expect(firstDefinitionFallback.open_status).toBe("custom_only");
     expect(firstDefinitionFallback.close_status).toBe("custom_only");
     expect(firstDefinitionFallback.canceled_status).toBe("custom_only");
-    expect(normalizeStatusInputWithRegistry("custom only", firstDefinitionFallback)).toBe("custom_only");
-    expect(normalizeStatusInputWithRegistry(undefined, firstDefinitionFallback)).toBeUndefined();
+    expect(
+      normalizeStatusInputWithRegistry("custom only", firstDefinitionFallback),
+    ).toBe("custom_only");
+    expect(
+      normalizeStatusInputWithRegistry(undefined, firstDefinitionFallback),
+    ).toBeUndefined();
   });
 
   it("scaffolds and loads runtime schema sections from multiple supported file shapes", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-runtime-schema-files-"));
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-runtime-schema-files-"),
+    );
     try {
       const absoluteFieldsPath = path.join(tempRoot, "absolute-fields.json");
       const schema = normalizeRuntimeSchemaSettings({
@@ -437,25 +482,43 @@ describe("runtime schema command flag registration", () => {
       });
 
       const scaffold = await ensureRuntimeSchemaFileScaffold(tempRoot, schema);
-      expect(scaffold.created_paths.sort()).toEqual([
-        absoluteFieldsPath,
-        path.join(tempRoot, "custom", "statuses.json"),
-        path.join(tempRoot, "custom", "types.json"),
-        path.join(tempRoot, "custom", "workflows.json"),
-      ].sort());
-      expect(await ensureRuntimeSchemaFileScaffold(tempRoot, schema)).toEqual({ created_paths: [] });
-      expect(filePathForSchemaSection(tempRoot, absoluteFieldsPath, "fallback.json")).toBe(absoluteFieldsPath);
-      expect(filePathForSchemaSection(tempRoot, " relative.json ", "fallback.json")).toBe(path.join(tempRoot, "relative.json"));
-      expect(filePathForSchemaSection(tempRoot, "   ", "fallback.json")).toBe(path.join(tempRoot, "fallback.json"));
+      expect(scaffold.created_paths.sort()).toEqual(
+        [
+          absoluteFieldsPath,
+          path.join(tempRoot, "custom", "statuses.json"),
+          path.join(tempRoot, "custom", "types.json"),
+          path.join(tempRoot, "custom", "workflows.json"),
+        ].sort(),
+      );
+      expect(await ensureRuntimeSchemaFileScaffold(tempRoot, schema)).toEqual({
+        created_paths: [],
+      });
+      expect(
+        filePathForSchemaSection(tempRoot, absoluteFieldsPath, "fallback.json"),
+      ).toBe(absoluteFieldsPath);
+      expect(
+        filePathForSchemaSection(tempRoot, " relative.json ", "fallback.json"),
+      ).toBe(path.join(tempRoot, "relative.json"));
+      expect(filePathForSchemaSection(tempRoot, "   ", "fallback.json")).toBe(
+        path.join(tempRoot, "fallback.json"),
+      );
 
       // resolveItemTypesFilePath threads the active tracker root into the configured types path,
       // so invalid-type hints reflect a custom --pm-path instead of the default `.agents/pm`.
-      expect(resolveItemTypesFilePath(tempRoot, normalizeRuntimeSchemaSettings({ files: { types: "custom/types.json" } }))).toBe(
-        path.join(tempRoot, "custom", "types.json"),
-      );
-      expect(resolveItemTypesFilePath(tempRoot, normalizeRuntimeSchemaSettings(undefined))).toBe(
-        path.join(tempRoot, "schema", "types.json"),
-      );
+      expect(
+        resolveItemTypesFilePath(
+          tempRoot,
+          normalizeRuntimeSchemaSettings({
+            files: { types: "custom/types.json" },
+          }),
+        ),
+      ).toBe(path.join(tempRoot, "custom", "types.json"));
+      expect(
+        resolveItemTypesFilePath(
+          tempRoot,
+          normalizeRuntimeSchemaSettings(undefined),
+        ),
+      ).toBe(path.join(tempRoot, "schema", "types.json"));
 
       await writeFile(
         path.join(tempRoot, "custom", "types.json"),
@@ -476,24 +539,53 @@ describe("runtime schema command flag registration", () => {
         path.join(tempRoot, "custom", "workflows.json"),
         `${JSON.stringify({
           workflows: { open_status: "review" },
-          type_workflows: [{ type: "Spike", allowed_transitions: [["review", "closed"]] }],
+          type_workflows: [
+            { type: "Spike", allowed_transitions: [["review", "closed"]] },
+          ],
         })}\n`,
         "utf8",
       );
 
       const loaded = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
       expect(loaded.warnings).toEqual([]);
-      expect(loaded.type_definitions_from_file).toEqual([{ name: "Spike", folder: "spikes" }]);
-      expect(loaded.schema.statuses).toContainEqual(expect.objectContaining({ id: "review", aliases: ["in_review"] }));
-      expect(loaded.schema.fields).toContainEqual(expect.objectContaining({ key: "risk", type: "number", commands: ["create"] }));
+      expect(loaded.type_definitions_from_file).toEqual([
+        { name: "Spike", folder: "spikes" },
+      ]);
+      expect(loaded.schema.statuses).toContainEqual(
+        expect.objectContaining({ id: "review", aliases: ["in_review"] }),
+      );
+      expect(loaded.schema.fields).toContainEqual(
+        expect.objectContaining({
+          key: "risk",
+          type: "number",
+          commands: ["create"],
+        }),
+      );
       expect(loaded.schema.workflow.open_status).toBe("review");
-      expect(loaded.schema.type_workflows).toEqual([{ type: "Spike", allowed_transitions: [["review", "closed"]] }]);
+      expect(loaded.schema.type_workflows).toEqual([
+        { type: "Spike", allowed_transitions: [["review", "closed"]] },
+      ]);
 
-      await writeFile(path.join(tempRoot, "custom", "types.json"), "{}", "utf8");
-      await writeFile(path.join(tempRoot, "custom", "statuses.json"), "\"bad\"", "utf8");
-      await writeFile(absoluteFieldsPath, "\"bad\"", "utf8");
-      await writeFile(path.join(tempRoot, "custom", "workflows.json"), "[]", "utf8");
-      const malformed = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
+      await writeFile(
+        path.join(tempRoot, "custom", "types.json"),
+        "{}",
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "custom", "statuses.json"),
+        '"bad"',
+        "utf8",
+      );
+      await writeFile(absoluteFieldsPath, '"bad"', "utf8");
+      await writeFile(
+        path.join(tempRoot, "custom", "workflows.json"),
+        "[]",
+        "utf8",
+      );
+      const malformed = await loadRuntimeSchemaFromOptionalFiles(
+        tempRoot,
+        schema,
+      );
       expect(malformed.warnings.sort()).toEqual([
         "runtime_schema_fields_invalid_shape",
         "runtime_schema_statuses_invalid_shape",
@@ -501,11 +593,26 @@ describe("runtime schema command flag registration", () => {
         "runtime_schema_workflows_invalid_shape",
       ]);
 
-      await writeFile(path.join(tempRoot, "custom", "types.json"), "null", "utf8");
-      await writeFile(path.join(tempRoot, "custom", "statuses.json"), "{}", "utf8");
+      await writeFile(
+        path.join(tempRoot, "custom", "types.json"),
+        "null",
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "custom", "statuses.json"),
+        "{}",
+        "utf8",
+      );
       await writeFile(absoluteFieldsPath, "{}", "utf8");
-      await writeFile(path.join(tempRoot, "custom", "workflows.json"), "{", "utf8");
-      const secondMalformed = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
+      await writeFile(
+        path.join(tempRoot, "custom", "workflows.json"),
+        "{",
+        "utf8",
+      );
+      const secondMalformed = await loadRuntimeSchemaFromOptionalFiles(
+        tempRoot,
+        schema,
+      );
       expect(secondMalformed.warnings.sort()).toEqual([
         "runtime_schema_fields_invalid_shape",
         "runtime_schema_statuses_invalid_shape",
@@ -513,19 +620,38 @@ describe("runtime schema command flag registration", () => {
         "runtime_schema_workflows_invalid_json",
       ]);
 
-      await writeFile(path.join(tempRoot, "custom", "types.json"), `${JSON.stringify({ item_types: {} })}\n`, "utf8");
-      await writeFile(path.join(tempRoot, "custom", "statuses.json"), "[]", "utf8");
+      await writeFile(
+        path.join(tempRoot, "custom", "types.json"),
+        `${JSON.stringify({ item_types: {} })}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "custom", "statuses.json"),
+        "[]",
+        "utf8",
+      );
       await writeFile(absoluteFieldsPath, "[]", "utf8");
-      await writeFile(path.join(tempRoot, "custom", "workflows.json"), "{}", "utf8");
-      const nestedMissingDefinitions = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
-      expect(nestedMissingDefinitions.warnings).toContain("runtime_schema_types_invalid_shape");
+      await writeFile(
+        path.join(tempRoot, "custom", "workflows.json"),
+        "{}",
+        "utf8",
+      );
+      const nestedMissingDefinitions = await loadRuntimeSchemaFromOptionalFiles(
+        tempRoot,
+        schema,
+      );
+      expect(nestedMissingDefinitions.warnings).toContain(
+        "runtime_schema_types_invalid_shape",
+      );
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
 
   it("loads alternate runtime schema file shapes and ignores absent optional files", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-runtime-schema-alt-files-"));
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-runtime-schema-alt-files-"),
+    );
     try {
       const schema = normalizeRuntimeSchemaSettings({
         files: {
@@ -558,9 +684,18 @@ describe("runtime schema command flag registration", () => {
 
       const loaded = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
       expect(loaded.warnings).toEqual([]);
-      expect(loaded.type_definitions_from_file).toEqual([{ name: "Bug", folder: "bugs" }]);
-      expect(loaded.schema.statuses).toContainEqual(expect.objectContaining({ id: "qa", aliases: ["quality_assurance"] }));
-      expect(loaded.schema.fields).toContainEqual(expect.objectContaining({ key: "severity", commands: ["create", "update"] }));
+      expect(loaded.type_definitions_from_file).toEqual([
+        { name: "Bug", folder: "bugs" },
+      ]);
+      expect(loaded.schema.statuses).toContainEqual(
+        expect.objectContaining({ id: "qa", aliases: ["quality_assurance"] }),
+      );
+      expect(loaded.schema.fields).toContainEqual(
+        expect.objectContaining({
+          key: "severity",
+          commands: ["create", "update"],
+        }),
+      );
       expect(loaded.schema.workflow.open_status).toBe("qa");
       expect(loaded.schema.workflow.close_status).toBe("closed");
 
@@ -577,7 +712,11 @@ describe("runtime schema command flag registration", () => {
       );
       expect(absentLoaded.warnings).toEqual([]);
       expect(absentLoaded.type_definitions_from_file).toBeUndefined();
-      expect(absentLoaded.schema.statuses.map((status) => status.id)).toEqual(normalizeRuntimeSchemaSettings(undefined).statuses.map((status) => status.id));
+      expect(absentLoaded.schema.statuses.map((status) => status.id)).toEqual(
+        normalizeRuntimeSchemaSettings(undefined).statuses.map(
+          (status) => status.id,
+        ),
+      );
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -600,9 +739,12 @@ describe("runtime schema command flag registration", () => {
       createTaskWithSegment(context, "Enterprise customer task", "enterprise");
       createTaskWithSegment(context, "SMB customer task", "smb");
 
-      const filteredByPrimary = context.runCli(["list-open", "--json", "--customer-segment", "enterprise"], {
-        expectJson: true,
-      });
+      const filteredByPrimary = context.runCli(
+        ["list-open", "--json", "--customer-segment", "enterprise"],
+        {
+          expectJson: true,
+        },
+      );
       expect(filteredByPrimary.code).toBe(0);
       const primaryJson = filteredByPrimary.json as {
         count: number;
@@ -611,9 +753,12 @@ describe("runtime schema command flag registration", () => {
       expect(primaryJson.count).toBe(1);
       expect(primaryJson.items[0]?.title).toBe("Enterprise customer task");
 
-      const filteredByAlias = context.runCli(["list-open", "--json", "--segment", "smb"], {
-        expectJson: true,
-      });
+      const filteredByAlias = context.runCli(
+        ["list-open", "--json", "--segment", "smb"],
+        {
+          expectJson: true,
+        },
+      );
       expect(filteredByAlias.code).toBe(0);
       const aliasJson = filteredByAlias.json as {
         count: number;
@@ -622,9 +767,12 @@ describe("runtime schema command flag registration", () => {
       expect(aliasJson.count).toBe(1);
       expect(aliasJson.items[0]?.title).toBe("SMB customer task");
 
-      const filteredListAll = context.runCli(["list-all", "--json", "--customer-segment", "enterprise"], {
-        expectJson: true,
-      });
+      const filteredListAll = context.runCli(
+        ["list-all", "--json", "--customer-segment", "enterprise"],
+        {
+          expectJson: true,
+        },
+      );
       expect(filteredListAll.code).toBe(0);
       expect((filteredListAll.json as { count: number }).count).toBe(1);
     });
@@ -679,35 +827,78 @@ describe("runtime field value coercion", () => {
   };
 
   it("reads option values through camelCase flag and alias candidates", () => {
-    expect(readRuntimeFieldOptionValue({ customerSegment: "smb" }, definition("customer_segment"))).toBe("smb");
-    expect(readRuntimeFieldOptionValue({ segment: "smb" }, definition("customer_segment"))).toBe("smb");
-    expect(readRuntimeFieldOptionValue({ custSeg: "smb" }, definition("customer_segment"))).toBe("smb");
-    expect(readRuntimeFieldOptionValue({ custSeg: undefined }, definition("customer_segment"))).toBeUndefined();
-    expect(readRuntimeFieldOptionValue({}, definition("customer_segment"))).toBeUndefined();
+    expect(
+      readRuntimeFieldOptionValue(
+        { customerSegment: "smb" },
+        definition("customer_segment"),
+      ),
+    ).toBe("smb");
+    expect(
+      readRuntimeFieldOptionValue(
+        { segment: "smb" },
+        definition("customer_segment"),
+      ),
+    ).toBe("smb");
+    expect(
+      readRuntimeFieldOptionValue(
+        { custSeg: "smb" },
+        definition("customer_segment"),
+      ),
+    ).toBe("smb");
+    expect(
+      readRuntimeFieldOptionValue(
+        { custSeg: undefined },
+        definition("customer_segment"),
+      ),
+    ).toBeUndefined();
+    expect(
+      readRuntimeFieldOptionValue({}, definition("customer_segment")),
+    ).toBeUndefined();
   });
 
   it("coerces scalar number, boolean, and string values with usage errors", () => {
     expect(coerceRuntimeFieldValue(definition("story_points"), "5")).toBe(5);
     expect(coerceRuntimeFieldValue(definition("story_points"), 8)).toBe(8);
-    expect(coerceRuntimeFieldValue(definition("story_points"), ["3", "5"])).toBe(5);
-    expect(() => coerceRuntimeFieldValue(definition("story_points"), "many")).toThrow("must be a number");
+    expect(
+      coerceRuntimeFieldValue(definition("story_points"), ["3", "5"]),
+    ).toBe(5);
+    expect(() =>
+      coerceRuntimeFieldValue(definition("story_points"), "many"),
+    ).toThrow("must be a number");
 
     expect(coerceRuntimeFieldValue(definition("verified"), true)).toBe(true);
     expect(coerceRuntimeFieldValue(definition("verified"), 1)).toBe(true);
     expect(coerceRuntimeFieldValue(definition("verified"), 0)).toBe(false);
     expect(coerceRuntimeFieldValue(definition("verified"), "YES")).toBe(true);
     expect(coerceRuntimeFieldValue(definition("verified"), "no")).toBe(false);
-    expect(() => coerceRuntimeFieldValue(definition("verified"), "maybe")).toThrow("true|false|1|0|yes|no");
-    expect(() => coerceRuntimeFieldValue(definition("verified"), 7, "--verified")).toThrow("--verified");
+    expect(() =>
+      coerceRuntimeFieldValue(definition("verified"), "maybe"),
+    ).toThrow("true|false|1|0|yes|no");
+    expect(() =>
+      coerceRuntimeFieldValue(definition("verified"), 7, "--verified"),
+    ).toThrow("--verified");
 
-    expect(coerceRuntimeFieldValue(definition("customer_segment"), 42)).toBe("42");
-    expect(coerceRuntimeFieldValue(definition("customer_segment"), undefined)).toBeUndefined();
+    expect(coerceRuntimeFieldValue(definition("customer_segment"), 42)).toBe(
+      "42",
+    );
+    expect(
+      coerceRuntimeFieldValue(definition("customer_segment"), undefined),
+    ).toBeUndefined();
   });
 
   it("splits repeatable values on commas, pipes, and newlines", () => {
-    expect(coerceRuntimeFieldValue(definition("labels"), "a, b|c\nd")).toEqual(["a", "b", "c", "d"]);
-    expect(coerceRuntimeFieldValue(definition("labels"), ["a,b", ["c"], null, 4])).toEqual(["a", "b", "c", "4"]);
-    expect(coerceRuntimeFieldValue(definition("labels"), undefined)).toEqual([]);
+    expect(coerceRuntimeFieldValue(definition("labels"), "a, b|c\nd")).toEqual([
+      "a",
+      "b",
+      "c",
+      "d",
+    ]);
+    expect(
+      coerceRuntimeFieldValue(definition("labels"), ["a,b", ["c"], null, 4]),
+    ).toEqual(["a", "b", "c", "4"]);
+    expect(coerceRuntimeFieldValue(definition("labels"), undefined)).toEqual(
+      [],
+    );
   });
 
   it("collects create values and reports missing type-scoped required flags", () => {
@@ -716,20 +907,29 @@ describe("runtime field value coercion", () => {
       registry,
       "task",
     );
-    expect(matched.values).toEqual({ customer_segment: "smb", story_points: 3, mandatory_everywhere: "x" });
+    expect(matched.values).toEqual({
+      customer_segment: "smb",
+      story_points: 3,
+      mandatory_everywhere: "x",
+    });
     expect(matched.missing_required_flags).toEqual([]);
 
     const missing = collectRuntimeCreateFieldValues({}, registry, "Task");
-    expect(missing.missing_required_flags).toEqual(["--customer-segment", "--mandatory-everywhere"]);
+    expect(missing.missing_required_flags).toEqual([
+      "--customer-segment",
+      "--mandatory-everywhere",
+    ]);
 
     // Type-scoped requirement does not fire for other types or unknown types,
     // but unconditional requirements always do.
-    expect(collectRuntimeCreateFieldValues({}, registry, "Issue").missing_required_flags).toEqual([
-      "--mandatory-everywhere",
-    ]);
-    expect(collectRuntimeCreateFieldValues({}, registry, undefined).missing_required_flags).toEqual([
-      "--mandatory-everywhere",
-    ]);
+    expect(
+      collectRuntimeCreateFieldValues({}, registry, "Issue")
+        .missing_required_flags,
+    ).toEqual(["--mandatory-everywhere"]);
+    expect(
+      collectRuntimeCreateFieldValues({}, registry, undefined)
+        .missing_required_flags,
+    ).toEqual(["--mandatory-everywhere"]);
   });
 
   it("collects update values once per metadata key across command scopes", () => {
@@ -738,9 +938,16 @@ describe("runtime field value coercion", () => {
       registry,
       ["update", "update_many"],
     );
-    expect(values).toEqual({ customer_segment: "enterprise", labels: ["x", "y"] });
-    expect(collectRuntimeUpdateFieldValues({ verified: "true" }, registry)).toEqual({ verified: true });
-    expect(collectRuntimeUpdateFieldValues({ verified: "true" }, registry, null)).toEqual({ verified: true });
+    expect(values).toEqual({
+      customer_segment: "enterprise",
+      labels: ["x", "y"],
+    });
+    expect(
+      collectRuntimeUpdateFieldValues({ verified: "true" }, registry),
+    ).toEqual({ verified: true });
+    expect(
+      collectRuntimeUpdateFieldValues({ verified: "true" }, registry, null),
+    ).toEqual({ verified: true });
     expect(collectRuntimeUpdateFieldValues({}, registry)).toEqual({});
   });
 });
@@ -749,22 +956,55 @@ describe("runtime field filters", () => {
   const registry = buildFieldRegistry();
 
   it("collects list filters from provided options only", () => {
-    expect(collectRuntimeFilterValues({ customerSegment: "smb", labels: "a,b" }, registry, "list")).toEqual({
+    expect(
+      collectRuntimeFilterValues(
+        { customerSegment: "smb", labels: "a,b" },
+        registry,
+        "list",
+      ),
+    ).toEqual({
       customer_segment: "smb",
       labels: ["a", "b"],
     });
     expect(collectRuntimeFilterValues({}, registry, "list")).toEqual({});
-    expect(collectRuntimeFilterValues({ customerSegment: "smb" }, registry, "search")).toEqual({});
+    expect(
+      collectRuntimeFilterValues(
+        { customerSegment: "smb" },
+        registry,
+        "search",
+      ),
+    ).toEqual({});
   });
 
   it("matches scalar filters and array filters with subset semantics", () => {
-    expect(matchesRuntimeFilters({ customer_segment: "smb" }, { customer_segment: "smb" })).toBe(true);
-    expect(matchesRuntimeFilters({ customer_segment: "ent" }, { customer_segment: "smb" })).toBe(false);
-    expect(matchesRuntimeFilters({ labels: ["a", "b", "c"] }, { labels: ["a", "c"] })).toBe(true);
-    expect(matchesRuntimeFilters({ labels: ["a"] }, { labels: ["a", "c"] })).toBe(false);
+    expect(
+      matchesRuntimeFilters(
+        { customer_segment: "smb" },
+        { customer_segment: "smb" },
+      ),
+    ).toBe(true);
+    expect(
+      matchesRuntimeFilters(
+        { customer_segment: "ent" },
+        { customer_segment: "smb" },
+      ),
+    ).toBe(false);
+    expect(
+      matchesRuntimeFilters(
+        { labels: ["a", "b", "c"] },
+        { labels: ["a", "c"] },
+      ),
+    ).toBe(true);
+    expect(
+      matchesRuntimeFilters({ labels: ["a"] }, { labels: ["a", "c"] }),
+    ).toBe(false);
     // Array filter against scalar value falls back to last-entry equality.
-    expect(matchesRuntimeFilters({ labels: "c" }, { labels: ["a", "c"] })).toBe(true);
-    expect(matchesRuntimeFilters({ labels: "a" }, { labels: ["a", "c"] })).toBe(false);
+    expect(matchesRuntimeFilters({ labels: "c" }, { labels: ["a", "c"] })).toBe(
+      true,
+    );
+    expect(matchesRuntimeFilters({ labels: "a" }, { labels: ["a", "c"] })).toBe(
+      false,
+    );
     expect(matchesRuntimeFilters({}, {})).toBe(true);
   });
 });

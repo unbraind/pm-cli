@@ -247,7 +247,7 @@ describe("recovery-reference reachability", () => {
     expect(new Set(derived.map(({ id }) => id)).size).toBe(derived.length);
   });
 
-  it("censuses every literal producer kind and rejects uncontracted recovery fields", () => {
+  it("censuses every literal recovery producer kind", () => {
     const report = censusPmRecoveryReferenceProducers([
       {
         path: "src/producer.ts",
@@ -281,7 +281,9 @@ describe("recovery-reference reachability", () => {
       path: "src/producer.ts",
       line: 2,
     });
+  });
 
+  it("rejects uncontracted recovery fields", () => {
     const broken = censusPmRecoveryReferenceProducers([
       {
         path: "src/broken.ts",
@@ -295,7 +297,9 @@ describe("recovery-reference reachability", () => {
     expect(
       broken.findings.filter(({ kind }) => kind === "missing_kind_producer"),
     ).toHaveLength(6);
+  });
 
+  it("sorts recovery producers by code-unit path and field", () => {
     const sorted = censusPmRecoveryReferenceProducers([
       { path: "src/z.ts", content: `({ examples: ["pm z"] })` },
       {
@@ -310,7 +314,9 @@ describe("recovery-reference reachability", () => {
       "src/a.ts:next_steps",
       "src/z.ts:examples",
     ]);
+  });
 
+  it("excludes non-executable recovery-like syntax", () => {
     const syntaxAware = censusPmRecoveryReferenceProducers([
       {
         path: "src/syntax.ts",
@@ -323,6 +329,7 @@ describe("recovery-reference reachability", () => {
           function read({ migration_hint: ignored }: { migration_hint: string }) { return ignored; }
           if (ready) { next_best_command: run(); }
           const regex = /fallback_candidates:\\s*/u;
+          const arrowRegex = (value: string) => /candidate_command:\\s*/u.test(value);
           const template = \`restore_with: \${ignored}\`;
           const real = { "next_steps": ["Run it"] };
         `,
@@ -338,7 +345,7 @@ describe("recovery-reference reachability", () => {
       expect.objectContaining({
         field: "next_steps",
         kind: "next_step",
-        line: 11,
+        line: 12,
       }),
     ]);
     expect(syntaxAware.producer_count_by_kind).toMatchObject({
@@ -347,7 +354,9 @@ describe("recovery-reference reachability", () => {
       example: 0,
       next_step: 1,
     });
+  });
 
+  it("reports malformed sources and resumes after closed comments", () => {
     const malformed = censusPmRecoveryReferenceProducers([
       {
         path: "src/unterminated-comment.ts",
@@ -359,6 +368,12 @@ describe("recovery-reference reachability", () => {
       },
     ]);
     expect(malformed.producers).toEqual([]);
+    expect(malformed.findings).toContainEqual(
+      expect.objectContaining({
+        kind: "invalid_source",
+        subject: "src/unterminated-comment.ts",
+      }),
+    );
     expect(malformed.findings).toContainEqual(
       expect.objectContaining({
         kind: "invalid_source",

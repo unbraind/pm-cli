@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:testing",ci,defect-escape,instrument-integrity,quality-gate
 created_at: "2026-08-03T06:31:40.504Z"
-updated_at: "2026-08-16T20:01:01.963Z"
+updated_at: "2026-08-17T00:47:59.150Z"
 closed_at: "2026-08-16T19:27:44.667Z"
 completed_at: "2026-08-16T19:27:44.667Z"
 author: "harness:claude-code"
@@ -20,7 +20,7 @@ risk: medium
 confidence: high
 resolution: "Implemented a typed boundary-fixture SDK registry, repository assurance gate, captured samples, waivers, docs, and regression coverage."
 expected_result: "Every external boundary has captured or explicitly waived evidence, with circular fixtures rejected."
-actual_result: Eight boundaries are governed; four use captured redaction-safe fixtures and four use expiring waivers; positive and negative controls pass.
+actual_result: Nine boundaries are governed; five use captured redaction-safe fixtures and four use expiring waivers; positive and negative controls pass.
 dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-4jk8kx,related,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
   pm-9c7h9x,related,"2026-08-03T06:31:56.940Z","harness:claude-code","cli:update:dep",detected
@@ -42,11 +42,12 @@ comments[5]{created_at,author,text}:
   "2026-08-16T20:01:01.963Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1043. The PR ships the captured boundary fixture registry, safe samples, provenance validation, expiring waiver contract, and repository gate tracked by this task."
 learnings[1]{created_at,author,text}:
   "2026-08-16T19:27:26.980Z","harness:codex",External-boundary fixtures must preserve captured provenance and redaction metadata; a production-generated expected value is circular evidence and is rejected even when its bytes match.
-files[9]{path,scope,note}:
+files[10]{path,scope,note}:
   config/boundary-fixtures.json,project,Complete external-boundary inventory
   scripts/release/defect-evidence-gate.mjs,project,Fail-closed repository gate
   src/sdk/governance/boundary-fixtures.ts,project,Public captured-boundary evidence analyzer
   tests/fixtures/boundaries/claude-project-directory-slug.json,project,Captured Claude Code slug sample
+  tests/fixtures/boundaries/git-rev-parse-commit.json,project,Captured redacted Git rev-parse boundary sample
   tests/fixtures/boundaries/github-actions-run-payload.json,project,Captured GitHub Actions payload sample
   tests/fixtures/boundaries/npm-local-package-spec.json,project,Captured npm package-spec sample
   tests/fixtures/boundaries/sentry-event-response.json,project,Captured Sentry response sample

@@ -195,6 +195,15 @@ describe("boundary fixture SDK", () => {
             waiver_owner: "pm-owner",
             waiver_expires_at: "2026-08-15T00:00:00.000Z",
           },
+          {
+            id: "timezone-free",
+            producer: "provider",
+            consumer: "adapter",
+            format: "JSON",
+            waiver_reason: "Temporary",
+            waiver_owner: "pm-owner",
+            waiver_expires_at: "2026-08-18T00:00:00",
+          },
         ],
       },
       {},
@@ -202,6 +211,7 @@ describe("boundary fixture SDK", () => {
     );
     expect(report.findings.map((finding) => finding.kind)).toEqual([
       "expired_waiver",
+      "invalid_waiver",
       "invalid_waiver",
     ]);
     expect(report.waived_count).toBe(0);

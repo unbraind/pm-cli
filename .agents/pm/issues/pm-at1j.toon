@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-06-17T23:30:11.555Z"
-updated_at: "2026-08-16T18:25:20.621Z"
+updated_at: "2026-08-17T00:47:57.618Z"
 author: codex-audit-agent
 parent: pm-mpbb
 release: v2026.6.19
@@ -34,6 +34,6 @@ gate_evidence:
   gate_id: cli-sdk-contract-parity
   negative_control: node scripts/run-tests.mjs test -- tests/unit/cli
   local_checks[1]: "pnpm contracts:check"
-  hosted_checks[2]: CI / test-shard,CodeRabbit
+  hosted_checks[1]: CI / test-shard
   owner: pm-at1j
 body: ""
