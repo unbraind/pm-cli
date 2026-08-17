@@ -4,7 +4,7 @@
  * Verifies real-entrypoint observations against refusal states declared by the
  * generated public error-code catalog.
  */
-import { stripTypeScriptTypes } from "node:module";
+import * as nodeModule from "node:module";
 
 import type {
   PmErrorCodeContract,
@@ -488,7 +488,7 @@ function isPatternLikeObjectClosure(
 /** Parse static object-literal members without treating patterns or labels as producers. */
 function scanSourcePropertyTokens(source: string): SourcePropertyToken[] {
   const tokens = tokenizeExecutableSource(
-    stripTypeScriptTypes(source, { mode: "strip" }),
+    nodeModule.stripTypeScriptTypes(source, { mode: "strip" }),
   );
   const properties: SourcePropertyToken[] = [];
   const stack: SourceDelimiterFrame[] = [];

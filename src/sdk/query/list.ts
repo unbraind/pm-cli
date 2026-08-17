@@ -1913,6 +1913,9 @@ function buildVerboseListFilters(params: {
   if (noTruncate) {
     filters.no_truncate = true;
   }
+  if (options.strictRead === true) {
+    filters.strict_read = true;
+  }
   if (treeEnabled) {
     filters.tree = true;
     if (treeDepth !== undefined) {

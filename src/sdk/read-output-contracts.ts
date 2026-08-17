@@ -72,6 +72,7 @@ export const PM_READ_OUTPUT_SURFACES = [
   "docs",
   "stats",
   "aggregate",
+  "package-catalog",
   "package-manage",
   "comments-audit",
   "assurance",
@@ -410,6 +411,7 @@ const LEGACY_FLAGS_BY_COMMAND: Readonly<
   docs: {},
   stats: {},
   aggregate: {},
+  "package-catalog": {},
   "package-manage": {},
   "comments-audit": {},
   assurance: {},
@@ -520,14 +522,26 @@ const SURFACE_CONTRACT_BY_COMMAND = new Map(
 /** Resolve a command or list/context alias to its canonical read-output surface. */
 export function resolveReadOutputSurface(
   command: string,
+  options: Record<string, unknown> = {},
 ): PmReadOutputSurface | undefined {
   const normalizedCommand = command
     .trim()
     .toLowerCase()
     .replaceAll(/\s+/gu, " ");
-  const root =
-    normalizedCommand === "package manage" ||
-    normalizedCommand === "package-manage"
+  const packageMode =
+    normalizedCommand === "package catalog" ||
+    normalizedCommand === "packages catalog" ||
+    normalizedCommand === "package-catalog" ||
+    ((normalizedCommand === "package" ||
+      normalizedCommand === "packages" ||
+      normalizedCommand === "extension") &&
+      (options.catalog === true ||
+        options.target === "catalog" ||
+        options.action === "catalog"));
+  const root = packageMode
+    ? "package-catalog"
+    : normalizedCommand === "package manage" ||
+        normalizedCommand === "package-manage"
       ? "package-manage"
       : normalizedCommand.split(" ")[0]!;
   const normalized = root.startsWith("list-")
@@ -564,6 +578,20 @@ const HYBRID_READ_MUTATION_KEYS: Readonly<
   notes: ["add", "addJson", "stdin", "file", "edit", "delete"],
   files: ["add", "addGlob", "remove", "migrate", "apply", "note"],
   docs: ["add", "addGlob", "remove", "migrate", "note"],
+  "package-catalog": [
+    "activate",
+    "adopt",
+    "adoptAll",
+    "deactivate",
+    "doctor",
+    "init",
+    "install",
+    "manage",
+    "migrate",
+    "reload",
+    "scaffold",
+    "uninstall",
+  ],
 };
 
 function hasCanonicalReadOutputOptions(
@@ -618,7 +646,7 @@ export function validateReadOutputOptions(
   options: Record<string, unknown>,
 ): void {
   if (!hasCanonicalReadOutputOptions(options)) return;
-  const normalizedCommand = resolveReadOutputSurface(command);
+  const normalizedCommand = resolveReadOutputSurface(command, options);
   if (!normalizedCommand) {
     throw new PmCliError(
       `Universal output controls apply only to read commands; ${command || "this command"} is not a read surface.`,
@@ -849,7 +877,7 @@ export function resolveReadOutputDimensions(
   command: string,
   options: Record<string, unknown>,
 ): PmResolvedReadOutputDimensions | undefined {
-  const normalizedCommand = resolveReadOutputSurface(command);
+  const normalizedCommand = resolveReadOutputSurface(command, options);
   if (!normalizedCommand) return undefined;
   const contract = SURFACE_CONTRACT_BY_COMMAND.get(normalizedCommand)!;
   const legacyResolvers = {

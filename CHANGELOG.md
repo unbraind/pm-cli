@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- GH-1052: typed fail-closed whole-list SDK primitive ([pm-y4aaol](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4aaol.toon))
+- Packed Bun SDK import fails on node:module stripTypeScriptTypes ([pm-ikj8ve](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ikj8ve.toon))
+- GH-1051: package catalog rejects universal output-budget controls ([pm-2firut](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2firut.toon))
 - Bun event streaming falls back to authoritative history without node:sqlite ([pm-b8hwfr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b8hwfr.toon))
 - Surface replication gate scopes trigger activation to relevant diff content ([pm-mrhwow](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrhwow.toon))
 - CodeQL: remove generated-code artifact path interpolation from exporter integration harness ([pm-ozxkm2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ozxkm2.toon))

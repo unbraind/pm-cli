@@ -47,6 +47,9 @@ first-class recurrence relationships are tracked by
 [pm-rf120g](../.agents/pm/tasks/pm-rf120g.toon),
 [pm-3crymx](../.agents/pm/issues/pm-3crymx.toon), and
 [pm-ouyq3n](../.agents/pm/issues/pm-ouyq3n.toon).
+Fail-closed whole-corpus reads and package-catalog output controls are tracked by
+[pm-y4aaol](../.agents/pm/issues/pm-y4aaol.toon) and
+[pm-2firut](../.agents/pm/issues/pm-2firut.toon).
 
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
@@ -199,6 +202,7 @@ Source of truth:
 - [`src/sdk/merge/index.ts`](../src/sdk/merge/index.ts)
 - [`src/sdk/workspace-transaction-gc.ts`](../src/sdk/workspace-transaction-gc.ts)
 - [`src/sdk/query/list.ts`](../src/sdk/query/list.ts)
+- [`src/sdk/query/complete-list.ts`](../src/sdk/query/complete-list.ts)
 - [`src/sdk/query/search.ts`](../src/sdk/query/search.ts)
 - [`src/sdk/query/search-pagination.ts`](../src/sdk/query/search-pagination.ts)
 - [`src/sdk/query/search-rendering.ts`](../src/sdk/query/search-rendering.ts)
@@ -292,7 +296,7 @@ Storage format-version exports (under `@unbrained/pm-cli/sdk/runtime`):
 Command/action contract exports:
 
 - `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
-- Typed read primitives on `PmClient`: `get` (including `GetOptions.at` point-in-time reads), `list`, `search`, `context`, `next`, `aggregate`, `stats`, and `duplicates`; direct `getItemAt` reconstructs a canonical historical document without mutation. `duplicates` performs one bounded all-status metadata sweep and returns deterministic canonical-candidate and close-command guidance without mutating items.
+- Typed read primitives on `PmClient`: `get` (including `GetOptions.at` point-in-time reads), `list`, `listAllComplete`, `search`, `context`, `next`, `aggregate`, `stats`, and `duplicates`; direct `getItemAt` reconstructs a canonical historical document without mutation. `listAllComplete` forces an all-status, full, strict, unbounded read and fails closed unless the returned envelope proves source completeness, unique ids, exact counts, no pagination, no field or budget omission, and no session projection. `duplicates` performs one bounded all-status metadata sweep and returns deterministic canonical-candidate and close-command guidance without mutating items.
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`. Standard and brief `get` projections omit note bodies but expose `item.notes_count`; deep/full reads return the notes themselves, and narrow consumers can request `notes_count` explicitly.
 - Stream projection primitive: `serializeNdjsonRows` frames SDK-owned object rows as newline-delimited JSON without a trailing newline and rejects scalar/array rows, so package transports can match list/search/context CLI semantics without importing presentation code.
 - Context relevance primitives: `buildItemContextRelevanceCandidates`, `buildContextSignalSnapshot`, `ContextSignalStore`, `JsonFileContextSignalStoreAdapter`, `parseContextSignalSnapshot`, `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
@@ -1468,6 +1472,10 @@ helpers return `ExtensionCommandResult`; both names describe the same lifecycle
 payload shape with vocabulary-appropriate SDK signatures. `UpgradeResult` is the
 same structured payload rendered by the CLI, so embedded tools can own their
 presentation layer while sharing pm's package/install/doctor semantics.
+`packageCatalog` is a read surface and accepts the universal output controls;
+the CLI-equivalent `pm --output-budget unbounded package --catalog --json`
+therefore composes with the same output contract while catalog-plus-mutation
+invocations fail before any package state can change.
 
 Annotation and relationship convenience methods turn "project management =
 context management" into a typed SDK surface. Use `pm.comments`, `pm.notes`,
@@ -1576,8 +1584,34 @@ compact or `fields` projections return `ListProjectedItem` dictionaries. Use
 a `partial` scan with unreadable item/directory counts, and an `unchecked`
 derived-index page. Set `ListOptions.strictRead` (CLI `--strict-read`) when an
 automation must fail instead of accepting omissions.
-`full: true` when an integration requires complete item metadata; the overload
+Use `full: true` when an integration requires complete item metadata; the overload
 then returns `ListFullResult` without an assertion or cast.
+
+When correctness depends on the entire workspace rather than a page, use the
+certifying primitive instead of rebuilding these conditions at every call site:
+
+```ts
+import {
+  PmClient,
+  certifyCompleteListResult,
+  createCompleteListOptions,
+} from "@unbrained/pm-cli/sdk/runtime";
+
+const pm = new PmClient({ pmRoot: "/workspace/.agents/pm" });
+const corpus = await pm.listAllComplete({ includeBody: true });
+corpus.complete_list.source_complete; // true, otherwise the call throws
+
+// Custom transports can apply the same request and certificate independently.
+const candidate = await pm.list(createCompleteListOptions());
+const certified = certifyCompleteListResult(candidate);
+```
+
+`PmCompleteListValidationError.receipt` lists every failed invariant and carries
+the exact recovery command
+`pm list-all --full --strict-read --no-truncate --output-budget unbounded --json`.
+The helper never infers completeness from a large limit: derived-index reads,
+terminal-state filtering, duplicate ids, cursor/session projection, compaction,
+and any omission receipt all prevent certification.
 
 CLI JSON consumers can add `--lean` to compact null and empty values. On
 item-list envelopes, lean output also removes request echoes (`filters`, `now`,
