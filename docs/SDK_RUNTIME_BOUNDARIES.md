@@ -53,7 +53,8 @@ not be relabeled as environment faults.
 
 Linked-test tracker seeding uses this boundary. A required sandbox copy that
 exceeds temporary-filesystem capacity fails with a stable recovery contract,
-while schema and non-PM linked tests avoid materializing tracker data at all.
+while linked tests whose effective context is schema avoid materializing
+tracker data at all.
 
 Existing SDK surfaces can supply category-specific `codes` to preserve their
 published error vocabulary while still sharing classification, path redaction,
