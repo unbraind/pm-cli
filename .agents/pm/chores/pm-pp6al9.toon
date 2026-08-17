@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:ci","area:security",dependencies,github-actions,supply-chain
 created_at: "2026-08-17T05:02:12.993Z"
-updated_at: "2026-08-17T05:19:01.706Z"
+updated_at: "2026-08-17T05:24:45.933Z"
 closed_at: "2026-08-17T05:18:52.025Z"
 completed_at: "2026-08-17T05:18:52.025Z"
 author: "harness:codex"
@@ -25,10 +25,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-ion0bp,discovered_from,"2026-08-17T05:02:12.993Z","harness:codex","cli:create:dep",detected
   pm-obh6lo,recurs_from,"2026-08-17T05:02:12.993Z","harness:codex","cli:create:dep",detected
   pm-qwoy,implements,"2026-08-17T05:02:12.993Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-17T05:02:12.993Z","harness:codex","Duplicate-check evidence: searched all statuses for CodeQL 4.37.7, TruffleHog 3.97.0, Dependabot, and PR #1046. Closed pm-obh6lo owns PR #958's earlier grouped refresh and pm-ion0bp owns TruffleHog 3.96.0; neither owns this new exact Dependabot head."
   "2026-08-17T05:06:07.451Z","harness:codex","Implementation evidence: incorporated Dependabot head b4f21c4c8f82020ecebf5364fc70f193f68dc6d2 exactly for the three workflow files. CodeQL init/analyze/upload-sarif now share immutable v4.37.7 SHA ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd and TruffleHog uses immutable v3.97.0 SHA bcfcf73aaf4759d4dadc2783177c245a02792318. Focused host-boundary tests 74/74, repository typecheck, and secret scan pass locally."
   "2026-08-17T05:18:51.291Z","harness:codex","Local closeout evidence: the exact Dependabot workflow delta is incorporated; linked security/docs plan passes; full coverage is exact 100/100/100/100 across 7,459 tests; typecheck, ESLint, zero-duplicate jscpd, repository assurance, package/SDK surface gates, secret scan, and isolated SDK/CLI performance gates pass. Hosted exact-head checks and bot dispositions remain PR-level evidence because appending them to this hash-chained item would change the reviewed head."
+  "2026-08-17T05:24:45.933Z","harness:codex","Delivery: Dependabot PR #1046 immutable action pins were incorporated into combined PR #1050 (https://github.com/unbraind/pm-cli/pull/1050), commit 8937ac7c8, so the exact combined head receives one full hosted quality and security review."
 files[3]{path,scope,note}:
   .github/workflows/codeql.yml,project,Immutable CodeQL 4.37.7 init and analyze pins
   .github/workflows/scorecard.yml,project,Immutable CodeQL 4.37.7 SARIF upload pin
