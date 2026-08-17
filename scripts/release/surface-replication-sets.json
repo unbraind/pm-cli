@@ -13,8 +13,26 @@
       "owner": "pm-b84irw",
       "description": "Keep the explicit DatabaseSync replacement seam aligned across the two persisted SQLite indexes.",
       "triggers": [
-        "src/core/history/event-index.ts",
-        "src/core/store/item-metadata-query-index.ts"
+        {
+          "path": "src/core/history/event-index.ts",
+          "changed_lines_contain_any": [
+            "loadDatabaseSync",
+            "loadStableDatabaseSync",
+            "resolveDatabaseSync",
+            "RuntimeDatabaseSync",
+            "setDatabaseSync"
+          ]
+        },
+        {
+          "path": "src/core/store/item-metadata-query-index.ts",
+          "changed_lines_contain_any": [
+            "loadDatabaseSync",
+            "loadStableDatabaseSync",
+            "resolveDatabaseSync",
+            "RuntimeDatabaseSync",
+            "setDatabaseSync"
+          ]
+        }
       ],
       "required_changed_members": [
         "src/core/history/event-index.ts",

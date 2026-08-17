@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[5]: agent-ux,"area:cli","area:sdk",composability,scale
 created_at: "2026-07-25T17:49:14.861Z"
-updated_at: "2026-08-17T08:52:35.848Z"
+updated_at: "2026-08-17T09:49:13.419Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#52e09ad611fe4b76c9f77dec"
 author: "harness:claude-code"
@@ -27,9 +27,13 @@ dependencies[11]{id,kind,created_at}:
   pm-cxr0jb,related,"2026-07-25T17:59:10.398Z"
   pm-g3n00m,related,"2026-07-25T17:59:10.398Z"
   pm-g2zz,implements,"2026-07-25T20:44:34.363Z"
-comments[2]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-17T07:36:48.392Z","harness:codex","Progress evidence 2026-08-17: introduced the shared pm.stream.trailer serializer, applied it to resumable mutation-event batches and idle heartbeats, and proved clean installed-exporter artifact channels. Linked exemplar tests passed 23/23 and the repository remains exact 100/100/100/100. This is substantive progress, but the feature remains open because list, search, context, next, activity, graph, aggregate, and deps still need convergence on one incremental constant-memory iterator contract with EPIPE and million-item gates."
   "2026-08-17T08:52:35.848Z","harness:codex","Exact-head review remediation completed across all ten CodeRabbit findings: initial-page consumption is documented; exporter authoring types and blueprint options align; trailer input is explicit; reserved rows and discriminator overrides are rejected; invalid CLI/runtime cursor values fail closed; compatibility iteration forces row mode; generated descriptions match; and artifact outputs reject ambiguous ownership/unknown fields. The expanded Bun recurrence pm-b8hwfr is also implemented after manual packed acceptance. Exact full coverage passes 512 files / 7,469 tests at 100/100/100/100."
+  "2026-08-17T09:07:20.979Z","harness:codex","PR #1053 first review loop evidence: all ten CodeRabbit findings, one outside-diff cursor validation gap, and CodeQL alert #36 were fixed and regression-tested. Every bot comment/review received an explicit vote and evidence reply; all eleven inline threads are resolved. Exact head 7f94e0001 is now entering the fresh full-review and hosted-check loop."
+  "2026-08-17T09:38:49.652Z","harness:codex","Exact-head round-two remediation remains fully covered: 512 files at exact 100/100/100/100 (54,622 statements, 40,733 branches, 11,226 functions, 52,720 lines). Docs now drain every bounded catch-up page with filter-stable cursors, NDJSON serializers reject count contradictions, and the authoring subpath exposes the artifact delivery type."
+  "2026-08-17T09:39:03.551Z","harness:codex","Coverage wording precision: 512 is the full Vitest test-file count; coverage-summary.json contains 602 covered source/report entries. Exact 100% counters are unchanged."
+  "2026-08-17T09:49:13.419Z","harness:codex","Post-remediation manual acceptance: packed npx consumer smoke passed all workflows (13 packages), and packed bunx --bun init/create/events returned a resumable authoritative_history trailer in a fresh temporary workspace."
 learnings[1]{created_at,author,text}:
   "2026-08-17T07:36:49.270Z","harness:codex","A discriminator-bearing terminal record can preserve counts, cursors, truncation, and provenance without forcing row buffering. Batch boundaries and exporter channel ownership are reusable primitives, but the parent must remain open until every enumerated row-producing surface adopts the same producer and early-termination contract."
 files[7]{path,scope,note}:

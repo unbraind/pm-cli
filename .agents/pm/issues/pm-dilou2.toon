@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: agent-ux,"area:cli","area:extensions","area:sdk","github:1049",output-contract,streaming,token-efficiency
 created_at: "2026-08-17T05:51:23.890Z"
-updated_at: "2026-08-17T08:52:35.009Z"
+updated_at: "2026-08-17T09:31:00.687Z"
 closed_at: "2026-08-17T07:37:20.572Z"
 completed_at: "2026-08-17T07:37:20.572Z"
 author: "harness:codex"
@@ -19,15 +19,16 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-7qjk,discovered_from,"2026-08-17T05:51:23.890Z","harness:codex","cli:create:dep",detected
   pm-mav1ak,implements,"2026-08-17T05:51:23.890Z","harness:codex","cli:create:dep",detected
   pm-psy1,verifies,"2026-08-17T05:51:23.890Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-17T05:51:23.890Z","harness:codex","text=Duplicate check 2026-08-17: searched all 2,515 items across every status for exporter stdout, clean artifact stream, and global --quiet; no item owns this failure. GitHub source: https://github.com/unbraind/pm-cli/issues/1049"
   "2026-08-17T07:36:46.082Z","harness:codex","Evidence 2026-08-17: added a typed exporter output contract with stdout|file channels, suppress|render receipt policy, media type inventory, derived help, and host-output suppression. Real installed-extension dispatch proves JSON, CSV, opaque bytes, stderr summaries, file receipts, and global --json without artifact duplication. Linked tests passed 16/16; the full repository suite passed 7,468/7,468 at exact 100/100/100/100. Packed artifact, type, lint, contract, security, audit, package-boundary, and docstring gates passed."
   "2026-08-17T07:37:55.369Z","harness:codex","Changelog evidence: pm-changelog 2026.8.17 installed from npm and regenerated CHANGELOG.md in replace/all-release-tags mode after closure."
   "2026-08-17T07:58:11.668Z","harness:codex","Hosted exact-head CI run 32007386490 exposed the required defect-evidence metadata omitted at closure. Classified GitHub #1049 as a production defect and recorded the installed-extension artifact-channel gate, its executable old-behavior negative control, exact local checks, and hosted check families. This strengthens recurrence evidence; it does not waive the gate."
   "2026-08-17T08:52:35.008Z","harness:codex","Exact-head review remediation: exporter outputs are now a closed discriminated stdout/file contract; runtime normalization rejects unknown keys and stdout receipt rendering, authoring exports the registered artifact types, and blueprint options use ExporterRegistrationOptions. Focused artifact tests, contracts, SDK surface, package artifact, and exact full coverage pass."
+  "2026-08-17T09:25:42.042Z","harness:codex","Exact-head review linkage: src/sdk/compose.ts is now explicitly linked because ExtensionBlueprintExporter.options exposes ExporterRegistrationOptions and therefore owns the declarative artifact-output metadata surface."
 learnings[1]{created_at,author,text}:
   "2026-08-17T07:36:47.382Z","harness:codex","Artifact ownership must be declared before handler dispatch. A stdout producer needs host rendering suppressed by default, while file producers may return bounded receipts; human summaries belong on stderr. Normalizing this in registration metadata makes clean output a compositional invariant rather than extension-specific convention."
-files[7]{path,scope,note}:
+files[10]{path,scope,note}:
   sdk/public-surface.json,project,versioned public exporter signature snapshot
   src/core/extensions/exporter-output-contract.ts,project,isolated artifact-channel validation contract
   src/core/extensions/extension-types.ts,project,public exporter artifact-channel types
@@ -35,6 +36,9 @@ files[7]{path,scope,note}:
   src/sdk/output.ts,project,public output framing and suppression primitives
   tests/integration/extension-host-contracts.integration.spec.ts,project,installed extension artifact acceptance
   tests/unit/extensions/exporter-artifact-contract.spec.ts,project,registration validation and suppression unit contracts
+  src/sdk/compose.ts,project,Declarative exporter blueprint exposes ExporterRegistrationOptions including artifact output metadata
+  src/sdk/authoring.ts,project,Public authoring subpath exports ExporterArtifactOutputContract
+  tests/types/sdk-subpath-entrypoints.test-d.ts,project,Published authoring subpath type regression for artifact output declarations
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/exporter-artifact-contract.spec.ts tests/integration/extension-host-contracts.integration.spec.ts tests/unit/sdk/output.spec.ts,project,300
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:

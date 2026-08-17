@@ -4,8 +4,9 @@
 
 ### Fixed
 
-- CodeQL: remove generated-code artifact path interpolation from exporter integration harness ([pm-ozxkm2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ozxkm2.toon))
 - Bun event streaming falls back to authoritative history without node:sqlite ([pm-b8hwfr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b8hwfr.toon))
+- Surface replication gate scopes trigger activation to relevant diff content ([pm-mrhwow](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrhwow.toon))
+- CodeQL: remove generated-code artifact path interpolation from exporter integration harness ([pm-ozxkm2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ozxkm2.toon))
 - Exporter artifact-channel contract: clean stdout, bounded receipts, and binary-safe streaming ([pm-dilou2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dilou2.toon))
 - GH-1048: Windows Node 24 numeric EDQUOT fixtures construct NaN on platforms that do not declare that errno ([pm-y4kovm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4kovm.toon))
 - Queued daily releases recognize an already-published same-day release before analyzer provenance ([pm-dm2vfz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dm2vfz.toon))
@@ -70,7 +71,6 @@
 - Provide an audited repair and severity-migration contract for legacy invalid provenance ([pm-76fkpp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-76fkpp.toon))
 - Detect extension-host pm-cli version skew before a workspace reports healthy ([pm-643e0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-643e0k.toon))
 - Restore strict unknown-key parity for docs linked-artifact additions ([pm-22rzjp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-22rzjp.toon))
-- Surface replication gate scopes trigger activation to relevant diff content ([pm-mrhwow](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrhwow.toon))
 - Make every failing health verdict self-indexing and attach gate severity to findings ([pm-larv4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-larv4r.toon))
 - GH-1004: history-repair remains writer-version-specific across 2026.8.7 and 2026.8.13 ([pm-igdvfq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-igdvfq.toon))
 - Assurance gates preserve zero-valued counts and report actionable source failures ([pm-xmmafu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xmmafu.toon))

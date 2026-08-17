@@ -32,10 +32,11 @@ pm events --cursor-mode row --since <cursor>
 By default, event rows carry `item_id`, `version`, `ts`, `author`, `type`, and
 `patch_count`, followed by one `pm.stream.trailer` record with `count`,
 `has_more`, `next_cursor`, and `source`. Persist the trailer cursor only after
-the batch is durable. A crash can replay at most one batch, so consumers remain
-idempotent. `--cursor-mode row` preserves the previous shape with one `cursor`
-per event and no trailer for consumers that checkpoint every row. Already
-issued version-1 cursors remain accepted by `--since`.
+the batch is durable. A crash before cursor persistence can replay the last
+batch repeatedly, including across multiple crashes. Consumers must process
+idempotently or deduplicate replays. `--cursor-mode row` preserves the previous
+shape with one `cursor` per event and no trailer for consumers that checkpoint
+every row. Already issued version-1 cursors remain accepted by `--since`.
 
 Node runtimes use the rebuildable SQLite event projection. Runtimes such as Bun
 that do not expose `node:sqlite` transparently scan the authoritative history
@@ -59,18 +60,27 @@ import {
   subscribeMutationEvents,
 } from "@unbrained/pm-cli/sdk";
 
-const page = await listMutationEvents({
-  pmRoot,
-  type: ["create", "update"],
-  limit: 100,
-});
-await consumeBatch(page.events);
-await persistCursor(page.next_cursor);
+const eventTypes = ["create", "update"] as const;
+let cursor: string | undefined;
+let hasMore = true;
+while (hasMore) {
+  const page = await listMutationEvents({
+    pmRoot,
+    type: eventTypes,
+    limit: 100,
+    ...(cursor === undefined ? {} : { since: cursor }),
+  });
+  await consumeBatch(page.events);
+  await persistCursor(page.next_cursor);
+  cursor = page.next_cursor;
+  hasMore = page.has_more;
+}
 
 const controller = new AbortController();
 for await (const batch of subscribeMutationEventBatches({
   pmRoot,
-  since: page.next_cursor,
+  type: eventTypes,
+  ...(cursor === undefined ? {} : { since: cursor }),
   signal: controller.signal,
 })) {
   await consumeBatch(batch.events);

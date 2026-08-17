@@ -95,5 +95,21 @@ describe("SDK host-output control", () => {
         },
       ),
     ).toThrow("NDJSON row 0 uses reserved record_type pm.stream.trailer");
+    expect(() =>
+      serializeNdjsonStream([{ id: "pm-1" }], {
+        count: 2,
+        has_more: false,
+        next_cursor: null,
+        source: "derived_index",
+      }),
+    ).toThrow("NDJSON trailer count 2 does not match 1 row");
+    expect(() =>
+      serializeNdjsonStream([], {
+        count: 1,
+        has_more: false,
+        next_cursor: null,
+        source: "derived_index",
+      }),
+    ).toThrow("NDJSON trailer count 1 does not match 0 rows");
   });
 });

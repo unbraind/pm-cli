@@ -140,7 +140,7 @@ export interface ExtensionBlueprintExporter {
   name: string;
   /** The exporter handler that bridges the pm context graph out to an external system. */
   exporter: Exporter;
-  /** Optional command metadata (description/flags/intent/examples) for the derived command. */
+  /** Optional command metadata and artifact-output delivery policy for the derived command. */
   options?: ExporterRegistrationOptions;
 }
 

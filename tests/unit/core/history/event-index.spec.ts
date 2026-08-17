@@ -273,6 +273,103 @@ describe("history mutation event index", () => {
     });
   });
 
+  it("reuses unchanged authoritative streams and refreshes only changed files", async () => {
+    await withTempPmPath(async (context) => {
+      const historyRoot = path.join(context.pmPath, "history");
+      const firstA = historyEntry(
+        "2026-07-24T09:00:00.000Z",
+        "alpha",
+        "create",
+      );
+      const firstB = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "beta",
+        "update",
+      );
+      await fs.writeFile(
+        path.join(historyRoot, "pm-a.jsonl"),
+        `${JSON.stringify(firstA)}\n`,
+      );
+      await fs.writeFile(
+        path.join(historyRoot, "pm-b.jsonl"),
+        `${JSON.stringify(firstB)}\n`,
+      );
+
+      const first = await queryHistoryEventStreams(context.pmPath, {
+        limit: 10,
+      });
+      const second = await queryHistoryEventStreams(context.pmPath, {
+        limit: 10,
+      });
+      expect(second.events.map((event) => event.entry)).toEqual(
+        first.events.map((event) => event.entry),
+      );
+      expect(second.events[0]?.entry).toBe(first.events[0]?.entry);
+      expect(second.events[1]?.entry).toBe(first.events[1]?.entry);
+
+      const secondA = historyEntry(
+        "2026-07-24T11:00:00.000Z",
+        "alpha",
+        "close",
+      );
+      await fs.appendFile(
+        path.join(historyRoot, "pm-a.jsonl"),
+        `${JSON.stringify(secondA)}\n`,
+      );
+      const refreshed = await queryHistoryEventStreams(context.pmPath, {
+        limit: 10,
+      });
+      expect(refreshed.events).toHaveLength(3);
+      expect(refreshed.events[1]?.entry).toBe(first.events[1]?.entry);
+      expect(refreshed.events[2]).toMatchObject({
+        stream_id: "pm-a",
+        stream_offset: 1,
+        entry: { op: "close" },
+      });
+
+      await fs.rm(path.join(historyRoot, "pm-b.jsonl"));
+      await expect(
+        queryHistoryEventStreams(context.pmPath, { limit: 10 }),
+      ).resolves.toMatchObject({
+        has_more: false,
+        events: [
+          { stream_id: "pm-a", stream_offset: 0 },
+          { stream_id: "pm-a", stream_offset: 1 },
+        ],
+      });
+    });
+  });
+
+  it("bounds authoritative stream caches across tracker roots", async () => {
+    await withTempPmPath(async (context) => {
+      let firstRoot = "";
+      let firstEntry: HistoryEntry | undefined;
+      for (let index = 0; index <= 8; index += 1) {
+        const pmRoot = path.join(context.tempRoot, `cache-root-${index}`);
+        const historyRoot = path.join(pmRoot, "history");
+        await fs.mkdir(historyRoot, { recursive: true });
+        await fs.writeFile(
+          path.join(historyRoot, "pm-cache.jsonl"),
+          `${JSON.stringify(
+            historyEntry(
+              `2026-07-24T${String(index).padStart(2, "0")}:00:00.000Z`,
+              "agent",
+              "update",
+            ),
+          )}\n`,
+        );
+        const page = await queryHistoryEventStreams(pmRoot, { limit: 10 });
+        if (index === 0) {
+          firstRoot = pmRoot;
+          firstEntry = page.events[0]?.entry;
+        }
+      }
+
+      const reread = await queryHistoryEventStreams(firstRoot, { limit: 10 });
+      expect(reread.events[0]?.entry).not.toBe(firstEntry);
+    });
+  });
+
   it("invalidates corrupt and incompatible projections instead of serving stale rows", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(

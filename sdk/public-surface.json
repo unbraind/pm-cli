@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1655,
+    "covered_symbols": 1656,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1656
+    "required_symbols": 1657
   },
   "breaking_acknowledgements": [
     {
@@ -4903,6 +4903,12 @@
           "kind": "type",
           "name": "Exporter",
           "signature": "export type Exporter = (context: ImportExportContext) => unknown | Promise<unknown>;"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ExporterArtifactOutputContract",
+          "signature": "export type ExporterArtifactOutputContract = { channel: \"stdout\"; receipt?: \"suppress\"; media_type?: string; } | { channel: \"file\"; receipt?: \"suppress\" | \"render\"; media_type?: string; };"
         },
         {
           "classification": "supported",
@@ -15997,6 +16003,12 @@
           "kind": "type",
           "name": "Exporter",
           "signature": "export type Exporter = (context: ImportExportContext) => unknown | Promise<unknown>;"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ExporterArtifactOutputContract",
+          "signature": "export type ExporterArtifactOutputContract = { channel: \"stdout\"; receipt?: \"suppress\"; media_type?: string; } | { channel: \"file\"; receipt?: \"suppress\" | \"render\"; media_type?: string; };"
         },
         {
           "classification": "supported",

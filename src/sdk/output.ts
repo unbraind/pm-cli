@@ -90,11 +90,19 @@ export interface PmNdjsonStreamTrailerInput {
  * trailer. The result has no trailing newline so callers retain framing
  * control while consumers always receive count and recovery metadata, even
  * for an empty batch.
+ *
+ * @throws {TypeError} When the trailer count differs from the number of domain
+ * rows or a domain row uses the reserved terminal discriminator.
  */
 export function serializeNdjsonStream(
   rows: readonly unknown[],
   trailer: PmNdjsonStreamTrailerInput,
 ): string {
+  if (trailer.count !== rows.length) {
+    throw new TypeError(
+      `NDJSON trailer count ${trailer.count} does not match ${rows.length} ${rows.length === 1 ? "row" : "rows"}.`,
+    );
+  }
   for (const [index, row] of rows.entries()) {
     if (
       typeof row === "object" &&

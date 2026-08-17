@@ -14,7 +14,23 @@ import { readHistoryEntries } from "./read.js";
 
 const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
 const EVENT_INDEX_VERSION = "2";
+const AUTHORITATIVE_HISTORY_CACHE_LIMIT = 8;
 type DatabaseSyncConstructor = typeof DatabaseSync;
+
+interface AuthoritativeHistoryStreamCache {
+  signature: string;
+  events: IndexedHistoryEvent[];
+}
+
+interface AuthoritativeHistoryCache {
+  streams: Map<string, AuthoritativeHistoryStreamCache>;
+  ordered_events: IndexedHistoryEvent[];
+}
+
+const authoritativeHistoryCaches = new Map<
+  string,
+  AuthoritativeHistoryCache
+>();
 
 /** Stable location of one history entry inside its authoritative stream. */
 export interface IndexedHistoryEvent {
@@ -86,20 +102,59 @@ async function readAuthoritativeHistoryEvents(
       }
       throw error;
     });
-  const events: IndexedHistoryEvent[] = [];
+  const cached = authoritativeHistoryCaches.get(pmRoot) ?? {
+    streams: new Map<string, AuthoritativeHistoryStreamCache>(),
+    ordered_events: [],
+  };
+  const presentStreams = new Set<string>();
+  let changed = !authoritativeHistoryCaches.has(pmRoot);
   for (const historyFile of entries
     .filter((entry) => entry.isFile() && entry.name.endsWith(".jsonl"))
     .sort((left, right) => left.name.localeCompare(right.name))) {
     const streamId = historyFile.name.slice(0, -".jsonl".length);
+    presentStreams.add(streamId);
+    const historyPath = path.join(historyRoot, historyFile.name);
+    const stats = await fs.stat(historyPath, { bigint: true });
+    const signature = [
+      stats.dev,
+      stats.ino,
+      stats.size,
+      stats.mtimeNs,
+      stats.ctimeNs,
+    ].join(":");
+    if (cached.streams.get(streamId)?.signature === signature) continue;
     const history = await readHistoryEntries(
-      path.join(historyRoot, historyFile.name),
+      historyPath,
       streamId,
     );
-    for (const [streamOffset, entry] of history.entries()) {
-      events.push({ stream_id: streamId, stream_offset: streamOffset, entry });
+    cached.streams.set(streamId, {
+      signature,
+      events: history.map((entry, streamOffset) => ({
+        stream_id: streamId,
+        stream_offset: streamOffset,
+        entry,
+      })),
+    });
+    changed = true;
+  }
+  for (const streamId of cached.streams.keys()) {
+    if (!presentStreams.has(streamId)) {
+      cached.streams.delete(streamId);
+      changed = true;
     }
   }
-  return events;
+  if (changed) {
+    cached.ordered_events = [...cached.streams.values()]
+      .flatMap((stream) => stream.events)
+      .sort(compareHistoryEventPosition);
+  }
+  authoritativeHistoryCaches.delete(pmRoot);
+  authoritativeHistoryCaches.set(pmRoot, cached);
+  if (authoritativeHistoryCaches.size > AUTHORITATIVE_HISTORY_CACHE_LIMIT) {
+    const oldestRoot = authoritativeHistoryCaches.keys().next().value as string;
+    authoritativeHistoryCaches.delete(oldestRoot);
+  }
+  return cached.ordered_events;
 }
 
 function loadDatabaseSync(
@@ -309,7 +364,6 @@ export async function queryHistoryEventStreams(
   const limit = Math.max(0, Math.floor(query.limit));
   const rows = (await readAuthoritativeHistoryEvents(pmRoot))
     .filter((event) => matchesHistoryEventQuery(event, query))
-    .sort(compareHistoryEventPosition)
     .slice(0, limit + 1);
   return {
     events: rows.slice(0, query.limit),

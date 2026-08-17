@@ -99,6 +99,7 @@ export type {
   CommandOverrideContext,
   ExtensionServiceName,
   Exporter,
+  ExporterArtifactOutputContract,
   ExporterRegistrationOptions,
   ExtensionActivationResult,
   ExtensionApi,
