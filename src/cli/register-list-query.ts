@@ -7,9 +7,16 @@ import type { Command } from "commander";
 import {
   EXIT_CODE,
   PmCliError,
+  readSettings,
   renderRowsAsCsv,
   renderRowsAsTable,
+  resolvePmRoot,
 } from "../sdk/runtime-primitives.js";
+import {
+  renderPmCommandAliasMigrationHint,
+  resolvePmCommandAlias,
+  type PmCommandAliasContract,
+} from "../sdk/cli-contracts.js";
 import { EVAL_QUERY_SET_SCHEMA_ID } from "../sdk/eval.js";
 import { applyContextIntentProjection } from "../sdk/context-intent-contracts.js";
 import {
@@ -213,6 +220,25 @@ interface RegisteredListOutputContext {
   effectiveGlobal: ReturnType<typeof getGlobalOptions>;
 }
 
+const CANONICAL_LIST_STATUS_VARIANTS: Readonly<
+  Partial<
+    Record<
+      ItemStatus,
+      {
+        name: ListCommandName;
+        dependencyBlocked: boolean;
+      }
+    >
+  >
+> = {
+  draft: { name: "list-draft", dependencyBlocked: false },
+  open: { name: "list-open", dependencyBlocked: false },
+  in_progress: { name: "list-in-progress", dependencyBlocked: false },
+  blocked: { name: "list-blocked", dependencyBlocked: true },
+  closed: { name: "list-closed", dependencyBlocked: false },
+  canceled: { name: "list-canceled", dependencyBlocked: false },
+};
+
 /** Resolve and validate the mutually exclusive list rendering modes. */
 function resolveRegisteredListOutputContext(
   options: Record<string, unknown>,
@@ -281,44 +307,60 @@ async function runRegisteredListCommand(params: {
   dependencyBlocked?: boolean;
   options: Record<string, unknown>;
   actionCommand: Command;
+  aliasContract?: PmCommandAliasContract;
 }): Promise<void> {
-  const globalOptions = getGlobalOptions(params.actionCommand);
+  const parsedGlobalOptions = getGlobalOptions(params.actionCommand);
+  const globalOptions = params.aliasContract
+    ? { ...parsedGlobalOptions, command: params.aliasContract.canonical }
+    : parsedGlobalOptions;
   const startedAt = Date.now();
-  if (params.options.all === true) {
-    throw new PmCliError(
-      "List --all was ambiguous and is no longer an alias for --no-truncate. Use `pm list --status all --no-truncate` for every status, or `pm list-all --no-truncate` for the dedicated all-status command.",
-      EXIT_CODE.USAGE,
-      {
-        code: "ambiguous_list_all",
-        examples: [
-          "pm list --status all --no-truncate",
-          "pm list-all --no-truncate",
-        ],
-      },
-    );
+  if (params.aliasContract?.lifecycle === "deprecated") {
+    const deprecationHints = await readSettings(
+      resolvePmRoot(process.cwd(), globalOptions.path),
+    ).then((settings) => settings.ux.deprecation_hints);
+    if (deprecationHints) {
+      printError(renderPmCommandAliasMigrationHint(params.aliasContract));
+    }
   }
   const intentOptions = applyContextIntentProjection("list", params.options);
   const listOptions = normalizeListOptions(intentOptions);
-  applyDefaultListProjection(listOptions, params.name);
-  if (params.excludeTerminal) listOptions.excludeTerminal = true;
-  if (params.name === "list" && listOptions.status === undefined) {
-    listOptions.status = "all";
+  let effectiveName = params.name;
+  let effectiveStatus = params.status;
+  let effectiveDependencyBlocked = params.dependencyBlocked === true;
+  let effectiveExcludeTerminal = params.excludeTerminal === true;
+  const requestedStatus = listOptions.status?.trim().toLowerCase();
+  const requestedVariant =
+    params.name === "list" && requestedStatus !== undefined
+      ? CANONICAL_LIST_STATUS_VARIANTS[requestedStatus as ItemStatus]
+      : undefined;
+  if (params.name === "list") {
+    if (params.options.all === true || requestedStatus === "all") {
+      effectiveName = "list-all";
+      effectiveExcludeTerminal = false;
+      listOptions.status = undefined;
+    } else if (requestedStatus !== undefined && requestedVariant !== undefined) {
+      effectiveName = requestedVariant.name;
+      effectiveStatus = requestedStatus as ItemStatus;
+      effectiveDependencyBlocked = requestedVariant.dependencyBlocked;
+      effectiveExcludeTerminal = false;
+      listOptions.status = undefined;
+    }
   }
-  listOptions.dependencyBlocked = params.dependencyBlocked;
+  applyDefaultListProjection(listOptions, effectiveName);
+  if (effectiveExcludeTerminal) listOptions.excludeTerminal = true;
+  listOptions.dependencyBlocked = effectiveDependencyBlocked;
   const output = resolveRegisteredListOutputContext(
     intentOptions,
     globalOptions,
   );
   const result = await runList(
-    params.dependencyBlocked ? undefined : params.status,
+    effectiveDependencyBlocked ? undefined : effectiveStatus,
     listOptions,
     globalOptions,
   );
-  renderRegisteredListResult(params.name, result, output);
+  renderRegisteredListResult("list", result, output);
   if (globalOptions.profile) {
-    printError(
-      `profile:command=${params.name} took_ms=${Date.now() - startedAt}`,
-    );
+    printError(`profile:command=list took_ms=${Date.now() - startedAt}`);
   }
 }
 
@@ -330,6 +372,8 @@ interface ListCommandDescriptor {
   allowStatusFilter?: boolean;
   /** Select via the shared edge-aware blocked classification instead of a raw status filter (GH-578). */
   dependencyBlocked?: boolean;
+  /** Declarative compatibility contract when this spelling is an alias. */
+  aliasContract?: PmCommandAliasContract;
 }
 
 function registerListCommand(
@@ -343,14 +387,20 @@ function registerListCommand(
     excludeTerminal,
     allowStatusFilter,
     dependencyBlocked,
+    aliasContract,
   } = descriptor;
-  const command = program.command(name).description(description);
+  const command = program
+    .command(name, { hidden: aliasContract?.hidden === true })
+    .description(description);
   if (allowStatusFilter) {
     command.option(
       "--status <value>",
       "Filter by status (repeatable or comma-separated; matches any; all selects every status)",
       collect,
     );
+  }
+  if (name === "list") {
+    command.option("--all", "Include every lifecycle status");
   }
   command
     .option("--for <intent>", "Apply a declared context intent projection")
@@ -485,6 +535,7 @@ function registerListCommand(
       dependencyBlocked,
       options,
       actionCommand,
+      aliasContract,
     });
   });
   // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
@@ -496,11 +547,6 @@ function registerListCommand(
   );
   addHiddenOption(command, "--tree_depth <n>", "Alias for --tree-depth");
   addHiddenOption(command, "--token_budget <n>", "Alias for --token-budget");
-  addHiddenOption(
-    command,
-    "--all",
-    "Removed ambiguous alias; emits migration guidance",
-  );
   // Singular alias so `--filter-estimate-missing` works (matches update-many spelling).
   addHiddenOption(
     command,
@@ -1001,7 +1047,7 @@ export function registerListQueryCommands(
     {
       name: "list",
       description:
-        "List items across every lifecycle status with optional filters.",
+        "List active items with optional lifecycle-status and project filters.",
       excludeTerminal: true,
       allowStatusFilter: true,
     },
@@ -1051,7 +1097,13 @@ export function registerListQueryCommands(
   ];
   for (const descriptor of listCommandDescriptors) {
     if (shouldRegister(descriptor.name)) {
-      registerListCommand(program, descriptor);
+      const aliasContract = resolvePmCommandAlias(descriptor.name);
+      registerListCommand(program, {
+        ...descriptor,
+        ...(aliasContract?.registration === "commander"
+          ? { aliasContract }
+          : {}),
+      });
     }
   }
 

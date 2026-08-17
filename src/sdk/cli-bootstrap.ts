@@ -5,10 +5,24 @@
  */
 import {
   EXECUTABLE_COMMAND_ALIASES,
+  PM_COMMAND_ALIAS_CONTRACTS,
+  renderPmCommandAliasMigrationHint,
+  resolvePmCommandAlias,
   resolveSubcommandFlagContractsForCommand,
   type CliFlagContract,
+  type PmCommandAliasContract,
+  type PmCommandAliasLifecycle,
+  type PmCommandAliasRegistration,
 } from "./cli-contracts.js";
-export { EXECUTABLE_COMMAND_ALIASES };
+export {
+  EXECUTABLE_COMMAND_ALIASES,
+  PM_COMMAND_ALIAS_CONTRACTS,
+  renderPmCommandAliasMigrationHint,
+  resolvePmCommandAlias,
+  type PmCommandAliasContract,
+  type PmCommandAliasLifecycle,
+  type PmCommandAliasRegistration,
+};
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";

@@ -45,6 +45,11 @@
         }
       },
       {
+        "path": "scripts/release/command-grammar-gate.mjs",
+        "disposition": "retained",
+        "reason": "Compares live runtime contracts with the noun-verb destination census, alias targets, and surface ceiling."
+      },
+      {
         "path": "scripts/release/coverage-threshold-gate.mjs",
         "disposition": "reduced_to_provider",
         "provider": "repository-quality/coverage-threshold",

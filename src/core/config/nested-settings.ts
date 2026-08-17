@@ -299,6 +299,12 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
       "Default output format for commands that support it: toon or json.",
   },
   {
+    key: "ux_deprecation_hints",
+    path: "ux.deprecation_hints",
+    kind: "boolean",
+    summary: "Emit one stderr migration hint for deprecated command aliases.",
+  },
+  {
     key: "locks_ttl_seconds",
     path: "locks.ttl_seconds",
     kind: "integer",

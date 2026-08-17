@@ -40,6 +40,7 @@ pm guide release --json
 - [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.
 - [Security Governance](SECURITY_GOVERNANCE.md) - vulnerability reporting, review discipline, property fuzzing, and OpenSSF limitations.
 - [Architecture](ARCHITECTURE.md) - contributor internals: storage, mutation flow, search, extensions, and command contracts.
+- [Noun–Verb CLI Grammar](CLI_GRAMMAR.md) - accepted command architecture, exhaustive destination census, hidden aliases, and the surface-growth gate.
 - [SDK Primitive Inventory](SDK_PRIMITIVE_INVENTORY.md) - SDK-first migration map and private-import ratchet for CLI/MCP layering.
 - [Package SDK Contract Conformance](PACKAGE_SDK_CONTRACT_CONFORMANCE.md) - authoritative public types, `typeof` module derivation, and the first-party parity gate.
 - [SDK Action and Boundary Conformance](SDK_ACTION_CONFORMANCE.md) - derived CLI/SDK/MCP action vocabulary, public-import ratchets, intent budget diagnostics, and package-runner proof.

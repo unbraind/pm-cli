@@ -11,6 +11,7 @@ import {
   KNOWN_EXTENSION_SERVICE_NAMES,
   KNOWN_EXTENSION_TRUST_MODES,
 } from "../../core/extensions/extension-types.js";
+import { PM_COMMAND_ALIAS_CONTRACTS } from "./command-aliases.js";
 
 /** Public contract for pm extension capability contracts, shared by SDK and presentation-layer consumers. */
 export const PM_EXTENSION_CAPABILITY_CONTRACTS = [
@@ -210,6 +211,24 @@ export const PM_TOOL_ACTIONS: readonly PmToolAction[] = Object.freeze(
     return [command as PmToolAction];
   }),
 );
+
+/** Deprecated compatibility actions accepted by the SDK but omitted from canonical MCP discovery. */
+export const PM_DEPRECATED_TOOL_ACTIONS: readonly PmToolAction[] = Object.freeze(
+  PM_COMMAND_ALIAS_CONTRACTS.filter(
+    (contract) =>
+      contract.lifecycle === "deprecated" &&
+      contract.registration === "commander" &&
+      PM_TOOL_ACTIONS.includes(contract.alias as PmToolAction),
+  ).map((contract) => contract.alias as PmToolAction),
+);
+
+/** Canonical actions presented to MCP clients and unscoped contract consumers. */
+export const PM_DISCOVERABLE_TOOL_ACTIONS: readonly PmToolAction[] =
+  Object.freeze(
+    PM_TOOL_ACTIONS.filter(
+      (action) => !PM_DEPRECATED_TOOL_ACTIONS.includes(action),
+    ),
+  );
 
 /** Static CLI-to-tool action parity evidence used by quality gates and tests. */
 export function analyzePmToolActionParity(

@@ -47,6 +47,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "alias_target_missing",
+    meaning: "Alias target missing condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "alias_target_missing",
+    aliases: [],
+  },
+  {
     code: "already_claimed_by",
     meaning: "Already claimed by condition.",
     stability: "stable",
@@ -57,19 +70,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/lifecycle/claim.ts"],
     emitting_commands: ["claim"],
     canonical_code: "already_claimed_by",
-    aliases: [],
-  },
-  {
-    code: "ambiguous_list_all",
-    meaning: "Ambiguous list all condition.",
-    stability: "stable",
-    exit_code: 2,
-    class: "usage",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/register-list-query.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "ambiguous_list_all",
     aliases: [],
   },
   {
@@ -538,6 +538,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/compose.ts"],
     emitting_commands: ["*"],
     canonical_code: "duplicate_command",
+    aliases: [],
+  },
+  {
+    code: "duplicate_destination",
+    meaning: "Duplicate destination condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "duplicate_destination",
     aliases: [],
   },
   {
@@ -1809,6 +1822,32 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/compose.ts"],
     emitting_commands: ["*"],
     canonical_code: "manifest_unknown_key",
+    aliases: [],
+  },
+  {
+    code: "merge_conflict_markers_detected",
+    meaning: "Merge conflict markers detected condition.",
+    stability: "stable",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/item/item-format.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_conflict_markers_detected",
+    aliases: ["history_merge_conflict_markers_detected"],
+  },
+  {
+    code: "merge_decisions_unreviewed",
+    meaning: "Merge decisions unreviewed condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_decisions_unreviewed",
     aliases: [],
   },
 ];

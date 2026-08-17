@@ -13,6 +13,7 @@ export {
   renderPmCommandVisibilityMarkdown,
   resolvePmCommandVisibilityTier,
 } from "./agent-capability-contracts.js";
+export * from "./cli-contracts/grammar-contracts.js";
 export * from "./agent-session-context.js";
 export type {
   PmCommandVisibilityContract,
@@ -106,6 +107,12 @@ export {
 export { flushTelemetryQueue } from "./telemetry-flush.js";
 export {
   EXECUTABLE_COMMAND_ALIASES,
+  PM_COMMAND_ALIAS_CONTRACTS,
+  renderPmCommandAliasMigrationHint,
+  resolvePmCommandAlias,
+  type PmCommandAliasContract,
+  type PmCommandAliasLifecycle,
+  type PmCommandAliasRegistration,
   applyBootstrapPagerPolicy,
   coalesceRepeatedListFlags,
   listAliasPluralKeys,
@@ -430,6 +437,8 @@ export {
   PM_CLI_ONLY_TOOL_ACTION_WAIVERS,
   PM_CORE_COMMAND_NAMES,
   PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS,
+  PM_DEPRECATED_TOOL_ACTIONS,
+  PM_DISCOVERABLE_TOOL_ACTIONS,
   PM_EXTENSION_CAPABILITY_CONTRACTS,
   PM_EXTENSION_POLICY_MODE_CONTRACTS,
   PM_EXTENSION_POLICY_SURFACE_CONTRACTS,

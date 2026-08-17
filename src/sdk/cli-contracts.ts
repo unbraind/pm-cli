@@ -14,7 +14,15 @@ export type {
   CommanderOptionAliasContract,
   CommanderOptionRegistrationContract,
 } from "./cli-contracts/commander-types.js";
-export { EXECUTABLE_COMMAND_ALIASES } from "./cli-contracts/command-aliases.js";
+export {
+  EXECUTABLE_COMMAND_ALIASES,
+  PM_COMMAND_ALIAS_CONTRACTS,
+  renderPmCommandAliasMigrationHint,
+  resolvePmCommandAlias,
+  type PmCommandAliasContract,
+  type PmCommandAliasLifecycle,
+  type PmCommandAliasRegistration,
+} from "./cli-contracts/command-aliases.js";
 export {
   ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
@@ -48,6 +56,8 @@ export {
   PM_CORE_COMMAND_NAMES,
   PM_CLI_ONLY_TOOL_ACTION_WAIVERS,
   PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS,
+  PM_DEPRECATED_TOOL_ACTIONS,
+  PM_DISCOVERABLE_TOOL_ACTIONS,
   PM_TOOL_ACTIONS,
   analyzePmToolActionParity,
   isPmToolAction,

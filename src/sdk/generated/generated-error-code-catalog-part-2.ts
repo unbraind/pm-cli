@@ -8,32 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "merge_conflict_markers_detected",
-    meaning: "Merge conflict markers detected condition.",
-    stability: "stable",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/item/item-format.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_conflict_markers_detected",
-    aliases: ["history_merge_conflict_markers_detected"],
-  },
-  {
-    code: "merge_decisions_unreviewed",
-    meaning: "Merge decisions unreviewed condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/diagnostics/remediation.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_decisions_unreviewed",
-    aliases: [],
-  },
-  {
     code: "merge_git_config_unwritable",
     meaning: "Merge git config unwritable condition.",
     stability: "stable",
@@ -70,6 +44,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/merge/install.ts"],
     emitting_commands: ["*"],
     canonical_code: "merge_root_not_found",
+    aliases: [],
+  },
+  {
+    code: "missing_destination",
+    meaning: "Missing destination condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_destination",
     aliases: [],
   },
   {
@@ -567,6 +554,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "stale_destination",
+    meaning: "Stale destination condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "stale_destination",
+    aliases: [],
+  },
+  {
     code: "status_duplicate",
     meaning: "Status duplicate condition.",
     stability: "stable",
@@ -1013,6 +1013,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/agent/subcommand-recovery.ts"],
     emitting_commands: ["*"],
     canonical_code: "unknown_subcommand",
+    aliases: [],
+  },
+  {
+    code: "unknown_noun",
+    meaning: "Unknown noun condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "unknown_noun",
     aliases: [],
   },
   {
@@ -1621,6 +1634,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
     canonical_code: "vectorization_stale_items_remaining",
+    aliases: [],
+  },
+  {
+    code: "visible_surface_ceiling_exceeded",
+    meaning: "Visible surface ceiling exceeded condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/grammar-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "visible_surface_ceiling_exceeded",
     aliases: [],
   },
   {

@@ -307,6 +307,9 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   output: {
     default_format: "toon",
   },
+  ux: {
+    deprecation_hints: true,
+  },
   history: {
     missing_stream: "auto_create",
     compact_policy: {

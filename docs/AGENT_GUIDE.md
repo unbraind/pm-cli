@@ -9,8 +9,8 @@ Run this before heavy work:
 ```bash
 pm context --limit 10
 pm search "<request keywords>" --limit 10
-pm list-open --limit 20
-pm list-in-progress --limit 20
+pm list --status open --limit 20
+pm list --status in_progress --limit 20
 pm init --agent-guidance status
 pm install guide-shell --project
 pm guide workflows
@@ -28,8 +28,8 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 ```bash
 pm context --limit 10
 pm search "<keywords>" --limit 10
-pm list-open --limit 20
-pm list-in-progress --limit 20
+pm list --status open --limit 20
+pm list --status in_progress --limit 20
 ```
 
 2. **Create only when necessary**
@@ -115,13 +115,13 @@ pm release <item-id>
 | Require every query token            | `pm search "<keywords>" --match-mode and` (hard-filter; `exact` = contiguous phrase; default `or` adds an all-terms ranking bonus)                         |
 | Just the match count                 | `pm search "<keywords>" --count` (no hit rows; `count`/`total` carry the matched total)                                                                    |
 | Per-query score threshold            | `pm search "<keywords>" --min-score 5` (overrides settings `search.score_threshold` for this query)                                                        |
-| Every matched row (no cap)           | `pm list-all --no-truncate --brief` (alias `--all`; `result.total` reports the full count when a `--limit`/`--offset` truncates)                           |
-| Item bodies in bulk (one call)       | `pm list-open --json --include-body` (avoids one `pm get` per item)                                                                                        |
+| Every matched row (no cap)           | `pm list --all --no-truncate --brief` (`result.total` reports the full count when a `--limit`/`--offset` truncates)                                        |
+| Item bodies in bulk (one call)       | `pm list --status open --json --include-body` (avoids one `pm get` per item)                                                                               |
 | Open work only                       | `pm search "<keywords>" --status open` (drops closed-history noise; did-you-mean on typos)                                                                 |
 | Scope search like list               | `pm search "<keywords>" --type Task --assignee <name> --parent <id>` (full `pm list` filter parity)                                                        |
-| Items changed since last window      | `pm list-all --updated-after <prev-run-ISO> --brief` (relative `-2h`/`-7d` also work)                                                                      |
-| Open items changed today             | `pm list-open --today --brief` (local-midnight shorthand; mutually exclusive with `--updated-after`)                                                       |
-| Items changed recently               | `pm list-all --recent --brief` (last seven days; mutually exclusive with `--updated-after`)                                                                |
+| Items changed since last window      | `pm list --all --updated-after <prev-run-ISO> --brief` (relative `-2h`/`-7d` also work)                                                                    |
+| Open items changed today             | `pm list --status open --today --brief` (local-midnight shorthand; mutually exclusive with `--updated-after`)                                              |
+| Items changed recently               | `pm list --all --recent --brief` (last seven days; mutually exclusive with `--updated-after`)                                                              |
 | Single item                          | `pm get <id>`                                                                                                                                              |
 | Full machine payload                 | `pm get <id> --full --json`                                                                                                                                |
 | Command flags                        | `pm <command> --help --json`                                                                                                                               |

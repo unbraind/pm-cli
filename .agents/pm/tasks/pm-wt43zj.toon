@@ -2,11 +2,13 @@ id: pm-wt43zj
 title: "Command-grammar conformance gate: the noun-verb table and shared verb vocabulary become machine-checked contracts a non-conforming command cannot pass"
 description: "The consolidation epic can collapse 75 spellings into twelve nouns, but nothing prevents the surface from regrowing the day after: every prior census (60, 64, 65, 73, 75 commands) found new top-level spellings that had leaked in between passes. Consolidation without a gate is a one-time cleanup, not a property. This task makes the target grammar an executable contract: an allowlist of top-level nouns, a shared verb vocabulary with one meaning per verb, and the scope-before-verb ordering rule, all declared in the contracts table and enforced by a CI check that fails on any command, subcommand, or alias that does not conform. Hidden aliases are explicitly exempt and must be declared as aliases rather than as commands, which also gives pm-0mox a place to hang usage counters."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",ci,governance,simplification
 created_at: "2026-07-25T06:17:12.603Z"
-updated_at: "2026-07-31T06:08:57.698Z"
+updated_at: "2026-08-17T19:36:32.688Z"
+closed_at: "2026-08-17T18:40:52.568Z"
+completed_at: "2026-08-17T18:40:52.568Z"
 author: unknown
 estimated_minutes: 420
 acceptance_criteria: "The contracts table declares the permitted top-level nouns, the shared verb vocabulary with one documented meaning per verb, and the scope-before-verb ordering rule as data, not prose; A CI check fails when a command, subcommand, or newly registered extension surface introduces a top-level noun outside the allowlist, a verb outside the vocabulary, or a scope-after-verb ordering; Hidden deprecated spellings must be declared as aliases of a conforming target and are exempt from the noun allowlist while still being counted; The gate reports the offending spelling and the nearest conforming target so the failure is self-correcting; The gate runs on the same job as the contracts drift check and cannot be satisfied by regenerating artifacts alone; An interim surface ratchet ships before and independently of the noun-table decision: the current top-level spelling count is recorded as a committed baseline, CI fails when the live count exceeds it, and lowering the baseline is always allowed while raising it requires an explicit waiver recorded as a tracked item that names the noun and its placement in the target table"
@@ -19,7 +21,10 @@ why_now: The twelve-noun target table now exists on this epic; gating it before 
 parent: pm-n7rr
 risk: medium
 confidence: high
-dependencies[12]:
+resolution: Implemented
+expected_result: "Static and release quality gates reject undeclared nouns, inconsistent shared verbs, stale census entries, and exposed compatibility aliases."
+actual_result: "The command grammar gate validates all 129 census rows, seven hidden aliases, 69 visible commands, deterministic diagnostics, and negative controls in the mandatory gate registry."
+dependencies[13]:
   - id: pm-0mox
     kind: related
     created_at: "2026-07-25T06:17:12.603Z"
@@ -59,8 +64,40 @@ dependencies[12]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-yy8rmx
+    kind: verifies
+    created_at: "2026-08-17T18:29:04.656Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[6]{created_at,author,text}:
+  "2026-08-17T18:40:35.604Z","harness:codex","Implementation evidence: added scripts/release/command-grammar-gate.mjs, registered it in quality:static and the governed gate registry, updated release-contract acceptance, contract snapshots, token baselines, and CLI-refusal inventory after retiring ambiguous_list_all. Gate reports 129 commands, 129 destinations, 7 hidden deprecated aliases, 69 visible roots, and zero findings. Security scan, pnpm audit, package artifact, changelog check, lint, typecheck, and exact coverage pass."
+  "2026-08-17T18:41:53.614Z","harness:codex","Closeout evidence: pm-changelog registry latest and installed versions are both 2026.8.17; generation added all five closed items and the subsequent --check reported unchanged."
+  "2026-08-17T18:57:03.407Z","harness:codex","Preflight token evidence: canonical item-not-found recovery grows 3 tokens because the deprecated list-open spelling is replaced by pm list --status open --limit 20, while regenerated real-transport ceilings reduce small-workspace 626->552, large-workspace 1231->1055, returning-agent 597->371, and composite 2651->2178. The executable negative control still detects a seeded regression."
+  "2026-08-17T19:03:53.473Z","harness:codex","GitHub governance evidence (2026-08-17): live gh inventory found 0 open PRs; 498 total issues (17 open, 481 closed), all 498 with a comment containing a corresponding PM item .toon link and no issue exceeding the 100-comment retrieval bound; 0 open Dependabot alerts; 0 open code-scanning alerts; 0 open secret-scanning alerts. pnpm audit reports no known vulnerabilities."
+  "2026-08-17T19:04:56.635Z","harness:codex","GitHub governance evidence (2026-08-17): live gh inventory found 0 open PRs; 498 total issues (17 open, 481 closed), all 498 with a comment containing a corresponding PM item .toon link and no issue exceeding the 100-comment retrieval bound; 0 open Dependabot alerts; 0 open code-scanning alerts; 0 open secret-scanning alerts. pnpm audit reports no known vulnerabilities. Registry outdated inventory has only two incompatible majors, each retained under its existing unclaimed canonical PM owner (pm-ksr40d and pm-do5b); no duplicate item was created."
+  "2026-08-17T19:36:32.688Z","harness:codex","Final pre-commit verification evidence: pnpm verify:preflight passed build/typecheck, repository static and context assurance, package boundary, SDK parity, surface replication, 129-row command grammar, tracker context, gate registry, SDK import/CLI transport floors, graph composition, record integrity, token surface, 518 files / 7,521 tests at exact 100/100/100/100, version sync, secrets, packed npx smoke, 88-command package-first dogfood, and live Sentry/telemetry (critical=0 high=0). The terminal Greptile gate refused only because there was no committed diff yet, as designed; rerun follows on the commit."
 notes[3]{created_at,author,text}:
   "2026-07-25T07:13:37.719Z","harness:claude-code","Surface-growth measurement for the conformance gate this item defines (2026-07-25): pm --help now lists 78 top-level commands in this repo (76 in the isolated fixture the token-budget gate measures) across 109 lines. pm-n7rr's charter was written against roughly 60 and targets roughly 15 nouns, so the surface has grown by about a third while the consolidation epic has been open. The 78 include all eight list-* status variants, four history-* commands, three completion-* data providers, three lifecycle aliases (start-task, pause-task, close-task), three calendar shortcuts (meet, event, remind), and package-registered commands (beads, changelog, dedupe-audit, dedupe-merge, comments-audit, normalize, item, pm). This is the concrete baseline the grammar gate has to freeze: without it the count has no ceiling, and every new command adds to the 49,872-token full help surface agents pay to discover the tool."
   "2026-07-26T10:50:05.718Z","harness:claude-code","Prerequisite discovered 2026-07-26: the twelve-noun target table on pm-n7rr has no placement for five live CORE nouns — graph, merge, events, copy, normalize — three of which (graph, merge, events) shipped after the table was authored. A conformance gate built against the current table would reject shipped functionality. Sequence the placement decision (recorded on pm-n7rr, ruled by ADR pm-pbyu) before the allowlist is declared as data, otherwise the allowlist encodes the omission."
   "2026-07-26T22:10:53.688Z","harness:claude-code","Why the ratchet belongs here and not on the ADR, recorded 2026-07-27.\n\nThis item exists to stop the surface regrowing after consolidation. Measured today the surface is growing before consolidation, at roughly 1.3 top-level spellings per day since the grammar ADR was written — the series is on pm-pbyu. The gate this item will build is the same mechanism in both cases: compare the live surface against a declared expectation and fail when it drifts. The only difference is what the expectation is. After the noun table is accepted the expectation is the table. Before it is accepted the expectation can simply be the current count.\n\nThat distinction matters because it makes a useful half of this item shippable now. A count baseline needs no grammar decision, no alias shim, and no migration; it needs a committed number, a check that reads the live surface, and a documented waiver path. It also produces the first honest measurement of intent: every waiver is a recorded decision to grow the surface, which is exactly the evidence the ADR is missing.\n\nSequencing is unchanged. The full conformance gate still waits on pm-pbyu and on the placement disposition recorded as pm-n7rr note 13. The ratchet is the tranche of this item that does not."
+files[12]{path,scope,note}:
+  docs/agent-task-token-baseline.json,project,Executable per-task token baseline tightened for the canonical grammar surface
+  package.json,project,Enforces grammar drift and release-quality parity with negative controls.
+  scripts/agent-token-surface-baseline.json,project,Enforces grammar drift and release-quality parity with negative controls.
+  scripts/contracts-snapshot.mjs,project,Enforces grammar drift and release-quality parity with negative controls.
+  scripts/release/command-grammar-gate.mjs,project,Enforces grammar drift and release-quality parity with negative controls.
+  scripts/release/gate-registry.json,project,Enforces grammar drift and release-quality parity with negative controls.
+  scripts/release/surface-replication-sets.json,project,Enforces grammar drift and release-quality parity with negative controls.
+  tests/helpers/releaseContracts.ts,project,Enforces grammar drift and release-quality parity with negative controls.
+  tests/integration/release-automation-contract.spec.ts,project,Enforces grammar drift and release-quality parity with negative controls.
+  tests/integration/release-readiness-runtime.spec.ts,project,Enforces grammar drift and release-quality parity with negative controls.
+  tests/unit/scripts/contracts-snapshot.spec.ts,project,Enforces grammar drift and release-quality parity with negative controls.
+  tests/unit/scripts/release/command-grammar-gate.spec.ts,project,Enforces grammar drift and release-quality parity with negative controls.
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/command-grammar-gate.spec.ts tests/unit/scripts/contracts-snapshot.spec.ts tests/integration/release-automation-contract.spec.ts,project,300
+  "pnpm test:coverage",project,900
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated from the five closed delivery items by pm-changelog 2026.8.17.
+close_reason: Shipped the mandatory command-grammar gate in static quality and release governance with complete coverage.
 body: ""

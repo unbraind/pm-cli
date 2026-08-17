@@ -188,6 +188,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] =
       { flag: "--for", value_name: "intent" },
       { flag: "--token-budget", aliases: ["--token_budget"] },
       { flag: "--status", list: true },
+      { flag: "--all", value_type: "boolean" },
       { flag: "--type", list: true },
       { flag: "--tag", aliases: ["--tags"], list: true },
       { flag: "--priority", list: true },

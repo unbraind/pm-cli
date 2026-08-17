@@ -84,7 +84,7 @@ pm create \
   --ac "Restore succeeds after stale lock cleanup and has regression coverage." \
   --create-mode progressive
 
-pm list-open --limit 10
+pm list --status open --limit 10
 pm claim <item-id>
 pm update <item-id> --status in_progress --message "Start implementation"
 pm files <item-id> --add path=src/core/lock/lock.ts
@@ -102,8 +102,8 @@ Use `pm next` to get the single highest-priority ready item (and why), or `pm co
 pm next                                          # the next actionable item + rationale, ready/blocked queues
 pm context --limit 10
 pm search "keywords for the requested work" --limit 10
-pm list-open --limit 20
-pm list-in-progress --limit 20
+pm list --status open --limit 20
+pm list --status in_progress --limit 20
 ```
 
 If no relevant item exists, create a parent lineage before child work, claim the child item, link changed files/docs/tests, and leave evidence comments before closing. The full workflow is in the [Agent Guide](docs/AGENT_GUIDE.md).

@@ -3,7 +3,6 @@
   "stable_codes": [
     "acceptance_criteria_semicolon_forbidden",
     "already_claimed_by",
-    "ambiguous_list_all",
     "ambiguous_option_combination",
     "annotation_flag_like_value",
     "annotation_message_without_text",
@@ -237,7 +236,6 @@
   "exit_codes": {
     "acceptance_criteria_semicolon_forbidden": 2,
     "already_claimed_by": 4,
-    "ambiguous_list_all": 2,
     "ambiguous_option_combination": 2,
     "annotation_flag_like_value": 2,
     "annotation_message_without_text": 2,

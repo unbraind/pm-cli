@@ -85,7 +85,7 @@ describe("universal query-filter scripting contract", () => {
         release: "release-b",
       });
 
-      const plainList = context.runCli(["list", "--brief", "--json"], {
+      const plainList = context.runCli(["list", "--all", "--brief", "--json"], {
         expectJson: true,
       });
       expect(plainList.code).toBe(0);

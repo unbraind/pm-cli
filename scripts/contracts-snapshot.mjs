@@ -86,6 +86,13 @@ function assertRenderedCommandCoverage(contractSummary, renderedHelp) {
     return;
   }
   const contracted = new Set(contractSummary.commands);
+  const declaredHiddenAliases = new Set(
+    (contractSummary.command_aliases ?? []).flatMap((group) =>
+      (group?.contracts ?? [])
+        .filter((contract) => contract?.hidden === true)
+        .map((contract) => contract.alias),
+    ),
+  );
   // Commander includes hidden commands in its JSON model without preserving
   // the hidden marker. This worker is an internal subprocess entrypoint, not a
   // user command contract.
@@ -97,6 +104,7 @@ function assertRenderedCommandCoverage(contractSummary, renderedHelp) {
       (name) =>
         typeof name === "string" &&
         !contracted.has(name) &&
+        !declaredHiddenAliases.has(name) &&
         !internalCommands.has(name),
     );
   if (missing.length > 0) {

@@ -58,6 +58,8 @@ import {
 } from "../../../src/sdk/mutation-events.js";
 import { printActivityJsonStream, printError, printListJsonStream, printResult, writeStdout } from "../../../src/cli/registration-helpers.js";
 import { getActiveCommandResult, setActiveCommandResult } from "../../../src/core/extensions/index.js";
+import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
+import { writeSettings } from "../../../src/core/store/settings.js";
 
 let tmpRoot: string;
 
@@ -156,6 +158,60 @@ beforeEach(() => {
 });
 
 describe("register-list-query list output formats", () => {
+  it("hides deprecated list spellings from help while preserving canonical parity", async () => {
+    const help = buildProgram().helpInformation();
+    expect(help).toContain("list");
+    expect(help).not.toContain("list-open");
+    expect(help).not.toContain("list-all");
+
+    await runRaw("list-open");
+    const aliasCall = vi.mocked(runList).mock.calls.at(-1);
+    expect(printError).toHaveBeenCalledWith(
+      "Deprecated command `list-open`; use `pm list --status open`.",
+    );
+
+    vi.mocked(runList).mockClear();
+    vi.mocked(printError).mockClear();
+    await runRaw("list", "--status", "open");
+    expect(vi.mocked(runList).mock.calls.at(-1)).toEqual(aliasCall);
+    expect(printError).not.toHaveBeenCalled();
+  });
+
+  it("routes canonical --all and blocked status through legacy-equivalent semantics", async () => {
+    await runRaw("list", "--all");
+    expect(vi.mocked(runList)).toHaveBeenLastCalledWith(
+      undefined,
+      expect.objectContaining({
+        status: undefined,
+        dependencyBlocked: false,
+      }),
+      expect.anything(),
+    );
+
+    await runRaw("list", "--status", "blocked");
+    expect(vi.mocked(runList)).toHaveBeenLastCalledWith(
+      undefined,
+      expect.objectContaining({
+        status: undefined,
+        dependencyBlocked: true,
+        brief: true,
+      }),
+      expect.anything(),
+    );
+  });
+
+  it("suppresses only the deprecated-alias stderr hint through UX settings", async () => {
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.ux.deprecation_hints = false;
+    await writeSettings(tmpRoot, settings);
+    await runRaw("list-closed");
+    expect(printError).not.toHaveBeenCalled();
+    expect(runList).toHaveBeenCalledTimes(1);
+
+    settings.ux.deprecation_hints = true;
+    await writeSettings(tmpRoot, settings);
+  });
+
   it("parses every supported list --format value and rejects others", () => {
     const { parseListFormat } = _testOnlyRegisterListQuery;
     expect(parseListFormat(undefined)).toBeUndefined();

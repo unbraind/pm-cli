@@ -118,13 +118,6 @@ const CORE_COMMANDS = [
   "upgrade",
   "create",
   "list",
-  "list-all",
-  "list-draft",
-  "list-open",
-  "list-in-progress",
-  "list-blocked",
-  "list-closed",
-  "list-canceled",
   "context",
   "search",
   "get",
@@ -738,7 +731,9 @@ describe("release readiness runtime coverage", () => {
   it("keeps --quiet runtime behavior deterministic", async () => {
     await withTempPmPath(async (context) => {
       const successResult = context.runCli([
-        "list-open",
+        "list",
+        "--status",
+        "open",
         "--limit",
         "1",
         "--quiet",

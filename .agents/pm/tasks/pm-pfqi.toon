@@ -2,18 +2,23 @@ id: pm-pfqi
 title: Consolidate the 8 list-* status variants into pm list --status (list-all/open/draft/in-progress/blocked/closed/canceled become hidden aliases)
 description: "list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled collapse to pm list with --status (multi-value) and --all; the 7 variant spellings become alias-table entries. Duplicate check: pm-gdi7 touches list-closed projection verbosity only; no consolidation item exists."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T04:53:04.736Z"
-updated_at: "2026-08-14T05:39:34.863Z"
+updated_at: "2026-08-17T18:50:08.309Z"
+closed_at: "2026-08-17T18:40:55.415Z"
+completed_at: "2026-08-17T18:40:55.415Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm list --status <s...> and --all cover every variant behavior incl. per-variant defaults; all 8 old spellings still work via alias shim with identical output; help shows only pm list; contracts/MCP/completions/docs regenerated; existing list-* tests pass unchanged against aliases
 parent: pm-n7rr
 risk: low
 confidence: high
-dependencies[3]:
+resolution: Implemented
+expected_result: One canonical list command supports repeatable lifecycle filters and all-status output while seven historical list variants remain compatible hidden aliases.
+actual_result: "Canonical list --status and list --all now cover lifecycle and all-status queries; the seven legacy variants are hidden, parity-tested aliases with documented migration behavior."
+dependencies[4]:
   - id: pm-0z7n
     kind: blocked_by
     created_at: "2026-07-05T04:54:59.730Z"
@@ -26,6 +31,39 @@ dependencies[3]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-0z7n
+    kind: implements
+    created_at: "2026-08-17T18:29:06.278Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-08-17T18:40:36.696Z","harness:codex","Implementation evidence: consolidated list-all/draft/open/in-progress/blocked/closed/canceled into canonical pm list --all and repeatable pm list --status. Bare list is active-only; blocked remains dependency-aware; legacy projections and byte-parity semantics are preserved. Updated agent/user docs, guides, error recovery, completion, integration contracts, and generated catalogs. Manual temp-project acceptance covered all seven aliases, active/all/blocked semantics, hidden help, direct contracts, and hint suppression; full suite passes 7,521 tests at 100/100/100/100."
 notes[1]{created_at,author,text}:
   "2026-08-14T05:39:34.863Z","harness:claude-code","Payoff measured 2026-08-14, at HEAD build 2026.8.14. This task previously carried a rationale and no number; it now has one, and the number is large enough to reorder it.\n\nThe eight list variants render these help payloads:\n\n    list-all             6,792 bytes\n    list                 6,791\n    list-blocked         6,687\n    list-in-progress     6,642\n    list-draft           6,639\n    list-closed          6,627\n    list-open            6,622\n    list-canceled        6,616\n\nTotal 53,416 bytes, which is 25.2 percent of the 212,233-byte top-level help surface across all 71 canonical commands.\n\nThey are not merely similar. Measured line by line, each variant is 95 to 96 percent identical to plain list: 107 of 111 lines for list-open, list-closed, list-draft, list-in-progress and list-canceled; 109 of 113 for list-all; 107 of 112 for list-blocked. Ninety-eight lines totalling 6,188 bytes are byte-identical across all eight simultaneously.\n\nKeeping one copy of those 98 shared lines recovers 43,316 bytes. That is 81.1 percent of this family's payload and 20.4 percent of the entire agent-facing help surface, from one consolidation.\n\nFor comparison, the whole surface shrank by 1,531 bytes at the root between 2026-08-13 and 2026-08-14 while per-command help grew by 48,848. This single task is roughly 28 times the size of the largest consolidation delivered so far, and it recovers slightly less than the surface grew in one day.\n\nTwo consequences for sequencing.\n\nFirst, the payoff does not depend on the grammar decision. The 43,316 bytes are duplicated text, and deduplicating help content is available whether or not the eight spellings ever merge into pm list --status. The alias-preserving consolidation this task describes remains the right end state; the text deduplication is the part that can land first and independently.\n\nSecond, the count is the wrong instrument for this epic and this family proves it. Retiring seven spellings moves the command count from 71 to 64, about 10 percent. It moves the surface an agent must read by 20.4 percent, and it does so almost entirely by removing text that said the same thing eight times.\n\nMethod note: measure with `while IFS= read -r` over pm contracts command_summaries[].command. Sixty of the 131 declared rows are multi-word subcommand paths, and an unquoted `for` loop word-splits them into separate invocations that fall through to root help, which inflates the total roughly sevenfold."
+files[14]{path,scope,note}:
+  scripts/error-code-stability.json,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/cli/error-guidance.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/cli/register-list-query.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/sdk/guide-topics.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/sdk/init-agent-guidance.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/integration/cli.integration.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/integration/query-filter-contract.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/integration/scripting-contract.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/integration/workspace-snapshot-cli.integration.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/unit/cli/error-guidance.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/unit/cli/register-list-query.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/unit/commands/register-commands.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/query-filter-contract.spec.ts tests/integration/scripting-contract.spec.ts tests/integration/workspace-snapshot-cli.integration.spec.ts tests/unit/cli/register-list-query.spec.ts,project,360
+docs[6]{path,scope,note}:
+  AGENTS.md,project,Uses canonical active-list agent guidance.
+  docs/AGENT_GUIDE.md,project,Routes agent workflows through canonical list filters.
+  docs/COMMANDS.md,project,Documents canonical list status and all-status forms.
+  docs/ONBOARDING.md,project,Updates onboarding examples to canonical list grammar.
+  docs/QUICKSTART.md,project,Updates quickstart examples to canonical list grammar.
+  README.md,project,Documents canonical lifecycle list filters.
+close_reason: Consolidated lifecycle list variants into canonical list filters with compatibility aliases and manual acceptance evidence.
 body: ""

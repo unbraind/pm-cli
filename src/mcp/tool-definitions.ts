@@ -5,7 +5,7 @@
  */
 import {
   GRAPH_SUBCOMMAND_VALUES,
-  PM_TOOL_ACTIONS,
+  PM_DISCOVERABLE_TOOL_ACTIONS,
 } from "../sdk/cli-contracts/enum-contracts.js";
 import { buildPmActionToolInputSchema } from "../sdk/cli-contracts/tool-schema.js";
 import type { PmToolAction } from "../sdk/cli-contracts/enum-contracts.js";
@@ -99,10 +99,10 @@ const idSchema = {
 };
 
 // pm-fd8n: derive the pm_run action enumeration from the canonical
-// PM_TOOL_ACTIONS contract instead of a hand-maintained prose list, so the
+// PM_DISCOVERABLE_TOOL_ACTIONS contract instead of a hand-maintained prose list, so the
 // MCP-facing description can never drift from the actual supported actions.
 const PM_RUN_ACTION_DESCRIPTION =
-  `Operation name (one of): ${PM_TOOL_ACTIONS.join(", ")}. ` +
+  `Operation name (one of): ${PM_DISCOVERABLE_TOOL_ACTIONS.join(", ")}. ` +
   "Package-owned actions are available dynamically when their provider package is installed.";
 
 const LIST_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
@@ -155,7 +155,7 @@ const RAW_TOOLS: ToolDefinition[] = [
       {
         action: {
           type: "string",
-          enum: [...PM_TOOL_ACTIONS],
+          enum: [...PM_DISCOVERABLE_TOOL_ACTIONS],
           description: PM_RUN_ACTION_DESCRIPTION,
         },
         id: idSchema,

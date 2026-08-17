@@ -2,18 +2,23 @@ id: pm-yy8rmx
 title: "Command-destination census: 14 of 76 canonical commands have no declared home in the target grammar, so the surface can be frozen with its shape still undecided"
 description: "Generate a complete destination census from the live command contracts so every canonical command has exactly one target noun, consolidation owner, package owner, or justified keep-as-is disposition. Gate both missing and stale rows before the grammar can be frozen."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: census,cli-grammar,consolidation,governance
 created_at: "2026-08-05T18:07:17.752Z"
-updated_at: "2026-08-14T10:14:34.442Z"
+updated_at: "2026-08-17T18:50:06.442Z"
+closed_at: "2026-08-17T18:40:51.098Z"
+completed_at: "2026-08-17T18:40:51.098Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "A checked-in destination table maps every canonical command emitted by pm contracts to exactly one of: a target noun, a named consolidation child, package-owned, or an explicit keep-as-is disposition with a reason; A gate fails when a command exists with no destination row, and fails when a destination row names a command the surface no longer emits; The census is recomputed from pm contracts at gate time, never hand-maintained; The 14 currently undeclared commands each carry a filed disposition before the grammar freeze in pm-agou can be declared complete"
 parent: pm-n7rr
 risk: medium
 confidence: high
-dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Completed
+expected_result: "Every canonical command has exactly one deterministic grammar disposition, and missing or stale census rows fail verification."
+actual_result: "The generated 129-command census maps every canonical command and is protected by bidirectional diagnostics, snapshots, and negative-control tests."
+dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-0z7n,related,"2026-08-05T18:08:32.066Z","harness:claude-code","cli:update:dep",detected
   pm-1jrdri,related,"2026-08-05T18:08:32.066Z","harness:claude-code","cli:update:dep",detected
   pm-1kxs,related,"2026-08-05T18:08:32.066Z","harness:claude-code","cli:update:dep",detected
@@ -24,8 +29,20 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-pbyu,related,"2026-08-05T18:08:32.066Z","harness:claude-code","cli:update:dep",detected
   pm-wt43zj,related,"2026-08-05T18:08:32.066Z","harness:claude-code","cli:update:dep",detected
   pm-ya7x55,related,"2026-08-05T18:08:32.066Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-pbyu,verifies,"2026-08-17T18:29:03.950Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
   "2026-08-05T18:08:31.121Z","harness:claude-code","Census recomputed 2026-08-05 against this checkout. 'pm contracts --json' emits 76 canonical command_summaries. Mapping each against the pm-n7rr charter target surface and every filed consolidation child (pm-yql1 item facets, pm-6apl ops, pm-kcs4 navigation, pm-eq4x lifecycle sugar, pm-ik19 bulk and destructive, pm-tqel history, pm-tnud package, pm-o3fh calendar, pm-xkgq aggregate, pm-szdc completion plumbing, pm-lp4j test worker) accounts for 62. The 14 with no declared destination:\n\n  comments-audit, copy, dedupe-audit, dedupe-merge, duplicates, events,\n  guide, item, merge, normalize, reindex, search-advanced, templates, workspace\n\nThey are not scattered: they fall into six clusters, each now a filed sibling — duplicate governance (4), a second search spelling (1), item-level operations (3), maintenance and read surfaces (3), authoring and orientation (3). Cross-checking every open item body for each name found only incidental mentions (pm-ez1dfg names events, pm-qljv names reindex, pm-3dyec2 names guide, pm-a8zm and pm-qapjw5 name item) — none is a consolidation disposition.\n\nThis matters because the target surface is stated as approximately 15 nouns while the emitted surface is 76 commands, and pm-agou would freeze the grammar. A freeze declared over a surface where 18 percent of commands have no recorded home locks in whatever shape those commands happen to have."
+  "2026-08-17T18:40:35.061Z","harness:codex","Implementation evidence: completed an exact 129-row live command destination census with deterministic missing, stale, duplicate, unknown-noun, alias-target, and surface-ceiling diagnostics. Default contract discovery is canonical while direct compatibility scoping remains executable. Negative controls corrupt the census deliberately and prove the gate fails upward. Verification: command enumeration, grammar contract, runtime alias defense, snapshots, and full 100/100/100/100 coverage pass."
 learnings[1]{created_at,author,text}:
   "2026-08-05T18:22:13.347Z","harness:claude-code","Ordering edges are written from the dependent, never from both endpoints. Writing blocked_by on the dependent and blocks on the prerequisite for the same pair is not redundancy — pm validate reports it as a lifecycle dependency cycle (pm-3i9q8g->pm-yy8rmx->pm-3i9q8g), and the extra rows also grow the blocks population that pm-jkbqt8 exists to shrink, because blocks is resolved by pm graph but invisible to the readiness resolver behind pm next. The release ratchet caught both effects in the same run and named the six offending rows with their timestamps."
+files[6]{path,scope,note}:
+  src/sdk/cli-contracts/grammar-contracts.ts,project,Implements and verifies the exhaustive live-command destination census.
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Implements and verifies the exhaustive live-command destination census.
+  tests/fixtures/contracts/full.json,project,Implements and verifies the exhaustive live-command destination census.
+  tests/integration/contract-command-enumeration.integration.spec.ts,project,Implements and verifies the exhaustive live-command destination census.
+  tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Implements and verifies the exhaustive live-command destination census.
+  tests/unit/sdk/cli-contracts/runtime-alias-surface.spec.ts,project,Implements and verifies the exhaustive live-command destination census.
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/sdk/cli-contracts/runtime-alias-surface.spec.ts tests/integration/contract-command-enumeration.integration.spec.ts,project,240
+close_reason: Completed the exhaustive 129-command destination census with bidirectional conformance diagnostics and negative controls.
 body: ""

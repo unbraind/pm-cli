@@ -33,6 +33,7 @@ import {
   INIT_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
   NEXT_FLAG_CONTRACTS,
+  PM_COMMAND_ALIAS_CONTRACTS,
   PACKAGE_FLAG_CONTRACTS,
   PLAN_FLAG_CONTRACTS,
   SEARCH_FLAG_CONTRACTS,
@@ -81,7 +82,14 @@ export interface CompletionRuntimeConfig {
   command_flags?: Partial<Record<CompletionFlagCommand, string[]>>;
 }
 
-const ALL_COMMANDS = listPmCommandsForTier("full");
+const HIDDEN_COMMAND_ALIASES = new Set(
+  PM_COMMAND_ALIAS_CONTRACTS.filter((contract) => contract.hidden).map(
+    (contract) => contract.alias,
+  ),
+);
+const ALL_COMMANDS = listPmCommandsForTier("full").filter(
+  (command) => !HIDDEN_COMMAND_ALIASES.has(command),
+);
 const LIST_FLAGS = toCompletionFlagString(LIST_FILTER_FLAG_CONTRACTS);
 const AGGREGATE_FLAGS = toCompletionFlagString(AGGREGATE_FLAG_CONTRACTS);
 const APPEND_FLAGS = toCompletionFlagString(APPEND_FLAG_CONTRACTS);
@@ -145,13 +153,6 @@ const COMMAND_COMPLETION_DESCRIPTIONS = [
   ["copy", "Copy an existing item to a new ID"],
   ["focus", "Set/clear/show the session focused parent for new items"],
   ["list", "List active items with optional filters"],
-  ["list-all", "List all items with optional filters"],
-  ["list-draft", "List draft items with optional filters"],
-  ["list-open", "List open items with optional filters"],
-  ["list-in-progress", "List in-progress items with optional filters"],
-  ["list-blocked", "List blocked items with optional filters"],
-  ["list-closed", "List closed items with optional filters"],
-  ["list-canceled", "List canceled items with optional filters"],
   [
     "aggregate",
     "Aggregate grouped item counts and numeric stats for governance queries",
@@ -1023,6 +1024,8 @@ _pm() {
       case $line[1] in
         list|list-all|list-draft|list-open|list-in-progress|list-blocked|list-closed|list-canceled)
           _arguments \\
+            '--status[Filter by status; repeatable, comma-separated, or all]:(${statusChoices})' \\
+            '--all[Include every lifecycle status]' \\
             '--type[Filter by item type]:(${typeChoices})' \\
             '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--tags[Alias for --tag]:(${zshTagChoices})' \\
@@ -1043,7 +1046,6 @@ ${zshPresenceFilterFlags}
             '--limit[Limit returned item count]:number' \\
             '--offset[Skip the first n matching rows before limit]:number' \\
             '--no-truncate[Return every matched row, overriding --limit]' \\
-            '--all[Alias for --no-truncate]' \\
             '--include-body[Include item body in each returned list row]' \\
             '--compact[Render compact list projection fields]' \\
             '--fields[Render custom comma-separated list fields]:fields' \\
@@ -2096,6 +2098,8 @@ ${renderFishCommandDescriptions()}
 
 # list* flags
 for list_cmd in ${listCmds}
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l status   -d 'Filter by status' -r -a '${statusChoices}'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l all      -d 'Include every lifecycle status'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l type     -d 'Filter by item type' -r -a '${typeChoices}'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tag      -d 'Filter by tag' -r -a ${fishTagChoices}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tags     -d 'Alias for --tag' -r -a ${fishTagChoices}
@@ -2107,7 +2111,6 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l limit    -d 'Limit returned item count' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l offset   -d 'Skip the first n matching rows before limit' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-truncate -d 'Return every matched row, overriding --limit'
-  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l all -d 'Alias for --no-truncate'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l include-body -d 'Include item body in each returned list row'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l compact -d 'Render compact list projection fields'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l fields -d 'Render custom comma-separated list fields' -r

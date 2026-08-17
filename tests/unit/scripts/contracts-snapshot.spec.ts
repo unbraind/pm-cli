@@ -144,6 +144,17 @@ describe("scripts/contracts-snapshot: check/update flows", () => {
           status: 0,
           stdout: JSON.stringify({
             commands: ["contracts"],
+            command_aliases: [
+              null,
+              { contracts: null },
+              {
+                contracts: [
+                  null,
+                  { alias: "visible-alias", hidden: false },
+                  { alias: "list-open", hidden: true },
+                ],
+              },
+            ],
           }),
         },
         {
@@ -154,6 +165,7 @@ describe("scripts/contracts-snapshot: check/update flows", () => {
               { name: "test-runs-worker" },
               { name: "ignored", hidden: true },
               { name: 42 },
+              { name: "list-open" },
               { name: "workspace" },
             ],
           }),

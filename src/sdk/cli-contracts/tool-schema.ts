@@ -299,6 +299,7 @@ const ACTIVITY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 
 const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_LIST_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
+  "all",
   "includeBody",
   "noTruncate",
   "strictRead",
@@ -1358,6 +1359,12 @@ function actionScopedToolParameterMetadata(
   action: PmToolAction,
   key: string,
 ): { description: string; examples?: unknown[] } | undefined {
+  if ((action === "list" || action.startsWith("list-")) && key === "all") {
+    return {
+      description:
+        "Return items from every lifecycle status instead of the default active-status set.",
+    };
+  }
   if (
     action === "plan" &&
     Object.prototype.hasOwnProperty.call(PLAN_ACTION_PARAMETER_METADATA, key)

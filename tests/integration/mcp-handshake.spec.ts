@@ -27,7 +27,8 @@ import {
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
 import {
   GRAPH_SUBCOMMAND_VALUES,
-  PM_TOOL_ACTIONS,
+  PM_DEPRECATED_TOOL_ACTIONS,
+  PM_DISCOVERABLE_TOOL_ACTIONS,
 } from "../../src/sdk/cli-contracts/enum-contracts.js";
 import { assertPmContextDepthProjection } from "../helpers/mcp-context-depth.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
@@ -275,7 +276,9 @@ describe("MCP protocol handshake", () => {
         properties: expect.objectContaining({
           action: expect.objectContaining({
             type: "string",
-            description: expect.stringContaining(PM_TOOL_ACTIONS[0]),
+            description: expect.stringContaining(
+              PM_DISCOVERABLE_TOOL_ACTIONS[0],
+            ),
           }),
         }),
       },
@@ -700,7 +703,7 @@ describe("MCP protocol handshake", () => {
     });
   });
 
-  it("pm_run action description is derived from PM_TOOL_ACTIONS (pm-fd8n)", async () => {
+  it("pm_run advertises canonical actions while legacy aliases stay SDK-compatible", async () => {
     const result = (await handleRequest({
       jsonrpc: "2.0",
       id: 3,
@@ -716,9 +719,14 @@ describe("MCP protocol handshake", () => {
     const actionDescription =
       pmRun?.inputSchema?.properties?.action?.description ?? "";
     // Every canonical action must appear in the generated enumeration; the
-    // string can never drift from PM_TOOL_ACTIONS since it is joined from it.
-    for (const action of PM_TOOL_ACTIONS) {
+    // string cannot drift because it is joined from the discoverable contract.
+    for (const action of PM_DISCOVERABLE_TOOL_ACTIONS) {
       expect(actionDescription).toContain(action);
+    }
+    for (const action of PM_DEPRECATED_TOOL_ACTIONS) {
+      expect(actionDescription).not.toMatch(
+        new RegExp(`(?:^|, )${action}(?:,|\\.)`, "u"),
+      );
     }
     // The trailing package-owned prose is preserved.
     expect(actionDescription).toContain("Package-owned actions");

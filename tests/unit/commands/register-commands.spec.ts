@@ -904,9 +904,12 @@ describe("operation command actions", () => {
     expect(requireClaimTarget("pm-a", false)).toBeUndefined();
   });
 
-  it("routes list migration errors and every workspace snapshot action", async () => {
-    await expect(runCli("list", "--all")).rejects.toThrow(
-      "List --all was ambiguous",
+  it("routes canonical list --all and every workspace snapshot action", async () => {
+    await runCli("list", "--all");
+    expect(vi.mocked(runList)).toHaveBeenLastCalledWith(
+      undefined,
+      expect.objectContaining({ status: undefined, dependencyBlocked: false }),
+      expect.anything(),
     );
     await runCli("workspace", "snapshot", "list");
     await runCli("workspace", "snapshot", "create");

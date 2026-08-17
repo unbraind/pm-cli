@@ -811,7 +811,7 @@ function buildItemNotFoundGuidance(
   const nextSteps = isPlaceholder
     ? [
         "Check that the variable holding the item ID is defined before passing it to pm.",
-        'Use "pm list-open --limit 20" to find valid IDs.',
+        'Use "pm list --status open --limit 20" to find valid IDs.',
       ]
     : ["Confirm the active --path/PM_PATH scope, then retry with a valid id."];
   return applyPmCliErrorContext(
@@ -821,7 +821,10 @@ function buildItemNotFoundGuidance(
       happened,
       required: "Use an existing item ID from current tracker data.",
       why: "Mutation and read commands operate only on known IDs.",
-      examples: ["pm list-open --limit 20", 'pm search "<keyword>" --limit 10'],
+      examples: [
+        "pm list --status open --limit 20",
+        'pm search "<keyword>" --limit 10',
+      ],
       nextSteps,
     }),
     rawMessage,

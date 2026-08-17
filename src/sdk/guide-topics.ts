@@ -63,7 +63,7 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     commands: [
       "pm init",
       "pm context --limit 10",
-      "pm list-open --limit 20",
+      "pm list --status open --limit 20",
       'pm create --create-mode progressive --title "..." --description "..." --type Task',
       "pm claim <ID>",
       "pm update <ID> --status in_progress",
@@ -77,7 +77,7 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
           "You are bootstrapping pm work. Use a token-efficient context snapshot first, then select one open item, claim it, and only then mutate.",
         commands: [
           "pm context --limit 10",
-          "pm list-open --limit 20",
+          "pm list --status open --limit 20",
           "pm claim <ID>",
         ],
       },
@@ -423,7 +423,7 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
       "pm get <ID> --output-include id,title,status,dependencies",
       "pm context --limit 10 --token-accounting",
       "pm notes <ID> --output-cursor <cursor>",
-      "pm list-closed --output-budget unbounded",
+      "pm list --status closed --output-budget unbounded",
     ],
     workflows: [
       {

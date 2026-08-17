@@ -136,7 +136,7 @@ describe("pm cli error guidance context plumbing", () => {
     );
     expect(envelope.code).toBe("item_not_found");
     expect(envelope.examples).toEqual([
-      "pm list-open --limit 20",
+      "pm list --status open --limit 20",
       'pm search "<keyword>" --limit 10',
     ]);
     expect(

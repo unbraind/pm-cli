@@ -15,6 +15,9 @@ const BOOLEAN_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "sea
 const NON_EMPTY_STRING_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "vector_store_collection_name")!;
 const NESTED_PATH_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "qdrant_url")!;
 const CHOICE_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "search_mutation_refresh_policy")!;
+const DEPRECATION_HINT_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find(
+  (descriptor) => descriptor.key === "ux_deprecation_hints",
+)!;
 
 describe("nested-settings helpers (pm-7ilo)", () => {
   describe("resolveNestedSettingDescriptor", () => {
@@ -79,6 +82,15 @@ describe("nested-settings helpers (pm-7ilo)", () => {
           expect(result.parsed.value).toBe(expected);
         }
       }
+    });
+
+    it("exposes the command-alias migration preference as a nested boolean", () => {
+      expect(DEPRECATION_HINT_DESCRIPTOR.path).toBe("ux.deprecation_hints");
+      const result = parseNestedSettingValue(
+        DEPRECATION_HINT_DESCRIPTOR,
+        "false",
+      );
+      expect(result).toMatchObject({ ok: true, parsed: { value: false } });
     });
 
     it("rejects invalid boolean input", () => {

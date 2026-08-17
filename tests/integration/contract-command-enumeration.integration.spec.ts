@@ -61,13 +61,19 @@ describe("contract command enumeration", () => {
 
       expect(enumeratedRoots).toEqual(resolvedRoots);
       expect(helpCommands).toEqual(enumeratedRoots);
-      for (const required of [
-        "context",
-        "search",
+      for (const required of ["context", "search", "list"]) {
+        expect(enumeratedRoots).toContain(required);
+      }
+      for (const compatibilityAlias of [
+        "list-all",
+        "list-draft",
         "list-open",
         "list-in-progress",
+        "list-blocked",
+        "list-closed",
+        "list-canceled",
       ]) {
-        expect(enumeratedRoots).toContain(required);
+        expect(enumeratedRoots).not.toContain(compatibilityAlias);
       }
     });
   });
