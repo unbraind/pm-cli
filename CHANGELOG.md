@@ -29,8 +29,8 @@
 
 ### Other
 
-- Consolidate the 8 list-\* status variants into pm list --status (list-all/open/draft/in-progress/blocked/closed/canceled become hidden aliases) ([pm-pfqi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pfqi.toon))
 - Command-grammar conformance gate: the noun-verb table and shared verb vocabulary become machine-checked contracts a non-conforming command cannot pass ([pm-wt43zj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wt43zj.toon))
+- Consolidate the 8 list-\* status variants into pm list --status (list-all/open/draft/in-progress/blocked/closed/canceled become hidden aliases) ([pm-pfqi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pfqi.toon))
 - Command-destination census: 14 of 76 canonical commands have no declared home in the target grammar, so the surface can be frozen with its shape still undecided ([pm-yy8rmx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yy8rmx.toon))
 - Half of the pm events payload is per-row resume cursors an agent never reads: 48 percent of stream bytes buy a capability consumed once per batch ([pm-ez1dfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ez1dfg.toon))
 

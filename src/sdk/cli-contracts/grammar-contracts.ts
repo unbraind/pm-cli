@@ -360,52 +360,58 @@ function validateCommandDestinations(
   >,
   nounSet: ReadonlySet<string>,
 ): PmCliGrammarFinding[] {
-  const findings: PmCliGrammarFinding[] = [];
-  for (const command of commands) {
+  return commands.flatMap((command) => {
     const destinations = destinationsByCommand.get(command) ?? [];
     if (destinations.length === 0) {
       const separatorIndex = command.indexOf(" ");
       const root =
         separatorIndex === -1 ? command : command.slice(0, separatorIndex);
-      findings.push({
-        code: "missing_destination",
-        spelling: command,
-        message: `Command \`${command}\` has no destination census row.`,
-        nearest_target: nounSet.has(root) ? root : `ops ${command}`,
-      });
-      continue;
-    }
-    if (destinations.length > 1) {
-      findings.push({
-        code: "duplicate_destination",
-        spelling: command,
-        message: `Command \`${command}\` has ${destinations.length} destination rows.`,
-        nearest_target: destinations[0]!.target,
-      });
-    }
-    for (const destination of destinations) {
-      if (
-        destination.disposition === "keep_as_is" &&
-        (destination.reason?.trim().length ?? 0) === 0
-      ) {
-        findings.push({
-          code: "missing_destination",
+      return [
+        {
+          code: "missing_destination" as const,
           spelling: command,
-          message: `Command \`${command}\` is kept as-is without a documented reason.`,
-          nearest_target: destination.target,
-        });
-      }
-      if (!nounSet.has(destination.noun)) {
-        findings.push({
-          code: "unknown_noun",
-          spelling: command,
-          message: `Command \`${command}\` names undeclared noun \`${destination.noun}\`.`,
-          nearest_target: destination.target,
-        });
-      }
+          message: `Command \`${command}\` has no destination census row.`,
+          nearest_target: nounSet.has(root) ? root : `ops ${command}`,
+        },
+      ];
     }
-  }
-  return findings;
+    const duplicateFinding: PmCliGrammarFinding[] =
+      destinations.length > 1
+        ? [
+            {
+              code: "duplicate_destination",
+              spelling: command,
+              message: `Command \`${command}\` has ${destinations.length} destination rows.`,
+              nearest_target: destinations[0]!.target,
+            },
+          ]
+        : [];
+    return destinations.reduce<PmCliGrammarFinding[]>(
+      (findings, destination) => {
+        if (
+          destination.disposition === "keep_as_is" &&
+          (destination.reason?.trim().length ?? 0) === 0
+        ) {
+          findings.push({
+            code: "missing_destination",
+            spelling: command,
+            message: `Command \`${command}\` is kept as-is without a documented reason.`,
+            nearest_target: destination.target,
+          });
+        }
+        if (!nounSet.has(destination.noun)) {
+          findings.push({
+            code: "unknown_noun",
+            spelling: command,
+            message: `Command \`${command}\` names undeclared noun \`${destination.noun}\`.`,
+            nearest_target: destination.target,
+          });
+        }
+        return findings;
+      },
+      duplicateFinding,
+    );
+  });
 }
 
 function validateDestinationCensus(
