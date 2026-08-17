@@ -278,6 +278,27 @@ describe("release automation contract", () => {
     expect(registry.local_preflight.steps[0]?.id).toBe("hosted-analysis-gate");
   });
 
+  it("keeps PM and changelog closeout inside reviewed delivery", async () => {
+    const [compactGuide, agentGuide, releaseGuide] = await Promise.all([
+      readFile(path.join(repoRoot, "AGENTS.md"), "utf8"),
+      readFile(path.join(repoRoot, "docs/AGENT_GUIDE.md"), "utf8"),
+      readFile(path.join(repoRoot, "docs/RELEASING.md"), "utf8"),
+    ]);
+
+    expect(compactGuide).toContain(
+      "Never push post-merge closeout commits directly to `main`",
+    );
+    expect(agentGuide).toContain(
+      "normal `main`-based follow-up pull request for the repository mutation",
+    );
+    expect(releaseGuide).toContain(
+      "Do not push `.agents/pm/**` or\n`CHANGELOG.md` closeout directly to `main`",
+    );
+    expect(releaseGuide).toContain(
+      "its failure is a provenance control, not an\nanalyzer approval",
+    );
+  });
+
   it("scopes protected-main credentials to release policy analysis", async () => {
     const workflow = await readFile(
       path.join(repoRoot, ".github/workflows/auto-release.yml"),

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:ci",gate,release,ux
 created_at: "2026-08-07T06:28:26.696Z"
-updated_at: "2026-08-17T14:00:02.970Z"
-closed_at: "2026-08-17T14:00:01.981Z"
-completed_at: "2026-08-17T14:00:01.981Z"
+updated_at: "2026-08-17T14:18:30.159Z"
+closed_at: "2026-08-17T14:18:29.247Z"
+completed_at: "2026-08-17T14:18:29.247Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The release pipeline reports, before it builds anything, whether the current head can satisfy the analyzer evidence requirement, and names the workflow rather than the missing external artifact when it cannot; A commit that reached the default branch without a pull request either has a declared path to analyzer evidence or is refused with that reason stated, and the choice is recorded as a decision; The precondition that a releasable commit arrives through a pull request is declared wherever the release contract is declared, not left to be discovered by a failed cut; A negative control proves an unanalyzed commit still cannot release, so declaring the precondition never becomes a way to skip the analyzers; Releasability of the default branch is continuously observable between release attempts, so a commit that cannot be released is reported when it lands rather than at the next scheduled cut"
@@ -17,7 +17,7 @@ risk: high
 confidence: high
 resolution: "Preserved the fail-closed analyzer gate and strengthened contributor, agent, and release closeout guidance so no post-merge PM/changelog repository mutation bypasses reviewed provenance."
 expected_result: Every main candidate reports release analyzer readiness before expensive release work; reviewed candidates can be proven under both maintainer and restricted Actions tokens; direct unreviewed candidates are refused with an actionable workflow reason; no recovery path bypasses analyzer or candidate-tree evidence.
-actual_result: "Direct-main closeout commit 2e5adcd98 was refused by main readiness as designed. The workflow now requires tracker, closure, and changelog artifacts to land in the reviewed implementation PR or a normal reviewed main-based follow-up; focused analyzer contracts and documentation gates pass."
+actual_result: "Direct-main closeout commit 2e5adcd98 was refused by main readiness as designed. Reviewed-closeout guidance now has an executable TypeScript contract; focused analyzer tests pass 110/110, and the recovery head is eligible for external code-analyzer review."
 affected_version: through 2026.8.14
 fixed_version: 2026.8.15
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
@@ -27,7 +27,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,implements,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-08-11T13:52:32.238Z","harness:claude-code","cli:update:dep",detected
   pm-q6n8sj,related,"2026-08-11T13:52:32.238Z","harness:claude-code","cli:update:dep",detected
-comments[29]{created_at,author,text}:
+comments[31]{created_at,author,text}:
   "2026-08-11T13:52:31.175Z","harness:claude-code","Reproduced in production on 2026-08-11, and it blocked the scheduled daily cut.\n\nSequence, all times UTC:\n\n- 04:02:48 the scheduled Auto Release run 31457243436 checked out main. HEAD was 3791ff12f74ff3f09c6062adca92ab8848d57ba7, a single-parent commit with no associated pull request.\n- 04:02:52 pull request 972 merged as 39d60f244779e8c4a451948988a0facbc48df824, four seconds after the checkout.\n- 04:09:37 hosted-analysis-gate refused with reason \"DeepScan status is missing for the exact commit\". The candidate carried exactly one commit status, codecov/patch, and no DeepScan or CodeFactor check run. Both fallbacks were unavailable: no second parent, and no pull request whose tree matched.\n- 04:09:38 blocker issue 973 opened. RECORDED_FAILURE_STAGE was hosted-analysis-gate, so the pm-x63izf fix reported the gate's own verdict rather than the preflight guess.\n- 04:12:23 blocker 973 closed, retry run 31457749989 started, checked out 39d60f24, and the same gate passed through the matching-pull-request fallback.\n- 04:21:18 v2026.8.11 tagged. npm shows 2026.8.11 as latest, and all three npx and bunx dispatch forms run it.\n\nSo the release succeeded only because the candidate changed between the two attempts. Nothing about 3791ff12 became releasable, and nothing ever will.\n\nPopulation measured the same day against the commits API rather than a subject-line heuristic: of the 103 commits on main since 2026-08-04, 37 have no associated pull request. That is 36 percent. main's HEAD at the time of measurement, 250b4030b4d246bdb6cb5f3ffb1fd1949be013c5, is one of them, so the default branch was sitting in an unreleasable state in the middle of an ordinary working day with no surface reporting it.\n\nThat last point is the half this item's acceptance criteria did not yet cover. AC1 requires the release pipeline to report releasability before it builds, which is a check inside a release attempt. Between attempts there is a window of up to 24 hours in which main is unreleasable and the only thing that will ever say so is tomorrow's 04:02 run. A new criterion has been added for that.\n"
   "2026-08-15T04:14:50.218Z","harness:codex","Production reproduction 2026-08-15: scheduled Auto Release run 31861502082 on main 592e5918 failed after exact coverage, packed npx, and package-first dogfood because DeepScan status was missing for the exact commit. Blocker GH-1017 is the live external report. PR #1016 is now merged at 26feeed14; no v2026.8.15 tag/package exists, so same-day uniqueness remains intact while this canonical item is actively fixed."
   "2026-08-15T04:19:42.982Z","harness:codex","Implementation evidence: hosted-analysis now emits a structured reviewed_pull_request_analyzer_evidence contract, succeeds for merge commit 26feeed14809 via identical-tree reviewed head e7e9b86afd7c, and explicitly refuses failed direct-main SHA 592e5918ca36 before build. Auto Release performs the check before toolchain setup; CI exposes Release analyzer readiness (main) on every product-relevant push. Focused unit/integration suite passed 79/79."
@@ -57,6 +57,8 @@ comments[29]{created_at,author,text}:
   "2026-08-16T07:03:41.855Z","harness:codex","Operational control 2026-08-16: main CI run 31924813173 at direct-main SHA cbc5ac21a440e5434669fe41de594b390d9a85e8 failed only Release analyzer readiness (main); every build, coverage, static, compatibility, smoke, and Windows job passed. The gate explicitly refused because no exact-commit or identical-tree reviewed-PR CodeFactor/DeepScan evidence existed. This is the shipped fail-closed policy working as designed, not analyzer approval or a regression; this delivery returns changes to main through a reviewed PR. Evidence: https://github.com/unbraind/pm-cli/actions/runs/31924813173"
   "2026-08-17T13:58:02.549Z","harness:codex","Recurrence implementation: the compact agent rules, full agent guide, and release contract now treat PM evidence, item closure, and generated changelog as reviewed delivery artifacts. Evidence known pre-merge stays in the implementation PR; merge-SHA-dependent repository mutations require a normal main-based follow-up PR. Direct-main tracker/changelog closeout is explicitly forbidden because the resulting head has no reviewed analyzer provenance."
   "2026-08-17T14:00:00.683Z","harness:codex","Verification evidence: pnpm build, docs/skills freshness, documentation link integrity, and secret scan pass. Focused analyzer and workflow contracts pass 109/109. The PM-linked docs/skills gate also passed and recorded its test run. The direct-main SHA remains the executable negative control; this branch is the normal reviewed recovery path."
+  "2026-08-17T14:17:03.964Z","harness:codex","Exact-head hosted inventory finding on PR #1056: all repository checks passed, but the docs/tracker-only head received no CodeFactor, Semgrep, Hound, or CodeRabbit app check. Merging that head would not restore the external analyzer evidence required by release readiness. The recovery now adds an executable TypeScript contract for the reviewed-closeout policy, preserving the fail-closed gate while making policy regression and analyzer eligibility observable."
+  "2026-08-17T14:18:28.417Z","harness:codex","Review-round remediation evidence: added a TypeScript integration contract that reads the compact agent guide, full agent guide, and release guide and refuses removal of the direct-main closeout prohibition, normal main-based follow-up path, or provenance-control interpretation. Focused analyzer/workflow contracts pass 110/110 and ESLint passes."
 files[7]{path,scope,note}:
   .github/workflows/auto-release.yml,project,Pre-build release analyzer readiness
   .github/workflows/ci.yml,project,Continuous main-branch release readiness observability
@@ -81,7 +83,7 @@ docs[4]{path,scope,note}:
   CHANGELOG.md,project,Deterministic generated release closeout entry
   docs/AGENT_GUIDE.md,project,Agent workflow for post-merge evidence without direct-main mutation
   docs/RELEASING.md,project,Reviewed-PR arrival and direct-main refusal policy
-close_reason: "Closed the operational recurrence by making reviewed PM/changelog closeout explicit across compact agent guidance, the full agent workflow, and release policy; focused gates pass and the negative control remains fail-closed."
+close_reason: Closed after converting reviewed-closeout guidance into an executable integration contract; focused analyzer and workflow tests pass 110/110 and the reviewed recovery now exposes a code-analysis surface.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
