@@ -188,6 +188,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] =
       { flag: "--for", value_name: "intent" },
       { flag: "--token-budget", aliases: ["--token_budget"] },
       { flag: "--status", list: true },
+      { flag: "--all", value_type: "boolean" },
       { flag: "--type", list: true },
       { flag: "--tag", aliases: ["--tags"], list: true },
       { flag: "--priority", list: true },
@@ -1797,9 +1798,7 @@ function withSubcommandGlobalFlags(
   );
 }
 
-const LIST_COMMAND_FLAG_ALIASES = [
-  "list",
-  "list-all",
+const FIXED_STATUS_LIST_COMMAND_ALIASES = [
   "list-draft",
   "list-open",
   "list-in-progress",
@@ -1807,6 +1806,12 @@ const LIST_COMMAND_FLAG_ALIASES = [
   "list-closed",
   "list-canceled",
 ];
+const FIXED_STATUS_LIST_FLAG_CONTRACTS = LIST_FILTER_FLAG_CONTRACTS.filter(
+  (contract) => contract.flag !== "--status" && contract.flag !== "--all",
+);
+const ALL_STATUS_LIST_FLAG_CONTRACTS = LIST_FILTER_FLAG_CONTRACTS.filter(
+  (contract) => contract.flag !== "--status",
+);
 
 // Single-token command (plus the `list`/`cal`/`ctx`/`templates` aliases) → its
 // dedicated flag-contract table. Lookups fall back to the subcommand-global set,
@@ -1816,10 +1821,14 @@ const LIST_COMMAND_FLAG_ALIASES = [
 // member such as `constructor` or `toString`.
 const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
   [
-    ...LIST_COMMAND_FLAG_ALIASES.map((command): [string, CliFlagContract[]] => [
-      command,
-      LIST_FILTER_FLAG_CONTRACTS,
-    ]),
+    ["list", LIST_FILTER_FLAG_CONTRACTS],
+    ["list-all", ALL_STATUS_LIST_FLAG_CONTRACTS],
+    ...FIXED_STATUS_LIST_COMMAND_ALIASES.map(
+      (command): [string, CliFlagContract[]] => [
+        command,
+        FIXED_STATUS_LIST_FLAG_CONTRACTS,
+      ],
+    ),
     ["templates", CREATE_FLAG_CONTRACTS],
     ["cal", CALENDAR_FLAG_CONTRACTS],
     ["ctx", CONTEXT_FLAG_CONTRACTS],

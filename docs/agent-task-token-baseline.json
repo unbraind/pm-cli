@@ -6,20 +6,20 @@
   "scenarios": [
     {
       "id": "small-workspace",
-      "max_estimated_tokens": 626
+      "max_estimated_tokens": 552
     },
     {
       "id": "large-workspace",
-      "max_estimated_tokens": 1231
+      "max_estimated_tokens": 1055
     },
     {
       "id": "returning-agent",
-      "max_estimated_tokens": 597
+      "max_estimated_tokens": 371
     },
     {
       "id": "failing-command",
-      "max_estimated_tokens": 197
+      "max_estimated_tokens": 200
     }
   ],
-  "composite_max_estimated_tokens": 2651
+  "composite_max_estimated_tokens": 2178
 }

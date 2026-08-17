@@ -1162,6 +1162,7 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
     },
     checkpoints: { ...defaults.checkpoints, ...settings.checkpoints },
     output: { ...defaults.output, ...settings.output },
+    ux: { ...defaults.ux, ...settings.ux },
     history: {
       ...defaults.history,
       ...settings.history,
@@ -1257,6 +1258,9 @@ function orderSerializedSettingsSections(
   );
   ordered.output = orderObject(ordered.output as Record<string, unknown>, [
     "default_format",
+  ]);
+  ordered.ux = orderObject(ordered.ux as Record<string, unknown>, [
+    "deprecation_hints",
   ]);
   ordered.history = orderObject(ordered.history as Record<string, unknown>, [
     "missing_stream",
@@ -1493,6 +1497,7 @@ function buildSerializeBaseSettings(settings: PmSettings): PmSettings {
       SETTINGS_DEFAULTS.checkpoints,
     ),
     output: valueOrDefault(settings.output, SETTINGS_DEFAULTS.output),
+    ux: valueOrDefault(settings.ux, SETTINGS_DEFAULTS.ux),
     history: valueOrDefault(settings.history, SETTINGS_DEFAULTS.history),
     validation: valueOrDefault(
       settings.validation,
@@ -1717,6 +1722,7 @@ const SETTINGS_TOP_LEVEL_KEY_ORDER = [
   "locks",
   "checkpoints",
   "output",
+  "ux",
   "history",
   "validation",
   "governance",

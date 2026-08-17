@@ -2,18 +2,23 @@ id: pm-pfqi
 title: Consolidate the 8 list-* status variants into pm list --status (list-all/open/draft/in-progress/blocked/closed/canceled become hidden aliases)
 description: "list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled collapse to pm list with --status (multi-value) and --all; the 7 variant spellings become alias-table entries. Duplicate check: pm-gdi7 touches list-closed projection verbosity only; no consolidation item exists."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T04:53:04.736Z"
-updated_at: "2026-08-14T05:39:34.863Z"
+updated_at: "2026-08-17T22:26:47.913Z"
+closed_at: "2026-08-17T22:26:46.593Z"
+completed_at: "2026-08-17T22:26:46.593Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm list --status <s...> and --all cover every variant behavior incl. per-variant defaults; all 8 old spellings still work via alias shim with identical output; help shows only pm list; contracts/MCP/completions/docs regenerated; existing list-* tests pass unchanged against aliases
 parent: pm-n7rr
 risk: low
 confidence: high
-dependencies[3]:
+resolution: Implemented
+expected_result: One canonical list command supports repeatable lifecycle filters and all-status output while seven historical list variants remain compatible hidden aliases.
+actual_result: "Canonical list filters and seven hidden compatibility aliases now have lifecycle-specific SDK/MCP schemas, canonical-only completions, isolated runtime alias tests, stderr-only deprecation hints, and clean-room payload parity."
+dependencies[4]:
   - id: pm-0z7n
     kind: blocked_by
     created_at: "2026-07-05T04:54:59.730Z"
@@ -26,6 +31,57 @@ dependencies[3]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-0z7n
+    kind: implements
+    created_at: "2026-08-17T18:29:06.278Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[6]{created_at,author,text}:
+  "2026-08-17T18:40:36.696Z","harness:codex","Implementation evidence: consolidated list-all/draft/open/in-progress/blocked/closed/canceled into canonical pm list --all and repeatable pm list --status. Bare list is active-only; blocked remains dependency-aware; legacy projections and byte-parity semantics are preserved. Updated agent/user docs, guides, error recovery, completion, integration contracts, and generated catalogs. Manual temp-project acceptance covered all seven aliases, active/all/blocked semantics, hidden help, direct contracts, and hint suppression; full suite passes 7,521 tests at 100/100/100/100."
+  "2026-08-17T20:45:39.154Z","harness:codex","PR #1058 review-correction evidence: fixed lifecycle list action schemas no longer accept ignored --status/--all selectors, Bash/Zsh completions expose only canonical list, runtime alias tests use injected contracts without real-tracker reads or global mutation, and documentation correctly distinguishes stdout payload compatibility from stderr migration hints. Clean-room acceptance at /tmp/pm-grammar-review.uAO0GB proved canonical and legacy JSON payload equality, legacy stderr-only deprecation, valid JSON stdout, and no hidden list aliases in generated Bash completion."
+  "2026-08-17T20:45:41.261Z","harness:codex","Final verification after review fixes: 518/518 test files and 7,525/7,525 tests pass at exact 100/100/100/100 with zero uncovered counts. Contracts snapshot, static quality, package boundary, CLI transport, package-first dogfood, secrets, dependency audit, and the focused SDK/grammar regression set all pass."
+  "2026-08-17T21:20:54.099Z","harness:codex","Final CodeRabbit round evidence: public COMMANDS examples now use pm list --status open, and PmSettings preserves existing SDK source compatibility by making the new ux preference optional while readSettings continues to normalize deprecation_hints before command access. Focused settings/list tests, SDK surface governance, exact coverage, and static quality pass."
+  "2026-08-17T22:09:22.794Z","harness:codex","Final CodeRabbit round: validate and implement explicitly selected deprecated-action contract retention, cross-shell completion parity, current --all documentation, and exact settings-default assertion."
+  "2026-08-17T22:26:34.752Z","harness:codex","Final late-review evidence: explicit deprecated --action selection retains its requested legacy command and flag contract; Zsh list status is repeatable; Zsh/Fish contracts expose --full; COMMANDS distinguishes lifecycle --all from unbounded --no-truncate; and settings defaults are asserted directly. Clean-room acceptance at /tmp/pm-clean-room.dSWbt8 proved semantic alias/canonical JSON parity, stderr-only migration guidance, non-omitted legacy action contracts, and cross-shell completion parity. Full exact coverage passes 7,527 tests at 100/100/100/100."
 notes[1]{created_at,author,text}:
   "2026-08-14T05:39:34.863Z","harness:claude-code","Payoff measured 2026-08-14, at HEAD build 2026.8.14. This task previously carried a rationale and no number; it now has one, and the number is large enough to reorder it.\n\nThe eight list variants render these help payloads:\n\n    list-all             6,792 bytes\n    list                 6,791\n    list-blocked         6,687\n    list-in-progress     6,642\n    list-draft           6,639\n    list-closed          6,627\n    list-open            6,622\n    list-canceled        6,616\n\nTotal 53,416 bytes, which is 25.2 percent of the 212,233-byte top-level help surface across all 71 canonical commands.\n\nThey are not merely similar. Measured line by line, each variant is 95 to 96 percent identical to plain list: 107 of 111 lines for list-open, list-closed, list-draft, list-in-progress and list-canceled; 109 of 113 for list-all; 107 of 112 for list-blocked. Ninety-eight lines totalling 6,188 bytes are byte-identical across all eight simultaneously.\n\nKeeping one copy of those 98 shared lines recovers 43,316 bytes. That is 81.1 percent of this family's payload and 20.4 percent of the entire agent-facing help surface, from one consolidation.\n\nFor comparison, the whole surface shrank by 1,531 bytes at the root between 2026-08-13 and 2026-08-14 while per-command help grew by 48,848. This single task is roughly 28 times the size of the largest consolidation delivered so far, and it recovers slightly less than the surface grew in one day.\n\nTwo consequences for sequencing.\n\nFirst, the payoff does not depend on the grammar decision. The 43,316 bytes are duplicated text, and deduplicating help content is available whether or not the eight spellings ever merge into pm list --status. The alias-preserving consolidation this task describes remains the right end state; the text deduplication is the part that can land first and independently.\n\nSecond, the count is the wrong instrument for this epic and this family proves it. Retiring seven spellings moves the command count from 71 to 64, about 10 percent. It moves the surface an agent must read by 20.4 percent, and it does so almost entirely by removing text that said the same thing eight times.\n\nMethod note: measure with `while IFS= read -r` over pm contracts command_summaries[].command. Sixty of the 131 declared rows are multi-word subcommand paths, and an unquoted `for` loop word-splits them into separate invocations that fall through to root help, which inflates the total roughly sevenfold."
+learnings[1]{created_at,author,text}:
+  "2026-08-17T22:26:35.616Z","harness:codex","Compatibility action selection is itself a contract: canonicalization may drive execution and discovery, but an explicitly selected deprecated action must retain its own command identity and flag projection so existing SDK consumers can migrate deliberately."
+files[23]{path,scope,note}:
+  scripts/error-code-stability.json,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/cli/error-guidance.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/cli/register-list-query.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/sdk/cli-contracts/flag-contracts.ts,project,Publishes canonical and legacy lifecycle flag contracts consistently through the SDK.
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Provides a pure injected alias-surface builder for deterministic package-author tests.
+  src/sdk/cli-contracts/tool-schema.ts,project,Removes ignored lifecycle selectors from fixed legacy list action schemas.
+  src/sdk/completion.ts,project,Excludes hidden lifecycle aliases and their unsupported flags from generated completions.
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/sdk/guide-topics.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  src/sdk/init-agent-guidance.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/integration/cli.integration.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/integration/query-filter-contract.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/integration/scripting-contract.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/integration/workspace-snapshot-cli.integration.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/unit/cli/error-guidance.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/unit/cli/register-list-query.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/unit/commands/completion-command.spec.ts,project,Proves generated completions expose only the canonical list command.
+  tests/unit/commands/contracts-command.spec.ts,project,Covers explicit deprecated action selection without losing the requested alias contract.
+  tests/unit/commands/register-commands.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/unit/sdk/action-schema-parity.spec.ts,project,Proves fixed lifecycle actions cannot accept ignored status or all selectors.
+  tests/unit/sdk/cli-contracts/runtime-alias-surface.spec.ts,project,Tests alias metadata without reading the real tracker or mutating global tables.
+  tests/unit/sdk/sdk-index.spec.ts,project,"Verifies public SDK flag routing for canonical,all-status,and fixed lifecycle commands."
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/query-filter-contract.spec.ts tests/integration/scripting-contract.spec.ts tests/integration/workspace-snapshot-cli.integration.spec.ts tests/unit/cli/register-list-query.spec.ts,project,360
+  node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/cli-contracts/runtime-alias-surface.spec.ts,project,300
+docs[7]{path,scope,note}:
+  AGENTS.md,project,Uses canonical active-list agent guidance.
+  docs/AGENT_GUIDE.md,project,Routes agent workflows through canonical list filters.
+  docs/CLI_GRAMMAR.md,project,Clarifies stdout compatibility and stderr-only deprecation guidance.
+  docs/COMMANDS.md,project,Documents canonical list status and all-status forms.
+  docs/ONBOARDING.md,project,Updates onboarding examples to canonical list grammar.
+  docs/QUICKSTART.md,project,Updates quickstart examples to canonical list grammar.
+  README.md,project,Documents canonical lifecycle list filters.
+close_reason: "Consolidated all lifecycle list variants into canonical filters with hidden compatibility aliases, complete SDK/contracts/completion/docs parity, clean-room acceptance, and 7,527 tests at exact 100/100/100/100."
 body: ""

@@ -187,7 +187,7 @@ function buildAgentGuidanceBlock(lineEnding: "\n" | "\r\n"): string {
     AGENT_GUIDANCE_START_MARKER,
     "## pm Workflow (Agent Quickstart)",
     "",
-    '- Orient before mutate: `pm context --limit 10`, `pm search "<keywords>" --limit 10`, `pm list-open --limit 20`.',
+    '- Orient before mutate: `pm context --limit 10`, `pm search "<keywords>" --limit 10`, `pm list --status open --limit 20`.',
     "- Claim and execute: `pm claim <id>` then `pm update <id> --status in_progress`.",
     '- Link evidence while coding: `pm files <id> --add ...`, `pm docs <id> --add ...`, `pm test <id> --add command="node scripts/run-tests.mjs test -- ..."`.',
     '- Verify and close: `pm test <id> --run --progress`, `pm close <id> "<evidence>" --validate-close warn`, `pm release <id>`.',

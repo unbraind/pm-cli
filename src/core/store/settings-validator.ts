@@ -54,6 +54,8 @@ export interface ParsedSettings {
   checkpoints?: { retention_days?: number };
   /** Value that configures or reports output for this contract. */
   output: { default_format: "toon" | "json" };
+  /** Agent and human interaction preferences. */
+  ux?: { deprecation_hints?: boolean };
   /** Value that configures or reports history for this contract. */
   history?: {
     missing_stream: "auto_create" | "strict_error";
@@ -542,6 +544,7 @@ const settingsCheck = vObject({
     }),
   ),
   output: vObject({ default_format: vLiteral("toon", "json") }),
+  ux: vOptional(vObject({ deprecation_hints: vOptional(vBoolean) })),
   history: vOptional(
     vObject({
       missing_stream: vLiteral("auto_create", "strict_error"),

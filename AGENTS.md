@@ -63,8 +63,8 @@ For real repository tracking, do not override `PM_PATH`. If a script must target
 ```bash
 pm context --limit 10
 pm search "<request keywords>" --limit 10
-pm list-open --limit 20
-pm list-in-progress --limit 20
+pm list --status open --limit 20
+pm list --status in_progress --limit 20
 pm create --create-mode progressive --title "..." --description "..." --type Task --status open
 pm claim <id>
 pm update <id> --status in_progress --message "Start implementation"
@@ -82,7 +82,7 @@ Author identity is automatic; use `--author` only for an explicit override.
 
 ## Working Rules
 
-- **Orient:** run `pm context`, `pm search`, `pm list-open`, and `pm list-in-progress` before `pm create`. If net-new work is required, create or reuse the parent lineage first and record duplicate-check evidence in a create-time comment.
+- **Orient:** run `pm context`, `pm search`, `pm list --status open`, and `pm list --status in_progress` before `pm create`. If net-new work is required, create or reuse the parent lineage first and record duplicate-check evidence in a create-time comment.
 - **Verify before you claim:** the verification recipe for the Non-Negotiable above. A `closed` item whose `resolution`/`close_reason` describes the fix represents completed, shipped work — never describe it as outstanding. Confirm release/CI/infra status against the live system, e.g. `pm get pm-9gxi`, `npm view @unbrained/pm-cli version`, `gh release list`, `gh run list --workflow=auto-release.yml`.
 - **Implement:** keep edits scoped to the claimed item. Link changed files with `pm files`, docs with `pm docs`, and runnable verification with `pm test`.
 - **Record:** use `pm comments`, `pm notes`, and `pm learnings` for progress, rationale, and durable lessons. Prefer append-style updates over rewriting item content.

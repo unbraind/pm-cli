@@ -299,6 +299,7 @@ const ACTIVITY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 
 const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_LIST_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
+  "all",
   "includeBody",
   "noTruncate",
   "strictRead",
@@ -306,6 +307,12 @@ const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "brief",
   "full",
 ]);
+const FIXED_STATUS_LIST_CONTRACT_PARAMETER_KEYS =
+  LIST_CONTRACT_PARAMETER_KEYS.filter(
+    (parameter) => parameter !== "all" && parameter !== "status",
+  );
+const ALL_STATUS_LIST_CONTRACT_PARAMETER_KEYS =
+  LIST_CONTRACT_PARAMETER_KEYS.filter((parameter) => parameter !== "status");
 const LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS = [
   [
     { property: "today", schema: { const: true } },
@@ -579,31 +586,31 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS,
     },
     "list-all": {
-      optional: LIST_CONTRACT_PARAMETER_KEYS,
+      optional: ALL_STATUS_LIST_CONTRACT_PARAMETER_KEYS,
       mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS,
     },
     "list-draft": {
-      optional: LIST_CONTRACT_PARAMETER_KEYS,
+      optional: FIXED_STATUS_LIST_CONTRACT_PARAMETER_KEYS,
       mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS,
     },
     "list-open": {
-      optional: LIST_CONTRACT_PARAMETER_KEYS,
+      optional: FIXED_STATUS_LIST_CONTRACT_PARAMETER_KEYS,
       mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS,
     },
     "list-in-progress": {
-      optional: LIST_CONTRACT_PARAMETER_KEYS,
+      optional: FIXED_STATUS_LIST_CONTRACT_PARAMETER_KEYS,
       mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS,
     },
     "list-blocked": {
-      optional: LIST_CONTRACT_PARAMETER_KEYS,
+      optional: FIXED_STATUS_LIST_CONTRACT_PARAMETER_KEYS,
       mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS,
     },
     "list-closed": {
-      optional: LIST_CONTRACT_PARAMETER_KEYS,
+      optional: FIXED_STATUS_LIST_CONTRACT_PARAMETER_KEYS,
       mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS,
     },
     "list-canceled": {
-      optional: LIST_CONTRACT_PARAMETER_KEYS,
+      optional: FIXED_STATUS_LIST_CONTRACT_PARAMETER_KEYS,
       mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS,
     },
     aggregate: { optional: AGGREGATE_CONTRACT_PARAMETER_KEYS },
@@ -1358,6 +1365,12 @@ function actionScopedToolParameterMetadata(
   action: PmToolAction,
   key: string,
 ): { description: string; examples?: unknown[] } | undefined {
+  if ((action === "list" || action.startsWith("list-")) && key === "all") {
+    return {
+      description:
+        "Return items from every lifecycle status instead of the default active-status set.",
+    };
+  }
   if (
     action === "plan" &&
     Object.prototype.hasOwnProperty.call(PLAN_ACTION_PARAMETER_METADATA, key)

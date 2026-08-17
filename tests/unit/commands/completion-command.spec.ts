@@ -51,13 +51,6 @@ describe("generateBashScript", () => {
       "get",
       "update",
       "list",
-      "list-all",
-      "list-open",
-      "list-in-progress",
-      "list-blocked",
-      "list-closed",
-      "list-canceled",
-      "list-draft",
       "calendar",
       "cal",
       "context",
@@ -97,6 +90,17 @@ describe("generateBashScript", () => {
       "config",
     ]) {
       expect(script).toContain(cmd);
+    }
+    for (const hiddenAlias of [
+      "list-all",
+      "list-open",
+      "list-in-progress",
+      "list-blocked",
+      "list-closed",
+      "list-canceled",
+      "list-draft",
+    ]) {
+      expect(script).not.toContain(hiddenAlias);
     }
   });
 
@@ -572,7 +576,7 @@ describe("generateBashScript", () => {
       expect(zsh, `zsh should contain --${flag}`).toContain(`--${flag}`);
       expect(fish, `fish should contain -l ${flag}`).toContain(`-l ${flag}`);
     }
-    const zshListBlockStart = zsh.indexOf("list|list-all|list-draft");
+    const zshListBlockStart = zsh.indexOf("        list)");
     const zshListBlock = zsh.slice(
       zshListBlockStart,
       zsh.indexOf("aggregate)", zshListBlockStart),
@@ -742,6 +746,19 @@ describe("generateZshScript", () => {
     expect(script).toContain("--profile");
     expect(script).toContain("--version");
     expect(script).toContain("--help");
+  });
+
+  it("keeps repeated list status completion active in zsh", () => {
+    const script = generateZshScript();
+    const listStart = script.indexOf("        list)");
+    const listBlock = script.slice(
+      listStart,
+      script.indexOf("        search)", listStart),
+    );
+    expect(listStart).toBeGreaterThan(-1);
+    expect(listBlock).toContain(
+      "*--status[Filter by status; repeatable, comma-separated, or all]",
+    );
   });
 
   it("includes zsh _arguments blocks", () => {
@@ -999,15 +1016,25 @@ describe("generateFishScript", () => {
   });
 
   it("includes contracts command flag completions", () => {
-    const script = generateFishScript();
-    expect(script).toContain("__fish_seen_subcommand_from contracts");
-    expect(script).toContain("-l action");
-    expect(script).toContain("-l command");
-    expect(script).toContain("-l schema-only");
-    expect(script).toContain("-l flags-only");
-    expect(script).toContain("-l availability-only");
-    expect(script).toContain("-l runtime-only");
-    expect(script).toContain("-l active-only");
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("__fish_seen_subcommand_from contracts");
+    expect(fishScript).toContain("-l action");
+    expect(fishScript).toContain("-l command");
+    expect(fishScript).toContain("-l schema-only");
+    expect(fishScript).toContain("-l flags-only");
+    expect(fishScript).toContain("-l availability-only");
+    expect(fishScript).toContain("-l runtime-only");
+    expect(fishScript).toContain("-l active-only");
+    expect(fishScript).toContain("-l full");
+
+    const zshScript = generateZshScript();
+    const contractsStart = zshScript.indexOf("        contracts)");
+    const contractsBlock = zshScript.slice(
+      contractsStart,
+      zshScript.indexOf("        gc)", contractsStart),
+    );
+    expect(contractsStart).toBeGreaterThan(-1);
+    expect(contractsBlock).toContain("--full[");
   });
 
   it("includes completion shell argument completions", () => {

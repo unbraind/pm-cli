@@ -4221,17 +4221,17 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         true,
       );
 
-      // pm list (bare command) discloses and returns the same all-status scope as search.
+      // Bare pm list is active-only; explicit --all retains the compatibility scope above.
       const listActive = context.runCli(["list", "--json", "--type", "Task"], { expectJson: true });
       expect(listActive.code).toBe(0);
       const listActiveJson = listActive.json as {
         count: number;
         items: Array<Record<string, unknown>>;
-        filters: { status: string };
+        filters: Record<string, unknown>;
         projection: { mode: string; fields: string[] | null };
       };
-      expect(listActiveJson.count).toBe(7);
-      expect(listActiveJson.filters.status).toBe("all");
+      expect(listActiveJson.count).toBe(5);
+      expect(listActiveJson.filters).not.toHaveProperty("status");
       expect(listActiveJson.projection).toEqual({
         mode: "brief",
         fields: ["id", "status", "type", "title"],
@@ -4243,9 +4243,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "open",
         "in_progress",
         "blocked",
-        "closed",
-        "canceled",
       ]));
+      expect(defaultStatuses).not.toContain("closed");
+      expect(defaultStatuses).not.toContain("canceled");
 
       const listActiveFull = context.runCli(["list", "--json", "--type", "Task", "--full"], { expectJson: true });
       expect(listActiveFull.code).toBe(0);

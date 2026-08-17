@@ -208,6 +208,30 @@ describe("action-scoped MCP schema parity", () => {
     expect(searchSchema.properties).not.toHaveProperty("recent");
   });
 
+  it("keeps lifecycle selectors out of fixed-status compatibility actions", () => {
+    for (const action of [
+      "list-draft",
+      "list-open",
+      "list-in-progress",
+      "list-blocked",
+      "list-closed",
+      "list-canceled",
+    ] as const) {
+      expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS[action].optional).not.toContain(
+        "status",
+      );
+      expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS[action].optional).not.toContain(
+        "all",
+      );
+    }
+    expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS["list-all"].optional).toContain(
+      "all",
+    );
+    expect(
+      PM_TOOL_ACTION_PARAMETER_CONTRACTS["list-all"].optional,
+    ).not.toContain("status");
+  });
+
   it("rejects list date-window combinations in action schemas", () => {
     const schema = _testOnlyCliContracts.buildActionScopedToolSchema(
       "list",

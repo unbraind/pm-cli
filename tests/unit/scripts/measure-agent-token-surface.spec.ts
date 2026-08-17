@@ -292,18 +292,34 @@ describe("measure-agent-token-surface", () => {
     const coreBaseline = module.buildBaseline(
       {
         ...report,
-        commands: [
-          ...report.commands,
-          { ...report.commands[0], name: "list" },
-        ],
+        commands: [...report.commands, { ...report.commands[0], name: "list" }],
       },
       1,
     );
     expect(coreBaseline.surfaces.required_commands).toEqual(["get", "list"]);
     expect(module.compareBaseline(report, baseline)).toEqual([]);
 
+    const reportWithOptionalExtension = {
+      ...report,
+      commands: [
+        ...report.commands,
+        { name: "optional-extension", bytes: 42, tokens: 11 },
+      ],
+    };
+    expect(
+      module.compareBaseline(reportWithOptionalExtension, baseline),
+    ).toEqual([]);
+
+    const reportWithUnbaselinedCoreCommand = {
+      ...report,
+      commands: [...report.commands, { name: "list", bytes: 42, tokens: 11 }],
+    };
+    expect(
+      module.compareBaseline(reportWithUnbaselinedCoreCommand, baseline),
+    ).toContain("commands.list: missing baseline");
+
     baseline.surfaces.root_help = 1;
-    delete baseline.surfaces.commands.ls;
+    delete baseline.surfaces.commands.get;
     baseline.surfaces.contracts.retired_projection = 100;
     baseline.surfaces.commands.retired_command = 100;
     baseline.surfaces.required_commands.push("retired_command");
@@ -311,7 +327,7 @@ describe("measure-agent-token-surface", () => {
     expect(module.compareBaseline(report, baseline)).toEqual([
       `root_help: ${report.root_help.bytes} bytes exceeds 1`,
       "contracts.retired_projection: stale baseline surface",
-      "commands.ls: missing baseline",
+      "commands.get: missing baseline",
       "commands.retired_command: stale baseline surface",
     ]);
 
@@ -328,19 +344,21 @@ describe("measure-agent-token-surface", () => {
       report,
       incompleteBaseline,
     );
-    expect(incompleteViolations).toHaveLength(7);
+    expect(incompleteViolations).toHaveLength(6);
     expect(incompleteViolations).toEqual(
       expect.arrayContaining([
         "contracts.summary_toon: missing baseline",
-        "commands.ls: missing baseline",
+        "commands.get: missing baseline",
       ]),
     );
-    expect(
-      module.compareBaseline(report, {
-        ...cleanBaseline,
-        surfaces: undefined,
-      } as unknown as TokenSurfaceBaseline),
-    ).toHaveLength(11);
+    const missingSurfaceViolations = module.compareBaseline(report, {
+      ...cleanBaseline,
+      surfaces: undefined,
+    } as unknown as TokenSurfaceBaseline);
+    expect(missingSurfaceViolations).toHaveLength(10);
+    expect(missingSurfaceViolations).toContain(
+      "commands.get: missing baseline",
+    );
   });
 
   it("writes an intentional baseline update to an explicit path", async () => {

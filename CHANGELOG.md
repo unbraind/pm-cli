@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Alias shim layer: config-aware hidden aliases with one-line migration hints (foundation for all consolidations) ([pm-0z7n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0z7n.toon))
+
 ### Fixed
 
 - A commit pushed directly to the default branch can never be released: both analyzer-evidence fallbacks presuppose a pull request, and nothing declares that precondition ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
@@ -19,8 +23,15 @@
 
 - Adopt Dependabot PR \#1046 pinned CodeQL 4.37.7 and TruffleHog 3.97.0 refresh ([pm-pp6al9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-pp6al9.toon))
 
+### Deprecated
+
+- ADR: noun-verb CLI grammar — accepted consolidation principles and alias-preserving deprecation policy ([pm-pbyu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-pbyu.toon))
+
 ### Other
 
+- Command-grammar conformance gate: the noun-verb table and shared verb vocabulary become machine-checked contracts a non-conforming command cannot pass ([pm-wt43zj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wt43zj.toon))
+- Consolidate the 8 list-\* status variants into pm list --status (list-all/open/draft/in-progress/blocked/closed/canceled become hidden aliases) ([pm-pfqi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pfqi.toon))
+- Command-destination census: 14 of 76 canonical commands have no declared home in the target grammar, so the surface can be frozen with its shape still undecided ([pm-yy8rmx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yy8rmx.toon))
 - Half of the pm events payload is per-row resume cursors an agent never reads: 48 percent of stream bytes buy a capability consumed once per batch ([pm-ez1dfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ez1dfg.toon))
 
 ## 2026.8.17 - 2026-08-17

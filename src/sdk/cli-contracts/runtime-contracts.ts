@@ -103,6 +103,7 @@ import {
   PM_OUTPUT_DEGRADATION_STEPS,
   PLAN_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
+  PM_DEPRECATED_TOOL_ACTIONS,
   PM_TOOL_ACTIONS,
   PM_TOOL_PARAMETERS_SCHEMA,
   REINDEX_FLAG_CONTRACTS,
@@ -130,10 +131,12 @@ import {
   UPGRADE_FLAG_CONTRACTS,
   VALIDATE_FLAG_CONTRACTS,
   compactFlagAliasContracts,
+  PM_COMMAND_ALIAS_CONTRACTS,
   resolvePmCommandOutputBudget,
   type CliFlagContract,
   type CommanderOptionAliasContract,
   type PmCommandOutputBudgetContract,
+  type PmCommandAliasContract,
 } from "../cli-contracts.js";
 import {
   GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES,
@@ -181,6 +184,11 @@ import {
   ASSURANCE_GATE_TRIGGERS,
   ASSURANCE_MEASUREMENT_SOURCE_KINDS,
 } from "../governance/assurance.js";
+import {
+  PM_CLI_GRAMMAR_CONTRACT,
+  PM_COMMAND_DESTINATION_CONTRACTS,
+  type PmCommandDestinationContract,
+} from "./grammar-contracts.js";
 
 /** Documents the contracts command options payload exchanged by command, SDK, and package integrations. */
 export interface ContractsCommandOptions {
@@ -215,9 +223,14 @@ interface CommandFlagSurface {
   }>;
 }
 
-interface CommandAliasSurface {
+/** Grouped command-alias projection retained for backward-compatible consumers. */
+export interface CommandAliasSurface {
+  /** Canonical command path shared by the grouped aliases. */
   canonical: string;
+  /** Accepted alternate spellings for the canonical path. */
   aliases: string[];
+  /** Per-spelling lifecycle, visibility, replacement, and ownership metadata. */
+  contracts?: PmCommandAliasContract[];
 }
 
 /** Machine-readable projection behavior for one list command. */
@@ -265,6 +278,15 @@ export interface ContractsResult {
   list_projections?: ListCommandProjectionSurface[];
   /** Value that configures or reports command aliases for this contract. */
   command_aliases?: CommandAliasSurface[];
+  /** Noun–verb routing policy and exhaustive current-command destinations. */
+  grammar_contracts?: {
+    nouns: readonly string[];
+    shared_verbs: readonly string[];
+    scope_before_verb: boolean;
+    visible_top_level_ceiling: number;
+    ceiling_raise_requires_pm_item: boolean;
+    destinations?: readonly PmCommandDestinationContract[];
+  };
   /** Value that configures or reports commander aliases for this contract. */
   commander_aliases?: Record<string, CommanderOptionAliasContract[]>;
   /** Value that configures or reports extension commands for this contract. */
@@ -1867,14 +1889,50 @@ function buildCommandFlagSurface(
     .sort((left, right) => left.command.localeCompare(right.command));
 }
 
-function buildCommandAliasSurface(commands: string[]): CommandAliasSurface[] {
+/** Build the executable alias projection from a command catalog and alias table. */
+export function buildCommandAliasSurface(
+  commands: string[],
+  aliasContracts: readonly PmCommandAliasContract[] = PM_COMMAND_ALIAS_CONTRACTS,
+): CommandAliasSurface[] {
   const commandSet = new Set(commands);
-  return CANONICAL_COMMAND_ALIASES.map((entry) => ({
-    canonical: entry.canonical,
-    aliases: entry.aliases.filter((alias) => commandSet.has(alias)),
-  })).filter(
-    (entry) => commandSet.has(entry.canonical) && entry.aliases.length > 0,
-  );
+  const grouped = new Map<
+    string,
+    CommandAliasSurface & { contracts: PmCommandAliasContract[] }
+  >();
+  for (const entry of CANONICAL_COMMAND_ALIASES) {
+    const aliases = entry.aliases.filter((alias) => commandSet.has(alias));
+    grouped.set(entry.canonical, {
+      canonical: entry.canonical,
+      aliases,
+      contracts: [],
+    });
+  }
+  for (const contract of aliasContracts) {
+    if (!commandSet.has(contract.canonical)) {
+      continue;
+    }
+    if (
+      contract.registration === "commander" &&
+      !commandSet.has(contract.alias)
+    ) {
+      continue;
+    }
+    const entry = grouped.get(contract.canonical) ?? {
+      canonical: contract.canonical,
+      aliases: [],
+      contracts: [],
+    };
+    if (!entry.aliases.includes(contract.alias)) {
+      entry.aliases.push(contract.alias);
+    }
+    entry.contracts.push(contract);
+    grouped.set(contract.canonical, entry);
+  }
+  return [...grouped.values()]
+    .map(({ contracts, ...entry }) =>
+      contracts.length === 0 ? entry : { ...entry, contracts },
+    )
+    .sort((left, right) => left.canonical.localeCompare(right.canonical));
 }
 
 function buildCommanderAliasSurface(): Record<
@@ -2181,6 +2239,15 @@ function collectContractsActionDescriptors(
       includePackageOwnedActions: shouldIncludePackageOwnedActions(selection),
     },
   );
+  if (
+    selection.selectedAction === undefined &&
+    selection.selectedCommand === undefined
+  ) {
+    const deprecatedActions = new Set<string>(PM_DEPRECATED_TOOL_ACTIONS);
+    return actionDescriptors.filter(
+      (descriptor) => !deprecatedActions.has(descriptor.action),
+    );
+  }
   if (
     shouldIncludePackageOwnedActions(selection) &&
     selection.selectedCommand !== undefined &&
@@ -2536,10 +2603,21 @@ function resolveContractsCommands(
 }
 
 function resolveOutputCommands(
-  _selection: ContractsSelection,
+  selection: ContractsSelection,
   commands: string[],
 ): string[] {
-  return commands;
+  if (
+    selection.selectedCommand !== undefined ||
+    selection.selectedAction !== undefined
+  ) {
+    return commands;
+  }
+  const hiddenAliases = new Set(
+    PM_COMMAND_ALIAS_CONTRACTS.filter(
+      (contract) => contract.hidden && contract.lifecycle === "deprecated",
+    ).map((contract) => contract.alias),
+  );
+  return commands.filter((command) => !hiddenAliases.has(command));
 }
 
 function canonicalSummaryCommand(command: string): string {
@@ -2899,9 +2977,7 @@ function attachFlagContractsResult(
   } else {
     result.command_flags_omitted_reason = "unfiltered_default_brief";
   }
-  if (commandAliases.length > 0) {
-    result.command_aliases = commandAliases;
-  }
+  result.command_aliases = commandAliases;
 }
 
 function attachCommanderAliasContractsResult(
@@ -2938,6 +3014,15 @@ function attachAgentCommandContractsResult(
     token_estimate: "ceil(utf8_bytes / 4)",
     degradation_ladder: [...PM_OUTPUT_DEGRADATION_STEPS],
     allows_unbounded_opt_out: true,
+  };
+  result.grammar_contracts = {
+    nouns: PM_CLI_GRAMMAR_CONTRACT.nouns,
+    shared_verbs: PM_CLI_GRAMMAR_CONTRACT.shared_verbs,
+    scope_before_verb: PM_CLI_GRAMMAR_CONTRACT.scope_before_verb,
+    visible_top_level_ceiling:
+      PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling,
+    ceiling_raise_requires_pm_item:
+      PM_CLI_GRAMMAR_CONTRACT.ceiling_raise_requires_pm_item,
   };
 }
 
@@ -2980,7 +3065,7 @@ export async function runContracts(
   if (selection.summary) {
     return result;
   }
-  const commandAliases = buildCommandAliasSurface(commands);
+  const commandAliases = buildCommandAliasSurface(actionContext.commandCatalog);
   if (!(selection.flagsOnly && !selection.fullOutput)) {
     attachRuntimeContractsResult(result, runtime, selection);
   }
@@ -3003,6 +3088,9 @@ export async function runContracts(
       measurement_source_kinds: [...ASSURANCE_MEASUREMENT_SOURCE_KINDS],
       gate_triggers: [...ASSURANCE_GATE_TRIGGERS],
     };
+  }
+  if (selection.fullOutput && result.grammar_contracts) {
+    result.grammar_contracts.destinations = PM_COMMAND_DESTINATION_CONTRACTS;
   }
 
   // pm-4os2: snapshot the static MCP tool surface in the full projection so

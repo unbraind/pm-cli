@@ -8,10 +8,15 @@ describe("CLI scripting process contract", () => {
       expect(success.code).toBe(0);
       expect(success.stdout.length).toBeGreaterThan(0);
       expect(success.stderr).toBe("");
-      expect(JSON.parse(success.stdout)).toMatchObject({
+      const successPayload = JSON.parse(success.stdout) as {
+        items: unknown[];
+        filters: Record<string, unknown>;
+      };
+      expect(successPayload).toMatchObject({
         items: [],
-        filters: { status: "all" },
+        filters: { runtime_filters: {} },
       });
+      expect(successPayload.filters).not.toHaveProperty("status");
 
       for (const [args, exitCode] of [
         [["list", "--priority", "9", "--json"], 2],

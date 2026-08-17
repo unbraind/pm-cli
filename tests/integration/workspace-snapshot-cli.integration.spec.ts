@@ -100,9 +100,16 @@ describe("workspace snapshot CLI integration", () => {
 
   it("reports actionable list and snapshot usage failures", async () => {
     await withTempPmPath(async (context) => {
-      const ambiguous = await context.runCliInProcess(["list", "--all"]);
-      expect(ambiguous.code).not.toBe(0);
-      expect(ambiguous.stderr).toContain("list --status all --no-truncate");
+      const allStatuses = await context.runCliInProcess(
+        ["list", "--all", "--json"],
+        { expectJson: true },
+      );
+      expect(allStatuses.code).toBe(0);
+      expect(allStatuses.json).toMatchObject({
+        count: 0,
+        total: 0,
+        filters: { status: "all" },
+      });
 
       const missingTarget = await context.runCliInProcess([
         "workspace",

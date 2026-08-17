@@ -141,8 +141,8 @@ pm search "calendar reminder validation" --limit 10
 pm get pm-a1b2                          # read one item; add --fields/--depth for lower-token projections
 pm get pm-a1b2 --tree --tree-depth 2    # item plus its descendant subtree
 pm get pm-a1b2 --at 7                   # verified, mutation-free historical version
-pm list-open --type Task --priority 1 --limit 20
-pm list-in-progress --limit 20
+pm list --status open --type Task --priority 1 --limit 20
+pm list --status in_progress --limit 20
 pm aggregate --group-by parent,type --status open
 pm aggregate --group-by parent,type --completion --include-unparented
 pm duplicates --status all --threshold 0.8
@@ -173,7 +173,7 @@ Each aggregate row carries an explicit `group_label`: a blank/null group value (
 `--sort` accepts `priority|deadline|updated_at|created_at|title|parent`, plus the convenience aliases `updated` (→ `updated_at`) and `created` (→ `created_at`):
 
 ```bash
-pm list-all --sort updated --order desc
+pm list --all --sort updated --order desc
 ```
 
 ### Incremental "what changed since" filters
@@ -182,16 +182,16 @@ Every `list*` command accepts `--updated-after`/`--updated-before`/`--created-af
 
 ```bash
 # Items touched since my last context window (feed back the previous run's `now`)
-pm list-all --updated-after 2026-06-04T15:18:32Z --brief
+pm list --all --updated-after 2026-06-04T15:18:32Z --brief
 
 # Relative offsets are SIGNED: -2h/-7d reach into the past, +1d into the future.
 # Units are h/d/w/m (m = months — there is no minutes unit).
-pm list-open --updated-after=-2h --brief
-pm list-all --created-after=-7d --status open
+pm list --status open --updated-after=-2h --brief
+pm list --status open --created-after=-7d
 
-# Common list windows avoid date math (`list-open` keeps the view open-only).
-pm list-open --today --brief
-pm list-all --recent --brief
+# Common list windows avoid date math (`pm list --status open` keeps the view open-only).
+pm list --status open --today --brief
+pm list --all --recent --brief
 
 # Search scoped to open work only (drops closed-history noise); statuses accept
 # all (no lifecycle restriction), open/closed/canceled aliases, or configured
@@ -293,12 +293,12 @@ pm eval --fail-under 0.6 --json      # CI gate: exit non-zero when aggregate nDC
 
 ### Full results, totals, and bodies
 
-`pm list*` returns every matched row when neither `--limit` nor `--offset` is set. Every JSON/TOON result has the same pagination envelope: `total` is the pre-pagination match count, `has_more` and `truncated` are booleans, and `next_cursor` is either the continuation token or `null`. `completeness` reports whether the corpus was `complete`, `partial`, or `unchecked` (derived-index page), with unreadable item/directory counts. Use `--strict-read` when omissions must fail the command. The `filters` object omits unset values instead of emitting null placeholders, keeping long-running agent context stable and lean. Pass `--no-truncate` (alias `--all`) to force the entire matched set and override any `--limit` in one call — the canonical "give me everything" flag for large-corpus audits:
+`pm list` returns every matched row when neither `--limit` nor `--offset` is set. Every JSON/TOON result has the same pagination envelope: `total` is the pre-pagination match count, `has_more` and `truncated` are booleans, and `next_cursor` is either the continuation token or `null`. `completeness` reports whether the corpus was `complete`, `partial`, or `unchecked` (derived-index page), with unreadable item/directory counts. Use `--strict-read` when omissions must fail the command. The `filters` object omits unset values instead of emitting null placeholders, keeping long-running agent context stable and lean. Pass `--no-truncate` to force the entire matched set and override any `--limit` in one call. `--all` selects every lifecycle status; combine the flags for an unbounded all-status audit:
 
 ```bash
-pm list-all --no-truncate --brief          # every matched row, ignoring any --limit
-pm list-open --limit 20 --json             # stable total/has_more/truncated/next_cursor envelope
-pm list-all --strict-read --json           # fail if any source item cannot be read
+pm list --all --no-truncate --brief        # every matched row, ignoring any --limit
+pm list --status open --limit 20 --json    # stable total/has_more/truncated/next_cursor envelope
+pm list --all --strict-read --json         # fail if any source item cannot be read
 ```
 
 Compatibility note: older responses emitted `total` only when pagination
@@ -312,7 +312,7 @@ unconditional pre-pagination match count, branch on `has_more` or
 JSON output is compact by default (id/status/type/title) for token efficiency. To pull item bodies in bulk in a single call — instead of one `pm get` per item — add `--include-body`, which expands each row to the full field set plus `body`:
 
 ```bash
-pm list-open --json --include-body         # full fields + body for every returned row
+pm list --status open --json --include-body # full fields + body for every returned row
 ```
 
 `pm get <id> --json` returns the item's `body` **inside** the `item` object (i.e. `.item.body`), matching where `list --include-body` places it and the long-form `description`/`acceptance_criteria` fields — so a single read exposes every field at a consistent path. Body is included at the default `standard` depth and above; `--depth brief` omits it.
@@ -322,10 +322,10 @@ pm list-open --json --include-body         # full fields + body for every return
 `pm list*` accepts `--format <csv|table|json|ndjson|toon>` to choose how rows render. `csv` and `table` are **human export** modes — pipe them into a spreadsheet or read them directly in a terminal — while `json`/`toon` override the machine output format the same way the global `--json` flag does. `ndjson` writes each projected item as one self-contained JSON object per line, with no wrapper or trailing summary. The rendered fields follow the active projection, so combine `--format` with `--fields`/`--brief`/`--compact` to control exactly what appears:
 
 ```bash
-pm list-open --format table                      # aligned, monospace-friendly columns
-pm list-all --fields id,title,priority --format csv  # spreadsheet export with chosen columns
-pm list-open --format csv > backlog.csv          # capture for reporting
-pm list-all --brief --format ndjson | jq -c 'select(.status == "open")'
+pm list --status open --format table                 # aligned, monospace-friendly columns
+pm list --all --fields id,title,priority --format csv # spreadsheet export with chosen columns
+pm list --status open --format csv > backlog.csv     # capture for reporting
+pm list --all --brief --format ndjson | jq -c 'select(.status == "open")'
 ```
 
 CSV output is RFC 4180 compliant (values with commas, quotes, or newlines are quoted; array fields such as `tags` join with `;`). `--format csv|table|ndjson` cannot be combined with the legacy envelope-oriented `--stream` mode.
@@ -338,13 +338,13 @@ The same `list*` commands and `pm search` extend this with governance-field pres
 
 ```bash
 # Find open Tasks that still need acceptance criteria
-pm list-open --type Task --filter-ac-missing --brief
+pm list --status open --type Task --filter-ac-missing --brief
 
 # Closed items that were never given a resolution
-pm list-closed --filter-resolution-missing --json
+pm list --status closed --filter-resolution-missing --json
 
 # Open items that still need a reviewer assigned
-pm list-open --filter-reviewer-missing --brief
+pm list --status open --filter-reviewer-missing --brief
 ```
 
 ### Content-field presence filters
@@ -353,10 +353,10 @@ pm list-open --filter-reviewer-missing --brief
 
 ```bash
 # Closed items that shipped no documented learnings
-pm list-closed --no-learnings --brief
+pm list --status closed --no-learnings --brief
 
 # Open work that has linked tests but no linked files yet
-pm list-open --has-tests --no-files --json
+pm list --status open --has-tests --no-files --json
 ```
 
 ## Bulk Operations

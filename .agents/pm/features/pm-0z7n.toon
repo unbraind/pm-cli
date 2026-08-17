@@ -2,20 +2,49 @@ id: pm-0z7n
 title: "Alias shim layer: config-aware hidden aliases with one-line migration hints (foundation for all consolidations)"
 description: "Build the shared mechanism every consolidation cluster uses: a declarative alias table mapping old spellings (e.g. list-open, start-task, history-repair) to new noun-verb invocations, hidden from help, emitting a single config-suppressible migration hint on stderr, with a spelling-parity spec asserting every aliased invocation produces byte-identical output to its canonical form. Duplicate check: no existing alias-shim or deprecation-layer item."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:contracts",simplification
 created_at: "2026-07-05T04:53:04.314Z"
-updated_at: "2026-07-25T06:28:06.557Z"
+updated_at: "2026-08-17T22:26:45.729Z"
+closed_at: "2026-08-17T22:26:45.044Z"
+completed_at: "2026-08-17T22:26:45.044Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Declarative alias table drives Commander registration; aliases hidden from default help but resolvable; migration hint printed once per invocation to stderr, suppressible via config key; spelling-parity spec proves alias output identical to canonical; contracts/completions expose canonical forms and mark aliases deprecated"
 parent: pm-n7rr
 risk: medium
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-pbyu,blocked_by,"2026-07-05T04:54:59.312Z",null,null
-  pm-pbyu,implements,"2026-07-25T06:28:06.310Z",null,null
+resolution: Implemented
+expected_result: "Legacy command spellings remain executable but hidden, map through typed SDK contracts, emit one suppressible migration hint, and preserve canonical output parity."
+actual_result: "Seven declarative hidden aliases now execute through canonical list semantics, expose typed runtime compatibility metadata, emit config-aware hints, and pass parity coverage."
+dependencies[1]{id,kind,created_at}:
+  pm-pbyu,implements,"2026-07-25T06:28:06.310Z"
+comments[3]{created_at,author,text}:
+  "2026-08-17T18:40:36.164Z","harness:codex","Implementation evidence: introduced typed PmCommandAliasContract metadata with canonical argv, lifecycle, hidden visibility, registration ownership, and migration hints. Seven list aliases are hidden from help/discovery, remain directly executable, emit one stderr hint, and can be suppressed through typed ux.deprecation_hints settings. SDK action compatibility remains available while MCP discovery is canonical. CLI, SDK, MCP, settings, completion, runtime-contract, and parity tests pass."
+  "2026-08-17T22:09:23.486Z","harness:codex","Final CodeRabbit round: reconcile the stale blocked_by edge whose chronology conflicts with the feature close and later ADR acceptance; preserve the typed implements relationship."
+  "2026-08-17T22:26:36.395Z","harness:codex","Graph correction evidence: removed the stale blocked_by pm-pbyu edge whose timestamp predates later ADR acceptance and contradicted this implemented feature. The typed implements edge remains, preserving architectural provenance without presenting completed historical work as blocked."
 notes[1]{created_at,author,text}:
   "2026-07-11T16:23:32.225Z",maintainer-agent,"Scope extension (pm-mpbb ledger lever b, promoted 2026-07-11 when the a22j baseline gate opened): in addition to the once-per-invocation stderr hint in the AC, the mutation/query ENVELOPE must carry the canonical spelling machine-readably when an alias was used (e.g. deprecated_alias + canonical fields), so agents self-migrate programmatically instead of parsing stderr. pm-0mox usage counters are the read side of the same channel. Field naming/placement belongs to the pm-srns uniform envelope spec - coordinate, do not invent a one-off shape here."
+files[17]{path,scope,note}:
+  src/core/config/nested-settings.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  src/core/shared/constants.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  src/core/store/settings-validator.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  src/core/store/settings.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  src/mcp/tool-definitions.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  src/sdk/cli-bootstrap.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  src/sdk/cli-contracts/command-aliases.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  src/sdk/cli-contracts/enum-contracts.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  src/sdk/cli-contracts/flag-contracts.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  src/sdk/cli-contracts/tool-schema.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  src/sdk/completion.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  tests/integration/mcp-handshake.spec.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  tests/unit/commands/config-key-aliases-search.spec.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  tests/unit/core/config/nested-settings.spec.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  tests/unit/core/store/settings-store.spec.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  tests/unit/core/store/settings-validator.spec.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/sdk/cli-contracts/runtime-alias-surface.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/core/config/nested-settings.spec.ts tests/unit/core/store/settings-validator.spec.ts,project,360
+close_reason: "Implemented the shared typed hidden-alias mechanism and corrected its historical dependency chronology; retained the typed architecture edge and verified migration hints, configuration, contracts, and parity."
 body: ""

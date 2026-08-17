@@ -175,6 +175,16 @@ describe("core/store/settings-validator", () => {
     expect(validateSettings(raw).success).toBe(true);
   });
 
+  it("validates the optional UX deprecation-hint preference", () => {
+    const enabled = minimalValidSettings();
+    enabled.ux = { deprecation_hints: true };
+    expect(validateSettings(enabled).success).toBe(true);
+
+    const invalid = minimalValidSettings();
+    invalid.ux = { deprecation_hints: "no" };
+    expect(validateSettings(invalid).success).toBe(false);
+  });
+
   it("accepts pm_max_version_exceeded_mode as a mode literal or per-layer object", () => {
     const literal = minimalValidSettings();
     literal.extensions = {

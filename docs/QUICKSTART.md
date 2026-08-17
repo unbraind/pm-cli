@@ -94,7 +94,7 @@ Useful item types:
 ```bash
 pm context --limit 10
 pm search "restore lock retry" --limit 10
-pm list-open --limit 20
+pm list --status open --limit 20
 pm claim <item-id>
 pm update <item-id> --status in_progress --message "Start implementation"
 pm update <item-id> --add-tags urgent,backend

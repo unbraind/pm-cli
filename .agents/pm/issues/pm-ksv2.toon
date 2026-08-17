@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,sentry,telemetry
 created_at: "2026-07-12T08:08:23.019Z"
-updated_at: "2026-08-17T16:30:39.396Z"
+updated_at: "2026-08-17T19:54:03.965Z"
 closed_at: "2026-08-17T16:30:38.514Z"
 completed_at: "2026-08-17T16:30:38.514Z"
 author: maintainer-agent
@@ -25,7 +25,7 @@ regression: true
 dependencies[2]{id,kind,created_at}:
   pm-5oj5,implements,"2026-07-26T17:18:51.005Z"
   pm-wfvq,related,"2026-07-26T17:18:51.005Z"
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-07-12T15:41:03.486Z",maintainer-agent,"Recurrence evidence 2026-07-12T15:36Z: this performance run interrupted an unintended interactive pm init prompt with Ctrl+C after pm test used schema context. Sentry correctly received PM-CLI-27 as handled=true but still reopened it at error/high; the linked runner was rerun successfully with --pm-context tracker. This is the same deliberate-abort class already owned here, not a new defect. Resolving the event group again pending the capture-time class fix."
   "2026-07-13T19:42:45.175Z",codex-root,"Live recurrence evidence 2026-07-13: release gate reports PM-CLI-27 unresolved high with count=5 and last seen 2026-07-13T16:46Z. During this lane, two linked-test attempts with an unintended interactive TTY reached the pm init wizard and were deliberately cancelled with Ctrl+C, reproducing the already-owned handled AbortError class; the non-TTY tracker-context rerun completed. No duplicate item created or claimed."
   "2026-07-14T00:09:48.869Z",codex-gpt5,"Implementation evidence: Sentry capture now recognizes user-initiated AbortError Ctrl+C/SIGINT control flow without suppressing unrelated abort failures. Dedicated regressions and all exact-tree strict gates pass at 100/100/100/100 coverage."
@@ -34,6 +34,8 @@ comments[8]{created_at,author,text}:
   "2026-08-17T16:09:16.947Z","harness:codex","Verification evidence 2026-08-17: TDD reproduced the exact Sentry event message before the policy change, then the PM-linked control-flow suite passed (3 tests). A solo full coverage run passed 515 files / 7,508 tests at statements 54,687/54,687, branches 40,815/40,815, functions 11,245/11,245, lines 52,784/52,784. Repository lint passed ESLint, zero jscpd clones, static assurance, package boundary/parity, surface replication, SDK import costs, and all graph/record assertions; the aggregate run's loaded transport benchmark exceeded its 362 ms get ceiling by 2 ms, and an immediate isolated no-load rerun passed all 6 operations. Manual PTY test in /tmp/pm-ctrl-d-manual.OHiASS reached the init wizard, Ctrl+D produced 'Aborted with Ctrl+D' and exit 1, and the built classifier returned sentry_capture=false for the corresponding named AbortError. Dependabot and code-scanning report zero open alerts. GitHub secret-scanning is currently returning provider HTTP 503, so no result is claimed. PM-CLI-27 is intentionally not resolved yet because public 2026.8.17 remains affected; resolve only after merged/published verification."
   "2026-08-17T16:30:03.301Z","harness:codex","Exact-head CodeRabbit review 048774cd-43ce-40f1-82f8-df8f7b1b0d60 found two valid closeout gaps: CHANGELOG.md was generated but not linked as item documentation, and the generated entry retained issue-symptom wording rather than stating the corrected behavior. Apply both through pm and pm-changelog; do not edit derived tracker files directly."
   "2026-08-17T16:30:33.399Z","harness:codex","Review remediation evidence: linked CHANGELOG.md through pm docs and changed the canonical item title so the pm-changelog-generated entry states the corrected behavior. No derived tracker file or changelog line was edited by hand. pm-changelog 2026.8.17 regenerated deterministically; focused validation follows on the closed projection."
+  "2026-08-17T19:21:42.858Z","harness:codex","Live Sentry closeout 2026-08-17: PM-CLI-27's two current Ctrl+D events last occurred at 2026-08-17T11:28:33Z, before main commit 84d742c70 (merged 2026-08-17T16:39:36+02:00) shipped the capture-time classifier. Fresh focused tests pass 3/3 and there is no post-merge recurrence. Resolved the Sentry group against unbrained/pm-cli; this records the main-source fix pending the next scheduled package release and does not claim or create a second 2026.8.17 release."
+  "2026-08-17T19:54:03.965Z","harness:codex","Correction to prior closeout evidence: the GitHub repository identifier is unbraind/pm-cli; the earlier comment spelling unbrained/pm-cli was incorrect. This append-only correction preserves the immutable history entry while restoring traceability."
 files[2]{path,scope,note}:
   src/core/sentry/helpers.ts,project,Explicit Ctrl+C Ctrl+D and SIGINT capture policy
   tests/unit/core/sentry/sentry-control-flow.spec.ts,project,Terminal cancellation capture regression coverage
