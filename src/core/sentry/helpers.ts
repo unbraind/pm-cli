@@ -342,7 +342,7 @@ export function shouldCaptureCliError(error: unknown): boolean {
   if (
     error instanceof Error &&
     error.name === "AbortError" &&
-    /(?:ctrl\+c|sigint|user[- ]initiated)/i.test(error.message)
+    /(?:ctrl\+[cd]|sigint|user[- ]initiated)/i.test(error.message)
   ) {
     return false;
   }
