@@ -37,6 +37,16 @@ const SUCCESSFUL_CODEFACTOR = {
     },
   ],
 };
+const FAILED_CODEFACTOR = {
+  check_runs: [
+    {
+      name: "CodeFactor",
+      status: "completed",
+      conclusion: "failure",
+      output: { title: "1 new issue.", annotations_count: 1 },
+    },
+  ],
+};
 
 /** Return successful hosted analyzer evidence for one exact commit API target. */
 function successfulAnalyzerResponse(target: string, sha: string, status = 0) {
@@ -510,6 +520,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
     {
       label: "validates the squash-message PR when GitHub has not published commit association",
       reviewedStatuses: SUCCESSFUL_DEEPSCAN,
+      reviewedChecks: SUCCESSFUL_CODEFACTOR,
       expected: {
         ok: true,
         sha: SHA,
@@ -520,6 +531,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
     {
       label: "reports reviewed squash provenance when DeepScan is absent",
       reviewedStatuses: { statuses: [] },
+      reviewedChecks: SUCCESSFUL_CODEFACTOR,
       expected: {
         ok: false,
         reason: expect.stringContaining("DeepScan status is missing"),
@@ -528,7 +540,19 @@ describe("scripts/release/hosted-analysis-gate", () => {
         analysis_source: "identical_tree_squash_pr_head",
       },
     },
-  ])("$label", async ({ reviewedStatuses, expected }) => {
+    {
+      label: "reports reviewed squash provenance when CodeFactor fails",
+      reviewedStatuses: SUCCESSFUL_DEEPSCAN,
+      reviewedChecks: FAILED_CODEFACTOR,
+      expected: {
+        ok: false,
+        reason: "CodeFactor did not succeed (failure)",
+        sha: SHA,
+        analyzed_sha: PARENT_SHA,
+        analysis_source: "identical_tree_squash_pr_head",
+      },
+    },
+  ])("$label", async ({ reviewedStatuses, reviewedChecks, expected }) => {
     const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
     const spawnSync = vi.fn((_command: string, args: string[]) => {
       const target = String(args[1] ?? "");
@@ -564,7 +588,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
         return { status: 0, stdout: JSON.stringify(reviewedStatuses), stderr: "" };
       }
       if (target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}/check-runs?per_page=100`) {
-        return { status: 0, stdout: JSON.stringify(SUCCESSFUL_CODEFACTOR), stderr: "" };
+        return { status: 0, stdout: JSON.stringify(reviewedChecks), stderr: "" };
       }
       if (target.endsWith("/status")) {
         return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
