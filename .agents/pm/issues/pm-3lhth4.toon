@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-08-10T00:19:43.045Z"
+updated_at: "2026-08-17T02:30:02.504Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
@@ -21,21 +21,28 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-qxo5iu,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-rtn5h6,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-08T10:32:51.895Z","harness:codex","Partial tranche evidence 2026-08-08: added the public path-redacted host errno classifier/translator/async boundary for EACCES, EDQUOT, EMFILE, ENFILE, ENOMEM, ENOSPC, EPERM, and EROFS; snapshot create/restore now consume it while preserving published snapshot error codes. Generated catalog, negative controls, 22/22 linked tests, security scan, and exact full coverage pass. Acceptance is not complete: the remaining awaited filesystem sites still need routing or explicit waivers and a CI recurrence gate. Returning this item to open and releasing the claim rather than claiming whole-repo completion."
   "2026-08-10T00:19:43.045Z","harness:codex","Live reliability evidence 2026-08-10: the 14-day release gate reports critical=0 and high=1 for Sentry group PM-CLI-2X, an unexpected ENOTDIR open fault. This is another member of the untyped host-filesystem family owned by this item; no duplicate item was created. The active SDK/CLI PR does not claim to complete this item's remaining all-call-site routing and recurrence-gate acceptance criteria, so the item remains open and unclaimed. No paths, payloads, or private endpoint data are retained here."
-files[7]{path,scope,note}:
+  "2026-08-17T02:03:50.281Z","harness:codex","Start evidence 2026-08-17: Sentry PM-CLI-36 exposes Linux EDQUOT as code='Unknown system error -122' plus errno=-122 and syscall=copyfile, which the existing shared classifier misses because it recognizes only symbolic code strings. This active partial tranche will normalize declared numeric errno values through node:os constants and wrap linked-test sandbox copy stages in the shared path-redacted boundary. Whole-repository call-site/gate acceptance remains separately outstanding unless completed in this tranche."
+  "2026-08-17T02:30:01.217Z","harness:codex","Delivered and verified one additional boundary tranche: the shared classifier now normalizes declared numeric Node errno values, and linked-test tracker seeding uses the path-redacted typed boundary. Exact coverage, focused linked tests, static quality, security, artifact, and consumer smokes pass. The item remains open because its acceptance criteria still require migrating the remaining ad hoc host-filesystem call sites and adding the complete enforcement gate."
+learnings[1]{created_at,author,text}:
+  "2026-08-17T02:30:00.618Z","harness:codex","Node can surface Linux quota exhaustion as code='Unknown system error -122' with errno=-122; portable host-boundary classification must normalize declared numeric node:os.constants.errno values rather than guess numeric literals."
+files[8]{path,scope,note}:
   sdk/public-surface.json,project,Reviewed additive SDK surface snapshot
   src/sdk/environment/host-environment-errors.ts,project,Shared path-redacted host errno classifier translator and async boundary
   src/sdk/generated-error-code-catalog.ts,project,Generated host fault codes and preserved snapshot aliases
   src/sdk/index.ts,project,Exports the public host environment primitives
+  src/sdk/test/execution.ts,project,Apply the shared host-environment boundary to linked-test tracker seeding
   src/sdk/workspace-snapshot.ts,project,Snapshot create and restore stages consume the shared boundary while preserving stable codes
   tests/unit/sdk/host-environment-errors.spec.ts,project,All errno classes redaction recovery and non-errno negative controls
   tests/unit/sdk/workspace-snapshot.spec.ts,project,Snapshot integration coverage for compatible shared-boundary codes
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/sdk/workspace-snapshot.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/commands/test-command.spec.ts,project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msk8hb2h-vcmjua,test,passed,"2026-08-08T10:31:07.212Z","2026-08-08T10:31:23.465Z","2026-08-08T10:31:23.465Z",1,0,0
+  test-local-mswm0e5d-tlp801,test,passed,"2026-08-17T02:23:01.110Z","2026-08-17T02:23:23.041Z","2026-08-17T02:23:23.041Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SDK_RUNTIME_BOUNDARIES.md,project,Package author guidance for host fault translation and compatibility codes
 body: ""

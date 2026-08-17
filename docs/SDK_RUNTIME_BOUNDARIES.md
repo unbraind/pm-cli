@@ -45,8 +45,16 @@ the stable, path-redacted `host_environment_capacity_fault`,
 `host_environment_permission_fault`, or `host_environment_resource_fault`
 contracts. `classifyHostEnvironmentFault` supports diagnostics that need a
 non-throwing classification, while `translateHostEnvironmentFault` supports an
-existing catch boundary. Non-errno failures are returned unchanged and must
+existing catch boundary. The classifier accepts both symbolic Node `code`
+values and declared numeric `errno` values from `node:os.constants.errno`; this
+also recognizes platform errors that Node renders only as a number, such as a
+Linux `-122` quota failure. Non-errno failures are returned unchanged and must
 not be relabeled as environment faults.
+
+Linked-test tracker seeding uses this boundary. A required sandbox copy that
+exceeds temporary-filesystem capacity fails with a stable recovery contract,
+while linked tests whose effective context is schema avoid materializing
+tracker data at all.
 
 Existing SDK surfaces can supply category-specific `codes` to preserve their
 published error vocabulary while still sharing classification, path redaction,

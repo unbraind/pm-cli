@@ -75,6 +75,7 @@ import {
   queryTestRunMeasurementsBelow,
   type TestRunMeasurementDiff,
 } from "./measurements.js";
+import { withHostEnvironmentBoundary } from "../environment/host-environment-errors.js";
 import { SOURCE_CONTEXT_ACCESS_ENV } from "../environment/source-context.js";
 
 const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
@@ -1585,17 +1586,32 @@ async function copyIntoSandboxIfPresent(
   sourcePath: string,
   targetPath: string,
   recursive = false,
+  makeDirectory: (
+    targetPath: string,
+    options: { recursive: true },
+  ) => Promise<unknown> = mkdir,
 ): Promise<void> {
   if (!(await pathExists(sourcePath))) {
     return;
   }
-  await mkdir(path.dirname(targetPath), { recursive: true });
   try {
-    if (recursive) {
-      await cp(sourcePath, targetPath, { recursive: true, force: true });
-      return;
-    }
-    await cp(sourcePath, targetPath, { force: true });
+    await withHostEnvironmentBoundary(
+      "seed_linked_test",
+      async () => {
+        await makeDirectory(path.dirname(targetPath), { recursive: true });
+        if (recursive) {
+          await cp(sourcePath, targetPath, { recursive: true, force: true });
+          return;
+        }
+        await cp(sourcePath, targetPath, { force: true });
+      },
+      {
+        why: "Linked tests need an isolated PM context without mutating the source tracker.",
+        nextSteps: [
+          "Reclaim capacity on the filesystem that hosts the linked-test temporary directory.",
+        ],
+      },
+    );
   } catch (error: unknown) {
     if (
       typeof error === "object" &&
@@ -2050,6 +2066,7 @@ async function initializeLinkedTestSandboxes(
   initialize: (
     ...args: Parameters<typeof runInit>
   ) => Promise<unknown> = runInit,
+  includeTrackerData = true,
 ): Promise<void> {
   const initOptions = { defaults: true, agentGuidance: "skip" } as const;
   await initialize(
@@ -2058,6 +2075,9 @@ async function initializeLinkedTestSandboxes(
     initOptions,
   );
   await initialize(undefined, { path: layout.schemaGlobalPmPath }, initOptions);
+  if (!includeTrackerData) {
+    return;
+  }
   await initialize(
     undefined,
     { path: layout.trackerProjectPmPath },
@@ -2073,6 +2093,7 @@ async function initializeLinkedTestSandboxes(
 async function seedLinkedTestSandboxesFromSource(
   layout: LinkedTestSandboxLayout,
   sourceRoots: LinkedTestSandboxSourceRoots | undefined,
+  includeTrackerData: boolean,
 ): Promise<void> {
   if (!sourceRoots) {
     return;
@@ -2082,6 +2103,9 @@ async function seedLinkedTestSandboxesFromSource(
     layout.schemaGlobalPmPath,
     sourceRoots,
   );
+  if (!includeTrackerData) {
+    return;
+  }
   await seedLinkedTestSandbox(
     layout.trackerProjectPmPath,
     layout.trackerGlobalPmPath,
@@ -2095,6 +2119,32 @@ async function seedLinkedTestSandboxesFromSource(
     sourceRoots.globalPmRoot,
     layout.trackerGlobalPmPath,
   );
+}
+
+function linkedTestsRequireTrackerData(
+  tests: LinkedTest[],
+  runLevelPmContextMode: LinkedTestPmContextMode,
+  options: RunLinkedTestsOptions | undefined,
+): boolean {
+  return tests.some((linkedTest) => {
+    const command = linkedTest.command ?? "";
+    const isPmTrackerReadCommand =
+      command.length > 0 && commandInvokesPmTrackerReadCommand(command);
+    const requestedPmContextMode =
+      options?.autoPmContext === true && isPmTrackerReadCommand
+        ? "auto"
+        : resolveLinkedTestRequestedContextMode(
+            linkedTest,
+            runLevelPmContextMode,
+            options?.overrideLinkedPmContext === true,
+          );
+    return (
+      resolveLinkedTestEffectiveContextMode(
+        requestedPmContextMode,
+        isPmTrackerReadCommand,
+      ) === "tracker"
+    );
+  });
 }
 
 async function countLinkedTestSandboxItems(
@@ -2492,10 +2542,23 @@ export async function runLinkedTests(
     options?.sharedHostSafe,
   );
   const sourceRoots = options?.sourceRoots;
+  const includeTrackerData = linkedTestsRequireTrackerData(
+    tests,
+    runLevelPmContextMode,
+    options,
+  );
 
   try {
-    await initializeLinkedTestSandboxes(layout);
-    await seedLinkedTestSandboxesFromSource(layout, sourceRoots);
+    await initializeLinkedTestSandboxes(
+      layout,
+      runInit,
+      includeTrackerData,
+    );
+    await seedLinkedTestSandboxesFromSource(
+      layout,
+      sourceRoots,
+      includeTrackerData,
+    );
     const counts = await countLinkedTestSandboxItems(layout, sourceRoots);
 
     for (let index = 0; index < tests.length; index += 1) {
@@ -3097,6 +3160,7 @@ export const _testOnlyTestCommand = {
   formatLinkedTestExecutionError,
   hasLinkedTestAssertions,
   initializeLinkedTestSandboxes,
+  linkedTestsRequireTrackerData,
   parseAddJsonEntries,
   parseLinkedTestTimeoutSeconds,
   parsePmContextMode,

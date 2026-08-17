@@ -4,6 +4,7 @@
  * Classifies host filesystem/resource failures at SDK boundaries without
  * leaking local paths or swallowing genuine implementation defects.
  */
+import { constants as osConstants } from "node:os";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 
@@ -85,6 +86,16 @@ const HOST_ENVIRONMENT_FAULTS: ReadonlyMap<
   ],
 ]);
 const OPERATION_PATTERN = /^[a-z][a-z0-9_]{0,63}$/u;
+const HOST_ENVIRONMENT_ERRNO_NAMES: ReadonlyMap<number, string> = new Map([
+  [osConstants.errno.EACCES, "EACCES"],
+  [osConstants.errno.EDQUOT, "EDQUOT"],
+  [osConstants.errno.EMFILE, "EMFILE"],
+  [osConstants.errno.ENFILE, "ENFILE"],
+  [osConstants.errno.ENOMEM, "ENOMEM"],
+  [osConstants.errno.ENOSPC, "ENOSPC"],
+  [osConstants.errno.EPERM, "EPERM"],
+  [osConstants.errno.EROFS, "EROFS"],
+]);
 const HOST_ENVIRONMENT_FAULT_CODES = {
   capacity: { code: "host_environment_capacity_fault" },
   permission: { code: "host_environment_permission_fault" },
@@ -115,12 +126,23 @@ export interface HostEnvironmentBoundaryOptions {
 
 /** Return a declared host errno only when it represents recoverable environment state. */
 export function classifyHostEnvironmentFault(error: unknown): string | null {
-  if (typeof error !== "object" || error === null || !("code" in error))
+  if (typeof error !== "object" || error === null) {
     return null;
-  const code = (error as { code?: unknown }).code;
-  return typeof code === "string" && HOST_ENVIRONMENT_FAULTS.has(code)
-    ? code
-    : null;
+  }
+  const errorRecord = error as { code?: unknown; errno?: unknown };
+  if (
+    typeof errorRecord.code === "string" &&
+    HOST_ENVIRONMENT_FAULTS.has(errorRecord.code)
+  ) {
+    return errorRecord.code;
+  }
+  if (
+    typeof errorRecord.errno !== "number" ||
+    !Number.isInteger(errorRecord.errno)
+  ) {
+    return null;
+  }
+  return HOST_ENVIRONMENT_ERRNO_NAMES.get(Math.abs(errorRecord.errno)) ?? null;
 }
 
 /** Translate one known host fault into a stable path-redacted SDK refusal. */

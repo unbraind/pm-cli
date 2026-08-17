@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- Linked tests retain high-volume Vitest output without aborting ([pm-giks4s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-giks4s.toon))
 - A declared context intent returns no context when combined with the narrowing flag, and its refusal receipt reports 122 tokens against a 2400 budget as the reason it does not fit ([pm-3crymx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3crymx.toon))
 - The relationship lexicon cannot express recurrence, so a defect family fixed thirty times is thirty unrelated nodes to every graph algorithm ([pm-ouyq3n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ouyq3n.toon))
 - The gate contributors run before merging fails on every Claude Code workstation and passes on the runner for the same tree, because a harness probe writes advisory warnings into the surface the token budget measures ([pm-95h7pg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-95h7pg.toon))

@@ -1,3 +1,4 @@
+import { constants as osConstants } from "node:os";
 import { describe, expect, it } from "vitest";
 import {
   classifyHostEnvironmentFault,
@@ -31,6 +32,7 @@ describe("host environment errors", () => {
 
   it("preserves non-environment defects and successful values", async () => {
     const defect = new TypeError("implementation defect");
+    expect(classifyHostEnvironmentFault(null)).toBeNull();
     expect(classifyHostEnvironmentFault(defect)).toBeNull();
     expect(classifyHostEnvironmentFault({ code: 123 })).toBeNull();
     expect(classifyHostEnvironmentFault({ code: "EUNKNOWN" })).toBeNull();
@@ -43,6 +45,27 @@ describe("host environment errors", () => {
         throw defect;
       }),
     ).rejects.toBe(defect);
+  });
+
+  it("normalizes numeric host errno values when Node cannot name the code", () => {
+    const error = Object.assign(new Error("Unknown system error -122"), {
+      code: "Unknown system error -122",
+      errno: -osConstants.errno.EDQUOT,
+      syscall: "copyfile",
+    });
+
+    expect(classifyHostEnvironmentFault(error)).toBe("EDQUOT");
+    expect(translateHostEnvironmentFault(error, "seed_linked_test")).toMatchObject(
+      {
+        code: "host_environment_capacity_fault",
+        context: expect.objectContaining({ reason: "EDQUOT" }),
+      },
+    );
+  });
+
+  it("rejects non-integral and undeclared numeric errno values", () => {
+    expect(classifyHostEnvironmentFault({ errno: 1.5 })).toBeNull();
+    expect(classifyHostEnvironmentFault({ errno: -999_999 })).toBeNull();
   });
 
   it("refuses unsafe operation labels before exposing them", () => {
