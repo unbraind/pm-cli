@@ -2606,7 +2606,10 @@ function resolveOutputCommands(
   selection: ContractsSelection,
   commands: string[],
 ): string[] {
-  if (selection.selectedCommand !== undefined) {
+  if (
+    selection.selectedCommand !== undefined ||
+    selection.selectedAction !== undefined
+  ) {
     return commands;
   }
   const hiddenAliases = new Set(

@@ -1024,7 +1024,7 @@ _pm() {
       case $line[1] in
         list)
           _arguments \\
-            '--status[Filter by status; repeatable, comma-separated, or all]:(${statusChoices})' \\
+            '*--status[Filter by status; repeatable, comma-separated, or all]:(${statusChoices})' \\
             '--all[Include every lifecycle status]' \\
             '--type[Filter by item type]:(${typeChoices})' \\
             '--tag[Filter by tag]:(${zshTagChoices})' \\
@@ -1549,6 +1549,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--availability-only[Return action availability only]' \\
             '--runtime-only[Include only actions invocable in the current runtime]' \\
             '--active-only[Alias for --runtime-only]' \\
+            '--full[Include complete command and schema contract details]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -2646,6 +2647,7 @@ complete -c pm -n '__fish_seen_subcommand_from contracts' -l flags-only -d 'Retu
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l availability-only -d 'Return action availability only'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l runtime-only -d 'Include only actions invocable in the current runtime'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l active-only -d 'Alias for --runtime-only'
+complete -c pm -n '__fish_seen_subcommand_from contracts' -l full -d 'Include complete command and schema contract details'
 complete -c pm -n '__fish_seen_subcommand_from deps' -l format -d 'Output format' -r -a 'tree graph context'
 complete -c pm -n '__fish_seen_subcommand_from deps' -l max-depth -d 'Maximum traversal depth (0 keeps root only)' -r
 complete -c pm -n '__fish_seen_subcommand_from deps' -l collapse -d 'Collapse mode' -r -a 'none repeated'

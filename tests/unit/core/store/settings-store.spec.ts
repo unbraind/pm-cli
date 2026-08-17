@@ -243,6 +243,7 @@ describe("core/store/settings", () => {
       expectOrderedObjectKeys(parsed.checkpoints, ["retention_days"]);
       expectOrderedObjectKeys(parsed.output, ["default_format"]);
       expectOrderedObjectKeys(parsed.ux, ["deprecation_hints"]);
+      expect(parsed.ux.deprecation_hints).toBe(true);
       expectOrderedObjectKeys(parsed.history, ["missing_stream", "compact_policy"]);
       expectOrderedObjectKeys(parsed.validation, [
         "sprint_release_format",

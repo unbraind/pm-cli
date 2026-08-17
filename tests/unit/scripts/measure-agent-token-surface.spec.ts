@@ -310,6 +310,14 @@ describe("measure-agent-token-surface", () => {
       module.compareBaseline(reportWithOptionalExtension, baseline),
     ).toEqual([]);
 
+    const reportWithUnbaselinedCoreCommand = {
+      ...report,
+      commands: [...report.commands, { name: "list", bytes: 42, tokens: 11 }],
+    };
+    expect(
+      module.compareBaseline(reportWithUnbaselinedCoreCommand, baseline),
+    ).toContain("commands.list: missing baseline");
+
     baseline.surfaces.root_help = 1;
     delete baseline.surfaces.commands.get;
     baseline.surfaces.contracts.retired_projection = 100;
@@ -343,12 +351,14 @@ describe("measure-agent-token-surface", () => {
         "commands.get: missing baseline",
       ]),
     );
-    expect(
-      module.compareBaseline(report, {
-        ...cleanBaseline,
-        surfaces: undefined,
-      } as unknown as TokenSurfaceBaseline),
-    ).toHaveLength(9);
+    const missingSurfaceViolations = module.compareBaseline(report, {
+      ...cleanBaseline,
+      surfaces: undefined,
+    } as unknown as TokenSurfaceBaseline);
+    expect(missingSurfaceViolations).toHaveLength(10);
+    expect(missingSurfaceViolations).toContain(
+      "commands.get: missing baseline",
+    );
   });
 
   it("writes an intentional baseline update to an explicit path", async () => {

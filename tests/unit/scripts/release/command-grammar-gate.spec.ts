@@ -48,7 +48,11 @@ async function runGrammarGate(commandSummaries: unknown): Promise<{
   expect(execFileSync).toHaveBeenCalledWith(
     process.execPath,
     expect.arrayContaining(["contracts", "--summary", "--json"]),
-    expect.objectContaining({ encoding: "utf8" }),
+    expect.objectContaining({
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+      timeout: 120_000,
+    }),
   );
   return {
     report: JSON.parse(output) as {

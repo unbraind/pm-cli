@@ -173,7 +173,9 @@ const raw = execFileSync(
     cwd: repoRoot,
     encoding: "utf8",
     env: { ...process.env, NO_COLOR: "1" },
+    maxBuffer: 64 * 1024 * 1024,
     stdio: ["ignore", "pipe", "inherit"],
+    timeout: 120_000,
   },
 );
 const contracts = JSON.parse(raw);

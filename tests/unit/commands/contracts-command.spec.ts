@@ -2293,6 +2293,17 @@ describe("contracts command runtime", () => {
     ]);
   });
 
+  it("preserves command contracts for an explicitly selected deprecated action", async () => {
+    const result = await runContracts(
+      { action: "list-open", flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
+    expect(result.commands).toEqual(["list-open"]);
+    expect(result.command_flags).toEqual([
+      expect.objectContaining({ command: "list-open" }),
+    ]);
+  });
+
   it("rejects optional package actions from the static SDK schema when the package command is not installed", async () => {
     await expect(
       runContracts(

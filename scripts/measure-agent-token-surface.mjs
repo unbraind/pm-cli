@@ -100,6 +100,7 @@ export function compareBaseline(report, baseline) {
   const requiredCommandNames = new Set(surfaces.required_commands ?? []);
   for (const measurement of report.commands) {
     if (
+      !CORE_COMMAND_NAMES.has(measurement.name) &&
       !requiredCommandNames.has(measurement.name) &&
       !Object.hasOwn(surfaces.commands ?? {}, measurement.name)
     ) {
