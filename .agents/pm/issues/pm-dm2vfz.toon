@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:release",ci,concurrency,github-actions,provenance,same-day-guard
 created_at: "2026-08-17T03:40:44.831Z"
-updated_at: "2026-08-17T04:18:00.990Z"
+updated_at: "2026-08-17T04:40:25.710Z"
 closed_at: "2026-08-17T04:12:29.398Z"
 completed_at: "2026-08-17T04:12:29.398Z"
 author: "harness:codex"
@@ -28,12 +28,15 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-u1baah,recurs_from,"2026-08-17T03:40:44.831Z","harness:codex","cli:create:dep",detected
   pm-uenmu9,implements,"2026-08-17T03:40:44.831Z","harness:codex","cli:create:dep",detected
   pm-e70zh5,incident_from,"2026-08-17T04:08:34.199Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-17T03:40:44.831Z","harness:codex","Duplicate check 2026-08-17: searched all statuses for scheduled/manual Auto Release races, same-day guards, release-commit analyzer provenance, and false blocker issues. pm-uenmu9 owns the broader accepted manual-follow-up version policy; pm-44u3wt owns schedule drift; pm-e70zh5 owns reliability measurement; closed pm-u1baah owns reviewed-PR analyzer provenance. None owns a queued automatic run that starts after another run has already published the same-day release, so this child records the distinct concurrency recurrence and links all canonical lineage."
   "2026-08-17T03:40:57.984Z","harness:codex","Start evidence 2026-08-17: manual Auto Release 31990359112 at merge SHA 4748962 passed the full pipeline and downstream Release 31990927326, producing release commit/tag 7668c2e00, GitHub release v2026.8.17, npm latest 2026.8.17, and passing installed npm/Bun agent sessions. Delayed scheduled run 31991277386 then checked out that release commit, failed before build because hosted-analysis-gate correctly found no reviewed-PR evidence for the generated direct-main version commit, and opened GH-1045. No duplicate tag or npm publication occurred. Active fix will make the automatic same-day published result authoritative before analyzer while refusing tag-only or incomplete publication."
   "2026-08-17T03:46:52.544Z","harness:codex","Implementation note: detection now applies to automatic schedule and issue events but deliberately excludes workflow_dispatch so the broader manual-follow-up policy remains owned by pm-uenmu9. Existing-tag recovery is outside issue-only marker handling, selects exact-tag Release evidence, verifies a non-draft GitHub Release and the anonymous exact npm version, then emits the authoritative tag/SHA receipt before analyzer or build. Missing public npm state fails closed and routes through the scheduled blocker path."
   "2026-08-17T04:08:34.905Z","harness:codex","Graph-governance correction: the initial generic related edge to pm-e70zh5 exceeded the related-edge ceiling and reduced semantic share. Retyped it to incident_from because this production automation failure is an observed incident in the release-reliability lineage; no generic substitute remains."
   "2026-08-17T04:12:24.890Z","harness:codex","Implementation complete before review: automatic same-day tag detection executes ahead of analyzer provenance; exact-tag Release selection is reused across schedule and issue retries; public GitHub/npm proof is mandatory; missing npm publication is a negative-control failure; manual dispatch semantics remain isolated. Local full coverage, focused behavior, graph governance, security, audit, docs, typecheck, duplication, and package-artifact checks are green. Hosted exact-head review and the live GH-1045 closure recovery remain operational merge evidence, not unimplemented scope."
+  "2026-08-17T04:27:36.215Z","harness:codex","Hosted exact-head static gate exposed incomplete local tag context rather than a generator defect: the checkout contained release commit 7668c2e00 but lacked ref v2026.8.17, so local --all-release-tags generation temporarily grouped already-released items under Unreleased. A clean GitHub merge-ref reproduced the hosted expectation. After git fetch --tags, pm-changelog 2026.8.17 deterministically emits only pm-dm2vfz under Unreleased and preserves the v2026.8.17 section; the check passes."
+  "2026-08-17T04:29:19.934Z","harness:codex","Review round 1: accepted CodeRabbit findings on unreachable provider diagnostics, missing successful-but-wrong npm version coverage, and overly operational public documentation. Workflow probes now capture nonzero gh/npm statuses inside explicit fail-closed branches; tests prove nonzero npm, mismatched npm, and unavailable GitHub Release diagnostics with no publication receipt; docs retain only the public contract. The hosted changelog failure was separately fixed by regenerating after fetching v2026.8.17 tag history."
+  "2026-08-17T04:40:25.710Z","harness:codex","Review-fix verification: exact amended workspace passes 511 files / 7,459 tests at 100/100/100/100, focused workflow suite 35/35, typecheck, docs, defect evidence, full-tag changelog check, ESLint, zero-duplicate scan, repository assurance, SDK import costs, and isolated CLI transport floor. The canonical lint chain reached all passing semantic gates but its final CLI timing sample exceeded the 362 ms floor by 14 ms immediately after the exhaustive run; an isolated rerun passed all six operations, and the prior hosted benchmark was green."
 notes[1]{created_at,author,text}:
   "2026-08-17T04:12:04.046Z","harness:codex","Verification receipt 2026-08-17: focused workflow contracts 35/35; complete suite 511 files and 7,459 tests; exact coverage 54,508 statements, 40,594 branches, 11,205 functions, and 52,609 lines at 100%; zero jscpd clones; secrets scan clear; pnpm production audit clear; package artifact 1,410 files and no forbidden source maps."
 learnings[1]{created_at,author,text}:
@@ -45,9 +48,10 @@ files[4]{path,scope,note}:
   tests/integration/release-automation-contract.spec.ts,project,Execute schedule and issue same-day recovery with successful publication and missing-npm negative controls
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mswp0ryk-k9xaz8,test,passed,"2026-08-17T03:47:29.167Z","2026-08-17T03:47:39.788Z","2026-08-17T03:47:39.788Z",1,0,0
   test-local-mswpvfov-m5sm1v,test,passed,"2026-08-17T04:11:19.997Z","2026-08-17T04:11:30.223Z","2026-08-17T04:11:30.223Z",1,0,0
+  test-local-mswqiljl-c5pxzi,test,passed,"2026-08-17T04:29:20.491Z","2026-08-17T04:29:30.897Z","2026-08-17T04:29:30.897Z",1,0,0
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Regenerate release notes from closed PM history with pm-changelog 2026.8.17
   docs/RELEASING.md,project,Document queued automatic no-op and incomplete-publication recovery semantics

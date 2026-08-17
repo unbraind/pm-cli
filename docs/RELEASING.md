@@ -80,12 +80,10 @@ Policy:
   `Auto Release blocked` issue on the same UTC day triggers one preparation
   retry
 - if today's tag already exists, a queued schedule or blocker closure bypasses
-  release-preparation provenance, dependency installation, and build work,
-  then selects immutable Release evidence across both tag-push and guarded
-  workflow-dispatch runs. A completed success is authoritative over stale
-  failures only after the non-draft GitHub Release and exact public npm version
-  are also verified; incomplete publication continues through exact-tag
-  recovery instead of being accepted from tag presence alone
+  candidate preparation and accepts the immutable result only after independent
+  public-distribution evidence confirms the exact release; incomplete
+  publication continues through bounded recovery instead of being accepted
+  from tag presence alone
 - release preparation must pass all quality and compatibility gates before commit+tag push
 - before dependency installation or build, auto-release verifies that the
   candidate has exact-commit analyzer results or an immutable tree-identical
@@ -107,11 +105,10 @@ Policy:
   before release mutation and reported as `retry_already_attempted`, and
   workflow cleanup closures by `github-actions[bot]` are ignored.
 - after a scheduled run publishes a tag and the downstream release workflow succeeds, auto-release closes any open `Auto Release blocked` issue so the GitHub tracker reflects current release health
-- workflow concurrency can leave a delayed schedule queued behind a manual
-  production run. The queued schedule resolves the current UTC-day tag before
-  analyzer provenance, waits for or recovers its exact-tag Release workflow,
-  verifies GitHub Release plus npm publication, and exits successfully without
-  evaluating the generated direct-main release commit as a new candidate
+- workflow concurrency can leave a delayed schedule queued behind another
+  production run. The queued schedule resolves the current UTC-day immutable
+  result before candidate provenance, proves publication, and exits without
+  evaluating the generated release commit as a new candidate
 
 Pipeline entrypoint:
 
