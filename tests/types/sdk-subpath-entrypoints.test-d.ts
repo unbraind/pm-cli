@@ -1,6 +1,7 @@
 import {
   defineExtension,
   type ExtensionCapability,
+  type ExporterArtifactOutputContract,
   type FlagDefinition,
   type SchemaFieldDefinition,
   type SchemaItemTypeCommandOptionPolicyDefinition,
@@ -38,6 +39,10 @@ const client = new PmClient({ noExtensions: true });
 const lightMetadata = client.listAllItemMetadataLight();
 const lightMetadataPrimitive = listAllItemMetadataLight("/tmp/.agents/pm");
 const extension = defineExtension({ activate: () => undefined });
+const artifactOutput: ExporterArtifactOutputContract = {
+  channel: "stdout",
+  media_type: "application/json",
+};
 const flagDefinition: FlagDefinition = {
   long: "--output",
   value_type: "string",
@@ -79,6 +84,7 @@ void client;
 void lightMetadata;
 void lightMetadataPrimitive;
 void extension;
+void artifactOutput;
 void flagDefinition;
 void schemaFieldDefinition;
 void schemaOptionPolicy;

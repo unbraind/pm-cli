@@ -6,23 +6,49 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli","area:sdk",composability,scale
 created_at: "2026-07-25T17:49:14.861Z"
-updated_at: "2026-07-25T20:44:34.634Z"
+updated_at: "2026-08-17T10:03:26.480Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "Every row-producing read (list, search, context, next, activity, graph, aggregate, deps) supports line-delimited row output through one contract-declared mode with both existing spellings preserved as aliases; rows are produced incrementally through an SDK iterator path, proven by a bounded-heap test over a large synthetic workspace and an early-termination test asserting the producer stops when the consumer closes the pipe; envelope metadata (count, cursor, truncation) is emitted as a final trailer record carrying a declared discriminator key so streams stay self-describing and resumable via --after; EPIPE is handled silently with the exit code declared by the pm-psy1 scripting contract; the row schema per surface is contract-declared and drift-gated; docs carry worked jq and xargs pipelines against a million-item workspace"
 parent: pm-9rxu
 risk: medium
 confidence: high
-dependencies[11]{id,kind,created_at,author,source_kind}:
-  pm-5gf0xf,related,"2026-07-25T17:49:14.861Z",null,null
-  pm-801d,related,"2026-07-25T17:49:14.861Z",null,null
-  pm-m9xv,implements,"2026-07-25T17:49:14.861Z",null,null
-  pm-plwm,related,"2026-07-25T17:49:14.861Z",null,null
-  pm-psy1,related,"2026-07-25T17:49:14.861Z",null,null
-  pm-srns,related,"2026-07-25T17:49:14.861Z",null,null
-  pm-tuadp2,related,"2026-07-25T17:49:14.861Z",null,null
-  pm-5t33or,related,"2026-07-25T17:59:10.398Z",null,null
-  pm-cxr0jb,related,"2026-07-25T17:59:10.398Z",null,null
-  pm-g3n00m,related,"2026-07-25T17:59:10.398Z",null,null
-  pm-g2zz,implements,"2026-07-25T20:44:34.363Z",null,null
+dependencies[11]{id,kind,created_at}:
+  pm-5gf0xf,related,"2026-07-25T17:49:14.861Z"
+  pm-801d,related,"2026-07-25T17:49:14.861Z"
+  pm-m9xv,implements,"2026-07-25T17:49:14.861Z"
+  pm-plwm,related,"2026-07-25T17:49:14.861Z"
+  pm-psy1,related,"2026-07-25T17:49:14.861Z"
+  pm-srns,related,"2026-07-25T17:49:14.861Z"
+  pm-tuadp2,related,"2026-07-25T17:49:14.861Z"
+  pm-5t33or,related,"2026-07-25T17:59:10.398Z"
+  pm-cxr0jb,related,"2026-07-25T17:59:10.398Z"
+  pm-g3n00m,related,"2026-07-25T17:59:10.398Z"
+  pm-g2zz,implements,"2026-07-25T20:44:34.363Z"
+comments[7]{created_at,author,text}:
+  "2026-08-17T07:36:48.392Z","harness:codex","Progress evidence 2026-08-17: introduced the shared pm.stream.trailer serializer, applied it to resumable mutation-event batches and idle heartbeats, and proved clean installed-exporter artifact channels. Linked exemplar tests passed 23/23 and the repository remains exact 100/100/100/100. This is substantive progress, but the feature remains open because list, search, context, next, activity, graph, aggregate, and deps still need convergence on one incremental constant-memory iterator contract with EPIPE and million-item gates."
+  "2026-08-17T08:52:35.848Z","harness:codex","Exact-head review remediation completed across all ten CodeRabbit findings: initial-page consumption is documented; exporter authoring types and blueprint options align; trailer input is explicit; reserved rows and discriminator overrides are rejected; invalid CLI/runtime cursor values fail closed; compatibility iteration forces row mode; generated descriptions match; and artifact outputs reject ambiguous ownership/unknown fields. The expanded Bun recurrence pm-b8hwfr is also implemented after manual packed acceptance. Exact full coverage passes 512 files / 7,469 tests at 100/100/100/100."
+  "2026-08-17T09:07:20.979Z","harness:codex","PR #1053 first review loop evidence: all ten CodeRabbit findings, one outside-diff cursor validation gap, and CodeQL alert #36 were fixed and regression-tested. Every bot comment/review received an explicit vote and evidence reply; all eleven inline threads are resolved. Exact head 7f94e0001 is now entering the fresh full-review and hosted-check loop."
+  "2026-08-17T09:38:49.652Z","harness:codex","Exact-head round-two remediation remains fully covered: 512 files at exact 100/100/100/100 (54,622 statements, 40,733 branches, 11,226 functions, 52,720 lines). Docs now drain every bounded catch-up page with filter-stable cursors, NDJSON serializers reject count contradictions, and the authoring subpath exposes the artifact delivery type."
+  "2026-08-17T09:39:03.551Z","harness:codex","Coverage wording precision: 512 is the full Vitest test-file count; coverage-summary.json contains 602 covered source/report entries. Exact 100% counters are unchanged."
+  "2026-08-17T09:49:13.419Z","harness:codex","Post-remediation manual acceptance: packed npx consumer smoke passed all workflows (13 packages), and packed bunx --bun init/create/events returned a resumable authoritative_history trailer in a fresh temporary workspace."
+  "2026-08-17T10:03:18.548Z","harness:codex","PR #1053 exact-head review closeout at 9cc7dfe18: 31 hosted checks pass with no failures or pending jobs, including static gates, exact coverage, package/consumer smokes, Windows, CodeQL, Semgrep, Trivy, TruffleHog, and Codecov. All review threads are resolved. Every new CodeRabbit confirmation received an explicit thumbs-up and evidence reply. The requested final CodeRabbit review was rate-limited and is documented as a provider limitation, not approval; no final-head Greptile response was emitted. The preceding complete review rounds were fully remediated. This parent remains open because the enumerated read surfaces still require universal constant-memory convergence."
+learnings[1]{created_at,author,text}:
+  "2026-08-17T07:36:49.270Z","harness:codex","A discriminator-bearing terminal record can preserve counts, cursors, truncation, and provenance without forcing row buffering. Batch boundaries and exporter channel ownership are reusable primitives, but the parent must remain open until every enumerated row-producing surface adopts the same producer and early-termination contract."
+files[7]{path,scope,note}:
+  sdk/public-surface.json,project,public row-stream API snapshot
+  src/cli/register-list-query.ts,project,event stream trailer and heartbeat exemplar
+  src/mcp/tool-definitions.ts,project,transport-discoverable batch boundary
+  src/sdk/mutation-events.ts,project,SDK batch subscription exemplar
+  src/sdk/output.ts,project,uniform terminal row-stream primitive
+  tests/integration/extension-host-contracts.integration.spec.ts,project,installed exporter stream channel acceptance
+  tests/unit/cli/register-list-query.spec.ts,project,terminal trailer and follow stream behavior
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output.spec.ts tests/unit/sdk/mutation-events.spec.ts tests/unit/cli/register-list-query.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,300
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mswx7132-mu3flh,test,passed,"2026-08-17T07:36:10.390Z","2026-08-17T07:36:28.477Z","2026-08-17T07:36:28.477Z",1,0,0
+  test-local-mswyac9c-tjnjvv,test,passed,"2026-08-17T08:06:42.931Z","2026-08-17T08:07:02.544Z","2026-08-17T08:07:02.544Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/SDK_ARTIFACT_OUTPUT.md,project,artifact and NDJSON framing contract
+  docs/SDK_CONTEXT_COORDINATION.md,project,resumable event batch exemplar
 body: "## Measured state (2026-07-25)\n\nRow-streaming coverage across the row-producing read surfaces:\n\n| surface | `--stream` | `--format ndjson` |\n|---|---|---|\n| `list` | yes | yes |\n| `search` | no | yes |\n| `context` | no | yes (json/ndjson only) |\n| `next` | no | no |\n| `activity` | no | no |\n| `graph` | no | no |\n| `aggregate` | no | no |\n| `deps` | no | no |\n| `get` | no | no (json/toon) |\n\n`events` is natively newline-delimited and is the shape everything else should converge on.\n\nSo there are three different answers to \"give me rows I can pipe\" — a dedicated `--stream` boolean, a `--format ndjson` enum value, and nothing at all — and the surfaces with no answer are precisely the ones that produce the largest row sets at scale: `graph` (4,352 edges today, millions later), `activity`, `deps`, `aggregate`.\n\n## Why this is a scale primitive, not a flag tidy-up\n\nAt a million items the array-envelope shape is not merely verbose, it is unusable: both producer and consumer must materialize the full result before the first row is readable. `jq` on a one-million-element array buffers the array; `head -20` cannot terminate the producer early; an agent cannot start work on row 1 until row 1,000,000 is serialized. Line-delimited rows make the pipeline incremental in constant memory on both sides, and make `head`/`grep -m`/`xargs -n` terminate the producer through SIGPIPE.\n\nThis is the mechanical foundation of \"pm composes with grep/jq/xargs\" (pm-m9xv) at the scale pm-9rxu targets.\n\n## Scope\n\n1. One contract-declared streaming mode across every row-producing read; `--stream` and `--format ndjson` both remain valid spellings (alias-preserved, zero feature loss) but resolve to one implementation and one documented row schema per surface.\n2. Rows are emitted incrementally as they are produced — a real generator/async-iterator path through the SDK, not a materialized array printed line by line. Gate this behaviourally: a bounded-memory test streams a large synthetic workspace with a heap ceiling, and an early-termination test asserts the producer stops on a closed pipe.\n3. Envelope metadata (counts, cursors, truncation) that has no place in a row stream is emitted as a final trailer record with a declared discriminator key, so a stream is still self-describing and resumable via `--after`.\n4. SIGPIPE/EPIPE handling is silent and exit-code-correct (the pm-psy1 shell contract governs the codes).\n\n## Relationship to neighbours\n\n- pm-srns owns the format-flag grammar and envelope spec — this item is the streaming shape that grammar must express, not a competing contract.\n- pm-psy1 owns exit codes and stream discipline; the EPIPE behaviour is specified there.\n- pm-plwm `--where` predicates keep selection O(result); streaming keeps delivery O(1) memory. Both are needed for million-item pipelines.\n- pm-tuadp2 `--since` delta reads and pm-5gf0xf `--at` historical projection both produce row sets that inherit this shape."

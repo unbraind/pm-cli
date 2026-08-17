@@ -75,6 +75,19 @@ export function runRuntimeEventsAction(
   context: RuntimeExtendedActionContext,
 ): Promise<unknown> {
   const input = mergedInput(context);
+  const rawCursorMode = input.cursorMode;
+  if (
+    rawCursorMode !== undefined &&
+    rawCursorMode !== "batch" &&
+    rawCursorMode !== "row"
+  ) {
+    throw new PmCliError(
+      "Mutation event cursor mode must be batch or row.",
+      EXIT_CODE.USAGE,
+      { code: "invalid_event_cursor_mode" },
+    );
+  }
+  const cursorMode: "batch" | "row" | undefined = rawCursorMode;
   return listMutationEvents({
     cwd: readRuntimeString(input, "cwd"),
     pmRoot: readRuntimeString(input, "path"),
@@ -87,6 +100,7 @@ export function runRuntimeEventsAction(
         ? undefined
         : parseRuntimeInteger(input.limit, "limit"),
     full: input.full === true,
+    cursorMode,
     ...(input.provenance === undefined
       ? {}
       : { provenance: input.provenance === true }),

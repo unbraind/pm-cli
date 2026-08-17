@@ -16630,6 +16630,25 @@
     },
     {
       "aliases": [],
+      "canonical_code": "invalid_event_cursor_mode",
+      "class": "usage",
+      "code": "invalid_event_cursor_mode",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Invalid event cursor mode condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-list-query.ts",
+        "sdk/mutation-events.ts",
+        "sdk/runtime-extended-actions.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "invalid_event_follow_interval",
       "class": "usage",
       "code": "invalid_event_follow_interval",
@@ -22734,7 +22753,7 @@
       ]
     },
     {
-      "description": "Read a bounded, cursor-resumable page of committed mutation events across item history streams.",
+      "description": "Read a bounded, cursor-resumable page of committed mutation events across item history streams. Batch cursors are the token-efficient default; pass cursorMode=row for per-event checkpoints.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -22771,6 +22790,14 @@
                 "type": "array"
               }
             ]
+          },
+          "cursorMode": {
+            "description": "Cursor framing: batch returns one terminal next_cursor (default); row also adds a cursor to every event.",
+            "enum": [
+              "batch",
+              "row"
+            ],
+            "type": "string"
           },
           "cwd": {
             "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
@@ -43813,6 +43840,18 @@
               ]
             ]
           },
+          "cursorMode": {
+            "description": "Cursor framing: batch returns one terminal next_cursor (default); row also adds a cursor to every event.",
+            "enum": [
+              "batch",
+              "row"
+            ],
+            "examples": [
+              "batch",
+              "row"
+            ],
+            "type": "string"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
@@ -54396,10 +54435,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.7.0"
+    "x-schema-version": "4.8.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.7.0",
+  "schema_version": "4.8.0",
   "selected": {
     "action": null,
     "availability_only": false,

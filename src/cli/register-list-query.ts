@@ -12,10 +12,15 @@ import {
 } from "../sdk/runtime-primitives.js";
 import { EVAL_QUERY_SET_SCHEMA_ID } from "../sdk/eval.js";
 import { applyContextIntentProjection } from "../sdk/context-intent-contracts.js";
-import { serializeNdjsonRows } from "../sdk/output.js";
+import {
+  serializeNdjsonRows,
+  serializeNdjsonStream,
+} from "../sdk/output.js";
 import {
   listMutationEvents,
+  subscribeMutationEventBatches,
   subscribeMutationEvents,
+  type MutationEventPage,
 } from "../sdk/mutation-events.js";
 import { runActivity } from "./commands/activity.js";
 import { runAggregate } from "./commands/aggregate.js";
@@ -769,6 +774,20 @@ function buildMutationEventOptions(
     options,
     "provenanceFilter",
   );
+  const rawCursorMode =
+    typeof options.cursorMode === "string" ? options.cursorMode : undefined;
+  if (
+    rawCursorMode !== undefined &&
+    rawCursorMode !== "batch" &&
+    rawCursorMode !== "row"
+  ) {
+    throw new PmCliError(
+      "Events --cursor-mode must be batch or row.",
+      EXIT_CODE.USAGE,
+      { code: "invalid_event_cursor_mode" },
+    );
+  }
+  const cursorMode: "batch" | "row" | undefined = rawCursorMode;
   return {
     pmRoot,
     since: typeof options.since === "string" ? options.since : undefined,
@@ -784,7 +803,71 @@ function buildMutationEventOptions(
     ...(harness === undefined ? {} : { harness }),
     ...(agentInstance === undefined ? {} : { agentInstance }),
     ...(provenanceFilter === undefined ? {} : { provenanceFilter }),
+    cursorMode,
   };
+}
+
+type MutationEventOptions = ReturnType<typeof buildMutationEventOptions>;
+
+/** Follows mutation events using either compatibility row cursors or the default batch-boundary trailer contract. */
+async function followMutationEvents(
+  eventOptions: MutationEventOptions,
+  options: Record<string, unknown>,
+  quiet: boolean,
+): Promise<void> {
+  if (options.provenanceSummary === true) {
+    throw new PmCliError(
+      "Events --provenance-summary is bounded to one page and cannot be combined with --follow.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const intervalMs =
+    typeof options.intervalMs === "string"
+      ? Number(options.intervalMs)
+      : undefined;
+  if (eventOptions.cursorMode === "row") {
+    for await (const event of subscribeMutationEvents({
+      ...eventOptions,
+      intervalMs,
+    })) {
+      if (!quiet) {
+        writeStdout(`${JSON.stringify(event)}\n`);
+      }
+    }
+    return;
+  }
+  for await (const page of subscribeMutationEventBatches({
+    ...eventOptions,
+    intervalMs,
+  })) {
+    if (!quiet) {
+      writeStdout(
+        `${serializeNdjsonStream(page.events, {
+          count: page.count,
+          has_more: page.has_more,
+          next_cursor: page.next_cursor ?? null,
+          source: page.source,
+          heartbeat: page.count === 0,
+        })}\n`,
+      );
+    }
+  }
+}
+
+/** Serializes one bounded mutation-event page using its declared row or batch cursor mode. */
+function renderMutationEventPage(page: MutationEventPage): string {
+  if (page.cursor_mode === "row") {
+    return serializeNdjsonRows(page.events);
+  }
+  return serializeNdjsonStream(page.events, {
+    count: page.count,
+    has_more: page.has_more,
+    next_cursor: page.next_cursor ?? null,
+    source: page.source,
+    ...(page.provenance_summary === undefined
+      ? {}
+      : { provenance_summary: page.provenance_summary }),
+  });
 }
 
 async function runEventsAction(
@@ -795,39 +878,23 @@ async function runEventsAction(
   const startedAt = Date.now();
   const eventOptions = buildMutationEventOptions(options, globalOptions.path);
   if (options.follow === true) {
-    if (options.provenanceSummary === true) {
-      throw new PmCliError(
-        "Events --provenance-summary is bounded to one page and cannot be combined with --follow.",
-        EXIT_CODE.USAGE,
-      );
-    }
-    const intervalMs =
-      typeof options.intervalMs === "string"
-        ? Number(options.intervalMs)
-        : undefined;
-    for await (const event of subscribeMutationEvents({
-      ...eventOptions,
-      intervalMs,
-    })) {
-      if (!globalOptions.quiet) {
-        writeStdout(`${JSON.stringify(event)}\n`);
-      }
-    }
+    await followMutationEvents(
+      eventOptions,
+      options,
+      globalOptions.quiet === true,
+    );
     return;
   }
   const page = await listMutationEvents(eventOptions);
   setActiveCommandResult(page);
-  const rendered = serializeNdjsonRows([
-    ...page.events,
-    ...(page.provenance_summary === undefined
-      ? []
-      : [
-          {
-            type: "provenance_summary",
-            provenance_summary: page.provenance_summary,
-          },
-        ]),
-  ]);
+  if (globalOptions.json) {
+    printResult(page, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=events took_ms=${Date.now() - startedAt}`);
+    }
+    return;
+  }
+  const rendered = renderMutationEventPage(page);
   if (!globalOptions.quiet && rendered.length > 0) {
     writeStdout(`${rendered}\n`);
   }
@@ -1468,6 +1535,10 @@ export function registerListQueryCommands(
         collect,
       )
       .option("--limit <n>", "Return at most 1,000 events (default: 100)")
+      .option(
+        "--cursor-mode <mode>",
+        "Cursor framing: batch emits one terminal trailer (default); row preserves one cursor per event",
+      )
       .option("--full", "Include each complete authoritative history entry")
       .option(
         "--provenance",

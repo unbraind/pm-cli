@@ -14,7 +14,23 @@ import { readHistoryEntries } from "./read.js";
 
 const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
 const EVENT_INDEX_VERSION = "2";
+const AUTHORITATIVE_HISTORY_CACHE_LIMIT = 8;
 type DatabaseSyncConstructor = typeof DatabaseSync;
+
+interface AuthoritativeHistoryStreamCache {
+  signature: string;
+  events: IndexedHistoryEvent[];
+}
+
+interface AuthoritativeHistoryCache {
+  streams: Map<string, AuthoritativeHistoryStreamCache>;
+  ordered_events: IndexedHistoryEvent[];
+}
+
+const authoritativeHistoryCaches = new Map<
+  string,
+  AuthoritativeHistoryCache
+>();
 
 /** Stable location of one history entry inside its authoritative stream. */
 export interface IndexedHistoryEvent {
@@ -67,6 +83,78 @@ export interface HistoryEventIndexQueryResult {
 
 function eventIndexPath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", EVENT_INDEX_FILENAME);
+}
+
+async function readAuthoritativeHistoryEvents(
+  pmRoot: string,
+): Promise<IndexedHistoryEvent[]> {
+  const historyRoot = path.join(pmRoot, "history");
+  const entries = await fs
+    .readdir(historyRoot, { withFileTypes: true })
+    .catch((error: unknown) => {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        return [];
+      }
+      throw error;
+    });
+  const cached = authoritativeHistoryCaches.get(pmRoot) ?? {
+    streams: new Map<string, AuthoritativeHistoryStreamCache>(),
+    ordered_events: [],
+  };
+  const presentStreams = new Set<string>();
+  let changed = !authoritativeHistoryCaches.has(pmRoot);
+  for (const historyFile of entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".jsonl"))
+    .sort((left, right) => left.name.localeCompare(right.name))) {
+    const streamId = historyFile.name.slice(0, -".jsonl".length);
+    presentStreams.add(streamId);
+    const historyPath = path.join(historyRoot, historyFile.name);
+    const stats = await fs.stat(historyPath, { bigint: true });
+    const signature = [
+      stats.dev,
+      stats.ino,
+      stats.size,
+      stats.mtimeNs,
+      stats.ctimeNs,
+    ].join(":");
+    if (cached.streams.get(streamId)?.signature === signature) continue;
+    const history = await readHistoryEntries(
+      historyPath,
+      streamId,
+    );
+    cached.streams.set(streamId, {
+      signature,
+      events: history.map((entry, streamOffset) => ({
+        stream_id: streamId,
+        stream_offset: streamOffset,
+        entry,
+      })),
+    });
+    changed = true;
+  }
+  for (const streamId of cached.streams.keys()) {
+    if (!presentStreams.has(streamId)) {
+      cached.streams.delete(streamId);
+      changed = true;
+    }
+  }
+  if (changed) {
+    cached.ordered_events = [...cached.streams.values()]
+      .flatMap((stream) => stream.events)
+      .sort(compareHistoryEventPosition);
+  }
+  authoritativeHistoryCaches.delete(pmRoot);
+  authoritativeHistoryCaches.set(pmRoot, cached);
+  if (authoritativeHistoryCaches.size > AUTHORITATIVE_HISTORY_CACHE_LIMIT) {
+    const oldestRoot = authoritativeHistoryCaches.keys().next().value as string;
+    authoritativeHistoryCaches.delete(oldestRoot);
+  }
+  return cached.ordered_events;
 }
 
 function loadDatabaseSync(
@@ -164,23 +252,6 @@ export async function rebuildHistoryEventIndex(
 ): Promise<boolean> {
   const Database = resolveDatabaseSync();
   if (!Database) return false;
-  const historyRoot = path.join(pmRoot, "history");
-  const entries = await fs
-    .readdir(historyRoot, { withFileTypes: true })
-    .catch((error: unknown) => {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "code" in error &&
-        error.code === "ENOENT"
-      ) {
-        return [];
-      }
-      throw error;
-    });
-  const historyFiles = entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".jsonl"))
-    .sort((left, right) => left.name.localeCompare(right.name));
   const targetPath = eventIndexPath(pmRoot);
   await fs.mkdir(path.dirname(targetPath), { recursive: true });
   const temporaryPath = `${targetPath}.${randomUUID()}.tmp`;
@@ -189,19 +260,8 @@ export async function rebuildHistoryEventIndex(
     database = new Database(temporaryPath);
     createSchema(database);
     database.exec("BEGIN IMMEDIATE");
-    for (const historyFile of historyFiles) {
-      const streamId = historyFile.name.slice(0, -".jsonl".length);
-      const history = await readHistoryEntries(
-        path.join(historyRoot, historyFile.name),
-        streamId,
-      );
-      for (const [streamOffset, entry] of history.entries()) {
-        insertEvent(database, {
-          stream_id: streamId,
-          stream_offset: streamOffset,
-          entry,
-        });
-      }
+    for (const event of await readAuthoritativeHistoryEvents(pmRoot)) {
+      insertEvent(database, event);
     }
     database.exec("COMMIT");
     database.close();
@@ -214,6 +274,101 @@ export async function rebuildHistoryEventIndex(
     await fs.rm(temporaryPath, { force: true });
     throw error;
   }
+}
+
+function matchesSet(
+  value: string,
+  accepted: readonly string[] | undefined,
+): boolean {
+  return !accepted || accepted.length === 0 || accepted.includes(value);
+}
+
+function compareHistoryEventPosition(
+  left: IndexedHistoryEvent,
+  right: IndexedHistoryEvent,
+): number {
+  return (
+    left.entry.ts.localeCompare(right.entry.ts) ||
+    left.stream_id.localeCompare(right.stream_id) ||
+    left.stream_offset - right.stream_offset
+  );
+}
+
+function isInsideHistoryEventWindow(
+  event: IndexedHistoryEvent,
+  query: HistoryEventIndexQuery,
+): boolean {
+  if (
+    query.after_ts !== undefined &&
+    query.after_stream_id !== undefined &&
+    query.after_stream_offset !== undefined
+  ) {
+    if (
+      compareHistoryEventPosition(event, {
+        stream_id: query.after_stream_id,
+        stream_offset: query.after_stream_offset,
+        entry: { ...event.entry, ts: query.after_ts },
+      }) <= 0
+    ) {
+      return false;
+    }
+  } else if (
+    query.since_ts !== undefined &&
+    event.entry.ts < query.since_ts
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function matchesHistoryEventHarness(
+  event: IndexedHistoryEvent,
+  query: HistoryEventIndexQuery,
+): boolean {
+  if (!query.harnesses || query.harnesses.length === 0) return true;
+  if (query.harnesses.includes(event.entry.agent_harness ?? "")) return true;
+  return (
+    event.entry.agent_harness === undefined &&
+    (query.harness_alias_authors ?? []).includes(event.entry.author)
+  );
+}
+
+function matchesHistoryEventQuery(
+  event: IndexedHistoryEvent,
+  query: HistoryEventIndexQuery,
+): boolean {
+  if (
+    !isInsideHistoryEventWindow(event, query) ||
+    !matchesSet(event.entry.op, query.ops) ||
+    !matchesSet(event.entry.author, query.authors) ||
+    !matchesSet(event.entry.agent_instance ?? "", query.agent_instances) ||
+    !matchesSet(event.stream_id, query.stream_ids) ||
+    !matchesHistoryEventHarness(event, query)
+  ) {
+    return false;
+  }
+  return (query.provenance ?? []).every((predicate) => {
+    const value = event.entry.agent_provenance?.[predicate.dimension]?.value;
+    return value !== undefined && predicate.values.includes(value);
+  });
+}
+
+/**
+ * Query authoritative history streams when the optional SQLite accelerator is
+ * unavailable. The result preserves the index contract at higher read cost.
+ */
+export async function queryHistoryEventStreams(
+  pmRoot: string,
+  query: HistoryEventIndexQuery,
+): Promise<HistoryEventIndexQueryResult> {
+  const limit = Math.max(0, Math.floor(query.limit));
+  const rows = (await readAuthoritativeHistoryEvents(pmRoot))
+    .filter((event) => matchesHistoryEventQuery(event, query))
+    .slice(0, limit + 1);
+  return {
+    events: rows.slice(0, query.limit),
+    has_more: rows.length > query.limit,
+  };
 }
 
 /**

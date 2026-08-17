@@ -1,6 +1,6 @@
 # SDK context coordination primitives
 
-Trackers: [pm-e200](../.agents/pm/features/pm-e200.toon), [pm-4ri6](../.agents/pm/features/pm-4ri6.toon), and [pm-hcrmye](../.agents/pm/issues/pm-hcrmye.toon).
+Trackers: [pm-e200](../.agents/pm/features/pm-e200.toon), [pm-ez1dfg](../.agents/pm/tasks/pm-ez1dfg.toon), [pm-4ri6](../.agents/pm/features/pm-4ri6.toon), and [pm-hcrmye](../.agents/pm/issues/pm-hcrmye.toon).
 
 `pm` treats project management as context management. These primitives let an
 agent learn what changed, avoid creating redundant work, and keep that work
@@ -26,37 +26,71 @@ Read committed history facts as newline-delimited JSON:
 pm events --type create --author agent-a --limit 100
 pm events --since <cursor> --item pm-abcd
 pm events --since <cursor> --follow --interval-ms 250
+pm events --cursor-mode row --since <cursor>
 ```
 
-Each line carries `cursor`, `item_id`, `version`, `ts`, `author`, `type`, and
-`patch_count`; `--full` also includes the complete authoritative history entry.
+By default, event rows carry `item_id`, `version`, `ts`, `author`, `type`, and
+`patch_count`, followed by one `pm.stream.trailer` record with `count`,
+`has_more`, `next_cursor`, and `source`. Persist the trailer cursor only after
+the batch is durable. A crash before cursor persistence can replay the last
+batch repeatedly, including across multiple crashes. Consumers must process
+idempotently or deduplicate replays. `--cursor-mode row` preserves the previous
+shape with one `cursor` per event and no trailer for consumers that checkpoint
+every row. Already issued version-1 cursors remain accepted by `--since`.
+
+Node runtimes use the rebuildable SQLite event projection. Runtimes such as Bun
+that do not expose `node:sqlite` transparently scan the authoritative history
+streams with the same ordering, filters, pagination, and cursor contract; pages
+identify that path with `source: "authoritative_history"`.
+
+`--full` also includes the complete authoritative history entry.
 `--type`, `--author`, and `--item` accept repeatable or comma-separated values.
 `--since` accepts either a cursor or an ISO timestamp. The CLI emits only event
-rows, so it composes directly with standard NDJSON consumers.
+rows and the typed terminal record, so consumers can distinguish data from
+recovery metadata without relying on position alone. Under `--follow`, every
+non-empty page ends at the same batch boundary and an empty boundary is emitted
+as an idle heartbeat.
 
 The public SDK provides bounded pages and an abortable async iterator:
 
 ```ts
 import {
   listMutationEvents,
+  subscribeMutationEventBatches,
   subscribeMutationEvents,
 } from "@unbrained/pm-cli/sdk";
 
-const page = await listMutationEvents({
-  pmRoot,
-  type: ["create", "update"],
-  limit: 100,
-});
+const eventTypes = ["create", "update"] as const;
+let cursor: string | undefined;
+let hasMore = true;
+while (hasMore) {
+  const page = await listMutationEvents({
+    pmRoot,
+    type: eventTypes,
+    limit: 100,
+    ...(cursor === undefined ? {} : { since: cursor }),
+  });
+  await consumeBatch(page.events);
+  await persistCursor(page.next_cursor);
+  cursor = page.next_cursor;
+  hasMore = page.has_more;
+}
 
 const controller = new AbortController();
-for await (const event of subscribeMutationEvents({
+for await (const batch of subscribeMutationEventBatches({
   pmRoot,
-  since: page.next_cursor,
+  type: eventTypes,
+  ...(cursor === undefined ? {} : { since: cursor }),
   signal: controller.signal,
 })) {
-  await consume(event);
+  await consumeBatch(batch.events);
+  await persistCursor(batch.next_cursor);
 }
 ```
+
+`subscribeMutationEvents` remains the per-event compatibility iterator and
+defaults to row cursors. `subscribeMutationEventBatches` is the token-efficient
+coordination primitive; it exposes the same boundaries used by the CLI.
 
 The `pm_events` MCP tool exposes the same bounded page contract. Consumers such
 as notification packages can store `next_cursor`, catch up after a restart,

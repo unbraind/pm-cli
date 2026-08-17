@@ -4,6 +4,10 @@ import { describe, expect, it } from "vitest";
 import {
   _testOnlyMutationEvents,
   listMutationEvents,
+  MUTATION_EVENT_WIRE_BUDGET,
+  serializeNdjsonRows,
+  serializeNdjsonStream,
+  subscribeMutationEventBatches,
   subscribeMutationEvents,
 } from "../../../src/sdk/index.js";
 import {
@@ -84,9 +88,11 @@ describe("SDK mutation event stream", () => {
       expect(page).toMatchObject({
         count: 1,
         has_more: true,
+        cursor_mode: "batch",
         source: "derived_index",
         events: [{ item_id: firstId, type: "create", version: 1 }],
       });
+      expect(page.events[0]).not.toHaveProperty("cursor");
       expect(page.next_cursor).toEqual(expect.any(String));
 
       const resumed = await listMutationEvents({
@@ -135,8 +141,35 @@ describe("SDK mutation event stream", () => {
           item_id: firstId,
           author: "event-agent-a",
           type: "create",
-          cursor: expect.any(String),
         },
+        {
+          record_type: "pm.stream.trailer",
+          count: 1,
+          has_more: false,
+          next_cursor: expect.any(String),
+          source: "derived_index",
+        },
+      ]);
+      const legacyCliPage = context.runCli([
+        "events",
+        "--type",
+        "create",
+        "--author",
+        "event-agent-a",
+        "--item",
+        firstId,
+        "--limit",
+        "1",
+        "--cursor-mode",
+        "row",
+      ]);
+      expect(
+        legacyCliPage.stdout
+          .trim()
+          .split("\n")
+          .map((line) => JSON.parse(line) as Record<string, unknown>),
+      ).toMatchObject([
+        { item_id: firstId, cursor: expect.any(String) },
       ]);
       await expect(
         handleRequest({
@@ -157,6 +190,29 @@ describe("SDK mutation event stream", () => {
           result: {
             count: 1,
             events: [{ item_id: firstId, type: "create" }],
+          },
+        },
+      });
+      await expect(
+        handleRequest({
+          id: 5,
+          method: "tools/call",
+          params: {
+            name: "pm_events",
+            arguments: {
+              path: context.pmPath,
+              type: "create",
+              item: firstId,
+              limit: 1,
+              cursorMode: "row",
+            },
+          },
+        }),
+      ).resolves.toMatchObject({
+        structuredContent: {
+          result: {
+            cursor_mode: "row",
+            events: [{ item_id: firstId, cursor: expect.any(String) }],
           },
         },
       });
@@ -303,7 +359,8 @@ describe("SDK mutation event stream", () => {
           provenance: { agent_harness: "codex", vocabulary_version: 4 },
         },
         {
-          type: "provenance_summary",
+          record_type: "pm.stream.trailer",
+          count: 1,
           provenance_summary: { entries: 1 },
         },
       ]);
@@ -402,6 +459,7 @@ describe("SDK mutation event stream", () => {
       const subscription = subscribeMutationEvents({
         pmRoot: context.pmPath,
         since: initial.next_cursor,
+        cursorMode: "batch",
         intervalMs: 10,
         signal: controller.signal,
       });
@@ -420,10 +478,71 @@ describe("SDK mutation event stream", () => {
       ]);
       await expect(nextEvent).resolves.toMatchObject({
         done: false,
-        value: { author: "event-follower", type: "create" },
+        value: {
+          author: "event-follower",
+          cursor: expect.any(String),
+          type: "create",
+        },
       });
       controller.abort();
       await expect(subscription.next()).resolves.toEqual({
+        done: true,
+        value: undefined,
+      });
+    });
+  });
+
+  it("emits batch boundaries as idle heartbeats while following", async () => {
+    await withTempPmPath(async (context) => {
+      const futureCursor = "2099-01-01T00:00:00.000Z";
+      const futureController = new AbortController();
+      const futureBatches = subscribeMutationEventBatches({
+        pmRoot: context.pmPath,
+        since: futureCursor,
+        intervalMs: 10,
+        signal: futureController.signal,
+      });
+      await expect(futureBatches.next()).resolves.toMatchObject({
+        done: false,
+        value: { count: 0, next_cursor: futureCursor },
+      });
+      futureController.abort();
+      await expect(futureBatches.next()).resolves.toEqual({
+        done: true,
+        value: undefined,
+      });
+
+      const initial = await listMutationEvents({ pmRoot: context.pmPath });
+      const controller = new AbortController();
+      const batches = subscribeMutationEventBatches({
+        pmRoot: context.pmPath,
+        since: initial.next_cursor,
+        intervalMs: 10,
+        signal: controller.signal,
+      });
+      await expect(batches.next()).resolves.toMatchObject({
+        done: false,
+        value: {
+          count: 0,
+          cursor_mode: "batch",
+        },
+      });
+      context.runCli([
+        "create",
+        "--title",
+        "Mutation batch followed",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--json",
+      ]);
+      await expect(batches.next()).resolves.toMatchObject({
+        done: false,
+        value: { count: 1, events: [{ type: "create" }] },
+      });
+      controller.abort();
+      await expect(batches.next()).resolves.toEqual({
         done: true,
         value: undefined,
       });
@@ -444,6 +563,9 @@ describe("SDK mutation event stream", () => {
       await expect(
         listMutationEvents({ pmRoot: context.pmPath, limit: -1 }),
       ).rejects.toThrow(/0 to 1000/);
+      await expect(
+        listMutationEvents({ pmRoot: context.pmPath, cursorMode: "item" }),
+      ).rejects.toThrow(/batch or row/);
       await expect(
         listMutationEvents({
           pmRoot: context.pmPath,
@@ -491,6 +613,21 @@ describe("SDK mutation event stream", () => {
     expect(
       _testOnlyMutationEvents.resolveMutationEventStart(undefined, fingerprint),
     ).toEqual({});
+    const issuedCursor =
+      "eyJ2ZXJzaW9uIjoxLCJmaW5nZXJwcmludCI6IjQ0MTM2ZmEzNTViMzY3OGExMTQ2YWQxNiIsInRzIjoiMjAyNi0wNy0yNlQwNToyOTozMS4wMjFaIiwic3RyZWFtX2lkIjoic2J4LXRubHgiLCJzdHJlYW1fb2Zmc2V0IjowfQ";
+    const emptyFingerprint = _testOnlyMutationEvents.eventQueryFingerprint({});
+    expect(
+      _testOnlyMutationEvents.resolveMutationEventStart(
+        issuedCursor,
+        emptyFingerprint,
+      ),
+    ).toMatchObject({
+      cursor: {
+        ts: "2026-07-26T05:29:31.021Z",
+        stream_id: "sbx-tnlx",
+        stream_offset: 0,
+      },
+    });
     expect(
       _testOnlyMutationEvents.resolveMutationEventStart("  ", fingerprint),
     ).toEqual({});
@@ -563,12 +700,61 @@ describe("SDK mutation event stream", () => {
     }
   });
 
-  it("reports unavailable and repeatedly unreadable derived event indexes", async () => {
+  it("gates the declared batch-to-row wire-cost ratio", () => {
+    const rows = Array.from(
+      { length: MUTATION_EVENT_WIRE_BUDGET.fixture_events },
+      (_, index) => ({
+        item_id: `pm-${index}`,
+        version: 1,
+        ts: "2026-07-26T05:29:31.021Z",
+        author: "harness:codex",
+        type: "create",
+        patch_count: 10,
+      }),
+    );
+    const cursor =
+      "eyJ2ZXJzaW9uIjoxLCJmaW5nZXJwcmludCI6IjQ0MTM2ZmEzNTViMzY3OGExMTQ2YWQxNiIsInRzIjoiMjAyNi0wNy0yNlQwNToyOTozMS4wMjFaIiwic3RyZWFtX2lkIjoic2J4LXRubHgiLCJzdHJlYW1fb2Zmc2V0IjowfQ";
+    const rowBytes = Buffer.byteLength(
+      serializeNdjsonRows(rows.map((row) => ({ cursor, ...row }))),
+    );
+    const batchBytes = Buffer.byteLength(
+      serializeNdjsonStream(rows, {
+        count: rows.length,
+        has_more: false,
+        next_cursor: cursor,
+        source: "derived_index",
+      }),
+    );
+    expect(batchBytes / rowBytes).toBeLessThanOrEqual(
+      MUTATION_EVENT_WIRE_BUDGET.batch_to_row_ratio,
+    );
+  });
+
+  it("falls back to authoritative streams and reports repeatedly unreadable indexes", async () => {
     await withTempPmPath(async (context) => {
       let restore = eventIndexTestOnly.setDatabaseSync(null);
+      await appendHistoryEntry(
+        path.join(context.pmPath, "history", "pm-bun.jsonl"),
+        {
+          ts: "2026-07-24T10:00:00.000Z",
+          author: "bun-agent",
+          op: "update",
+          patch: [],
+          before_hash: "before",
+          after_hash: "after",
+        },
+      );
       await expect(
-        listMutationEvents({ pmRoot: context.pmPath }),
-      ).rejects.toThrow(/node:sqlite DatabaseSync/);
+        listMutationEvents({
+          pmRoot: context.pmPath,
+          item: "pm-bun",
+          author: "bun-agent",
+        }),
+      ).resolves.toMatchObject({
+        count: 1,
+        source: "authoritative_history",
+        events: [{ item_id: "pm-bun", type: "update" }],
+      });
       restore();
 
       let constructions = 0;

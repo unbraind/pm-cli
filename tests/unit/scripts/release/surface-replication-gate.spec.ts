@@ -427,6 +427,47 @@ describe("surface replication gate", () => {
     );
   }, 120_000);
 
+  it("activates database seam replication only for DatabaseSync contract changes", async () => {
+    const config = JSON.parse(
+      await readFile(
+        path.resolve("scripts/release/surface-replication-sets.json"),
+        "utf8",
+      ),
+    ) as Record<string, unknown>;
+    config.waivers = [];
+
+    const unrelated = await validateSurfaceReplication(config, {
+      repoRoot: path.resolve("."),
+      changedFiles: ["src/core/history/event-index.ts"],
+      changedLines: {
+        "src/core/history/event-index.ts": [
+          "queryHistoryEventStreams",
+          "readAuthoritativeHistoryEvents",
+        ],
+      },
+      today: "2026-08-17",
+    });
+    expect(unrelated.active_sets).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "database-sync-test-seam" }),
+      ]),
+    );
+
+    const relevant = await validateSurfaceReplication(config, {
+      repoRoot: path.resolve("."),
+      changedFiles: ["src/core/history/event-index.ts"],
+      changedLines: {
+        "src/core/history/event-index.ts": [
+          "RuntimeDatabaseSync = loadStableDatabaseSync(",
+        ],
+      },
+      today: "2026-08-17",
+    });
+    expect(relevant.violations).toContain(
+      "set:database-sync-test-seam:member:src/core/store/item-metadata-query-index.ts:unchanged",
+    );
+  }, 120_000);
+
   it("reports recurrence density, cap overlap, and CLI refusal totals", async () => {
     const root = await fixtureRoot();
     await writeFile(

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1653,
+    "covered_symbols": 1656,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1654
+    "required_symbols": 1657
   },
   "breaking_acknowledgements": [
     {
@@ -703,6 +703,49 @@
       ],
       "package_version": "2026.8.16",
       "reason": "Canonicalize recovery producer fields and expose fail-closed source parse findings"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ImportExportRegistrationOptions",
+        "signature ./sdk:ListMutationEventsOptions",
+        "signature ./sdk:MutationEvent",
+        "signature ./sdk:MutationEventPage",
+        "signature ./sdk:RegisteredExtensionExporter",
+        "signature ./sdk/authoring:ImportExportRegistrationOptions",
+        "signature ./sdk/authoring:RegisteredExtensionExporter"
+      ],
+      "package_version": "2026.8.17",
+      "reason": "Intentional resumable-stream evolution: default batch cursors remove redundant wire cost while cursorMode row and subscribeMutationEvents preserve per-row compatibility; exporter output fields are additive and optional."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ExtensionApi",
+        "signature ./sdk:ImportExportRegistrationOptions",
+        "signature ./sdk:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/authoring:ExtensionApi",
+        "signature ./sdk/authoring:ImportExportRegistrationOptions",
+        "signature ./sdk/contracts:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.8.17",
+      "reason": "Intentional SDK typing refinement: importer options exclude exporter-only artifact output while exporter registrations retain the additive channel contract."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ExtensionBlueprintExporter",
+        "signature ./sdk:PmNdjsonStreamTrailerInput",
+        "signature ./sdk/authoring:ExtensionBlueprintExporter"
+      ],
+      "package_version": "2026.8.17",
+      "reason": "Close exporter artifact ownership and NDJSON trailer input invariants after exact-head review; stdout render opt-in was newly introduced only on this unmerged branch."
+    },
+    {
+      "changes": [
+        "signature ./sdk:MutationEventPage"
+      ],
+      "package_version": "2026.8.17",
+      "reason": "Add truthful authoritative_history source receipt for Bun event fallback while preserving derived_index on Node."
     }
   ],
   "entrypoints": {
@@ -4862,6 +4905,18 @@
           "signature": "export type Exporter = (context: ImportExportContext) => unknown | Promise<unknown>;"
         },
         {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ExporterArtifactOutputContract",
+          "signature": "export type ExporterArtifactOutputContract = { channel: \"stdout\"; receipt?: \"suppress\"; media_type?: string; } | { channel: \"file\"; receipt?: \"suppress\" | \"render\"; media_type?: string; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExporterRegistrationOptions",
+          "signature": "export interface ExporterRegistrationOptions extends ImportExportRegistrationOptions { output?: ExporterArtifactOutputContract; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "extension",
@@ -5039,7 +5094,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionApi",
-          "signature": "export interface ExtensionApi { readonly extension: ExtensionSelfIdentity; registerCommand(command: string, override: CommandOverride): void; registerCommand(definition: CommandDefinition): void; registerParser(command: string, override: ParserOverride): void; registerPreflight(override: PreflightOverride | ScopedPreflightOverrideDefinition): void; registerService(service: ExtensionServiceName, override: ServiceOverride): void; registerFlags(targetCommand: string, flags: FlagDefinition[]): void; registerItemFields(fields: SchemaFieldDefinition[]): void; registerItemTypes(types: SchemaItemTypeDefinition[]): void; registerRelationshipKinds(definitions: RelationshipKindDefinition[]): void; registerMigration(definition: SchemaMigrationDefinition): void; registerProfile(profile: ProjectProfileRegistrationInput): void; registerRenderer(format: OutputRendererFormat, renderer: RendererOverride, ownership?: RendererOverrideOwnership): void; registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void; registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void; registerSearchProvider(provider: SearchProviderDefinition): void; registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void; registerAssuranceMeasurementProvider(provider: AssuranceMeasurementProviderDefinition): void; hooks: { beforeCommand(hook: BeforeCommandHook): void; beforeMutation(hook: BeforeMutationHook): void; afterCommand(hook: AfterCommandHook): void; onWrite(hook: OnWriteHook): void; onRead(hook: OnReadHook): void; onIndex(hook: OnIndexHook): void; }; }"
+          "signature": "export interface ExtensionApi { readonly extension: ExtensionSelfIdentity; registerCommand(command: string, override: CommandOverride): void; registerCommand(definition: CommandDefinition): void; registerParser(command: string, override: ParserOverride): void; registerPreflight(override: PreflightOverride | ScopedPreflightOverrideDefinition): void; registerService(service: ExtensionServiceName, override: ServiceOverride): void; registerFlags(targetCommand: string, flags: FlagDefinition[]): void; registerItemFields(fields: SchemaFieldDefinition[]): void; registerItemTypes(types: SchemaItemTypeDefinition[]): void; registerRelationshipKinds(definitions: RelationshipKindDefinition[]): void; registerMigration(definition: SchemaMigrationDefinition): void; registerProfile(profile: ProjectProfileRegistrationInput): void; registerRenderer(format: OutputRendererFormat, renderer: RendererOverride, ownership?: RendererOverrideOwnership): void; registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void; registerExporter(name: string, exporter: Exporter, options?: ExporterRegistrationOptions): void; registerSearchProvider(provider: SearchProviderDefinition): void; registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void; registerAssuranceMeasurementProvider(provider: AssuranceMeasurementProviderDefinition): void; hooks: { beforeCommand(hook: BeforeCommandHook): void; beforeMutation(hook: BeforeMutationHook): void; afterCommand(hook: AfterCommandHook): void; onWrite(hook: OnWriteHook): void; onRead(hook: OnReadHook): void; onIndex(hook: OnIndexHook): void; }; }"
         },
         {
           "classification": "supported",
@@ -5051,7 +5106,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionBlueprintExporter",
-          "signature": "export interface ExtensionBlueprintExporter { name: string; exporter: Exporter; options?: ImportExportRegistrationOptions; }"
+          "signature": "export interface ExtensionBlueprintExporter { name: string; exporter: Exporter; options?: ExporterRegistrationOptions; }"
         },
         {
           "classification": "supported",
@@ -7493,7 +7548,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ListMutationEventsOptions",
-          "signature": "export interface ListMutationEventsOptions { pmRoot?: string; cwd?: string; since?: string; type?: string | readonly string[]; author?: string | readonly string[]; item?: string | readonly string[]; limit?: number; full?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; }"
+          "signature": "export interface ListMutationEventsOptions { pmRoot?: string; cwd?: string; since?: string; type?: string | readonly string[]; author?: string | readonly string[]; item?: string | readonly string[]; limit?: number; full?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; cursorMode?: \"batch\" | \"row\"; }"
         },
         {
           "classification": "supported",
@@ -7892,6 +7947,12 @@
           "signature": "<Result>(params: WorkspaceJsonMutationOptions<Result>) => Promise<{ changed: boolean; result: Result; }> | calls: <Result>(params: WorkspaceJsonMutationOptions<Result>) => Promise<{ changed: boolean; result: Result; }>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "MUTATION_EVENT_WIRE_BUDGET",
+          "signature": "Readonly<{ batch_to_row_ratio: 0.6; fixture_events: 200; }>"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "MutationActionContract",
@@ -7907,13 +7968,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "MutationEvent",
-          "signature": "export interface MutationEvent { cursor: string; item_id: string; version: number; ts: string; author: string; type: string; message?: string; patch_count: number; entry?: HistoryEntry; provenance?: HistoryProvenanceRow; }"
+          "signature": "export interface MutationEvent { cursor?: string; item_id: string; version: number; ts: string; author: string; type: string; message?: string; patch_count: number; entry?: HistoryEntry; provenance?: HistoryProvenanceRow; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "MutationEventPage",
-          "signature": "export interface MutationEventPage { events: MutationEvent[]; count: number; has_more: boolean; next_cursor?: string; source: \"derived_index\"; provenance_summary?: HistoryProvenanceSummary; }"
+          "signature": "export interface MutationEventPage { events: MutationEvent[]; count: number; has_more: boolean; cursor_mode: \"batch\" | \"row\"; next_cursor?: string; source: \"derived_index\" | \"authoritative_history\"; provenance_summary?: HistoryProvenanceSummary; }"
         },
         {
           "classification": "supported",
@@ -9173,7 +9234,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.3.0\""
+          "signature": "\"1.4.0\""
         },
         {
           "classification": "supported",
@@ -9275,7 +9336,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.7.0\""
+          "signature": "\"4.8.0\""
         },
         {
           "classification": "contract_data",
@@ -9636,6 +9697,18 @@
           "kind": "interface",
           "name": "PmMutationReceipt",
           "signature": "export interface PmMutationReceipt { id: string; status: string; changedFieldCount: number; closeReason?: string; deleted?: boolean; previousStatus?: string; warnings?: readonly unknown[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmNdjsonStreamTrailer",
+          "signature": "export interface PmNdjsonStreamTrailer { readonly [key: string]: unknown; record_type: \"pm.stream.trailer\"; count: number; has_more: boolean; next_cursor: string | null; source: string; metadata?: Readonly<Record<string, unknown>>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmNdjsonStreamTrailerInput",
+          "signature": "export interface PmNdjsonStreamTrailerInput { readonly [key: string]: unknown; readonly record_type?: never; count: number; has_more: boolean; next_cursor: string | null; source: string; metadata?: Readonly<Record<string, unknown>>; }"
         },
         {
           "classification": "contract_data",
@@ -10821,6 +10894,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "RegisteredExporterArtifactOutputContract",
+          "signature": "export interface RegisteredExporterArtifactOutputContract { channel: \"stdout\" | \"file\"; receipt: \"suppress\" | \"render\"; media_type?: string; }"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "RegisteredExporterExpectation",
           "signature": "export type RegisteredExporterExpectation = NamedRegistrationExpectation<\"exporter\", string, { extensionName?: string; }>;"
@@ -10835,7 +10914,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RegisteredExtensionExporter",
-          "signature": "export interface RegisteredExtensionExporter { layer: ExtensionLayer; name: string; exporter: string; }"
+          "signature": "export interface RegisteredExtensionExporter { layer: ExtensionLayer; name: string; exporter: string; output?: RegisteredExporterArtifactOutputContract; }"
         },
         {
           "classification": "supported",
@@ -13868,6 +13947,12 @@
           "signature": "(rows: readonly unknown[]) => string | calls: (rows: readonly unknown[]) => string"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "serializeNdjsonStream",
+          "signature": "(rows: readonly unknown[], trailer: PmNdjsonStreamTrailerInput) => string | calls: (rows: readonly unknown[], trailer: PmNdjsonStreamTrailerInput) => string"
+        },
+        {
           "classification": "supported",
           "kind": "type",
           "name": "ServiceOverride",
@@ -14256,6 +14341,12 @@
           "kind": "value",
           "name": "SUBCOMMAND_GLOBAL_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "subscribeMutationEventBatches",
+          "signature": "(options?: SubscribeMutationEventsOptions) => AsyncGenerator<MutationEventPage, void, void> | calls: (options?: SubscribeMutationEventsOptions) => AsyncGenerator<MutationEventPage, void, void>"
         },
         {
           "classification": "advanced_export",
@@ -15915,6 +16006,18 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "ExporterArtifactOutputContract",
+          "signature": "export type ExporterArtifactOutputContract = { channel: \"stdout\"; receipt?: \"suppress\"; media_type?: string; } | { channel: \"file\"; receipt?: \"suppress\" | \"render\"; media_type?: string; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExporterRegistrationOptions",
+          "signature": "export interface ExporterRegistrationOptions extends ImportExportRegistrationOptions { output?: ExporterArtifactOutputContract; }"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "EXTENSION_CAPABILITIES",
           "signature": "readonly [\"commands\", \"renderers\", \"hooks\", \"schema\", \"importers\", \"search\", \"parser\", \"preflight\", \"services\"]"
@@ -15977,7 +16080,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionApi",
-          "signature": "export interface ExtensionApi { readonly extension: ExtensionSelfIdentity; registerCommand(command: string, override: CommandOverride): void; registerCommand(definition: CommandDefinition): void; registerParser(command: string, override: ParserOverride): void; registerPreflight(override: PreflightOverride | ScopedPreflightOverrideDefinition): void; registerService(service: ExtensionServiceName, override: ServiceOverride): void; registerFlags(targetCommand: string, flags: FlagDefinition[]): void; registerItemFields(fields: SchemaFieldDefinition[]): void; registerItemTypes(types: SchemaItemTypeDefinition[]): void; registerRelationshipKinds(definitions: RelationshipKindDefinition[]): void; registerMigration(definition: SchemaMigrationDefinition): void; registerProfile(profile: ProjectProfileRegistrationInput): void; registerRenderer(format: OutputRendererFormat, renderer: RendererOverride, ownership?: RendererOverrideOwnership): void; registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void; registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void; registerSearchProvider(provider: SearchProviderDefinition): void; registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void; registerAssuranceMeasurementProvider(provider: AssuranceMeasurementProviderDefinition): void; hooks: { beforeCommand(hook: BeforeCommandHook): void; beforeMutation(hook: BeforeMutationHook): void; afterCommand(hook: AfterCommandHook): void; onWrite(hook: OnWriteHook): void; onRead(hook: OnReadHook): void; onIndex(hook: OnIndexHook): void; }; }"
+          "signature": "export interface ExtensionApi { readonly extension: ExtensionSelfIdentity; registerCommand(command: string, override: CommandOverride): void; registerCommand(definition: CommandDefinition): void; registerParser(command: string, override: ParserOverride): void; registerPreflight(override: PreflightOverride | ScopedPreflightOverrideDefinition): void; registerService(service: ExtensionServiceName, override: ServiceOverride): void; registerFlags(targetCommand: string, flags: FlagDefinition[]): void; registerItemFields(fields: SchemaFieldDefinition[]): void; registerItemTypes(types: SchemaItemTypeDefinition[]): void; registerRelationshipKinds(definitions: RelationshipKindDefinition[]): void; registerMigration(definition: SchemaMigrationDefinition): void; registerProfile(profile: ProjectProfileRegistrationInput): void; registerRenderer(format: OutputRendererFormat, renderer: RendererOverride, ownership?: RendererOverrideOwnership): void; registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void; registerExporter(name: string, exporter: Exporter, options?: ExporterRegistrationOptions): void; registerSearchProvider(provider: SearchProviderDefinition): void; registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void; registerAssuranceMeasurementProvider(provider: AssuranceMeasurementProviderDefinition): void; hooks: { beforeCommand(hook: BeforeCommandHook): void; beforeMutation(hook: BeforeMutationHook): void; afterCommand(hook: AfterCommandHook): void; onWrite(hook: OnWriteHook): void; onRead(hook: OnReadHook): void; onIndex(hook: OnIndexHook): void; }; }"
         },
         {
           "classification": "supported",
@@ -15989,7 +16092,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionBlueprintExporter",
-          "signature": "export interface ExtensionBlueprintExporter { name: string; exporter: Exporter; options?: ImportExportRegistrationOptions; }"
+          "signature": "export interface ExtensionBlueprintExporter { name: string; exporter: Exporter; options?: ExporterRegistrationOptions; }"
         },
         {
           "classification": "supported",
@@ -16714,8 +16817,14 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "RegisteredExporterArtifactOutputContract",
+          "signature": "export interface RegisteredExporterArtifactOutputContract { channel: \"stdout\" | \"file\"; receipt: \"suppress\" | \"render\"; media_type?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "RegisteredExtensionExporter",
-          "signature": "export interface RegisteredExtensionExporter { layer: ExtensionLayer; name: string; exporter: string; }"
+          "signature": "export interface RegisteredExtensionExporter { layer: ExtensionLayer; name: string; exporter: string; output?: RegisteredExporterArtifactOutputContract; }"
         },
         {
           "classification": "supported",
@@ -17813,7 +17922,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.3.0\""
+          "signature": "\"1.4.0\""
         },
         {
           "classification": "contract_data",
@@ -17879,7 +17988,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.7.0\""
+          "signature": "\"4.8.0\""
         },
         {
           "classification": "contract_data",
@@ -27621,6 +27730,7 @@
     "invalid_argument_value",
     "invalid_command_usage",
     "invalid_event_cursor",
+    "invalid_event_cursor_mode",
     "invalid_event_follow_interval",
     "invalid_event_limit",
     "invalid_event_since",

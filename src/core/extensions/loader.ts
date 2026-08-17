@@ -8,6 +8,10 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { pathExists } from "../fs/fs-utils.js";
 import { isPathWithinDirectory } from "../fs/path-utils.js";
+import {
+  isHostOutputSuppressed,
+  suppressHostOutput,
+} from "../output/output-control.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import {
@@ -31,6 +35,10 @@ import {
   normalizePreflightOverride,
 } from "./preflight-ownership.js";
 import { assertCommandDefinitionMetadataStrings } from "./command-visibility-tier.js";
+import {
+  buildImportExportContext,
+  resolveImportExportArtifactOutput,
+} from "./exporter-output-contract.js";
 import {
   asRegistrationRecord,
   assertOptionalBooleanField,
@@ -86,10 +94,7 @@ import {
   createEmptyExtensionRendererRegistry,
   createEmptyExtensionRegistrationRegistry,
 } from "./extension-registries.js";
-import {
-  normalizeCommandName,
-  cloneContextSnapshot,
-} from "./extension-runtime-helpers.js";
+import { normalizeCommandName } from "./extension-runtime-helpers.js";
 import { normalizeExtensionContributionInventory } from "./contribution-inventory.js";
 import { formatExtensionManifestSchemaWarnings } from "./manifest-schema.js";
 import {
@@ -188,6 +193,8 @@ import {
   type SchemaItemTypeDefinition,
   type SchemaMigrationDefinition,
   type ImportExportRegistrationOptions,
+  type ExporterRegistrationOptions,
+  type RegisteredExporterArtifactOutputContract,
   type Importer,
   type Exporter,
   type SearchProviderDefinition,
@@ -2780,11 +2787,49 @@ class ExtensionApiRegistrar implements ExtensionApi {
     });
   }
 
+  /** Validates and records optional importer/exporter flag metadata through the schema policy gate. */
+  private registerImportExportCommandFlags(
+    method: "registerImporter" | "registerExporter",
+    commandPath: string,
+    resolvedOptions: ExporterRegistrationOptions,
+  ): void {
+    if (resolvedOptions.flags === undefined) {
+      return;
+    }
+    assertExtensionCapability(
+      this.#loadedExtension,
+      "schema",
+      `${method} options.flags`,
+    );
+    if (
+      !this.allowRegistration(
+        "schema.flags",
+        `${method} options.flags`,
+        "schema",
+      )
+    ) {
+      return;
+    }
+    validateFlagDefinitions(resolvedOptions.flags);
+    this.#registrationRegistry.flags.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
+      target_command: commandPath,
+      flags: normalizeFlagDefinitions(
+        `${method} options.flags`,
+        resolvedOptions.flags,
+      ),
+    });
+  }
+
   private applyImportExportCommandMetadata(
     method: "registerImporter" | "registerExporter",
     commandPath: string,
-    options: ImportExportRegistrationOptions | undefined,
-  ): void {
+    options:
+      | ImportExportRegistrationOptions
+      | ExporterRegistrationOptions
+      | undefined,
+  ): RegisteredExporterArtifactOutputContract | undefined {
     if (
       options !== undefined &&
       (typeof options !== "object" ||
@@ -2801,11 +2846,16 @@ class ExtensionApiRegistrar implements ExtensionApi {
         description: "Optional input or output file path.",
       },
     ];
-    const resolvedOptions: ImportExportRegistrationOptions = {
+    const resolvedOptions: ExporterRegistrationOptions = {
       ...options,
       description: options?.description ?? defaultDescription,
       arguments: options?.arguments ?? defaultArguments,
     };
+    const output = resolveImportExportArtifactOutput(
+      method,
+      resolvedOptions,
+      options?.description !== undefined,
+    );
     assertOptionalStringField(
       `${method} options.action`,
       resolvedOptions.action,
@@ -2834,33 +2884,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
       resolvedOptions.arguments,
     );
 
-    if (resolvedOptions.flags !== undefined) {
-      assertExtensionCapability(
-        this.#loadedExtension,
-        "schema",
-        `${method} options.flags`,
-      );
-      // Route metadata flags through the same surface-policy gate as registerFlags so
-      // enforce-mode policies blocking schema.flags are honored even when importers are allowed.
-      if (
-        this.allowRegistration(
-          "schema.flags",
-          `${method} options.flags`,
-          "schema",
-        )
-      ) {
-        validateFlagDefinitions(resolvedOptions.flags);
-        this.#registrationRegistry.flags.push({
-          layer: this.#loadedExtension.layer,
-          name: this.#loadedExtension.name,
-          target_command: commandPath,
-          flags: normalizeFlagDefinitions(
-            `${method} options.flags`,
-            resolvedOptions.flags,
-          ),
-        });
-      }
-    }
+    this.registerImportExportCommandFlags(method, commandPath, resolvedOptions);
 
     const registration: RegisteredExtensionCommandDefinition = {
       layer: this.#loadedExtension.layer,
@@ -2881,6 +2905,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
       registration.intent = intent;
     }
     this.#registrationRegistry.commands.push(registration);
+    return output;
   }
 
   public registerImporter(
@@ -2924,26 +2949,14 @@ class ExtensionApiRegistrar implements ExtensionApi {
       name: this.#loadedExtension.name,
       command: commandPath,
       run: async (context) =>
-        importer({
-          registration: normalizedName,
-          action: "import",
-          command: context.command,
-          args: cloneContextSnapshot(context.args),
-          options: cloneContextSnapshot(context.options),
-          global: cloneContextSnapshot(context.global),
-          pm_root: context.pm_root,
-          source_workspace_root: context.source_workspace_root,
-          repo_root: context.repo_root,
-          pm_root_rel: context.pm_root_rel,
-          ...(context.sdk === undefined ? {} : { sdk: context.sdk }),
-        }),
+        importer(buildImportExportContext(context, normalizedName, "import")),
     });
   }
 
   public registerExporter(
     name: string,
     exporter: Exporter,
-    options?: ImportExportRegistrationOptions,
+    options?: ExporterRegistrationOptions,
   ): void {
     assertExtensionCapability(
       this.#loadedExtension,
@@ -2966,7 +2979,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
     const commandPath = toRegistrationCommandPath(normalizedName, "export");
     // Validate and register optional command metadata before mutating the registry
     // so an invalid options object leaves no partial exporter registration.
-    this.applyImportExportCommandMetadata(
+    const output = this.applyImportExportCommandMetadata(
       "registerExporter",
       commandPath,
       options,
@@ -2975,25 +2988,21 @@ class ExtensionApiRegistrar implements ExtensionApi {
       layer: this.#loadedExtension.layer,
       name: this.#loadedExtension.name,
       exporter: normalizedName,
+      ...(output === undefined ? {} : { output }),
     });
     this.#commandRegistry.handlers.push({
       layer: this.#loadedExtension.layer,
       name: this.#loadedExtension.name,
       command: commandPath,
-      run: async (context) =>
-        exporter({
-          registration: normalizedName,
-          action: "export",
-          command: context.command,
-          args: cloneContextSnapshot(context.args),
-          options: cloneContextSnapshot(context.options),
-          global: cloneContextSnapshot(context.global),
-          pm_root: context.pm_root,
-          source_workspace_root: context.source_workspace_root,
-          repo_root: context.repo_root,
-          pm_root_rel: context.pm_root_rel,
-          ...(context.sdk === undefined ? {} : { sdk: context.sdk }),
-        }),
+      run: async (context) => {
+        const result = await exporter(
+          buildImportExportContext(context, normalizedName, "export"),
+        );
+        return output?.receipt === "suppress" &&
+          !isHostOutputSuppressed(result)
+          ? suppressHostOutput(result)
+          : result;
+      },
     });
   }
 

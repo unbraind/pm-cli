@@ -13,8 +13,26 @@
       "owner": "pm-b84irw",
       "description": "Keep the explicit DatabaseSync replacement seam aligned across the two persisted SQLite indexes.",
       "triggers": [
-        "src/core/history/event-index.ts",
-        "src/core/store/item-metadata-query-index.ts"
+        {
+          "path": "src/core/history/event-index.ts",
+          "changed_lines_contain_any": [
+            "loadDatabaseSync",
+            "loadStableDatabaseSync",
+            "resolveDatabaseSync",
+            "RuntimeDatabaseSync",
+            "setDatabaseSync"
+          ]
+        },
+        {
+          "path": "src/core/store/item-metadata-query-index.ts",
+          "changed_lines_contain_any": [
+            "loadDatabaseSync",
+            "loadStableDatabaseSync",
+            "resolveDatabaseSync",
+            "RuntimeDatabaseSync",
+            "setDatabaseSync"
+          ]
+        }
       ],
       "required_changed_members": [
         "src/core/history/event-index.ts",
@@ -408,11 +426,11 @@
     },
     {
       "path": "src/cli/register-list-query.ts",
-      "expected_count": 14,
+      "expected_count": 15,
       "rule_ownership": "all_occurrences",
       "owner": "pm-0xmajx",
       "disposition": "transport_validation",
-      "reason": "Human query syntax, output destinations, and stream conflicts are CLI transport contracts."
+      "reason": "Human query syntax, output destinations, cursor-mode spellings, and stream conflicts are CLI transport contracts."
     },
     {
       "path": "src/cli/register-operations.ts",

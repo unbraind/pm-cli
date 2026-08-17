@@ -6,18 +6,19 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-14T07:11:28.225Z"
-updated_at: "2026-08-15T03:01:46.246Z"
-closed_at: "2026-08-15T03:01:45.716Z"
-completed_at: "2026-08-15T03:01:45.716Z"
+updated_at: "2026-08-17T09:15:23.565Z"
+closed_at: "2026-08-17T09:15:22.850Z"
+completed_at: "2026-08-17T09:15:22.850Z"
 author: "harness:codex"
 acceptance_criteria: Replication sets may declare content predicates for trigger-file diff hunks; Relevant annotation receipt changes still require every replicated member; Unrelated output-budget changes in the shared table do not activate annotation receipt replication; Negative-control tests prove malformed trigger declarations fail closed
 parent: pm-92if
-resolution: fixed
-expected_result: "A replication set activates only when relevant contract lines change in a declared trigger file, still enforcing every required member and failing closed when diff evidence or trigger declarations are invalid."
-actual_result: "The gate now supports changed_lines_contain_any markers, ignores proven unrelated hunks, activates on relevant added or removed lines, and treats unavailable diff evidence as active."
+resolution: "Content-scoped both database-sync-test-seam triggers to the explicit DatabaseSync loader, resolver, runtime cache, and replacement markers."
+expected_result: "Unrelated history-index work does not activate the SQLite replacement-seam ratchet, while changes to either replacement seam still require both persisted-index members."
+actual_result: "The new negative control ignores authoritative history fallback markers, the positive control fails closed on RuntimeDatabaseSync changes, all 17 focused tests pass, and the real PR diff has no false active set."
+fixed_version: unreleased
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-kmnvug,discovered_from,"2026-08-14T07:11:28.225Z","harness:codex","cli:create:dep",detected
-comments[13]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-08-14T07:11:28.225Z","harness:codex","Duplicate check: searched all statuses for surface replication false-positive activation,trigger scope,unrelated file changes,and content-aware triggers. pm-kmnvug fixed shared non-trigger activation but does not address unrelated hunks inside an explicitly shared trigger file; no item tracks that distinct residual."
   "2026-08-14T07:18:30.525Z","harness:codex","TDD/quality evidence: the existing full pnpm quality:static chain reproduced false activation of annotation-mutation-receipts from an outputBudget-only hunk. New focused tests prove relevant diff markers activate, unrelated hunks stay inactive, missing diff evidence activates fail-closed, and malformed trigger objects are refused. The real changeset now reports zero unrelated active replication sets."
   "2026-08-14T07:55:45.881Z","harness:codex","Completion evidence: replication triggers accept changed_lines_contain_any, relevant diff markers activate every required-member ratchet, unrelated shared-file hunks do not, missing diff evidence activates fail-closed, malformed objects fail declaration validation, and a no-default-branch Git fixture is covered. Real changeset gate, linked 15-test suite, complete static chain, and exact coverage all pass."
@@ -31,6 +32,8 @@ comments[13]{created_at,author,text}:
   "2026-08-15T01:56:45.923Z","harness:codex","Delivery evidence 2026-08-15: surface replication activation now evaluates declared semantic content predicates rather than treating any change to a shared contract file as relevant. Negative controls prove unrelated flag/tool-schema edits stay inactive while --full-history changes activate the annotation set. The focused gate passed 16/16, the real diff reports zero active sets, token baselines pass 79 surfaces, and full release verification passed 7,334 tests with exact 100/100/100/100 coverage."
   "2026-08-15T02:58:00.679Z","harness:codex","Review reliability evidence 2026-08-15: exact coverage showed the two real-worktree semantic-trigger controls take 26-55 seconds under the fully parallel 500-file run although they finish in 7-10 seconds alone. Their test-only timeout is now 120 seconds; no gate threshold, trigger predicate, assertion, or fail-closed behavior changed. The focused 16-test suite and exact 7,337-test coverage pass."
   "2026-08-15T03:01:45.000Z","harness:codex","Final review evidence: linked surface-replication contracts passed 16/16 tests with unchanged gate thresholds and bounded 120-second test harness timeouts."
+  "2026-08-17T09:12:35.696Z","harness:codex","Recurrence evidence 2026-08-17: PR #1053 exact head 7f94e0001 added an authoritative non-SQLite history fallback in src/core/history/event-index.ts while leaving resolveDatabaseSync/setDatabaseSync unchanged. The database-sync-test-seam declaration still uses whole-file triggers, so hosted Gates (static) demanded an artificial edit to item-metadata-query-index.ts. Reusing this canonical content-scope item; no waiver and no unrelated production edit."
+  "2026-08-17T09:15:17.334Z","harness:codex","TDD completion evidence 2026-08-17: the new database seam negative control failed against the whole-file declaration, proving unrelated queryHistoryEventStreams/readAuthoritativeHistoryEvents lines activated database-sync-test-seam. Both index triggers now match only load/resolve/runtime/set DatabaseSync seam markers. The focused gate passes 17/17; its positive control still requires the second member for a RuntimeDatabaseSync change; the real PR changeset reports active_sets=[]; defect-evidence passes."
 learnings[1]{created_at,author,text}:
   "2026-08-14T07:55:46.540Z","harness:codex","A file path is too coarse to be a replication trigger when one shared registry owns unrelated contracts. Content-scoped added/removed-line markers preserve fail-closed coupling without requiring artificial edits; absence of diff evidence must activate, not skip, the set."
 files[5]{path,scope,note}:
@@ -41,7 +44,7 @@ files[5]{path,scope,note}:
   tests/unit/scripts/release/surface-replication-gate.spec.ts,project,Deleted structured-trigger activation regression coverage
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/surface-replication-gate.spec.ts,project,240
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mssnitjk-wezjxh
     kind: test
     status: passed
@@ -71,8 +74,25 @@ test_runs[3]:
     skipped: 0
     items: 1
     linked_tests: 1
+  - run_id: test-local-msx0q39o-yatrns
+    kind: test
+    status: passed
+    started_at: "2026-08-17T09:14:54.604Z"
+    finished_at: "2026-08-17T09:15:16.620Z"
+    recorded_at: "2026-08-17T09:15:16.620Z"
+    passed: 1
+    failed: 0
+    skipped: 0
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated by pm-changelog 2026.8.12 from closed tracker state
   docs/SDK_CONTEXT_INTEGRITY.md,project,Document content-scoped replication trigger semantics
-close_reason: "Review follow-up complete: real-worktree replication contracts remain strict and reliable under full-suite load."
+close_reason: "Scoped the database replacement-seam replication set to semantic diff markers with failing-first negative coverage, preserved fail-closed positive behavior, and cleared the real static-gate false activation."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: surface-replication-database-sync-semantic-trigger
+  negative_control: authoritative history fallback changes in event-index.ts do not touch DatabaseSync seams and must not require artificial item-metadata-index edits
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/surface-replication-gate.spec.ts,node scripts/release/surface-replication-gate.mjs
+  hosted_checks[1]: CI / Gates (static)
+  owner: pm-mrhwow
 body: ""

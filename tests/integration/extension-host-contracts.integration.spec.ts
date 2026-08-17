@@ -1,5 +1,6 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -148,6 +149,73 @@ describe("extension host contracts", () => {
       expect(result.code).toBe(0);
       expect(result.stdout).toBe("");
       expect(result.stderr).toBe("");
+    });
+  });
+
+  it("keeps declared exporter artifacts byte-clean across formats and global JSON", async () => {
+    await withTempPmPath(async (context) => {
+      context.env.PM_HOST_ARTIFACT_PATH = path.join(
+        context.tempRoot,
+        "artifact.txt",
+      );
+      await installHostContractExtension(
+        context.pmPath,
+        [
+          "import { writeFileSync } from 'node:fs';",
+          "export default {",
+          "  activate(api) {",
+          "    api.registerExporter('json-report', async () => { process.stdout.write('{\"rows\":[1,2]}\\n'); return { rows: 2 }; }, { output: { channel: 'stdout', media_type: 'application/json' } });",
+          "    api.registerExporter('csv-report', async () => { process.stdout.write('id,title\\n1,alpha\\n'); return { rows: 1 }; }, { output: { channel: 'stdout', media_type: 'text/csv' } });",
+          "    api.registerExporter('binary-report', async () => { process.stdout.write(Buffer.from([0, 255, 10])); process.stderr.write('exported 3 bytes\\n'); return { bytes: 3 }; }, { output: { channel: 'stdout', media_type: 'application/octet-stream' } });",
+          "    api.registerExporter('file-report', async () => { const artifactPath = process.env.PM_HOST_ARTIFACT_PATH; if (!artifactPath) throw new Error('PM_HOST_ARTIFACT_PATH is required'); writeFileSync(artifactPath, 'file artifact\\n'); return { path: 'artifact.txt' }; }, { output: { channel: 'file', media_type: 'text/plain' } });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+        ["importers"],
+        [
+          "json-report export",
+          "csv-report export",
+          "binary-report export",
+          "file-report export",
+        ],
+      );
+
+      expect(context.runCli(["json-report", "export"]).stdout).toBe(
+        '{"rows":[1,2]}\n',
+      );
+      expect(
+        context.runCli(["json-report", "export", "--json"]).stdout,
+      ).toBe('{"rows":[1,2]}\n');
+      expect(context.runCli(["csv-report", "export"]).stdout).toBe(
+        "id,title\n1,alpha\n",
+      );
+
+      const binary = spawnSync(
+        process.execPath,
+        [path.resolve("dist/cli.js"), "binary-report", "export"],
+        { cwd: process.cwd(), env: context.env },
+      );
+      expect(binary.status).toBe(0);
+      expect(binary.stdout).toEqual(Buffer.from([0, 255, 10]));
+      expect(binary.stderr.toString("utf8")).toBe("exported 3 bytes\n");
+
+      const fileResult = context.runCli(
+        ["file-report", "export", "--json"],
+        { expectJson: true },
+      );
+      expect(fileResult).toMatchObject({
+        code: 0,
+        stderr: "",
+        json: { path: "artifact.txt" },
+      });
+      await expect(
+        readFile(path.join(context.tempRoot, "artifact.txt"), "utf8"),
+      ).resolves.toBe("file artifact\n");
+
+      const help = context.runCli(["json-report", "export", "--help"]);
+      expect(help.stdout).toContain("Artifact bytes are written");
+      expect(help.stdout).toContain("exclusively to stdout");
     });
   });
 

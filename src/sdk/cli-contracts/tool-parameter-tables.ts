@@ -196,6 +196,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   schedulePreset: { type: "string", enum: ["lightweight"] },
   status: { type: "string" },
   since: { type: "string", format: "date-time" },
+  cursorMode: { type: "string", enum: ["batch", "row"] },
   threshold: { type: "number", minimum: 0, maximum: 1 },
   filterStatus: { type: "string" },
   filterType: { type: "string" },
@@ -2188,6 +2189,11 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     limit: {
       description: "Maximum mutation events returned, from 0 through 1000.",
       examples: [0, 100],
+    },
+    cursorMode: {
+      description:
+        "Cursor framing: batch returns one terminal next_cursor (default); row also adds a cursor to every event.",
+      examples: ["batch", "row"],
     },
   },
   remind: {

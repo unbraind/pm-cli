@@ -1,0 +1,19 @@
+id: pm-y4aaol
+title: "GH-1052: typed fail-closed whole-list SDK primitive"
+description: "GitHub issue #1052 reports that package integrations duplicate incomplete whole-corpus list validation because the public SDK has no single typed primitive that proves terminal inclusion, strict reads, complete projection, zero omissions, consistent counts, and unique item identities. Add a fail-closed whole-list SDK contract with typed receipts and independent negative controls."
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:sdk",context-management,"github:1052",output-contract,package-ecosystem
+created_at: "2026-08-17T07:44:20.811Z"
+updated_at: "2026-08-17T08:20:02.600Z"
+author: "harness:codex"
+parent: pm-usfg
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-rjqr,discovered_from,"2026-08-17T07:44:20.811Z","harness:codex","cli:create:dep",detected
+  pm-5t33or,implements,"2026-08-17T08:20:02.420Z","harness:codex","governance:typed-relationship-repair",detected
+  pm-pae3wo,verifies,"2026-08-17T08:20:02.420Z","harness:codex","governance:typed-relationship-repair",detected
+comments[2]{created_at,author,text}:
+  "2026-08-17T07:44:20.811Z","harness:codex","Duplicate check 2026-08-17: searched all statuses for GH-1052, typed fail-closed whole-list, complete-list validation, and whole-corpus SDK reads. No item owns this exact reusable guarantee; pm-rjqr is the closed query-SDK source, pm-usfg is the SDK-first parent, pm-5t33or owns output receipts, and pm-pae3wo owns cross-version read compatibility. Source: https://github.com/unbraind/pm-cli/issues/1052"
+  "2026-08-17T08:20:02.420Z","harness:codex","Tracker quality: the whole-list primitive implements the output-receipt contract and verifies cross-version read compatibility; generic related edges were too weak to encode either fact."
+body: ""
