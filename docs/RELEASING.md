@@ -27,7 +27,8 @@ The local/hosted gate selection contract is tracked by
 [pm-ei6x66](../.agents/pm/tasks/pm-ei6x66.toon). Release-candidate analyzer
 provenance is tracked by [pm-u1baah](../.agents/pm/issues/pm-u1baah.toon), and
 authoritative blocker-recovery run selection by
-[pm-db8onn](../.agents/pm/issues/pm-db8onn.toon).
+[pm-db8onn](../.agents/pm/issues/pm-db8onn.toon), and queued automatic
+same-day recovery by [pm-dm2vfz](../.agents/pm/issues/pm-dm2vfz.toon).
 
 ## Version Policy
 
@@ -78,11 +79,13 @@ Policy:
   created, a non-`github-actions[bot]` closure of the exact bot-created
   `Auto Release blocked` issue on the same UTC day triggers one preparation
   retry
-- if today's tag already exists, blocker closure bypasses release-preparation
-  provenance, dependency installation, and build work, then selects immutable
-  Release evidence across both tag-push and guarded workflow-dispatch runs; a
-  completed success is authoritative over stale failures and is recorded as
-  recovered without republishing
+- if today's tag already exists, a queued schedule or blocker closure bypasses
+  release-preparation provenance, dependency installation, and build work,
+  then selects immutable Release evidence across both tag-push and guarded
+  workflow-dispatch runs. A completed success is authoritative over stale
+  failures only after the non-draft GitHub Release and exact public npm version
+  are also verified; incomplete publication continues through exact-tag
+  recovery instead of being accepted from tag presence alone
 - release preparation must pass all quality and compatibility gates before commit+tag push
 - before dependency installation or build, auto-release verifies that the
   candidate has exact-commit analyzer results or an immutable tree-identical
@@ -104,6 +107,11 @@ Policy:
   before release mutation and reported as `retry_already_attempted`, and
   workflow cleanup closures by `github-actions[bot]` are ignored.
 - after a scheduled run publishes a tag and the downstream release workflow succeeds, auto-release closes any open `Auto Release blocked` issue so the GitHub tracker reflects current release health
+- workflow concurrency can leave a delayed schedule queued behind a manual
+  production run. The queued schedule resolves the current UTC-day tag before
+  analyzer provenance, waits for or recovers its exact-tag Release workflow,
+  verifies GitHub Release plus npm publication, and exits successfully without
+  evaluating the generated direct-main release commit as a new candidate
 
 Pipeline entrypoint:
 

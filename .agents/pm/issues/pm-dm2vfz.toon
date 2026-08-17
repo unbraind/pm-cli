@@ -1,0 +1,63 @@
+id: pm-dm2vfz
+title: Queued daily releases recognize an already-published same-day release before analyzer provenance
+description: "A delayed scheduled Auto Release run queued behind a successful manual production release under workflow concurrency. When it began, main already pointed at the generated v2026.8.17 release commit. The workflow ran the reviewed-PR analyzer gate before any same-day release check, so the expected no-op path failed on direct-main release-commit provenance and opened GH-1045 even though GitHub, npm, npx, and bunx had already accepted the one immutable release for the UTC day. This is a distinct scheduling/concurrency recurrence: same-day uniqueness held, but the automatic path falsely reported a blocker after successful publication."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:release",ci,concurrency,github-actions,provenance,same-day-guard
+created_at: "2026-08-17T03:40:44.831Z"
+updated_at: "2026-08-17T04:18:00.990Z"
+closed_at: "2026-08-17T04:12:29.398Z"
+completed_at: "2026-08-17T04:12:29.398Z"
+author: "harness:codex"
+acceptance_criteria: "A queued schedule or issue-retry run detects an already-published current-day tag before analyzer, dependency installation, version mutation, or release gates; The skip receipt identifies the authoritative existing tag and exact SHA and verifies GitHub Release plus npm publication rather than treating tag presence alone as success; A current-day tag whose publication is incomplete continues through immutable recovery or fails with a typed actionable blocker; it is never silently accepted; A schedule/manual concurrency negative control proves exactly one version is produced and the later automatic run completes successfully without a false blocker issue"
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: high
+repro_steps: Dispatch a production Auto Release shortly before the delayed daily schedule becomes runnable; let the manual run push the current-day release commit/tag while the scheduled run waits on workflow concurrency; observe the scheduled checkout at the release commit fail reviewed-PR analyzer provenance before same-day skip logic.
+resolution: "Automatic schedule and issue-retry events now resolve the current UTC-day immutable tag before analyzer or build work, select/wait/recover its exact Release workflow, and accept success only after direct non-draft GitHub Release plus anonymous exact-version npm verification. Manual workflow dispatch remains governed by the separate same-day follow-up policy."
+expected_result: "After one production path publishes the UTC-day release, any queued automatic run recognizes and verifies that immutable result before analyzer provenance and exits successfully without a second release or blocker issue."
+actual_result: "Behavioral workflow tests execute both tag detection and recovery shell paths: queued schedule returns the existing exact tag/SHA without issue mutation or republishing; missing public npm evidence fails closed. Focused PM-linked suite passes 35/35, full suite passes 7,459 tests at exact 100/100/100/100 coverage, security scan and production audit report zero findings, and package artifact validation passes."
+affected_version: 2026.8.17
+fixed_version: 2026.8.18
+component: Auto Release workflow orchestration
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-44u3wt,discovered_from,"2026-08-17T03:40:44.831Z","harness:codex","cli:create:dep",detected
+  pm-7zs0,verifies,"2026-08-17T03:40:44.831Z","harness:codex","cli:create:dep",detected
+  pm-u1baah,recurs_from,"2026-08-17T03:40:44.831Z","harness:codex","cli:create:dep",detected
+  pm-uenmu9,implements,"2026-08-17T03:40:44.831Z","harness:codex","cli:create:dep",detected
+  pm-e70zh5,incident_from,"2026-08-17T04:08:34.199Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-08-17T03:40:44.831Z","harness:codex","Duplicate check 2026-08-17: searched all statuses for scheduled/manual Auto Release races, same-day guards, release-commit analyzer provenance, and false blocker issues. pm-uenmu9 owns the broader accepted manual-follow-up version policy; pm-44u3wt owns schedule drift; pm-e70zh5 owns reliability measurement; closed pm-u1baah owns reviewed-PR analyzer provenance. None owns a queued automatic run that starts after another run has already published the same-day release, so this child records the distinct concurrency recurrence and links all canonical lineage."
+  "2026-08-17T03:40:57.984Z","harness:codex","Start evidence 2026-08-17: manual Auto Release 31990359112 at merge SHA 4748962 passed the full pipeline and downstream Release 31990927326, producing release commit/tag 7668c2e00, GitHub release v2026.8.17, npm latest 2026.8.17, and passing installed npm/Bun agent sessions. Delayed scheduled run 31991277386 then checked out that release commit, failed before build because hosted-analysis-gate correctly found no reviewed-PR evidence for the generated direct-main version commit, and opened GH-1045. No duplicate tag or npm publication occurred. Active fix will make the automatic same-day published result authoritative before analyzer while refusing tag-only or incomplete publication."
+  "2026-08-17T03:46:52.544Z","harness:codex","Implementation note: detection now applies to automatic schedule and issue events but deliberately excludes workflow_dispatch so the broader manual-follow-up policy remains owned by pm-uenmu9. Existing-tag recovery is outside issue-only marker handling, selects exact-tag Release evidence, verifies a non-draft GitHub Release and the anonymous exact npm version, then emits the authoritative tag/SHA receipt before analyzer or build. Missing public npm state fails closed and routes through the scheduled blocker path."
+  "2026-08-17T04:08:34.905Z","harness:codex","Graph-governance correction: the initial generic related edge to pm-e70zh5 exceeded the related-edge ceiling and reduced semantic share. Retyped it to incident_from because this production automation failure is an observed incident in the release-reliability lineage; no generic substitute remains."
+  "2026-08-17T04:12:24.890Z","harness:codex","Implementation complete before review: automatic same-day tag detection executes ahead of analyzer provenance; exact-tag Release selection is reused across schedule and issue retries; public GitHub/npm proof is mandatory; missing npm publication is a negative-control failure; manual dispatch semantics remain isolated. Local full coverage, focused behavior, graph governance, security, audit, docs, typecheck, duplication, and package-artifact checks are green. Hosted exact-head review and the live GH-1045 closure recovery remain operational merge evidence, not unimplemented scope."
+notes[1]{created_at,author,text}:
+  "2026-08-17T04:12:04.046Z","harness:codex","Verification receipt 2026-08-17: focused workflow contracts 35/35; complete suite 511 files and 7,459 tests; exact coverage 54,508 statements, 40,594 branches, 11,205 functions, and 52,609 lines at 100%; zero jscpd clones; secrets scan clear; pnpm production audit clear; package artifact 1,410 files and no forbidden source maps."
+learnings[1]{created_at,author,text}:
+  "2026-08-17T04:12:04.715Z","harness:codex","A workflow concurrency group serializes starts but does not make a queued schedule stale-aware. Same-day idempotency must be evaluated as the first automatic step against immutable publication state, before candidate-commit provenance, because the previous run may have replaced main with a generated release commit while the schedule waited."
+files[4]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Record the latest installed pm-changelog package version used for generation
+  .github/workflows/auto-release.yml,project,Move authoritative same-day publication detection ahead of analyzer and expensive release preparation
+  tests/integration/ci-workflow-contract.spec.ts,project,Ratchet automatic target detection ahead of analyzer and require GitHub/npm verification
+  tests/integration/release-automation-contract.spec.ts,project,Execute schedule and issue same-day recovery with successful publication and missing-npm negative controls
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mswp0ryk-k9xaz8,test,passed,"2026-08-17T03:47:29.167Z","2026-08-17T03:47:39.788Z","2026-08-17T03:47:39.788Z",1,0,0
+  test-local-mswpvfov-m5sm1v,test,passed,"2026-08-17T04:11:19.997Z","2026-08-17T04:11:30.223Z","2026-08-17T04:11:30.223Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Regenerate release notes from closed PM history with pm-changelog 2026.8.17
+  docs/RELEASING.md,project,Document queued automatic no-op and incomplete-publication recovery semantics
+close_reason: "Implemented fail-closed same-day automatic publication recovery before analyzer/build, with executable schedule, issue-retry, tag-detection, and missing-npm negative controls; 7,459 tests pass at exact 100/100/100/100 coverage and all local security/artifact/governance gates pass."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: auto-release-same-day-automatic-recovery
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts -t automatic
+  local_checks[6]: pm test pm-dm2vfz --run --progress,node scripts/run-tests.mjs coverage,pnpm lint,"pnpm security:scan",pnpm audit --prod,"pnpm quality:package-artifact"
+  hosted_checks[4]: CI / Gates (coverage),CI / Gates (static),Security / Security Scan,CodeQL / Analyze
+  owner: pm-dm2vfz
+body: ""
