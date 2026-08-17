@@ -257,7 +257,7 @@ describe("release automation contract", () => {
       ),
     ).toBeLessThan(autoReleaseWorkflow.indexOf("Setup pnpm"));
     expect(
-      autoReleaseWorkflow.indexOf("Detect immutable same-day retry target"),
+      autoReleaseWorkflow.indexOf("Detect immutable same-day automatic target"),
     ).toBeLessThan(
       autoReleaseWorkflow.indexOf(
         "Verify release analyzer provenance before build",
@@ -307,7 +307,7 @@ describe("release automation contract", () => {
     expect(gates).toContain(".filter(([, value]) => value.length > 0)");
   });
 
-  it("executes guarded issue recovery before build and records one retry marker", async () => {
+  it("executes automatic same-day recovery before build and records issue retry markers", async () => {
     const workflow = await readFile(
       path.join(repoRoot, ".github/workflows/auto-release.yml"),
       "utf8",
@@ -327,6 +327,7 @@ describe("release automation contract", () => {
     );
     try {
       const ghLog = path.join(tempRoot, "gh.log");
+      const npmLog = path.join(tempRoot, "npm.log");
       const githubOutput = path.join(tempRoot, "github.output");
       await writeFile(
         path.join(tempRoot, "gh"),
@@ -337,12 +338,23 @@ case "$1 $2" in
   "issue view") printf '%s' "\${ISSUE_COMMENTS}" ;;
   "issue comment") ;;
   "run list") printf '%s' "\${RELEASE_RUNS_JSON}" ;;
+  "release view") printf '%s' "\${RELEASE_TAG_OUTPUT}" ;;
   *) printf 'Unexpected gh invocation: %s\\n' "$*" >&2; exit 97 ;;
 esac
 `,
         "utf8",
       );
+      await writeFile(
+        path.join(tempRoot, "npm"),
+        `#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "\${NPM_FAKE_LOG}"
+printf '"%s"\\n' "\${RELEASE_VERSION}"
+exit "\${NPM_STATUS}"
+`,
+        "utf8",
+      );
       await chmod(path.join(tempRoot, "gh"), 0o755);
+      await chmod(path.join(tempRoot, "npm"), 0o755);
 
       const currentDay = new Date().toISOString().slice(0, 10);
       const releaseTag = `v${currentDay
@@ -362,7 +374,10 @@ esac
           createdAt: `${currentDay}T08:16:49Z`,
         },
       ]);
-      const runScenario = (issueComments: string) =>
+      const runScenario = (
+        issueComments: string,
+        overrides: NodeJS.ProcessEnv = {},
+      ) =>
         spawnSync(
           "bash",
           ["-c", prependFakeBinForBash(autoReleaseScript ?? "")],
@@ -373,21 +388,27 @@ esac
               ...process.env,
               FAKE_BIN: tempRoot,
               GH_FAKE_LOG: ghLog,
+              NPM_FAKE_LOG: npmLog,
+              NPM_STATUS: "0",
               GITHUB_EVENT_NAME: "issues",
               ISSUE_CREATED_AT: `${currentDay}T08:00:00Z`,
               ISSUE_NUMBER: "1017",
               ISSUE_COMMENTS: issueComments,
               EXISTING_RELEASE_TAG: releaseTag,
               EXISTING_RELEASE_SHA: releaseSha,
+              RELEASE_TAG_OUTPUT: releaseTag,
+              RELEASE_VERSION: releaseTag.slice(1),
               RELEASE_RUNS_JSON: releaseRuns,
               GITHUB_OUTPUT: githubOutput,
               RUNNER_TEMP: tempRoot,
               DEFAULT_BRANCH: "main",
+              ...overrides,
             },
           },
         );
 
       await writeFile(ghLog, "", "utf8");
+      await writeFile(npmLog, "", "utf8");
       await writeFile(githubOutput, "", "utf8");
       const recovered = runScenario("");
       expect(recovered.status).toBe(0);
@@ -403,8 +424,41 @@ esac
       expect(await readFile(ghLog, "utf8")).toContain(
         `auto-release-retry-attempted:${currentDay}`,
       );
+      expect(await readFile(ghLog, "utf8")).toContain(
+        `release view ${releaseTag}`,
+      );
+      expect(await readFile(npmLog, "utf8")).toContain(
+        `view @unbrained/pm-cli@${releaseTag.slice(1)} version --json`,
+      );
 
       await writeFile(ghLog, "", "utf8");
+      await writeFile(npmLog, "", "utf8");
+      await writeFile(githubOutput, "", "utf8");
+      const queuedSchedule = runScenario("", {
+        GITHUB_EVENT_NAME: "schedule",
+      });
+      expect(queuedSchedule.status).toBe(0);
+      expect(queuedSchedule.stdout).toContain(
+        `Verified same-day GitHub Release and npm publication for ${releaseTag} at ${releaseSha}.`,
+      );
+      expect(await readFile(ghLog, "utf8")).not.toContain("issue view");
+      expect(await readFile(ghLog, "utf8")).not.toContain("issue comment");
+      expect(await readFile(githubOutput, "utf8")).toContain(
+        `published_tag=${releaseTag}`,
+      );
+
+      await writeFile(ghLog, "", "utf8");
+      await writeFile(npmLog, "", "utf8");
+      await writeFile(githubOutput, "", "utf8");
+      const missingPublicPackage = runScenario("", {
+        GITHUB_EVENT_NAME: "schedule",
+        NPM_STATUS: "1",
+      });
+      expect(missingPublicPackage.status).not.toBe(0);
+      expect(await readFile(githubOutput, "utf8")).toBe("");
+
+      await writeFile(ghLog, "", "utf8");
+      await writeFile(npmLog, "", "utf8");
       await writeFile(githubOutput, "", "utf8");
       const duplicate = runScenario(
         `<!-- auto-release-retry-attempted:${currentDay} -->`,
@@ -417,6 +471,87 @@ esac
         "retry_skip_reason=retry_already_attempted\n",
       );
       expect(await readFile(ghLog, "utf8")).not.toContain("run list");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("detects an immutable same-day tag before automatic preparation", async () => {
+    const workflow = await readFile(
+      path.join(repoRoot, ".github/workflows/auto-release.yml"),
+      "utf8",
+    );
+    const detectionStep = workflow.match(
+      / {6}- name: Detect immutable same-day automatic target[\s\S]*? {8}run: \|\n([\s\S]*?)(?=\n {6}- name:)/u,
+    )?.[1];
+    expect(detectionStep).toBeDefined();
+    const detectionScript = detectionStep
+      ?.split("\n")
+      .map((line) => line.slice(10))
+      .join("\n");
+    expect(detectionScript).toBeDefined();
+
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-auto-release-detection-"),
+    );
+    try {
+      const gitEnv = {
+        ...process.env,
+        GIT_AUTHOR_EMAIL: "release-contract@example.invalid",
+        GIT_AUTHOR_NAME: "Release Contract",
+        GIT_COMMITTER_EMAIL: "release-contract@example.invalid",
+        GIT_COMMITTER_NAME: "Release Contract",
+      };
+      expect(
+        spawnSync("git", ["init", "--initial-branch=main"], {
+          cwd: tempRoot,
+          encoding: "utf8",
+          env: gitEnv,
+        }).status,
+      ).toBe(0);
+      await writeFile(path.join(tempRoot, "tracked.txt"), "release\n", "utf8");
+      expect(
+        spawnSync("git", ["add", "tracked.txt"], {
+          cwd: tempRoot,
+          encoding: "utf8",
+          env: gitEnv,
+        }).status,
+      ).toBe(0);
+      expect(
+        spawnSync("git", ["commit", "-m", "release candidate"], {
+          cwd: tempRoot,
+          encoding: "utf8",
+          env: gitEnv,
+        }).status,
+      ).toBe(0);
+
+      const currentDay = new Date().toISOString().slice(0, 10);
+      const releaseTag = `v${currentDay
+        .split("-")
+        .map((part) => String(Number(part)))
+        .join(".")}`;
+      expect(
+        spawnSync("git", ["tag", releaseTag], {
+          cwd: tempRoot,
+          encoding: "utf8",
+          env: gitEnv,
+        }).status,
+      ).toBe(0);
+      const expectedSha = spawnSync("git", ["rev-parse", "HEAD"], {
+        cwd: tempRoot,
+        encoding: "utf8",
+        env: gitEnv,
+      }).stdout.trim();
+      const githubOutput = path.join(tempRoot, "github.output");
+      const detected = spawnSync("bash", ["-c", detectionScript ?? ""], {
+        cwd: tempRoot,
+        encoding: "utf8",
+        env: { ...gitEnv, GITHUB_OUTPUT: githubOutput },
+      });
+      expect(detected.status).toBe(0);
+      expect(await readFile(githubOutput, "utf8")).toBe(
+        `existing_tag=${releaseTag}\nexisting_sha=${expectedSha}\n`,
+      );
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

@@ -63,9 +63,9 @@ jobs:
           # the git push process only.
           persist-credentials: false
 
-      - name: Detect immutable same-day retry target
+      - name: Detect immutable same-day automatic target
         id: retry_target
-        if: github.event_name == 'issues'
+        if: github.event_name != 'workflow_dispatch'
         run: |
           set -euo pipefail
           # JavaScript template expressions are intentionally protected from shell expansion.
@@ -160,9 +160,9 @@ jobs:
           RELEASE_FAILURE_RECORD: ${{ runner.temp }}/release-failure-record.json
         run: |
           set -euo pipefail
+          current_day="$(date -u +%F)"
           if [[ "${GITHUB_EVENT_NAME}" == "issues" ]]; then
             issue_created_day="${ISSUE_CREATED_AT%%T*}"
-            current_day="$(date -u +%F)"
             if [[ -z "${issue_created_day}" || "${issue_created_day}" != "${current_day}" ]]; then
               echo "Auto Release retry skipped because blocker issue was not created on the current UTC day."
               echo "retry_skip_reason=same_day_window_expired" >> "${GITHUB_OUTPUT}"
@@ -196,70 +196,86 @@ jobs:
               echo "Could not record Auto Release retry marker on blocker issue #${ISSUE_NUMBER}; refusing untracked production retry."
               exit 1
             fi
-            if [[ -n "${EXISTING_RELEASE_TAG}" ]]; then
-              echo "Same-day tag ${EXISTING_RELEASE_TAG} already exists; selecting authoritative exact-tag Release evidence before any preparation work."
-              release_runs="$(gh run list --workflow Release --limit 100 --json databaseId,status,conclusion,headBranch,headSha,event,createdAt,displayTitle)"
+          fi
+          if [[ -n "${EXISTING_RELEASE_TAG}" ]]; then
+            echo "Same-day tag ${EXISTING_RELEASE_TAG} already exists; selecting authoritative exact-tag Release evidence before any preparation work."
+            release_runs="$(gh run list --workflow Release --limit 100 --json databaseId,status,conclusion,headBranch,headSha,event,createdAt,displayTitle)"
+            selection="$(printf '%s' "${release_runs}" | node scripts/release/release-run-selection.mjs \
+              --tag "${EXISTING_RELEASE_TAG}" \
+              --tag-sha "${EXISTING_RELEASE_SHA}" \
+              --default-branch "${DEFAULT_BRANCH}")"
+            dispatch_evidence=""
+            if [[ "$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).reason);' "${selection}")" != "successful_run" ]]; then
+              while IFS= read -r run_id; do
+                if [[ -z "${run_id}" ]]; then
+                  continue
+                fi
+                run_log="${RUNNER_TEMP}/release-run-${run_id}.log"
+                if gh run view "${run_id}" --log > "${run_log}" 2>/dev/null && grep -Fq "RELEASE_TAG: ${EXISTING_RELEASE_TAG}" "${run_log}"; then
+                  dispatch_evidence="${run_id}"
+                  rm -f "${run_log}"
+                  break
+                fi
+                rm -f "${run_log}"
+              done < <(printf '%s' "${release_runs}" | node -e 'const fs=require("fs"); const currentDay=process.argv[1]; const defaultBranch=process.argv[2]; const runs=JSON.parse(fs.readFileSync(0,"utf8")).filter((run)=>run.event === "workflow_dispatch" && run.status === "completed" && run.conclusion === "success" && run.headBranch === defaultBranch && run.createdAt.startsWith(currentDay)).slice(0, 5); for (const run of runs) console.log(run.databaseId);' "${current_day}" "${DEFAULT_BRANCH}")
               selection="$(printf '%s' "${release_runs}" | node scripts/release/release-run-selection.mjs \
                 --tag "${EXISTING_RELEASE_TAG}" \
                 --tag-sha "${EXISTING_RELEASE_SHA}" \
-                --default-branch "${DEFAULT_BRANCH}")"
-              dispatch_evidence=""
-              if [[ "$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).reason);' "${selection}")" != "successful_run" ]]; then
-                while IFS= read -r run_id; do
-                  if [[ -z "${run_id}" ]]; then
-                    continue
-                  fi
-                  run_log="${RUNNER_TEMP}/release-run-${run_id}.log"
-                  if gh run view "${run_id}" --log > "${run_log}" 2>/dev/null && grep -Fq "RELEASE_TAG: ${EXISTING_RELEASE_TAG}" "${run_log}"; then
-                    dispatch_evidence="${run_id}"
-                    rm -f "${run_log}"
-                    break
-                  fi
-                  rm -f "${run_log}"
-                done < <(printf '%s' "${release_runs}" | node -e 'const fs=require("fs"); const currentDay=process.argv[1]; const defaultBranch=process.argv[2]; const runs=JSON.parse(fs.readFileSync(0,"utf8")).filter((run)=>run.event === "workflow_dispatch" && run.status === "completed" && run.conclusion === "success" && run.headBranch === defaultBranch && run.createdAt.startsWith(currentDay)).slice(0, 5); for (const run of runs) console.log(run.databaseId);' "${current_day}" "${DEFAULT_BRANCH}")
-                selection="$(printf '%s' "${release_runs}" | node scripts/release/release-run-selection.mjs \
+                --default-branch "${DEFAULT_BRANCH}" \
+                --dispatch-run-ids "${dispatch_evidence}")"
+            fi
+            RELEASE_RUN_ID="$(node -e 'const selected=JSON.parse(process.argv[1]).selected; process.stdout.write(selected ? String(selected.database_id) : "");' "${selection}")"
+            RELEASE_RUN_STATUS="$(node -e 'const selected=JSON.parse(process.argv[1]).selected; process.stdout.write(selected?.status ?? "");' "${selection}")"
+            RELEASE_RUN_CONCLUSION="$(node -e 'const selected=JSON.parse(process.argv[1]).selected; process.stdout.write(selected?.conclusion ?? "");' "${selection}")"
+
+            if [[ "${RELEASE_RUN_STATUS}" == "completed" && "${RELEASE_RUN_CONCLUSION}" == "success" ]]; then
+              echo "Existing Release workflow ${RELEASE_RUN_ID} for ${EXISTING_RELEASE_TAG} already proved successful immutable publication."
+            elif [[ -n "${RELEASE_RUN_ID}" && "${RELEASE_RUN_STATUS}" != "completed" ]]; then
+              echo "Waiting for active exact-tag Release workflow ${RELEASE_RUN_ID}."
+              gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
+            else
+              dispatch_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              gh workflow run release.yml --ref "${DEFAULT_BRANCH}" -f tag="${EXISTING_RELEASE_TAG}"
+              echo "Dispatched the reviewed current Release workflow from ${DEFAULT_BRANCH} for immutable source ${EXISTING_RELEASE_TAG}."
+              RELEASE_RUN_ID=""
+              for _attempt in $(seq 1 30); do
+                dispatched_runs="$(gh run list --workflow Release --event workflow_dispatch --branch "${DEFAULT_BRANCH}" --limit 20 --json databaseId,status,conclusion,headBranch,headSha,event,createdAt,displayTitle)"
+                dispatch_selection="$(printf '%s' "${dispatched_runs}" | node scripts/release/release-run-selection.mjs \
                   --tag "${EXISTING_RELEASE_TAG}" \
                   --tag-sha "${EXISTING_RELEASE_SHA}" \
                   --default-branch "${DEFAULT_BRANCH}" \
-                  --dispatch-run-ids "${dispatch_evidence}")"
-              fi
-              RELEASE_RUN_ID="$(node -e 'const selected=JSON.parse(process.argv[1]).selected; process.stdout.write(selected ? String(selected.database_id) : "");' "${selection}")"
-              RELEASE_RUN_STATUS="$(node -e 'const selected=JSON.parse(process.argv[1]).selected; process.stdout.write(selected?.status ?? "");' "${selection}")"
-              RELEASE_RUN_CONCLUSION="$(node -e 'const selected=JSON.parse(process.argv[1]).selected; process.stdout.write(selected?.conclusion ?? "");' "${selection}")"
-
-              if [[ "${RELEASE_RUN_STATUS}" == "completed" && "${RELEASE_RUN_CONCLUSION}" == "success" ]]; then
-                echo "Existing Release workflow ${RELEASE_RUN_ID} for ${EXISTING_RELEASE_TAG} already proved successful immutable publication."
-              elif [[ -n "${RELEASE_RUN_ID}" && "${RELEASE_RUN_STATUS}" != "completed" ]]; then
-                echo "Waiting for active exact-tag Release workflow ${RELEASE_RUN_ID}."
-                gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
-              else
-                dispatch_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-                gh workflow run release.yml --ref "${DEFAULT_BRANCH}" -f tag="${EXISTING_RELEASE_TAG}"
-                echo "Dispatched the reviewed current Release workflow from ${DEFAULT_BRANCH} for immutable source ${EXISTING_RELEASE_TAG}."
-                RELEASE_RUN_ID=""
-                for _attempt in $(seq 1 30); do
-                  dispatched_runs="$(gh run list --workflow Release --event workflow_dispatch --branch "${DEFAULT_BRANCH}" --limit 20 --json databaseId,status,conclusion,headBranch,headSha,event,createdAt,displayTitle)"
-                  dispatch_selection="$(printf '%s' "${dispatched_runs}" | node scripts/release/release-run-selection.mjs \
-                    --tag "${EXISTING_RELEASE_TAG}" \
-                    --tag-sha "${EXISTING_RELEASE_SHA}" \
-                    --default-branch "${DEFAULT_BRANCH}" \
-                    --created-after "${dispatch_started_at}")"
-                  RELEASE_RUN_ID="$(node -e 'const selected=JSON.parse(process.argv[1]).selected; process.stdout.write(selected ? String(selected.database_id) : "");' "${dispatch_selection}")"
-                  if [[ -n "${RELEASE_RUN_ID}" ]]; then
-                    break
-                  fi
-                  sleep 10
-                done
-                if [[ -z "${RELEASE_RUN_ID}" ]]; then
-                  echo "Current-workflow recovery run for ${EXISTING_RELEASE_TAG} did not become visible in time."
-                  exit 1
+                  --created-after "${dispatch_started_at}")"
+                RELEASE_RUN_ID="$(node -e 'const selected=JSON.parse(process.argv[1]).selected; process.stdout.write(selected ? String(selected.database_id) : "");' "${dispatch_selection}")"
+                if [[ -n "${RELEASE_RUN_ID}" ]]; then
+                  break
                 fi
-                gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
+                sleep 10
+              done
+              if [[ -z "${RELEASE_RUN_ID}" ]]; then
+                echo "Current-workflow recovery run for ${EXISTING_RELEASE_TAG} did not become visible in time."
+                exit 1
               fi
-              echo "published_tag=${EXISTING_RELEASE_TAG}" >> "${GITHUB_OUTPUT}"
-              echo "published_sha=${EXISTING_RELEASE_SHA}" >> "${GITHUB_OUTPUT}"
-              exit 0
+              gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
             fi
+
+            verified_release_tag="$(gh release view "${EXISTING_RELEASE_TAG}" --json tagName,isDraft,isPrerelease --jq 'select(.isDraft == false and .isPrerelease == false) | .tagName')"
+            if [[ "${verified_release_tag}" != "${EXISTING_RELEASE_TAG}" ]]; then
+              echo "Existing release ${EXISTING_RELEASE_TAG} lacks public non-draft GitHub Release metadata."
+              exit 1
+            fi
+            release_version="${EXISTING_RELEASE_TAG#v}"
+            npm_package="$(node -p 'require("./package.json").name')"
+            public_npmrc="${RUNNER_TEMP}/same-day-public-npmrc"
+            : > "${public_npmrc}"
+            verified_npm_version="$(env -u NODE_AUTH_TOKEN -u NPM_TOKEN npm_config_userconfig="${public_npmrc}" npm_config_cache="${RUNNER_TEMP}/same-day-npm-cache" npm view "${npm_package}@${release_version}" version --json | node -e 'let input=""; process.stdin.on("data", (chunk) => { input += chunk; }); process.stdin.on("end", () => { const parsed=JSON.parse(input); process.stdout.write(typeof parsed === "string" ? parsed : ""); });')"
+            if [[ "${verified_npm_version}" != "${release_version}" ]]; then
+              echo "Existing release ${EXISTING_RELEASE_TAG} is not publicly available from npm at the exact version."
+              exit 1
+            fi
+            echo "Verified same-day GitHub Release and npm publication for ${EXISTING_RELEASE_TAG} at ${EXISTING_RELEASE_SHA}."
+            echo "published_tag=${EXISTING_RELEASE_TAG}" >> "${GITHUB_OUTPUT}"
+            echo "published_sha=${EXISTING_RELEASE_SHA}" >> "${GITHUB_OUTPUT}"
+            exit 0
           fi
           if [[ "${INPUT_DRY_RUN}" == "true" && "${INPUT_PUSH}" == "true" ]]; then
             echo "dry_run=true cannot be combined with push=true"
