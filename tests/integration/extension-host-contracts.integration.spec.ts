@@ -154,6 +154,10 @@ describe("extension host contracts", () => {
 
   it("keeps declared exporter artifacts byte-clean across formats and global JSON", async () => {
     await withTempPmPath(async (context) => {
+      context.env.PM_HOST_ARTIFACT_PATH = path.join(
+        context.tempRoot,
+        "artifact.txt",
+      );
       await installHostContractExtension(
         context.pmPath,
         [
@@ -163,7 +167,7 @@ describe("extension host contracts", () => {
           "    api.registerExporter('json-report', async () => { process.stdout.write('{\"rows\":[1,2]}\\n'); return { rows: 2 }; }, { output: { channel: 'stdout', media_type: 'application/json' } });",
           "    api.registerExporter('csv-report', async () => { process.stdout.write('id,title\\n1,alpha\\n'); return { rows: 1 }; }, { output: { channel: 'stdout', media_type: 'text/csv' } });",
           "    api.registerExporter('binary-report', async () => { process.stdout.write(Buffer.from([0, 255, 10])); process.stderr.write('exported 3 bytes\\n'); return { bytes: 3 }; }, { output: { channel: 'stdout', media_type: 'application/octet-stream' } });",
-          `    api.registerExporter('file-report', async () => { writeFileSync(${JSON.stringify(path.join(context.tempRoot, "artifact.txt"))}, 'file artifact\\n'); return { path: 'artifact.txt' }; }, { output: { channel: 'file', media_type: 'text/plain' } });`,
+          "    api.registerExporter('file-report', async () => { const artifactPath = process.env.PM_HOST_ARTIFACT_PATH; if (!artifactPath) throw new Error('PM_HOST_ARTIFACT_PATH is required'); writeFileSync(artifactPath, 'file artifact\\n'); return { path: 'artifact.txt' }; }, { output: { channel: 'file', media_type: 'text/plain' } });",
           "  },",
           "};",
           "",

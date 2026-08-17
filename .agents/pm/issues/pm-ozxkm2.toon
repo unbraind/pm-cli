@@ -1,0 +1,45 @@
+id: pm-ozxkm2
+title: "CodeQL: remove generated-code artifact path interpolation from exporter integration harness"
+description: Resolve CodeQL alert #36 (js/bad-code-sanitization) in PR #1053 by passing the disposable artifact path to the generated extension through a controlled environment variable instead of interpolating it into JavaScript source. Preserve the file-artifact integration assertion and keep CodeQL enabled.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-08-17T08:59:18.441Z"
+updated_at: "2026-08-17T09:00:51.139Z"
+closed_at: "2026-08-17T09:00:50.372Z"
+completed_at: "2026-08-17T09:00:50.372Z"
+author: "harness:codex"
+parent: pm-mav1ak
+severity: medium
+environment: PR #1053 exact head ee3960b3c; tests/integration/extension-host-contracts.integration.spec.ts
+repro_steps: Open CodeQL alert #36 or run the hosted CodeQL analysis on PR #1053; it reports js/bad-code-sanitization at the generated writeFileSync path expression.
+resolution: Removed the path-to-generated-code interpolation by carrying the disposable artifact destination through the test process environment and validating it at runtime.
+expected_result: "Generated test extensions obtain the harness-controlled artifact destination as runtime data, and CodeQL reports no bad-code-sanitization alert."
+actual_result: "Focused integration coverage passes 8/8 with the artifact bytes and receipt unchanged; the source pattern reported by CodeQL alert #36 is gone, pending exact-head hosted confirmation."
+affected_version: unreleased
+fixed_version: unreleased
+component: test-security
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-92if,implements,"2026-08-17T08:59:18.441Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-17T08:59:18.441Z","harness:codex","Duplicate check: all-status searches for CodeQL improper code sanitization, generated extension artifact path, and security code injection found the general quality epic pm-92if and prior CodeQL workflow-hardening work, but no item tracking this PR-specific scanner finding. Created as a child of the active review exemplar pm-mav1ak and implementation of pm-92if."
+  "2026-08-17T09:00:48.160Z","harness:codex","TDD and remediation evidence: CodeQL alert #36 identified a harness-controlled path embedded into generated JavaScript. The integration fixture now passes that path as runtime environment data, validates its presence inside the disposable extension, and retains the same file-artifact assertion. Focused integration coverage passes 8/8, the linked PM test passes, file-level ESLint passes, and git diff validation is clean. Hosted CodeQL remains the mandatory exact-head negative control."
+learnings[1]{created_at,author,text}:
+  "2026-08-17T09:00:48.851Z","harness:codex","Even test-only generated modules should preserve the data/code boundary: pass variable fixture coordinates at runtime instead of serializing them into source, so scanners can distinguish trusted code from data without suppressions."
+files[1]{path,scope,note}:
+  tests/integration/extension-host-contracts.integration.spec.ts,project,Replace generated-source path interpolation with runtime environment data
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msx07956-1ptev6,test,passed,"2026-08-17T09:00:26.131Z","2026-08-17T09:00:37.770Z","2026-08-17T09:00:37.770Z",1,0,0
+close_reason: Resolved CodeQL alert #36 at its source without suppressing the scanner or weakening artifact integration coverage; exact-head hosted CodeQL is required before merge.
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: codeql-js-bad-code-sanitization
+  negative_control: CodeQL alert #36 on ee3960b3c
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts
+  hosted_checks[2]: CodeQL / Analyze,CodeQL
+  owner: pm-ozxkm2
+body: ""
