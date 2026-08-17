@@ -88,6 +88,7 @@ Author identity is automatic; use `--author` only for an explicit override.
 - **Record:** use `pm comments`, `pm notes`, and `pm learnings` for progress, rationale, and durable lessons. Prefer append-style updates over rewriting item content.
 - **Verify:** use sandbox-safe commands. For documentation-only work, run at least `pnpm build` and a focused link/content check. For broader work, run linked tests, coverage, validation, and release gates as appropriate.
 - **Close:** add evidence first, then `pm close <id> "<reason>" --validate-close warn`, then `pm release <id>`.
+- **Land closeout through review:** tracker evidence, item closure, and the generated changelog are part of the reviewed delivery. Never push post-merge closeout commits directly to `main`; if evidence depends on the merge SHA, carry it in a normal `main`-based follow-up PR so the new head retains analyzer provenance. See [Releasing](docs/RELEASING.md#reviewed-delivery-closeout).
 
 ## Test Safety
 

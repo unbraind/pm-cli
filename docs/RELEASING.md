@@ -273,6 +273,25 @@ confirms that exact merge SHA, `main` base, and reviewed head. Remediate a
 refused direct-main candidate by landing the next tree-changing fix through a
 reviewed PR; never copy, synthesize, or bypass analyzer evidence.
 
+### Reviewed Delivery Closeout
+
+The reviewed delivery includes its PM evidence, item closure, and generated
+changelog. Complete those mutations on the implementation branch before merge
+whenever their evidence is already available. A pull request is not complete
+while known tracker or changelog closeout remains queued for a direct push.
+
+When a repository update genuinely depends on the merge SHA or a post-merge
+hosted result, create a normal follow-up branch from `main` and land that update
+through another reviewed pull request. Do not push `.agents/pm/**` or
+`CHANGELOG.md` closeout directly to `main`. Although tracker-only commits do not
+create package-release eligibility by themselves, the direct commit still
+becomes the default-branch head and lacks the reviewed analyzer evidence needed
+by the next release-relevant candidate. `Release analyzer readiness (main)`
+must fail closed in that state; its failure is a provenance control, not an
+analyzer approval. Restore readiness only with a tree-changing, `main`-based,
+reviewed pull request—never by copying statuses, weakening the gate, or
+synthesizing a pull-request association.
+
 ```bash
 # Read-only parity check
 pnpm release:pipeline:dry-run
