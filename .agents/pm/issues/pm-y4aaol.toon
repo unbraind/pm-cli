@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:sdk",context-management,"github:1052",output-contract,package-ecosystem
 created_at: "2026-08-17T07:44:20.811Z"
-updated_at: "2026-08-17T13:33:12.764Z"
+updated_at: "2026-08-17T13:44:29.333Z"
 closed_at: "2026-08-17T13:33:11.792Z"
 completed_at: "2026-08-17T13:33:11.792Z"
 author: "harness:codex"
@@ -19,7 +19,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-08-17T08:20:02.420Z","harness:codex","governance:typed-relationship-repair",detected
   pm-pae3wo,verifies,"2026-08-17T08:20:02.420Z","harness:codex","governance:typed-relationship-repair",detected
   pm-h8tpeh,verifies,"2026-08-17T12:10:07.241Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-08-17T07:44:20.811Z","harness:codex","Duplicate check 2026-08-17: searched all statuses for GH-1052, typed fail-closed whole-list, complete-list validation, and whole-corpus SDK reads. No item owns this exact reusable guarantee; pm-rjqr is the closed query-SDK source, pm-usfg is the SDK-first parent, pm-5t33or owns output receipts, and pm-pae3wo owns cross-version read compatibility. Source: https://github.com/unbraind/pm-cli/issues/1052"
   "2026-08-17T08:20:02.420Z","harness:codex","Tracker quality: the whole-list primitive implements the output-receipt contract and verifies cross-version read compatibility; generic related edges were too weak to encode either fact."
   "2026-08-17T11:49:48.349Z","harness:codex","Implementation start 2026-08-17: deliver one coupled SDK/CLI/package-assurance tranche covering fail-closed whole-corpus reads, mode-sensitive package catalog output controls, and source-derived executable recovery obligations. Scope includes public types, command/runtime contracts, CLI and SDK behavior, generated surfaces, temporary-workspace acceptance, negative controls, docs, and packed consumers."
@@ -28,6 +28,7 @@ comments[8]{created_at,author,text}:
   "2026-08-17T13:17:58.881Z","harness:codex","Review finding 2026-08-17: DeepScan NULL_POINTER identified that the recovery integration used a non-null assertion after a Vitest definedness assertion. The runtime catches a typed validation error, but external analysis cannot use the test matcher for control-flow narrowing. Replace it with an explicit instanceof guard and rerun exact gates."
   "2026-08-17T13:19:19.475Z","harness:codex","Review fix evidence 2026-08-17: replaced the analyzer-opaque non-null assertion with an explicit PmCompleteListValidationError runtime guard before both recovery receipt reads. The focused real-entrypoint integration passes 3/3 and repo-wide ESLint passes with zero warnings."
   "2026-08-17T13:24:35.637Z","harness:codex","Hosted gate finding 2026-08-17: after the DeepScan review closeout updated the item's terminal chronology, changelog:pm:check correctly failed because CHANGELOG.md predated that final tracker state. Regenerate with pm-changelog 2026.8.17 after this evidence entry, then leave PM state immutable through the next exact-head run."
+  "2026-08-17T13:44:29.333Z","harness:codex","Merged delivery evidence 2026-08-17: PR #1054 exact head e382745a4 merged as main commit 52d2e95cdf152374308308536b57122cebaebe97 after 28 hosted checks passed. GH #1052 closed automatically. DeepScan's sole NULL_POINTER finding was fixed with explicit PmCompleteListValidationError narrowing and the final DeepScan run reported zero findings; complete-list SDK acceptance, recovery execution, structured defect evidence, and exact 100/100/100/100 coverage are on main."
 files[11]{path,scope,note}:
   sdk/public-surface.json,project,Published compatibility snapshot
   src/sdk/core.ts,project,Core SDK export
