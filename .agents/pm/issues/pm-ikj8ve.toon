@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:sdk",package-assurance,regression,"runtime:bun"
 created_at: "2026-08-17T12:47:48.472Z"
-updated_at: "2026-08-17T13:09:39.552Z"
+updated_at: "2026-08-17T13:12:17.205Z"
 closed_at: "2026-08-17T13:09:03.955Z"
 completed_at: "2026-08-17T13:09:03.955Z"
 author: "harness:codex"
@@ -18,9 +18,10 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-h8tpeh,blocked_by,"2026-08-17T12:47:48.472Z","harness:codex","cli:create:dep",detected
   pm-y4aaol,discovered_from,"2026-08-17T12:47:48.472Z","harness:codex","cli:create:dep",detected
   pm-lpqln4,recurs_from,"2026-08-17T13:08:39.183Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-17T12:47:48.472Z","harness:codex","text=Duplicate check 2026-08-17: searched all statuses for stripTypeScriptTypes and the Bun SDK runtime; zero exact items exist. pm-lpqln4 and pm-b8hwfr own prior bunx/realtime gates, not eager public SDK import compatibility. Discovery evidence: packed Bun 1.3.11 import failed while bunx pm --version passed."
   "2026-08-17T13:08:41.714Z","harness:codex","Implementation evidence 2026-08-17: changed the recovery analyzer's node:module binding from an eager named export to a namespace property so Bun can instantiate the public SDK while Node retains stripTypeScriptTypes semantics. The installed-artifact verifier now imports the exact package under both Node/npm and Bun and requires listAllComplete certification. Linked tests pass 22/22. A real temporary packed Bun 1.3.11 consumer passed bunx pm, two lifecycle states, certified complete SDK read, and package catalog; npm/npx passed the same scenario. Full repository coverage remains exact 100/100/100/100."
+  "2026-08-17T13:12:17.205Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1054 at implementation head 7d03a39ccde25a846cb099cb08b1a7840668abff. Hosted checks and full bot review are in progress."
 learnings[1]{created_at,author,text}:
   "2026-08-17T13:08:39.911Z","harness:codex","Named imports from evolving node: built-ins can make an otherwise unused SDK module fail during eager bundle instantiation on Bun. Namespace binding preserves import compatibility while retaining Node's typed implementation at the call site; published-artifact gates must execute the SDK, not only the bin."
 files[3]{path,scope,note}:

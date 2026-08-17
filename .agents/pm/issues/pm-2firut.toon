@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:sdk","github:1051",output-contract
 created_at: "2026-08-17T07:44:11.138Z"
-updated_at: "2026-08-17T13:09:39.009Z"
+updated_at: "2026-08-17T13:12:16.515Z"
 closed_at: "2026-08-17T13:09:02.654Z"
 completed_at: "2026-08-17T13:09:02.654Z"
 author: "harness:codex"
@@ -17,11 +17,12 @@ actual_result: Catalog accepts universal read controls through CLI and SDK; cata
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-479ggz,discovered_from,"2026-08-17T07:44:11.138Z","harness:codex","cli:create:dep",detected
   pm-tnud,blocked_by,"2026-08-17T08:19:49.098Z","harness:codex","governance:typed-relationship-repair",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-17T07:44:11.138Z","harness:codex","Duplicate check 2026-08-17: searched all statuses for GH-1051, package catalog output budget, and mode-sensitive package reads. No item owns this exact failure; pm-479ggz is the closed prior diagnostic-mode analogue, pm-5t33or owns universal budget contracts, and pm-tnud owns package grammar. Source: https://github.com/unbraind/pm-cli/issues/1051"
   "2026-08-17T08:19:49.098Z","harness:codex","Tracker quality: replaced the generic package-grammar relation with depends_on because mode-sensitive catalog support is constrained by the package grammar contract."
   "2026-08-17T11:49:50.881Z","harness:codex","Implementation start 2026-08-17: deliver one coupled SDK/CLI/package-assurance tranche covering fail-closed whole-corpus reads, mode-sensitive package catalog output controls, and source-derived executable recovery obligations. Scope includes public types, command/runtime contracts, CLI and SDK behavior, generated surfaces, temporary-workspace acceptance, negative controls, docs, and packed consumers."
   "2026-08-17T13:08:41.167Z","harness:codex","Implementation evidence 2026-08-17: package --catalog is now a mode-sensitive universal read surface in CLI and SDK contracts, accepting bounded/unbounded output controls while mutation combinations remain fail-closed. Generated contracts and public SDK snapshots are synchronized. Linked tests pass 3/3; packed npm/npx and Bun/bunx consumers execute catalog with --output-budget unbounded; exact full coverage, static quality, package artifact, dogfood, and external-package gates pass."
+  "2026-08-17T13:12:16.515Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1054 at implementation head 7d03a39ccde25a846cb099cb08b1a7840668abff. Hosted checks and full bot review are in progress."
 files[8]{path,scope,note}:
   sdk/public-surface.json,project,Published read-surface compatibility snapshot
   src/sdk/read-output-contracts.ts,project,Mode-sensitive package catalog read surface

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:sdk",context-management,"github:1052",output-contract,package-ecosystem
 created_at: "2026-08-17T07:44:20.811Z"
-updated_at: "2026-08-17T13:09:38.431Z"
+updated_at: "2026-08-17T13:12:15.835Z"
 closed_at: "2026-08-17T13:09:01.322Z"
 completed_at: "2026-08-17T13:09:01.322Z"
 author: "harness:codex"
@@ -19,11 +19,12 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-08-17T08:20:02.420Z","harness:codex","governance:typed-relationship-repair",detected
   pm-pae3wo,verifies,"2026-08-17T08:20:02.420Z","harness:codex","governance:typed-relationship-repair",detected
   pm-h8tpeh,verifies,"2026-08-17T12:10:07.241Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-17T07:44:20.811Z","harness:codex","Duplicate check 2026-08-17: searched all statuses for GH-1052, typed fail-closed whole-list, complete-list validation, and whole-corpus SDK reads. No item owns this exact reusable guarantee; pm-rjqr is the closed query-SDK source, pm-usfg is the SDK-first parent, pm-5t33or owns output receipts, and pm-pae3wo owns cross-version read compatibility. Source: https://github.com/unbraind/pm-cli/issues/1052"
   "2026-08-17T08:20:02.420Z","harness:codex","Tracker quality: the whole-list primitive implements the output-receipt contract and verifies cross-version read compatibility; generic related edges were too weak to encode either fact."
   "2026-08-17T11:49:48.349Z","harness:codex","Implementation start 2026-08-17: deliver one coupled SDK/CLI/package-assurance tranche covering fail-closed whole-corpus reads, mode-sensitive package catalog output controls, and source-derived executable recovery obligations. Scope includes public types, command/runtime contracts, CLI and SDK behavior, generated surfaces, temporary-workspace acceptance, negative controls, docs, and packed consumers."
   "2026-08-17T13:08:40.518Z","harness:codex","Implementation evidence 2026-08-17: added typed listAllComplete primitives across query/core/runtime/root entrypoints. Certification fails closed over source completeness, all-status scope, strict reads, terminal inclusion, full projection, paging/count consistency, field/budget/session omissions, and unique valid identities, with an exact executable CLI/SDK recovery receipt. The default full projection regression found by the packed test is covered. Linked tests pass 28/28; full repository coverage passes 515 files and 7,502 tests at exact 100/100/100/100; public surface, contracts, docs, typecheck, ESLint, jscpd, package artifact, npm/npx, Bun/bunx, dogfood, and external-package gates pass."
+  "2026-08-17T13:12:15.835Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1054 at implementation head 7d03a39ccde25a846cb099cb08b1a7840668abff. Hosted checks and full bot review are in progress."
 files[10]{path,scope,note}:
   sdk/public-surface.json,project,Published compatibility snapshot
   src/sdk/core.ts,project,Core SDK export
