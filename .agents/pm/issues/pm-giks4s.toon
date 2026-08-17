@@ -2,21 +2,44 @@ id: pm-giks4s
 title: Linked-test regular-file capture still aborts high-volume Vitest output with UNKNOWN synchronous write failure
 description: "Running the repository-wide coverage command directly passes 7,443 tests at exact 100/100/100/100, but recording and executing the identical command through pm test --run --only-index 4 aborts around 200 seconds after retained child output reaches the linked-test reporting boundary. Node raises Error: UNKNOWN: unknown error, write from SyncWriteStream._write while Vitest reports progress; coverage-summary.json is then absent and pm classifies the product-independent transport failure as assertion_failure. The earlier EAGAIN regressions were fixed with regular-file capture, so this is a distinct released-version recurrence at the reporter-to-parent output boundary."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: coverage,infrastructure-classification,linked-test,output-capture,recurrence,test-harness
 created_at: "2026-08-16T22:25:26.735Z"
-updated_at: "2026-08-16T22:25:26.735Z"
+updated_at: "2026-08-17T02:30:44.494Z"
+closed_at: "2026-08-17T02:29:59.409Z"
+completed_at: "2026-08-17T02:29:59.409Z"
 author: "harness:codex"
 acceptance_criteria: "A linked test whose child emits repository-coverage-scale output completes without EAGAIN, UNKNOWN write, broken pipe, or missing coverage artifact; Retained output remains bounded and exposes a truncation receipt without aborting the child or parent reporter; Infrastructure output-capture failures are classified separately from assertion failures"
 parent: pm-lm0j
+resolution: "Demand-driven linked-test sandbox planning prevents non-tracker commands from copying repository tracker data, while required tracker seeding now converts numeric and symbolic host capacity failures into typed path-redacted refusals."
 expected_result: pm test can execute the same verbose coverage command that passes directly and persist a bounded successful test-run receipt.
-actual_result: "Direct execution passed 7,443 tests at exact 100/100/100/100; linked execution failed after about 201 seconds with Node UNKNOWN write and no coverage-summary.json."
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "The PM-linked repository coverage command completes successfully under the same 98%-inode-use temporary filesystem, retains bounded output, records a passing run, and preserves exact 100/100/100/100 coverage."
+affected_version: 2026.8.16
+fixed_version: 2026.8.17
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-1qkivy,discovered_from,"2026-08-16T22:25:26.735Z","harness:codex","cli:create:dep",detected
   pm-5sm91o,recurs_from,"2026-08-16T22:25:26.735Z","harness:codex","cli:create:dep",detected
   pm-e97jyf,related,"2026-08-16T22:25:26.735Z","harness:codex","cli:create:dep",detected
   pm-j36ypd,recurs_from,"2026-08-16T22:25:26.735Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-3lhth4,implements,"2026-08-17T02:29:52.994Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
   "2026-08-16T22:25:26.735Z","harness:codex","Duplicate check 2026-08-17: searched all statuses for linked test output buffer, max_buffer, stdout write, UNKNOWN write, EAGAIN, verbose child, and coverage capture. Closed pm-j36ypd and pm-5sm91o own two previously shipped EAGAIN fixes; their own lineage treats a released-version recurrence with contradictory evidence as a distinct child issue. Open pm-e97jyf covers schema-context divergence, not output transport. This item records the new UNKNOWN SyncWriteStream recurrence without reopening completed historical fixes."
+  "2026-08-17T02:03:48.256Z","harness:codex","Start evidence 2026-08-17: Auto Release run 31985913468 passed build, exact coverage, packed npx smoke, and 88-command package-first dogfood, then correctly stopped before tag creation on Sentry PM-CLI-36. Live event 2e031518369e4998abae876a2035cae9 is a single handled pm-cli@2026.8.16 Node 26/Arch copyfile errno -122 during linked-test tracker seeding. Host diagnostics show /tmp at 98% inode use while runLinkedTests eagerly initializes four trackers and copies tracker data even for the selected non-PM coverage command. Active fix will make tracker sandbox data demand-driven and prove non-tracker runs avoid the high-inode copy path."
+  "2026-08-17T02:29:54.275Z","harness:codex","Verification evidence: the first PM-linked coverage run under /tmp at 98% inode use completed all 511 files and 7,457 tests without the prior copyfile EDQUOT failure; the strict gate then correctly found one uncovered defensive null branch. After adding the negative control, pm test pm-giks4s --run --only-index 2 passed in the same schema sandbox with source_project_item_count=2512 and sandbox_project_item_count=0. Exact coverage is 54,508/54,508 statements, 40,594/40,594 branches, 11,205/11,205 functions, and 52,609/52,609 lines. Repo-wide pnpm lint passed ESLint, zero jscpd clones, static assurance, package boundaries, SDK parity, graph composition, and record integrity. Secret scan, production dependency audit, package artifact gate, docs link gate, latest pm-changelog 2026.8.16 install/check, and a fresh temporary packed-package npx plus bunx version/contracts smoke all passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-17T02:29:53.761Z","harness:codex","Demand-driven context materialization is both a correctness and resource-safety primitive: decide effective linked-command context before sandbox initialization, and never copy tracker data for schema or non-PM runs."
+files[2]{path,scope,note}:
+  src/sdk/test/execution.ts,project,Materialize linked-test tracker sandboxes only when selected commands require tracker context and type sandbox seeding host failures
+  tests/unit/commands/test-command.spec.ts,project,"Cover schema,auto,explicit tracker,and auto-promotion materialization decisions"
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/sdk/host-environment-errors.spec.ts,project,240
+  node scripts/run-tests.mjs coverage,project,900
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mswlsay4-61uno2,test,failed,"2026-08-17T02:11:20.952Z","2026-08-17T02:17:05.644Z","2026-08-17T02:17:05.644Z",1,1,0
+  test-local-mswlzt1s-kbrqoc,test,passed,"2026-08-17T02:17:20.779Z","2026-08-17T02:22:55.696Z","2026-08-17T02:22:55.696Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated fixed entry from the closed canonical item using pm-changelog 2026.8.16
+  docs/TESTING.md,project,Document demand-driven linked-test sandbox materialization and typed recovery
+close_reason: "Fixed the release-blocking linked-test recurrence by planning effective contexts before sandbox creation, materializing tracker roots/data only when required, and translating required sandbox seeding capacity failures through the shared typed host boundary. PM-linked exact coverage and fresh packed npx/bunx consumer tests pass."
 body: ""

@@ -2,7 +2,7 @@
 
 This page describes safe local tests, linked tests, coverage, and release-readiness checks.
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon), [pm-rizqb6](../.agents/pm/issues/pm-rizqb6.toon), [pm-95h7pg](../.agents/pm/issues/pm-95h7pg.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon), [pm-rizqb6](../.agents/pm/issues/pm-rizqb6.toon), [pm-95h7pg](../.agents/pm/issues/pm-95h7pg.toon), [pm-giks4s](../.agents/pm/issues/pm-giks4s.toon).
 
 ## Agent Quick Context
 
@@ -405,6 +405,14 @@ Linked PM commands default to schema context: settings and extensions are seeded
 When a linked command is a PM tracker-read such as `pm validate`, the default mismatch error suggests
 `--auto-pm-context`, which keeps schema isolation for ordinary commands and routes only tracker-read PM commands
 through seeded tracker data.
+
+The runner resolves every selected command's effective context before it
+creates temporary sandboxes. Schema and non-PM runs initialize only their
+schema roots; tracker roots and item data are materialized only when at least
+one selected command requires tracker context. This preserves source isolation
+without copying an unrelated tracker into constrained temporary storage.
+Capacity, permission, and resource failures while seeding a required tracker
+surface as typed, path-redacted host-environment refusals with recovery steps.
 
 Use explicit modes when needed:
 

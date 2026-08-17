@@ -1107,6 +1107,58 @@ describe("runTest", () => {
     expect(counts.infra_collision).toBe(0);
   });
 
+  it("materializes tracker data only for linked tests that select tracker context", () => {
+    expect(
+      testInternals.linkedTestsRequireTrackerData(
+        [
+          {
+            command: "node scripts/run-tests.mjs coverage",
+            scope: "project",
+          },
+        ],
+        "schema",
+        undefined,
+      ),
+    ).toBe(false);
+    expect(
+      testInternals.linkedTestsRequireTrackerData(
+        [
+          {
+            command: "node dist/cli.js list-open --json",
+            scope: "project",
+          },
+        ],
+        "auto",
+        undefined,
+      ),
+    ).toBe(true);
+    expect(
+      testInternals.linkedTestsRequireTrackerData(
+        [
+          {
+            command: "node --version",
+            scope: "project",
+            pm_context_mode: "tracker",
+          },
+        ],
+        "schema",
+        undefined,
+      ),
+    ).toBe(true);
+    expect(
+      testInternals.linkedTestsRequireTrackerData(
+        [
+          {
+            command: "node dist/cli.js list-open --json",
+            scope: "project",
+          },
+        ],
+        "schema",
+        { autoPmContext: true },
+      ),
+    ).toBe(true);
+  });
+
   it("covers pure linked-test helpers for context modes, parsing, sandbox copy, and json paths", async () => {
     const previousAuthor = process.env.PM_AUTHOR;
     const previousRunId = process.env.PM_BACKGROUND_TEST_RUN_ID;
