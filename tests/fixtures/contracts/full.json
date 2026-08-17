@@ -16641,6 +16641,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
+        "cli/register-list-query.ts",
         "sdk/mutation-events.ts",
         "sdk/runtime-extended-actions.ts"
       ],
@@ -22791,7 +22792,7 @@
             ]
           },
           "cursorMode": {
-            "description": "Cursor framing: batch returns one next_cursor (default); row also adds a cursor to every event.",
+            "description": "Cursor framing: batch returns one terminal next_cursor (default); row also adds a cursor to every event.",
             "enum": [
               "batch",
               "row"
@@ -43840,7 +43841,7 @@
             ]
           },
           "cursorMode": {
-            "description": "Cursor framing: batch returns one terminal next_cursor; row also adds a cursor to every event.",
+            "description": "Cursor framing: batch returns one terminal next_cursor (default); row also adds a cursor to every event.",
             "enum": [
               "batch",
               "row"

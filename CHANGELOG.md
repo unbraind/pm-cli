@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Bun event streaming falls back to authoritative history without node:sqlite ([pm-b8hwfr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b8hwfr.toon))
 - Exporter artifact-channel contract: clean stdout, bounded receipts, and binary-safe streaming ([pm-dilou2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dilou2.toon))
 - GH-1048: Windows Node 24 numeric EDQUOT fixtures construct NaN on platforms that do not declare that errno ([pm-y4kovm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4kovm.toon))
 - Queued daily releases recognize an already-published same-day release before analyzer provenance ([pm-dm2vfz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dm2vfz.toon))

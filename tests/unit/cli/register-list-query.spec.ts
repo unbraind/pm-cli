@@ -562,14 +562,14 @@ describe("register-list-query mutation events", () => {
       cursorMode: undefined,
     });
     expect(vi.mocked(writeStdout)).toHaveBeenCalledWith(
-      '{"record_type":"pm.stream.trailer","count":0,"has_more":false,"next_cursor":null,"source":"derived_index"}\n',
+      '{"count":0,"has_more":false,"next_cursor":null,"source":"derived_index","record_type":"pm.stream.trailer"}\n',
     );
   });
 
   it("writes a non-empty event page when output is enabled", async () => {
     await runRaw("events");
     expect(vi.mocked(writeStdout)).toHaveBeenCalledWith(
-      '{"item_id":"pm-event","type":"update"}\n{"record_type":"pm.stream.trailer","count":1,"has_more":false,"next_cursor":null,"source":"derived_index"}\n',
+      '{"item_id":"pm-event","type":"update"}\n{"count":1,"has_more":false,"next_cursor":null,"source":"derived_index","record_type":"pm.stream.trailer"}\n',
     );
   });
 
@@ -666,7 +666,7 @@ describe("register-list-query mutation events", () => {
       expect.objectContaining({ intervalMs: 25 }),
     );
     expect(vi.mocked(writeStdout)).toHaveBeenCalledWith(
-      '{"item_id":"pm-follow","type":"claim"}\n{"record_type":"pm.stream.trailer","count":1,"has_more":false,"next_cursor":"follow-cursor","source":"derived_index","heartbeat":false}\n',
+      '{"item_id":"pm-follow","type":"claim"}\n{"count":1,"has_more":false,"next_cursor":"follow-cursor","source":"derived_index","heartbeat":false,"record_type":"pm.stream.trailer"}\n',
     );
 
     vi.mocked(writeStdout).mockClear();
@@ -689,7 +689,7 @@ describe("register-list-query mutation events", () => {
     );
     await runRaw("events", "--follow");
     expect(vi.mocked(writeStdout)).toHaveBeenLastCalledWith(
-      '{"record_type":"pm.stream.trailer","count":0,"has_more":false,"next_cursor":null,"source":"derived_index","heartbeat":true}\n',
+      '{"count":0,"has_more":false,"next_cursor":null,"source":"derived_index","heartbeat":true,"record_type":"pm.stream.trailer"}\n',
     );
 
     await runRaw("events", "--follow", "--cursor-mode", "row");

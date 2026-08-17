@@ -2192,7 +2192,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     },
     cursorMode: {
       description:
-        "Cursor framing: batch returns one terminal next_cursor; row also adds a cursor to every event.",
+        "Cursor framing: batch returns one terminal next_cursor (default); row also adds a cursor to every event.",
       examples: ["batch", "row"],
     },
   },

@@ -72,7 +72,7 @@ describe("SDK host-output control", () => {
         source: "derived_index",
       }),
     ).toBe(
-      '{"id":"pm-1"}\n{"id":"pm-2"}\n{"record_type":"pm.stream.trailer","count":2,"has_more":true,"next_cursor":"cursor-2","source":"derived_index"}',
+      '{"id":"pm-1"}\n{"id":"pm-2"}\n{"count":2,"has_more":true,"next_cursor":"cursor-2","source":"derived_index","record_type":"pm.stream.trailer"}',
     );
     expect(
       serializeNdjsonStream([], {
@@ -82,7 +82,18 @@ describe("SDK host-output control", () => {
         source: "derived_index",
       }),
     ).toBe(
-      '{"record_type":"pm.stream.trailer","count":0,"has_more":false,"next_cursor":null,"source":"derived_index"}',
+      '{"count":0,"has_more":false,"next_cursor":null,"source":"derived_index","record_type":"pm.stream.trailer"}',
     );
+    expect(() =>
+      serializeNdjsonStream(
+        [{ record_type: "pm.stream.trailer", count: 99 }],
+        {
+          count: 1,
+          has_more: false,
+          next_cursor: null,
+          source: "derived_index",
+        },
+      ),
+    ).toThrow("NDJSON row 0 uses reserved record_type pm.stream.trailer");
   });
 });

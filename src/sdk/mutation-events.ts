@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import {
   queryHistoryEventIndex,
+  queryHistoryEventStreams,
   rebuildHistoryEventIndex,
   type IndexedHistoryEvent,
 } from "../core/history/event-index.js";
@@ -118,7 +119,7 @@ export interface MutationEventPage {
   /** Cursor that resumes after the final returned event. */
   next_cursor?: string;
   /** Persistent derived projection used for the read. */
-  source: "derived_index";
+  source: "derived_index" | "authoritative_history";
   /** Constant-size provenance completeness metrics for the returned page. */
   provenance_summary?: HistoryProvenanceSummary;
 }
@@ -274,11 +275,10 @@ async function resolveIndexedMutationEvents(
   let indexed = await queryHistoryEventIndex(pmRoot, query);
   if (indexed === null) {
     if (!(await rebuildHistoryEventIndex(pmRoot))) {
-      throw new PmCliError(
-        "Mutation events require a runtime with node:sqlite DatabaseSync support.",
-        EXIT_CODE.GENERIC_FAILURE,
-        { code: "event_index_unavailable" },
-      );
+      return {
+        ...(await queryHistoryEventStreams(pmRoot, query)),
+        source: "authoritative_history" as const,
+      };
     }
     indexed = await queryHistoryEventIndex(pmRoot, query);
   }
@@ -289,7 +289,7 @@ async function resolveIndexedMutationEvents(
       { code: "event_index_unavailable" },
     );
   }
-  return indexed;
+  return { ...indexed, source: "derived_index" as const };
 }
 
 /** Resolves the event cursor emission mode and rejects unsupported transport spellings. */
@@ -404,7 +404,7 @@ export async function listMutationEvents(
             fingerprint,
           ),
         }),
-    source: "derived_index",
+    source: indexed.source,
     ...(options.provenanceSummary === true
       ? {
           provenance_summary: summarizeHistoryProvenance(
@@ -466,7 +466,7 @@ export async function* subscribeMutationEvents(
 ): AsyncGenerator<MutationEvent, void, void> {
   for await (const page of subscribeMutationEventBatches({
     ...options,
-    cursorMode: options.cursorMode ?? "row",
+    cursorMode: "row",
   })) {
     for (const event of page.events) {
       yield event;

@@ -37,6 +37,11 @@ idempotent. `--cursor-mode row` preserves the previous shape with one `cursor`
 per event and no trailer for consumers that checkpoint every row. Already
 issued version-1 cursors remain accepted by `--since`.
 
+Node runtimes use the rebuildable SQLite event projection. Runtimes such as Bun
+that do not expose `node:sqlite` transparently scan the authoritative history
+streams with the same ordering, filters, pagination, and cursor contract; pages
+identify that path with `source: "authoritative_history"`.
+
 `--full` also includes the complete authoritative history entry.
 `--type`, `--author`, and `--item` accept repeatable or comma-separated values.
 `--since` accepts either a cursor or an ISO timestamp. The CLI emits only event
@@ -59,6 +64,8 @@ const page = await listMutationEvents({
   type: ["create", "update"],
   limit: 100,
 });
+await consumeBatch(page.events);
+await persistCursor(page.next_cursor);
 
 const controller = new AbortController();
 for await (const batch of subscribeMutationEventBatches({

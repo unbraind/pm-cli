@@ -6,12 +6,13 @@ status: open
 priority: 1
 tags[4]: "area:cli","area:sdk","github:1051",output-contract
 created_at: "2026-08-17T07:44:11.138Z"
-updated_at: "2026-08-17T07:44:11.138Z"
+updated_at: "2026-08-17T08:19:49.236Z"
 author: "harness:codex"
 parent: pm-5t33or
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-479ggz,discovered_from,"2026-08-17T07:44:11.138Z","harness:codex","cli:create:dep",detected
-  pm-tnud,related,"2026-08-17T07:44:11.138Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-tnud,blocked_by,"2026-08-17T08:19:49.098Z","harness:codex","governance:typed-relationship-repair",detected
+comments[2]{created_at,author,text}:
   "2026-08-17T07:44:11.138Z","harness:codex","Duplicate check 2026-08-17: searched all statuses for GH-1051, package catalog output budget, and mode-sensitive package reads. No item owns this exact failure; pm-479ggz is the closed prior diagnostic-mode analogue, pm-5t33or owns universal budget contracts, and pm-tnud owns package grammar. Source: https://github.com/unbraind/pm-cli/issues/1051"
+  "2026-08-17T08:19:49.098Z","harness:codex","Tracker quality: replaced the generic package-grammar relation with depends_on because mode-sensitive catalog support is constrained by the package grammar contract."
 body: ""

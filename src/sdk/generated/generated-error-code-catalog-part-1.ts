@@ -1386,7 +1386,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/mutation-events.ts", "sdk/runtime-extended-actions.ts"],
+    sources: [
+      "cli/register-list-query.ts",
+      "sdk/mutation-events.ts",
+      "sdk/runtime-extended-actions.ts",
+    ],
     emitting_commands: ["*"],
     canonical_code: "invalid_event_cursor_mode",
     aliases: [],

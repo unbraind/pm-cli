@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   _testOnly,
   queryHistoryEventIndex,
+  queryHistoryEventStreams,
   rebuildHistoryEventIndex,
   removeHistoryEventIndexForHistoryPath,
   updateHistoryEventIndexAfterAppend,
@@ -195,11 +196,80 @@ describe("history mutation event index", () => {
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
       await expect(
+        queryHistoryEventStreams(context.pmPath, { limit: 10 }),
+      ).resolves.toEqual({ events: [], has_more: false });
+      await expect(
         updateHistoryEventIndexAfterAppend(
           path.join(context.pmPath, "history", "pm-a.jsonl"),
           historyEntry("2026-07-24T10:00:00.000Z", "agent", "update"),
         ),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  it("queries authoritative streams with index-equivalent ordering and filters", async () => {
+    await withTempPmPath(async (context) => {
+      const historyRoot = path.join(context.pmPath, "history");
+      await fs.writeFile(
+        path.join(historyRoot, "pm-b.jsonl"),
+        `${JSON.stringify({
+          ...historyEntry("2026-07-24T10:00:00.000Z", "beta", "update"),
+          agent_harness: "codex",
+          agent_instance: "instance-b",
+          agent_provenance: {
+            model: { value: "gpt-5.6-sol", source: "probe" },
+          },
+        })}\n`,
+      );
+      await fs.writeFile(
+        path.join(historyRoot, "pm-a.jsonl"),
+        [
+          historyEntry("2026-07-24T09:00:00.000Z", "alpha", "create"),
+          historyEntry("2026-07-24T10:00:00.000Z", "legacy-codex", "update"),
+        ]
+          .map((entry) => JSON.stringify(entry))
+          .join("\n"),
+      );
+
+      await expect(
+        queryHistoryEventStreams(context.pmPath, {
+          since_ts: "2026-07-24T10:00:00.000Z",
+          ops: ["update"],
+          harnesses: ["codex"],
+          harness_alias_authors: ["legacy-codex"],
+          limit: 1,
+        }),
+      ).resolves.toMatchObject({
+        has_more: true,
+        events: [{ stream_id: "pm-a", stream_offset: 1 }],
+      });
+      await expect(
+        queryHistoryEventStreams(context.pmPath, {
+          after_ts: "2026-07-24T10:00:00.000Z",
+          after_stream_id: "pm-a",
+          after_stream_offset: 1,
+          agent_instances: ["instance-b"],
+          provenance: [{ dimension: "model", values: ["gpt-5.6-sol"] }],
+          stream_ids: ["pm-b"],
+          limit: 10,
+        }),
+      ).resolves.toMatchObject({
+        has_more: false,
+        events: [{ stream_id: "pm-b", stream_offset: 0 }],
+      });
+      await expect(
+        queryHistoryEventStreams(context.pmPath, {
+          authors: ["nobody"],
+          limit: 10,
+        }),
+      ).resolves.toEqual({ events: [], has_more: false });
+      await expect(
+        queryHistoryEventStreams(context.pmPath, {
+          harnesses: ["codex"],
+          stream_ids: ["pm-a"],
+          limit: 10,
+        }),
+      ).resolves.toEqual({ events: [], has_more: false });
     });
   });
 

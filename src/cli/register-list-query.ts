@@ -784,6 +784,7 @@ function buildMutationEventOptions(
     throw new PmCliError(
       "Events --cursor-mode must be batch or row.",
       EXIT_CODE.USAGE,
+      { code: "invalid_event_cursor_mode" },
     );
   }
   const cursorMode: "batch" | "row" | undefined = rawCursorMode;

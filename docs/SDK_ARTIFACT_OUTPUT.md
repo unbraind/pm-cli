@@ -53,10 +53,11 @@ description.
 | `stdout` | `suppress` | Artifact bytes only | Extension-owned diagnostics or summary |
 | `file` | `render` | Bounded structured receipt | Extension-owned diagnostics |
 
-`receipt: "render"` and `receipt: "suppress"` are explicit compatibility
-controls. Do not choose `render` for a stdout artifact: it intentionally opts
-back into the legacy interleaved stream and is unsuitable for redirection,
-`jq`, or binary output.
+File exporters may select `receipt: "render"` or `receipt: "suppress"` as an
+explicit compatibility control. Stdout artifacts always suppress the host
+receipt; declaring `receipt: "render"` with `channel: "stdout"` is rejected at
+registration so redirection, `jq`, and binary output remain clean by
+construction.
 
 The host does not decode, re-encode, buffer, or inspect stdout artifact bytes.
 Consequently NUL bytes and non-UTF-8 payloads pass through unchanged. The

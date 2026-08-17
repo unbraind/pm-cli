@@ -23,6 +23,14 @@ export function normalizeExporterArtifactOutput(
     "registerExporter options.output",
     value,
   );
+  const allowedKeys = new Set(["channel", "receipt", "media_type"]);
+  for (const key of Object.keys(candidate)) {
+    if (!allowedKeys.has(key)) {
+      throw new TypeError(
+        `registerExporter options.output contains unsupported field ${key}`,
+      );
+    }
+  }
   if (candidate.channel !== "stdout" && candidate.channel !== "file") {
     throw new TypeError(
       "registerExporter options.output.channel must be stdout|file",
@@ -35,6 +43,11 @@ export function normalizeExporterArtifactOutput(
   ) {
     throw new TypeError(
       "registerExporter options.output.receipt must be suppress|render",
+    );
+  }
+  if (candidate.channel === "stdout" && candidate.receipt === "render") {
+    throw new TypeError(
+      "registerExporter stdout artifacts cannot render a host receipt",
     );
   }
   assertOptionalStringField(

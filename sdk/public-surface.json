@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1653,
+    "covered_symbols": 1655,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1654
+    "required_symbols": 1656
   },
   "breaking_acknowledgements": [
     {
@@ -730,6 +730,22 @@
       ],
       "package_version": "2026.8.17",
       "reason": "Intentional SDK typing refinement: importer options exclude exporter-only artifact output while exporter registrations retain the additive channel contract."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ExtensionBlueprintExporter",
+        "signature ./sdk:PmNdjsonStreamTrailerInput",
+        "signature ./sdk/authoring:ExtensionBlueprintExporter"
+      ],
+      "package_version": "2026.8.17",
+      "reason": "Close exporter artifact ownership and NDJSON trailer input invariants after exact-head review; stdout render opt-in was newly introduced only on this unmerged branch."
+    },
+    {
+      "changes": [
+        "signature ./sdk:MutationEventPage"
+      ],
+      "package_version": "2026.8.17",
+      "reason": "Add truthful authoritative_history source receipt for Bun event fallback while preserving derived_index on Node."
     }
   ],
   "entrypoints": {
@@ -4889,6 +4905,12 @@
           "signature": "export type Exporter = (context: ImportExportContext) => unknown | Promise<unknown>;"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExporterRegistrationOptions",
+          "signature": "export interface ExporterRegistrationOptions extends ImportExportRegistrationOptions { output?: ExporterArtifactOutputContract; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "extension",
@@ -5078,7 +5100,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionBlueprintExporter",
-          "signature": "export interface ExtensionBlueprintExporter { name: string; exporter: Exporter; options?: ImportExportRegistrationOptions; }"
+          "signature": "export interface ExtensionBlueprintExporter { name: string; exporter: Exporter; options?: ExporterRegistrationOptions; }"
         },
         {
           "classification": "supported",
@@ -7946,7 +7968,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "MutationEventPage",
-          "signature": "export interface MutationEventPage { events: MutationEvent[]; count: number; has_more: boolean; cursor_mode: \"batch\" | \"row\"; next_cursor?: string; source: \"derived_index\"; provenance_summary?: HistoryProvenanceSummary; }"
+          "signature": "export interface MutationEventPage { events: MutationEvent[]; count: number; has_more: boolean; cursor_mode: \"batch\" | \"row\"; next_cursor?: string; source: \"derived_index\" | \"authoritative_history\"; provenance_summary?: HistoryProvenanceSummary; }"
         },
         {
           "classification": "supported",
@@ -9678,9 +9700,9 @@
         },
         {
           "classification": "advanced_export",
-          "kind": "type",
+          "kind": "interface",
           "name": "PmNdjsonStreamTrailerInput",
-          "signature": "export type PmNdjsonStreamTrailerInput = Omit<PmNdjsonStreamTrailer, \"record_type\">;"
+          "signature": "export interface PmNdjsonStreamTrailerInput { readonly [key: string]: unknown; readonly record_type?: never; count: number; has_more: boolean; next_cursor: string | null; source: string; metadata?: Readonly<Record<string, unknown>>; }"
         },
         {
           "classification": "contract_data",
@@ -10863,6 +10885,12 @@
           "kind": "type",
           "name": "RegisteredCommandOverrideExpectation",
           "signature": "export type RegisteredCommandOverrideExpectation = NamedRegistrationExpectation<\"command\", string, { extensionName?: string; }>;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "RegisteredExporterArtifactOutputContract",
+          "signature": "export interface RegisteredExporterArtifactOutputContract { channel: \"stdout\" | \"file\"; receipt: \"suppress\" | \"render\"; media_type?: string; }"
         },
         {
           "classification": "supported",
@@ -15972,6 +16000,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "ExporterRegistrationOptions",
+          "signature": "export interface ExporterRegistrationOptions extends ImportExportRegistrationOptions { output?: ExporterArtifactOutputContract; }"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "EXTENSION_CAPABILITIES",
           "signature": "readonly [\"commands\", \"renderers\", \"hooks\", \"schema\", \"importers\", \"search\", \"parser\", \"preflight\", \"services\"]"
@@ -16046,7 +16080,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionBlueprintExporter",
-          "signature": "export interface ExtensionBlueprintExporter { name: string; exporter: Exporter; options?: ImportExportRegistrationOptions; }"
+          "signature": "export interface ExtensionBlueprintExporter { name: string; exporter: Exporter; options?: ExporterRegistrationOptions; }"
         },
         {
           "classification": "supported",
@@ -16767,6 +16801,12 @@
           "kind": "function",
           "name": "reconcileExtensionCapabilityUsage",
           "signature": "(loaded: ReadonlyArray<{ layer: ExtensionLayer; name: string; capabilities?: readonly string[]; }>, activation: ExtensionActivationResult) => ExtensionCapabilityUsageReconciliation[] | calls: (loaded: ReadonlyArray<{ layer: ExtensionLayer; name: string; capabilities?: readonly string[]; }>, activation: ExtensionActivationResult) => ExtensionCapabilityUsageReconciliation[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "RegisteredExporterArtifactOutputContract",
+          "signature": "export interface RegisteredExporterArtifactOutputContract { channel: \"stdout\" | \"file\"; receipt: \"suppress\" | \"render\"; media_type?: string; }"
         },
         {
           "classification": "supported",

@@ -888,14 +888,23 @@ export interface ImportExportRegistrationOptions {
  * Declares where an exporter writes its artifact and whether the host may
  * render the returned structured receipt after the exporter completes.
  */
-export interface ExporterArtifactOutputContract {
-  /** Destination carrying the artifact bytes. */
-  channel: "stdout" | "file";
-  /** Host receipt policy; stdout defaults to suppress and file to render. */
-  receipt?: "suppress" | "render";
-  /** Optional IANA media type describing the emitted artifact. */
-  media_type?: string;
-}
+export type ExporterArtifactOutputContract =
+  | {
+      /** Stdout exclusively carries artifact bytes. */
+      channel: "stdout";
+      /** Stdout artifacts cannot opt back into host rendering. */
+      receipt?: "suppress";
+      /** Optional IANA media type describing the emitted artifact. */
+      media_type?: string;
+    }
+  | {
+      /** The exporter writes its artifact to a file. */
+      channel: "file";
+      /** File exporters may render or suppress their bounded receipt. */
+      receipt?: "suppress" | "render";
+      /** Optional IANA media type describing the emitted artifact. */
+      media_type?: string;
+    };
 
 /** Exporter command metadata plus its optional artifact-delivery contract. */
 export interface ExporterRegistrationOptions

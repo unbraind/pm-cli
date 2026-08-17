@@ -58,7 +58,7 @@ describe("extension exporter artifact channels", () => {
     expect(handled.result).toMatchObject({ result: { rows: 2 } });
   });
 
-  it("keeps file receipts renderable and accepts an explicit stdout receipt", async () => {
+  it("keeps file receipts renderable unless explicitly suppressed", async () => {
     const activation = await activateSyntheticExtensions([
       {
         name: "receipt-exporters",
@@ -68,7 +68,7 @@ describe("extension exporter artifact channels", () => {
             output: { channel: "file" },
           });
           api.registerExporter("report", async () => ({ rows: 2 }), {
-            output: { channel: "stdout", receipt: "render" },
+            output: { channel: "file", receipt: "suppress" },
           });
         },
       },
@@ -82,7 +82,7 @@ describe("extension exporter artifact channels", () => {
       ...COMMAND_CONTEXT,
       command: "file-report export",
     });
-    expect(stdoutReceipt.result).toEqual({ rows: 2 });
+    expect(isHostOutputSuppressed(stdoutReceipt.result)).toBe(true);
     expect(fileReceipt.result).toEqual({ path: "report.json" });
   });
 
@@ -141,6 +141,46 @@ describe("extension exporter artifact channels", () => {
     expect(invalidReceipt.registrations.exporters).toEqual([]);
     expect(invalidReceipt.failed[0]?.error).toContain(
       "registerExporter options.output.receipt must be suppress|render",
+    );
+
+    const incompatibleReceipt = await activateSyntheticExtensions([
+      {
+        name: "incompatible-receipt",
+        capabilities: ["importers"],
+        activate(api) {
+          api.registerExporter(
+            "report",
+            async () => ({ rows: 0 }),
+            {
+              output: { channel: "stdout", receipt: "render" },
+            } as unknown as ExporterRegistrationOptions,
+          );
+        },
+      },
+    ]);
+    expect(incompatibleReceipt.registrations.exporters).toEqual([]);
+    expect(incompatibleReceipt.failed[0]?.error).toContain(
+      "stdout artifacts cannot render a host receipt",
+    );
+
+    const unknownField = await activateSyntheticExtensions([
+      {
+        name: "unknown-output-field",
+        capabilities: ["importers"],
+        activate(api) {
+          api.registerExporter(
+            "report",
+            async () => ({ rows: 0 }),
+            {
+              output: { channel: "stdout", recepit: "suppress" },
+            } as unknown as ExporterRegistrationOptions,
+          );
+        },
+      },
+    ]);
+    expect(unknownField.registrations.exporters).toEqual([]);
+    expect(unknownField.failed[0]?.error).toContain(
+      "contains unsupported field recepit",
     );
   });
 });

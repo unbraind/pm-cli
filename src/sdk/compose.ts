@@ -36,6 +36,7 @@ import type {
   ExtensionManifest,
   ExtensionServiceName,
   Exporter,
+  ExporterRegistrationOptions,
   FlagDefinition,
   ImportExportRegistrationOptions,
   Importer,
@@ -140,7 +141,7 @@ export interface ExtensionBlueprintExporter {
   /** The exporter handler that bridges the pm context graph out to an external system. */
   exporter: Exporter;
   /** Optional command metadata (description/flags/intent/examples) for the derived command. */
-  options?: ImportExportRegistrationOptions;
+  options?: ExporterRegistrationOptions;
 }
 
 /**

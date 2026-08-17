@@ -302,7 +302,7 @@ const RAW_TOOLS: ToolDefinition[] = [
         type: "string",
         enum: ["batch", "row"],
         description:
-          "Cursor framing: batch returns one next_cursor (default); row also adds a cursor to every event.",
+          "Cursor framing: batch returns one terminal next_cursor (default); row also adds a cursor to every event.",
       },
     }),
   },

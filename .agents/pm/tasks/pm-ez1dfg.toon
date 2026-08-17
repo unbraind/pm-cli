@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[7]: agent-ux,"area:cli","area:sdk",context-management,output-contract,scale,token-efficiency
 created_at: "2026-07-26T05:42:49.365Z"
-updated_at: "2026-08-17T07:37:54.472Z"
+updated_at: "2026-08-17T08:52:34.303Z"
 closed_at: "2026-08-17T07:37:18.454Z"
 completed_at: "2026-08-17T07:37:18.454Z"
 author: "harness:claude-code"
@@ -50,9 +50,10 @@ dependencies[8]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-17T07:36:44.229Z","harness:codex","Evidence 2026-08-17: shipped the default batch-terminal cursor contract through SDK, CLI, MCP, universal tool schemas, generated contracts, and docs. Compatibility row mode remains explicit through --cursor-mode row; literal v1 cursors are accepted; follow emits recoverable batch boundaries and idle heartbeats. The 200-event wire budget gates batch bytes at no more than 60 percent of row-mode bytes. Linked tests passed 67/67; repository suite passed 7,468/7,468 with exact 100/100/100/100 coverage; typecheck, contract snapshots, SDK surface, docs links, secret scan, package artifact, audit, and static assurance passed. Manual unrelated-tracker acceptance proved batch trailers, cursor-free batch rows, row cursors, and one JSON envelope. Packed npx and bunx both reported 2026.8.17."
   "2026-08-17T07:37:54.472Z","harness:codex","Changelog evidence: pm-changelog 2026.8.17 installed from npm and regenerated CHANGELOG.md in replace/all-release-tags mode after closure."
+  "2026-08-17T08:52:34.303Z","harness:codex","Exact-head review remediation: forced the compatibility iterator to row framing even if callers pass batch, made NDJSON trailer input explicit and non-overridable, rejected reserved trailer rows, aligned CLI/MCP descriptions, and added stable invalid cursor-mode codes. Manual packed Bun acceptance then exposed and fixed the event index portability recurrence in pm-b8hwfr. Full expanded coverage is exact 100/100/100/100."
 learnings[1]{created_at,author,text}:
   "2026-08-17T07:36:44.991Z","harness:codex","A durable resume capability should be charged once at the consumer commit boundary. Keep the parser permissive for historical cursors, expose expensive per-row checkpoints only as an explicit compatibility mode, and make idle follow yields carry the last boundary so liveness and recovery share one contract."
 files[17]{path,scope,note}:

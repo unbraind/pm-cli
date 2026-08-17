@@ -459,6 +459,7 @@ describe("SDK mutation event stream", () => {
       const subscription = subscribeMutationEvents({
         pmRoot: context.pmPath,
         since: initial.next_cursor,
+        cursorMode: "batch",
         intervalMs: 10,
         signal: controller.signal,
       });
@@ -477,7 +478,11 @@ describe("SDK mutation event stream", () => {
       ]);
       await expect(nextEvent).resolves.toMatchObject({
         done: false,
-        value: { author: "event-follower", type: "create" },
+        value: {
+          author: "event-follower",
+          cursor: expect.any(String),
+          type: "create",
+        },
       });
       controller.abort();
       await expect(subscription.next()).resolves.toEqual({
@@ -725,12 +730,31 @@ describe("SDK mutation event stream", () => {
     );
   });
 
-  it("reports unavailable and repeatedly unreadable derived event indexes", async () => {
+  it("falls back to authoritative streams and reports repeatedly unreadable indexes", async () => {
     await withTempPmPath(async (context) => {
       let restore = eventIndexTestOnly.setDatabaseSync(null);
+      await appendHistoryEntry(
+        path.join(context.pmPath, "history", "pm-bun.jsonl"),
+        {
+          ts: "2026-07-24T10:00:00.000Z",
+          author: "bun-agent",
+          op: "update",
+          patch: [],
+          before_hash: "before",
+          after_hash: "after",
+        },
+      );
       await expect(
-        listMutationEvents({ pmRoot: context.pmPath }),
-      ).rejects.toThrow(/node:sqlite DatabaseSync/);
+        listMutationEvents({
+          pmRoot: context.pmPath,
+          item: "pm-bun",
+          author: "bun-agent",
+        }),
+      ).resolves.toMatchObject({
+        count: 1,
+        source: "authoritative_history",
+        events: [{ item_id: "pm-bun", type: "update" }],
+      });
       restore();
 
       let constructions = 0;
